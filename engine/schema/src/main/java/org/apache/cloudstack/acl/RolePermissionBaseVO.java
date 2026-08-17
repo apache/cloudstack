@@ -50,6 +50,12 @@ public class RolePermissionBaseVO implements RolePermissionEntity {
 
     public RolePermissionBaseVO() { this.uuid = UUID.randomUUID().toString(); }
 
+    public RolePermissionBaseVO(final String rule, final Permission permission) {
+        this();
+        this.rule = rule;
+        this.permission = permission;
+    }
+
     public RolePermissionBaseVO(final String rule, final Permission permission, final String description) {
         this();
         this.rule = rule;

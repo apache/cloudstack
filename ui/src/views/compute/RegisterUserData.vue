@@ -38,11 +38,11 @@
         <div v-if="$route.name === 'userdata'">
           <a-form-item name="userdata" ref="userdata">
             <template #label>
-              <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+              <tooltip-label :title="$t('label.user.data')" :tooltip="$t('label.register.user.data.details')"/>
             </template>
             <a-textarea
               v-model:value="form.userdata"
-              :placeholder="apiParams.userdata.description"/>
+              :placeholder="$t('label.register.user.data.details')"/>
           </a-form-item>
         </div>
         <div v-else>
@@ -61,7 +61,7 @@
         <a-form-item name="params" ref="params">
           <template #label>
             <tooltip-label
-              :title="$route.name === 'userdata' ? $t('label.userdataparams') : $t('label.cniconfigparams')"
+              :title="$route.name === 'userdata' ? $t('label.user.data.params') : $t('label.cniconfigparams')"
               :tooltip="apiParams.params.description"/>
           </template>
           <a-select
@@ -129,7 +129,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -169,7 +169,7 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        userdata: [{ required: true, message: this.$t('message.error.userdata') }]
+        userdata: [{ required: true, message: this.$t('message.error.user.data') }]
       })
     },
     fetchData () {
@@ -192,7 +192,7 @@ export default {
     fetchDomainData () {
       const params = {}
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listdomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listdomains)
       }).finally(() => {
@@ -240,7 +240,7 @@ export default {
           params.params = userdataparams
         }
 
-        api(apiName, {}, 'POST', params).then(json => {
+        postAPI(apiName, params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)

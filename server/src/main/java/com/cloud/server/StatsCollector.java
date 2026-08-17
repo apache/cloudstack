@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -165,15 +166,16 @@ import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -294,6 +296,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new Gson();
+    private static Gson msStatsGson = new GsonBuilder()
+            .setDateFormat(DateUtil.ZONED_DATETIME_FORMAT)
+            .create();
 
     private ScheduledExecutorService _executor = null;
     @Inject
@@ -383,7 +388,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static void registerMetric(String name, Metric metric) {
+        METRIC_REGISTRY.register(name, metric);
+    }
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -406,6 +415,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
         registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
         registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
+        try {
+            JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
+        } catch (Exception e) {
+            logger.warn("Failed to start JMX reporter for METRIC_REGISTRY, metrics will not be visible via JMX", e);
+        }
         return true;
     }
     @Override
@@ -739,7 +753,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
-
          @Override
          protected Point createInfluxDbPoint(Object metricsObject) {
              return null;
@@ -759,7 +772,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 msHostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), msHostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(msHostStatsEntry));
+                clusterManager.publishStatus(msStatsGson.toJson(msHostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
@@ -940,12 +953,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.info(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
             }
             try {
-                String bootTime = Script.runSimpleBashScript("uptime -s");
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+                String bootTime = Script.runSimpleBashScript("date -d @$(grep btime /proc/stat | awk '{print $2}') '+%Y-%m-%d %H:%M:%S'");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                 Date date = formatter.parse(bootTime);
                 newEntry.setSystemBootTime(date);
             } catch (ParseException e) {
-                logger.error("can not retrieve system uptime");
+                logger.error("can not retrieve system uptime", e);
             }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse) * 1024);
@@ -983,7 +996,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             double totalcpucap = 0;
             if (StringUtils.isEmpty(cpucaps)) {
                 String totalCpus = Script.runSimpleBashScript("nproc --all| tr '\\n' \" \"");
-                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | egrep 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | grep -E 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
                 if (StringUtils.isNotEmpty(totalCpus) && StringUtils.isNotEmpty(maxCpuSpeed)) {
                     totalcpucap = Double.parseDouble(totalCpus) * Double.parseDouble(maxCpuSpeed);
                 }
@@ -1161,9 +1174,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.debug(String.format("StatusUpdate from %s, json: %s", pdu.getSourcePeer(), pdu.getJsonPackage()));
             }
 
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry hostStatsEntry;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
+                hostStatsEntry = msStatsGson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer
@@ -1462,7 +1475,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 for (VmDiskStats vmDiskStat : vmDiskStats) {
                                     VmDiskStatsEntry vmDiskStatEntry = (VmDiskStatsEntry)vmDiskStat;
                                     SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                                    sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStatEntry.getPath());
+                                    sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStatEntry.getPath() + "%");
                                     List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
 
                                     if (CollectionUtils.isEmpty(volumes))
@@ -1646,7 +1659,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 List<StoragePoolVO> pools = _storagePoolDao.listAll();
 
                 for (StoragePoolVO pool : pools) {
-                    List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
+                    List<VolumeVO> volumes = _volsDao.findNonDestroyedVolumesByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
                         if (!List.of(ImageFormat.QCOW2, ImageFormat.VHD, ImageFormat.OVA, ImageFormat.RAW).contains(volume.getFormat()) &&
                             !List.of(Storage.StoragePoolType.PowerFlex, Storage.StoragePoolType.FiberChannel).contains(pool.getPoolType())) {

@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,15 +30,14 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.Event;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -63,6 +63,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component
@@ -86,6 +87,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
     SearchBuilder<NetworkVO> PrivateNetworkSearch;
+    SearchBuilder<NetworkVO> NetworkDomainSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -192,11 +194,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         PersistentNetworkSearch.and("id", PersistentNetworkSearch.entity().getId(), Op.NEQ);
         PersistentNetworkSearch.and("guestType", PersistentNetworkSearch.entity().getGuestType(), Op.IN);
         PersistentNetworkSearch.and("broadcastUri", PersistentNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        PersistentNetworkSearch.and("dc", PersistentNetworkSearch.entity().getDataCenterId(), Op.EQ);
         PersistentNetworkSearch.and("removed", PersistentNetworkSearch.entity().getRemoved(), Op.NULL);
         final SearchBuilder<NetworkOfferingVO> persistentNtwkOffJoin = _ntwkOffDao.createSearchBuilder();
         persistentNtwkOffJoin.and("persistent", persistentNtwkOffJoin.entity().isPersistent(), Op.EQ);
         PersistentNetworkSearch.join("persistent", persistentNtwkOffJoin, PersistentNetworkSearch.entity().getNetworkOfferingId(), persistentNtwkOffJoin.entity().getId(), JoinType.INNER);
         PersistentNetworkSearch.done();
+
+        NetworkDomainSearch = createSearchBuilder();
+        NetworkDomainSearch.and("networkDomains", NetworkDomainSearch.entity().getNetworkDomain(), Op.IN);
+        NetworkDomainSearch.and("accounts", NetworkDomainSearch.entity().getAccountId(), Op.IN);
+        NetworkDomainSearch.and("domains", NetworkDomainSearch.entity().getDomainId(), Op.IN);
+        NetworkDomainSearch.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -382,7 +391,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (final String service : serviceProviderMap.keySet()) {
-            final NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
+            final NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service).getName(), serviceProviderMap.get(service));
             _ntwkSvcMap.persist(serviceMap);
         }
         txn.commit();
@@ -429,11 +438,34 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("accounts", accountIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
+        SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
+        sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
+        sc.setParameters("domains", domainIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
     public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         final SequenceFetcher fetch = SequenceFetcher.getInstance();
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
-        if(zoneMacIdentifier != null && zoneMacIdentifier.intValue() != 0 ){
-            seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000l;
+        if (zoneMacIdentifier != null && zoneMacIdentifier != 0) {
+            seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000L;
         }
         return NetUtils.long2Mac(seq);
     }
@@ -568,7 +600,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public List<NetworkVO> listByPhysicalNetworkTrafficType(final long physicalNetworkId, final TrafficType trafficType) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("physicalNetwork", physicalNetworkId);
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
         return listBy(sc);
     }
 
@@ -601,12 +633,46 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType, Filter filter) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("trafficType", trafficType);
 
-        return listBy(sc, null);
+        return listBy(sc, filter);
+    }
+
+    @Override
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
+        return listByZoneAndTrafficType(zoneId, trafficType, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByZonesTrafficTypeAndOwners(List<Long> zoneIds, final TrafficType trafficType,
+                                                           List<Long> accountIds, List<Long> domainIds, Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<NetworkVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
+        if (accountIdsNotEmpty || domainIdsNotEmpty) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
+        sb.done();
+        final SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("trafficType", trafficType);
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainIdsNotEmpty) {
+            sc.setParameters("domain", domainIds.toArray());
+        }
+        return listBy(sc, filter);
     }
 
     @Override
@@ -876,5 +942,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         }
 
         return overlappingNetworks;
+    }
+
+    @Override
+    public NetworkVO findByZoneIdAndAccountIdAndGuestTypeAndName(long zoneId, long accountId, GuestType guestType, String name) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+
+        sc.setParameters("datacenter", zoneId);
+        sc.setParameters("account", accountId);
+        sc.setParameters("guestType", guestType);
+        sc.setParameters("name", name);
+
+        return findOneBy(sc);
     }
 }

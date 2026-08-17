@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;

@@ -41,7 +41,11 @@
         {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
       </template>
       <template v-if="column.key === 'storage'">
-        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'kmskey'">
+        <router-link v-if="record.kmskeyid" :to="{ path: '/kmskey/' + encodeURIComponent(record.kmskeyid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
     </template>
@@ -49,7 +53,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -80,7 +84,7 @@ export default {
     return {
       vm: {},
       volumes: [],
-      defaultColumns: ['name', 'state', 'type', 'size'],
+      defaultColumns: ['name', 'state', 'type', 'size', 'kmskey'],
       allColumns: [
         {
           key: 'name',
@@ -100,6 +104,11 @@ export default {
           key: 'size',
           title: this.$t('label.size'),
           dataIndex: 'size'
+        },
+        {
+          key: 'kmskey',
+          title: this.$t('label.kms.key'),
+          dataIndex: 'kmskey'
         },
         {
           key: 'storage',
@@ -132,7 +141,7 @@ export default {
       }
     },
     getVolumes () {
-      api('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
+      getAPI('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })

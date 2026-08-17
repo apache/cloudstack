@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.consoleproxy.ConsoleSession;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -38,8 +42,8 @@ import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -64,6 +68,7 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
@@ -75,6 +80,7 @@ import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -141,7 +147,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
@@ -150,6 +155,7 @@ import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.gui.theme.GuiThemeJoin;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
@@ -275,7 +281,8 @@ public interface ResponseGenerator {
 
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details,
+            UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
@@ -301,11 +308,13 @@ public interface ResponseGenerator {
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
 
-    LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
+    LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies,
+            LoadBalancer lb);
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
 
-    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb);
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies,
+            LoadBalancer lb);
 
     LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb);
 
@@ -313,7 +322,8 @@ public interface ResponseGenerator {
 
     PodResponse createMinimalPodResponse(Pod pod);
 
-    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities, Boolean showResourceIcon);
+    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities,
+            Boolean showResourceIcon);
 
     DataCenterGuestIpv6PrefixResponse createDataCenterGuestIpv6PrefixResponse(DataCenterGuestIpv6Prefix prefix);
 
@@ -337,6 +347,8 @@ public interface ResponseGenerator {
 
     UserVm findUserVmById(Long vmId);
 
+    UserVm findUserVmByNicId(Long nicId);
+
     Volume findVolumeById(Long volumeId);
 
     Account findAccountByNameDomain(String accountName, Long domainId);
@@ -353,7 +365,8 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly);
 
-    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId,
+            boolean readyOnly);
 
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules);
 
@@ -372,14 +385,15 @@ public interface ResponseGenerator {
     TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
-                                                   Long zoneId, boolean readyOnly);
+            Long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
-                                                   List<Long> zoneIds, boolean readyOnly);
+            List<Long> zoneIds, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
-    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id);
+    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames,
+            Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
 
@@ -393,7 +407,8 @@ public interface ResponseGenerator {
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId,
+            boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
 
@@ -494,13 +509,15 @@ public interface ResponseGenerator {
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
 
-    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames);
+    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(
+            List<Pair<String, String>> hypervisorGuestOsNames);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
-    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat);
+    UsageRecordResponse createUsageResponse(Usage usageRecord,
+            Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat);
 
     public Map<String, Set<ResourceTagResponse>> getUsageResourceTags();
 
@@ -512,7 +529,8 @@ public interface ResponseGenerator {
 
     public NicResponse createNicResponse(Nic result);
 
-    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
+    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb,
+            Map<Ip, UserVm> lbInstances);
 
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
@@ -532,17 +550,18 @@ public interface ResponseGenerator {
 
     UserDataResponse createUserDataResponse(UserData userData);
 
-    BackupResponse createBackupResponse(Backup backup);
-
     BackupScheduleResponse createBackupScheduleResponse(BackupSchedule backup);
 
     BackupOfferingResponse createBackupOfferingResponse(BackupOffering policy);
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
 
-    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
+    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router,
+            List<RouterHealthCheckResult> healthCheckResults);
 
-    RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
+    RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details,
+            List<RollingMaintenanceManager.HostUpdated> hostsUpdated,
+            List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
@@ -552,11 +571,14 @@ public interface ResponseGenerator {
 
     DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate);
 
-    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
+    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(
+            List<DirectDownloadCertificateHostMap> hostMappings);
 
-    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(
+            DirectDownloadManager.HostCertificateStatus status);
 
-    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId,
+            Long hostId, Pair<Boolean, String> result);
 
     FirewallResponse createIpv6FirewallRuleResponse(FirewallRule acl);
 
@@ -579,4 +601,12 @@ public interface ResponseGenerator {
     SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
 
     void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses, ResourceTag.ResourceObjectType type);
+
+    GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin);
+
+    ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView);
+
+    ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair);
+
+    ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(List<ApiKeyPairPermission> permissions);
 }

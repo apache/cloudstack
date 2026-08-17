@@ -33,13 +33,13 @@ public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the virtual machines, mutually exclusive with id.")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description = "The IDs of the Instances, mutually exclusive with id.")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value returning the data for all matching VMs).")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the Instance (a substring match is made against the parameter value returning the data for all matching Instances).")
     private String name;
 
     /////////////////////////////////////////////////////

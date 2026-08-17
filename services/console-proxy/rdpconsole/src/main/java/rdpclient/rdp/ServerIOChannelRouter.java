@@ -73,7 +73,6 @@ public class ServerIOChannelRouter extends BaseElement {
         {
             // It is ServerErrorAlert-ValidClient
             // Ignore it
-            //throw new RuntimeException("[" + this + "] ERROR: Incorrect PDU length: " + length + ", data: " + buf + ".");
         }
 
         int type = buf.readUnsignedShortLE() & 0xf;
@@ -88,14 +87,12 @@ public class ServerIOChannelRouter extends BaseElement {
         case PDUTYPE_CONFIRMACTIVEPDU:
             throw new RuntimeException("Unexpected client CONFIRM ACTIVE PDU. Data: " + buf + ".");
         case PDUTYPE_DEACTIVATEALLPDU:
-            // pushDataToPad("deactivate_all", buf);
             /* ignore */buf.unref();
             break;
         case PDUTYPE_DATAPDU:
             handleDataPdu(buf);
             break;
         case PDUTYPE_SERVER_REDIR_PKT:
-            // pushDataToPad("server_redir", buf);
             /* ignore */buf.unref();
             break;
         default:
@@ -253,7 +250,6 @@ public class ServerIOChannelRouter extends BaseElement {
         long shareId = buf.readUnsignedIntLE();
         if (shareId != state.serverShareId)
             throw new RuntimeException("Unexpected share ID: " + shareId + ".");
-//    buf.skipBytes(4);
 
         // Padding.
         buf.skipBytes(1);
@@ -461,9 +457,7 @@ public class ServerIOChannelRouter extends BaseElement {
      *
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         byte[] packet = new byte[] {
                 // TPKT

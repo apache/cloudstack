@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.23.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -63,6 +63,7 @@
         <module>backup/dummy</module>
         <module>backup/networker</module>
         <module>backup/nas</module>
+        <module>backup/kboss</module>
 
         <module>ca/root-ca</module>
 
@@ -84,19 +85,19 @@
 
         <module>ha-planners/skip-heurestics</module>
 
-        <module>host-allocators/random</module>
-
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
-        <module>hypervisors/ovm3</module>
-        <module>hypervisors/ovm</module>
         <module>hypervisors/ucs</module>
         <module>hypervisors/xenserver</module>
 
         <module>integrations/cloudian</module>
         <module>integrations/prometheus</module>
         <module>integrations/kubernetes-service</module>
+        <module>integrations/veeam-control-service</module>
+
+        <module>kms</module>
 
         <module>metrics</module>
 
@@ -130,6 +131,7 @@
         <module>storage/volume/default</module>
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
+        <module>storage/volume/ontap</module>
         <module>storage/volume/solidfire</module>
         <module>storage/volume/scaleio</module>
         <module>storage/volume/linstor</module>
@@ -155,6 +157,7 @@
 
         <module>user-two-factor-authenticators/totp</module>
         <module>user-two-factor-authenticators/static-pin</module>
+        <module>dns/powerdns</module>
 
     </modules>
     <dependencies>
@@ -204,13 +207,13 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio-admin</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -234,6 +237,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
                 <module>network-elements/juniper-contrail</module>
                 <module>network-elements/tungsten</module>
             </modules>

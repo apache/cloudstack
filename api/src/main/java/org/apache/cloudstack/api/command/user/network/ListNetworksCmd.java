@@ -42,7 +42,7 @@ import com.cloud.network.Network;
 import com.cloud.utils.Pair;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
+@APICommand(name = "listNetworks", description = "Lists all available Networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     private static final String s_name = "listnetworksresponse";
@@ -50,49 +50,52 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list networks by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "List Networks by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID of the network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list networks by name", since = "4.22.0")
+    private String name;
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The zone ID of the Network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of the network. Supported values are: isolated, l2, shared and all")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of the Network. Supported values are: isolated, l2, shared and all")
     private String guestIpType;
 
-    @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
+    @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "True if Network is system, false otherwise")
     private Boolean isSystem;
 
-    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "list networks by ACL (access control list) type. Supported values are account and domain")
+    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "List Networks by ACL (access control list) type. Supported values are Account and domain")
     private String aclType;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "type of the traffic")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "Type of the traffic")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list networks by physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "List Networks by physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list networks supporting certain services")
+    @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List Networks supporting certain services")
     private List<String> supportedServices;
 
-    @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list networks by restartRequired")
+    @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "List networks by restartRequired")
     private Boolean restartRequired;
 
-    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "true if need to list only networks which support specifying IP ranges")
+    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "True if need to list only networks which support specifying IP ranges")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List networks by VPC")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.CAN_USE_FOR_DEPLOY, type = CommandType.BOOLEAN, description = "list networks available for VM deployment")
+    @Parameter(name = ApiConstants.CAN_USE_FOR_DEPLOY, type = CommandType.BOOLEAN, description = "List networks available for Instance deployment")
     private Boolean canUseForDeploy;
 
-    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to VPC")
+    @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "The network belongs to VPC")
     private Boolean forVpc;
 
-    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list networks by network offering ID")
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "List networks by network offering ID")
     private Long networkOfferingId;
 
     @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
@@ -103,17 +106,17 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
     private Long associatedNetworkId;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for networks")
+            description = "Flag to display the resource icon for networks")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.NETWORK_FILTER,
             type = CommandType.STRING,
             since = "4.17.0",
-            description = "possible values are \"account\", \"domain\", \"accountdomain\",\"shared\", and \"all\". Default value is \"all\"."
-                    + "* account : account networks that have been registered for or created by the calling user. "
-                    + "* domain : domain networks that have been registered for or created by the calling user. "
-                    + "* accountdomain : account and domain networks that have been registered for or created by the calling user. "
-                    + "* shared : networks that have been granted to the calling user by another user. "
+            description = "Possible values are \"account\", \"domain\", \"accountdomain\",\"shared\", and \"all\". Default value is \"all\"."
+                    + "* account : account networks that have been registered for or created by the calling User. "
+                    + "* domain : domain networks that have been registered for or created by the calling User. "
+                    + "* accountdomain : account and domain networks that have been registered for or created by the calling User. "
+                    + "* shared : networks that have been granted to the calling User by another User. "
                     + "* all : all networks (account, domain and shared).")
     private String networkFilter;
 
@@ -123,6 +126,10 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getZoneId() {

@@ -31,6 +31,7 @@ import org.junit.Test;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -78,18 +79,40 @@ public class HAProxyConfiguratorTest {
         LoadBalancerTO[] lba = new LoadBalancerTO[1];
         lba[0] = lb;
         HAProxyConfigurator hpg = new HAProxyConfigurator();
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L);
         String result = genConfig(hpg, cmd);
-        assertTrue("keepalive disabled should result in 'mode http' in the resulting haproxy config", result.contains("mode http"));
+        assertTrue("keepalive disabled should result in 'option httpclose' in the resulting haproxy config", result.contains("\toption httpclose"));
 
-        cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true);
+        cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 0L);
         result = genConfig(hpg, cmd);
-        assertTrue("keepalive enabled should not result in 'mode http' in the resulting haproxy config", !result.contains("mode http"));
+        assertTrue("keepalive enabled should result in 'no option httpclose' in the resulting haproxy config", result.contains("\tno option httpclose"));
+
         // TODO
         // create lb command
         // setup tests for
         // maxconn (test for maxpipes as well)
         // httpmode
+    }
+
+    /**
+     * Test method for {@link com.cloud.network.HAProxyConfigurator#generateConfiguration(com.cloud.agent.api.routing.LoadBalancerConfigCommand)}.
+     */
+    @Test
+    public void testGenerateConfigurationLoadBalancerIdleTimeoutConfigCommand() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 0L);
+        String result = genConfig(hpg, cmd);
+        assertTrue("idleTimeout of 0 should not generate 'timeout server' in the resulting haproxy config", !result.contains("\ttimeout server"));
+        assertTrue("idleTimeout of 0 should not generate 'timeout client' in the resulting haproxy config", !result.contains("\ttimeout client"));
+
+        cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 1234L);
+        result = genConfig(hpg, cmd);
+        assertTrue("idleTimeout of 1234 should result in 'timeout server     1234' in the resulting haproxy config", result.contains("\ttimeout server     1234"));
+        assertTrue("idleTimeout of 1234 should result in 'timeout client     1234' in the resulting haproxy config", result.contains("\ttimeout client     1234"));
     }
 
     /**
@@ -105,7 +128,7 @@ public class HAProxyConfiguratorTest {
         LoadBalancerTO[] lba = new LoadBalancerTO[1];
         lba[0] = lb;
         HAProxyConfigurator hpg = new HAProxyConfigurator();
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L);
         String result = genConfig(hpg, cmd);
         assertTrue("'send-proxy' should result if protocol is 'tcp-proxy'", result.contains("send-proxy"));
     }
@@ -117,9 +140,22 @@ public class HAProxyConfiguratorTest {
         LoadBalancerTO[] lba = new LoadBalancerTO[1];
         lba[0] = lb;
         HAProxyConfigurator hpg = new HAProxyConfigurator();
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L);
         String result = genConfig(hpg, cmd);
         Assert.assertTrue(result.contains("acl network_allowed src 1.1.1.1 2.2.2.2/24 \n\ttcp-request connection reject if !network_allowed"));
+    }
+
+    @Test
+    public void generateConfigurationTestWithSslCert() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 443, "ssl", "roundrobin", false, false, false, null);
+        final LbSslCert lbSslCert = new LbSslCert("cert", "key", "password", "chain", "fingerprint", false);
+        lb.setLbSslCert(lbSslCert);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L);
+        String result = genConfig(hpg, cmd);
+        Assert.assertTrue(result.contains("bind 10.2.0.1:443 ssl crt /etc/cloudstack/ssl/10_2_0_1-443.pem"));
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {

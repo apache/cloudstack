@@ -46,16 +46,18 @@ public class LinstorStoragePool implements KVMStoragePool {
     private final Storage.StoragePoolType _storagePoolType;
     private final StorageAdaptor _storageAdaptor;
     private final String _resourceGroup;
+    private final boolean _insecureSsl;
     private final String localNodeName;
 
     public LinstorStoragePool(String uuid, String host, int port, String resourceGroup,
-                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor, boolean insecureSsl) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;
         _storagePoolType = storagePoolType;
         _storageAdaptor = storageAdaptor;
         _resourceGroup = resourceGroup;
+        _insecureSsl = insecureSsl;
         localNodeName = getHostname();
     }
 
@@ -213,6 +215,10 @@ public class LinstorStoragePool implements KVMStoragePool {
         return _resourceGroup;
     }
 
+    public boolean isInsecureSsl() {
+        return _insecureSsl;
+    }
+
     @Override
     public boolean isPoolSupportHA() {
         return true;
@@ -228,11 +234,11 @@ public class LinstorStoragePool implements KVMStoragePool {
     public String createHeartBeatCommand(HAStoragePool pool, String hostPrivateIp,
             boolean hostValidation) {
         LOGGER.trace(String.format("Linstor.createHeartBeatCommand: %s, %s, %b", pool.getPoolIp(), hostPrivateIp, hostValidation));
-        boolean isStorageNodeUp = checkingHeartBeat(pool, null);
+        boolean isStorageNodeUp = hasHeartBeat(pool, null);
         if (!isStorageNodeUp && !hostValidation) {
             //restart the host
             LOGGER.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, pool.getPool().getType()));
-            Script cmd = new Script(pool.getPool().getHearthBeatPath(), Duration.millis(HeartBeatUpdateTimeout), LOGGER);
+            Script cmd = new Script(pool.getPool().getHearthBeatPath(), Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
             cmd.add("-c");
             cmd.execute();
             return "Down";
@@ -258,7 +264,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+    public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         String hostName;
         if (host == null) {
             hostName = localNodeName;
@@ -274,7 +280,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     private String executeDrbdSetupStatus(OutputInterpreter.AllLinesParser parser) {
-        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeout), LOGGER);
+        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
         sc.add("status");
         sc.add("--json");
         return sc.execute(parser);
@@ -329,7 +335,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     private String executeDrbdEventsNow(OutputInterpreter.AllLinesParser parser) {
-        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeout), LOGGER);
+        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
         sc.add("events2");
         sc.add("--now");
         return sc.execute(parser);
@@ -369,8 +375,8 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+    public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
         LOGGER.trace(String.format("Linstor.vmActivityCheck: %s, %s", pool.getPoolIp(), host.getPrivateNetwork().getIp()));
-        return checkingHeartBeat(pool, host);
+        return hasHeartBeat(pool, host);
     }
 }

@@ -19,6 +19,7 @@ import {
   AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
+  AppstoreAddOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
   ArrowRightOutlined,
@@ -82,6 +83,7 @@ import {
   FieldTimeOutlined,
   FileDoneOutlined,
   FileProtectOutlined,
+  FileSyncOutlined,
   FileTextOutlined,
   FileZipOutlined,
   FilterOutlined,
@@ -137,6 +139,7 @@ import {
   PictureOutlined,
   PieChartOutlined,
   PlayCircleOutlined,
+  PlaySquareOutlined,
   PlusCircleOutlined,
   PlusOutlined,
   PlusSquareOutlined,
@@ -180,6 +183,7 @@ import {
   UploadOutlined,
   VerticalAlignBottomOutlined,
   VerticalAlignTopOutlined,
+  VerticalAlignMiddleOutlined,
   WarningOutlined,
   WifiOutlined,
   SolutionOutlined
@@ -191,6 +195,7 @@ export default {
     app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
+    app.component('AppstoreAddOutlined', AppstoreAddOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
     app.component('ArrowRightOutlined', ArrowRightOutlined)
@@ -254,6 +259,7 @@ export default {
     app.component('FieldTimeOutlined', FieldTimeOutlined)
     app.component('FileDoneOutlined', FileDoneOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
+    app.component('FileSyncOutlined', FileSyncOutlined)
     app.component('FileTextOutlined', FileTextOutlined)
     app.component('FileZipOutlined', FileZipOutlined)
     app.component('FilterOutlined', FilterOutlined)
@@ -309,6 +315,7 @@ export default {
     app.component('PictureOutlined', PictureOutlined)
     app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
+    app.component('PlaySquareOutlined', PlaySquareOutlined)
     app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PlusSquareOutlined', PlusSquareOutlined)
@@ -352,6 +359,7 @@ export default {
     app.component('UploadOutlined', UploadOutlined)
     app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
     app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
+    app.component('VerticalAlignMiddleOutlined', VerticalAlignMiddleOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)

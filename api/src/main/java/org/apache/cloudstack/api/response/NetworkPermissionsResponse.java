@@ -29,31 +29,31 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class NetworkPermissionsResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the network ID")
+    @Param(description = "The Network ID")
     private String networkId;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain to which the network belongs")
+    @Param(description = "The ID of the domain to which the Network belongs")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the domain to which the network belongs")
+    @Param(description = "The name of the domain to which the Network belongs")
     private String domainName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account the network is available for")
+    @Param(description = "The Account the Network is available for")
     private String accountName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the ID of account the network is available for")
+    @Param(description = "The ID of Account the Network is available for")
     private String accountId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project the network is available for")
+    @Param(description = "The project the Network is available for")
     private String projectName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the ID of project the network is available for")
+    @Param(description = "The ID of project the Network is available for")
     private String projectId;
 
 

@@ -43,20 +43,20 @@ public class DeleteUserDataCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "the ID of the Userdata")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "The ID of the Userdata")
     private Long id;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional account for the userdata. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "An optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the userdata")
     private Long projectId;
 
     /////////////////////////////////////////////////////

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.job;
 import java.util.Date;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -26,7 +27,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
-@APICommand(name = "listAsyncJobs", description = "Lists all pending asynchronous jobs for the account.", responseObject = AsyncJobResponse.class,
+@APICommand(name = "listAsyncJobs", description = "Lists all pending asynchronous jobs for the Account.", responseObject = AsyncJobResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
@@ -40,6 +41,12 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server", since="4.19")
     private Long managementServerId;
 
+    @Parameter(name = ApiConstants.RESOURCE_ID, validations = {ApiArgValidator.UuidString}, type = CommandType.STRING, description = "the ID of the resource associated with the job", since="4.22.1")
+    private String resourceId;
+
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the job", since="4.22.1")
+    private String resourceType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -50,6 +57,14 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public String getResourceType() {
+        return resourceType;
     }
 
     /////////////////////////////////////////////////////

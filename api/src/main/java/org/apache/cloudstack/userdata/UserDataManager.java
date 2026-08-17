@@ -22,6 +22,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.Manager;
 
+import java.io.IOException;
+
 public interface UserDataManager extends Manager, Configurable {
     String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
     ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
@@ -29,4 +31,14 @@ public interface UserDataManager extends Manager, Configurable {
 
     String concatenateUserData(String userdata1, String userdata2, String userdataProvider);
     String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod);
+
+    /**
+     * This method validates the user data uuid for system VMs and returns the user data
+     * after compression and base64 encoding for the system VM to consume.
+     *
+     * @param userDataUuid
+     * @return a String containing the user data after compression and base64 encoding
+     * @throws IOException
+     */
+    String validateAndGetUserDataForSystemVM(String userDataUuid) throws IOException;
 }

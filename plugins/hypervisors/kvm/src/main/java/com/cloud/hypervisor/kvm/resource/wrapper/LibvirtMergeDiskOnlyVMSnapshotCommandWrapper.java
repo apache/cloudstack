@@ -1,0 +1,79 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package com.cloud.hypervisor.kvm.resource.wrapper;
+
+import com.cloud.agent.api.Answer;
+
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.libvirt.LibvirtException;
+
+import java.io.IOException;
+import java.util.List;
+
+@ResourceWrapper(handles = MergeDiskOnlyVmSnapshotCommand.class)
+public class LibvirtMergeDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper<MergeDiskOnlyVmSnapshotCommand, Answer, LibvirtComputingResource> {
+
+    @Override
+    public Answer execute(MergeDiskOnlyVmSnapshotCommand command, LibvirtComputingResource serverResource) {
+        boolean isVmRunning = command.isVmRunning();
+
+        try {
+            if (isVmRunning) {
+                return mergeDiskOnlySnapshotsForRunningVM(command, serverResource);
+            }
+            return mergeDiskOnlySnapshotsForStoppedVM(command, serverResource);
+        } catch (LibvirtException | QemuImgException | CloudRuntimeException ex) {
+            return new Answer(command, ex);
+        }
+    }
+
+    protected Answer mergeDiskOnlySnapshotsForStoppedVM(MergeDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource) throws QemuImgException, LibvirtException {
+        List<DeltaMergeTreeTO> deltaMergeTreeTOList = cmd.getDeltaMergeTreeToList();
+
+        logger.debug("Merging deltas for stopped VM [{}] using the following Delta Merge Trees [{}].", cmd.getVmName(), deltaMergeTreeTOList);
+
+        for (DeltaMergeTreeTO deltaMergeTreeTO : deltaMergeTreeTOList) {
+            try {
+                resource.mergeDeltaForStoppedVm(deltaMergeTreeTO);
+            } catch (IOException ex) {
+                return new Answer(cmd, ex);
+            }
+        }
+        return new Answer(cmd, true, null);
+    }
+
+    protected Answer mergeDiskOnlySnapshotsForRunningVM(MergeDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource) throws QemuImgException, LibvirtException {
+        String vmName = cmd.getVmName();
+        List<DeltaMergeTreeTO> deltaMergeTreeTOs = cmd.getDeltaMergeTreeToList();
+
+        logger.debug("Merging deltas for running VM [{}] using the following Delta Merge Trees [{}].", vmName, deltaMergeTreeTOs);
+
+        for (DeltaMergeTreeTO deltaMergeTreeTO : deltaMergeTreeTOs) {
+            resource.mergeDeltaForRunningVm(deltaMergeTreeTO, vmName, deltaMergeTreeTO.getVolumeObjectTO());
+        }
+
+        return new Answer(cmd, true, null);
+    }
+}

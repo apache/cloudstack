@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserData;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "linkUserDataToTemplate", description = "Link or unlink a userdata to a template.", responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
+@APICommand(name = "linkUserDataToTemplate", description = "Link or unlink a userdata to a Template.", responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
@@ -47,24 +47,24 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            description = "the ID of the template for the virtual machine")
+            description = "The ID of the Template for the Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.ISO_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            description = "the ID of the ISO for the virtual machine")
+            description = "The ID of the ISO for the Instance")
     private Long isoId;
 
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,
-            description = "the ID of the userdata that has to be linked to template/ISO. If not provided existing userdata will be unlinked from the template/ISO")
+            description = "The ID of the userdata that has to be linked to Template/ISO. If not provided existing userdata will be unlinked from the Template/ISO")
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
             type = CommandType.STRING,
-            description = "an optional override policy of the userdata. Possible values are - ALLOWOVERRIDE, APPEND, DENYOVERRIDE. Default policy is allowoverride")
+            description = "An optional override policy of the userdata. Possible values are - ALLOWOVERRIDE, APPEND, DENYOVERRIDE. Default policy is allowoverride")
     private String userdataPolicy;
 
     /////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
         try {
             result = _templateService.linkUserDataToTemplate(this);
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to link userdata to template, due to: %s", e.getLocalizedMessage()), e);
+            throw new CloudRuntimeException(String.format("Failed to link userdata to Template, due to: %s", e.getLocalizedMessage()), e);
         }
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(getResponseView(), result);
@@ -109,7 +109,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to link userdata to template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to link userdata to Template");
         }
     }
 

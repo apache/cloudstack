@@ -110,7 +110,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -166,7 +166,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones', { showicon: true }).then(response => {
+      getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.form.zoneid = this.zonesList[0].id
         this.params = this.$store.getters.apis.createPod.params
@@ -189,7 +189,7 @@ export default {
         const values = toRaw(this.form)
 
         this.loading = true
-        api('createPod', {
+        postAPI('createPod', {
           zoneId: values.zoneid,
           name: values.name,
           gateway: values.gateway,
@@ -218,7 +218,7 @@ export default {
     },
     dedicatePod (podId) {
       this.loading = true
-      api('dedicatePod', {
+      postAPI('dedicatePod', {
         podId,
         domainid: this.dedicatedDomainId,
         account: this.dedicatedAccount

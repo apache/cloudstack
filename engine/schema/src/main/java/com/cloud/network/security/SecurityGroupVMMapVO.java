@@ -50,6 +50,9 @@ public class SecurityGroupVMMapVO implements InternalIdentity {
     @Column(name = "ip4_address", table = "nics", insertable = false, updatable = false)
     private String guestIpAddress;
 
+    @Column(name = "ip6_address", table = "nics", insertable = false, updatable = false)
+    private String guestIpv6Address;
+
     @Column(name = "state", table = "vm_instance", insertable = false, updatable = false)
     private State vmState;
 
@@ -75,6 +78,10 @@ public class SecurityGroupVMMapVO implements InternalIdentity {
 
     public String getGuestIpAddress() {
         return guestIpAddress;
+    }
+
+    public String getGuestIpv6Address() {
+        return guestIpv6Address;
     }
 
     public long getInstanceId() {

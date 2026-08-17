@@ -618,10 +618,9 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
 
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("If this property is true, then this Ethernet port can be connected to the switche" +
-            "s and thus can provide connectivity to virtual machine. If this property is fals" +
-            "e, then this Ethernet is not being used by the virtual machine networking archit" +
-            "ecture.")]
+        [Description("If this property is true, then this Ethernet port can be connected to the switches" +
+            " and thus can provide connectivity to virtual machine. If this property is false" +
+            ", then this Ethernet is not being used by the virtual machine networking architecture.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public bool IsBound {
             get {

@@ -2305,7 +2305,7 @@ CREATE TABLE `cloud_usage`.`usage_vmsnapshot` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'healthcheck.update.interval', '600', 'Time Interval to fetch the LB health check states (in sec)');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'kvm.snapshot.enabled', 'false', 'whether snapshot is enabled for KVM hosts');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'kvm.snapshot.enabled', 'true', 'whether snapshot is enabled for KVM hosts');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'eip.use.multiple.netscalers', 'false', 'Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Snapshots', 'DEFAULT', 'SnapshotManager', 'snapshot.backup.rightafter', 'true', 'backup snapshot right after snapshot is taken');
 

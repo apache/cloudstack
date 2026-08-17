@@ -31,7 +31,7 @@ public class AcquirePodIpCmdResponse extends BaseResponse {
     private String ipAddress;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the ID of the pod the  IP address belongs to")
+    @Param(description = "The ID of the pod the  IP address belongs to")
     private Long podId;
 
     @SerializedName(ApiConstants.GATEWAY)
@@ -43,15 +43,15 @@ public class AcquirePodIpCmdResponse extends BaseResponse {
     private String cidrAddress;
 
     @SerializedName(ApiConstants.NIC_ID)
-    @Param(description = "the ID of the nic")
+    @Param(description = "The ID of the NIC")
     private Long nicId;
 
     @SerializedName(ApiConstants.HOST_MAC)
-    @Param(description = "MAC address of the pod the  IP")
+    @Param(description = "MAC address of the pod the IP")
     private Long macAddress;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the pod the  IP address")
+    @Param(description = "The ID of the pod the IP address")
     private long id;
 
     public void setIpAddress(String ipAddress) {

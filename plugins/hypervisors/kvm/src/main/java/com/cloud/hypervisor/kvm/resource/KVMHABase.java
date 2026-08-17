@@ -35,11 +35,9 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 public class KVMHABase {
     protected Logger logger = LogManager.getLogger(getClass());
     private long _timeout = 60000; /* 1 minutes */
-    protected static String s_heartBeatPath;
-    protected long _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
-    protected long _heartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
+    protected long _heartBeatUpdateFreqInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
     protected long _heartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
-    protected long _heartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
+    protected long _heartBeatUpdateRetrySleepInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage
@@ -139,7 +137,7 @@ public class KVMHABase {
             /* Can't find the mount point? */
             /* we need to mount it under poolName */
             if (poolName != null) {
-                Script mount = new Script("/bin/bash", 60000);
+                Script mount = new Script("/bin/bash", _timeout);
                 mount.add("-c");
                 mount.add("mount " + mountSource + " " + destPath);
                 String result = mount.execute();
@@ -155,7 +153,6 @@ public class KVMHABase {
     }
 
     protected String getMountPoint(HAStoragePool storagePool) {
-
         StoragePool pool = null;
         String poolName = null;
         try {
@@ -172,7 +169,6 @@ public class KVMHABase {
                 }
                 poolName = pool.getName();
             }
-
         } catch (LibvirtException e) {
             logger.debug("Ignoring libvirt error.", e);
         } finally {
@@ -235,7 +231,7 @@ public class KVMHABase {
         return result;
     }
 
-    public Boolean checkingHeartBeat() {
+    public Boolean hasHeartBeat() {
         // TODO Auto-generated method stub
         return null;
     }

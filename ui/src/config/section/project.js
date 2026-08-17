@@ -47,6 +47,10 @@ export default {
       }
     },
     {
+      name: 'certificates',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
+    },
+    {
       name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
@@ -158,6 +162,7 @@ export default {
       },
       groupAction: true,
       popup: true,
+      requireNameConfirmation: true,
       groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) },
       args: (record, store) => {
         const fields = []

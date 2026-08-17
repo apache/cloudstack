@@ -37,7 +37,7 @@ public class UpdateLBHealthCheckPolicyCmd extends BaseAsyncCustomIdCmd{
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class, required = true, description = "ID of load balancer health check policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class UpdateLBHealthCheckPolicyCmd extends BaseAsyncCustomIdCmd{
 
     @Override
     public String getEventDescription() {
-        return "Update load balancer health check policy ID= " + id;
+        return "Update load balancer health check policy ID = " + id;
     }
 
     @Override

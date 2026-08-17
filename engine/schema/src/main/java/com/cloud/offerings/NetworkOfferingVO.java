@@ -134,12 +134,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_vpc")
     boolean forVpc;
 
-    @Column(name = "for_tungsten")
-    boolean forTungsten = false;
-
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
     @Column(name = "network_mode")
     NetworkMode networkMode;
 
@@ -198,24 +192,6 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setForVpc(boolean isForVpc) {
         this.forVpc = isForVpc;
-    }
-
-    @Override
-    public boolean isForTungsten() {
-        return forTungsten;
-    }
-
-    public void setForTungsten(boolean forTungsten) {
-        this.forTungsten = forTungsten;
-    }
-
-    @Override
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    public void setForNsx(boolean forNsx) {
-        this.forNsx = forNsx;
     }
 
     @Override

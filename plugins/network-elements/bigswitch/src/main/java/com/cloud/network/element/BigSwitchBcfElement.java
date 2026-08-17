@@ -237,7 +237,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         // get arguments for CreateBcfAttachmentCommand
         // determine whether this is VPC network or stand-alone network
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -264,7 +264,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         String vmwareVswitchLabel = _networkModel.getDefaultGuestTrafficLabel(zoneId, HypervisorType.VMware);
         String[] labelArray = null;
         String vswitchName = null;
-        if(vmwareVswitchLabel!=null){
+        if (vmwareVswitchLabel != null) {
             labelArray=vmwareVswitchLabel.split(",");
             vswitchName = labelArray[0];
         }
@@ -273,9 +273,9 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         //   kvm: ivs port name
         //   vmware: specific portgroup naming convention
         String pgName = "";
-        if (dest.getHost().getHypervisorType() == HypervisorType.KVM){
+        if (dest.getHost().getHypervisorType() == HypervisorType.KVM) {
             pgName = hostname;
-        } else if (dest.getHost().getHypervisorType() == HypervisorType.VMware){
+        } else if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
             pgName = hostname + "-" + vswitchName;
         }
 
@@ -306,7 +306,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         String nicId = nic.getUuid();
 
         String tenantId;
-        if(network.getVpcId()!=null) {
+        if (network.getVpcId() != null) {
             tenantId = network.getNetworkDomain();
         } else {
             tenantId = networkId;
@@ -439,16 +439,16 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
 
         DataCenterVO zone = _zoneDao.findById(physicalNetwork.getDataCenterId());
         String zoneName;
-        if(zone!= null){
+        if (zone != null) {
             zoneName = zone.getName();
         } else {
             zoneName = String.valueOf(zoneId);
         }
 
         Boolean natNow =  _bcfUtils.isNatEnabled();
-        if (!nat && natNow){
+        if (!nat && natNow) {
             throw new CloudRuntimeException("NAT is enabled in existing controller. Enable NAT for new controller or remove existing controller first.");
-        } else if (nat && !natNow){
+        } else if (nat && !natNow) {
             throw new CloudRuntimeException("NAT is disabled in existing controller. Disable NAT for new controller or remove existing controller first.");
         }
 
@@ -582,7 +582,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         BigSwitchBcfResource bcfResource = (BigSwitchBcfResource) resource;
         bcfUtilsInit();
 
-        if(_bcfUtils.getTopology()!=null){
+        if (_bcfUtils.getTopology() != null) {
             bcfResource.setTopology(_bcfUtils.getTopology());
         }
 
@@ -621,7 +621,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         _bcfUtils.listACLbyNetwork(network);
 
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -635,11 +635,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             tenantId = network.getUuid();
         }
 
-        for (StaticNat rule: rules){
+        for (StaticNat rule: rules) {
             String srcIp = _ipAddressDao.findById(rule.getSourceIpAddressId()).getAddress().addr();
             String dstIp = rule.getDestIpAddress();
             String mac = rule.getSourceMacAddress();
-            if(!rule.isForRevoke()) {
+            if (!rule.isForRevoke()) {
                 logger.debug("BCF enables static NAT for public IP: " + srcIp + " private IP " + dstIp
                         + " mac " + mac);
                 CreateBcfStaticNatCommand cmd = new CreateBcfStaticNatCommand(
@@ -671,13 +671,13 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         SubnetUtils utils;
         String cidr = null;
         List<String> cidrList;
-        for(NetworkACLItem r: rules){
-            if(r.getState()==NetworkACLItem.State.Revoke){
+        for (NetworkACLItem r: rules) {
+            if (r.getState() == NetworkACLItem.State.Revoke) {
                 continue;
             }
             cidrList = r.getSourceCidrList();
-            if(cidrList != null){
-                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
+            if (cidrList != null) {
+                if (cidrList.size() > 1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -688,7 +688,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
                 cidr = "";
             } else {
                 utils = new SubnetUtils(cidr);
-                if(!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())){
+                if (!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())) {
                     throw new ResourceUnavailableException("Invalid CIDR in Network ACL rule.",
                             Network.class, network.getId());
                 }
@@ -710,13 +710,13 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         SubnetUtils utils;
         String cidr = null;
         List<String> cidrList;
-        for(FirewallRule r: rules){
-            if(r.getState()==FirewallRule.State.Revoke){
+        for (FirewallRule r: rules) {
+            if (r.getState() == FirewallRule.State.Revoke) {
                 continue;
             }
             cidrList = r.getSourceCidrList();
-            if(cidrList != null){
-                if(cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())){
+            if (cidrList != null) {
+                if (cidrList.size()>1 || !r.getSourcePortEnd().equals(r.getSourcePortStart())) {
                     throw new ResourceUnavailableException("One CIDR and one port only please.",
                             Network.class, network.getId());
                 } else {
@@ -727,7 +727,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
                 cidr = "";
             } else {
                 utils = new SubnetUtils(cidr);
-                if(!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())){
+                if (!utils.getInfo().getNetworkAddress().equals(utils.getInfo().getAddress())) {
                     throw new ResourceUnavailableException("Invalid CIDR in Firewall rule.",
                             Network.class, network.getId());
                 }
@@ -741,7 +741,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         bcfUtilsInit();
 
         Vpc vpc = null;
-        if(network.getVpcId()!=null){
+        if (network.getVpcId() != null) {
             vpc = _vpcDao.acquireInLockTable(network.getVpcId());
         }
 
@@ -756,23 +756,23 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         UpdateBcfRouterCommand cmd = new UpdateBcfRouterCommand(tenantId);
 
         List<AclData> aclList = _bcfUtils.listACLbyNetwork(network);
-        for(AclData acl: aclList){
+        for (AclData acl: aclList) {
             cmd.addAcl(acl);
         }
 
-        if(vpc != null){
+        if (vpc != null) {
             cmd.setPublicIp(_bcfUtils.getPublicIpByVpc(vpc));
         } else {
             cmd.setPublicIp(_bcfUtils.getPublicIpByNetwork(network));
         }
 
         BcfAnswer answer = _bcfUtils.sendBcfCommandWithNetworkSyncCheck(cmd, network);
-        if(answer != null && !answer.getResult()){
+        if (answer != null && !answer.getResult()) {
             throw new IllegalArgumentException("Illegal router update arguments");
         }
     }
 
-    private void bcfUtilsInit(){
+    private void bcfUtilsInit() {
         if (_bcfUtils == null) {
             _bcfUtils = new BigSwitchBcfUtils(_networkDao, _nicDao,
                     _vmDao, _hostDao, _vpcDao, _bigswitchBcfDao,

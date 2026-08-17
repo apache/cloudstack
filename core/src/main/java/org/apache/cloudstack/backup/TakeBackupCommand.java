@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.List;
 
@@ -29,9 +30,22 @@ public class TakeBackupCommand extends Command {
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
+    private List<PrimaryDataStoreTO> volumePools;
     private List<String> volumePaths;
+    private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+
+    // Incremental backup fields (NAS provider; null/empty for legacy full-only callers).
+    private String mode;          // "full" or "incremental"; null => legacy behaviour (script default)
+    private String bitmapNew;     // Checkpoint/bitmap name to create with this backup (timestamp-based)
+    private String bitmapParent;  // Incremental: parent bitmap to read changes since
+
+    // Per-volume parent backup file paths (one per VM volume, ordered by deviceId — same
+    // order as volumePaths). The script rebases each new qcow2 onto the matching parent.
+    // Backup file UUIDs differ across volumes, so a single parentPath would have rebased
+    // every data disk onto the root file. New callers MUST populate parentPaths.
+    private List<String> parentPaths;
 
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
@@ -79,12 +93,60 @@ public class TakeBackupCommand extends Command {
         this.mountOptions = mountOptions;
     }
 
+    public List<PrimaryDataStoreTO> getVolumePools() {
+        return volumePools;
+    }
+
+    public void setVolumePools(List<PrimaryDataStoreTO> volumePools) {
+        this.volumePools = volumePools;
+    }
+
     public List<String> getVolumePaths() {
         return volumePaths;
     }
 
     public void setVolumePaths(List<String> volumePaths) {
         this.volumePaths = volumePaths;
+    }
+
+    public Boolean getQuiesce() {
+        return quiesce;
+    }
+
+    public void setQuiesce(Boolean quiesce) {
+        this.quiesce = quiesce;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public String getBitmapNew() {
+        return bitmapNew;
+    }
+
+    public void setBitmapNew(String bitmapNew) {
+        this.bitmapNew = bitmapNew;
+    }
+
+    public String getBitmapParent() {
+        return bitmapParent;
+    }
+
+    public void setBitmapParent(String bitmapParent) {
+        this.bitmapParent = bitmapParent;
+    }
+
+    public List<String> getParentPaths() {
+        return parentPaths;
+    }
+
+    public void setParentPaths(List<String> parentPaths) {
+        this.parentPaths = parentPaths;
     }
 
     @Override

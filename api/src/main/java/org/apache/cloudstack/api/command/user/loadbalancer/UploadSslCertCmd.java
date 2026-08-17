@@ -61,13 +61,13 @@ public class UploadSslCertCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "Password for the private key")
     private String password;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the SSL certificate")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that will own the SSL certificate")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the SSL certificate")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the SSL certificate")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning the SSL certificate")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the account owning the SSL certificate")
     private Long domainId;
 
     @Parameter(name = ApiConstants.NAME , type = CommandType.STRING, required = true, description = "Name for the uploaded certificate")

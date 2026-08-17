@@ -22,7 +22,6 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -75,6 +74,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.UuidUtils;
 import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
@@ -117,7 +117,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
         if (podId == null) {
             if (logger.isInfoEnabled())
-                logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
+                logger.info("No pod is assigned, assuming that it is not for VMware and skip it to next discoverer");
             return null;
         }
         boolean failureInClusterDiscovery = true;
@@ -125,7 +125,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
             if (logger.isInfoEnabled())
-                logger.info("invalid cluster id or cluster is not for VMware hypervisors");
+                logger.info("Invalid cluster ID or cluster is not for VMware hypervisors");
             return null;
         }
 
@@ -397,7 +397,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
             // place a place holder guid derived from cluster ID
             try{
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
+                cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes("UTF-8")).toString());
             }catch(UnsupportedEncodingException e){
                 throw new DiscoveredWithErrorException("Unable to create UUID based on string " + String.valueOf(clusterId) + ". Bad clusterId or UTF-8 encoding error.");
             }

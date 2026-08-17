@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
@@ -45,6 +46,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
@@ -65,6 +67,9 @@ import java.util.List;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
 public class NetworkerClient {
+    @Inject
+    BackupManager backupManager;
+
     private static final Logger LOG = LogManager.getLogger(NetworkerClient.class);
     private final URI apiURI;
     private final String apiName;
@@ -267,6 +272,8 @@ public class NetworkerClient {
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(backupManager.getBackupNameFromVM(vm));
+
             return backup;
         } catch (final IOException e) {
             LOG.error("Failed to register backup from EMC Networker due to:", e);

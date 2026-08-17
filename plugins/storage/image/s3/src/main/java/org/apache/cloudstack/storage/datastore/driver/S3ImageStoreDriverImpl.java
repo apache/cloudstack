@@ -55,7 +55,7 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return new S3TO(imgStore.getId(),
                         imgStore.getUuid(),
                         details.get(ApiConstants.S3_ACCESS_KEY),
-                        details.get(ApiConstants.S3_SECRET_KEY),
+                        details.get(ApiConstants.SECRET_KEY),
                         details.get(ApiConstants.S3_END_POINT),
                         details.get(ApiConstants.S3_BUCKET_NAME),
                         details.get(ApiConstants.S3_SIGNER),

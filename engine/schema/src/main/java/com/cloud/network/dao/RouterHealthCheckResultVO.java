@@ -29,6 +29,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.network.RouterHealthCheckResult;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.utils.StringUtils;
 
 @Entity
@@ -49,7 +50,7 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
     private String checkType;
 
     @Column(name = "check_result")
-    private boolean checkResult;
+    private VirtualNetworkApplianceService.RouterHealthStatus checkResult;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_update", updatable = true, nullable = true)
@@ -87,7 +88,7 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
     }
 
     @Override
-    public boolean getCheckResult() {
+    public VirtualNetworkApplianceService.RouterHealthStatus getCheckResult() {
         return checkResult;
     }
 
@@ -105,7 +106,7 @@ public class RouterHealthCheckResultVO implements RouterHealthCheckResult {
         return checkDetails;
     }
 
-    public void setCheckResult(boolean checkResult) {
+    public void setCheckResult(VirtualNetworkApplianceService.RouterHealthStatus checkResult) {
         this.checkResult = checkResult;
     }
 

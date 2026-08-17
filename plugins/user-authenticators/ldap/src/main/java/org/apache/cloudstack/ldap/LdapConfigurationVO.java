@@ -23,18 +23,24 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "ldap_configuration")
-public class LdapConfigurationVO implements InternalIdentity {
-    @Column(name = "hostname")
-    private String hostname;
-
+public class LdapConfigurationVO implements Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "hostname")
+    private String hostname;
+
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "port")
     private int port;
@@ -43,12 +49,14 @@ public class LdapConfigurationVO implements InternalIdentity {
     private Long domainId;
 
     public LdapConfigurationVO() {
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public LdapConfigurationVO(final String hostname, final int port, final Long domainId) {
         this.hostname = hostname;
         this.port = port;
         this.domainId = domainId;
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public String getHostname() {
@@ -58,6 +66,10 @@ public class LdapConfigurationVO implements InternalIdentity {
     @Override
     public long getId() {
         return id;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public int getPort() {

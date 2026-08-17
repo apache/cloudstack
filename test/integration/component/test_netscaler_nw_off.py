@@ -802,7 +802,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
 
         # Validate the following
         # 1. Add another netscaler device and spawn a new VM again
-        # 2. VM deployement should be successful
+        # 2. VM deployment should be successful
 
         self.debug("Adding another netscaler device: %s" %
                                     self.services["netscaler_2"]["ipaddress"])
@@ -1672,7 +1672,7 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
         #   LB rules
         # 5. Deploy instance with dedicated network offering in account 3.
         #   Create Lb rules.
-        # 6. Configure another instace of netscaler in dedicated mode
+        # 6. Configure another instance of netscaler in dedicated mode
         # 7. upgrade networkj for user 1 to dedicated network offering.
         #    Create LB rules. LB rule creation should be successful
 
@@ -2063,7 +2063,7 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
         #   LB rules
         # 5. Deploy instance with dedicated network offering in account 3.
         #   Create Lb rules.
-        # 6. Configure another instace of netscaler in dedicated mode
+        # 6. Configure another instance of netscaler in dedicated mode
         # 7. upgrade networkj for user 1 to dedicated network offering.
         #    Create LB rules. LB rule creation should be successful
 

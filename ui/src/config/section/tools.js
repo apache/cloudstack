@@ -117,6 +117,10 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'filters',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/WebhookFiltersTab.vue')))
+        },
+        {
           name: 'recent.deliveries',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/WebhookDeliveriesTab.vue')))
         }

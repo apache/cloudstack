@@ -62,7 +62,6 @@
           <tooltip-label :title="$t('label.quota.tariff.value')" :tooltip="apiParams.value.description"/>
         </template>
         <a-input-number
-          class="full-width-input"
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
@@ -85,7 +84,6 @@
           <tooltip-label :title="$t('label.quota.tariff.position')" :tooltip="apiParams.position.description" />
         </template>
         <a-input-number
-          class="full-width-input"
           v-model:value="form.position"
           :placeholder="$t('placeholder.quota.tariff.position')" />
       </a-form-item>
@@ -94,7 +92,6 @@
           <tooltip-label :title="$t('label.start.date')" :tooltip="apiParams.startdate.description"/>
         </template>
         <a-date-picker
-          class="full-width-input"
           v-model:value="form.startDate"
           :disabled-date="disabledStartDate"
           :placeholder="$t('placeholder.quota.tariff.startdate')"
@@ -122,7 +119,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getQuotaTypes } from '@/utils/quota'
@@ -190,7 +187,7 @@ export default {
         }
 
         this.loading = true
-        api('quotaTariffCreate', values).then(response => {
+        postAPI('quotaTariffCreate', values).then(response => {
           this.$message.success(this.$t('message.quota.tariff.create.success', { quotaTariff: values.name }))
           this.parentFetchData()
           this.closeModal()
@@ -211,7 +208,7 @@ export default {
       const values = this.handleRemoveFields(formRaw)
 
       this.loading = true
-      api('quotaValidateActivationRule', {}, 'POST', {
+      postAPI('quotaValidateActivationRule', {
         activationRule: values.activationRule || ' ',
         usageType: values?.usageType?.split('-')[0]
       }).then(response => {

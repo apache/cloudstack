@@ -16,6 +16,7 @@
 # under the License.
 import logging
 import os.path
+from os import listdir
 import re
 from cs.CsDatabag import CsDataBag
 from .CsProcess import CsProcess
@@ -25,6 +26,7 @@ from . import CsHelper
 HAPROXY_CONF_T = "/etc/haproxy/haproxy.cfg.new"
 HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
 
+SSL_CERTS_DIR = "/etc/cloudstack/ssl/"
 
 class CsLoadBalancer(CsDataBag):
     """ Manage Load Balancer entries """
@@ -34,6 +36,9 @@ class CsLoadBalancer(CsDataBag):
             return
         if 'configuration' not in list(self.dbag['config'][0].keys()):
             return
+        if 'ssl_certs' in list(self.dbag['config'][0].keys()):
+            self._create_pem_for_sslcert(self.dbag['config'][0]['ssl_certs'])
+
         config = self.dbag['config'][0]['configuration']
         file1 = CsFile(HAPROXY_CONF_T)
         file1.empty()
@@ -43,6 +48,11 @@ class CsLoadBalancer(CsDataBag):
         file1.commit()
         file2 = CsFile(HAPROXY_CONF_P)
         if not file2.compare(file1):
+            # Verify new haproxy config before haproxy restart/reload
+            haproxy_err = self._verify_haproxy_config(HAPROXY_CONF_T)
+            if haproxy_err:
+                raise Exception("haproxy config is invalid with error \n%s" % haproxy_err)
+
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
             proc = CsProcess(['/run/haproxy.pid'])
@@ -82,3 +92,29 @@ class CsLoadBalancer(CsDataBag):
             ip = path[0]
             port = path[1]
             firewall.append(["filter", "", "-A INPUT -p tcp -m tcp -d %s --dport %s -m state --state NEW -j ACCEPT" % (ip, port)])
+
+    def _create_pem_for_sslcert(self, ssl_certs):
+        logging.debug("CsLoadBalancer:: creating new pem files in %s and cleaning up it" % SSL_CERTS_DIR)
+        if not os.path.exists(SSL_CERTS_DIR):
+            CsHelper.execute("mkdir -p %s" % SSL_CERTS_DIR)
+        cert_names = []
+        for cert in ssl_certs:
+            cert_names.append(cert['name'] + ".pem")
+            file = CsFile("%s/%s.pem" % (SSL_CERTS_DIR, cert['name']))
+            file.empty()
+            file.add("%s\n" % cert['cert'].replace("\r\n", "\n"))
+            if 'chain' in cert.keys():
+                file.add("%s\n" % cert['chain'].replace("\r\n", "\n"))
+            file.add("%s\n" % cert['key'].replace("\r\n", "\n"))
+            file.commit()
+        for f in listdir(SSL_CERTS_DIR):
+            if f not in cert_names:
+                CsHelper.execute("rm -rf %s/%s" % (SSL_CERTS_DIR, f))
+
+    def _verify_haproxy_config(self, config):
+        ret = CsHelper.execute2("haproxy -c -f %s" % config)
+        if ret.returncode:
+            stdout, stderr = ret.communicate()
+            logging.error("haproxy config is invalid with error: %s" % stderr)
+            return stderr
+        return ""

@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 
 export default {
@@ -112,7 +112,7 @@ export default {
       this.loading = true
       this.items = []
       this.total = 0
-      api('listBgpPeers', {
+      getAPI('listBgpPeers', {
         keyword: this.options.keyword,
         zoneid: this.resource.zoneid,
         domainid: this.resource.domainid,
@@ -149,7 +149,7 @@ export default {
     handleSubmit () {
       if (this.loading) return
       this.loading = true
-      api('changeBgpPeersForVpc', {
+      postAPI('changeBgpPeersForVpc', {
         vpcid: this.resource.id,
         bgppeerids: this.selectedRowKeys.join(',')
       }).then(response => {

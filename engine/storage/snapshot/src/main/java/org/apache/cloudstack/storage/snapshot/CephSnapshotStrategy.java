@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -46,6 +47,9 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.COPY.equals(op)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
         boolean baseVolumeExists = volumeVO.getRemoved() == null;

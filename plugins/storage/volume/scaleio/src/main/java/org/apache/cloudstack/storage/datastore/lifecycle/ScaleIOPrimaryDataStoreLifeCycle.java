@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.host.HostVO;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -105,8 +104,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
     @Inject
     private AgentManager agentMgr;
     private ScaleIOSDCManager sdcManager;
-    @Inject
-    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     public ScaleIOPrimaryDataStoreLifeCycle() {
         sdcManager = new ScaleIOSDCManagerImpl();
@@ -306,14 +303,19 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean maintain(DataStore store) {
-        Map<String,String> details = new HashMap<>();
-        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-        if (systemIdDetail != null) {
-            details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
-            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
-            if (mdmsDetail != null) {
-                details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdmsDetail.getValue());
-                details.put(ScaleIOSDCManager.ConnectOnDemand.key(), "false");
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
+        if (storagePoolVO != null) {
+            sdcManager = ComponentContext.inject(sdcManager);
+            sdcManager.populateSdcSettings(details, storagePoolVO.getDataCenterId());
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
+                StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+                if (mdmsDetail != null) {
+                    details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdmsDetail.getValue());
+                    details.put(ScaleIOSDCManager.ConnectOnDemand.key(), "false");
+                }
             }
         }
 
@@ -324,14 +326,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        Map<String,String> details = new HashMap<>();
-        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-        if (systemIdDetail != null) {
-            details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
+        if (storagePoolVO != null) {
             sdcManager = ComponentContext.inject(sdcManager);
-            if (sdcManager.areSDCConnectionsWithinLimit(store.getId())) {
-                StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
-                if (storagePoolVO != null) {
+            sdcManager.populateSdcSettings(details, storagePoolVO.getDataCenterId());
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
+                if (sdcManager.areSDCConnectionsWithinLimit(store.getId())) {
                     details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(storagePoolVO.getDataCenterId())));
                     StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
                     if (mdmsDetail != null) {

@@ -423,24 +423,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         throw new UnsupportedOperationException("Unimplemented method 'createPhysicalDisk'");
     }
 
-    boolean isTemplateExtractable(String templatePath) {
-        ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
-        String type = result.getResult();
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
         LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
 

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -69,12 +70,14 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
@@ -109,6 +112,9 @@ public class VMwareGuruTest {
 
     @Mock
     ClusterDetailsDao _clusterDetailsDao;
+
+    @Mock
+    DiskOfferingDao diskOfferingDao;
 
     AutoCloseable closeable;
 
@@ -187,19 +193,26 @@ public class VMwareGuruTest {
 
     @Test
     public void createVolumeInfoFromVolumesTestCorrectlyConvertOfVolumes() {
+        Long diskOfferingId = 5L;
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOffering.getUuid()).thenReturn("disk-offering-uuid");
+        Mockito.when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+
         List<VolumeVO> volumesToTest = new ArrayList<>();
 
-        VolumeVO root = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir", ProvisioningType.THIN, 555l, Volume.Type.ROOT);
+        VolumeVO root = new VolumeVO("test", 1l, 1l, 1l, 1l, 6l, "test", "/root/dir", ProvisioningType.THIN, 555l, Volume.Type.ROOT);
+        root.setDiskOfferingId(diskOfferingId);
         String rootUuid = root.getUuid();
 
         VolumeVO data = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir/data", ProvisioningType.THIN, 1111000l, Volume.Type.DATADISK);
+        data.setDiskOfferingId(diskOfferingId);
         String dataUuid = data.getUuid();
 
         volumesToTest.add(root);
         volumesToTest.add(data);
 
         String result = vMwareGuru.createVolumeInfoFromVolumes(volumesToTest);
-        String expected = String.format("[{\"uuid\":\"%s\",\"type\":\"ROOT\",\"size\":555,\"path\":\"/root/dir\"},{\"uuid\":\"%s\",\"type\":\"DATADISK\",\"size\":1111000,\"path\":\"/root/dir/data\"}]", rootUuid, dataUuid);
+        String expected = String.format("[{\"uuid\":\"%s\",\"type\":\"ROOT\",\"size\":555,\"path\":\"/root/dir\",\"diskOfferingId\":\"disk-offering-uuid\"},{\"uuid\":\"%s\",\"type\":\"DATADISK\",\"size\":1111000,\"path\":\"/root/dir/data\",\"diskOfferingId\":\"disk-offering-uuid\"}]", rootUuid, dataUuid);
 
         assertEquals(expected, result);
     }
@@ -613,5 +626,25 @@ public class VMwareGuruTest {
         String templateDir = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
         boolean result = vMwareGuru.removeVMTemplateOutOfBand(dataStore, templateDir);
         assertTrue(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckSourceVmResourcesAgainstSelectedOfferingResourcesInsufficientMemory() throws Exception {
+        VirtualMachineMO virtualMachineMO = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineConfigSummary configSummary = Mockito.mock(VirtualMachineConfigSummary.class);
+        Mockito.when(virtualMachineMO.getConfigSummary()).thenReturn(configSummary);
+        Mockito.when(configSummary.getNumCpu()).thenReturn(1);
+        Mockito.when(configSummary.getMemorySizeMB()).thenReturn(2048);
+        vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 1, 500, 1024);
+    }
+
+    @Test
+    public void testCheckSourceVmResourcesAgainstSelectedOfferingResourcesGreaterOffering() throws Exception {
+        VirtualMachineMO virtualMachineMO = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineConfigSummary configSummary = Mockito.mock(VirtualMachineConfigSummary.class);
+        Mockito.when(virtualMachineMO.getConfigSummary()).thenReturn(configSummary);
+        Mockito.when(configSummary.getNumCpu()).thenReturn(1);
+        Mockito.when(configSummary.getMemorySizeMB()).thenReturn(1024);
+        vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 2, 1500, 2048);
     }
 }

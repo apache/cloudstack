@@ -18,11 +18,13 @@ package com.cloud.network.dao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.fsm.StateDao;
@@ -46,6 +48,12 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
 
     int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent);
+
+    List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains);
+
+    List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds);
+
+    List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds);
 
     /**
      * Retrieves the next available mac address in this network configuration.
@@ -89,7 +97,12 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     boolean update(Long networkId, NetworkVO network, Map<String, String> serviceProviderMap);
 
+    List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType, Filter filter);
+
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
+
+    List<NetworkVO> listByZonesTrafficTypeAndOwners(List<Long> zoneIds, final TrafficType trafficType,
+                                                    List<Long> accountIds, List<Long> domainIds, Filter filter);
 
     void setCheckForGc(long networkId);
 
@@ -128,4 +141,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri);
 
     List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId);
+
+    NetworkVO findByZoneIdAndAccountIdAndGuestTypeAndName(long zoneId, long accountId, GuestType guestType, String name);
 }

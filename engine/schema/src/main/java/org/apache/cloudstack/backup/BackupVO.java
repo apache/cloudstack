@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -38,6 +39,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "backups")
@@ -47,17 +49,23 @@ public class BackupVO implements Backup {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "vm_id")
-    private long vmId;
+    private Long vmId;
 
     @Column(name = "external_id")
     private String externalId;
 
     @Column(name = "type")
-    private String backupType;
+    private String type;
 
     @Column(name = "date")
     @Temporal(value = TemporalType.DATE)
@@ -71,6 +79,9 @@ public class BackupVO implements Backup {
 
     @Column(name = "protected_size")
     private Long protectedSize;
+
+    @Column(name = "uncompressed_size")
+    private Long uncompressedSize;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status")
@@ -88,20 +99,58 @@ public class BackupVO implements Backup {
     @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name = "backup_interval_type")
-    private short backupIntervalType;
-
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
+
+    @Column(name = "backup_schedule_id")
+    private Long backupScheduleId;
+
+    @Column(name = "compression_status")
+    private CompressionStatus compressionStatus;
+
+    @Column(name = "validation_status")
+    private ValidationStatus validationStatus;
+
+    @Column(name = "from_checkpoint_id")
+    private String fromCheckpointId;
+
+    @Column(name = "to_checkpoint_id")
+    private String toCheckpointId;
+
+    @Column(name = "checkpoint_create_time")
+    private Long checkpointCreateTime;
+
+    @Column(name = "host_id")
+    private Long hostId;
+
+    @Transient
+    Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize,
+                    Status status, Long backupScheduleId, CompressionStatus compressionStatus, ValidationStatus validationStatus) {
+        this.name = name;
+        this.vmId = vmId;
+        this.backupOfferingId = backupOfferingId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.zoneId = zoneId;
+        this.protectedSize = virtualSize;
+        this.status = status;
+        this.setType("FULL");
+        this.uuid = UUID.randomUUID().toString();
+        this.backupScheduleId = backupScheduleId;
+        this.compressionStatus = compressionStatus;
+        this.validationStatus = validationStatus;
+    }
+
     @Override
     public String toString() {
         return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "vmId", "backupType", "externalId"));
+                this, "id", "uuid", "vmId", "type", "externalId"));
     }
 
     @Override
@@ -115,11 +164,11 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public long getVmId() {
+    public Long getVmId() {
         return vmId;
     }
 
-    public void setVmId(long vmId) {
+    public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
 
@@ -132,12 +181,13 @@ public class BackupVO implements Backup {
         this.externalId = externalId;
     }
 
+    @Override
     public String getType() {
-        return backupType;
+        return type;
     }
 
     public void setType(String type) {
-        this.backupType = type;
+        this.type = type;
     }
 
     @Override
@@ -211,14 +261,6 @@ public class BackupVO implements Backup {
         this.zoneId = zoneId;
     }
 
-    public short getBackupIntervalType() {
-        return backupIntervalType;
-    }
-
-    public void setBackupIntervalType(short backupIntervalType) {
-        this.backupIntervalType = backupIntervalType;
-    }
-
     @Override
     public Class<?> getEntityType() {
         return Backup.class;
@@ -226,7 +268,22 @@ public class BackupVO implements Backup {
 
     @Override
     public String getName() {
-        return null;
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<VolumeInfo> getBackedUpVolumes() {
@@ -240,11 +297,95 @@ public class BackupVO implements Backup {
         this.backedUpVolumes = backedUpVolumes;
     }
 
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    @Override
+    public String getDetail(String name) {
+        return this.details.get(name);
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
     public Date getRemoved() {
         return removed;
     }
-
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public Long getBackupScheduleId() {
+        return backupScheduleId;
+    }
+
+    public void setBackupScheduleId(Long backupScheduleId) {
+        this.backupScheduleId = backupScheduleId;
+    }
+
+    @Override
+    public CompressionStatus getCompressionStatus() {
+        return compressionStatus;
+    }
+
+    public void setCompressionStatus(CompressionStatus compressionStatus) {
+        this.compressionStatus = compressionStatus;
+    }
+
+    @Override
+    public ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
+    }
+
+    public Long getUncompressedSize() {
+        return uncompressedSize;
+    }
+
+    public void setUncompressedSize(Long uncompressedSize) {
+        this.uncompressedSize = uncompressedSize;
+    }
+
+    @Override
+    public String getFromCheckpointId() {
+        return fromCheckpointId;
+    }
+
+    public void setFromCheckpointId(String fromCheckpointId) {
+        this.fromCheckpointId = fromCheckpointId;
+    }
+
+    @Override
+    public String getToCheckpointId() {
+        return toCheckpointId;
+    }
+
+    public void setToCheckpointId(String toCheckpointId) {
+        this.toCheckpointId = toCheckpointId;
+    }
+
+    @Override
+    public Long getCheckpointCreateTime() {
+        return checkpointCreateTime;
+    }
+
+    public void setCheckpointCreateTime(Long checkpointCreateTime) {
+        this.checkpointCreateTime = checkpointCreateTime;
+    }
+
+    @Override
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
     }
 }

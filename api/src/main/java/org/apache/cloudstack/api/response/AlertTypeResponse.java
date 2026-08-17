@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class AlertTypeResponse extends BaseResponse {
 
@@ -30,6 +31,10 @@ public class AlertTypeResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
     @Param(description = "description of alert type")
     private String name;
+
+    @SerializedName(ApiConstants.REPETITION_ALLOWED)
+    @Param(description = "Whether repetitive alerts allowed for the alert type", since = "4.22.0")
+    private boolean repetitionAllowed = true;
 
     public String getName() {
         return name;
@@ -47,9 +52,10 @@ public class AlertTypeResponse extends BaseResponse {
         this.alertType = alertType;
     }
 
-    public AlertTypeResponse(short alertType, String name) {
+    public AlertTypeResponse(short alertType, String name, boolean repetitionAllowed) {
         this.alertType = alertType;
         this.name = name;
+        this.repetitionAllowed = repetitionAllowed;
         setObjectName("alerttype");
     }
 }

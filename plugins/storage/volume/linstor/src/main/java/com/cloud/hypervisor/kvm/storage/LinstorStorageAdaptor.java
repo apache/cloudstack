@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -39,10 +39,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
@@ -57,7 +57,6 @@ import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
-import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
 
 import java.io.File;
@@ -73,8 +72,17 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private final String localNodeName;
 
     private DevelopersApi getLinstorAPI(KVMStoragePool pool) {
-        ApiClient client = Configuration.getDefaultApiClient();
+        // Use a fresh client per pool so a self-signed/insecure pool can't weaken the TLS settings
+        // of another pool sharing this agent.
+        ApiClient client = new ApiClient();
         client.setBasePath(pool.getSourceHost());
+        // The agent has no access to the per-pool API token config; fall back to the auth.json file
+        // on the host (/var/lib/linstor.d/auth.json), or stay unauthenticated if it is absent.
+        client.setAccessTokenWithFallback(null);
+        if (pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl()) {
+            client.setInsecureSsl();
+        }
+        client.discoverHttps();
         return new DevelopersApi(client);
     }
 
@@ -167,7 +175,16 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                                             Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage)
     {
         logger.debug("Linstor createStoragePool: name: '{}', host: '{}', path: {}, userinfo: {}", name, host, path, userInfo);
-        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this);
+        // The management server ships the per-pool config in the details map; the controller TLS
+        // verification can be disabled here for self-signed certificates. The ConfigKey default is only
+        // applied on the management server (via valueIn()) and is NOT shipped in the details, so when the
+        // detail is absent we must fall back to that default here too - otherwise a pool without an
+        // explicit setting would verify the certificate on the agent while the MS thinks it is disabled.
+        final String insecureSslDetail = details != null ? details.get(LinstorConfigurationManager.InsecureSsl.key()) : null;
+        boolean insecureSsl = insecureSslDetail != null
+                ? Boolean.parseBoolean(insecureSslDetail)
+                : Boolean.parseBoolean(LinstorConfigurationManager.InsecureSsl.defaultValue());
+        LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this, insecureSsl);
 
         MapStorageUuidToStoragePool.put(name, storagePool);
 
@@ -234,7 +251,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
+                final String devPath = LinstorUtil.getDevicePathFromResource(resources.get(0));
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
@@ -457,8 +474,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     private Optional<ResourceWithVolumes> getResourceByPathOrName(
             final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
-                .anyMatch(v -> path.equals(v.getDevicePath())))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) ||
+                    path.equals(LinstorUtil.formatDrbdByResDevicePath(rsc.getName())) ||
+                    rsc.getVolumes().stream().anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -508,12 +526,33 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             // if there is only one template-for property left for templates, the template isn't needed anymore
             // or if it isn't a template anyway, it will not have this Aux property
             // _cs-template-for- properties work like a ref-count.
-            if (rd.getProps().keySet().stream()
+            long remainingTemplateRefs = rd.getProps().keySet().stream()
                     .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
-                    .count() == expectedProps) {
+                    .count();
+            if (remainingTemplateRefs == expectedProps) {
+                // Surface the legacy case where a resource has zero `_cs-template-for-` aux
+                // properties even though we never decremented one — that's a template predating
+                // the ref-count convention, or a stale orphan. Logging before deletion lets
+                // operators audit how many such orphans existed at upgrade time.
+                if (expectedProps == 0) {
+                    logger.info("Linstor: deleting resource {} which has no _cs-template-for- aux properties " +
+                                    "(legacy template predating the ref-count convention, or a stale orphan). " +
+                                    "Resource group context: {}", rd.getName(), rscGrpName);
+                }
                 ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
                 checkLinstorAnswersThrow(answers);
                 deleted = true;
+
+                // LINSTOR can return success here while the resource lingers in DELETING state
+                // on the controller (down peer, lost quorum, etc.). Confirm it's actually gone
+                // — if not, log a WARN so operators can clear it manually. Don't throw: the
+                // CloudStack-side accounting has already moved on.
+                if (!LinstorUtil.waitForResourceDefinitionDeleted(api, rd.getName(),
+                        LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS)) {
+                    logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                            "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list).",
+                            rd.getName(), LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+                }
             }
         }
         return deleted;
@@ -574,40 +613,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks if all diskful resource are on a zeroed block device.
-     * @param destPool Linstor pool to use
-     * @param resName Linstor resource name
-     * @return true if all resources are on a provider with zeroed blocks.
-     */
-    private boolean resourceSupportZeroBlocks(KVMStoragePool destPool, String resName) {
-        final DevelopersApi api = getLinstorAPI(destPool);
-
-        try {
-            List<ResourceWithVolumes> resWithVols = api.viewResources(
-                    Collections.emptyList(),
-                    Collections.singletonList(resName),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    null,
-                    null);
-
-            if (resWithVols != null) {
-                return resWithVols.stream()
-                        .allMatch(res -> {
-                            Volume vol0 = res.getVolumes().get(0);
-                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
-                        } );
-            }
-        } catch (ApiException apiExc) {
-            logger.error(apiExc.getMessage());
-        }
-        return false;
-    }
-
-    /**
      * Checks if the given disk is the SystemVM template, by checking its properties file in the same directory.
      * The initial systemvm template resource isn't created on the management server, but
      * we now need to know if the systemvm template is used, while copying.
@@ -619,10 +624,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Path propFile = diskPath.getParent().resolve("template.properties");
         if (Files.exists(propFile)) {
             java.util.Properties templateProps = new java.util.Properties();
-            try {
-                templateProps.load(new FileInputStream(propFile.toFile()));
+            try (FileInputStream in = new FileInputStream(propFile.toFile())) {
+                templateProps.load(in);
                 String desc = templateProps.getProperty("description");
-                if (desc.startsWith("SystemVM Template")) {
+                if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;
                 }
             } catch (IOException e) {
@@ -677,7 +682,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
-        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
+        boolean zeroedDevice = LinstorUtil.resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
         try {
             final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);
@@ -730,7 +735,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private String getFinalDirectDownloadPath(String templateFilePath, KVMStoragePool destPool) {
         String finalSourcePath = templateFilePath;
-        if (LibvirtStorageAdaptor.isTemplateExtractable(templateFilePath)) {
+        if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
             finalSourcePath = templateFilePath.substring(0, templateFilePath.lastIndexOf('.'));
             LibvirtStorageAdaptor.extractDownloadedTemplate(templateFilePath, destPool, finalSourcePath);
         }
@@ -776,7 +781,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     public long getCapacity(LinstorStoragePool pool) {
         final String rscGroupName = pool.getResourceGroup();
-        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName);
+        // Agent side: no per-pool token config; fall back to the host's auth.json (or unauthenticated).
+        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName, null, pool.isInsecureSsl());
     }
 
     public long getAvailable(LinstorStoragePool pool) {

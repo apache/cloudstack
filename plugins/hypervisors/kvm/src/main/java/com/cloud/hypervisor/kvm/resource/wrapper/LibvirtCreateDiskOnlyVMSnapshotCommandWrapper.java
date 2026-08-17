@@ -1,0 +1,47 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package com.cloud.hypervisor.kvm.resource.wrapper;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
+import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotCommand;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.BackupException;
+import com.cloud.vm.VirtualMachine;
+
+@ResourceWrapper(handles = CreateDiskOnlyVmSnapshotCommand.class)
+public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper<CreateDiskOnlyVmSnapshotCommand, Answer, LibvirtComputingResource> {
+
+    @Override
+    public Answer execute(CreateDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource) {
+        VirtualMachine.State state = cmd.getVmState();
+
+        try {
+            if (VirtualMachine.State.Running.equals(state)) {
+                return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVmSnapshotForRunningVm(cmd.getVolumeTosAndNewPaths(), cmd.getVmName(),
+                        cmd.getTarget().getSnapshotName(), cmd.getTarget().getQuiescevm()));
+            }
+            return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVMSnapshotOfStoppedVm(cmd.getVolumeTosAndNewPaths(), cmd.getVmName()));
+        } catch (BackupException ex) {
+            return new Answer(cmd, ex);
+        }
+    }
+}

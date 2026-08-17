@@ -36,6 +36,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.resource.PurgeExpungedResourcesCmd;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -93,7 +95,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -125,7 +127,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     @Inject
     InlineLoadBalancerNicMapDao inlineLoadBalancerNicMapDao;
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     VMSnapshotDao vmSnapshotDao;
     @Inject
@@ -158,6 +160,8 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     ManagementServerHostDao managementServerHostDao;
     @Inject
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    BackupDao backupDao;
 
     private ScheduledExecutorService expungedResourcesCleanupExecutor;
     private ExecutorService purgeExpungedResourcesJobExecutor;
@@ -269,7 +273,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
         }
         purgeVMVolumes(vmIds, batchSize);
         purgeVMNics(vmIds, batchSize);
-        userVmDetailsDao.batchExpungeForResources(vmIds, batchSize);
+        vmInstanceDetailsDao.batchExpungeForResources(vmIds, batchSize);
         purgeVMSnapshots(vmIds, batchSize);
         autoScaleVmGroupVmMapDao.expungeByVmList(vmIds, batchSize);
         commandExecLogDao.expungeByVmList(vmIds, batchSize);
@@ -300,7 +304,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
                         .collect(Collectors.toCollection(HashSet::new));
     }
 
-    protected Pair<List<Long>, List<Long>> getFilteredVmIdsForSnapshots(List<Long> vmIds) {
+    protected Pair<List<Long>, List<Long>> getFilteredVmIdsForSnapshotsAndBackups(List<Long> vmIds) {
         HashSet<Long> currentSkippedVmIds = new HashSet<>();
         List<VMSnapshotVO> activeSnapshots = vmSnapshotDao.searchByVms(vmIds);
         if (CollectionUtils.isNotEmpty(activeSnapshots)) {
@@ -320,20 +324,33 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
             }
             currentSkippedVmIds.addAll(vmIdsWithActiveVolumeSnapshots);
         }
+
+        List<BackupVO> backups = backupDao.searchByVmIds(vmIds);
+        if (CollectionUtils.isNotEmpty(backups)) {
+            HashSet<Long> vmIdsWithBackups = backups.stream().map(BackupVO::getVmId)
+                    .collect(Collectors.toCollection(HashSet::new));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Skipping purging VMs with IDs %s as they have backups",
+                        StringUtils.join(vmIdsWithBackups)));
+            }
+            currentSkippedVmIds.addAll(vmIdsWithBackups);
+        }
+
         if (CollectionUtils.isNotEmpty(currentSkippedVmIds)) {
             vmIds.removeAll(currentSkippedVmIds);
         }
+
         return new Pair<>(vmIds, new ArrayList<>(currentSkippedVmIds));
     }
 
-    protected Pair<List<Long>, List<Long>> getVmIdsWithNoActiveSnapshots(final Date startDate, final Date endDate,
-                 final Long batchSize, final List<Long> skippedVmIds) {
+    protected Pair<List<Long>, List<Long>> getVmIdsWithNoActiveSnapshotsAndBackups(final Date startDate, final Date endDate,
+                                                                                   final Long batchSize, final List<Long> skippedVmIds) {
         List<VMInstanceVO> vms = vmInstanceDao.searchRemovedByRemoveDate(startDate, endDate, batchSize, skippedVmIds);
         if (CollectionUtils.isEmpty(vms)) {
             return new Pair<>(new ArrayList<>(), new ArrayList<>());
         }
         List<Long> vmIds = vms.stream().map(VMInstanceVO::getId).collect(Collectors.toList());
-        return getFilteredVmIdsForSnapshots(vmIds);
+        return getFilteredVmIdsForSnapshotsAndBackups(vmIds);
     }
 
     protected long purgeVMEntities(final Long batchSize, final Date startDate, final Date endDate) {
@@ -344,7 +361,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
             List<Long> skippedVmIds = new ArrayList<>();
             do {
                 Pair<List<Long>, List<Long>> allVmIds =
-                        getVmIdsWithNoActiveSnapshots(startDate, endDate, batchSize, skippedVmIds);
+                        getVmIdsWithNoActiveSnapshotsAndBackups(startDate, endDate, batchSize, skippedVmIds);
                 List<Long> vmIds = allVmIds.first();
                 List<Long> currentSkippedVmIds = allVmIds.second();
                 count = vmIds.size() + currentSkippedVmIds.size();
@@ -364,7 +381,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
             final Long batchSize = ExpungedResourcesPurgeBatchSize.value().longValue();
             List<Long> vmIds = new ArrayList<>();
             vmIds.add(vmId);
-            Pair<List<Long>, List<Long>> allVmIds = getFilteredVmIdsForSnapshots(vmIds);
+            Pair<List<Long>, List<Long>> allVmIds = getFilteredVmIdsForSnapshotsAndBackups(vmIds);
             if (CollectionUtils.isEmpty(allVmIds.first())) {
                 return false;
             }

@@ -45,6 +45,12 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="forced" ref="forced">
+          <template #label>
+            <tooltip-label :title="$t('label.forced')" :tooltip="prepareForMaintenanceApiParams.forced.description"/>
+          </template>
+          <a-switch v-model:checked="form.forced" />
+        </a-form-item>
         <a-divider/>
         <a-alert type="error">
           <template #message>
@@ -72,7 +78,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -135,7 +141,8 @@ export default {
         if (this.isPrepareForMaintenance && this.form.algorithm !== '') {
           params.algorithm = this.form.algorithm
         }
-        api(this.action.currentAction.api, params).then(() => {
+        params.forced = this.form.forced
+        postAPI(this.action.currentAction.api, params).then(() => {
           this.$message.success(this.$t(this.action.currentAction.label) + ' : ' + this.resource.name)
           this.closeAction()
           this.parentFetchData()

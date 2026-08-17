@@ -41,6 +41,7 @@ public interface VmDetailConstants {
     String KVM_VNC_PORT = "kvm.vnc.port";
     String KVM_VNC_ADDRESS = "kvm.vnc.address";
     String KVM_VNC_PASSWORD = "kvm.vnc.password";
+    String KVM_GUEST_OS_MACHINE_TYPE = "kvm.guest.os.machine.type";
 
     // KVM specific, custom virtual GPU hardware
     String VIDEO_HARDWARE = "video.hardware";
@@ -53,6 +54,9 @@ public interface VmDetailConstants {
     // KVM specific, the number of queues for multiqueue NICs
     String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
     String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
+
+    // KVM specific, disk controllers
+    String KVM_SKIP_FORCE_DISK_CONTROLLER = "skip.force.disk.controller";
 
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
@@ -92,6 +96,7 @@ public interface VmDetailConstants {
     String CKS_NODE_TYPE = "node";
     String OFFERING = "offering";
     String TEMPLATE = "template";
+    String AFFINITY_GROUP = "affinitygroup";
 
     // VMware to KVM VM migrations specific
     String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
@@ -114,7 +119,31 @@ public interface VmDetailConstants {
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
 
+    // Lease related
     String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
     String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
     String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
+
+    // External orchestrator related
+    String MAC_ADDRESS = "mac_address";
+    String EXPUNGE_EXTERNAL_VM = "expunge.external.vm";
+    String EXTERNAL_DETAIL_PREFIX = "External:";
+    String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
+    String CLOUDSTACK_VLAN = "cloudstack.vlan";
+
+    // KVM Checkpoints related
+    String ACTIVE_CHECKPOINT_ID = "active.checkpoint.id";
+    String ACTIVE_CHECKPOINT_CREATE_TIME = "active.checkpoint.create.time";
+    String LAST_CHECKPOINT_ID = "last.checkpoint.id";
+    String LAST_CHECKPOINT_CREATE_TIME = "last.checkpoint.create.time";
+
+    // KBOSS specific
+    String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
+    String VALIDATION_COMMAND = "backupValidationCommand";
+    String VALIDATION_COMMAND_ARGUMENTS = "backupValidationCommandArguments";
+    String VALIDATION_COMMAND_EXPECTED_RESULT = "backupValidationCommandExpectedResult";
+    String VALIDATION_COMMAND_TIMEOUT = "backupValidationCommandTimeout";
+    String VALIDATION_SCREENSHOT_WAIT = "backupValidationScreenshotWait";
+    String VALIDATION_BOOT_TIMEOUT = "backupValidationBootTimeout";
+    String LAST_KNOWN_STATE = "last_known_state";
 }

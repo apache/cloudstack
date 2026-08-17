@@ -56,6 +56,38 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.support']">
+        <div>
+          <strong>{{ $t('label.host.vddk.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.version']">
+        <div>
+          <strong>{{ $t('label.host.vddk.version') }}</strong>
+          <div>
+            {{ host.details['host.vddk.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.ovftool.version']">
+        <div>
+          <strong>{{ $t('label.host.ovftool.version') }}</strong>
+          <div>
+            {{ host.details['host.ovftool.version'] }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
@@ -173,7 +205,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'HostInfo',
@@ -212,7 +244,7 @@ export default {
   methods: {
     fetchData () {
       this.fetchLoading = true
-      api('listHosts', { id: this.resource.id }).then(json => {
+      getAPI('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]
         const hosttags = this.host.hosttags?.split(',') || []
         const explicithosttags = this.host.explicithosttags?.split(',') || []

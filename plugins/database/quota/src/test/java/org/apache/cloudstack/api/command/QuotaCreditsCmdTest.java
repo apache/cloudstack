@@ -16,16 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-
 import java.lang.reflect.Field;
 
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.quota.QuotaService;
@@ -78,23 +71,13 @@ public class QuotaCreditsCmdTest extends TestCase {
         AccountVO acc = new AccountVO();
         acc.setId(2L);
 
-        Mockito.when(accountService.getActiveAccountByName(nullable(String.class), nullable(Long.class))).thenReturn(acc);
-
-        Mockito.when(responseBuilder.addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class))).thenReturn(new QuotaCreditsResponse());
-
-        // No value provided test
-        try {
-            cmd.execute();
-        } catch (ServerApiException e) {
-            assertTrue(e.getErrorCode().equals(ApiErrorCode.PARAM_ERROR));
-        }
+        Mockito.when(responseBuilder.addQuotaCredits(cmd)).thenReturn(new QuotaCreditsResponse());
 
         // With value provided test
         cmd.setValue(11.80);
         cmd.execute();
-        Mockito.verify(quotaService, Mockito.times(0)).setLockAccount(anyLong(), anyBoolean());
-        Mockito.verify(quotaService, Mockito.times(1)).setMinBalance(anyLong(), anyDouble());
-        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(nullable(Long.class), nullable(Long.class), nullable(Double.class), nullable(Long.class), nullable(Boolean.class));
+
+        Mockito.verify(responseBuilder, Mockito.times(1)).addQuotaCredits(cmd);
     }
 
 }

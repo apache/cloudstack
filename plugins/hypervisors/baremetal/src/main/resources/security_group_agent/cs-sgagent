@@ -1,7 +1,7 @@
 #!/bin/sh
 # the following is chkconfig init header
 #
-# cs-sgagent:  cloudStack baremetal sercurity group agent
+# cs-sgagent:  cloudStack baremetal security group agent
 #
 # chkconfig: 345 97 03
 # description:  This is a daemon instructed by CloudStack management server \

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import dayjs from 'dayjs'
 import semver from 'semver'
 
 export function timeFix () {
@@ -79,13 +80,13 @@ export function getParsedVersion (version) {
   return version
 }
 
-export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
-  if (data === null || !data.length) {
+export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n', headers = null, dateFormat = undefined }) {
+  if (data === null || !data.length || keys === null || !keys.filter(key => key !== null && key !== '').length) {
     return null
   }
 
   let result = ''
-  result += keys.join(columnDelimiter)
+  result += (headers || keys).join(columnDelimiter)
   result += lineDelimiter
 
   data.forEach(item => {
@@ -93,7 +94,15 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
       if (item[key] === undefined) {
         item[key] = ''
       }
-      result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+
+      if (typeof item[key] === 'string' && item[key].includes(columnDelimiter)) {
+        result += `"${item[key]}"`
+      } else if (dateFormat && dayjs.isDayjs(item[key])) {
+        result += `"${item[key].format(dateFormat)}"`
+      } else {
+        result += item[key]
+      }
+
       result += columnDelimiter
     })
     result = result.slice(0, -1)
@@ -101,4 +110,39 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
   })
 
   return result
+}
+
+export function downloadDataAsCsv ({ data = null, keys = null, headers = null, columnDelimiter = ',', lineDelimiter = '\n', fileName = 'data', dateFormat = undefined }) {
+  const dataParsed = toCsv({ keys, data, columnDelimiter, lineDelimiter, headers, dateFormat })
+  if (dataParsed === null) {
+    return
+  }
+
+  const hiddenElement = document.createElement('a')
+  hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(dataParsed)
+  hiddenElement.target = '_blank'
+  hiddenElement.download = `${fileName}.csv`
+  hiddenElement.click()
+  hiddenElement.remove()
+}
+
+export function isValidIPv4Cidr (rule, value) {
+  return new Promise((resolve, reject) => {
+    if (!value) {
+      reject(new Error())
+      return
+    }
+    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/
+    if (!cidrRegex.test(value)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    const ip = value.split('/')[0]
+    const octets = ip.split('.').map(Number)
+    if (octets.some(octet => octet < 0 || octet > 255)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    resolve()
+  })
 }

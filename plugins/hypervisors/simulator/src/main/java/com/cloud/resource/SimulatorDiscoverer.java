@@ -300,6 +300,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             return null;
         }
 
+        ssCmd.setGpuDevices(_mockAgentMgr.getGPUDevices(host.getId()));
+
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Simulator, details, hostTags);
     }
 

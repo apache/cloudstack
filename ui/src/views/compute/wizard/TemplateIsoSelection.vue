@@ -25,7 +25,7 @@
     <a-spin :spinning="loading">
       <a-tabs
         :animated="false"
-        :defaultActiveKey="filterOpts[0].id"
+        :activeKey="filterType"
         v-model="filterType"
         tabPosition="top"
         @change="changeFilterType">
@@ -103,12 +103,19 @@ export default {
       deep: true,
       handler (items) {
         const key = this.inputDecorator.slice(0, -2)
+        if (this.pagination) {
+          return
+        }
         for (const filter of this.filterOpts) {
-          if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
-            if (!this.pagination) {
+          if (this.preFillContent.templateid) {
+            if (items[filter.id]?.[key]?.some(item => item.id === this.preFillContent.templateid)) {
               this.filterType = filter.id
               this.checkedValue = items[filter.id][key][0].id
+              break
             }
+          } else if (items[filter.id]?.[key]?.length > 0) {
+            this.filterType = filter.id
+            this.checkedValue = items[filter.id][key][0].id
             break
           }
         }

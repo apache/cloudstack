@@ -29,6 +29,9 @@ import java.util.List;
 
 public class AffinityProcessorBase extends AdapterBase implements AffinityGroupProcessor {
 
+    public static final String AFFINITY_TYPE_HOST = "host affinity";
+    public static final String AFFINITY_TYPE_HOST_ANTI = "host anti-affinity";
+
     protected String _type;
 
     @Override

@@ -145,6 +145,9 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "cni_config_details", updatable = true, length = 4096)
     private String cniConfigDetails;
 
+    @Column(name = "csi_enabled")
+    private boolean csiEnabled;
+
     @Override
     public long getId() {
         return id;
@@ -387,6 +390,14 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public void setClusterType(ClusterType clusterType) {
         this.clusterType = clusterType;
+    }
+
+    public boolean isCsiEnabled() {
+        return csiEnabled;
+    }
+
+    public void setCsiEnabled(boolean csiEnabled) {
+        this.csiEnabled = csiEnabled;
     }
 
     public KubernetesClusterVO() {

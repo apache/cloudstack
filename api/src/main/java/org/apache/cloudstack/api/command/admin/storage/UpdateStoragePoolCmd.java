@@ -44,22 +44,22 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the Id of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "The Id of the storage pool")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "Change the name of the storage pool", since = "4.15")
     private String name;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "comma-separated list of tags for the storage pool")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Comma-separated list of tags for the storage pool")
     private List<String> tags;
 
     @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool")
     private Long capacityBytes;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "False to disable the pool for allocation of new volumes, true to" +
             " enable it back.")
     private Boolean enabled;
 
@@ -153,6 +153,8 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
                 MapUtils.isNotEmpty(details)) {
             result = _storageService.updateStoragePool(this);
+        } else {
+            result = _storageService.getStoragePool(getId());
         }
 
         if (enabled != null) {

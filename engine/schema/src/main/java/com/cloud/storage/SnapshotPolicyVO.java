@@ -59,6 +59,12 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
     @Column(name = "uuid")
     String uuid;
 
+    @Column(name = "account_id")
+    long accountId;
+
+    @Column(name = "domain_id")
+    long domainId;
+
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
@@ -66,7 +72,7 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps, boolean display) {
+    public SnapshotPolicyVO(long volumeId, String schedule, String timezone, IntervalType intvType, int maxSnaps, long accountId, long domainId, boolean display) {
         this.volumeId = volumeId;
         this.schedule = schedule;
         this.timezone = timezone;
@@ -75,6 +81,8 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
         this.active = true;
         this.display = display;
         this.uuid = UUID.randomUUID().toString();
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
     @Override
@@ -159,5 +167,33 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
 
     public void setDisplay(boolean display) {
         this.display = display;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return SnapshotPolicy.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 }

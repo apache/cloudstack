@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -34,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +62,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
@@ -83,6 +84,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -91,9 +93,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -107,9 +109,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
@@ -117,6 +121,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -142,8 +147,11 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -223,6 +231,8 @@ public class VolumeApiServiceImplTest {
     ClusterDao clusterDao;
     @Mock
     VolumeOrchestrationService volumeOrchestrationService;
+    @Mock
+    ClvmPoolManager clvmPoolManager;
 
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
@@ -267,6 +277,9 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private ManagementService managementService;
+
+    @Mock
+    private VMSnapshotDetailsDao vmSnapshotDetailsDaoMock;
 
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
@@ -461,6 +474,111 @@ public class VolumeApiServiceImplTest {
         when(_jobMgr.submitAsyncJob(any(AsyncJobVO.class), any(String.class), any(Long.class))).thenReturn(1L);
     }
 
+    @Test
+    public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenAccessibleAndEncryptionNotRequired() {
+        Account owner = Mockito.mock(Account.class);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+        Mockito.when(defaultOffering.getId()).thenReturn(11L);
+        Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+
+        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
+
+        Assert.assertEquals(Long.valueOf(11L), result);
+        Mockito.verify(_diskOfferingDao, Mockito.never()).listCustomDiskOfferings();
+    }
+
+    @Test
+    public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenEncryptedOnlyAndDefaultOfferingIsEncrypted() {
+        Account owner = Mockito.mock(Account.class);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+        Mockito.when(defaultOffering.getId()).thenReturn(12L);
+        Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+        Mockito.when(_diskOfferingDao.findById(12L)).thenReturn(defaultOffering);
+        Mockito.when(defaultOffering.getEncrypt()).thenReturn(true);
+
+        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
+
+        Assert.assertEquals(Long.valueOf(12L), result);
+        Mockito.verify(_diskOfferingDao, Mockito.never()).listCustomDiskOfferings();
+    }
+
+    @Test
+    public void getCustomDiskOfferingIdForVolumeUploadFallsBackToEncryptedCustomOfferingWhenDefaultOfferingNotEncrypted() {
+        Account owner = Mockito.mock(Account.class);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO nonEncryptedOffering = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO encryptedOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+        Mockito.when(defaultOffering.getId()).thenReturn(13L);
+        Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+        Mockito.when(_diskOfferingDao.findById(13L)).thenReturn(defaultOffering);
+        Mockito.when(defaultOffering.getEncrypt()).thenReturn(false);
+
+        Mockito.when(nonEncryptedOffering.getEncrypt()).thenReturn(false);
+        Mockito.when(encryptedOffering.getEncrypt()).thenReturn(true);
+        Mockito.when(encryptedOffering.getId()).thenReturn(23L);
+        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(nonEncryptedOffering, encryptedOffering));
+
+        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
+
+        Assert.assertEquals(Long.valueOf(23L), result);
+        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, encryptedOffering, zone);
+        Mockito.verify(_configMgr, Mockito.never()).checkDiskOfferingAccess(owner, nonEncryptedOffering, zone);
+    }
+
+    @Test
+    public void getCustomDiskOfferingIdForVolumeUploadFallsBackWhenDefaultOfferingIsNotAccessible() {
+        Account owner = Mockito.mock(Account.class);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO deniedOffering = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO allowedOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+        Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+        Mockito.doThrow(new PermissionDeniedException("default denied")).when(_configMgr).checkDiskOfferingAccess(owner, defaultOffering, zone);
+
+        Mockito.when(allowedOffering.getId()).thenReturn(24L);
+        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(deniedOffering, allowedOffering));
+        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
+
+        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
+
+        Assert.assertEquals(Long.valueOf(24L), result);
+        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
+        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, allowedOffering, zone);
+    }
+
+    @Test
+    public void getCustomDiskOfferingIdForVolumeUploadReturnsNullWhenNoAccessibleEligibleCustomOfferingExists() {
+        Account owner = Mockito.mock(Account.class);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO firstEncrypted = Mockito.mock(DiskOfferingVO.class);
+        DiskOfferingVO secondEncrypted = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Inactive);
+        Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+
+        Mockito.when(firstEncrypted.getEncrypt()).thenReturn(true);
+        Mockito.when(secondEncrypted.getEncrypt()).thenReturn(true);
+        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(firstEncrypted, secondEncrypted));
+        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, firstEncrypted, zone);
+        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, secondEncrypted, zone);
+
+        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
+
+        Assert.assertNull(result);
+    }
+
     /**
      * TESTS FOR DETACH ROOT VOLUME, COUNT=4
      */
@@ -508,44 +626,46 @@ public class VolumeApiServiceImplTest {
     // Negative test - try to attach non-root non-datadisk volume
     @Test(expected = InvalidParameterValueException.class)
     public void attachIncorrectDiskType() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L, false, false);
     }
 
     // Negative test - attach root volume to running vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToRunningVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L, false, false);
     }
 
     // Negative test - attach root volume to non-xen vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToHyperVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L, false, false);
     }
 
     // Negative test - attach root volume from the managed data store
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskOfManagedDataStore() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L, false, false);
     }
 
     // Negative test - root volume can't be attached to the vm already having a root volume attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToVmHavingRootDisk() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L, false, false);
     }
 
     // Negative test - root volume in uploaded state can't be attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootInUploadedState() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L, false, false);
     }
 
     // Positive test - attach ROOT volume in correct state, to the vm not having root volume attached
     @Test
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false, false);
+        }
     }
 
     // Negative test - attach data volume, to the vm on non-kvm hypervisor
@@ -554,7 +674,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false, false);
     }
 
     // Positive test - attach data volume, to the vm on kvm hypervisor
@@ -564,7 +684,9 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false, false);
+        }
     }
 
     // volume not Ready
@@ -573,7 +695,7 @@ public class VolumeApiServiceImplTest {
         when(volumeDataFactoryMock.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
         lenient().when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null, null, false);
     }
 
     @Test
@@ -586,31 +708,27 @@ public class VolumeApiServiceImplTest {
         final TaggedResourceService taggedResourceService = Mockito.mock(TaggedResourceService.class);
         Mockito.lenient().when(taggedResourceService.createTags(any(), any(), any(), any())).thenReturn(null);
         ReflectionTestUtils.setField(volumeApiServiceImpl, "taggedResourceService", taggedResourceService);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null, null, false);
     }
 
     @Test
     public void testNullGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn(null);
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(null));
     }
 
     @Test
     public void testEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(""));
     }
 
     @Test
     public void testBlankGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("   ");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand("   "));
     }
 
     @Test
     public void testNonEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("abc");
-        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand(createVol), "abc");
+        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand("abc"), "abc");
     }
 
     @Test
@@ -634,7 +752,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void testAllocSnapshotNonManagedStorageArchive() {
         try {
-            volumeApiServiceImpl.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY, null);
+            volumeApiServiceImpl.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY, null, null, null);
         } catch (InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), "VolumeId: 6 LocationType is supported only for managed storage");
             return;
@@ -649,9 +767,7 @@ public class VolumeApiServiceImplTest {
      * The resource limit check for primary storage should not be skipped for Volume in 'Uploaded' state.
      */
     @Test
-    public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
-        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(resourceLimitServiceMock)
-        .checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
+    public void testAttachVolumeToVMPerformsResourceReservation() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         AccountVO acc = Mockito.mock(AccountVO.class);
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
@@ -666,17 +782,16 @@ public class VolumeApiServiceImplTest {
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(34L);
         when(vm.getBackupOfferingId()).thenReturn(null);
-        when(backupDaoMock.listByVmId(anyLong(), anyLong())).thenReturn(Collections.emptyList());
         when(volumeDaoMock.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList<>(10));
         when(volumeDataFactoryMock.getVolume(9L)).thenReturn(volumeToAttach);
         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
         DataCenterVO zoneWithDisabledLocalStorage = Mockito.mock(DataCenterVO.class);
         when(_dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
-        try {
-            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false);
-        } catch (InvalidParameterValueException e) {
-            Assert.assertEquals(e.getMessage(), ("primary storage resource limit check failed"));
+        doReturn(volumeVoMock).when(volumeApiServiceImpl).getVolumeAttachJobResult(Mockito.any(), Mockito.any(), Mockito.any());
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false, false);
+            Assert.assertEquals(1, mockCheckedReservation.constructed().size());
         }
     }
 
@@ -929,7 +1044,7 @@ public class VolumeApiServiceImplTest {
 
     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
-        Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
     }
 
     private void configureMocksForTestDestroyVolumeWhenVolume() {
@@ -937,7 +1052,7 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doReturn(true).when(volumeVoMock).isDisplayVolume();
 
         Mockito.lenient().doNothing().when(volumeServiceMock).destroyVolume(volumeMockId);
-        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
     }
 
     @Test
@@ -1485,7 +1600,7 @@ public class VolumeApiServiceImplTest {
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
                     volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume()));
 
-            Mockito.verify(resourceLimitServiceMock).decrementVolumeResourceCount(accountMock.getAccountId(), true, volumeVoMock.getSize(), newDiskOfferingMock);
+            Mockito.verify(resourceLimitServiceMock).decrementVolumeResourceCount(accountMock.getAccountId(), true, volumeVoMock.getSize(), newDiskOfferingMock, null);
 
             Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
             Mockito.verify(volumeVoMock).setDomainId(newAccountMock.getDomainId());
@@ -1540,7 +1655,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1553,7 +1668,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1568,7 +1683,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -1584,7 +1699,7 @@ public class VolumeApiServiceImplTest {
             volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                    offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+                    offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.getInstanceId(), volumeVoMock.isDisplay()));
         }
     }
 
@@ -2108,7 +2223,7 @@ public class VolumeApiServiceImplTest {
         Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(destPrimaryStorage);
         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
         try {
-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                     .thenReturn(newVolumeOnPrimaryStorage);
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2129,7 +2244,7 @@ public class VolumeApiServiceImplTest {
         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
         try {
             Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(
-                    vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+                    vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                 .thenReturn(newVolumeOnPrimaryStorage);
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2161,7 +2276,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(destPrimaryStorage).when(volumeApiServiceImpl)
                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
         try {
-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage))
+            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
                     .thenThrow(new NoTransitionException("Mocked exception"));
         } catch (NoTransitionException nte) {
             Assert.fail(nte.getMessage());
@@ -2186,7 +2301,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void testCreateVolumeOnSecondaryForAttachIfNeeded_NoSuitablePool_ReturnSameVolumeInfo() {
+    public void testCreateVolumeOnSecondaryForAttachIfNeeded_NoSuitablePool_ReturnsSameVolumeInfo() {
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
         Mockito.when(volumeToAttach.getState()).thenReturn(Volume.State.Allocated);
         UserVmVO vm = Mockito.mock(UserVmVO.class);
@@ -2197,9 +2312,588 @@ public class VolumeApiServiceImplTest {
         Assert.assertSame(volumeToAttach, result);
         try {
             Mockito.verify(volumeOrchestrationService, Mockito.never()).createVolumeOnPrimaryStorage(Mockito.any(),
-                    Mockito.any(), Mockito.any(), Mockito.any());
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         } catch (NoTransitionException e) {
             Assert.fail();
+        }
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreEmptyReturnsZero() {
+        List<String> tags = new ArrayList<>();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestVolumeIsReadyReturnsZero() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Ready).when(volumeInfoMock).getState();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreNotEmptyAndVolumeIsUploadedReturnsVolumeSize() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Uploaded).when(volumeInfoMock).getState();
+        Mockito.doReturn(2L).when(volumeInfoMock).getSize();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(2L, (long) result);
+    }
+
+    @Test
+    public void validateNoVmSnapshotsTestNoInstanceId() {
+        Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+
+        Mockito.verify(volumeApiServiceImpl, Mockito.never()).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(Mockito.anyLong());
+    }
+
+    @Test
+    public void validateNoVmSnapshotsTestVmHasVmSnapshotsExceptKvmDiskOnlySnapshotsIsFalse() {
+        Mockito.doReturn(1L).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(false).when(volumeApiServiceImpl).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(1L);
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateNoVmSnapshotsTestVmHasVmSnapshotsExceptKvmDiskOnlySnapshotsIsTrue() {
+        Mockito.doReturn(1L).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(true).when(volumeApiServiceImpl).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(1L);
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestMultipleDiskAndMemory () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.DiskAndMemory, VMSnapshot.Type.DiskAndMemory);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestOnlyOneDiskAndMemory () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.DiskAndMemory);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(Mockito.anyLong());
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestDiskSnapshotsButNotKvmFileBasedSnapshots () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestOnlyOneKvmFileBasedSnapshot () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(0);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestAllKvmFileBasedSnapshots () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(0);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(1);
+
+        Assert.assertFalse(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    private List<VMSnapshotVO> generateVmSnapshotVoList(VMSnapshot.Type t1, VMSnapshot.Type t2) {
+        VMSnapshotVO mock1 = Mockito.mock(VMSnapshotVO.class);
+        Mockito.doReturn(t1).when(mock1).getType();
+        Mockito.doReturn(0L).when(mock1).getId();
+        VMSnapshotVO mock2 = Mockito.mock(VMSnapshotVO.class);
+        Mockito.doReturn(t2).when(mock2).getType();
+        Mockito.doReturn(1L).when(mock2).getId();
+        return List.of(mock1, mock2);
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_SameVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+                "/vg1", "/vg1")).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM, "/vg1", "/vg1");
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_DifferentVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg2");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+                "/vg1", "/vg2")).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLightweightMigrationNeeded_CLVM_NG_SameVG() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+
+        Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                Storage.StoragePoolType.CLVM_NG, Storage.StoragePoolType.CLVM_NG,
+                "/vg1", "/vg1")).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLightweightMigrationNeeded",
+                new Class[]{VolumeInfo.class, VolumeVO.class},
+                volumeInfo, vmExistingVolume);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_DifferentHosts() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L; // Same pool
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId));
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_SameHost() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_DifferentPools() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 200L; // Different pool
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(volumePool.getId()).thenReturn(volumePoolId);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(vmHostId))).thenReturn(false);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_NonCLVMPool() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long vmHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_NullVM() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, null);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testIsClvmLockTransferRequired_VMStoppedUsesLastHostId() {
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+
+        Long volumePoolId = 100L;
+        Long vmPoolId = 100L;
+        Long lastHostId = 10L;
+
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+        Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+        Mockito.when(vm.getHostId()).thenReturn(null); // VM is stopped
+        Mockito.when(vm.getLastHostId()).thenReturn(lastHostId);
+        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+        Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+
+        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+
+        Mockito.when(volumeServiceMock.isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(lastHostId))).thenReturn(true);
+
+        boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+                new Class[]{VolumeInfo.class, VolumeVO.class, UserVmVO.class},
+                volumeInfo, vmExistingVolume, vm);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeServiceMock).isLockTransferRequired(
+                eq(volumeInfo), eq(Storage.StoragePoolType.CLVM), eq(Storage.StoragePoolType.CLVM),
+                eq(volumePoolId), eq(vmPoolId), eq(lastHostId));
+    }
+
+
+    private <T> T invokePrivateMethod(String methodName, Class<?>[] paramTypes, Object... params) {
+        try {
+            java.lang.reflect.Method method = VolumeApiServiceImpl.class.getDeclaredMethod(methodName, paramTypes);
+            method.setAccessible(true);
+            return (T) method.invoke(volumeApiServiceImpl, params);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to invoke method: " + methodName, e);
+        }
+    }
+
+// =====================================================================
+// VMware ROOT-volume resize / offering-change: VM power_state-lag tests
+//
+// Both private guards that protect VMware ROOT-volume resize operations
+// are covered here:
+//   • validateVolumeReadyStateAndHypervisorChecks  (called by changeDiskOfferingForVolumeInternal)
+//   • resizeVolumeInternal                         (called by both resize and change-offering flows)
+//
+// The "power_state lag" scenario: when a VMware VM is stopped via CloudStack
+// the VirtualMachine.State transitions to Stopped immediately, but the
+// VMware-side VirtualMachine.PowerState (polled from ESX) may still read
+// PoweredOn for some seconds. The production code must use only the
+// authoritative CloudStack State field and must NOT additionally gate on
+// PowerState.
+// =====================================================================
+
+    /**
+     * Positive – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must allow a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Stopped}, regardless of the VMware power_state value.
+     * getPowerState() is intentionally left un-stubbed so that any invocation
+     * of that method would cause a Mockito strict-stubbing error and surface a
+     * regression.
+     */
+    @Test
+    public void testValidateVolumeReadyStateVMware_VMStopped_PowerStateLag_ShouldPass()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        // snapshotDaoMock returns an empty list by default (Mockito default behaviour)
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        // Authoritative cloud state: Stopped.
+        // getPowerState() is NOT stubbed – power_state lag scenario.
+        when(stoppedVm.getState()).thenReturn(State.Stopped);
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        long currentSizeBytes = 10L << 30; // 10 GiB
+        Long newSizeBytes     = 20L << 30; // 20 GiB (grow; VMware prohibits shrink)
+
+        // Must complete without throwing any exception
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
+    }
+
+    /**
+     * Negative – validateVolumeReadyStateAndHypervisorChecks:
+     * The guard must reject a VMware ROOT-volume resize when the CloudStack VM
+     * state is {@code Running}.
+     */
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateVolumeReadyStateVMware_VMRunning_ShouldThrowInvalidParameterValueException()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 200L;
+        long vmId     = 201L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        long currentSizeBytes = 10L << 30;
+        Long newSizeBytes     = 20L << 30;
+
+        volumeApiServiceImpl.validateVolumeReadyStateAndHypervisorChecks(volume, currentSizeBytes, newSizeBytes);
+        Assert.fail("Expected InvalidParameterValueException for VMware ROOT-volume resize "
+                + "when VM state is Running");
+    }
+
+    /**
+     * Positive – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must NOT
+     * fire when the CloudStack VM state is {@code Stopped}, even when the VMware
+     * power_state has not yet transitioned to PowerOff.
+     * Any exception originating from deeper plumbing (job queue, storage layer)
+     * is acceptable; only the state-guard exception is a failure.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMStopped_PowerStateLag_ShouldNotThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId     = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+        when(stoppedVm.getState()).thenReturn(State.Stopped); // authoritative cloud state
+        // getPowerState() deliberately NOT stubbed – power_state lag scenario
+        when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        // Stub the job-queue call so OutcomeImpl.s_jobMgr (static, uninitialized in tests)
+        // is never reached.  The Outcome mock returns null from get() and a bare AsyncJobVO
+        // from getJob(), which is enough for the unmarshallResultObject path to return null.
+        @SuppressWarnings("unchecked")
+        Outcome<Volume> outcomemock = Mockito.mock(Outcome.class);
+        AsyncJobVO stubJob = new AsyncJobVO();
+        when(outcomemock.getJob()).thenReturn(stubJob);
+        doReturn(outcomemock).when(volumeApiServiceImpl).resizeVolumeThroughJobQueue(
+                anyLong(), anyLong(), anyLong(), anyLong(),
+                nullable(Long.class), nullable(Long.class),
+                nullable(Integer.class), nullable(Long.class), anyBoolean());
+
+        // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
+        try {
+            volumeApiServiceImpl.resizeVolumeInternal(
+                    volume,
+                    /* newDiskOffering */          (DiskOfferingVO) null,
+                    /* currentSize     */          0L,
+                    /* newSize         */          1L,
+                    /* newMinIops      */          (Long) null,
+                    /* newMaxIops      */          (Long) null,
+                    /* snapshotReserve */          (Integer) null,
+                    /* shrinkOk        */          false);
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Unexpected ResourceAllocationException");
+        } catch (InvalidParameterValueException e) {
+            Assert.fail("VMware ROOT-volume resize must be allowed when CloudStack VM state is "
+                    + "Stopped, even under a power_state lag. Unexpected exception: "
+                    + e.getMessage());
+        }
+    }
+
+    /**
+     * Negative – resizeVolumeInternal:
+     * The VMware stopped-state guard inside {@code resizeVolumeInternal} must
+     * reject the operation when the CloudStack VM state is {@code Running}.
+     */
+    @Test
+    public void testResizeVolumeInternal_VMware_VMRunning_ShouldThrowStateGuardError()
+            throws NoSuchMethodException, IllegalAccessException {
+
+        long volumeId = 300L;
+        long vmId = 301L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getInstanceId()).thenReturn(vmId);
+        when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+
+        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+        when(runningVm.getState()).thenReturn(State.Running);
+        when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+
+        try {
+            volumeApiServiceImpl.resizeVolumeInternal(
+                    volume,
+                    (DiskOfferingVO) null,
+                    0L, 1L, (Long) null, (Long) null, (Integer) null, false);
+            Assert.fail("Expected an InvalidParameterValueException for VMware ROOT-volume resize when VM state is Running");
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Cause must be InvalidParameterValueException, was: " + e.getClass());
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(
+                    "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
     }
 }

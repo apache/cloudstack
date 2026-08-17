@@ -109,7 +109,7 @@ public class CreateRoleCmd extends RoleCmd {
         }
 
         if (getRoleId() != null && getRoleId() < 1L) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role ID provided");
         }
     }
 

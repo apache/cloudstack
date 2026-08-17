@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @APICommand(name = "listUnmanagedInstances",
-        description = "Lists unmanaged virtual machines for a given cluster.",
+        description = "Lists unmanaged Instances for a given cluster.",
         responseObject = UnmanagedInstanceResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         entityType = {UnmanagedInstanceTO.class},
@@ -62,12 +62,12 @@ public class ListUnmanagedInstancesCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = ClusterResponse.class,
             required = true,
-            description = "the cluster ID")
+            description = "The cluster ID")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the hypervisor name of the instance")
+            description = "The hypervisor name of the Instance")
     private String name;
 
     /////////////////////////////////////////////////////

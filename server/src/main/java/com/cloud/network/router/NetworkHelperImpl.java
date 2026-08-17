@@ -28,6 +28,9 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -84,7 +87,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LbStickinessMethod;
-import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
@@ -103,7 +105,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -176,6 +177,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    VpcManager vpcManager;
+
+    protected static final List<HypervisorType> HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER = Arrays.asList(
+            HypervisorType.Ovm, HypervisorType.BareMetal, HypervisorType.External);
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -192,7 +198,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
-            logger.debug("Router requires upgrade. Unable to send command to router: {}, router template version: {}, minimal required version: {}",
+            logger.debug("Router requires upgrade. Unable to send command to router: {}, router Template version: {}, minimal required version: {}",
                     router, router.getTemplateVersion(), NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
@@ -275,6 +281,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         _itMgr.expunge(router.getUuid());
         _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
         _routerDao.remove(router.getId());
+
+        if (router.getVpcId() != null) {
+            vpcManager.reconfigStaticNatForVpcVr(router.getVpcId());
+        }
         return router;
     }
 
@@ -659,8 +669,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             hypervisors.add(defaults);
         }
         if (dest.getCluster() != null) {
-            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+            HypervisorType destClusterHypType = dest.getCluster().getHypervisorType();
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(destClusterHypType)) {
+                hypervisors.add(getClusterToStartDomainRouterOtherThanProvidedType(dest.getCluster().getPodId()));
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
@@ -685,10 +696,10 @@ public class NetworkHelperImpl implements NetworkHelper {
      * Ovm won't support any system. So we have to choose a partner cluster in
      * the same pod to start domain router for us
      */
-    protected HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
+    protected HypervisorType getClusterToStartDomainRouterOtherThanProvidedType(final long podId) {
         final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (final ClusterVO cv : clusters) {
-            if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(cv.getHypervisorType())) {
                 continue;
             }
 
@@ -715,7 +726,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected LinkedHashMap<Network, List<? extends NicProfile>> configureControlNic(final RouterDeploymentDefinition routerDeploymentDefinition) {
         final LinkedHashMap<Network, List<? extends NicProfile>> controlConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
-        logger.debug("Adding nic for Virtual Router in Control network ");
+        logger.debug("Adding NIC for Virtual Router in Control network ");
         final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         final NetworkOffering controlOffering = offerings.get(0);
         final Network controlNic = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
@@ -726,53 +737,89 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) throws InsufficientAddressCapacityException {
-        final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
-
-        if (routerDeploymentDefinition.isPublicNetwork()) {
-            logger.debug("Adding nic for Virtual Router in Public network ");
-            // if source nat service is supported by the network, get the source
-            // nat ip address
-            final NicProfile defaultNic = new NicProfile();
-            defaultNic.setDefaultNic(true);
-            final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
-            defaultNic.setIPv4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setIPv4Gateway(sourceNatIp.getGateway());
-            defaultNic.setIPv4Netmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            // get broadcast from public network
-            final Network pubNet = _networkDao.findById(sourceNatIp.getNetworkId());
-            if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
-            } else {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(sourceNatIp.getVlanTag() != null ? BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
-                defaultNic.setIsolationUri(sourceNatIp.getVlanTag() != null ?  IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
-            }
-
-            //If guest nic has already been added we will have 2 devices in the list.
-            if (hasGuestNic) {
-                defaultNic.setDeviceId(2);
-            }
-
-            final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
-            final String publicIp = defaultNic.getIPv4Address();
-            // We want to use the identical MAC address for RvR on public
-            // interface if possible
-            final NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
-            if (peerNic != null) {
-                logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
-                defaultNic.setMacAddress(peerNic.getMacAddress());
-            }
-            if (routerDeploymentDefinition.getGuestNetwork() != null) {
-                ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
-            }
-            publicConfig.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<>(3);
+        if (!routerDeploymentDefinition.isPublicNetwork()) {
+            return publicConfig;
         }
 
+        final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
+        final NicProfile defaultNic = new NicProfile();
+        configurePublicVrNicBasedOnSourceNatIp(defaultNic, sourceNatIp);
+        if (hasGuestNic) {
+            logger.debug("Guest NIC has already been configured, therefore setting device ID of new VR (with source NAT [{}]) public NIC to [2].", sourceNatIp);
+            defaultNic.setDeviceId(2);
+        }
+
+        final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
+        final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
+
+        setPublicNicMacAddressSameAsPeerNic(defaultNic, publicNetworks.get(0), routerDeploymentDefinition);
+
+        if (routerDeploymentDefinition.getGuestNetwork() != null) {
+            ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
+        }
+        publicConfig.put(publicNetworks.get(0), List.of(defaultNic));
         return publicConfig;
+    }
+
+    /**
+     * Configures the public NIC of a Virtual Router based on the provided source NAT IP.
+     * @param nic Virtual Router public NIC to be configured.
+     * @param sourceNatIp Source NAT IP which should be used to configure the Virtual Router's public NIC.
+     */
+    protected void configurePublicVrNicBasedOnSourceNatIp(NicProfile nic, PublicIp sourceNatIp) {
+        logger.debug("Configuring public NIC of VR with source NAT IP equal to [{}]", sourceNatIp.getAddress().addr());
+        nic.setDefaultNic(true);
+        nic.setIPv4Address(sourceNatIp.getAddress().addr());
+        nic.setIPv4Gateway(sourceNatIp.getGateway());
+        nic.setIPv4Netmask(sourceNatIp.getNetmask());
+        nic.setMacAddress(sourceNatIp.getMacAddress());
+
+        Network publicNetwork = _networkDao.findById(sourceNatIp.getNetworkId());
+        if (publicNetwork.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+            nic.setBroadcastType(BroadcastDomainType.Vxlan);
+            nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+            nic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+        } else {
+            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            nic.setBroadcastUri(sourceNatIp.getVlanTag() != null ? BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
+            nic.setIsolationUri(sourceNatIp.getVlanTag() != null ? IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
+        }
+    }
+
+    /**
+     * Sets the MAC address of the new VR's public NIC the same as the previous VR's public NIC MAC address if
+     * {@link RouterDeploymentDefinition#getKeepMacAddressOnPublicNic()} is set to {@code true} and a peer NIC is found; otherwise,
+     * does nothing.
+     */
+    protected void setPublicNicMacAddressSameAsPeerNic(NicProfile defaultNic, Network publicNetwork, RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientAddressCapacityException {
+        String publicIp = defaultNic.getIPv4Address();
+        logger.info("Verifying if we will use same MAC address for public NIC of new VR (with source NAT [{}]).", publicIp);
+
+        logger.debug("Searching for peer NIC for public IP [{}] and network [{}].", publicIp, publicNetwork.getUuid());
+        NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetwork.getId());
+        if (peerNic == null) {
+            logger.info("We will not use the same MAC address for public NIC of new VR as we have not found a peer NIC for public IP [{}] and network [{}].",
+                    publicIp, publicNetwork.getUuid());
+            return;
+        }
+
+        logger.info("Found peer NIC [{}] for public IP [{}] and network [{}].", peerNic.getUuid(), publicIp, publicNetwork.getUuid());
+        boolean keepMacAddressOnPublicNic = routerDeploymentDefinition.getKeepMacAddressOnPublicNic();
+        String macAddressLog = String.format("same MAC address for public NIC of new VR (with source NAT [%s]) as the [keep_mac_address_on_public_nic] property is configured as [%s].", publicIp, keepMacAddressOnPublicNic);
+        if (keepMacAddressOnPublicNic) {
+            logger.info("Using {}", macAddressLog);
+            defaultNic.setMacAddress(peerNic.getMacAddress());
+            return;
+        }
+
+        logger.info("Not using {}", macAddressLog);
+        boolean fetchNewMacAddress = peerNic.getMacAddress().equals(defaultNic.getMacAddress());
+        if (fetchNewMacAddress) {
+            logger.debug("Fetching new MAC address for public NIC of new VR, since the MAC address of the peer NIC [UUID: {}, MAC address: {}] is equal to the predefined MAC address of the current NIC.", peerNic.getUuid(), peerNic.getMacAddress());
+            routerDeploymentDefinition.findSourceNatIP();
+            configurePublicVrNicBasedOnSourceNatIp(defaultNic, routerDeploymentDefinition.getSourceNatIP());
+        }
     }
 
     @Override
@@ -805,13 +852,14 @@ public class NetworkHelperImpl implements NetworkHelper {
         final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
 
         if (guestNetwork != null) {
-            logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
+            logger.debug("Adding NIC for Virtual Router in Guest Network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
-            if (!routerDeploymentDefinition.isPublicNetwork()) {
+            if (!routerDeploymentDefinition.isPublicNetwork()
+                    || !_networkModel.isAnyServiceSupportedInNetwork(guestNetwork.getId(), Network.Provider.VPCVirtualRouter, Network.Service.SourceNat, Network.Service.Gateway)) {
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
-                        logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
+                        logger.debug("Requesting IPv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
                                 + guestNetwork);
                         defaultNetworkStartIp = placeholder.getIPv4Address();
                     } else {
@@ -825,8 +873,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                                     && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                                 defaultNetworkStartIp = startIp;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv4 {} in network {} is already allocated, " +
-                                        "can't use it for domain router; will get random ip " +
+                                logger.debug("First IPv4 {} in Network {} is already allocated, " +
+                                        "can't use it for domain router; will get random IP " +
                                         "address from the range", startIp, guestNetwork);
                             }
                         }
@@ -835,7 +883,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 if (guestNetwork.getIp6Cidr() != null) {
                     if (placeholder != null && placeholder.getIPv6Address() != null) {
-                        logger.debug("Requesting ipv6 address " + placeholder.getIPv6Address() + " stored in placeholder nic for the network "
+                        logger.debug("Requesting IPv6 address " + placeholder.getIPv6Address() + " stored in placeholder nic for the network "
                                 + guestNetwork);
                         defaultNetworkStartIpv6 = placeholder.getIPv6Address();
                     } else {
@@ -848,8 +896,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                             if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
                                 defaultNetworkStartIpv6 = startIpv6;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv6 {} in network {} is already allocated, " +
-                                        "can't use it for domain router; will get random ipv6 " +
+                                logger.debug("First IPv6 {} in Network {} is already allocated, " +
+                                        "can't use it for domain router; will get random IPv6 " +
                                         "address from the range", startIpv6, guestNetwork);
                             }
                         }
@@ -889,7 +937,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition);
 
-        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType);
+        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType, null, null);
     }
 
     public static void setSystemAccount(final Account systemAccount) {
@@ -905,17 +953,19 @@ public class NetworkHelperImpl implements NetworkHelper {
         int haproxy_stats_port = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyStatsPort.key()));
         if (rule.getSourcePortStart() == haproxy_stats_port) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for  LB stats on this port");
+                logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for LB stats on this port");
             }
             return false;
         }
         String lbProtocol = rule.getLbProtocol();
         if (lbProtocol != null && lbProtocol.toLowerCase().equals(NetUtils.UDP_PROTO)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Can't create LB rule as haproxy does not support udp");
+                logger.debug("Can't create LB rule as haproxy does not support UDP");
             }
             return false;
         }
+
+        validateHAproxyLbProtocol(rule.getLbProtocol());
 
         for (final LoadBalancingRule.LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             final List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
@@ -968,6 +1018,13 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
         return true;
+    }
+
+    private void validateHAproxyLbProtocol(String lbProtocol) {
+        List<String> lbProtocols = Arrays.asList("tcp", "udp", "tcp-proxy", "ssl");
+        if (lbProtocol != null && !lbProtocols.contains(lbProtocol)) {
+            throw new InvalidParameterValueException(String.format("protocol %s is not in valid protocols %s", lbProtocol, lbProtocols));
+        }
     }
 
     /*

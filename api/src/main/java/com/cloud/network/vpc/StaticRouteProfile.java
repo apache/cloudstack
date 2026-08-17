@@ -23,7 +23,8 @@ public class StaticRouteProfile implements StaticRoute {
     private String targetCidr;
     private long accountId;
     private long domainId;
-    private long gatewayId;
+    private Long gatewayId;
+    private String nextHop;
     private StaticRoute.State state;
     private long vpcId;
     String vlanTag;
@@ -46,6 +47,18 @@ public class StaticRouteProfile implements StaticRoute {
         ipAddress = gateway.getIp4Address();
     }
 
+    public StaticRouteProfile(StaticRoute staticRoute) {
+        id = staticRoute.getId();
+        uuid = staticRoute.getUuid();
+        targetCidr = staticRoute.getCidr();
+        accountId = staticRoute.getAccountId();
+        domainId = staticRoute.getDomainId();
+        gatewayId = staticRoute.getVpcGatewayId();
+        state = staticRoute.getState();
+        vpcId = staticRoute.getVpcId();
+        gateway = staticRoute.getNextHop();
+    }
+
     @Override
     public long getAccountId() {
         return accountId;
@@ -57,8 +70,13 @@ public class StaticRouteProfile implements StaticRoute {
     }
 
     @Override
-    public long getVpcGatewayId() {
+    public Long getVpcGatewayId() {
         return gatewayId;
+    }
+
+    @Override
+    public String getNextHop() {
+        return nextHop;
     }
 
     @Override

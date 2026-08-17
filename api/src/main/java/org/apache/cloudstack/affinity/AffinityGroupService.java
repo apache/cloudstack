@@ -66,5 +66,4 @@ public interface AffinityGroupService {
 
     boolean isAffinityGroupAvailableInDomain(long affinityGroupId, long domainId);
 
-
 }

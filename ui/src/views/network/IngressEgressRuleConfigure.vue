@@ -212,7 +212,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -322,12 +322,12 @@ export default {
       })
     },
     fetchNetworkProtocols () {
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'protocolnumber'
       }).then(json => {
         this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
       })
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'icmptype'
       }).then(json => {
         this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
@@ -364,7 +364,7 @@ export default {
       if (this.isSubmitted) return
       this.isSubmitted = true
       this.parentToggleLoading()
-      api(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
+      postAPI(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
         securitygroupid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account,
@@ -406,7 +406,7 @@ export default {
     },
     handleDeleteRule (rule) {
       this.parentToggleLoading()
-      api(this.tabType === 'ingress' ? 'revokeSecurityGroupIngress' : 'revokeSecurityGroupEgress', {
+      postAPI(this.tabType === 'ingress' ? 'revokeSecurityGroupIngress' : 'revokeSecurityGroupEgress', {
         id: rule.ruleid,
         domainid: this.resource.domainid,
         account: this.resource.account
@@ -435,7 +435,7 @@ export default {
       })
     },
     fetchTags (rule) {
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: rule.ruleid,
         resourceType: 'SecurityGroupRule',
         listAll: true
@@ -448,7 +448,7 @@ export default {
     handleDeleteTag (tag) {
       this.parentToggleLoading()
       this.tagsLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule.ruleid,
@@ -490,7 +490,7 @@ export default {
         const values = toRaw(this.form)
 
         this.parentToggleLoading()
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule.ruleid,

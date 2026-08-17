@@ -87,7 +87,12 @@ public class CopySnapshotCmdTest {
 
     @Test (expected = ServerApiException.class)
     public void testExecuteWrongNoParams() {
+        UUIDManager uuidManager = Mockito.mock(UUIDManager.class);
+        SnapshotApiService snapshotApiService = Mockito.mock(SnapshotApiService.class);
         final CopySnapshotCmd cmd = new CopySnapshotCmd();
+        cmd._uuidMgr = uuidManager;
+        cmd._snapshotService = snapshotApiService;
+
         try {
             cmd.execute();
         } catch (ResourceUnavailableException e) {

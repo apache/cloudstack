@@ -38,7 +38,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "getUploadParamsForIso",
-        description = "upload an existing ISO into the CloudStack cloud.",
+        description = "Upload an existing ISO into the CloudStack cloud.",
         responseObject = GetUploadParamsResponse.class, since = "4.13",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -50,30 +50,30 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BOOTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "true if this ISO is bootable. If not passed explicitly its assumed to be true")
+    @Parameter(name = ApiConstants.BOOTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "True if this ISO is bootable. If not passed explicitly its assumed to be true")
     private Boolean bootable;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
             type = BaseCmd.CommandType.STRING,
-            description = "the display text of the ISO. This is usually used for display purposes.",
+            description = "The display text of the ISO. This is usually used for display purposes.",
             length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = BaseCmd.CommandType.BOOLEAN, description = "true if you want this ISO to be featured")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = BaseCmd.CommandType.BOOLEAN, description = "True if you want this ISO to be featured")
     private Boolean featured;
 
     @Parameter(name = ApiConstants.IS_PUBLIC,
             type = BaseCmd.CommandType.BOOLEAN,
-            description = "true if you want to register the ISO to be publicly available to all users, false otherwise.")
+            description = "True if you want to register the ISO to be publicly available to all Users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "true if the ISO or its derivatives are extractable; default is false")
+    @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "True if the ISO or its derivatives are extractable; default is false")
     private Boolean extractable;
 
     @Parameter(name = ApiConstants.OS_TYPE_ID,
             type = BaseCmd.CommandType.UUID,
             entityType = GuestOSResponse.class,
-            description = "the ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
+            description = "The ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
     private Long osTypeId;
 
     /////////////////////////////////////////////////////
@@ -104,6 +104,29 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
         return osTypeId;
     }
 
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public void setPublicIso(Boolean publicIso) {
+        this.publicIso = publicIso;
+    }
+
+    public void setExtractable(Boolean extractable) {
+        this.extractable = extractable;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -135,7 +158,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
+        Long accountId = _accountService.finalizeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

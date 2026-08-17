@@ -22,20 +22,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageNetworkVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.SearchCriteria;
@@ -43,38 +39,27 @@ import com.cloud.utils.db.SearchCriteria;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class NetworkUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(NetworkUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageNetworkDao s_usageNetworkDao;
-
+public class NetworkUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageNetworkDao _usageNetworkDao;
+    private UsageNetworkDao usageNetworkDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageNetworkDao = _usageNetworkDao;
+    @Override
+    public String getParserName() {
+        return "Network";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Network usage events for account: " + account.getId());
-        }
-
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         // - query usage_network table for all entries for userId with
         // event_date in the given range
-        SearchCriteria<UsageNetworkVO> sc = s_usageNetworkDao.createSearchCriteria();
+        SearchCriteria<UsageNetworkVO> sc = usageNetworkDao.createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
         sc.addAnd("eventTimeMillis", SearchCriteria.Op.BETWEEN, startDate.getTime(), endDate.getTime());
-        List<UsageNetworkVO> usageNetworkVOs = s_usageNetworkDao.search(sc, null);
+        List<UsageNetworkVO> usageNetworkVOs = usageNetworkDao.search(sc, null);
 
         Map<String, NetworkInfo> networkUsageByZone = new HashMap<String, NetworkInfo>();
 
@@ -105,7 +90,7 @@ public class NetworkUsageParser {
             long totalBytesReceived = networkInfo.getBytesRcvd();
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
-                LOGGER.debug("Creating usage record, total bytes sent [{}], total bytes received [{}], startDate [{}], and endDate [{}], for account [{}] in " +
+                logger.debug("Creating usage record, total bytes sent [{}], total bytes received [{}], startDate [{}], and endDate [{}], for account [{}] in " +
                                 "availability zone [{}].", toHumanReadableSize(totalBytesSent), toHumanReadableSize(totalBytesReceived),
                         DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                         DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), networkInfo.getZoneId());
@@ -135,13 +120,11 @@ public class NetworkUsageParser {
                 usageRecords.add(usageRecord);
             } else {
                 // Don't charge anything if there were zero bytes processed
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("No usage record (0 bytes used) generated for account: " + account.getId());
-                }
+                logger.debug("No usage record (0 bytes used) generated for account: [{}]", account.getUuid());
             }
         }
 
-        s_usageDao.saveUsageRecords(usageRecords);
+        usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }

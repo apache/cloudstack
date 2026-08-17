@@ -91,7 +91,7 @@
           :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
-                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+              <router-link :to="{ path: '/storagepool/' + encodeURIComponent(record.datastoreId) }">
                 {{ text }}
               </router-link>
             </template>
@@ -107,7 +107,7 @@
           :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
-                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+              <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
                 {{ text }}
               </router-link>
             </template>
@@ -217,7 +217,9 @@
           <a-alert type="error">
             <template #message>
               <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
-              <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+              <span
+                style="padding-left: 5px"
+                v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
               <span v-html="$t(message.confirmMessage)" />
             </template>
           </a-alert>
@@ -255,7 +257,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -391,10 +393,10 @@ export default {
   },
   computed: {
     isActionsOnTemplatePermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
-        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) &&
         this.resource.templatetype !== 'SYSTEM'
     }
   },
@@ -418,7 +420,7 @@ export default {
       this.dataSource = []
       this.itemCount = 0
       this.fetchLoading = true
-      api('listTemplates', params).then(json => {
+      getAPI('listTemplates', params).then(json => {
         this.dataSource = json.listtemplatesresponse.template || []
         this.itemCount = json.listtemplatesresponse.count || 0
       }).catch(error => {
@@ -476,7 +478,7 @@ export default {
       this.showTable = false
       this.fetchData()
       if (this.dataSource.length === 0) {
-        this.$router.go(-1)
+        this.$router.push({ path: '/template' })
       }
     },
     getOkProps () {
@@ -522,7 +524,7 @@ export default {
         zoneid: template.zoneid
       }
       this.deleteLoading = true
-      api('deleteTemplate', params).then(json => {
+      postAPI('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
@@ -572,7 +574,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = zones
         this.copyZones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
@@ -607,7 +609,7 @@ export default {
       if (!needed) {
         return
       }
-      api('listOsTypes', { id: this.resource.ostypeid }).then(json => {
+      getAPI('listOsTypes', { id: this.resource.ostypeid }).then(json => {
         this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
       })
     },
@@ -646,7 +648,7 @@ export default {
           destzoneids: values.zoneid.join()
         }
         this.copyLoading = true
-        api('copyTemplate', params).then(json => {
+        postAPI('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
           eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({

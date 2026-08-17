@@ -23,20 +23,24 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.ldap.LdapConfiguration;
+import org.apache.cloudstack.ldap.LdapConfigurationVO;
 
-@EntityReference(value = LdapConfiguration.class)
+@EntityReference(value = LdapConfigurationVO.class)
 public class LdapConfigurationResponse extends BaseResponse {
+    @SerializedName("id")
+    @Param(description = "the ID of the LDAP configuration")
+    private String id;
+
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "name of the host running the ldap server")
+    @Param(description = "Name of the host running the LDAP server")
     private String hostname;
 
     @SerializedName(ApiConstants.PORT)
-    @Param(description = "port the ldap server is running on")
+    @Param(description = "Port the LDAP server is running on")
     private int port;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "linked domain")
+    @Param(description = "Linked domain")
     private String domainId;
 
     public LdapConfigurationResponse() {
@@ -53,9 +57,18 @@ public class LdapConfigurationResponse extends BaseResponse {
         setPort(port);
     }
 
-    public LdapConfigurationResponse(final String hostname, final int port, final String domainId) {
+    public LdapConfigurationResponse(final String hostname, final int port, final String domainId, final String id) {
         this(hostname, port);
         setDomainId(domainId);
+        setId(id);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getHostname() {

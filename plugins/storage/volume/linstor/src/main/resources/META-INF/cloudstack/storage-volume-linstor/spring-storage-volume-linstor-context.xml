@@ -33,4 +33,8 @@
           class="org.apache.cloudstack.storage.snapshot.LinstorVMSnapshotStrategy" />
     <bean id="linstorConfigManager"
           class="org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager" />
+    <bean id="linstorConfigChangeListener"
+          class="org.apache.cloudstack.storage.datastore.util.LinstorConfigChangeListener" />
+    <bean id="linstorDataMotionStrategy"
+          class="org.apache.cloudstack.storage.motion.LinstorDataMotionStrategy" />
 </beans>
