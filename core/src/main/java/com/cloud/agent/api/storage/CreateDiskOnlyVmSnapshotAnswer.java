@@ -20,20 +20,19 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.utils.Pair;
 
 import java.util.Map;
 
 public class CreateDiskOnlyVmSnapshotAnswer extends Answer {
 
-    protected Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath;
+    protected Map<String, Long> mapVolumeToSnapshotSize;
 
-    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath) {
+    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize) {
         super(command, success, details);
-        this.mapVolumeToSnapshotSizeAndNewVolumePath = mapVolumeToSnapshotSizeAndNewVolumePath;
+        this.mapVolumeToSnapshotSize = mapVolumeToSnapshotSize;
     }
 
-    public Map<String, Pair<Long, String>> getMapVolumeToSnapshotSizeAndNewVolumePath() {
-        return mapVolumeToSnapshotSizeAndNewVolumePath;
+    public Map<String, Long> getMapVolumeToSnapshotSize() {
+        return mapVolumeToSnapshotSize;
     }
 }

@@ -19,28 +19,28 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
-import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
 
 import java.util.List;
 
 public class MergeDiskOnlyVmSnapshotCommand extends Command {
 
-    private List<SnapshotMergeTreeTO> snapshotMergeTreeToList;
-    private VirtualMachine.State vmState;
+    private List<DeltaMergeTreeTO> snapshotMergeTreeToList;
+    private boolean isVmRunning;
     private String vmName;
 
-    public MergeDiskOnlyVmSnapshotCommand(List<SnapshotMergeTreeTO> snapshotMergeTreeToList, VirtualMachine.State vmState, String vmName) {
+    public MergeDiskOnlyVmSnapshotCommand(List<DeltaMergeTreeTO> snapshotMergeTreeToList, boolean isVmRunning, String vmName) {
         this.snapshotMergeTreeToList = snapshotMergeTreeToList;
-        this.vmState = vmState;
+        this.isVmRunning = isVmRunning;
         this.vmName = vmName;
     }
 
-    public List<SnapshotMergeTreeTO> getSnapshotMergeTreeToList() {
+    public List<DeltaMergeTreeTO> getDeltaMergeTreeToList() {
         return snapshotMergeTreeToList;
     }
 
-    public VirtualMachine.State getVmState() {
-        return vmState;
+    public boolean isVmRunning() {
+        return isVmRunning;
     }
 
     public String getVmName() {

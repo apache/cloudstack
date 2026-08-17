@@ -1482,7 +1482,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         // Validate Provider
-        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());
+        Network.Provider provider = networkModel.resolveProvider(cmd.getProvider());
         if (provider == null) {
             throw new InvalidParameterValueException("The Provider " + cmd.getProvider() + " does not exist; Unable to create Counter");
         }
@@ -1551,7 +1551,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         String providerStr = cmd.getProvider();
         if (providerStr != null) {
-            Network.Provider provider = Network.Provider.getProvider(providerStr);
+            Network.Provider provider = networkModel.resolveProvider(providerStr);
             if (provider == null) {
                 throw new InvalidParameterValueException("The Provider " + providerStr + " does not exist; Unable to list Counter");
             }
@@ -2026,7 +2026,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private UserVmVO startNewVM(long vmId) {
         try {
             CallContext.current().setEventDetails("Instance ID: " + vmId);
-            return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null).first();
+            return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null, false).first();
         } catch (final ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());

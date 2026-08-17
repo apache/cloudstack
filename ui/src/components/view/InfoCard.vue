@@ -548,7 +548,7 @@
                 </span>
                 <project-outlined v-else />
                 <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
-                <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
+                <span v-else>{{ resource.projectname || resource.projectid }}</span>
               </div>
             </div>
 
@@ -885,6 +885,18 @@
                 <block-outlined v-else />
                 <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
                 <span v-else>{{ resource.domain || resource.domainid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.currency">
+              <div class="resource-detail-item__label">{{ $t('label.currency') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.currency }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.balance">
+              <div class="resource-detail-item__label">{{ $t('label.quota.current.balance') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.balance }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.payloadurl">

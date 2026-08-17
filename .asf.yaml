@@ -57,6 +57,7 @@ github:
     - jmsperu
     - GaOrtiga
     - bhouse-nexthop
+    - Dogface2k
 
   rulesets:
     - name: "Default Branch Protection"

@@ -1573,6 +1573,10 @@ public class ApiDBUtils {
         return s_networkModel.canElementEnableIndividualServices(serviceProvider);
     }
 
+    public static boolean canElementEnableIndividualServicesByName(String providerName) {
+        return s_networkModel.canElementEnableIndividualServicesByName(providerName);
+    }
+
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
         NetworkDomainVO map = s_networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
 
