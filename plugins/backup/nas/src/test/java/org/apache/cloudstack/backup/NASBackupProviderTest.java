@@ -48,6 +48,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import java.util.Date;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -1039,5 +1040,195 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao).remove(52L);
         Mockito.verify(backupDao, Mockito.never()).remove(51L);
         Mockito.verify(backupDao).remove(50L);
+    }
+
+    // -- content-based (pull mode) chain decisions for raw block storage -----------------
+
+    /**
+     * A LINSTOR-backed VM must take the content-based path even when the incremental master
+     * switch is off: pull mode still writes a sparse qcow2 in one pass, which is strictly better
+     * than the fully allocated push output. It must NOT fall back to legacy-full.
+     */
+    @Test
+    public void decideChainReturnsContentFullForLinstorWhenIncrementalDisabled() {
+        Long vmId = 70L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.lenient().when(vm.getDataCenterId()).thenReturn(1L);
+        stubAllVolumesOnLinstor(vmId, 1);
+
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
+                        "nas.backup.incremental.enabled", "false",
+                        "test override — disabled", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+        Assert.assertTrue(decision.isContentBased());
+        Assert.assertFalse(decision.isIncremental());
+        Assert.assertNull("content path uses no bitmaps", decision.bitmapNew);
+        Assert.assertNotNull("content-full still anchors a chain", decision.chainId);
+    }
+
+    /**
+     * Stopped VMs are imaged straight from the disk by qemu-img, with no point-in-time export to
+     * diff against a parent, so a LINSTOR VM that is stopped must take a content-full.
+     */
+    @Test
+    public void decideChainReturnsContentFullForStoppedLinstorVm() {
+        Long vmId = 71L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Stopped);
+        stubAllVolumesOnLinstor(vmId, 1);
+        enableIncrementals();
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+    }
+
+    /**
+     * Running LINSTOR VM with a healthy parent inside the cadence => content-incremental, carrying
+     * the parent's chain id, the next position, the parent uuid (resolved directly since there is
+     * no bitmap to look it up by) and the per-volume parent paths the script rebases onto.
+     */
+    @Test
+    public void decideChainReturnsContentIncrementalForLinstorWithValidParent() {
+        Long vmId = 72L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+        stubAllVolumesOnLinstor(vmId, 1);
+        enableIncrementals();
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupFullEvery",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Integer.class,
+                        "nas.backup.full.every", "3", "test override", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+
+        Backup parent = mock(Backup.class);
+        Mockito.when(parent.getId()).thenReturn(900L);
+        Mockito.when(parent.getStatus()).thenReturn(Backup.Status.BackedUp);
+        Mockito.lenient().when(parent.getDate()).thenReturn(new Date());
+        Mockito.when(parent.getUuid()).thenReturn("parent-uuid");
+        Mockito.when(parent.getExternalId()).thenReturn("i-2-3-VM/2026.01.01.00.00.00");
+        Backup.VolumeInfo pv = mock(Backup.VolumeInfo.class);
+        Mockito.when(pv.getPath()).thenReturn("volpath1");
+        Mockito.<List<Backup.VolumeInfo>>when(parent.getBackedUpVolumes()).thenReturn(List.of(pv));
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(parent));
+
+        BackupDetailVO chainId = mock(BackupDetailVO.class);
+        Mockito.when(chainId.getValue()).thenReturn("chain-1");
+        BackupDetailVO chainPos = mock(BackupDetailVO.class);
+        Mockito.when(chainPos.getValue()).thenReturn("0");
+        Mockito.when(backupDetailsDao.findDetail(900L, NASBackupChainKeys.CHAIN_ID)).thenReturn(chainId);
+        Mockito.when(backupDetailsDao.findDetail(900L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(chainPos);
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_INCREMENTAL, decision.mode);
+        Assert.assertTrue(decision.isIncremental());
+        Assert.assertTrue(decision.isContentBased());
+        Assert.assertNull("content-incremental carries no bitmap", decision.bitmapNew);
+        Assert.assertNull(decision.bitmapParent);
+        Assert.assertEquals("chain-1", decision.chainId);
+        Assert.assertEquals(1, decision.chainPosition);
+        Assert.assertEquals("parent-uuid", decision.parentBackupUuid);
+        Assert.assertEquals(List.of("i-2-3-VM/2026.01.01.00.00.00/root.volpath1.qcow2"),
+                decision.parentPaths);
+    }
+
+    /**
+     * Once the chain reaches nas.backup.full.every, the next LINSTOR backup must anchor a new
+     * chain with a content-full rather than extending the existing one.
+     */
+    @Test
+    public void decideChainReturnsContentFullForLinstorAtChainEnd() {
+        Long vmId = 73L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+        stubAllVolumesOnLinstor(vmId, 1);
+        enableIncrementals();
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupFullEvery",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Integer.class,
+                        "nas.backup.full.every", "2", "test override", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+
+        Backup parent = mock(Backup.class);
+        Mockito.when(parent.getId()).thenReturn(901L);
+        Mockito.when(parent.getStatus()).thenReturn(Backup.Status.BackedUp);
+        Mockito.lenient().when(parent.getDate()).thenReturn(new Date());
+        Mockito.when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(parent));
+        BackupDetailVO chainId = mock(BackupDetailVO.class);
+        Mockito.when(chainId.getValue()).thenReturn("chain-9");
+        BackupDetailVO chainPos = mock(BackupDetailVO.class);
+        Mockito.when(chainPos.getValue()).thenReturn("1"); // 1 + 1 >= 2 => new full
+        Mockito.when(backupDetailsDao.findDetail(901L, NASBackupChainKeys.CHAIN_ID)).thenReturn(chainId);
+        Mockito.when(backupDetailsDao.findDetail(901L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(chainPos);
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+    }
+
+    /**
+     * A VM straddling LINSTOR and file-based storage is not content-diff capable: one backup run
+     * uses a single mode, so it must not be routed down the content path.
+     */
+    @Test
+    public void allVolumesOnContentDiffCapableStorageFalseForMixedStorage() {
+        Long vmId = 74L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+
+        VolumeVO linVol = mock(VolumeVO.class);
+        Mockito.when(linVol.getPoolId()).thenReturn(1L);
+        VolumeVO nfsVol = mock(VolumeVO.class);
+        Mockito.when(nfsVol.getPoolId()).thenReturn(2L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(linVol, nfsVol));
+
+        StoragePoolVO lin = mock(StoragePoolVO.class);
+        Mockito.when(lin.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        StoragePoolVO nfs = mock(StoragePoolVO.class);
+        Mockito.when(nfs.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(lin);
+        Mockito.when(storagePoolDao.findById(2L)).thenReturn(nfs);
+
+        Assert.assertFalse(nasBackupProvider.allVolumesOnContentDiffCapableStorage(vm));
+    }
+
+    /** A VM with no volumes is not content-diff capable (safe default). */
+    @Test
+    public void allVolumesOnContentDiffCapableStorageFalseForNoVolumes() {
+        Long vmId = 75L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of());
+        Assert.assertFalse(nasBackupProvider.allVolumesOnContentDiffCapableStorage(vm));
+    }
+
+    private void enableIncrementals() {
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
+                        "nas.backup.incremental.enabled", "true",
+                        "test override — enabled", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+    }
+
+    /** Point every volume of {@code vmId} at a LINSTOR pool. */
+    private void stubAllVolumesOnLinstor(Long vmId, int count) {
+        List<VolumeVO> vols = new java.util.ArrayList<>();
+        StoragePoolVO lin = mock(StoragePoolVO.class);
+        Mockito.lenient().when(lin.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        for (int i = 0; i < count; i++) {
+            VolumeVO v = mock(VolumeVO.class);
+            long poolId = 100L + i;
+            Mockito.when(v.getPoolId()).thenReturn(poolId);
+            Mockito.when(storagePoolDao.findById(poolId)).thenReturn(lin);
+            vols.add(v);
+        }
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(vols);
     }
 }
