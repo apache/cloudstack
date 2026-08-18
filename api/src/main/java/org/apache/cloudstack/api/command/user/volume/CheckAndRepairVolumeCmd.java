@@ -53,7 +53,11 @@ public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.REPAIR, type = CommandType.STRING, required = false, description = "parameter to repair the volume, leaks or all are the possible values")
+    @Parameter(name = ApiConstants.REPAIR,
+            type = CommandType.STRING,
+            allowedValues = {"LEAKS", "ALL"},
+            required = false,
+            description = "parameter to repair the volume, leaks or all are the possible values")
     private String repair;
 
     /////////////////////////////////////////////////////

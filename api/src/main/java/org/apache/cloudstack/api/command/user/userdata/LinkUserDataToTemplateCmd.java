@@ -64,6 +64,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
             type = CommandType.STRING,
+            allowedValues = {"ALLOWOVERRIDE", "APPEND", "DENYOVERRIDE"},
             description = "An optional override policy of the userdata. Possible values are - ALLOWOVERRIDE, APPEND, DENYOVERRIDE. Default policy is allowoverride")
     private String userdataPolicy;
 
