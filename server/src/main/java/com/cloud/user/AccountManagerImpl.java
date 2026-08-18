@@ -45,10 +45,13 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
 import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
@@ -314,6 +317,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private DomainDao _domainDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
+    @Inject
+    private ProjectInvitationDao projectInvitationDao;
     @Inject
     private IPAddressDao _ipAddressDao;
     @Inject
@@ -2521,14 +2526,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccountAndAccess(user, account);
         verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        removeUserApiKeys(id);
+        return deleteAndCleanupUser(user);
+    }
 
-        return _userDao.remove(id);
+    /**
+     * Removes the specified user and performs cleanup operations associated with the user.
+     *
+     * @param user the user to be deleted and cleaned up
+     * @return true if the user was successfully marked as removed, false otherwise
+     */
+    protected boolean deleteAndCleanupUser(User user) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            long userId = user.getId();
+
+            removeUserApiKeys(userId);
+            _projectMgr.cleanupProjectsForUser(null, user);
+
+            return _userDao.remove(userId);
+        });
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
-    public boolean moveUser(MoveUserCmd cmd) {
+    public boolean moveUser(MoveUserCmd cmd) throws ResourceAllocationException {
         final Long id = cmd.getId();
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
@@ -2542,7 +2562,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean moveUser(long id, Long domainId, Account newAccount) {
+    public boolean moveUser(long id, Long domainId, Account newAccount) throws ResourceAllocationException {
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
@@ -2550,24 +2570,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return moveUser(user, newAccount.getId());
     }
 
-    private boolean moveUser(UserVO user, long newAccountId) {
+    private boolean moveUser(UserVO user, long newAccountId) throws ResourceAllocationException {
         if (newAccountId == user.getAccountId()) {
             // could do a not silent fail but the objective of the user is reached
             return true; // no need to create a new user object for this user
         }
 
-        return Transaction.execute(new TransactionCallback<>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                UserVO newUser = new UserVO(user);
-                user.setExternalEntity(user.getUuid());
-                user.setUuid(UUID.randomUUID().toString());
-                _userDao.update(user.getId(), user);
-                newUser.setAccountId(newAccountId);
-                boolean success = _userDao.remove(user.getId());
-                UserVO persisted = _userDao.persist(newUser);
-                return success && persisted.getUuid().equals(user.getExternalEntity());
-            }
+        return Transaction.execute((TransactionCallbackWithException<Boolean, ResourceAllocationException>) status -> {
+            UserVO newUser = new UserVO(user);
+            user.setExternalEntity(user.getUuid());
+            user.setUuid(UUID.randomUUID().toString());
+            _userDao.update(user.getId(), user);
+            newUser.setAccountId(newAccountId);
+            UserVO persisted = _userDao.persist(newUser);
+            _projectMgr.moveProjectAssociationsToUser(user, persisted);
+            boolean success = _userDao.remove(user.getId());
+            return success && persisted.getUuid().equals(user.getExternalEntity());
         });
     }
 
