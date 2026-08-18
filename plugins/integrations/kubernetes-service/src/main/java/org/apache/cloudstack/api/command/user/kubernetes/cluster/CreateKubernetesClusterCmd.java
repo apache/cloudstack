@@ -116,13 +116,17 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter",
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter. " +
+                    "Example: nodeofferings[0].node=\"control\"&nodeofferings[0].offering=\"<service-offering-uuid>\"&" +
+                    "nodeofferings[1].node=\"worker\"&nodeofferings[1].offering=\"<service-offering-uuid>\"",
             since = "4.21.0")
     private Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_TEMPLATE_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template",
+            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template. " +
+                    "Example: nodetemplates[0].node=\"control\"&nodetemplates[0].template=\"<template-uuid>\"&" +
+                    "nodetemplates[1].node=\"worker\"&nodetemplates[1].template=\"<template-uuid>\"",
             since = "4.21.0")
     private Map<String, Map<String, String>> templateNodeTypeMap;
 
