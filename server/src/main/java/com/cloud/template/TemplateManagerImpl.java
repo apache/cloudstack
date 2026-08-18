@@ -332,6 +332,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private UserDataDao userDataDao;
 
+    @Inject
+    private UserDataDao userDataDao;
+
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
         if (type == HypervisorType.BareMetal) {
