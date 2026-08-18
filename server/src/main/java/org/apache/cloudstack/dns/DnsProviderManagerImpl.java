@@ -174,8 +174,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
      * @throws InvalidParameterValueException if the URL is blank, fails validation, or is a private address
      * requested by a non-root-admin caller.
      */
-    private String validateDnsServerUrl(String url, Account caller) {
-        String trimmedUrl = StringUtils.trim(url);
+    private String validateDnsServerUrl(String trimmedUrl, Account caller) {
         if (StringUtils.isBlank(trimmedUrl)) {
             throw new InvalidParameterValueException("URL cannot be blank.");
         }
@@ -196,11 +195,12 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        String url = validateDnsServerUrl(cmd.getUrl(), caller);
-        DnsServer existing = dnsServerDao.findByUrlAndAccount(url, caller.getId());
+        String trimmedUrl = StringUtils.trim(cmd.getUrl());
+        String dnsUrl = validateDnsServerUrl(trimmedUrl, caller);
+        DnsServer existing = dnsServerDao.findByUrlAndAccount(dnsUrl, caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
-                    "This Account already has a DNS server integration for URL: " + url);
+                    "This Account already has a DNS server integration for URL: " + dnsUrl);
         }
 
         boolean isDnsPublic = cmd.isPublic();
@@ -216,7 +216,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         DnsProviderType type = cmd.getProvider();
-        DnsServerVO server = new DnsServerVO(cmd.getName(), url, cmd.getPort(), type,
+        DnsServerVO server = new DnsServerVO(cmd.getName(), dnsUrl, cmd.getPort(), type,
                 cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
 
@@ -282,14 +282,14 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         if (cmd.getUrl() != null) {
-            String url = StringUtils.trim(cmd.getUrl());
-            if (!url.equals(originalUrl)) {
-                url = validateDnsServerUrl(url, caller);
-                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(url, dnsServer.getAccountId());
+            String trimmedUrl = StringUtils.trim(cmd.getUrl());
+            if (!trimmedUrl.equals(originalUrl)) {
+                String dnsUrl = validateDnsServerUrl(trimmedUrl, caller);
+                DnsServer duplicate = dnsServerDao.findByUrlAndAccount(dnsUrl, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
                 }
-                dnsServer.setUrl(url);
+                dnsServer.setUrl(dnsUrl);
                 validationRequired = true;
             }
         }
