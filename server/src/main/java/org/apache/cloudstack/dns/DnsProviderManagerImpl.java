@@ -97,6 +97,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
@@ -167,19 +168,26 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
      * Trims and rejects a DNS provider URL that resolves to an illegal address before any provider client
      * is given the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules
      * enforced (including the requirement that the URL declares an {@code http}/{@code https} scheme).
+     * Private/site-local addresses (e.g. {@code 192.168.0.0/16}) are only permitted for root admin callers.
      *
      * @return the trimmed URL.
-     * @throws InvalidParameterValueException if the URL is blank or fails validation.
+     * @throws InvalidParameterValueException if the URL is blank, fails validation, or is a private address
+     * requested by a non-root-admin caller.
      */
-    private String validateDnsServerUrl(String url) {
+    private String validateDnsServerUrl(String url, Account caller) {
         String trimmedUrl = StringUtils.trim(url);
         if (StringUtils.isBlank(trimmedUrl)) {
             throw new InvalidParameterValueException("URL cannot be blank.");
         }
+        Pair<String, Integer> hostAndPort;
         try {
-            UriUtils.validateUrl(trimmedUrl);
+            hostAndPort = UriUtils.validateUrl(trimmedUrl);
         } catch (IllegalArgumentException e) {
             throw new InvalidParameterValueException(e.getMessage());
+        }
+        if (!accountMgr.isRootAdmin(caller.getId()) && NetUtils.isSiteLocalAddress(hostAndPort.first())) {
+            throw new InvalidParameterValueException(
+                    "Only root admin accounts can configure a DNS server on a private/internal network address.");
         }
         return trimmedUrl;
     }
@@ -187,8 +195,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
-        String url = validateDnsServerUrl(cmd.getUrl());
         Account caller = CallContext.current().getCallingAccount();
+        String url = validateDnsServerUrl(cmd.getUrl(), caller);
         DnsServer existing = dnsServerDao.findByUrlAndAccount(url, caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
@@ -276,7 +284,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (cmd.getUrl() != null) {
             String url = StringUtils.trim(cmd.getUrl());
             if (!url.equals(originalUrl)) {
-                url = validateDnsServerUrl(url);
+                url = validateDnsServerUrl(url, caller);
                 DnsServer duplicate = dnsServerDao.findByUrlAndAccount(url, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");

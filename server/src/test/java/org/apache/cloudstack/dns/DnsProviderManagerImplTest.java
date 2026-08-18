@@ -819,6 +819,31 @@ public class DnsProviderManagerImplTest {
         manager.addDnsServer(cmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddDnsServerRejectsPrivateAddressForNonRootAdmin() {
+        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        manager.addDnsServer(cmd);
+    }
+
+    @Test
+    public void testAddDnsServerAllowsPrivateAddressForRootAdmin() throws Exception {
+        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
+        when(dnsServerDao.persist(any())).thenReturn(serverVO);
+
+        DnsServer result = manager.addDnsServer(cmd);
+        assertNotNull(result);
+        verify(dnsServerDao).persist(any());
+    }
+
     @Test
     public void testAddDnsServerNormalUser() throws Exception {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
@@ -878,6 +903,38 @@ public class DnsProviderManagerImplTest {
         Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
 
         manager.updateDnsServer(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateDnsServerRejectsPrivateAddressForNonRootAdmin() {
+        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
+
+        manager.updateDnsServer(cmd);
+    }
+
+    @Test
+    public void testUpdateDnsServerAllowsPrivateAddressForRootAdmin() throws Exception {
+        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
+        Mockito.doReturn(DnsProviderType.PowerDNS).when(serverVO).getProviderType();
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        doNothing().when(dnsProviderMock).validate(any());
+        when(dnsServerDao.update(anyLong(), any())).thenReturn(true);
+
+        DnsServer result = manager.updateDnsServer(cmd);
+        assertNotNull(result);
+        verify(dnsProviderMock).validate(any());
     }
 
     @Test
