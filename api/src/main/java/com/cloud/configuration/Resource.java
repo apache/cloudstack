@@ -33,7 +33,8 @@ public interface Resource {
         cpu("cpu", 8),
         memory("memory", 9),
         primary_storage("primary_storage", 10),
-        secondary_storage("secondary_storage", 11);
+        secondary_storage("secondary_storage", 11),
+        instance_snapshot("instance_snapshot", 12);
 
         private String name;
         private int ordinal;

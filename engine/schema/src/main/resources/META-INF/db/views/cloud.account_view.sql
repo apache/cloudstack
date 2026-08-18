@@ -52,6 +52,8 @@ select
     `volumecount`.`count` AS `volumeTotal`,
     `snapshotlimit`.`max` AS `snapshotLimit`,
     `snapshotcount`.`count` AS `snapshotTotal`,
+    `vmsnapshotlimit`.`max` AS `vmSnapshotLimit`,
+    `vmsnapshotcount`.`count` AS `vmSnapshotTotal`,
     `templatelimit`.`max` AS `templateLimit`,
     `templatecount`.`count` AS `templateTotal`,
     `vpclimit`.`max` AS `vpcLimit`,
@@ -111,6 +113,12 @@ from
         left join
     `cloud`.`resource_count` snapshotcount ON account.id = snapshotcount.account_id
         and snapshotcount.type = 'snapshot'
+        left join
+    `cloud`.`resource_limit` vmsnapshotlimit ON account.id = vmsnapshotlimit.account_id
+        and vmsnapshotlimit.type = 'vm_snapshot'
+        left join
+    `cloud`.`resource_count` vmsnapshotcount ON account.id = vmsnapshotcount.account_id
+        and vmsnapshotcount.type = 'vm_snapshot'
         left join
     `cloud`.`resource_limit` templatelimit ON account.id = templatelimit.account_id
         and templatelimit.type = 'template'
