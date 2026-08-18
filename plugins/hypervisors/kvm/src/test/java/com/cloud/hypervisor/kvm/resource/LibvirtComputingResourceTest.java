@@ -7186,6 +7186,38 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputReturnsLibraryVersion() {
+        String output = "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n" +
+                "vddk_library_version=8\n" +
+                "vddk_transport_modes=file:san:hotadd:nbdssl:nbd\n";
+
+        Assert.assertEquals("8", libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputIgnoresPluginVersionWithoutLoadedLibrary() {
+        String output = "nbdkit 1.24.0\n" +
+                "vddk 1.24.0\n" +
+                "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n";
+
+        Assert.assertNull(libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void isNbdkitVddkPluginUsableRequiresLoadedVddkLibrary() throws IOException {
+        Path vddkDir = Files.createTempDirectory("vddk-test");
+        Files.createDirectories(vddkDir.resolve("lib64"));
+        Files.createFile(vddkDir.resolve("lib64/libvixDiskLib.so.8"));
+        Mockito.doReturn("vddk_library_version=8\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertTrue(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
+
+        Mockito.doReturn("nbdkit: error: libssl.so.3: cannot open shared object file\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertFalse(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
+    }
+
+    @Test
     public void defineDiskForDefaultPoolTypeSkipsForceDiskController() {
         Map<String, String> details = new HashMap<>();
         details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");

@@ -188,6 +188,10 @@ public class UnmanagedVMsManagerImplTest {
     @Mock
     private UserVmManager userVmManager;
     @Mock
+    private com.cloud.storage.dao.GuestOSDao guestOSDao;
+    @Mock
+    private com.cloud.storage.dao.GuestOSHypervisorDao guestOSHypervisorDao;
+    @Mock
     private ClusterDao clusterDao;
     @Mock
     private ResourceManager resourceManager;
@@ -730,6 +734,27 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
     }
 
+    @Test
+    public void testGetVmwareMigrationModeFallsBackToUseVddk() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.OVF, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.VDDK, unmanagedVMsManager.getVmwareMigrationMode(cmd, true));
+    }
+
+    @Test
+    public void testGetVmwareMigrationModeParsesCbt() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("cbt");
+        Assert.assertEquals(ImportVmCmd.VmwareMigrationMode.CBT, unmanagedVMsManager.getVmwareMigrationMode(cmd, false));
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testGetVmwareMigrationModeRejectsUnknownMode() {
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getVmwareMigrationMode()).thenReturn("not-a-mode");
+        unmanagedVMsManager.getVmwareMigrationMode(cmd, false);
+    }
+
     private enum VcenterParameter {
         EXISTING,
         EXTERNAL,
@@ -1075,6 +1100,19 @@ public class UnmanagedVMsManagerImplTest {
                 serviceOffering, Map.of("1000-2", 32L));
     }
 
+    @Test
+    public void testValidateSelectedConversionStoragePoolForVddkSkipsTemporaryPoolForStagedImport() {
+        long poolId = 12L;
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+
+        Mockito.reset(primaryDataStoreDao, diskOfferingDao, volumeApiService);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, false, poolId,
+                serviceOffering, Map.of("1000-2", 32L));
+
+        Mockito.verifyNoInteractions(primaryDataStoreDao, diskOfferingDao, volumeApiService);
+    }
+
     private ClusterVO getClusterForTests() {
         ClusterVO cluster = mock(ClusterVO.class);
         when(cluster.getId()).thenReturn(1L);
@@ -1395,6 +1433,40 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
+    public void testSelectKVMHostForConversionInClusterDirectRbdAutoSelectsHostWithDirectSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddkOnly = Mockito.mock(HostVO.class);
+        HostVO hostWithDirectRbd = Mockito.mock(HostVO.class);
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn(null);
+        when(hostWithDirectRbd.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithDirectRbd.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn("true");
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithVddkOnly, hostWithDirectRbd));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, true);
+        Assert.assertEquals(hostWithDirectRbd, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterDirectRbdFailsWithoutDirectSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddkOnly = Mockito.mock(HostVO.class);
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithVddkOnly.getDetail(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT)).thenReturn(null);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithVddkOnly));
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType()))
+                .thenReturn(List.of(hostWithVddkOnly));
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, true);
+    }
+
+    @Test
     public void testCheckConversionStoragePoolSecondaryStorageStaging() {
         unmanagedVMsManager.checkConversionStoragePool(null, false);
         Mockito.verifyNoInteractions(primaryDataStoreDao);
@@ -1420,6 +1492,110 @@ public class UnmanagedVMsManagerImplTest {
         long destPoolId = 1L;
         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolRbdAllowedForVddkForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, true);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolLinstorAllowedForVddkForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, true);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolLinstorNotAllowedWithoutVddk() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true, false);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterDirectLinstorAutoSelectsHostWithSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithoutInPlace = Mockito.mock(HostVO.class);
+        HostVO hostWithInPlace = Mockito.mock(HostVO.class);
+        when(hostWithoutInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn(null);
+        when(hostWithInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn("true");
+        when(hostWithInPlace.getId()).thenReturn(7L);
+
+        StoragePoolVO linstorPool = mock(StoragePoolVO.class);
+        when(linstorPool.getId()).thenReturn(10L);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(10L, 7L)).thenReturn(storagePoolHost);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutInPlace, hostWithInPlace));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, false, linstorPool);
+        Assert.assertEquals(hostWithInPlace, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterDirectLinstorFailsWithoutSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithoutInPlace = Mockito.mock(HostVO.class);
+        when(hostWithoutInPlace.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutInPlace.getDetail(Host.HOST_VIRTV2V_INPLACE_SUPPORT)).thenReturn(null);
+
+        StoragePoolVO linstorPool = mock(StoragePoolVO.class);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutInPlace));
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType()))
+                .thenReturn(List.of(hostWithoutInPlace));
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true, false, linstorPool);
+    }
+
+    @Test
+    public void testValidateStagedImportHostSupportLinstorPoolAccessibleFromImportHost() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(destPool.getId()).thenReturn(10L);
+        HostVO importHost = mock(HostVO.class);
+        Mockito.when(importHost.getId()).thenReturn(5L);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        Mockito.when(storagePoolHostDao.findByPoolHost(10L, 5L)).thenReturn(storagePoolHost);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(false, List.of(destPool), importHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testValidateStagedImportHostSupportLinstorPoolNotOnImportHost() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(destPool.getId()).thenReturn(10L);
+        HostVO importHost = mock(HostVO.class);
+        Mockito.when(importHost.getId()).thenReturn(5L);
+        Mockito.when(storagePoolHostDao.findByPoolHost(10L, 5L)).thenReturn(null);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(false, List.of(destPool), importHost);
+    }
+
+    @Test
+    public void testValidateStagedImportHostSupportSkippedForForceConvertToPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        HostVO importHost = mock(HostVO.class);
+
+        unmanagedVMsManager.validateStagedImportHostSupport(true, List.of(destPool), importHost);
+
+        Mockito.verifyNoInteractions(storagePoolHostDao);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1497,6 +1673,29 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals("1", params.get(VmDetailConstants.CPU_NUMBER));
         Assert.assertEquals("1500", params.get(VmDetailConstants.CPU_SPEED));
         Assert.assertEquals("1024", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsUsesCallerDetailsForCustomOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Map<String, String> offeringDetails = new HashMap<>();
+        offeringDetails.put(ApiConstants.MIN_CPU_NUMBER, "1");
+        offeringDetails.put(ApiConstants.MIN_MEMORY, "1024");
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put(VmDetailConstants.CPU_NUMBER, "4");
+        callerDetails.put(VmDetailConstants.CPU_SPEED, "2200");
+        callerDetails.put(VmDetailConstants.MEMORY, "8192");
+        Mockito.when(serviceOfferingVO.getDetails()).thenReturn(offeringDetails);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO, callerDetails);
+
+        Assert.assertEquals("4", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("2200", params.get(VmDetailConstants.CPU_SPEED));
+        Assert.assertEquals("8192", params.get(VmDetailConstants.MEMORY));
     }
 
     @Test
@@ -1608,5 +1807,194 @@ public class UnmanagedVMsManagerImplTest {
         Map<String, String> details = new HashMap<>();
         details.put("key", "not-a-number");
         unmanagedVMsManager.getDetailAsInteger("key", details);
+    }
+
+    private UnmanagedInstanceTO.Disk diskWithImagePath(String imagePath) {
+        UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
+        disk.setImagePath(imagePath);
+        return disk;
+    }
+
+    @Test
+    public void testExtractConvertedPoolDiskPosition() {
+        String uuid = "4ee0d2a1-080d-4377-b209-9f3479678dcc";
+        Assert.assertEquals(Integer.valueOf(0), unmanagedVMsManager.extractConvertedPoolDiskPosition("pr13656/" + uuid + "-disk-000"));
+        Assert.assertEquals(Integer.valueOf(1), unmanagedVMsManager.extractConvertedPoolDiskPosition("pr13656/" + uuid + "-disk-001"));
+        Assert.assertEquals(Integer.valueOf(2), unmanagedVMsManager.extractConvertedPoolDiskPosition("linstorpool/" + uuid + "-d02"));
+        // OVF-converted images carry no position -> null (falls back to index pairing)
+        Assert.assertNull(unmanagedVMsManager.extractConvertedPoolDiskPosition("/mnt/nfs/" + uuid + "-sda"));
+        Assert.assertNull(unmanagedVMsManager.extractConvertedPoolDiskPosition(null));
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesRbdReversedDomainOrder() {
+        // Converted disks discovered from the finalized domain in reversed order: [disk-001, disk-000]
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("pr13656/uuid-disk-001"),
+                diskWithImagePath("pr13656/uuid-disk-000"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        // converted[0]=disk-001 -> source idx 1 (data); converted[1]=disk-000 -> source idx 0 (root)
+        Assert.assertArrayEquals(new int[]{1, 0}, idx);
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesOvfFallsBackToIndex() {
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("/mnt/nfs/uuid-sda"),
+                diskWithImagePath("/mnt/nfs/uuid-sdb"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        Assert.assertArrayEquals(new int[]{0, 1}, idx);
+    }
+
+    @Test
+    public void testResolveConvertedToSourceDiskIndexesInSourceOrder() {
+        java.util.List<UnmanagedInstanceTO.Disk> converted = java.util.List.of(
+                diskWithImagePath("pr13656/uuid-disk-000"),
+                diskWithImagePath("pr13656/uuid-disk-001"));
+        int[] idx = unmanagedVMsManager.resolveConvertedToSourceDiskIndexes(converted, 2);
+        Assert.assertArrayEquals(new int[]{0, 1}, idx);
+    }
+
+    private com.cloud.storage.GuestOSVO guestOsVO(long id, String displayName) {
+        com.cloud.storage.GuestOSVO vo = new com.cloud.storage.GuestOSVO();
+        try {
+            java.lang.reflect.Field idField = com.cloud.storage.GuestOSVO.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.setLong(vo, id);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        vo.setDisplayName(displayName);
+        return vo;
+    }
+
+    @Test
+    public void testResolveGuestOsIdMatchesDisplayNameWithoutVendorPrefix() {
+        Mockito.when(guestOSDao.findOneByDisplayName("Microsoft Windows Server 2022 (64-bit)")).thenReturn(null);
+        Mockito.when(guestOSDao.findOneByDisplayName("Windows Server 2022 (64-bit)")).thenReturn(guestOsVO(77L, "Windows Server 2022 (64-bit)"));
+        Assert.assertEquals(Long.valueOf(77L),
+                unmanagedVMsManager.resolveGuestOsIdForVmwareImport("Microsoft Windows Server 2022 (64-bit)", "windows2019srv_64Guest"));
+    }
+
+    @Test
+    public void testResolveGuestOsIdFallsBackToNearestWindowsServerYear() {
+        Mockito.when(guestOSDao.findOneByDisplayName(Mockito.anyString())).thenReturn(null);
+        Mockito.when(guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        Mockito.when(guestOSDao.listLikeDisplayName("Windows Server")).thenReturn(java.util.List.of(
+                guestOsVO(70L, "Windows Server 2019 (64-bit)"),
+                guestOsVO(71L, "Windows Server 2022 (64-bit)"),
+                guestOsVO(60L, "Windows Server 2016 (64-bit)")));
+        Assert.assertEquals(Long.valueOf(71L),
+                unmanagedVMsManager.resolveGuestOsIdForVmwareImport("Microsoft Windows Server 2025 Standard Evaluation", "windows2025srv_64Guest"));
+    }
+
+    @Test
+    public void testResolveGuestOsIdReturnsNullForUnknownNonWindows() {
+        Mockito.when(guestOSDao.findOneByDisplayName(Mockito.anyString())).thenReturn(null);
+        Mockito.when(guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        Assert.assertNull(unmanagedVMsManager.resolveGuestOsIdForVmwareImport("SomeExotic OS 9", "exotic9_64Guest"));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsForUefiWindows() {
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(new HashMap<>(),
+                "UEFI", "SECURE", "Microsoft Windows Server 2025 Standard Evaluation");
+        Assert.assertEquals("SECURE", details.get("UEFI"));
+        Assert.assertEquals("q35", details.get(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+        Assert.assertEquals("vga", details.get(VmDetailConstants.VIDEO_HARDWARE));
+        Assert.assertEquals("32768", details.get(VmDetailConstants.VIDEO_RAM));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsKeepsCallerChoices() {
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put("UEFI", "LEGACY");
+        callerDetails.put(VmDetailConstants.VIDEO_HARDWARE, "virtio");
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(callerDetails,
+                "UEFI", "SECURE", "Microsoft Windows Server 2022 (64-bit)");
+        Assert.assertEquals("LEGACY", details.get("UEFI"));
+        Assert.assertEquals("virtio", details.get(VmDetailConstants.VIDEO_HARDWARE));
+    }
+
+    @Test
+    public void testApplyVmwareImportHardwareDetailsNoopForBiosLinux() {
+        Map<String, String> details = unmanagedVMsManager.applyVmwareImportHardwareDetails(null,
+                "BIOS", "LEGACY", "Ubuntu Linux (64-bit)");
+        Assert.assertFalse(details.containsKey("UEFI"));
+        Assert.assertFalse(details.containsKey(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+        Assert.assertFalse(details.containsKey(VmDetailConstants.VIDEO_HARDWARE));
+    }
+
+    private NetworkVO staticIpTestNetwork(long id, String cidr, String gateway) {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.lenient().when(network.getId()).thenReturn(id);
+        Mockito.lenient().when(network.getCidr()).thenReturn(cidr);
+        Mockito.lenient().when(network.getGateway()).thenReturn(gateway);
+        Mockito.lenient().when(network.getUuid()).thenReturn("net-" + id);
+        Mockito.lenient().when(networkDao.findById(id)).thenReturn(network);
+        return network;
+    }
+
+    @Test
+    public void testAutoFillPreservesStaticIpThatFitsTargetCidr() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.150/24")));
+        Assert.assertEquals("10.1.1.150", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillKeepsCallerProvidedIp() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> caller = new HashMap<>();
+        caller.put("Network adapter 1", new com.cloud.network.Network.IpAddresses("10.1.1.99", null));
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), caller,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.150/24")));
+        Assert.assertEquals("10.1.1.99", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillFallsBackToAutoForIpOutsideTargetCidr() {
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 2", 200L), null,
+                Map.of("Network adapter 2", java.util.List.of("192.168.77.5/24")));
+        Assert.assertEquals("auto", result.get("Network adapter 2").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillFallsBackToAutoForGatewayAndInUseIps() {
+        NetworkVO network = staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Mockito.when(nicDao.findByIp4AddressAndNetworkId("10.1.1.151", 200L)).thenReturn(Mockito.mock(com.cloud.vm.NicVO.class));
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L, "Network adapter 2", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.1/24"),
+                       "Network adapter 2", java.util.List.of("10.1.1.151/24")));
+        Assert.assertEquals("auto", result.get("Network adapter 1").getIp4Address());
+        Assert.assertEquals("auto", result.get("Network adapter 2").getIp4Address());
+        Mockito.verify(network, Mockito.atLeastOnce()).getCidr();
+    }
+
+    @Test
+    public void testAutoFillFallsBackToAutoWhenSourceReportsNoAddresses() {
+        // A NIC with no Tools-reported address at all (DHCP guest before lease, Tools down)
+        // must still be importable into an isolated network - via automatic allocation.
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null, new HashMap<>());
+        Assert.assertEquals("auto", result.get("Network adapter 1").getIp4Address());
+    }
+
+    @Test
+    public void testAutoFillAcceptsBareAddressWithoutPrefix() {
+        // Older or limited VMware Tools report addresses without ipConfig, so the captured
+        // entry has no prefix - preservation must still work from the bare address.
+        staticIpTestNetwork(200L, "10.1.1.0/24", "10.1.1.1");
+        Map<String, com.cloud.network.Network.IpAddresses> result = unmanagedVMsManager.autoFillStaticNicIpAddresses(
+                Map.of("Network adapter 1", 200L), null,
+                Map.of("Network adapter 1", java.util.List.of("10.1.1.151")));
+        Assert.assertEquals("10.1.1.151", result.get("Network adapter 1").getIp4Address());
     }
 }

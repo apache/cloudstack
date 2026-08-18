@@ -38,6 +38,7 @@ public class RemoteInstanceTO implements Serializable {
     private String datacenterName;
     private String clusterName;
     private String hostName;
+    private String vmwareMoref;
 
     public RemoteInstanceTO() {
     }
@@ -63,6 +64,11 @@ public class RemoteInstanceTO implements Serializable {
         this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         this.clusterName = clusterName;
         this.hostName = hostName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String instancePath, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName, String clusterName, String hostName, String vmwareMoref) {
+        this(instanceName, instancePath, vcenterHost, vcenterUsername, vcenterPassword, datacenterName, clusterName, hostName);
+        this.vmwareMoref = vmwareMoref;
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
@@ -99,5 +105,13 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getVmwareMoref() {
+        return vmwareMoref;
+    }
+
+    public void setVmwareMoref(String vmwareMoref) {
+        this.vmwareMoref = vmwareMoref;
     }
 }
