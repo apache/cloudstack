@@ -180,7 +180,9 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             description = "if true, the templates would be available for deploying CKS clusters", since = "4.21.0")
     protected Boolean forCks;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE,
+            type = CommandType.STRING,
+            allowedValues = {"USER", "VNF", "SYSTEM", "ROUTING", "BUILTIN"},
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
             since = "4.19.0")
     private String templateType;

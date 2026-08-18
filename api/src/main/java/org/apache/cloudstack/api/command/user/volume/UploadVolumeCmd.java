@@ -50,9 +50,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.FORMAT,
-               type = CommandType.STRING,
-               required = true,
-               description = "The format for the volume. Possible values include QCOW2, OVA, and VHD.")
+                type = CommandType.STRING,
+                allowedValues = {"QCOW2", "OVA", "VHD"},
+                required = true,
+                description = "The format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the volume")

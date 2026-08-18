@@ -88,7 +88,9 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
     private Boolean directDownload;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.ARCH,
+            type = CommandType.STRING,
+            allowedValues = {"x86_64", "aarch64", "s390x"},
             description = "the CPU arch of the Kubernetes ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;

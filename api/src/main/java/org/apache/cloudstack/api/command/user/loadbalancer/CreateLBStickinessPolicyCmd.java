@@ -66,6 +66,7 @@ public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.METHOD_NAME,
                type = CommandType.STRING,
                required = true,
+               allowedValues = {"LbCookie", "AppCookie", "SourceBased"},
                description = "Name of the load balancer stickiness policy method, possible values are LbCookie, AppCookie, SourceBased")
     private String stickinessMethodName;
 
