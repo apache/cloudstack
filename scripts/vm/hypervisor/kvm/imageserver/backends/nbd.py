@@ -32,6 +32,24 @@ from ..util import coalesce_allocation_extents, merge_dirty_zero_extents
 from .base import BackendSession, ImageBackend
 
 
+def _entries_to_pairs(entries: Any) -> List[Tuple[int, int]]:
+    """
+    Normalize block status callback entries to (length, flags) pairs.
+    block_status delivers a flat list [length, flags, ...] while
+    block_status_64 delivers a list of (length, flags) tuples.
+    """
+    raw = list(entries)
+    if not raw:
+        return []
+    if isinstance(raw[0], (tuple, list)):
+        return [(int(length), int(flags)) for length, flags in raw]
+    if isinstance(raw[0], int):
+        return [(int(raw[i]), int(raw[i + 1])) for i in range(0, len(raw) - 1, 2)]
+    raise TypeError(
+        f"unrecognized block status entry type: {type(raw[0]).__name__}"
+    )
+
+
 class NbdConnection:
     """
     Low-level helper to connect to an NBD server over a Unix socket.
@@ -190,19 +208,16 @@ class NbdConnection:
                 return 0
             current = off
             try:
-                flat = list(entries)
-                for i in range(0, len(flat), 2):
-                    if i + 1 >= len(flat):
-                        break
-                    length = int(flat[i])
-                    flags = int(flat[i + 1])
+                for length, flags in _entries_to_pairs(entries):
                     zero = (flags & (NBD_STATE_HOLE | NBD_STATE_ZERO)) != 0
                     allocation_extents.append(
                         {"start": current, "length": length, "zero": zero}
                     )
                     current += length
-            except (TypeError, ValueError, IndexError):
-                pass
+            except (TypeError, ValueError, IndexError) as e:
+                logging.warning(
+                    "get_allocation_extents: unparseable block status entries: %r", e
+                )
             return 0
 
         block_status_fn = getattr(
@@ -261,12 +276,7 @@ class NbdConnection:
                 return 0
             current = off
             try:
-                flat = list(entries)
-                for i in range(0, len(flat), 2):
-                    if i + 1 >= len(flat):
-                        break
-                    length = int(flat[i])
-                    flags = int(flat[i + 1])
+                for length, flags in _entries_to_pairs(entries):
                     if metacontext == "base:allocation":
                         zero = (flags & (NBD_STATE_HOLE | NBD_STATE_ZERO)) != 0
                         allocation_extents.append((current, length, zero))
@@ -274,8 +284,11 @@ class NbdConnection:
                         dirty = (flags & NBD_STATE_DIRTY) != 0
                         dirty_extents.append((current, length, dirty))
                     current += length
-            except (TypeError, ValueError, IndexError):
-                pass
+            except (TypeError, ValueError, IndexError) as e:
+                logging.warning(
+                    "get_extents_dirty_and_zero: unparseable block status entries: %r",
+                    e,
+                )
             return 0
 
         block_status_fn = getattr(

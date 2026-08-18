@@ -38,6 +38,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -227,6 +229,8 @@ public class VolumeServiceImpl implements VolumeService {
     protected DiskOfferingDao diskOfferingDao;
     @Inject
     ClvmPoolManager clvmPoolManager;
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Inject
     private KMSManager kmsManager;
@@ -524,6 +528,8 @@ public class VolumeServiceImpl implements VolumeService {
                     snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
+
+                internalBackupService.cleanupBackupMetadata(vo.getVolumeId());
 
                 List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 
@@ -1363,11 +1369,13 @@ public class VolumeServiceImpl implements VolumeService {
             primaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, primaryDataStore);
-            volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
-            // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
-            String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
-            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
-            primaryDataStore.setDetails(details);
+            if (DataStoreProvider.ONTAP_PLUGIN_NAME.equals(primaryDataStore.getStorageProviderName())) {
+                // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
+                volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
+                String managedStoreTarget = ObjectUtils.defaultIfNull(volumeInfo.get_iScsiName(), volumeInfo.getUuid());
+                details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
+                primaryDataStore.setDetails(details);
+            }
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);
@@ -1696,7 +1704,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
             // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()), null);
         }
     }
 
@@ -3118,6 +3126,12 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volumePoolId == null || !volumePoolId.equals(vmPoolId)) {
+            Long volumeLockHostId = findVolumeLockHost(volumeToAttach);
+            if (volumeLockHostId != null && vmHostId != null && !volumeLockHostId.equals(vmHostId)) {
+                logger.info("CLVM cross-pool lock transfer required: Volume {} on pool {} lock is on host {} but VM is on host {}",
+                        volumeToAttach.getUuid(), volumePoolId, volumeLockHostId, vmHostId);
+                return true;
+            }
             return false;
         }
 

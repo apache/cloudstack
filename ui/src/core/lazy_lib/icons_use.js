@@ -184,6 +184,7 @@ import {
   VerticalAlignBottomOutlined,
   VerticalAlignMiddleOutlined,
   VerticalAlignTopOutlined,
+  VerticalAlignMiddleOutlined,
   WarningOutlined,
   WifiOutlined,
   SolutionOutlined
@@ -360,6 +361,7 @@ export default {
     app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
     app.component('VerticalAlignMiddleOutlined', VerticalAlignMiddleOutlined)
     app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
+    app.component('VerticalAlignMiddleOutlined', VerticalAlignMiddleOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)

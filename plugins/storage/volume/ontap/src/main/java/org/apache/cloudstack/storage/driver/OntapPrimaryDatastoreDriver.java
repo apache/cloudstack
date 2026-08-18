@@ -413,7 +413,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     private void grantAccessIscsi(Host host, VolumeVO volumeVO, Map<String, String> details, String svmName, StoragePoolVO storagePool) {
         String cloudStackVolumeName = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME).getValue();
         UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-        String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
+        String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
 
         // Validate if Igroup exist ONTAP for this host as we may be using delete_on_unmap= true and igroup may be deleted by ONTAP automatically
         Map<String, String> getAccessGroupMap = Map.of(
@@ -506,7 +506,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         String svmName = details.get(OntapStorageConstants.SVM_NAME);
 
         if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
-            String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
+            String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
 
             // Retrieve LUN name from volume details; if missing, volume may not have been fully created
             VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME);

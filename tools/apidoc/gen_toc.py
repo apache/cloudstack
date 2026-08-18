@@ -283,7 +283,8 @@ known_categories = {
     'CustomActions' : 'Extension',
     'ImportVmTask': 'Import VM Task',
     'Dns': 'DNS',
-    'InstanceBootGroup': 'Instance Boot Group',
+    'downloadValidationScreenshot': 'Backup and Recovery',
+    'InstanceBootGroup': 'Instance Boot Group'
 }
 
 

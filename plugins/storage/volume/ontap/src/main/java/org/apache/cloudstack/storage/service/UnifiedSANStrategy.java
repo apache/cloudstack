@@ -207,7 +207,7 @@ public class UnifiedSANStrategy extends SANStrategy {
             igroupRequest.setOsType(Igroup.OsTypeEnum.Linux);
 
             for (HostVO host : accessGroup.getHostsToConnect()) {
-                igroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
+                igroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
                 igroupRequest.setName(igroupName);
 
                 List<Initiator> initiators = new ArrayList<>();
@@ -271,7 +271,7 @@ public class UnifiedSANStrategy extends SANStrategy {
             //Get iGroup name per host
             if(!CollectionUtils.isEmpty(accessGroup.getHostsToConnect())) {
                 for (HostVO host : accessGroup.getHostsToConnect()) {
-                    String igroupName = OntapStorageUtils.getIgroupName(svmName, host.getName());
+                    String igroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
                     logger.info("deleteAccessGroup: iGroup name '{}'", igroupName);
 
                     // Get the iGroup to retrieve its UUID

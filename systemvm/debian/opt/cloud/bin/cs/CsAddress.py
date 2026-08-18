@@ -680,6 +680,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
+
     def fw_router_routing(self):
         if self.config.is_vpc() or not self.config.is_routed():
             return

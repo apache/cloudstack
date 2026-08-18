@@ -115,10 +115,15 @@ public interface UserVmManager extends UserVmService {
             "true", "Defines whether a VM should be automatically migrated to a suitable host when the current host " +
                     "lacks sufficient compute capacity to live scale the instance. Defaults to true.", true, ConfigKey.Scope.Cluster);
 
+    ConfigKey<Boolean> EnforceResourceLimitOnValidationVm = new ConfigKey<Boolean>(
+            "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
+            "account/domain.", true, ConfigKey.Scope.Account);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
     public  static  final String SHAREDFSVM = "sharedfsvm";
+    String VALIDATION_VM = "validationvm";
 
     /**
      * @param hostId get all of the virtual machines that belong to one host.
@@ -158,13 +163,15 @@ public interface UserVmManager extends UserVmService {
 
     boolean expunge(UserVmVO vm);
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean quickRestore)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
+            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean quickRestore)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
-    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
+    Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
+            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost, boolean quickRestore)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
@@ -210,4 +217,6 @@ public interface UserVmManager extends UserVmService {
      * @return true if the VM is part of a CKS cluster, false otherwise.
      */
     boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
+
+    UserVm allocateVMForValidation(long backupId, HypervisorType hypervisor) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 }

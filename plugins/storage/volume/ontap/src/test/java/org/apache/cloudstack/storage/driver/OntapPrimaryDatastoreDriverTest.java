@@ -348,6 +348,7 @@ class OntapPrimaryDatastoreDriverTest {
         when(volumeVO.getId()).thenReturn(100L);
 
         when(host.getName()).thenReturn("host1");
+        when(host.getUuid()).thenReturn("host-uuid-1");
 
         VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
         when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
@@ -384,6 +385,7 @@ class OntapPrimaryDatastoreDriverTest {
         // Setup - use HostVO mock since production code casts Host to HostVO
         HostVO hostVO = mock(HostVO.class);
         when(hostVO.getName()).thenReturn("host1");
+        when(hostVO.getUuid()).thenReturn("host-uuid-1");
 
         when(dataStore.getId()).thenReturn(1L);
         when(volumeInfo.getType()).thenReturn(VOLUME);
@@ -477,6 +479,7 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         when(host.getName()).thenReturn("host1");
+        when(host.getUuid()).thenReturn("host-uuid-1");
 
         VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
         when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
