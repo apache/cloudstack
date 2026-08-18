@@ -648,5 +648,5 @@ UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ', backupValidationCo
 WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 -- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the two volume
 -- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
-CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('cloud_usage.usage_volume', 'id');
-CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud_usage.usage_volume', 'id', '(`volume_id`, `created`, `vm_id`)');
+CALL `cloud_usage`.`IDEMPOTENT_DROP_UNIQUE_KEY`('cloud_usage.usage_volume', 'id');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud_usage.usage_volume', 'id', '(`volume_id`, `created`, `vm_id`)');
