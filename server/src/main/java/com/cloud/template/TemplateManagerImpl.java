@@ -322,18 +322,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<TemplateAdapter> _adapters;
 
     ExecutorService _preloadExecutor;
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
-
-    @Inject
-    private UserDataDao userDataDao;
-
-    @Inject
-    private UserDataDao userDataDao;
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
