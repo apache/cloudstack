@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -60,6 +61,9 @@ import com.cloud.storage.ImageStore;
 public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
 
     private static final String s_name = "addImageStoreS3Response";
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the S3 image store")
+    private Long zoneId;
 
     @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
@@ -128,7 +132,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
         }
 
         try{
-            ImageStore result = _storageService.discoverImageStore(null, null, "S3", null, dm);
+            ImageStore result = _storageService.discoverImageStore(null, null, "S3", zoneId, dm);
             ImageStoreResponse storeResponse;
             if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
