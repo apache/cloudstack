@@ -177,4 +177,6 @@ public interface VpcManager {
      * @return
      */
     boolean isSrcNatIpRequired(long vpcOfferingId);
+
+    boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId);
 }
