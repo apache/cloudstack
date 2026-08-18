@@ -25,8 +25,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.cloudstack.backup.BackupAnswer;
@@ -126,11 +128,25 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                                             String backupPath, List<String> backupFiles, String mountDirectory, int timeout) {
         String diskType = "root";
         try {
-            for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
-                PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(idx);
-                String restoreVolumePath = restoreVolumePaths.get(idx);
-                String backupFile = backupFiles.get(idx);
+            // Match each backed up volume to the instance's volume with the SAME UUID. Both lists
+            // arrive ordered by device id, but device ids are not stable across restores, so relying
+            // on the position within the list can write a backup into a different volume than the one
+            // it was taken from.
+            Map<String, Integer> targetIndexByVolumeUuid = new HashMap<>();
+            for (int i = 0; i < restoreVolumePaths.size(); i++) {
+                targetIndexByVolumeUuid.put(getVolumeUuidFromPath(restoreVolumePaths.get(i), restoreVolumePools.get(i)), i);
+            }
+
+            for (int idx = 0; idx < backedVolumesUUIDs.size(); idx++) {
                 String backupVolumeUuid = backedVolumesUUIDs.get(idx);
+                Integer targetIdx = targetIndexByVolumeUuid.get(backupVolumeUuid);
+                if (targetIdx == null) {
+                    throw new CloudRuntimeException(String.format("Unable to restore backup: volume [%s] recorded in the backup"
+                            + " is not attached to the instance any more.", backupVolumeUuid));
+                }
+                PrimaryDataStoreTO restoreVolumePool = restoreVolumePools.get(targetIdx);
+                String restoreVolumePath = restoreVolumePaths.get(targetIdx);
+                String backupFile = backupFiles.get(idx);
                 String fullPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
                 diskType = "datadisk";
 
