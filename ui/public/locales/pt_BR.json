@@ -1729,6 +1729,7 @@
 "label.virtual.network": "Rede virtual",
 "label.virtual.networking": "Rede virtual",
 "label.virtual.routers": "Roteadores virtuais",
+  "label.virtual.routers.system.offering": "Oferta de sistema do roteador virtual",
 "label.virtualmachineid": "ID da VM",
 "label.virtualmachinename": "Nome da VM",
 "label.virtualsize": "Tamanho virtual",
