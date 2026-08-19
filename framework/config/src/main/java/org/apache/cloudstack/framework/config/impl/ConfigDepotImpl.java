@@ -289,11 +289,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             final ScopedConfigStorage scopedConfigStorageFinal = scopedConfigStorage;
             return Transaction.execute((TransactionCallback<String>) status -> scopedConfigStorageFinal.getConfigValue(scopeId, key));
         }
-        ConfigurationVO configurationVO = _configDao.findById(key);
-        if (configurationVO != null) {
-            return configurationVO.getValue();
-        }
-        return null;
+        return _configDao.getValue(key);
     }
 
     protected Ternary<String, ConfigKey.Scope, Long> getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
