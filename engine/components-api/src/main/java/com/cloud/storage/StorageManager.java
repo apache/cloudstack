@@ -188,8 +188,6 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> ExpungeWorkers = new ConfigKey<>("Advanced", Integer.class, "expunge.workers", "1",
             "Number of workers performing expunge ", true);
 
-    ConfigKey<Boolean> HAStorageMigration = new ConfigKey<>("Storage", Boolean.class, "enable.ha.storage.migration", "true",
-            "Enable/disable storage migration across primary storage during HA", true);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",

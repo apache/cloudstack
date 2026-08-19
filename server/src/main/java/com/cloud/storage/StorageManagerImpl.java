@@ -4658,8 +4658,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmDiskThrottlingIopsWriteRate,
                 VmDiskThrottlingBytesReadRate,
                 VmDiskThrottlingBytesWriteRate,
-                ExpungeWorkers,
-                HAStorageMigration
+                ExpungeWorkers
         };
     }
 
