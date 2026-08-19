@@ -469,6 +469,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     static final ConfigKey<Integer> StartRetry = new ConfigKey<Integer>("Advanced", Integer.class, "start.retry", "10",
             "Number of times to retry create and start commands", true);
+    static final ConfigKey<Integer> MigrateRetry = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry", "3",
+            "Number of times to retry migrating the vm", true);
     static final ConfigKey<Integer> VmOpWaitInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.op.wait.interval", "120",
             "Time (in seconds) to wait before checking if a previous operation has succeeded", true);
 
@@ -3908,7 +3910,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final Long hostId = vm.getHostId();
         if (hostId == null) {
-            String message = String.format("Unable to migrate %s due to it does not have a host id.", vm.toString());
+            String message = String.format("Unable to migrate %s due to it does not have a host id.", vm);
             logger.warn(message);
             throw new CloudRuntimeException(message);
         }
@@ -3928,13 +3930,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DataCenterDeployment plan = getMigrationDeployment(vm, host, poolId, excludes);
 
         DeployDestination dest = null;
-        while (true) {
 
+        int retry = MigrateRetry.value();
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
+            logger.debug("Migrate VM {}, attempt #{}", vm, retryAttempt);
             try {
                 plan.setMigrationPlan(true);
                 dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
             } catch (final AffinityConflictException e2) {
-                String message = String.format("Unable to create deployment, affinity rules associated to the %s conflict.", vm.toString());
+                String message = String.format("Unable to create deployment, affinity rules associated to the %s conflict.", vm);
                 logger.warn(message, e2);
                 throw new CloudRuntimeException(message, e2);
             }
@@ -3951,15 +3956,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } catch (ResourceUnavailableException | ConcurrentOperationException e) {
                 logger.warn("Unable to migrate {} to {} due to [{}]", vm.toString(), dest.getHost().toString(), e.getMessage(), e);
             }
-
-            try {
-                advanceStop(vmUuid, true);
-                throw new CloudRuntimeException("Unable to migrate " + vm);
-            } catch (final ResourceUnavailableException | ConcurrentOperationException | OperationTimedoutException e) {
-                logger.error("Unable to stop {} due to [{}].", vm.toString(), e.getMessage(), e);
-                throw new CloudRuntimeException("Unable to migrate " + vm);
-            }
         }
+
+        String message = String.format("Unable to migrate %s after %d attempts.", vm, retry);
+        logger.warn(message);
+        throw new CloudRuntimeException(message);
     }
 
     /**
@@ -5298,7 +5299,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
+        return new ConfigKey<?>[] { ClusterDeltaSyncInterval, StartRetry, MigrateRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
