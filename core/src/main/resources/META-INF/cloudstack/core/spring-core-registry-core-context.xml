@@ -375,4 +375,19 @@
     </bean>
 
     <bean id="dnsProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry" />
+
+    <bean id="bootGroupReadinessCheckersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry" />
+
+    <!--
+        Declared directly in this "core" context (not an -inheritable.xml under a descendant module
+        like "api") because the ReadinessChecker beans (VrPingChecker etc.) are themselves declared in
+        "core" (spring-server-core-managers-context.xml). RegistryLifecycle only intercepts beans
+        created within its OWN module context — an inheritable file only propagates to DESCENDANT
+        modules, and "core" is an ancestor of "api", not a descendant, so a RegistryLifecycle declared
+        under "api" would never see beans declared in "core".
+    -->
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="bootGroupReadinessCheckersRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.vm.bootgroup.readiness.ReadinessChecker" />
+    </bean>
 </beans>

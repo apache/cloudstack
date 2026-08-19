@@ -77,6 +77,7 @@ public class VRScripts {
 
     public static final String DIAGNOSTICS = "diagnostics.py";
     public static final String RETRIEVE_DIAGNOSTICS = "get_diagnostics_files.py";
+    public static final String INSTANCE_READINESS_CHECK = "instance_readiness_check.py";
     public static final String VR_FILE_CLEANUP = "cleanup.sh";
 
     public static final String VR_UPDATE_INTERFACE_CONFIG = "update_interface_config.sh";
