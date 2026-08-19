@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.lang.reflect.Field;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -80,6 +84,8 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @Component
@@ -115,6 +121,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
+    private final SearchBuilder<TemplateJoinVO> tmpltIdPairCrossZoneSearch;
+
     private final SearchBuilder<TemplateJoinVO> tmpltIdSearch;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdsSearch;
@@ -128,9 +136,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
-        tmpltIdPairSearch.and("templateState", tmpltIdPairSearch.entity().getTemplateState(), SearchCriteria.Op.IN);
-        tmpltIdPairSearch.and("tempZonePairIN", tmpltIdPairSearch.entity().getTempZonePair(), SearchCriteria.Op.IN);
+        tmpltIdPairSearch.and("template_dc_pair_templateid", tmpltIdPairSearch.entity().getId(), SearchCriteria.Op.EQ);
+        tmpltIdPairSearch.and("template_dc_pair_dcid", tmpltIdPairSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         tmpltIdPairSearch.done();
+
+        tmpltIdPairCrossZoneSearch = createSearchBuilder();
+        tmpltIdPairCrossZoneSearch.and("template_dc_pair_templateid", tmpltIdPairCrossZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
+        tmpltIdPairCrossZoneSearch.and("template_dc_pair_dcid", tmpltIdPairCrossZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.NULL);
+        tmpltIdPairCrossZoneSearch.done();
 
         tmpltIdSearch = createSearchBuilder();
         tmpltIdSearch.and("id", tmpltIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -631,53 +644,46 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     @Override
     public List<TemplateJoinVO> searchByTemplateZonePair(Boolean showRemoved, String... idPairs) {
-        // set detail batch query size
-        int DETAILS_BATCH_SIZE = 2000;
-        String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if (batchCfg != null) {
-            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
-        }
-        // query details by batches
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
         searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", QueryService.SortKeyAscending.value());
+
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
-        // query details by batches
-        int curr_index = 0;
-        if (idPairs.length > DETAILS_BATCH_SIZE) {
-            while ((curr_index + DETAILS_BATCH_SIZE) <= idPairs.length) {
-                String[] labels = new String[DETAILS_BATCH_SIZE];
-                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
-                    labels[k] = idPairs[j];
-                }
-                SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
-                if (!showRemoved) {
-                    sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
-                }
-                sc.setParameters("tempZonePairIN", labels);
-                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
-                if (vms != null) {
-                    uvList.addAll(vms);
-                }
-                curr_index += DETAILS_BATCH_SIZE;
-            }
+        if (idPairs == null || idPairs.length == 0) {
+            return uvList;
         }
-        if (curr_index < idPairs.length) {
-            int batch_size = (idPairs.length - curr_index);
-            String[] labels = new String[batch_size];
-            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                labels[k] = idPairs[j];
-            }
-            SearchCriteria<TemplateJoinVO> sc = tmpltIdPairSearch.create();
-            if (!showRemoved) {
-                sc.setParameters("templateState", VirtualMachineTemplate.State.Active, VirtualMachineTemplate.State.UploadAbandoned, VirtualMachineTemplate.State.UploadError ,VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
-            }
-            sc.setParameters("tempZonePairIN", labels);
-            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
-            if (vms != null) {
-                uvList.addAll(vms);
+
+        for (String idPair : idPairs) {
+            SearchCriteria<TemplateJoinVO> sc = buildTemplateZonePairSearchCriteria(idPair);
+            List<TemplateJoinVO> rows = searchIncludingRemoved(sc, searchFilter, null, false);
+            if (rows != null) {
+                uvList.addAll(rows);
             }
         }
         return uvList;
+    }
+
+    private SearchCriteria<TemplateJoinVO> buildTemplateZonePairSearchCriteria(String idPair) {
+        if (idPair == null || idPair.isEmpty()) {
+            throw new IllegalArgumentException("template zone pair id is null or empty");
+        }
+        // eg "3124_3" → templateId=3124, dcId=3
+        String[] parts = idPair.split("_");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("unexpected template zone pair id format: " + idPair);
+        }
+        long templateId = Long.parseLong(parts[0]);
+        long dcId = Long.parseLong(parts[1]);
+
+        SearchCriteria<TemplateJoinVO> sc;
+        if (dcId == 0) {
+            sc = tmpltIdPairCrossZoneSearch.create();
+            sc.setParameters("template_dc_pair_templateid", templateId);
+        } else {
+            sc = tmpltIdPairSearch.create();
+            sc.setParameters("template_dc_pair_templateid", templateId);
+            sc.setParameters("template_dc_pair_dcid", dcId);
+        }
+        return sc;
     }
 
     @Override
@@ -701,6 +707,288 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
         Integer count = getCountIncludingRemoved(sc);
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
+    }
+
+    // ============================================================================
+    // The standard Phase 1 path runs `SELECT DISTINCT temp_zone_pair FROM
+    // template_view WHERE ...` against a 13-table view.
+    //
+    // This bypass path issues hand-tuned SQL against only the 6 tables needed
+    // to compute the (template_id, data_center_id) pair: vm_template, account,
+    // template_store_ref, image_store, template_zone_ref, data_center. The OR
+    // join is replaced with COALESCE.
+    //
+    // Hard filters (tags, sharedAccountIds, domainPath, featured/community
+    // domain hierarchy) are not implemented here — TemplateListFilter#canBypass()
+    // returns false in those cases and the dispatcher falls back to the
+    // SearchBuilder path.
+
+    private static final Field TEMPLATE_JOIN_ID_FIELD;
+    private static final Field TEMPLATE_JOIN_PAIR_FIELD;
+
+    static {
+        try {
+            TEMPLATE_JOIN_ID_FIELD = findFieldUpHierarchy(TemplateJoinVO.class, "id");
+            TEMPLATE_JOIN_PAIR_FIELD = findFieldUpHierarchy(TemplateJoinVO.class, "tempZonePair");
+            TEMPLATE_JOIN_ID_FIELD.setAccessible(true);
+            TEMPLATE_JOIN_PAIR_FIELD.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    private static Field findFieldUpHierarchy(Class<?> clazz, String name) throws NoSuchFieldException {
+        Class<?> c = clazz;
+        while (c != null) {
+            try {
+                return c.getDeclaredField(name);
+            } catch (NoSuchFieldException ignored) {
+                c = c.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(name + " on " + clazz);
+    }
+
+    @Override
+    public Pair<List<TemplateJoinVO>, Integer> findDistinctTempZonePairs(TemplateListFilter filter) {
+        if (!filter.canBypass()) {
+            throw new IllegalArgumentException(
+                    "findDistinctTempZonePairs called with unsupported filter (tags / sharedAccountIds / domainPath / domainIds populated). Caller should fall back to searchAndDistinctCount.");
+        }
+
+        List<Object> params = new ArrayList<>();
+        StringBuilder where = new StringBuilder(" WHERE 1=1");
+        appendCommonWhere(where, params, filter);
+
+        String fromClause = buildFromClause(filter);
+
+        String selectExpr = filter.showUnique
+                ? "vt.id"
+                : "CONCAT(vt.id, '_', IFNULL(dc.id, 0))";
+
+        String dataSql = "SELECT DISTINCT " + selectExpr + " AS distinct_key, vt.sort_key"
+                + " FROM " + fromClause
+                + where
+                + " ORDER BY vt.sort_key " + (filter.sortAscending ? "ASC" : "DESC")
+                + ", distinct_key " + (filter.sortAscending ? "ASC" : "DESC")
+                + buildLimitClause(filter);
+
+        String countSql = "SELECT COUNT(DISTINCT " + selectExpr + ")"
+                + " FROM " + fromClause
+                + where;
+
+        List<TemplateJoinVO> rows = executeDistinctQuery(dataSql, params, filter.showUnique);
+        int count = executeCountQuery(countSql, params);
+        return new Pair<>(rows, count);
+    }
+
+    /**
+     * Build the FROM clause. The 6-table base is always present; conditional
+     * joins are added when the filter actually needs them. Today only
+     * `domain` is conditional (used for {@code domainPathLike} predicates);
+     * `launch_permission` and `resource_tags` are added in later iterations.
+     */
+    private String buildFromClause(TemplateListFilter filter) {
+        StringBuilder from = new StringBuilder()
+                .append("cloud.vm_template vt")
+                .append(" JOIN cloud.account a ON a.id = vt.account_id")
+                .append(" LEFT JOIN cloud.template_store_ref tsr")
+                .append("   ON tsr.template_id = vt.id AND tsr.store_role = 'Image' AND tsr.destroyed = 0")
+                .append(" LEFT JOIN cloud.image_store img")
+                .append("   ON img.id = tsr.store_id AND img.removed IS NULL")
+                .append(" LEFT JOIN cloud.template_zone_ref tzr")
+                .append("   ON tzr.template_id = vt.id AND tsr.store_id IS NULL AND tzr.removed IS NULL")
+                .append(" LEFT JOIN cloud.data_center dc")
+                .append("   ON dc.id = COALESCE(img.data_center_id, tzr.zone_id)");
+
+        if (filter.domainPathLike != null) {
+            from.append(" JOIN cloud.domain d ON d.id = a.domain_id");
+        }
+        return from.toString();
+    }
+
+    private void appendCommonWhere(StringBuilder where, List<Object> params, TemplateListFilter filter) {
+        if (filter.templateId != null) {
+            where.append(" AND vt.id = ?");
+            params.add(filter.templateId);
+        }
+
+        if (!filter.ids.isEmpty()) {
+            where.append(" AND vt.id IN ").append(inClausePlaceholders(filter.ids.size()));
+            params.addAll(filter.ids);
+        }
+
+        if (filter.keyword != null) {
+            where.append(" AND vt.name LIKE ?");
+            params.add("%" + filter.keyword + "%");
+        } else if (filter.name != null) {
+            where.append(" AND vt.name = ?");
+            params.add(filter.name);
+        }
+
+        if (filter.format != null) {
+            // searchForTemplatesInternal: format = 'ISO' for isos, format != 'ISO' otherwise.
+            String condition = filter.isIso ? "=" : "!=";
+            where.append(" AND vt.format " + condition + " 'ISO'");
+        }
+
+        if (filter.hypervisorType != null) {
+            where.append(" AND vt.hypervisor_type = ?");
+            params.add(filter.hypervisorType.toString());
+        }
+
+        if (!filter.availableHypervisors.isEmpty()) {
+            where.append(" AND vt.hypervisor_type IN ").append(inClausePlaceholders(filter.availableHypervisors.size()));
+            for (HypervisorType h : filter.availableHypervisors) {
+                params.add(h.toString());
+            }
+        }
+
+        if (filter.publicTemplate != null && !filter.publicOrAccountIdComposite) {
+            where.append(" AND vt.public = ?");
+            params.add(filter.publicTemplate ? 1 : 0);
+        }
+
+        if (filter.featured != null) {
+            where.append(" AND vt.featured = ?");
+            params.add(filter.featured ? 1 : 0);
+        }
+
+        if (filter.bootable != null) {
+            where.append(" AND vt.bootable = ?");
+            params.add(filter.bootable ? 1 : 0);
+        }
+
+        if (filter.parentTemplateId != null) {
+            where.append(" AND vt.parent_template_id = ?");
+            params.add(filter.parentTemplateId);
+        }
+
+        if (filter.excludeSystemTemplates) {
+            where.append(" AND vt.type != 'SYSTEM'");
+        }
+
+        if (filter.accountTypeNeq != null) {
+            where.append(" AND a.type != ?");
+            params.add(filter.accountTypeNeq.ordinal());
+        }
+        if (filter.accountTypeEq != null) {
+            where.append(" AND a.type = ?");
+            params.add(filter.accountTypeEq.ordinal());
+        }
+
+        // ACL — accountIds: either pure IN, or composite OR with public=true.
+        if (filter.publicOrAccountIdComposite) {
+            where.append(" AND (vt.public = 1");
+            if (!filter.accountIds.isEmpty()) {
+                where.append(" OR vt.account_id IN ").append(inClausePlaceholders(filter.accountIds.size()));
+                params.addAll(filter.accountIds);
+            }
+            where.append(")");
+        } else if (filter.publicOrDomainPathComposite) {
+            // all + non-admin + SkipProjectResources: (public OR domain.path LIKE)
+            where.append(" AND (vt.public = 1");
+            if (filter.domainPathLike != null) {
+                where.append(" OR d.path LIKE ?");
+                params.add(filter.domainPathLike);
+            }
+            where.append(")");
+        } else if (filter.accountIdRequiredForFilter && !filter.accountIds.isEmpty()) {
+            where.append(" AND vt.account_id IN ").append(inClausePlaceholders(filter.accountIds.size()));
+            params.addAll(filter.accountIds);
+        }
+
+        // Standalone domain_path predicate — used when domainPathLike is set
+        // outside any composite (self/selfexecutable + DOMAIN_ADMIN scoping).
+        if (filter.domainPathLike != null
+                && !filter.publicOrDomainPathComposite) {
+            where.append(" AND d.path LIKE ?");
+            params.add(filter.domainPathLike);
+        }
+
+        if (filter.zoneId != null) {
+            // mirrors templateChecks(): zone match OR REGION-scoped store OR (ISO + PERHOST)
+            where.append(" AND (dc.id = ? OR img.scope = 'REGION' OR (vt.format = 'ISO' AND vt.type = 'PERHOST'))");
+            params.add(filter.zoneId);
+        }
+
+        if (filter.onlyReady) {
+            // mirrors templateChecks(): tsr Ready OR BAREMETAL format OR (ISO + PERHOST)
+            where.append(" AND (tsr.state = 'Ready' OR vt.format = 'BAREMETAL' OR (vt.format = 'ISO' AND vt.type = 'PERHOST'))");
+        }
+
+        if (!filter.showRemoved) {
+            where.append(" AND vt.removed IS NULL");
+            if (!filter.templateStates.isEmpty()) {
+                where.append(" AND vt.state IN ").append(inClausePlaceholders(filter.templateStates.size()));
+                for (VirtualMachineTemplate.State s : filter.templateStates) {
+                    params.add(s.toString());
+                }
+            }
+        }
+    }
+
+    private String buildLimitClause(TemplateListFilter filter) {
+        if (filter.pageSize == null) {
+            return "";
+        }
+        long start = filter.startIndex == null ? 0L : filter.startIndex;
+        return " LIMIT " + start + ", " + filter.pageSize;
+    }
+
+    private static String inClausePlaceholders(int n) {
+        StringBuilder sb = new StringBuilder("(");
+        for (int i = 0; i < n; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append('?');
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
+    private List<TemplateJoinVO> executeDistinctQuery(String sql, List<Object> params, boolean showUnique) {
+        List<TemplateJoinVO> out = new ArrayList<>();
+        try (TransactionLegacy txn = TransactionLegacy.open("TemplateJoinDao");
+             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
+            bindParams(pstmt, params);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    TemplateJoinVO vo = new TemplateJoinVO();
+                    if (showUnique) {
+                        TEMPLATE_JOIN_ID_FIELD.setLong(vo, rs.getLong(1));
+                    } else {
+                        TEMPLATE_JOIN_PAIR_FIELD.set(vo, rs.getString(1));
+                    }
+                    out.add(vo);
+                }
+            }
+        } catch (SQLException | IllegalAccessException e) {
+            throw new CloudRuntimeException("findDistinctTempZonePairs data query failed: " + sql, e);
+        }
+        return out;
+    }
+
+    private int executeCountQuery(String sql, List<Object> params) {
+        try (TransactionLegacy txn = TransactionLegacy.open("TemplateJoinDao");
+             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
+            bindParams(pstmt, params);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+                return 0;
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("findDistinctTempZonePairs count query failed: " + sql, e);
+        }
+    }
+
+    private static void bindParams(PreparedStatement pstmt, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            pstmt.setObject(i + 1, params.get(i));
+        }
     }
 
     @Override
