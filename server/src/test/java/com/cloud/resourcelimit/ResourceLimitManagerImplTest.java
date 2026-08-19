@@ -56,6 +56,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.Resource;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
@@ -66,6 +67,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -679,6 +681,35 @@ public class ResourceLimitManagerImplTest {
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager).recalculateResourceCount(accountId, domainId, typeId, null);
         resourceLimitManager.recalculateResourceCount(accountId, domainId, typeId);
         Mockito.verify(resourceLimitManager, Mockito.times(1)).recalculateResourceCount(accountId, domainId, typeId, null);
+    }
+
+    @Test
+    public void testRecalculateResourceCountRemovedAccount() {
+        Long accountId = 10L;
+        Long domainId = 2L;
+        Resource.ResourceType type = Resource.ResourceType.secondary_storage;
+        Mockito.when(domainDao.findById(domainId)).thenReturn(Mockito.mock(DomainVO.class));
+        Account removedAccount = Mockito.mock(Account.class);
+        Mockito.when(entityManager.findByIdIncludingRemoved(Account.class, accountId)).thenReturn(removedAccount);
+        Mockito.doNothing().when(resourceLimitManager).removeResourceLimitAndCountForNonMatchingTags(Mockito.anyLong(),
+                Mockito.any(), Mockito.anyList(), Mockito.anyList());
+        Mockito.doReturn(1L).when(resourceLimitManager).recalculateAccountResourceCount(accountId, type, null);
+        Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager).recalculateAccountTaggedResourceCount(
+                Mockito.eq(accountId.longValue()), Mockito.eq(type), Mockito.anyList(), Mockito.anyList());
+
+        List<? extends ResourceCount> result = resourceLimitManager.recalculateResourceCount(accountId, domainId, type.getOrdinal(), null);
+
+        Assert.assertEquals(1, result.size());
+        Mockito.verify(accountManager).verifyCallerPrivilegeForUserOrAccountOperations(removedAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRecalculateResourceCountAccountNotFound() {
+        Long accountId = 10L;
+        Long domainId = 2L;
+        Mockito.when(domainDao.findById(domainId)).thenReturn(Mockito.mock(DomainVO.class));
+        Mockito.when(entityManager.findByIdIncludingRemoved(Account.class, accountId)).thenReturn(null);
+        resourceLimitManager.recalculateResourceCount(accountId, domainId, Resource.ResourceType.secondary_storage.getOrdinal(), null);
     }
 
     @Test
