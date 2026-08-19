@@ -60,7 +60,7 @@
             <a-radio-button value="isolated">
               {{ $t('label.isolated') }}
             </a-radio-button>
-            <a-radio-button value="l2" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
+            <a-radio-button value="l2" v-if="form.provider !== 'NSX'">
               {{ $t('label.l2') }}
             </a-radio-button>
             <a-radio-button value="shared" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
@@ -311,7 +311,7 @@
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item name="lbtype" ref="lbtype" :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked">
+        <a-form-item name="lbtype" ref="lbtype" :label="$t('label.lbtype')" v-if="forVpc && lbServiceChecked && form.provider !== 'Netris'">
           <a-radio-group
             v-model:value="form.lbtype"
             buttonStyle="solid"
@@ -358,7 +358,7 @@
           v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && !isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-model:checked="form.redundantroutercapability" />
         </a-form-item>
-        <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked">
+        <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && form.provider !== 'Netris'">
           <a-radio-group
             v-model:value="form.sourcenattype"
             buttonStyle="solid">
@@ -374,8 +374,8 @@
           name="vmautoscalingcapability"
           ref="vmautoscalingcapability"
           :label="$t('label.supportsvmautoscaling')"
-          v-if="lbServiceChecked && ['Netscaler', 'VirtualRouter', 'VpcVirtualRouter'].includes(lbServiceProvider)">
-          <a-switch v-model:checked="form.vmautoscalingcapability" />
+          v-if="lbServiceChecked && ['Netscaler', 'VirtualRouter', 'VpcVirtualRouter', 'Netris'].includes(lbServiceProvider)">
+          <a-switch v-model:checked="form.vmautoscalingcapability" :disabled="lbServiceProvider === 'Netris'" />
         </a-form-item>
         <a-form-item
           name="elasticlb"
@@ -865,6 +865,12 @@ export default {
           this.supportedServices[i].provider = providers
           this.supportedServices[i].description = serviceDisplayName
         }
+        this.supportedSvcs = this.supportedServices.map(service => {
+          return {
+            ...service,
+            provider: (service.provider || []).map(provider => ({ ...provider }))
+          }
+        })
       }).finally(() => {
         this.supportedServiceLoading = false
         this.updateSupportedServices()
@@ -902,7 +908,12 @@ export default {
     },
     updateSupportedServices () {
       this.supportedServiceLoading = true
-      var supportedServices = this.supportedServices
+      var supportedServices = (this.supportedSvcs.length > 0 ? this.supportedSvcs : this.supportedServices).map(service => {
+        return {
+          ...service,
+          provider: (service.provider || []).map(provider => ({ ...provider }))
+        }
+      })
       var self = this
       if (this.provider !== 'NSX' && this.provider !== 'Netris') {
         if (this.networkmode === 'ROUTED' && this.guestType === 'isolated') {
@@ -930,12 +941,10 @@ export default {
           }
         })
         setTimeout(() => {
-          self.supportedSvcs = self.supportedServices
           self.supportedServices = supportedServices
           self.supportedServiceLoading = false
         }, 50)
       } else {
-        supportedServices = this.supportedSvcs
         supportedServices = supportedServices.filter(svc => {
           if (this.provider === 'NSX') {
             return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
@@ -959,88 +968,93 @@ export default {
           }
           return svc
         })
-        self.supportedSvcs = self.supportedServices
+
+        const externalSelectedProviders = {}
+        supportedServices.forEach(svc => {
+          const providerName = svc.provider?.[0]?.name
+          if (providerName) {
+            externalSelectedProviders[svc.name] = providerName
+          }
+        })
+        this.selectedServiceProviderMap = externalSelectedProviders
+        this.sourceNatServiceChecked = 'SourceNat' in externalSelectedProviders
+        this.lbServiceChecked = 'Lb' in externalSelectedProviders
+        this.lbServiceProvider = this.lbServiceChecked ? externalSelectedProviders.Lb : ''
+        if (this.lbServiceProvider === 'Netris') {
+          this.form.vmautoscalingcapability = true
+        }
+        this.staticNatServiceChecked = 'StaticNat' in externalSelectedProviders
+        this.staticNatServiceProvider = this.staticNatServiceChecked ? externalSelectedProviders.StaticNat : ''
+        this.connectivityServiceChecked = 'Connectivity' in externalSelectedProviders
+        this.firewallServiceChecked = 'Firewall' in externalSelectedProviders
+        this.firewallServiceProvider = this.firewallServiceChecked ? externalSelectedProviders.Firewall : ''
+        const selectedProviders = Object.values(externalSelectedProviders)
+        this.isVirtualRouterForAtLeastOneService = selectedProviders.includes('VirtualRouter')
+        this.isVpcVirtualRouterForAtLeastOneService = selectedProviders.includes('VpcVirtualRouter')
+        if ((this.isVirtualRouterForAtLeastOneService || this.isVpcVirtualRouterForAtLeastOneService) &&
+          this.serviceOfferings.length === 0) {
+          this.fetchServiceOfferingData()
+        }
+
         self.supportedServices = supportedServices
         self.supportedServiceLoading = false
       }
     },
+    refreshExternalSupportedServicesMap () {
+      const selectedProvider = this.form.provider || this.provider
+      if (selectedProvider !== 'NSX' && selectedProvider !== 'Netris') {
+        return
+      }
+
+      const selectedNetworkMode = this.form.networkmode || this.networkmode
+      const effectiveNetworkMode = selectedProvider === 'Netris' && !selectedNetworkMode ? 'NATTED' : selectedNetworkMode
+      const externalProvider = selectedProvider === 'NSX' ? this.NSX : this.Netris
+      const isNsxProvider = selectedProvider === 'NSX'
+      const commonServices = {
+        Dhcp: this.forVpc ? this.VPCVR : this.VR,
+        Dns: this.forVpc ? this.VPCVR : this.VR,
+        UserData: this.forVpc ? this.VPCVR : this.VR,
+        ...(this.forVpc && { NetworkACL: externalProvider }),
+        ...(!this.forVpc && { Firewall: externalProvider })
+      }
+
+      const nattedServices = {
+        SourceNat: externalProvider,
+        StaticNat: externalProvider,
+        PortForwarding: externalProvider,
+        Vpn: this.forVpc ? this.VPCVR : this.VR,
+        ...((!isNsxProvider || this.form.nsxsupportlb) && { Lb: externalProvider })
+      }
+
+      const serviceMap = {
+        ...commonServices,
+        ...(effectiveNetworkMode === 'NATTED' && nattedServices)
+      }
+
+      if (isNsxProvider) {
+        this.nsxSupportedServicesMap = serviceMap
+      } else {
+        this.netrisSupportedServicesMap = serviceMap
+      }
+    },
     handleForVpcChange (forVpc) {
       this.forVpc = forVpc
-      if (this.provider === 'NSX') {
-        this.nsxSupportedServicesMap = {
-          Dhcp: this.forVpc ? this.VPCVR : this.VR,
-          Dns: this.forVpc ? this.VPCVR : this.VR,
-          UserData: this.forVpc ? this.VPCVR : this.VR,
-          ...(this.networkmode === 'NATTED' && {
-            SourceNat: this.NSX,
-            StaticNat: this.NSX,
-            PortForwarding: this.NSX,
-            Lb: this.NSX
-          }),
-          ...(forVpc && { NetworkACL: this.NSX }),
-          ...(!forVpc && { Firewall: this.NSX })
-        }
-      } else if (this.provider === 'Netris') {
-        this.netrisSupportedServicesMap = {
-          Dhcp: this.forVpc ? this.VPCVR : this.VR,
-          Dns: this.forVpc ? this.VPCVR : this.VR,
-          UserData: this.forVpc ? this.VPCVR : this.VR,
-          ...(this.networkmode === 'NATTED' && {
-            SourceNat: this.Netris,
-            StaticNat: this.Netris,
-            PortForwarding: this.Netris,
-            Lb: this.Netris
-          }),
-          ...(forVpc && { NetworkACL: this.Netris }),
-          ...(!forVpc && { Firewall: this.Netris })
-        }
-      }
+      this.refreshExternalSupportedServicesMap()
       this.updateSupportedServices()
     },
     handleProviderChange (provider) {
       this.provider = provider
-      if (this.provider === 'NSX') {
-        this.nsxSupportedServicesMap = {
-          Dhcp: this.forVpc ? this.VPCVR : this.VR,
-          Dns: this.forVpc ? this.VPCVR : this.VR,
-          UserData: this.forVpc ? this.VPCVR : this.VR,
-          ...(this.networkmode === 'NATTED' && {
-            SourceNat: this.NSX,
-            StaticNat: this.NSX,
-            PortForwarding: this.NSX,
-            Lb: this.NSX
-          }),
-          ...(this.forVpc && { NetworkACL: this.NSX }),
-          ...(!this.forVpc && { Firewall: this.NSX })
-        }
-      } else if (this.provider === 'Netris') {
-        this.netrisSupportedServicesMap = {
-          Dhcp: this.forVpc ? this.VPCVR : this.VR,
-          Dns: this.forVpc ? this.VPCVR : this.VR,
-          UserData: this.forVpc ? this.VPCVR : this.VR,
-          ...(this.networkmode === 'NATTED' && {
-            SourceNat: this.Netris,
-            StaticNat: this.Netris,
-            PortForwarding: this.Netris,
-            Lb: this.Netris
-          }),
-          ...(this.forVpc && { NetworkACL: this.Netris }),
-          ...(!this.forVpc && { Firewall: this.Netris })
-        }
-      }
+      this.refreshExternalSupportedServicesMap()
       this.fetchSupportedServiceData()
     },
     handleForNetworkModeChange (networkMode) {
       this.networkmode = networkMode
+      this.refreshExternalSupportedServicesMap()
       this.fetchSupportedServiceData()
     },
     handleNsxLbService (supportLb) {
-      if (!supportLb && 'Lb' in this.nsxSupportedServicesMap) {
-        delete this.nsxSupportedServicesMap.Lb
-      }
-      if (supportLb && !('Lb' in this.nsxSupportedServicesMap)) {
-        this.nsxSupportedServicesMap.Lb = this.NSX
-      }
+      this.form.nsxsupportlb = supportLb
+      this.refreshExternalSupportedServicesMap()
       this.fetchSupportedServiceData()
     },
     handleLbTypeChange (lbType) {
@@ -1055,6 +1069,10 @@ export default {
           this.fetchRegisteredServicePackageData()
           if (provider != null & provider !== undefined) {
             this.lbServiceProvider = provider
+            this.lbServiceChecked = true
+            if (provider === 'Netris') {
+              this.form.vmautoscalingcapability = true
+            }
           }
         } else {
           this.lbServiceProvider = ''
@@ -1062,7 +1080,7 @@ export default {
         this.lbServiceChecked = checked
       } else if (service === 'StaticNat') {
         this.staticNatServiceChecked = checked
-        if (checked && provider != null & provider !== undefined) {
+        if (checked && provider != null && provider !== undefined) {
           this.staticNatServiceProvider = provider
         } else {
           this.staticNatServiceProvider = ''
@@ -1071,13 +1089,13 @@ export default {
         this.connectivityServiceChecked = checked
       } else if (service === 'Firewall') {
         this.firewallServiceChecked = checked
-        if (checked && provider != null & provider !== undefined) {
-          this.staticNatServiceProvider = provider
+        if (checked && provider != null && provider !== undefined) {
+          this.firewallServiceProvider = provider
         } else {
-          this.staticNatServiceProvider = ''
+          this.firewallServiceProvider = ''
         }
       }
-      if (checked && provider != null & provider !== undefined) {
+      if (checked && provider != null && provider !== undefined) {
         this.selectedServiceProviderMap[service] = provider
       } else {
         delete this.selectedServiceProviderMap[service]
@@ -1196,16 +1214,19 @@ export default {
             delete params.supportspublicaccess
           }
           if (supportedServices.includes('SourceNat')) {
+            const isNetrisSourceNat = this.selectedServiceProviderMap.SourceNat === 'Netris'
             if (values.redundantroutercapability === true) {
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
               serviceCapabilityIndex++
             }
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
-            serviceCapabilityIndex++
+            if (!isNetrisSourceNat) {
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
+              serviceCapabilityIndex++
+            }
             delete params.redundantroutercapability
             delete params.sourcenattype
           } else if (values.redundantroutercapability === true) {
@@ -1233,7 +1254,7 @@ export default {
             if ('vmautoscalingcapability' in values) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = this.selectedServiceProviderMap.Lb === 'Netris' ? true : values.vmautoscalingcapability
               serviceCapabilityIndex++
             }
             if (values.elasticlb === true) {

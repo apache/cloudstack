@@ -1288,6 +1288,7 @@ public class ApiConstants {
     public static final String HAS_RULES = "hasrules";
     public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String NETRIS_DETAIL_KEY = "forNetris";
+    public static final String NETRIS_NAT_PUBLIC_IP_ID = "netrisnatpublicipid";
     public static final String NETRIS_TAG = "netristag";
     public static final String NETRIS_VXLAN_ID = "netrisvxlanid";
     public static final String NETRIS_URL = "netrisurl";

@@ -252,7 +252,7 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vpn.gateway')" key="vpngw" v-if="'listVpnGateways' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.vpn.gateway')" key="vpngw" v-if="'listVpnGateways' in $store.getters.apis && resource.service && resource.service.some(s => s.name === 'Vpn')">
         <a-button
           v-if="vpnGateways.length === 0"
           type="dashed"
@@ -313,7 +313,7 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis && resource.service && resource.service.some(s => s.name === 'Vpn')">
         <a-button
           type="dashed"
           style="width: 100%"

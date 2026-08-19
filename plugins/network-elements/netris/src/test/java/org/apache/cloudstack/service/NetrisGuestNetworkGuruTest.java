@@ -41,6 +41,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -206,12 +207,49 @@ public class NetrisGuestNetworkGuruTest {
     @Test
     public void testCreateNetrisVnetVpcNetworkRoutedMode() {
         Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        Mockito.when(networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingId)).thenReturn(NetUtils.InternetProtocol.IPv4);
         Mockito.when(netrisService.createVnetResource(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
                 Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyBoolean())).thenReturn(true);
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn(true);
         guru.createNetrisVnet(network, zone);
         Mockito.verify(netrisService).createVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
-                networkName, networkId, networkCidr, true);
+                networkName, networkId, networkCidr, NetworkOffering.NetworkMode.ROUTED, NetUtils.InternetProtocol.IPv4, false);
+    }
+
+    @Test
+    public void testCreateNetrisVnetVpcNetworkNattedMode() {
+        Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+        Mockito.when(networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingId)).thenReturn(NetUtils.InternetProtocol.IPv4);
+        Mockito.when(netrisService.createVnetResource(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn(true);
+        guru.createNetrisVnet(network, zone);
+        Mockito.verify(netrisService).createVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+                networkName, networkId, networkCidr, NetworkOffering.NetworkMode.NATTED, NetUtils.InternetProtocol.IPv4, false);
+    }
+
+    @Test
+    public void testCreateNetrisVnetVpcNetworkDualStackNattedMode() {
+        Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+        Mockito.when(networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingId)).thenReturn(NetUtils.InternetProtocol.DualStack);
+        Mockito.when(netrisService.createVnetResource(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn(true);
+        guru.createNetrisVnet(network, zone);
+        Mockito.verify(netrisService).createVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+                networkName, networkId, networkCidr, NetworkOffering.NetworkMode.NATTED, NetUtils.InternetProtocol.DualStack, false);
+    }
+
+    @Test
+    public void testCreateNetrisVnetVpcNetworkDualStackRoutedMode() {
+        Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        Mockito.when(networkOfferingDao.getNetworkOfferingInternetProtocol(networkOfferingId)).thenReturn(NetUtils.InternetProtocol.DualStack);
+        Mockito.when(netrisService.createVnetResource(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn(true);
+        guru.createNetrisVnet(network, zone);
+        Mockito.verify(netrisService).createVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+                networkName, networkId, networkCidr, NetworkOffering.NetworkMode.ROUTED, NetUtils.InternetProtocol.DualStack, false);
     }
 
     @Test
