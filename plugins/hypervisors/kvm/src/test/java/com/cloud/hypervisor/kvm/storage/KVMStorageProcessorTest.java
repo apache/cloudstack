@@ -18,6 +18,11 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
@@ -107,6 +112,11 @@ public class KVMStorageProcessorTest {
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
     private static final long templateSize = 80000L;
+
+    private static final String RBD_POOL_NAME = "cloudstack";
+    private static final String RBD_IMAGE_NAME = "b7a1f0a9-0f0e-4a1a-9a35-1c1a2e0f1b5e";
+    private static final String SNAPSHOT_NAME = "8f1c1f0b-9d3e-4c2a-8a3d-6f0b2c9e1d47";
+    private static final long SNAPSHOT_SIZE = 196624L;
 
     private AutoCloseable closeable;
 
@@ -498,5 +508,72 @@ public class KVMStorageProcessorTest {
         String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
 
         Assert.assertEquals("vda", result);
+    }
+
+    /**
+     * Wires a mocked Ceph stack for {@link KVMStorageProcessor#takeRbdVolumeSnapshotOfStoppedVm} and returns the
+     * mocked disk. The Rbd instance is created inside the method under test, so it is mocked by construction.
+     */
+    private KVMPhysicalDisk prepareRbdSnapshotMocks(Rados radosMock, IoCTX ioCtxMock) throws Exception {
+        KVMPhysicalDisk diskMock = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.lenient().doReturn(RBD_IMAGE_NAME).when(diskMock).getName();
+
+        Mockito.lenient().doReturn(RBD_POOL_NAME).when(kvmStoragePoolMock).getSourceDir();
+        Mockito.lenient().doReturn("10.0.0.1").when(kvmStoragePoolMock).getSourceHost();
+        Mockito.lenient().doReturn("cloudstack").when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.lenient().doReturn("secret").when(kvmStoragePoolMock).getAuthSecret();
+
+        Mockito.doReturn(radosMock).when(storageProcessorSpy).radosConnect(kvmStoragePoolMock);
+        Mockito.doReturn(ioCtxMock).when(radosMock).ioCtxCreate(RBD_POOL_NAME);
+        Mockito.lenient().doReturn(SNAPSHOT_SIZE).when(storageProcessorSpy).getRbdSnapshotSize(Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+        return diskMock;
+    }
+
+    /**
+     * A duplicated snapCreate call used to throw "snapshot already exists" on every single RBD snapshot, which then
+     * skipped the cleanup below and leaked the image's exclusive-lock.
+     */
+    @Test
+    public void takeRbdVolumeSnapshotOfStoppedVmTestCreatesSnapshotExactlyOnce() throws Exception {
+        Rados radosMock = Mockito.mock(Rados.class);
+        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+        RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
+
+        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+
+            Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
+
+            Assert.assertEquals(Long.valueOf(SNAPSHOT_SIZE), result);
+            Mockito.verify(rbdImageMock, Mockito.times(1)).snapCreate(SNAPSHOT_NAME);
+            Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+        }
+    }
+
+    /**
+     * While the image stays open this client holds the RBD exclusive-lock, and a later 'rbd snap rollback'
+     * (revertSnapshot) from another host fails with EROFS. The handles must be released even when the snapshot fails.
+     */
+    @Test
+    public void takeRbdVolumeSnapshotOfStoppedVmTestReleasesHandlesWhenSnapshotFails() throws Exception {
+        Rados radosMock = Mockito.mock(Rados.class);
+        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+        RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
+        Mockito.doThrow(new RbdException("Failed to create snapshot")).when(rbdImageMock).snapCreate(SNAPSHOT_NAME);
+
+        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+
+            Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
+
+            Assert.assertNull(result);
+            Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+        }
     }
 }
