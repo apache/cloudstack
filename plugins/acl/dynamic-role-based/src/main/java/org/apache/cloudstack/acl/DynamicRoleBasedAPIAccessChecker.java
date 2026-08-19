@@ -101,9 +101,12 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return apiNames;
         }
         List<RolePermission> allPermissions = roleAndPermissions.second();
+        List<RolePermissionEntity> allPermissionEntities = allPermissions.stream().map(permission -> (RolePermissionEntity) permission)
+                .collect(Collectors.toList());
+
         List<String> allowedApis = new ArrayList<>();
         for (String api : apiNames) {
-            if (checkApiPermissionByRole(accountRole, api, allPermissions)) {
+            if (checkApiPermissionByRole(accountRole, api, allPermissionEntities, false)) {
                 allowedApis.add(api);
             }
         }
