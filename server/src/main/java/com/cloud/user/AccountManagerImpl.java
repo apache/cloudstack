@@ -3417,6 +3417,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_SECRET_API_KEY, eventDescription = "deleting API key pair")
     public void deleteApiKey(DeleteUserKeysCmd cmd) {
         ApiKeyPair keyPair = apiKeyPairService.findById(cmd.getId());
         if (keyPair == null) {
