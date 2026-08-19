@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -148,7 +149,7 @@ public interface AccountManager extends AccountService, Configurable {
      * moves a user to another account within the same domain
      * @return true if the user was successfully moved
      */
-    boolean moveUser(MoveUserCmd moveUserCmd);
+    boolean moveUser(MoveUserCmd moveUserCmd) throws ResourceAllocationException;
 
     @Override
     UserAccount updateUser(UpdateUserCmd cmd);
@@ -202,7 +203,7 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Long> SSOAuthTolerance = new ConfigKey<>("Advanced", Long.class, "security.singlesignon.tolerance.millis", "300000",
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", true);
 
-    boolean moveUser(long id, Long domainId, Account newAccount);
+    boolean moveUser(long id, Long domainId, Account newAccount) throws ResourceAllocationException;
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
 
