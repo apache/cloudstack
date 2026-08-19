@@ -55,6 +55,42 @@ def execute(cmd):
         logging.exception('Command exited non-zero: %s', cmd)
         raise
 
+def iptables_chain_exists(chain):
+    """Check if iptables chain exists."""
+    try:
+        execute("iptables -S %s 2>/dev/null" % chain)
+        return True
+    except CalledProcessError as e:
+        if e.returncode == 1:
+            # Chain not found - normal for idempotent cleanup
+            logging.debug("iptables chain %s does not exist", chain)
+            return False
+        # Other exit codes are real errors
+        raise
+
+
+def ip6tables_chain_exists(chain):
+    """Check if ip6tables chain exists."""
+    try:
+        execute("ip6tables -S %s 2>/dev/null" % chain)
+        return True
+    except CalledProcessError as e:
+        if e.returncode == 1:
+            logging.debug("ip6tables chain %s does not exist", chain)
+            return False
+        raise
+
+
+def ipset_exists(setname):
+    """Check if ipset exists."""
+    try:
+        execute("ipset list %s 2>/dev/null" % setname)
+        return True
+    except CalledProcessError as e:
+        if e.returncode == 1:
+            logging.debug("ipset %s does not exist", setname)
+            return False
+        raise
 
 def can_bridge_firewall(privnic):
     try:
@@ -195,7 +231,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     vmchain = iptables_chain_name(vm_name)
     vmchain_egress = egress_chain_name(vm_name)
     vmchain_default = None
-    vm_ipsetname=ipset_chain_name(vm_name)
+    vm_ipsetname = ipset_chain_name(vm_name)
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if 1 in [vm_name.startswith(c) for c in ['r-', 's-', 'v-']]:
@@ -208,40 +244,52 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
 
     chains = [vmchain_default, vmchain, vmchain_egress]
     for chain in [_f for _f in chains if _f]:
-        try:
-            execute("iptables -F " + chain)
-            execute('ip6tables -F ' + chain)
-        except:
-            logging.debug("Ignoring failure to flush chain: " + chain)
+        # iptables
+        if iptables_chain_exists(chain):
+            try:
+                execute("iptables -F " + chain)
+                execute("iptables -X " + chain)
+            except Exception as e:
+                logging.error("Failed to flush/delete iptables chain %s: %s", chain, str(e))
+        else:
+            logging.debug("iptables chain %s does not exist, skipping", chain)
 
-    for chain in [_f for _f in chains if _f]:
-        try:
-            execute("iptables -X " + chain)
-            execute('ip6tables -X ' + chain)
-        except:
-            logging.debug("Ignoring failure to delete chain: " + chain)
+        # ip6tables
+        if ip6tables_chain_exists(chain):
+            try:
+                execute("ip6tables -F " + chain)
+                execute("ip6tables -X " + chain)
+            except Exception as e:
+                logging.error("Failed to flush/delete ip6tables chain %s: %s", chain, str(e))
+        else:
+            logging.debug("ip6tables chain %s does not exist, skipping", chain)
 
-    try:
-        for ipset in [vm_ipsetname, vm_ipsetname + '-6']:
-            execute('ipset -F ' + ipset)
-            execute('ipset -X ' + ipset)
-    except:
-        logging.debug("Ignoring failure to delete ipset " + vmchain)
+    for ipset in [vm_ipsetname, vm_ipsetname + '-6']:
+        if ipset_exists(ipset):
+            try:
+                execute('ipset -F ' + ipset)
+                execute('ipset -X ' + ipset)
+            except Exception as e:
+                logging.error("Failed to flush/delete ipset %s: %s", ipset, str(e))
+        else:
+            logging.debug("Ipset %s does not exist, skipping", ipset)
 
     if vif:
         try:
-            dnats = execute("""iptables -t nat -S | awk '/%s/ { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
+            dnats = execute("""iptables -t nat -S | awk '/%s/ { sub(/-A/, "-D", $1) ; print }'""" % vif).split("\n")
             for dnat in [_f for _f in dnats if _f]:
                 try:
                     execute("iptables -t nat " + dnat)
-                except:
+                except Exception:
                     logging.debug("Ignoring failure to delete dnat: " + dnat)
-        except:
+        except Exception:
             pass
+
     remove_rule_log_for_vm(vm_name)
     remove_secip_log_for_vm(vm_name)
 
     return True
+
 
 
 def destroy_ebtables_rules(vm_name, vif):
