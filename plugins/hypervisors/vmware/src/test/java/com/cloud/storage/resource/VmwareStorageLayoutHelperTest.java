@@ -18,6 +18,7 @@ package com.cloud.storage.resource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
@@ -85,8 +86,8 @@ public class VmwareStorageLayoutHelperTest {
             VirtualDiskManagerMO diskManager = diskManagers.constructed().get(0);
             ArgumentCaptor<FileBackedVirtualDiskSpec> diskSpec = ArgumentCaptor.forClass(FileBackedVirtualDiskSpec.class);
             InOrder inOrder = Mockito.inOrder(diskManager);
-            inOrder.verify(diskManager).copyVirtualDisk("[datastore] volume.vmdk", datacenterMor,
-                    "[datastore] vm-name/volume.vmdk", datacenterMor, diskSpec.capture(), true);
+            inOrder.verify(diskManager).copyVirtualDisk(eq("[datastore] volume.vmdk"), eq(datacenterMor),
+                    eq("[datastore] vm-name/volume.vmdk"), eq(datacenterMor), diskSpec.capture(), eq(true));
             inOrder.verify(diskManager).deleteVirtualDisk("[datastore] volume.vmdk", datacenterMor);
             assertEquals("lsiLogic", diskSpec.getValue().getAdapterType());
             assertEquals("eagerZeroedThick", diskSpec.getValue().getDiskType());
@@ -115,8 +116,8 @@ public class VmwareStorageLayoutHelperTest {
             VirtualDiskManagerMO diskManager = diskManagers.constructed().get(0);
             ArgumentCaptor<FileBackedVirtualDiskSpec> diskSpec = ArgumentCaptor.forClass(FileBackedVirtualDiskSpec.class);
             InOrder inOrder = Mockito.inOrder(diskManager);
-            inOrder.verify(diskManager).copyVirtualDisk("[datastore] fcd/volume.vmdk", datacenterMor,
-                    "[datastore] vm-name/volume.vmdk", datacenterMor, diskSpec.capture(), true);
+            inOrder.verify(diskManager).copyVirtualDisk(eq("[datastore] fcd/volume.vmdk"), eq(datacenterMor),
+                    eq("[datastore] vm-name/volume.vmdk"), eq(datacenterMor), diskSpec.capture(), eq(true));
             inOrder.verify(diskManager).deleteVirtualDisk("[datastore] fcd/volume.vmdk", datacenterMor);
             assertEquals("lsiLogic", diskSpec.getValue().getAdapterType());
             assertEquals("thin", diskSpec.getValue().getDiskType());
