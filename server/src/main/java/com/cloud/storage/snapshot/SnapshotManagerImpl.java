@@ -1633,11 +1633,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
-            DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
-            if (imageStore == null) {
-                throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
+            try {
+                DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
+                if (imageStore == null) {
+                    throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
+                }
+                snapshot.setImageStore(imageStore);
+            } catch (CloudRuntimeException ex) {
+                logger.error("There was an error while selecting image store for snapshot: {}", ex.getMessage());
+                handleErrorInUncreatedSnapshot(snapshotId);
+                throw new CloudRuntimeException(ex.getMessage());
             }
-            snapshot.setImageStore(imageStore);
         }
 
         updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, clusterId);
@@ -1736,6 +1742,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         snapshotOnPrimary.markBackedUp();
         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
         snapshotDetailsDao.removeDetail(snapshotOnPrimary.getId(), AsyncJob.Constants.MS_ID);
+    }
+
+    private void handleErrorInUncreatedSnapshot(Long snapshotId) {
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        snapshot.setState(Snapshot.State.Error);
+        _snapshotDao.persist(snapshot);
     }
 
     @Override
