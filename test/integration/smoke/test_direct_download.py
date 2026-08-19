@@ -218,7 +218,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                 zoneid=cls.zone.id
             )
             for pool in storage_pools:
-                if not cls.nfsStorageFound and pool.type == "NetworkFilesystem":
+                if not cls.nfsStorageFound and pool.type in ("NetworkFilesystem", "RBD"):
                     cls.nfsStorageFound = True
                     cls.nfsPoolId = pool.id
                 elif not cls.localStorageFound and pool.type == "Filesystem":
@@ -298,7 +298,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
     @skipTestIf("nfsKvmNotAvailable")
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
     def test_01_deploy_vm_from_direct_download_template_nfs_storage(self):
-        """Test Deploy VM from direct download template on NFS storage
+        """Test Deploy VM from direct download template on NFS or RBD storage
         """
 
         # Create service offering for local storage using storage tags
