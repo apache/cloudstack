@@ -11,76 +11,76 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	listNiciraNvpDevices
 
 		Response:
 
-			New parameters: l2gatewayserviceuuid 
+			New parameters: l2gatewayserviceuuid
 
 	addNiciraNvpDevice
 
 		Request:
 
-			New parameters: l2gatewayserviceuuid (optional) 
+			New parameters: l2gatewayserviceuuid (optional)
 
 		Response:
 
-			New parameters: l2gatewayserviceuuid 
+			New parameters: l2gatewayserviceuuid
 
 	createVpnCustomerGateway
 
 		Request:
 
-			New parameters: forceencap (optional) 
+			New parameters: forceencap (optional)
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	listVpnCustomerGateways
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	updateVpnCustomerGateway
 
 		Request:
 
-			New parameters: forceencap (optional) 
+			New parameters: forceencap (optional)
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	updateVpnConnection
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	listNics
 
 		Response:
 
-			New parameters: nsxlogicalswitch, nsxlogicalswitchport 
+			New parameters: nsxlogicalswitch, nsxlogicalswitchport
 
 	createVolume
 
 		Request:
 
-			Changed parameters: name (old version - required, new version - optional) 
+			Changed parameters: name (old version - required, new version - optional)
 
 	resetVpnConnection
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap
 
 	listVpnConnections
 
 		Response:
 
-			New parameters: forceencap 
+			New parameters: forceencap

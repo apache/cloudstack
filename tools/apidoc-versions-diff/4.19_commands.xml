@@ -29335,7 +29335,7 @@
       </arg>
       <arg>
         <name>sourcenatipaddress</name>
-        <description>IPV4 address to be assigned to the public interface of the network router.This address will be used as source NAT address for the networks in ths VPC. 
+        <description>IPV4 address to be assigned to the public interface of the network router.This address will be used as source NAT address for the networks in ths VPC.
 If an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,</description>
         <required>false</required>
         <sinceVersion>4.19</sinceVersion>
@@ -99949,7 +99949,7 @@ For the KVM hypervisor, the values of the parameters cpuSpeed and cpuNumber will
       </arg>
       <arg>
         <name>otherdeployparams</name>
-        <description>parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. 
+        <description>parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine.
 Example: otherdeployparams[0].name=serviceofferingid&amp;otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&amp;otherdeployparams[1].name=rootdisksize&amp;otherdeployparams[1].value=10 .
 Possible parameters are &quot;rootdisksize&quot;, &quot;diskofferingid&quot;,&quot;size&quot;, &quot;securitygroupids&quot;, &quot;overridediskofferingid&quot;, &quot;keypairs&quot;, &quot;affinitygroupids&apos;&quot; and &quot;networkids&quot;.</description>
         <required>false</required>
@@ -104959,7 +104959,7 @@ Possible parameters are &quot;rootdisksize&quot;, &quot;diskofferingid&quot;,&qu
       </arg>
       <arg>
         <name>sourcenatipaddress</name>
-        <description>IPV4 address to be assigned to the public interface of the network router. This address will be used as source NAT address for the network. 
+        <description>IPV4 address to be assigned to the public interface of the network router. This address will be used as source NAT address for the network.
 If an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,</description>
         <required>false</required>
         <sinceVersion>4.19</sinceVersion>

@@ -35,376 +35,376 @@ Changes in commands arguments:
 
 		Request:
 
-			New parameters: destzoneids (optional) 
+			New parameters: destzoneids (optional)
 
-			Changed parameters: destzoneid (old version - required, new version - optional) 
+			Changed parameters: destzoneid (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	listHosts
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	updateFirewallRule
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist
 
 	updateGuestOs
 
 		Request:
 
-			New parameters: details (required) 
+			New parameters: details (required)
 
 	updateHost
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	createEgressFirewallRule
 
 		Request:
 
-			New parameters: destcidrlist (optional) 
+			New parameters: destcidrlist (optional)
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist
 
 	addSwift
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	listEgressFirewallRules
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist
 
 	listSecondaryStagingStores
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	listTemplates
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	listFirewallRules
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist
 
 	createSecondaryStagingStore
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	updateNetworkOffering
 
 		Response:
 
-			New parameters: supportspublicaccess 
+			New parameters: supportspublicaccess
 
 	createNetworkOffering
 
 		Response:
 
-			New parameters: supportspublicaccess 
+			New parameters: supportspublicaccess
 
 	listSnapshots
 
 		Response:
 
-			New parameters: locationtype, osdisplayname, ostypeid 
+			New parameters: locationtype, osdisplayname, ostypeid
 
 	listConfigurations
 
 		Request:
 
-			New parameters: imagestoreuuid (optional) 
+			New parameters: imagestoreuuid (optional)
 
 	addIpToNic
 
 		Response:
 
-			New parameters: secondaryip 
+			New parameters: secondaryip
 
 	createProject
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	createSnapshot
 
 		Request:
 
-			New parameters: locationtype (optional) 
+			New parameters: locationtype (optional)
 
 		Response:
 
-			New parameters: locationtype, osdisplayname, ostypeid 
+			New parameters: locationtype, osdisplayname, ostypeid
 
 	findHostsForMigration
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	dedicateGuestVlanRange
 
 		Request:
 
-			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional) 
+			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional)
 
 	updateIso
 
 		Request:
 
-			New parameters: cleanupdetails (optional) 
+			New parameters: cleanupdetails (optional)
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	listExternalLoadBalancers
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	prepareTemplate
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	samlSso
 
 		Response:
 
-			New parameters: timezoneoffset 
+			New parameters: timezoneoffset
 
 	login
 
 		Response:
 
-			New parameters: timezoneoffset 
+			New parameters: timezoneoffset
 
 	addImageStore
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	copyTemplate
 
 		Request:
 
-			New parameters: destzoneids (optional) 
+			New parameters: destzoneids (optional)
 
-			Changed parameters: destzoneid (old version - required, new version - optional) 
+			Changed parameters: destzoneid (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	assignVirtualMachine
 
 		Request:
 
-			New parameters: projectid (optional) 
+			New parameters: projectid (optional)
 
-			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional) 
+			Changed parameters: account (old version - required, new version - optional), domainid (old version - required, new version - optional)
 
 	updateTemplate
 
 		Request:
 
-			New parameters: cleanupdetails (optional) 
+			New parameters: cleanupdetails (optional)
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	addSecondaryStorage
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	updateVirtualMachine
 
 		Request:
 
-			New parameters: cleanupdetails (optional) 
+			New parameters: cleanupdetails (optional)
 
 	updateNetwork
 
 		Request:
 
-			New parameters: forced (optional), updateinsequence (optional) 
+			New parameters: forced (optional), updateinsequence (optional)
 
 	createTemplate
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	listProjects
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	addGuestOs
 
 		Request:
 
-			New parameters: details (required) 
+			New parameters: details (required)
 
 	registerIso
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	listProjectAccounts
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	listNetworkOfferings
 
 		Response:
 
-			New parameters: supportspublicaccess 
+			New parameters: supportspublicaccess
 
 	addHost
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	updateProject
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	listIsos
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	updateCloudToUseObjectStore
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	updateConfiguration
 
 		Request:
 
-			New parameters: imagestoreuuid (optional) 
+			New parameters: imagestoreuuid (optional)
 
 	revertSnapshot
 
 		Response:
 
-			New parameters: locationtype, osdisplayname, ostypeid 
+			New parameters: locationtype, osdisplayname, ostypeid
 
 	listSwifts
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	suspendProject
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	registerTemplate
 
 		Request:
 
-			New parameters: zoneids (optional) 
+			New parameters: zoneids (optional)
 
-			Changed parameters: zoneid (old version - required, new version - optional) 
+			Changed parameters: zoneid (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: bits 
+			New parameters: bits
 
 	addImageStoreS3
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	createFirewallRule
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist
 
 	listImageStores
 
 		Response:
 
-			Removed parameters: details 
+			Removed parameters: details
 
 	activateProject
 
 		Response:
 
-			New parameters: projectaccountname 
+			New parameters: projectaccountname
 
 	reconnectHost
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: memorywithoverprovisioning 
+			New parameters: memorywithoverprovisioning
 
 	updateEgressFirewallRule
 
 		Response:
 
-			New parameters: destcidrlist 
+			New parameters: destcidrlist

@@ -61418,7 +61418,7 @@
       </arg>
       <arg>
         <name>otherdeployparams</name>
-        <description>parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. 
+        <description>parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine.
 Example: otherdeployparams[0].name=serviceofferingid&amp;otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&amp;otherdeployparams[1].name=rootdisksize&amp;otherdeployparams[1].value=10 .
 Possible parameters are &quot;rootdisksize&quot;, &quot;diskofferingid&quot;,&quot;size&quot;, &quot;securitygroupids&quot;, &quot;overridediskofferingid&quot;, &quot;keypairs&quot;, &quot;affinitygroupids&apos;&quot; and &quot;networkids&quot;.</description>
         <required>false</required>

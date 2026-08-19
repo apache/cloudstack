@@ -83,370 +83,370 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	importLdapUsers
 
 		Response:
 
-			New parameters: conflictingusersource 
+			New parameters: conflictingusersource
 
 	listHostsMetrics
 
 		Response:
 
-			New parameters: cpuloadaverage 
+			New parameters: cpuloadaverage
 
 	restoreVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	updateHost
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	stopRouter
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	changeServiceForVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	startRouter
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	rebootVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	listVolumesMetrics
 
 		Request:
 
-			New parameters: state (optional) 
+			New parameters: state (optional)
 
 	updateVmNicIp
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	startInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	searchLdap
 
 		Response:
 
-			New parameters: conflictingusersource 
+			New parameters: conflictingusersource
 
 	stopNetScalerVpx
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	listCapabilities
 
 		Response:
 
-			New parameters: allowuserexpungerecovervolume, kubernetesclusterexperimentalfeaturesenabled, kubernetesserviceenabled 
+			New parameters: allowuserexpungerecovervolume, kubernetesclusterexperimentalfeaturesenabled, kubernetesserviceenabled
 
 	listLdapUsers
 
 		Request:
 
-			New parameters: domainid (optional), userfilter (optional) 
+			New parameters: domainid (optional), userfilter (optional)
 
 		Response:
 
-			New parameters: conflictingusersource 
+			New parameters: conflictingusersource
 
 	rebootRouter
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	listNics
 
 		Response:
 
-			New parameters: adaptertype, ipaddresses, isolatedpvlan, isolatedpvlantype, vlanid 
+			New parameters: adaptertype, ipaddresses, isolatedpvlan, isolatedpvlantype, vlanid
 
 	addNicToVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	listExternalLoadBalancers
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	updateDefaultNicForVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	stopInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	createServiceOffering
 
 		Request:
 
-			New parameters: cachemode (optional) 
+			New parameters: cachemode (optional)
 
 		Response:
 
-			New parameters: cacheMode 
+			New parameters: cacheMode
 
 	assignVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	changeServiceForRouter
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	updateVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	migrateVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	resetPasswordForVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	associateIpAddress
 
 		Request:
 
-			New parameters: ipaddress (optional) 
+			New parameters: ipaddress (optional)
 
 	resetSSHKeyForVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	listInternalLoadBalancerVMs
 
 		Request:
 
-			New parameters: fetchhealthcheckresults (optional) 
+			New parameters: fetchhealthcheckresults (optional)
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	detachIso
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	listVirtualMachines
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	revertToVMSnapshot
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	deployVirtualMachine
 
 		Request:
 
-			New parameters: bootmode (optional), boottype (optional) 
+			New parameters: bootmode (optional), boottype (optional)
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	createDiskOffering
 
 		Request:
 
-			New parameters: cachemode (optional) 
+			New parameters: cachemode (optional)
 
 	listVolumes
 
 		Request:
 
-			New parameters: state (optional) 
+			New parameters: state (optional)
 
 	createNetwork
 
 		Request:
 
-			New parameters: isolatedpvlantype (optional) 
+			New parameters: isolatedpvlantype (optional)
 
 	migrateVirtualMachineWithVolume
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	addHost
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	updateVMAffinityGroup
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	recoverVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	listRouters
 
 		Request:
 
-			New parameters: fetchhealthcheckresults (optional) 
+			New parameters: fetchhealthcheckresults (optional)
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	attachIso
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	destroyRouter
 
 		Response:
 
-			New parameters: healthchecksfailed, healthcheckresults(*) 
+			New parameters: healthchecksfailed, healthcheckresults(*)
 
 	removeNicFromVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	reconnectHost
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	createPrivateGateway
 
 		Request:
 
-			New parameters: bypassvlanoverlapcheck (optional) 
+			New parameters: bypassvlanoverlapcheck (optional)
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: cpuloadaverage, ueficapability 
+			New parameters: cpuloadaverage, ueficapability
 
-			Removed parameters: averageload 
+			Removed parameters: averageload
 
 	destroyVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	listServiceOfferings
 
 		Response:
 
-			New parameters: cacheMode 
+			New parameters: cacheMode
 
 	startVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	stopVirtualMachine
 
 		Response:
 
-			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype
 
 	updateServiceOffering
 
 		Response:
 
-			New parameters: cacheMode 
+			New parameters: cacheMode

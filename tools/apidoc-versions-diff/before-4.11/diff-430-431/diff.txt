@@ -11,4 +11,4 @@ Changes in commands arguments:
 
 		Request:
 
-			New parameters: account (optional) 
+			New parameters: account (optional)

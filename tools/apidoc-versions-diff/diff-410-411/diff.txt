@@ -97,626 +97,626 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: forsystemvms, vlanid 
+			New parameters: forsystemvms, vlanid
 
 	copyIso
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	listHosts
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	updateStoragePool
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	rebootSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	listNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	updateResourceLimit
 
 		Response:
 
-			New parameters: resourcetypename 
+			New parameters: resourcetypename
 
 	updateHost
 
 		Request:
 
-			New parameters: annotation (optional) 
+			New parameters: annotation (optional)
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	uploadVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	destroySystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	scaleSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	listLdapConfigurations
 
 		Request:
 
-			New parameters: domainid (optional) 
+			New parameters: domainid (optional)
 
 		Response:
 
-			New parameters: domainid 
+			New parameters: domainid
 
 	listTemplates
 
 		Request:
 
-			New parameters: parenttemplateid (optional) 
+			New parameters: parenttemplateid (optional)
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	createLoadBalancerRule
 
 		Response:
 
-			New parameters: zonename 
+			New parameters: zonename
 
 	updateNetworkOffering
 
 		Request:
 
-			New parameters: tags (optional) 
+			New parameters: tags (optional)
 
 	stopSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	createNetworkOffering
 
 		Request:
 
-			New parameters: forvpc (optional) 
+			New parameters: forvpc (optional)
 
 	listVolumesMetrics
 
 		Request:
 
-			New parameters: clusterid (optional) 
+			New parameters: clusterid (optional)
 
 	listSslCerts
 
 		Response:
 
-			New parameters: name 
+			New parameters: name
 
 	listPods
 
 		Response:
 
-			New parameters: forsystemvms, vlanid 
+			New parameters: forsystemvms, vlanid
 
 	listSnapshots
 
 		Response:
 
-			New parameters: virtualsize 
+			New parameters: virtualsize
 
 	listConfigurations
 
 		Request:
 
-			New parameters: domainid (optional) 
+			New parameters: domainid (optional)
 
 	listSystemVms
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	detachVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	changeServiceForSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	createSnapshot
 
 		Request:
 
-			New parameters: asyncbackup (optional) 
+			New parameters: asyncbackup (optional)
 
 		Response:
 
-			New parameters: virtualsize 
+			New parameters: virtualsize
 
 	listNics
 
 		Response:
 
-			New parameters: extradhcpoption 
+			New parameters: extradhcpoption
 
 	createSnapshotFromVMSnapshot
 
 		Response:
 
-			New parameters: virtualsize 
+			New parameters: virtualsize
 
 	listStoragePools
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	addNicToVirtualMachine
 
 		Request:
 
-			New parameters: dhcpoptions (optional), macaddress (optional) 
+			New parameters: dhcpoptions (optional), macaddress (optional)
 
 	updateIso
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	listExternalLoadBalancers
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	prepareTemplate
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	copyTemplate
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	listNiciraNvpDeviceNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	resizeVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	updateTemplate
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	createVlanIpRange
 
 		Request:
 
-			New parameters: forsystemvms (optional) 
+			New parameters: forsystemvms (optional)
 
 		Response:
 
-			New parameters: forsystemvms 
+			New parameters: forsystemvms
 
 	listPaloAltoFirewallNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	deleteLdapConfiguration
 
 		Request:
 
-			New parameters: domainid (optional), port (optional) 
+			New parameters: domainid (optional), port (optional)
 
 		Response:
 
-			New parameters: domainid 
+			New parameters: domainid
 
 	updateVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	updateVirtualMachine
 
 		Request:
 
-			New parameters: dhcpoptionsnetworklist (optional) 
+			New parameters: dhcpoptionsnetworklist (optional)
 
 	listDomains
 
 		Request:
 
-			New parameters: details (optional) 
+			New parameters: details (optional)
 
 	updateNetwork
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	deleteTemplate
 
 		Request:
 
-			New parameters: forced (optional) 
+			New parameters: forced (optional)
 
 	createTemplate
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	updatePortForwardingRule
 
 		Request:
 
-			New parameters: privateendport (optional) 
+			New parameters: privateendport (optional)
 
 	linkDomainToLdap
 
 		Request:
 
-			New parameters: ldapdomain (optional) 
+			New parameters: ldapdomain (optional)
 
-			Changed parameters: name (old version - required, new version - optional) 
+			Changed parameters: name (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: ldapdomain 
+			New parameters: ldapdomain
 
 	listSrxFirewallNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	registerIso
 
 		Request:
 
-			New parameters: directdownload (optional) 
+			New parameters: directdownload (optional)
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	deployVirtualMachine
 
 		Request:
 
-			New parameters: datadiskofferinglist (optional), dhcpoptionsnetworklist (optional), macaddress (optional) 
+			New parameters: datadiskofferinglist (optional), dhcpoptionsnetworklist (optional), macaddress (optional)
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	listVlanIpRanges
 
 		Response:
 
-			New parameters: forsystemvms 
+			New parameters: forsystemvms
 
 	listVolumes
 
 		Request:
 
-			New parameters: clusterid (optional) 
+			New parameters: clusterid (optional)
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	lockUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	createNetwork
 
 		Request:
 
-			New parameters: bypassvlanoverlapcheck (optional), externalid (optional) 
+			New parameters: bypassvlanoverlapcheck (optional), externalid (optional)
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	updateUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	attachVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	addHost
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	listUsers
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	listResourceLimits
 
 		Request:
 
-			New parameters: resourcetypename (optional) 
+			New parameters: resourcetypename (optional)
 
 		Response:
 
-			New parameters: resourcetypename 
+			New parameters: resourcetypename
 
 	disableUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	listIsos
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	listNetscalerLoadBalancerNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	startSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	migrateVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	listEvents
 
 		Request:
 
-			New parameters: startid (optional) 
+			New parameters: startid (optional)
 
 	addLdapConfiguration
 
 		Request:
 
-			New parameters: domainid (optional) 
+			New parameters: domainid (optional)
 
 		Response:
 
-			New parameters: domainid 
+			New parameters: domainid
 
 	updateConfiguration
 
 		Request:
 
-			New parameters: domainid (optional) 
+			New parameters: domainid (optional)
 
 	dedicatePublicIpRange
 
 		Response:
 
-			New parameters: forsystemvms 
+			New parameters: forsystemvms
 
 	revertSnapshot
 
 		Response:
 
-			New parameters: virtualsize 
+			New parameters: virtualsize
 
 	migrateSystemVm
 
 		Response:
 
-			New parameters: guestvlan, publicvlan 
+			New parameters: guestvlan, publicvlan
 
 	updateResourceCount
 
 		Response:
 
-			New parameters: resourcetypename 
+			New parameters: resourcetypename
 
 	listBrocadeVcsDeviceNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	listUsageRecords
 
 		Request:
 
-			New parameters: includetags (optional) 
+			New parameters: includetags (optional)
 
 	enableUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	registerTemplate
 
 		Request:
 
-			New parameters: directdownload (optional) 
+			New parameters: directdownload (optional)
 
 		Response:
 
-			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize
 
 	findStoragePoolsForMigration
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	createStoragePool
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	createVolume
 
 		Response:
 
-			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize
 
 	listF5LoadBalancerNetworks
 
 		Response:
 
-			New parameters: externalid 
+			New parameters: externalid
 
 	updatePod
 
 		Response:
 
-			New parameters: forsystemvms, vlanid 
+			New parameters: forsystemvms, vlanid
 
 	enableStorageMaintenance
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	createUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	updateRolePermission
 
 		Request:
 
-			New parameters: permission (optional), ruleid (optional) 
+			New parameters: permission (optional), ruleid (optional)
 
-			Changed parameters: ruleorder (old version - required, new version - optional) 
+			Changed parameters: ruleorder (old version - required, new version - optional)
 
 	cancelStorageMaintenance
 
 		Response:
 
-			New parameters: allocatediops, provider 
+			New parameters: allocatediops, provider
 
 	updateLoadBalancerRule
 
 		Request:
 
-			New parameters: protocol (optional) 
+			New parameters: protocol (optional)
 
 		Response:
 
-			New parameters: zonename 
+			New parameters: zonename
 
 	reconnectHost
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	getUser
 
 		Response:
 
-			New parameters: usersource 
+			New parameters: usersource
 
 	listLoadBalancerRules
 
 		Response:
 
-			New parameters: zonename 
+			New parameters: zonename
 
 	uploadSslCert
 
 		Request:
 
-			New parameters: name (required) 
+			New parameters: name (required)
 
 		Response:
 
-			New parameters: name 
+			New parameters: name
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: annotation, hostha, lastannotated, username 
+			New parameters: annotation, hostha, lastannotated, username
 
 	listCapacity
 
 		Response:
 
-			New parameters: capacityallocated, name 
+			New parameters: capacityallocated, name

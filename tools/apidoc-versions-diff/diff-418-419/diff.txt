@@ -125,1566 +125,1566 @@ Changes in commands arguments:
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 	copyIso
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listVirtualMachinesMetrics
 
 		Request:
 
-			New parameters: isvnf (optional), retrieveonlyresourcecount (optional) 
+			New parameters: isvnf (optional), retrieveonlyresourcecount (optional)
 
 		Response:
 
-			Removed parameters: ipaddress 
+			Removed parameters: ipaddress
 
 	listHosts
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	listVsphereStoragePolicyCompatiblePools
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	updateStoragePool
 
 		Request:
 
-			New parameters: details (optional), istagarule (optional), url (optional) 
+			New parameters: details (optional), istagarule (optional), url (optional)
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	rebootSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	listNetworks
 
 		Request:
 
-			New parameters: retrieveonlyresourcecount (optional) 
+			New parameters: retrieveonlyresourcecount (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listGuestVlans
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateGuestOs
 
 		Request:
 
-			New parameters: forDisplay (optional) 
+			New parameters: forDisplay (optional)
 
-			Changed parameters: details (old version - required, new version - optional) 
+			Changed parameters: details (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: fordisplay, name, oscategoryname 
+			New parameters: fordisplay, name, oscategoryname
 
 	updateResourceLimit
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listHostsMetrics
 
 		Response:
 
-			New parameters: systeminstances 
+			New parameters: systeminstances
 
 	listAffinityGroups
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	restoreVirtualMachine
 
 		Request:
 
-			New parameters: details (optional), diskofferingid (optional), expunge (optional), rootdisksize (optional) 
+			New parameters: details (optional), diskofferingid (optional), expunge (optional), rootdisksize (optional)
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	reserveIpAddress
 
 		Response:
 
-			New parameters: domainpath, hasrules, virtualmachinetype 
+			New parameters: domainpath, hasrules, virtualmachinetype
 
 	updateHost
 
 		Request:
 
-			New parameters: istagarule (optional) 
+			New parameters: istagarule (optional)
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	uploadVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listSecurityGroups
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	destroySystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	listUserData
 
 		Response:
 
-			New parameters: domainpath, project, projectid 
+			New parameters: domainpath, project, projectid
 
 	updateLoadBalancer
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	scaleSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	listSnapshotPolicies
 
 		Response:
 
-			New parameters: zone 
+			New parameters: zone
 
 	updateVpnCustomerGateway
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	stopRouter
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listProjectInvitations
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listClustersMetrics
 
 		Response:
 
-			New parameters: drsimbalance 
+			New parameters: drsimbalance
 
 	createRemoteAccessVpn
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	startRouter
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	changeServiceForVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listGuestOsMapping
 
 		Request:
 
-			New parameters: osdisplayname (optional), osnameforhypervisor (optional) 
+			New parameters: osdisplayname (optional), osnameforhypervisor (optional)
 
 	listTemplates
 
 		Request:
 
-			New parameters: imagestoreid (optional), isvnf (optional), storageid (optional), templatetype (optional) 
+			New parameters: imagestoreid (optional), isvnf (optional), storageid (optional), templatetype (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createAutoScalePolicy
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createAffinityGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	rebootVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	createLoadBalancerRule
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	addGuestOsMapping
 
 		Request:
 
-			New parameters: forced (optional), osmappingcheckenabled (optional) 
+			New parameters: forced (optional), osmappingcheckenabled (optional)
 
 	stopSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	updateVPC
 
 		Request:
 
-			New parameters: sourcenatipaddress (optional) 
+			New parameters: sourcenatipaddress (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listResourceDetails
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createNetworkOffering
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 	listVolumesMetrics
 
 		Request:
 
-			New parameters: isencrypted (optional), retrieveonlyresourcecount (optional), serviceofferingid (optional) 
+			New parameters: isencrypted (optional), retrieveonlyresourcecount (optional), serviceofferingid (optional)
 
 	listPrivateGateways
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateVmNicIp
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	startInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateDiskOffering
 
 		Request:
 
-			New parameters: state (optional) 
+			New parameters: state (optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	listSnapshots
 
 		Request:
 
-			New parameters: imagestoreid (optional), locationtype (optional), showunique (optional), storageid (optional) 
+			New parameters: imagestoreid (optional), locationtype (optional), showunique (optional), storageid (optional)
 
 		Response:
 
-			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename 
+			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename
 
 	listKubernetesClusters
 
 		Request:
 
-			New parameters: clustertype (optional) 
+			New parameters: clustertype (optional)
 
 		Response:
 
-			New parameters: clustertype, domainpath 
+			New parameters: clustertype, domainpath
 
 	resetVpnConnection
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createAutoScaleVmGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	stopNetScalerVpx
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	scaleKubernetesCluster
 
 		Response:
 
-			New parameters: clustertype, domainpath 
+			New parameters: clustertype, domainpath
 
 	listCapabilities
 
 		Response:
 
-			New parameters: customhypervisordisplayname 
+			New parameters: customhypervisordisplayname
 
 	listConditions
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listInstanceGroups
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createStaticRoute
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	destroyVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	disableAutoScaleVmGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createSnapshotPolicy
 
 		Request:
 
-			New parameters: zoneids (optional) 
+			New parameters: zoneids (optional)
 
 		Response:
 
-			New parameters: zone 
+			New parameters: zone
 
 	listSystemVms
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	createProject
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 	detachVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	changeServiceForSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	createSnapshot
 
 		Request:
 
-			New parameters: zoneids (optional) 
+			New parameters: zoneids (optional)
 
 		Response:
 
-			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename 
+			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename
 
 	listStoragePoolsMetrics
 
 		Request:
 
-			New parameters: hostid (optional), status (optional), storagecustomstats (optional) 
+			New parameters: hostid (optional), status (optional), storagecustomstats (optional)
 
 	rebootRouter
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listNics
 
 		Response:
 
-			New parameters: publicip, publicipid 
+			New parameters: publicip, publicipid
 
 	createSnapshotFromVMSnapshot
 
 		Response:
 
-			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename 
+			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename
 
 	listStoragePools
 
 		Request:
 
-			New parameters: hostid (optional), status (optional), storagecustomstats (optional) 
+			New parameters: hostid (optional), status (optional), storagecustomstats (optional)
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	updateHypervisorCapabilities
 
 		Request:
 
-			New parameters: hypervisor (optional), hypervisorversion (optional) 
+			New parameters: hypervisor (optional), hypervisorversion (optional)
 
 	addNicToVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	dedicateGuestVlanRange
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listStaticRoutes
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listPublicIpAddresses
 
 		Request:
 
-			New parameters: retrieveonlyresourcecount (optional) 
+			New parameters: retrieveonlyresourcecount (optional)
 
 		Response:
 
-			New parameters: domainpath, hasrules, virtualmachinetype 
+			New parameters: domainpath, hasrules, virtualmachinetype
 
 	updateIso
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateDefaultNicForVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	updateImageStore
 
 		Request:
 
-			New parameters: capacitybytes (optional), name (optional) 
+			New parameters: capacitybytes (optional), name (optional)
 
-			Changed parameters: readonly (old version - required, new version - optional) 
+			Changed parameters: readonly (old version - required, new version - optional)
 
 	prepareTemplate
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listAsyncJobs
 
 		Request:
 
-			New parameters: managementserverid (optional) 
+			New parameters: managementserverid (optional)
 
 		Response:
 
-			New parameters: account, domainid, domainpath, managementserverid 
+			New parameters: account, domainid, domainpath, managementserverid
 
 	stopInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateSecurityGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateStorageCapabilities
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	assignVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listDedicatedGuestVlanRanges
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	copyTemplate
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createServiceOffering
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	listNiciraNvpDeviceNetworks
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	assignVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listOvsElements
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	resizeVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	updateTemplate
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateVpnConnection
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVlanIpRange
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listPaloAltoFirewallNetworks
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listManagementServers
 
 		Response:
 
-			New parameters: serviceip 
+			New parameters: serviceip
 
 	updateInstanceGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	changeOfferingForVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	changeServiceForRouter
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	updateVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	updateNetwork
 
 		Request:
 
-			New parameters: sourcenatipaddress (optional) 
+			New parameters: sourcenatipaddress (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	resetUserDataForVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	archiveSnapshot
 
 		Response:
 
-			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename 
+			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename
 
 	updateVpnGateway
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	migrateVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	createTemplate
 
 		Request:
 
-			New parameters: account (optional), domainid (optional), zoneid (optional) 
+			New parameters: account (optional), domainid (optional), zoneid (optional)
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	resetPasswordForVirtualMachine
 
 		Request:
 
-			New parameters: password (optional) 
+			New parameters: password (optional)
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	associateIpAddress
 
 		Response:
 
-			New parameters: domainpath, hasrules, virtualmachinetype 
+			New parameters: domainpath, hasrules, virtualmachinetype
 
 	listVpnCustomerGateways
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	resetSSHKeyForVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	addKubernetesSupportedVersion
 
 		Request:
 
-			New parameters: directdownload (optional) 
+			New parameters: directdownload (optional)
 
 		Response:
 
-			New parameters: directdownload 
+			New parameters: directdownload
 
 	deleteKubernetesCluster
 
 		Request:
 
-			New parameters: cleanup (optional), expunge (optional) 
+			New parameters: cleanup (optional), expunge (optional)
 
 	createGlobalLoadBalancerRule
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	linkUserDataToTemplate
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listGlobalLoadBalancerRules
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listTags
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVirtualRouterElement
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVPC
 
 		Request:
 
-			New parameters: sourcenatipaddress (optional) 
+			New parameters: sourcenatipaddress (optional)
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listInternalLoadBalancerVMs
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listOsTypes
 
 		Request:
 
-			New parameters: fordisplay (optional) 
+			New parameters: fordisplay (optional)
 
 		Response:
 
-			New parameters: fordisplay, name, oscategoryname 
+			New parameters: fordisplay, name, oscategoryname
 
 	updateKubernetesSupportedVersion
 
 		Response:
 
-			New parameters: directdownload 
+			New parameters: directdownload
 
 	detachIso
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	createRole
 
 		Request:
 
-			New parameters: ispublic (optional) 
+			New parameters: ispublic (optional)
 
 	updateAutoScaleVmGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateAutoScaleVmProfile
 
 		Request:
 
-			New parameters: userdatadetails (optional), userdataid (optional) 
+			New parameters: userdatadetails (optional), userdataid (optional)
 
 		Response:
 
-			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy 
+			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy
 
 	enableAutoScaleVmGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	deleteSnapshot
 
 		Request:
 
-			New parameters: zoneid (optional) 
+			New parameters: zoneid (optional)
 
 	listVirtualMachines
 
 		Request:
 
-			New parameters: isvnf (optional), retrieveonlyresourcecount (optional) 
+			New parameters: isvnf (optional), retrieveonlyresourcecount (optional)
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	updateGuestOsMapping
 
 		Request:
 
-			New parameters: osmappingcheckenabled (optional) 
+			New parameters: osmappingcheckenabled (optional)
 
 	listDiskOfferings
 
 		Request:
 
-			New parameters: account (optional), projectid (optional), state (optional), storagetype (optional) 
+			New parameters: account (optional), projectid (optional), state (optional), storagetype (optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	upgradeKubernetesCluster
 
 		Response:
 
-			New parameters: clustertype, domainpath 
+			New parameters: clustertype, domainpath
 
 	updateGlobalLoadBalancerRule
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createCondition
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	revertToVMSnapshot
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	addGuestOs
 
 		Request:
 
-			New parameters: forDisplay (optional) 
+			New parameters: forDisplay (optional)
 
-			Changed parameters: details (old version - required, new version - optional) 
+			Changed parameters: details (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: fordisplay, name, oscategoryname 
+			New parameters: fordisplay, name, oscategoryname
 
 	registerIso
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	deployVirtualMachine
 
 		Request:
 
-			New parameters: nicmultiqueuenumber (optional), nicpackedvirtqueuesenabled (optional), password (optional) 
+			New parameters: nicmultiqueuenumber (optional), nicpackedvirtqueuesenabled (optional), password (optional)
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listVlanIpRanges
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	updateAutoScalePolicy
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createDiskOffering
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	listVolumes
 
 		Request:
 
-			New parameters: isencrypted (optional), retrieveonlyresourcecount (optional), serviceofferingid (optional) 
+			New parameters: isencrypted (optional), retrieveonlyresourcecount (optional), serviceofferingid (optional)
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	createNetwork
 
 		Request:
 
-			New parameters: sourcenatipaddress (optional) 
+			New parameters: sourcenatipaddress (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	migrateVirtualMachineWithVolume
 
 		Request:
 
-			New parameters: autoselect (optional) 
+			New parameters: autoselect (optional)
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listVPCs
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	addHost
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	attachVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listLoadBalancers
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateProject
 
 		Request:
 
-			New parameters: name (optional) 
+			New parameters: name (optional)
 
 	listVpnConnections
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateVlanIpRange
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listResourceLimits
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listIsos
 
 		Request:
 
-			New parameters: imagestoreid (optional), storageid (optional) 
+			New parameters: imagestoreid (optional), storageid (optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listAutoScalePolicies
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateRole
 
 		Request:
 
-			New parameters: ispublic (optional) 
+			New parameters: ispublic (optional)
 
 	listZones
 
 		Request:
 
-			New parameters: ids (optional) 
+			New parameters: ids (optional)
 
 	listRemoteAccessVpns
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createServiceInstance
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listNetscalerLoadBalancerNetworks
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	startSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	declareHostAsDegraded
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	createKubernetesCluster
 
 		Request:
 
-			New parameters: clustertype (optional) 
+			New parameters: clustertype (optional)
 
-			Changed parameters: description (old version - required, new version - optional), kubernetesversionid (old version - required, new version - optional), size (old version - required, new version - optional), serviceofferingid (old version - required, new version - optional) 
+			Changed parameters: description (old version - required, new version - optional), kubernetesversionid (old version - required, new version - optional), size (old version - required, new version - optional), serviceofferingid (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: clustertype, domainpath 
+			New parameters: clustertype, domainpath
 
 	configureVirtualRouterElement
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	migrateVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listEvents
 
 		Request:
 
-			New parameters: archived (optional) 
+			New parameters: archived (optional)
 
 		Response:
 
-			New parameters: archived, domainpath 
+			New parameters: archived, domainpath
 
 	updateVMAffinityGroup
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	migrateVPC
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	dedicatePublicIpRange
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	recoverVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	getUploadParamsForTemplate
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 	revertSnapshot
 
 		Response:
 
-			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename 
+			New parameters: datastoreid, datastorename, datastorestate, datastoretype, domainpath, downloaddetails, status, volumestate, zonename
 
 	migrateSystemVm
 
 		Response:
 
-			New parameters: serviceofferingid, serviceofferingname 
+			New parameters: serviceofferingid, serviceofferingname
 
 	listVirtualRouterElements
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	linkAccountToLdap
 
 		Request:
 
-			New parameters: roleid (optional) 
+			New parameters: roleid (optional)
 
-			Changed parameters: accounttype (old version - required, new version - optional) 
+			Changed parameters: accounttype (old version - required, new version - optional)
 
 	listAutoScaleVmProfiles
 
 		Response:
 
-			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy 
+			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy
 
 	cancelHostAsDegraded
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	syncStoragePool
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	createSecurityGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listVpnGateways
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateResourceCount
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listRouters
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVpnConnection
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listBrocadeVcsDeviceNetworks
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	importRole
 
 		Request:
 
-			New parameters: ispublic (optional) 
+			New parameters: ispublic (optional)
 
 	listKubernetesSupportedVersions
 
 		Response:
 
-			New parameters: directdownload 
+			New parameters: directdownload
 
 	listInfrastructure
 
 		Response:
 
-			New parameters: objectstores 
+			New parameters: objectstores
 
 	listUsageRecords
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	recoverVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listZonesMetrics
 
 		Request:
 
-			New parameters: ids (optional) 
+			New parameters: ids (optional)
 
 	updateIpAddress
 
 		Response:
 
-			New parameters: domainpath, hasrules, virtualmachinetype 
+			New parameters: domainpath, hasrules, virtualmachinetype
 
 	migrateNetwork
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listUnmanagedInstances
 
 		Response:
 
-			New parameters: clustername 
+			New parameters: clustername
 
 	registerTemplate
 
 		Request:
 
-			New parameters: templatetype (optional) 
+			New parameters: templatetype (optional)
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	findStoragePoolsForMigration
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	createStoragePool
 
 		Request:
 
-			New parameters: istagarule (optional) 
+			New parameters: istagarule (optional)
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	configureOvsElement
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	importUnmanagedInstance
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listAutoScaleVmGroups
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVolume
 
 		Response:
 
-			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult 
+			New parameters: domainpath, encryptformat, volumecheckresult, volumerepairresult
 
 	listVMSnapshot
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	attachIso
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	disassociateIpAddress
 
 		Request:
 
-			New parameters: ipaddress (optional) 
+			New parameters: ipaddress (optional)
 
-			Changed parameters: id (old version - required, new version - optional) 
+			Changed parameters: id (old version - required, new version - optional)
 
 	enableStorageMaintenance
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	createVpnGateway
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVMSnapshot
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listVpnUsers
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	cancelStorageMaintenance
 
 		Response:
 
-			New parameters: istagarule, managed, nfsmountopts, storagecustomstats 
+			New parameters: istagarule, managed, nfsmountopts, storagecustomstats
 
 	destroyRouter
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	updateSnapshotPolicy
 
 		Response:
 
-			New parameters: zone 
+			New parameters: zone
 
 	queryAsyncJobResult
 
 		Response:
 
-			New parameters: account, domainid, domainpath, managementserverid 
+			New parameters: account, domainid, domainpath, managementserverid
 
 	removeNicFromVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	getUploadParamsForIso
 
 		Request:
 
-			Changed parameters: displaytext (old version - required, new version - optional) 
+			Changed parameters: displaytext (old version - required, new version - optional)
 
 	updateLoadBalancerRule
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createAutoScaleVmProfile
 
 		Request:
 
-			New parameters: userdatadetails (optional), userdataid (optional) 
+			New parameters: userdatadetails (optional), userdataid (optional)
 
 		Response:
 
-			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy 
+			New parameters: domainpath, userdatadetails, userdataid, userdataname, userdatapolicy
 
 	startKubernetesCluster
 
 		Response:
 
-			New parameters: clustertype, domainpath 
+			New parameters: clustertype, domainpath
 
 	reconnectHost
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	createInstanceGroup
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createLoadBalancer
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createPrivateGateway
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	listLoadBalancerRules
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	createVpnCustomerGateway
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	addVpnUser
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: instanceconversionsupported, istagarule 
+			New parameters: instanceconversionsupported, istagarule
 
 	updateRemoteAccessVpn
 
 		Response:
 
-			New parameters: domainpath 
+			New parameters: domainpath
 
 	destroyVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	listServiceOfferings
 
 		Request:
 
-			New parameters: account (optional), projectid (optional), state (optional), storagetype (optional) 
+			New parameters: account (optional), projectid (optional), state (optional), storagetype (optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	startVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	updateServiceOffering
 
 		Request:
 
-			New parameters: state (optional) 
+			New parameters: state (optional)
 
 		Response:
 
-			New parameters: state 
+			New parameters: state
 
 	stopVirtualMachine
 
 		Response:
 
-			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics 
+			New parameters: domainpath, ipaddress, templateformat, templatetype, vnfdetails, vnfnics
 
 	createNetworkACLList
 
 		Request:
 
-			Changed parameters: vpcid (old version - required, new version - optional) 
+			Changed parameters: vpcid (old version - required, new version - optional)

@@ -67,528 +67,528 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	copyTemplate
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	addNicToVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	addCluster
 
 		Response:
 
-			New parameters: resourcedetails 
+			New parameters: resourcedetails
 
 	listVolumes
 
 		Request:
 
-			New parameters: ids (optional) 
+			New parameters: ids (optional)
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	importLdapUsers
 
 		Request:
 
-			New parameters: roleid (optional) 
+			New parameters: roleid (optional)
 
-			Changed parameters: accounttype (old version - required, new version - optional) 
+			Changed parameters: accounttype (old version - required, new version - optional)
 
 	createTemplate
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	migrateVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	enableAccount
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	listClusters
 
 		Response:
 
-			New parameters: resourcedetails 
+			New parameters: resourcedetails
 
 	attachVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	resetSSHKeyForVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateVmNicIp
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	addNuageVspDevice
 
 		Request:
 
-			Changed parameters: retrycount (old version - required, new version - optional), retryinterval (old version - required, new version - optional), apiversion (old version - required, new version - optional) 
+			Changed parameters: retrycount (old version - required, new version - optional), retryinterval (old version - required, new version - optional), apiversion (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: cmsid 
+			New parameters: cmsid
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	resizeVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	recoverVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listCapabilities
 
 		Response:
 
-			New parameters: dynamicrolesenabled 
+			New parameters: dynamicrolesenabled
 
 	deployVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	enableUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	updateAccount
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	addHost
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	updateNuageVspDevice
 
 		Response:
 
-			New parameters: cmsid 
+			New parameters: cmsid
 
 	updateHost
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	lockAccount
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	createUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	detachVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listSnapshots
 
 		Request:
 
-			New parameters: ids (optional) 
+			New parameters: ids (optional)
 
 	ldapCreateAccount
 
 		Request:
 
-			New parameters: roleid (optional) 
+			New parameters: roleid (optional)
 
-			Changed parameters: accounttype (old version - required, new version - optional) 
+			Changed parameters: accounttype (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	registerTemplate
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	createAccount
 
 		Request:
 
-			New parameters: roleid (optional) 
+			New parameters: roleid (optional)
 
-			Changed parameters: accounttype (old version - required, new version - optional) 
+			Changed parameters: accounttype (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	listNuageVspDevices
 
 		Response:
 
-			New parameters: cmsid 
+			New parameters: cmsid
 
 	attachIso
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	getUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	updateCluster
 
 		Response:
 
-			New parameters: resourcedetails 
+			New parameters: resourcedetails
 
 	listTemplates
 
 		Request:
 
-			New parameters: ids (optional) 
+			New parameters: ids (optional)
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	prepareTemplate
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	rebootVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateVMAffinityGroup
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	updateTemplate
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	disableUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	removeNicFromVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateDefaultNicForVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	registerIso
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listExternalLoadBalancers
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	createVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	resetPasswordForVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	changeServiceForVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	startVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	detachIso
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	disableAccount
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	migrateVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listVMSnapshot
 
 		Request:
 
-			New parameters: vmsnapshotids (optional) 
+			New parameters: vmsnapshotids (optional)
 
 	assignVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	updateVirtualMachine
 
 		Request:
 
-			New parameters: securitygroupids (optional), securitygroupnames (optional) 
+			New parameters: securitygroupids (optional), securitygroupnames (optional)
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	getSolidFireVolumeSize
 
 		Request:
 
-			Removed parameters: storageid 
+			Removed parameters: storageid
 
 	restoreVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	copyIso
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	uploadVolume
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	migrateVirtualMachineWithVolume
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	stopVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listAccounts
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	updateIso
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	destroyVirtualMachine
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	revertToVMSnapshot
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	markDefaultZoneForAccount
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	lockUser
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	listVirtualMachines
 
 		Response:
 
-			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)
 
 	listHosts
 
 		Request:
 
-			New parameters: outofbandmanagementenabled (optional), outofbandmanagementpowerstate (optional) 
+			New parameters: outofbandmanagementenabled (optional), outofbandmanagementpowerstate (optional)
 
 		Response:
 
-			New parameters: outofbandmanagement 
+			New parameters: outofbandmanagement
 
 	listUsers
 
 		Response:
 
-			New parameters: roleid, rolename, roletype 
+			New parameters: roleid, rolename, roletype
 
 	listIsos
 
 		Response:
 
-			Removed parameters: tags(*) 
+			Removed parameters: tags(*)

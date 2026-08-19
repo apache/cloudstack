@@ -41,84 +41,84 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	stopRouter
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	createAffinityGroup
 
 		Request:
 
-			New parameters: projectid (optional) 
+			New parameters: projectid (optional)
 
 		Response:
 
-			New parameters: project, projectid 
+			New parameters: project, projectid
 
 	startInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	destroyRouter
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	rebootRouter
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	stopInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	changeServiceForRouter
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	listAffinityGroups
 
 		Request:
 
-			New parameters: projectid (optional) 
+			New parameters: projectid (optional)
 
 		Response:
 
-			New parameters: project, projectid 
+			New parameters: project, projectid
 
 	startRouter
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname
 
 	deleteAffinityGroup
 
 		Request:
 
-			New parameters: projectid (optional) 
+			New parameters: projectid (optional)
 
 	dedicatePublicIpRange
 
 		Request:
 
-			Changed parameters: account (old version - required, new version - optional) 
+			Changed parameters: account (old version - required, new version - optional)
 
 	listInternalLoadBalancerVMs
 
 		Response:
 
-			New parameters: guestnetworkname, vpcname 
+			New parameters: guestnetworkname, vpcname

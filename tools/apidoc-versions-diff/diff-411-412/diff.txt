@@ -49,284 +49,284 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	listNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	updateNetworkACLList
 
 		Request:
 
-			New parameters: description (optional), name (optional) 
+			New parameters: description (optional), name (optional)
 
 	listTemplates
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	updateDiskOffering
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength
 
 	updateIso
 
 		Request:
 
-			New parameters: sshkeyenabled (optional) 
+			New parameters: sshkeyenabled (optional)
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	prepareTemplate
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	listAsyncJobs
 
 		Response:
 
-			New parameters: completed 
+			New parameters: completed
 
 	restartNetwork
 
 		Request:
 
-			New parameters: makeredundant (optional) 
+			New parameters: makeredundant (optional)
 
 	listNetworkACLs
 
 		Response:
 
-			New parameters: reason 
+			New parameters: reason
 
 	copyTemplate
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	createServiceOffering
 
 		Request:
 
-			New parameters: bytesreadratemax (optional), bytesreadratemaxlength (optional), byteswriteratemax (optional), byteswriteratemaxlength (optional), iopsreadratemax (optional), iopsreadratemaxlength (optional), iopswriteratemax (optional), iopswriteratemaxlength (optional) 
+			New parameters: bytesreadratemax (optional), bytesreadratemaxlength (optional), byteswriteratemax (optional), byteswriteratemaxlength (optional), iopsreadratemax (optional), iopsreadratemaxlength (optional), iopswriteratemax (optional), iopswriteratemaxlength (optional)
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength
 
 	listNiciraNvpDeviceNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	updateTemplate
 
 		Request:
 
-			New parameters: sshkeyenabled (optional) 
+			New parameters: sshkeyenabled (optional)
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	listPaloAltoFirewallNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	updateAccount
 
 		Request:
 
-			New parameters: roleid (optional) 
+			New parameters: roleid (optional)
 
-			Changed parameters: newname (old version - required, new version - optional) 
+			Changed parameters: newname (old version - required, new version - optional)
 
 	updateVirtualMachine
 
 		Request:
 
-			New parameters: extraconfig (optional) 
+			New parameters: extraconfig (optional)
 
 	updateNetwork
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	createTemplate
 
 		Request:
 
-			New parameters: sshkeyenabled (optional) 
+			New parameters: sshkeyenabled (optional)
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	createNetworkACL
 
 		Request:
 
-			New parameters: reason (optional) 
+			New parameters: reason (optional)
 
 		Response:
 
-			New parameters: reason 
+			New parameters: reason
 
 	listSrxFirewallNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	listDiskOfferings
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength
 
 	registerIso
 
 		Request:
 
-			New parameters: passwordenabled (optional) 
+			New parameters: passwordenabled (optional)
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	deployVirtualMachine
 
 		Request:
 
-			New parameters: extraconfig (optional) 
+			New parameters: extraconfig (optional)
 
 	createDiskOffering
 
 		Request:
 
-			New parameters: bytesreadratemax (optional), bytesreadratemaxlength (optional), byteswriteratemax (optional), byteswriteratemaxlength (optional), iopsreadratemax (optional), iopsreadratemaxlength (optional), iopswriteratemax (optional), iopswriteratemaxlength (optional) 
+			New parameters: bytesreadratemax (optional), bytesreadratemaxlength (optional), byteswriteratemax (optional), byteswriteratemaxlength (optional), iopsreadratemax (optional), iopsreadratemaxlength (optional), iopswriteratemax (optional), iopswriteratemaxlength (optional)
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength
 
 	createNetwork
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	updateUser
 
 		Request:
 
-			New parameters: currentpassword (optional) 
+			New parameters: currentpassword (optional)
 
 	listIsos
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	updateRole
 
 		Response:
 
-			New parameters: id, description, name, type 
+			New parameters: id, description, name, type
 
-			Removed parameters: displaytext, success 
+			Removed parameters: displaytext, success
 
 	listNetscalerLoadBalancerNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	migrateVolume
 
 		Request:
 
-			New parameters: newdiskofferingid (optional) 
+			New parameters: newdiskofferingid (optional)
 
 	updateNetworkACLItem
 
 		Request:
 
-			New parameters: partialupgrade (optional), reason (optional) 
+			New parameters: partialupgrade (optional), reason (optional)
 
 		Response:
 
-			New parameters: reason 
+			New parameters: reason
 
 	listBrocadeVcsDeviceNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	listInfrastructure
 
 		Response:
 
-			New parameters: managementservers 
+			New parameters: managementservers
 
 	migrateNetwork
 
 		Request:
 
-			Changed parameters: networkofferingid (old version - optional, new version - required) 
+			Changed parameters: networkofferingid (old version - optional, new version - required)
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	registerTemplate
 
 		Response:
 
-			New parameters: requireshvm 
+			New parameters: requireshvm
 
 	listF5LoadBalancerNetworks
 
 		Response:
 
-			New parameters: redundantrouter 
+			New parameters: redundantrouter
 
 	queryAsyncJobResult
 
 		Response:
 
-			New parameters: completed 
+			New parameters: completed
 
 	destroyVirtualMachine
 
 		Request:
 
-			New parameters: volumeids (optional) 
+			New parameters: volumeids (optional)
 
 	listServiceOfferings
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength
 
 	updateServiceOffering
 
 		Response:
 
-			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength 
+			New parameters: diskBytesReadRateMax, diskBytesReadRateMaxLength, diskBytesWriteRateMax, diskBytesWriteRateMaxLength, diskIopsReadRateMax, diskIopsReadRateMaxLength, diskIopsWriteRateMax, diskIopsWriteRateMaxLength

@@ -13,40 +13,40 @@ Changes in commands arguments:
 
 		Request:
 
-			New parameters: fordisplay (optional), id (optional) 
+			New parameters: fordisplay (optional), id (optional)
 
-			Changed parameters: volumeid (old version - required, new version - optional) 
+			Changed parameters: volumeid (old version - required, new version - optional)
 
 		Response:
 
-			New parameters: fordisplay 
+			New parameters: fordisplay
 
 	getUser
 
 		Request:
 
-			New parameters: userapikey (required) 
+			New parameters: userapikey (required)
 
-			Removed parameters: apikey 
+			Removed parameters: apikey
 
 	listResourceDetails
 
 		Request:
 
-			New parameters: value (optional) 
+			New parameters: value (optional)
 
 	createSnapshotPolicy
 
 		Request:
 
-			New parameters: fordisplay (optional) 
+			New parameters: fordisplay (optional)
 
 		Response:
 
-			New parameters: fordisplay 
+			New parameters: fordisplay
 
 	uploadVolume
 
 		Request:
 
-			New parameters: diskofferingid (optional) 
+			New parameters: diskofferingid (optional)

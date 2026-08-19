@@ -70,336 +70,336 @@ Changes in commands arguments:
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	listRouters
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listVolumes
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	migrateVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 -
 	destroySystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listPublicIpAddresses
 
 		Request:
 
-			New parameters: state (optional) 
+			New parameters: state (optional)
 
 	stopRouter
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	attachVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	updateVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	cancelHostMaintenance
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	updateServiceOffering
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	addBaremetalHost
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	resizeVolume
 
 		Request:
 
-			New parameters: maxiops (optional), miniops (optional) 
+			New parameters: maxiops (optional), miniops (optional)
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	updateDiskOffering
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 --
 	startInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	destroyRouter
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listUsageRecords
 
 		Request:
 
-			New parameters: usageid (optional) 
+			New parameters: usageid (optional)
 
 	updateTrafficType
 
 		Request:
 
-			New parameters: xenservernetworklabel (optional) 
+			New parameters: xenservernetworklabel (optional)
 
-			Removed parameters: xennetworklabel 
+			Removed parameters: xennetworklabel
 
 		Response:
 
-			New parameters: xenservernetworklabel 
+			New parameters: xenservernetworklabel
 
-			Removed parameters: xennetworklabel 
+			Removed parameters: xennetworklabel
 
 	listLBHealthCheckPolicies
 
 		Request:
 
-			Removed parameters: id 
+			Removed parameters: id
 
-			Changed parameters: lbruleid (old version - optional, new version - required) 
+			Changed parameters: lbruleid (old version - optional, new version - required)
 
 	addHost
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	rebootRouter
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	updateHost
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	listDiskOfferings
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	detachVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 ---
 	prepareHostForMaintenance
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	stopInternalLoadBalancerVM
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	stopSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	login
 
 		Response:
 
-			New parameters: registered 
+			New parameters: registered
 
-			Removed parameters: password, timezoneoffset 
+			Removed parameters: password, timezoneoffset
 
 	changeServiceForRouter
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	updateZone
 
 		Response:
 
-			Removed parameters: vlan 
+			Removed parameters: vlan
 
 	startSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	createZone
 
 		Response:
 
-			Removed parameters: vlan 
+			Removed parameters: vlan
 
 	listBaremetalPxeServers
 
 		Request:
 
-			New parameters: physicalnetworkid (required) 
+			New parameters: physicalnetworkid (required)
 
 	changeServiceForSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listBaremetalDhcp
 
 		Request:
 
-			New parameters: physicalnetworkid (required) 
+			New parameters: physicalnetworkid (required)
 
 	addTrafficType
 
 		Request:
 
-			New parameters: xenservernetworklabel (optional) 
+			New parameters: xenservernetworklabel (optional)
 
-			Removed parameters: xennetworklabel 
+			Removed parameters: xennetworklabel
 
 		Response:
 
-			New parameters: xenservernetworklabel 
+			New parameters: xenservernetworklabel
 
-			Removed parameters: xennetworklabel 
+			Removed parameters: xennetworklabel
 
 	migrateSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	createServiceOffering
 
 		Request:
 
-			New parameters: provisioningtype (optional) 
+			New parameters: provisioningtype (optional)
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	listZones
 
 		Response:
 
-			Removed parameters: vlan 
+			Removed parameters: vlan
 
 	listExternalLoadBalancers
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
 
 	createVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	startRouter
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listSystemVms
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	updateVirtualMachine
 
 		Request:
 
-			New parameters: instancename (optional) 
+			New parameters: instancename (optional)
 
 	listServiceOfferings
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	uploadVolume
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	createDiskOffering
 
 		Request:
 
-			New parameters: provisioningtype (optional) 
+			New parameters: provisioningtype (optional)
 
 		Response:
 
-			New parameters: provisioningtype 
+			New parameters: provisioningtype
 
 	listInternalLoadBalancerVMs
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	rebootSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	scaleSystemVm
 
 		Response:
 
-			New parameters: hypervisor 
+			New parameters: hypervisor
 
 	listHosts
 
 		Response:
 
-			New parameters: details 
+			New parameters: details
