@@ -70,6 +70,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -1863,6 +1864,97 @@ public class VirtualMachineManagerImplTest {
         pendingJobs.add(vmWorkJobVO);
         when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId)).thenReturn(pendingJobs);
         virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    /**
+     * A pending remove-nic job for a different nic on the same vm must not swallow the removal of
+     * this nic: the pending-job lookup has to be keyed on the nic uuid so that a new job is
+     * submitted for this nic instead of joining the other nic's job. Regression test for the
+     * concurrent-removeNic collapse.
+     */
+    @Test
+    public void removeNicFromVmThroughJobQueueDoesNotJoinAnotherNicsPendingJob() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getId()).thenReturn(42L);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        // A pending remove-nic job exists for the vm (e.g. for another nic); the nic-agnostic
+        // lookup would return it, but the nic-keyed lookup finds nothing for this nic. This stub is
+        // lenient because the fixed code never consults the nic-agnostic 3-arg lookup - only the
+        // buggy code does, where this job is what it wrongly joins.
+        Mockito.lenient().when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName))
+                .thenReturn(Collections.singletonList(mock(VmWorkJobVO.class)));
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Collections.emptyList());
+
+        VmWorkJobVO newJob = mock(VmWorkJobVO.class);
+        when(newJob.getId()).thenReturn(100L);
+        doReturn(new Pair<VmWorkJobVO, VmWork>(newJob, mock(VmWork.class)))
+                .when(virtualMachineManagerImpl).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+        doNothing().when(virtualMachineManagerImpl).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+
+        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
+
+            virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+
+            // A new job must be created for this nic, stamped with the nic uuid, submitted and joined.
+            verify(virtualMachineManagerImpl, times(1)).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+            verify(newJob, times(1)).setSecondaryObjectIdentifier(nicUuid);
+            verify(virtualMachineManagerImpl, times(1)).setCmdInfoAndSubmitAsyncJob(eq(newJob), any(), eq(vmInstanceVoMockId));
+            verify(execContext, times(1)).joinJob(100L);
+        }
+    }
+
+    /**
+     * When a pending remove-nic job already exists for this same nic, the request must join it
+     * rather than submit a duplicate: per-nic deduplication still holds.
+     */
+    @Test
+    public void removeNicFromVmThroughJobQueueJoinsExistingJobForSameNic() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        VmWorkJobVO existingJob = mock(VmWorkJobVO.class);
+        when(existingJob.getId()).thenReturn(77L);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Collections.singletonList(existingJob));
+
+        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
+
+            virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+
+            verify(virtualMachineManagerImpl, never()).createWorkJobAndWorkInfo(anyString(), anyLong());
+            verify(virtualMachineManagerImpl, never()).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+            verify(execContext, times(1)).joinJob(77L);
+        }
+    }
+
+    /**
+     * More than one pending remove-nic job for the same nic is an inconsistent state and must fail
+     * fast rather than pick one arbitrarily. Mirrors the guard in addVmToNetworkThroughJobQueue.
+     */
+    @Test(expected = CloudRuntimeException.class)
+    public void removeNicFromVmThroughJobQueueThrowsWhenMultiplePendingJobsForSameNic() {
+        String commandName = VmWorkRemoveNicFromVm.class.getName();
+        String nicUuid = UUID.randomUUID().toString();
+
+        Nic nic = mock(Nic.class);
+        when(nic.getUuid()).thenReturn(nicUuid);
+
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                .thenReturn(Arrays.asList(mock(VmWorkJobVO.class), mock(VmWorkJobVO.class)));
+
+        virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
     }
 
     @Test
