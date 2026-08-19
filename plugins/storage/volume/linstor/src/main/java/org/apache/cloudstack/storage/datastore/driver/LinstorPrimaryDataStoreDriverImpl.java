@@ -103,6 +103,8 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
@@ -124,6 +126,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Inject private VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject private SnapshotDao _snapshotDao;
     @Inject private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject private StorageManager _storageMgr;
     @Inject
     ConfigurationDao _configDao;
@@ -857,15 +860,17 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
             throws ApiException {
-        List<com.linbit.linstor.api.model.StoragePool> linSPs = LinstorUtil.getDiskfulStoragePools(api, rscName);
-        if (linSPs != null) {
-            List<String> linstorNodeNames = linSPs.stream()
-                    .map(com.linbit.linstor.api.model.StoragePool::getNodeName)
-                    .collect(Collectors.toList());
-            Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+        // Take the first diskful copy whose host can be used: the copies are ordered by how
+        // suited they are (in use, then active, then inactive), and for shared storage pools
+        // only the active node may be read, so the order must not be broken here.
+        for (com.linbit.linstor.api.model.StoragePool linSP
+                : LinstorUtil.getDiskfulStoragePoolsByPreference(api, rscName)) {
+            Host host = getEnabledClusterHost(storagePool, Collections.singletonList(linSP.getNodeName()));
             if (host != null) {
                 return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
+            logger.debug("Linstor: no usable cloudstack host for diskful node {}, trying next copy",
+                    linSP.getNodeName());
         }
         logger.error("Linstor: No diskfull host found.");
         return Optional.empty();
@@ -1071,15 +1076,30 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         SnapshotObject snapshotObject = (SnapshotObject)srcData;
-        Boolean snapshotFullBackup = snapshotObject.getFullBackup();
         final StoragePoolVO pool = _storagePoolDao.findById(srcData.getDataStore().getId());
         final DevelopersApi api = getLinstorAPI(pool);
-        boolean fullSnapshot = true;
-        if (snapshotFullBackup != null) {
-            fullSnapshot = snapshotFullBackup;
-        }
+
+        // For encrypted volumes Linstor adds a LUKS layer (DRBD -> LUKS -> STORAGE). The storage
+        // layer snapshot device (getSnapshotPath) therefore only exposes the raw LUKS ciphertext,
+        // while restore writes onto the decrypted DRBD device (/dev/drbd/by-res/.../0). Backing up
+        // the ciphertext and writing it back to the decrypted layer corrupts the volume (and the
+        // shrink to the net volume size would even truncate the ciphertext). So for encrypted
+        // volumes we never read the storage snapshot directly: restore the snapshot into a temporary
+        // resource and back up its decrypted DRBD device instead, symmetric to the restore path.
+        final boolean encrypted = snapshotObject.getBaseVolume().getPassphraseId() != null;
+
+        SnapshotDataStoreVO destRef = _snapshotStoreDao.findByStoreSnapshot(
+            destData.getDataStore().getRole(), destData.getDataStore().getId(), destData.getId());
+        // encrypted volumes are always backed up as full copies: an incremental rebase would need
+        // the LUKS secret for both the delta and the backing file
+        String parentPath = encrypted ? null : getIncrementalParentPath(destRef);
+        boolean fullSnapshot = parentPath == null;
+
         Map<String, String> options = new HashMap<>();
         options.put("fullSnapshot", fullSnapshot + "");
+        if (parentPath != null) {
+            options.put(LinstorBackupSnapshotCommand.OPTION_PARENT_PATH, parentPath);
+        }
         options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(),
             String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
         options.put("volumeSize", snapshotObject.getBaseVolume().getSize() + "");
@@ -1095,14 +1115,6 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            // For encrypted volumes Linstor adds a LUKS layer (DRBD -> LUKS -> STORAGE). The storage
-            // layer snapshot device (getSnapshotPath) therefore only exposes the raw LUKS ciphertext,
-            // while restore writes onto the decrypted DRBD device (/dev/drbd/by-res/.../0). Backing up
-            // the ciphertext and writing it back to the decrypted layer corrupts the volume (and the
-            // shrink to the net volume size would even truncate the ciphertext). So for encrypted
-            // volumes we never read the storage snapshot directly: restore the snapshot into a temporary
-            // resource and back up its decrypted DRBD device instead, symmetric to the restore path.
-            final boolean encrypted = snapshotObject.getBaseVolume().getPassphraseId() != null;
             Optional<RemoteHostEndPoint> optEP = encrypted ?
                 Optional.empty() : getDiskfullEP(api, pool, rscName);
             Answer answer;
@@ -1113,12 +1125,73 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     encrypted);
                 answer = copyFromTemporaryResource(api, pool, rscName, snapshotName, snapshotObject, cmd);
             }
+            if (answer != null && answer.getResult()) {
+                clearChainParentIfFullCopy(destRef, answer);
+            }
             return answer;
         } catch (Exception e) {
             logger.debug("copy snapshot failed, please cleanup snapshot manually: ", e);
             throw new CloudRuntimeException(e.toString());
         }
 
+    }
+
+    /**
+     * Returns the secondary storage install path of the parent snapshot to build an incremental
+     * (content-diff) backup against, or null if a full backup has to be taken. The parent link on the
+     * destination store ref was set at allocation time (honoring end_of_chain and kvm.incremental.snapshot).
+     */
+    protected String getIncrementalParentPath(SnapshotDataStoreVO destRef) {
+        if (destRef == null || destRef.getParentSnapshotId() <= 0) {
+            return null;
+        }
+        if (!LinstorConfigurationManager.BackupSnapshots.value()) {
+            // snapshots-kept-on-primary mode: copies to secondary are only temporary (template from
+            // snapshot, extract, cross-zone copy) and their refs get expunged after use. A delta
+            // against such a parent would be left with a dangling backing file, so always copy full.
+            logger.debug("{} is disabled, taking full backup of snapshot {}",
+                LinstorConfigurationManager.BackupSnapshots.key(), destRef.getSnapshotId());
+            return null;
+        }
+        SnapshotDataStoreVO parentRef = _snapshotStoreDao.findByStoreSnapshot(
+            destRef.getRole(), destRef.getDataStoreId(), destRef.getParentSnapshotId());
+        if (parentRef == null || parentRef.getInstallPath() == null
+                || parentRef.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+            logger.debug("Parent snapshot {} of snapshot {} not ready on store, taking full backup instead",
+                destRef.getParentSnapshotId(), destRef.getSnapshotId());
+            return null;
+        }
+        if (parentRef.getSize() != destRef.getSize()) {
+            // volume was resized between the two snapshots; the delta would need to cover the size
+            // change through beyond-EOF backing semantics, take a full backup instead
+            logger.debug("Parent snapshot {} has a different volume size than snapshot {} ({} != {}), taking full backup instead",
+                destRef.getParentSnapshotId(), destRef.getSnapshotId(), parentRef.getSize(), destRef.getSize());
+            return null;
+        }
+        return parentRef.getInstallPath();
+    }
+
+    /**
+     * The parent link is only valid if the backup really was written as a delta of the parent file.
+     * If a full copy was made instead (encrypted volume, missing/unready parent or agent-side
+     * fallback), drop the link so chain bookkeeping (delete ordering, chain length, flattening)
+     * matches what is on disk.
+     */
+    protected void clearChainParentIfFullCopy(SnapshotDataStoreVO destRef, Answer answer) {
+        if (destRef == null || destRef.getParentSnapshotId() <= 0) {
+            return;
+        }
+        boolean deltaWritten = false;
+        if (answer instanceof CopyCmdAnswer) {
+            DataTO newData = ((CopyCmdAnswer) answer).getNewData();
+            deltaWritten = newData instanceof SnapshotObjectTO && ((SnapshotObjectTO) newData).isKvmIncrementalSnapshot();
+        }
+        if (!deltaWritten) {
+            logger.debug("Snapshot {} was backed up as a full copy, clearing its chain parent {}",
+                destRef.getSnapshotId(), destRef.getParentSnapshotId());
+            destRef.setParentSnapshotId(0);
+            _snapshotStoreDao.update(destRef.getId(), destRef);
+        }
     }
 
     @Override
