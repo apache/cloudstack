@@ -2271,39 +2271,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             // Setup ISO device
             //
 
-            // prepare systemvm patch ISO
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                // attach ISO (for patching of system VM)
-                Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
-                String secStoreUrl = secStoreUrlAndId.first();
-                if (secStoreUrl == null) {
-                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
-                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
-                    throw new Exception(msg);
-                }
-
-                ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
-                if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, NFS secondary or cache store url: " + secStoreUrl + " in dc "+ _dcId;
-                    throw new Exception(msg);
-                }
-                DatastoreMO secDsMo = new DatastoreMO(hyperHost.getContext(), morSecDs);
-
-                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo,
-                        null, secDsMo.getMor(), true, true, ideUnitNumber++, i + 1);
-                deviceConfigSpecArray[i].setDevice(isoInfo.first());
-                if (isoInfo.second()) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
-                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                } else {
-                    if (logger.isDebugEnabled())
-                        logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
-                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                }
-                i++;
-            } else if (!deployAsIs) {
+            if (VirtualMachine.Type.User.equals(vmSpec.getType()) && !deployAsIs) {
                 // Note: we will always plug a CDROM device
                 if (volIso != null) {
                     for (DiskTO vol : disks) {
