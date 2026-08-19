@@ -42,6 +42,7 @@ import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.collect.ImmutableSet;
@@ -70,9 +71,12 @@ public class ReflectUtil {
         Reflections reflections;
         Set<Class<?>> classes = new HashSet<Class<?>>();
         ConfigurationBuilder builder=new ConfigurationBuilder();
+        FilterBuilder filterBuilder = new FilterBuilder();
         for (String packageName : packageNames) {
              builder.addUrls(ClasspathHelper.forPackage(packageName));
+             filterBuilder.includePackage(packageName);
         }
+        builder.filterInputsBy(filterBuilder);
         builder.setScanners(new SubTypesScanner(),new TypeAnnotationsScanner());
         reflections = new Reflections(builder);
         classes.addAll(reflections.getTypesAnnotatedWith(annotation));
