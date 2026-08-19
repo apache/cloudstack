@@ -280,4 +280,9 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
         return List.of();
     }
+
+    @Override
+    public List<NetworkVO> listByIds(List<Long> ids) {
+        return null;
+    }
 }
