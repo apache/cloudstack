@@ -109,6 +109,13 @@ public class AgentProperties{
     public static final Property<String> PRIVATE_NETWORK_DEVICE = new Property<>("private.network.device", "cloudbr1");
 
     /**
+     * Private NIC device address. If this property is commented, it will be autodetected on service startup.<br>
+     * Data type: String.<br>
+     * Default value: <code>cloudbr1</code>
+     */
+    public static final Property<String> PRIVATE_NETWORK_DEVICE_ADDRESS = new Property<>("private.network.address", null, String.class);
+
+    /**
      * Guest NIC device. If this property is commented, the value of the private NIC device will be used.<br>
      * Data type: String.<br>
      * Default value: the private NIC device value.
