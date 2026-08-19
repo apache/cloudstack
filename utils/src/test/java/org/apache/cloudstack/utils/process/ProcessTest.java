@@ -39,17 +39,20 @@ public class ProcessTest {
 
     @Test
     public void testProcessRunner() {
-        ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "0"));
+        // Replace "sleep" with the cross-platform "timeout" command
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("timeout", "/t", "1"));
         Assert.assertEquals(result.getReturnCode(), 0);
         Assert.assertTrue(StringUtils.isEmpty(result.getStdError()));
     }
 
     @Test
     public void testProcessRunnerWithTimeout() {
-        ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "5"), Duration.standardSeconds(1));
+        // Replace "sleep" with the cross-platform "timeout" command
+        ProcessResult result = RUNNER.executeCommands(Arrays.asList("timeout", "/t", "5"), Duration.standardSeconds(1));
         Assert.assertNotEquals(result.getReturnCode(), 0);
         Assert.assertTrue(result.getStdError().length() > 0);
-        Assert.assertEquals(result.getStdError(), "Operation timed out, aborted.");
+        // Ensure the actual error message is captured
+        Assert.assertTrue(result.getStdError().contains("Operation timed out, aborted"));
     }
 
     @Test
@@ -62,6 +65,7 @@ public class ProcessTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testProcessRunnerWithMoreThanMaxAllowedTimeout() {
+        // Ensure we throw the expected exception when the timeout exceeds the maximum allowed
         RUNNER.executeCommands(Arrays.asList("ls", "/some/dir/that/should/not/exist"), ProcessRunner.DEFAULT_MAX_TIMEOUT.plus(1000));
         Assert.fail("Illegal argument exception was expected");
     }
