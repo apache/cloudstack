@@ -29,13 +29,30 @@ import java.util.List;
 public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
     protected VirtualMachine.State vmState;
+    private final String vmUuid;
+    private final boolean uefiEnabled;
 
     public CreateDiskOnlyVmSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
+        this(vmName, null, snapshot, volumeTOs, guestOSType, vmState, false);
+    }
+
+    public CreateDiskOnlyVmSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType,
+            VirtualMachine.State vmState, boolean uefiEnabled) {
         super(vmName, snapshot, volumeTOs, guestOSType);
+        this.vmUuid = vmUuid;
         this.vmState = vmState;
+        this.uefiEnabled = uefiEnabled;
     }
 
     public VirtualMachine.State getVmState() {
         return vmState;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public boolean isUefiEnabled() {
+        return uefiEnabled;
     }
 }
