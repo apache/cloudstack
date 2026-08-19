@@ -89,7 +89,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             } else if (type.equalsIgnoreCase("Dynamic")) {
                 return Dynamic;
             } else {
-                throw new InvalidParameterValueException("Unexpected Routing type : " + type);
+                throw new InvalidParameterValueException("Unexpected Routing mode : " + type);
             }
         }
     }
