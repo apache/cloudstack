@@ -324,9 +324,13 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
+            if (volume.isEncrypted()) {
+                logger.debug("{} as the VM has a volume that is encrypted.", cantHandleLog);
+                return StrategyPriority.CANT_HANDLE;
+            }
             StoragePoolVO storagePoolVO = storagePool.findById(volume.getPoolId());
             if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
-                logger.debug(String.format("%s as the VM has a volume that is in a storage with unsupported type [%s].", cantHandleLog, storagePoolVO.getPoolType()));
+                logger.debug("{} as the VM has a volume that is in a storage with unsupported type [{}].", cantHandleLog, storagePoolVO.getPoolType());
                 return StrategyPriority.CANT_HANDLE;
             }
             List<SnapshotVO> snapshots = snapshotDao.listByVolumeIdAndTypeNotInAndStateNotRemoved(volume.getId(), Snapshot.Type.GROUP);
