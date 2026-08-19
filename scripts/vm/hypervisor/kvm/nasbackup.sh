@@ -108,6 +108,23 @@ get_linstor_uuid_from_path() {
   echo "$volUuid"
 }
 
+get_linstor_uuid_from_device() {
+  local fullpath="$1"
+  # VMs started before the /dev/drbd/by-res/ change still reference the raw DRBD
+  # device node (e.g. /dev/drbd1098) in their live libvirt XML. Ask udev for the
+  # device's symlinks and map it back to the volume UUID via the by-res symlink.
+  local link
+  for link in $(udevadm info --query=symlink --name="$fullpath" 2>/dev/null || true); do
+    if [[ "$link" == drbd/by-res/cs-* ]]; then
+      get_linstor_uuid_from_path "/dev/$link"
+      return 0
+    fi
+  done
+  # Without a by-res symlink we cannot derive the volume UUID. Falling back to the
+  # raw device name would produce a backup that restore cannot find, so fail hard.
+  return 1
+}
+
 backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
@@ -117,6 +134,12 @@ backup_running_vm() {
   while read -r disk fullpath; do
     if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
         volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    elif [[ "$fullpath" == /dev/drbd[0-9]* ]]; then
+        if ! volUuid=$(get_linstor_uuid_from_device "$fullpath"); then
+            echo "Failed to resolve LINSTOR volume UUID for $fullpath"
+            cleanup
+            exit 1
+        fi
     else
         volUuid="${fullpath##*/}"
     fi
@@ -174,10 +197,18 @@ backup_running_vm() {
   # Use qemu-img convert to sparsify linstor backups which get bloated due to virsh backup-begin.
   name="root"
   while read -r disk fullpath; do
-    if [[ "$fullpath" != /dev/drbd/by-res/* ]]; then
+    if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
+      volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    elif [[ "$fullpath" == /dev/drbd[0-9]* ]]; then
+      if ! volUuid=$(get_linstor_uuid_from_device "$fullpath"); then
+        echo "Failed to resolve LINSTOR volume UUID for $fullpath"
+        cleanup
+        exit 1
+      fi
+    else
+      name="datadisk"
       continue
     fi
-    volUuid=$(get_linstor_uuid_from_path "$fullpath")
     if ! qemu-img convert -O qcow2 "$dest/$name.$volUuid.qcow2" "$dest/$name.$volUuid.qcow2.tmp" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $dest/$name.$volUuid.qcow2"
       cleanup
@@ -213,6 +244,12 @@ backup_stopped_vm() {
       volUuid=$(get_ceph_uuid_from_path "$disk")
     elif [[ "$disk" == /dev/drbd/by-res/* ]]; then
       volUuid=$(get_linstor_uuid_from_path "$disk")
+    elif [[ "$disk" == /dev/drbd[0-9]* ]]; then
+      if ! volUuid=$(get_linstor_uuid_from_device "$disk"); then
+        echo "Failed to resolve LINSTOR volume UUID for $disk"
+        cleanup
+        exit 1
+      fi
     else
       volUuid="${disk##*/}"
     fi
