@@ -270,14 +270,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected void removeResourceReservationIfNeededAndIncrementResourceCountForTags(
             final long accountId, final ResourceType type, final List<String> tags, final long numToIncrement) {
         if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not incrementing resource count for system accounts, returning");
+            logger.trace("Not incrementing resource count for system accounts, returning");
             return;
         }
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
         if (numToIncrement <= 0) {
-            s_logger.warn(String.format("Skipping increment of resource count: non-positive delta = %d for Account = %d Type = %s",
+            logger.warn(String.format("Skipping increment of resource count: non-positive delta = %d for Account = %d Type = %s",
                     numToIncrement, accountId, type));
             return;
         }
@@ -289,7 +289,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 reservationDao.removeByIds(reservationIds);
                 Set<Long> rowIds = collectRowIdsForTags(accountId, type, tags, numToIncrement, true);
                 if (rowIds.isEmpty()) {
-                    s_logger.warn("No resource_count rows resolved to increment for Account = " + accountId
+                    logger.warn("No resource_count rows resolved to increment for Account = " + accountId
                             + " Type = " + type + " tags = " + tags + "; skipping update");
                     return;
                 }
@@ -321,20 +321,20 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected void decrementResourceCountForTags(final long accountId, final ResourceType type,
             final List<String> tags, final long numToDecrement) {
         if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.trace("Not decrementing resource count for system accounts, returning");
+            logger.trace("Not decrementing resource count for system accounts, returning");
             return;
         }
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
         if (numToDecrement <= 0) {
-            s_logger.warn(String.format("Skipping decrement of resource count: non-positive delta = %d for Account = %d Type = %s",
+            logger.warn(String.format("Skipping decrement of resource count: non-positive delta = %d for Account = %d Type = %s",
                     numToDecrement, accountId, type));
             return;
         }
         Set<Long> rowIds = collectRowIdsForTags(accountId, type, tags, numToDecrement, false);
         if (rowIds.isEmpty()) {
-            s_logger.warn("No resource_count rows resolved to decrement for Account = " + accountId
+            logger.warn("No resource_count rows resolved to decrement for Account = " + accountId
                     + " Type = " + type + " tags = " + tags + "; skipping update");
             return;
         }
@@ -366,12 +366,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private Set<Long> collectRowIdsForTags(long accountId, ResourceType type, List<String> tags, long delta, boolean increment) {
         Set<Long> rowIds = new HashSet<>();
         for (String tag : tags) {
-            if (s_logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 String convertedDelta = (type == ResourceType.secondary_storage || type == ResourceType.primary_storage)
                         ? toHumanReadableSize(delta) : String.valueOf(delta);
                 String typeStr = StringUtils.isNotEmpty(tag)
                         ? String.format("%s (tag: %s)", type, tag) : type.getName();
-                s_logger.debug("Updating resource Type = " + typeStr + " count for Account = " + accountId
+                logger.debug("Updating resource Type = " + typeStr + " count for Account = " + accountId
                         + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
             }
             rowIds.addAll(_resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag));
