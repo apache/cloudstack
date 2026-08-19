@@ -56,10 +56,6 @@ import com.cloud.vm.VirtualMachine;
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
-    // Flattens the backing-file chain into a single self-contained qcow2 written to the
-    // destination volume path. Used when the source backup is an incremental whose qcow2
-    // has a backing reference to its parent (chain set up by nasbackup.sh's qemu-img rebase).
-    private static final String QEMU_IMG_FLATTEN_COMMAND = "qemu-img convert -O qcow2 %s %s";
     // Detects whether a qcow2 file references a parent in its backing-file metadata.
     // Returns 0 (true) when a backing file is present, 1 when not. Uses --output=json
     // so the test is robust to qemu-img version differences in human-readable output.
@@ -291,8 +287,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         // chain via qemu-img convert, which follows the backing-file links and
         // produces a single self-contained qcow2.
         if (hasBackingChain(backupPath)) {
-            int flattenExit = Script.runSimpleBashScriptForExitValue(
-                    String.format(QEMU_IMG_FLATTEN_COMMAND, backupPath, volumePath), timeout, false);
+            String[] qemuImgCmd = new String[] { Script.getExecutableAbsolutePath("qemu-img"), "convert", "-O", "qcow2", backupPath, volumePath };
+            int flattenExit = Script.executeCommandForExitValue(qemuImgCmd);
             return flattenExit == 0;
         }
 
