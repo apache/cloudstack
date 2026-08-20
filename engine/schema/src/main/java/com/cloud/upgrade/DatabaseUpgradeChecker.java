@@ -307,9 +307,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
     }
 
-    protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
+    protected void upgrade(DbUpgrade[] upgrades) {
         executeProcedureScripts();
-        final DbUpgrade[] upgrades = executeUpgrades(dbVersion, currentVersion);
+        executeUpgrades(upgrades);
 
         executeViewScripts();
         updateSystemVmTemplates(upgrades);
@@ -337,16 +337,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
     }
 
-    private DbUpgrade[] executeUpgrades(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
-        LOGGER.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
-
-        final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
-
+    private void executeUpgrades(DbUpgrade[] upgrades) {
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version = executeUpgrade(upgrade);
             executeUpgradeCleanup(upgrade, version);
         }
-        return upgrades;
     }
 
     private VersionVO executeUpgrade(DbUpgrade upgrade) {
@@ -516,8 +511,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 return;
             }
 
-            if (isStandalone()) {
-                upgrade(dbVersion, currentVersion);
+            LOGGER.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
+            final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
+
+            if (isStandalone() || isNoopOnlyUpgradePath(upgrades)) {
+                upgrade(upgrades);
             } else {
                 String errorMessage = "Database upgrade is required but the management server is running in a clustered environment. " +
                         "Please perform the database upgrade when the management server is not running in a clustered environment.";
@@ -527,6 +525,20 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * A noop-only path means the DB is only missing its version stamp (e.g. a hotfix release with
+     * no schema/data changes); it is safe to apply on any node regardless of cluster state, which
+     * also avoids deadlocking a fresh multi-node cluster bring-up where every node runs the same code.
+     */
+    boolean isNoopOnlyUpgradePath(DbUpgrade[] upgrades) {
+        for (DbUpgrade upgrade : upgrades) {
+            if (!(upgrade instanceof NoopDbUpgrade)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

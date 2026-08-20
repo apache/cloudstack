@@ -19,6 +19,7 @@ package com.cloud.upgrade;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
@@ -81,7 +82,7 @@ public class DatabaseUpgradeCheckerDoUpgradesTest {
         }
 
         @Override
-        protected void upgrade(org.apache.cloudstack.utils.CloudStackVersion dbVersion, org.apache.cloudstack.utils.CloudStackVersion currentVersion) {
+        protected void upgrade(DbUpgrade[] upgrades) {
             upgradeCalled = true;
         }
 
@@ -169,5 +170,28 @@ public class DatabaseUpgradeCheckerDoUpgradesTest {
         assertTrue(checker.initializeCalled);
         assertFalse("upgrade should not be invoked in clustered mode", checker.upgradeCalled);
         assertTrue("cluster handler should be invoked in clustered mode", checker.clusterHandlerCalled);
+    }
+
+    @Test
+    public void testDoUpgrades_noopOnlyPath_clustered_stillUpgrades() {
+        // DB is one hotfix release behind the code (e.g. 4.20.4.0 -> 4.20.4.1) with no real schema/data
+        // migration between them, so it must be allowed even though another MS is already reported up -
+        // this is the normal case when bringing up a fresh multi-node cluster on identical code.
+        TestableChecker checker = new TestableChecker("4.20.4.0");
+        checker.implVersionOverride = "4.20.4.1";
+        checker.sysVmMetadataOverride = "4.20.4.1";
+        checker.standaloneOverride = false;
+
+        GlobalLock lock = GlobalLock.getInternLock("test-upgrade-noop-clustered");
+        try {
+            lock.lock(1);
+            checker.doUpgrades(lock);
+        } finally {
+            lock.releaseRef();
+        }
+
+        assertTrue(checker.initializeCalled);
+        assertTrue("a noop-only upgrade path must be applied even in clustered mode", checker.upgradeCalled);
+        assertFalse("cluster handler should not be invoked for a noop-only upgrade path", checker.clusterHandlerCalled);
     }
 }

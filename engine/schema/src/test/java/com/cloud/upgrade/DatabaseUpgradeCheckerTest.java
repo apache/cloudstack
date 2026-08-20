@@ -227,6 +227,30 @@ public class DatabaseUpgradeCheckerTest {
     }
 
     @Test
+    public void testIsNoopOnlyUpgradePathTrueForNoopOnlyPath() {
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.99.0.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertTrue("a path made up of only version-stamp noop upgrades should be safe on any node",
+                checker.isNoopOnlyUpgradePath(upgrades));
+    }
+
+    @Test
+    public void testIsNoopOnlyUpgradePathFalseWhenRealUpgradePresent() {
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.8.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.8.1");
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertFalse("a path containing a real schema/data migration must not be treated as noop-only",
+                checker.isNoopOnlyUpgradePath(upgrades));
+    }
+
+    @Test
     public void testCalculateUpgradePathFromKnownDbVersion() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.0.0");
