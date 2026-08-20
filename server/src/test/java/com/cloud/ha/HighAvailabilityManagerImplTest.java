@@ -311,7 +311,7 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(vm.getHostId()).thenReturn(1L);
 
-        Mockito.when(_haDao.persist((HaWorkVO) Mockito.anyObject())).thenAnswer(invocation -> {
+        Mockito.when(_haDao.persist((HaWorkVO) Mockito.any())).thenAnswer(invocation -> {
             HaWorkVO haWork = invocation.getArgument(0);
             ReflectionTestUtils.setField(haWork, "id", 1L);
             return haWork;
