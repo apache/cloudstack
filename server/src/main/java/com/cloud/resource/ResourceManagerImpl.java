@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 import static org.apache.cloudstack.gpu.GpuService.GpuDetachOnStop;
@@ -1062,7 +1063,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 logger.debug("Deleting tags from database for host with UUID [{}].", host.getUuid());
                 _hostTagsDao.deleteTags(hostId);
 
-                host.setGuid(null);
+                // Note: the host GUID is intentionally preserved on the (soft-)deleted record so that a
+                // returning agent with the same GUID can be detected and refused re-registration when
+                // 'add.host.on.service.restart.kvm' is false. See getNewHost()/rejectReAddOfDeletedHost().
                 final Long clusterId = host.getClusterId();
                 host.setClusterId(null);
                 _hostDao.update(host.getId(), host);
@@ -3213,7 +3216,59 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         logger.debug(String.format("Could not find Host by guid %s", fullGuid));
+
+        // No live host matches this GUID. Before letting the caller create a brand-new host,
+        // make sure this GUID does not belong to a host that was previously deleted. Otherwise a
+        // still-running agent whose host was deleted would silently re-register itself as a new host.
+        rejectReAddOfDeletedHost(fullGuid, guidPrefix);
+
         return null;
+    }
+
+    /**
+     * Refuses the (re-)registration of an agent whose GUID matches a host that was previously deleted
+     * (soft-removed) from CloudStack.
+     * <p>
+     * This is the management-server-side, hypervisor-agnostic enforcement of the intent already expressed by
+     * the {@code add.host.on.service.restart.kvm} setting: when that setting is {@code false} the operator has
+     * indicated a deleted host must not come back. The existing enforcement (in LibvirtServerDiscoverer) only
+     * works for KVM/LXC and only if the agent was still connected at delete time; this guard also covers the
+     * case where the agent was offline when the host was deleted and later reconnects with the same GUID.
+     */
+    protected void rejectReAddOfDeletedHost(String fullGuid, String guidPrefix) {
+        if (ADD_HOST_ON_SERVICE_RESTART_KVM.value()) {
+            return;
+        }
+
+        HostVO deletedHost = findRemovedHostByGuid(fullGuid);
+        if (deletedHost == null && StringUtils.isNotBlank(guidPrefix)) {
+            deletedHost = findRemovedHostByGuidPrefix(guidPrefix);
+        }
+
+        if (deletedHost != null) {
+            String msg = String.format(
+                    "Refusing to (re-)register agent with GUID [%s]: a host with this GUID (id: %d, uuid: %s, name: %s) was previously deleted from CloudStack on %s. " +
+                    "Set the global setting '%s' to true to allow a deleted host to re-register when its agent reconnects.",
+                    fullGuid, deletedHost.getId(), deletedHost.getUuid(), deletedHost.getName(), deletedHost.getRemoved(), ADD_HOST_ON_SERVICE_RESTART_KVM.key());
+            logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private HostVO findRemovedHostByGuid(String guid) {
+        if (StringUtils.isBlank(guid)) {
+            return null;
+        }
+        HostVO host = _hostDao.findByGuidIncludingRemoved(guid);
+        return host != null && host.getRemoved() != null ? host : null;
+    }
+
+    private HostVO findRemovedHostByGuidPrefix(String guidPrefix) {
+        if (StringUtils.isBlank(guidPrefix)) {
+            return null;
+        }
+        HostVO host = _hostDao.findByGuidPrefixIncludingRemoved(guidPrefix);
+        return host != null && host.getRemoved() != null ? host : null;
     }
 
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
