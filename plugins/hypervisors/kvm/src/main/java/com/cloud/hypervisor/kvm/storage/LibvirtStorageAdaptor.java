@@ -1535,47 +1535,47 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     private KVMPhysicalDisk createEncryptedRootCoWClone(KVMPhysicalDisk template, KVMStoragePool destPool,
             String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
-        String encSnap = rbdTemplateSnapName + "-luks";
-        Rados r = null;
-        IoCTX io = null;
-        Rbd rbd = null;
-        RbdImage base = null;
+        String luksReservedSnapshotName = rbdTemplateSnapName + "-luks";
+        Rados radosConnection = null;
+        IoCTX ioContext = null;
+        Rbd rbdClient = null;
+        RbdImage templateImage = null;
         try {
-            r = new Rados(destPool.getAuthUserName());
-            r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-            r.confSet("key", destPool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
-            io = r.ioCtxCreate(destPool.getSourceDir());
-            rbd = new Rbd(io);
-            base = rbd.open(template.getName());
-            boolean haveEncSnap = false;
-            for (RbdSnapInfo s : base.snapList()) {
-                if (encSnap.equals(s.name)) {
-                    haveEncSnap = true;
+            radosConnection = new Rados(destPool.getAuthUserName());
+            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("key", destPool.getAuthSecret());
+            radosConnection.confSet("client_mount_timeout", "30");
+            radosConnection.connect();
+            ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
+            rbdClient = new Rbd(ioContext);
+            templateImage = rbdClient.open(template.getName());
+            boolean luksSnapshotExists = false;
+            for (RbdSnapInfo snapshotInfo : templateImage.snapList()) {
+                if (luksReservedSnapshotName.equals(snapshotInfo.name)) {
+                    luksSnapshotExists = true;
                     break;
                 }
             }
-            if (!haveEncSnap) {
-                base.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
-                base.snapCreate(encSnap);
-                base.snapProtect(encSnap);
-                logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), encSnap);
+            if (!luksSnapshotExists) {
+                templateImage.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
+                templateImage.snapCreate(luksReservedSnapshotName);
+                templateImage.snapProtect(luksReservedSnapshotName);
+                logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksReservedSnapshotName);
             }
-            rbd.clone(template.getName(), encSnap, io, newUuid, RBD_FEATURES, rbdOrder);
+            rbdClient.clone(template.getName(), luksReservedSnapshotName, ioContext, newUuid, RBD_FEATURES, rbdOrder);
         } catch (RadosException | RbdException e) {
             logger.error("Failed to create encrypted CoW clone {}: {}", newUuid, e.getMessage());
             return null;
         } finally {
-            if (rbd != null && base != null) {
+            if (rbdClient != null && templateImage != null) {
                 try {
-                    rbd.close(base);
+                    rbdClient.close(templateImage);
                 } catch (RbdException ignored) {
                     // best-effort close of the template handle
                 }
             }
-            if (r != null && io != null) {
-                r.ioCtxDestroy(io);
+            if (radosConnection != null && ioContext != null) {
+                radosConnection.ioCtxDestroy(ioContext);
             }
         }
         formatRbdImageEncryption(destPool, newUuid, passphrase);
@@ -1598,31 +1598,31 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     private KVMPhysicalDisk createEncryptedRootFullCopy(KVMStoragePool srcPool, KVMPhysicalDisk template,
             KVMStoragePool destPool, String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
-        long createSize = disk.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES;
-        Rados r = null;
-        IoCTX io = null;
+        long imageSizeWithLuksHeader = disk.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES;
+        Rados radosConnection = null;
+        IoCTX ioContext = null;
         try {
-            r = new Rados(destPool.getAuthUserName());
-            r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-            r.confSet("key", destPool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
-            io = r.ioCtxCreate(destPool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            rbd.create(newUuid, createSize, RBD_FEATURES, rbdOrder);
+            radosConnection = new Rados(destPool.getAuthUserName());
+            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("key", destPool.getAuthSecret());
+            radosConnection.confSet("client_mount_timeout", "30");
+            radosConnection.connect();
+            ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
+            Rbd rbdClient = new Rbd(ioContext);
+            rbdClient.create(newUuid, imageSizeWithLuksHeader, RBD_FEATURES, rbdOrder);
         } catch (RadosException | RbdException e) {
             logger.error("Failed to create encrypted RBD image {}: {}", newUuid, e.getMessage());
             return null;
         } finally {
-            if (r != null && io != null) {
-                r.ioCtxDestroy(io);
+            if (radosConnection != null && ioContext != null) {
+                radosConnection.ioCtxDestroy(ioContext);
             }
         }
         formatRbdImageEncryption(destPool, newUuid, passphrase);
-        boolean srcIsRbd = srcPool.getType() == StoragePoolType.RBD;
+        boolean sourceIsRbdPool = srcPool.getType() == StoragePoolType.RBD;
         new RbdEncryption().importTemplate(
-                srcIsRbd ? srcPool.getSourceDir() : null, srcIsRbd ? template.getName() : null,
-                srcIsRbd ? null : template.getPath(), srcIsRbd ? null : template.getFormat().toString(),
+                sourceIsRbdPool ? srcPool.getSourceDir() : null, sourceIsRbdPool ? template.getName() : null,
+                sourceIsRbdPool ? null : template.getPath(), sourceIsRbdPool ? null : template.getFormat().toString(),
                 destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthUserName(), destPool.getAuthSecret(),
                 destPool.getSourceDir(), newUuid, passphrase, CryptSetup.LuksType.LUKS2);
         disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
