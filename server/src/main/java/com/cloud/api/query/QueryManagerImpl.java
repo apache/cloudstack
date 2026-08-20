@@ -158,7 +158,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.InternalBackupServiceJobType;
 import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.BackupVO;
@@ -6400,7 +6399,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
         return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
-                InternalBackupServiceJobType.valueOf(cmd.getType()), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
+                cmd.getType(), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
     }
 
     @Override
