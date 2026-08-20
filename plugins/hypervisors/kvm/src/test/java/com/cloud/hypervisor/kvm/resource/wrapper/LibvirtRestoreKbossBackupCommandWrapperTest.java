@@ -122,8 +122,6 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
         doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
         doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
         doReturn(kvmStoragePoolManagerMock).when(libvirtComputingResourceMock).getStoragePoolMgr();
-        doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(any());
-        doReturn("uuid").when(kvmStoragePool1).getUuid();
         doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).restoreVolumes(any(), any(), any(), anyBoolean(), anyInt());
         doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).deleteDeltas(any(), any());
 
@@ -131,7 +129,7 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
 
         RestoreKbossBackupAnswer answer = (RestoreKbossBackupAnswer)libvirtRestoreKbossBackupCommandWrapperSpy.execute(cmdMock, libvirtComputingResourceMock);
         assertTrue(answer.getResult());
-        verify(kvmStoragePoolManagerMock).deleteStoragePool(Storage.StoragePoolType.NetworkFilesystem, "uuid");
+        verify(kvmStoragePoolManagerMock, never()).deleteStoragePool(Storage.StoragePoolType.NetworkFilesystem, "uuid");
     }
 
 
@@ -140,8 +138,6 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
         doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
         doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
         doReturn(kvmStoragePoolManagerMock).when(libvirtComputingResourceMock).getStoragePoolMgr();
-        doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(any());
-        doReturn("uuid").when(kvmStoragePool1).getUuid();
         doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).restoreVolumes(any(), any(), any(), anyBoolean(), anyInt());
         doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).deleteDeltas(any(), any());
 
