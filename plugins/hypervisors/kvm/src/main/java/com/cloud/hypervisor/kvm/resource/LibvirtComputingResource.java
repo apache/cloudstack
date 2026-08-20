@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource;
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
@@ -4413,6 +4414,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
@@ -6198,28 +6200,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Test host for volume encryption support. A host is considered encryption-capable if it
-     * supports EITHER mechanism CloudStack can use:
-     *  - qemu-native LUKS (qemu-img LUKS + cryptsetup) for file/block backed pools, or
-     *  - librbd native encryption (rbd encryption format) for RBD/Ceph pools.
-     * NOTE: HOST_VOLUME_ENCRYPTION is a single host-wide flag and is not per-pool, so a host that
-     * advertises encryption via only one mechanism could still be selected for a volume that needs
-     * the other. In practice hosts that do encryption have the qemu-native stack; the librbd branch
-     * additionally covers Ceph-only hosts.
+     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup),
+     * reported as {@code host.volume.encryption}. RBD/librbd encryption support is a separate
+     * capability, reported as {@code host.volume.encryption.rbd}
+     * (see {@link #hostSupportsRbdVolumeEncryption()}).
      * @return boolean
      */
     public boolean hostSupportsVolumeEncryption() {
-        boolean supported = hostSupportsQemuNativeVolumeEncryption() || hostSupportsRbdVolumeEncryption();
-        if (!supported) {
-            LOGGER.info("Host does not support volume encryption (no qemu-native LUKS + cryptsetup, and no librbd rbd encryption)");
-        }
-        return supported;
-    }
-
-    /**
-     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup).
-     */
-    public boolean hostSupportsQemuNativeVolumeEncryption() {
         // test qemu-img
         try {
             QemuImg qemu = new QemuImg(0);

@@ -40,6 +40,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -196,6 +197,9 @@ public class DeploymentPlanningManagerImplTest {
 
     @Inject
     HostDao hostDao;
+
+    @Inject
+    HostDetailsDao hostDetailsDao;
 
     @Inject
     CapacityManager capacityMgr;
@@ -548,6 +552,69 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertFalse("Volumes do not require encryption, but reporting they do", _dpm.anyVolumeRequiresEncryption(volumes));
     }
 
+    private void stubHostEncryptionDetails(long hostId, boolean qemuNative, boolean rbd) {
+        Mockito.when(hostDetailsDao.findDetail(hostId, Host.HOST_VOLUME_ENCRYPTION))
+                .thenReturn(new DetailVO(hostId, Host.HOST_VOLUME_ENCRYPTION, String.valueOf(qemuNative)));
+        Mockito.when(hostDetailsDao.findDetail(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION))
+                .thenReturn(new DetailVO(hostId, Host.HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(rbd)));
+    }
+
+    private VolumeVO encryptedVolumeOnPool(Long poolId, Storage.StoragePoolType poolType) {
+        VolumeVO volume = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
+        volume.setPassphraseId(1L);
+        if (poolId != null) {
+            volume.setPoolId(poolId);
+            StoragePoolVO pool = new StoragePoolVO();
+            pool.setPoolType(poolType);
+            Mockito.when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        }
+        return volume;
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsRbdPoolNeedsRbdSupportTest() {
+        VolumeVO volume = encryptedVolumeOnPool(77L, Storage.StoragePoolType.RBD);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        stubHostEncryptionDetails(6L, false, true);   // librbd only
+        Assert.assertFalse("qemu-native-only host must not pass for an encrypted volume on an RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertTrue("librbd-capable host must pass for an encrypted volume on an RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsNonRbdPoolNeedsQemuSupportTest() {
+        VolumeVO volume = encryptedVolumeOnPool(78L, Storage.StoragePoolType.NetworkFilesystem);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        stubHostEncryptionDetails(6L, false, true);   // librbd only
+        Assert.assertTrue("qemu-native host must pass for an encrypted volume on a non-RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertFalse("librbd-only host must not pass for an encrypted volume on a non-RBD pool",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsNoPoolAcceptsEitherMechanismTest() {
+        VolumeVO volume = encryptedVolumeOnPool(null, null);
+        stubHostEncryptionDetails(5L, false, true);   // librbd only
+        stubHostEncryptionDetails(6L, false, false);  // no encryption at all
+        Assert.assertTrue("a volume with no pool yet accepts any encryption mechanism",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), null));
+        Assert.assertFalse("a host with no encryption support must not pass for an encrypted volume",
+                _dpm.hostMeetsVolumeEncryptionRequirements(6L, List.of(volume), null));
+    }
+
+    @Test
+    public void hostMeetsVolumeEncryptionRequirementsUsesProposedPoolTest() {
+        VolumeVO volume = encryptedVolumeOnPool(null, null);
+        StoragePoolVO proposedRbdPool = new StoragePoolVO();
+        proposedRbdPool.setPoolType(Storage.StoragePoolType.RBD);
+        Map<Volume, StoragePool> proposedPools = Map.of(volume, proposedRbdPool);
+        stubHostEncryptionDetails(5L, true, false);   // qemu-native only
+        Assert.assertFalse("the proposed pool's type must drive the required encryption mechanism",
+                _dpm.hostMeetsVolumeEncryptionRequirements(5L, List.of(volume), proposedPools));
+    }
+
     /**
      * Root requires encryption, chosen host supports it
      */
@@ -863,6 +930,12 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
         Mockito.doNothing().when(hostDao).loadDetails(host);
+        // encryption capability checks read host_details through the dao; answer them from the test host's detail map
+        Mockito.when(hostDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenAnswer(invocation -> {
+            String detailName = invocation.getArgument(1);
+            String detailValue = host.getDetails() != null ? host.getDetails().get(detailName) : null;
+            return detailValue != null ? new DetailVO(host.getId(), detailName, detailValue) : null;
+        });
         Mockito.doReturn(volumeVOs).when(volDao).findByInstance(ArgumentMatchers.anyLong());
         Mockito.doReturn(suitable).when(_dpm).findSuitablePoolsForVolumes(
                 ArgumentMatchers.any(VirtualMachineProfile.class),
