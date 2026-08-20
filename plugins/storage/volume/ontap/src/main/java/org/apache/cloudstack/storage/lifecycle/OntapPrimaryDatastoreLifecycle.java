@@ -83,7 +83,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
     @Inject private AlertManager _alertMgr;
     private static final Logger logger = LogManager.getLogger(OntapPrimaryDatastoreLifecycle.class);
 
-    private static final long ONTAP_MIN_VOLUME_SIZE_IN_BYTES = 1677721600L;
+    private static final long ONTAP_MIN_VOLUME_SIZE_IN_BYTES = 20971520L;
 
     /**
      * Creates primary storage on NetApp storage
@@ -112,6 +112,8 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         // Additional details requested for ONTAP primary storage pool creation
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+
+        validateInitializeInputs(capacityBytes, podId, clusterId, zoneId, storagePoolName, providerName, managed, details);
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
         if (clusterId != null) {
@@ -212,16 +214,16 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         return _dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
-    private long validateInitializeInputs(Long capacityBytes, Long podId, Long clusterId, Long zoneId,
+    private void validateInitializeInputs(Long capacityBytes, Long podId, Long clusterId, Long zoneId,
                                           String storagePoolName, String providerName, boolean managed, Map<String, String> details) {
 
-        // Validate and set capacity
         if (capacityBytes == null || capacityBytes <= 0) {
-            logger.warn("capacityBytes not provided or invalid (" + capacityBytes + "), using ONTAP minimum size: " + ONTAP_MIN_VOLUME_SIZE_IN_BYTES);
-            capacityBytes = ONTAP_MIN_VOLUME_SIZE_IN_BYTES;
-        } else if (capacityBytes < ONTAP_MIN_VOLUME_SIZE_IN_BYTES) {
-            logger.warn("capacityBytes (" + capacityBytes + ") is below ONTAP minimum (" + ONTAP_MIN_VOLUME_SIZE_IN_BYTES + "), adjusting to minimum");
-            capacityBytes = ONTAP_MIN_VOLUME_SIZE_IN_BYTES;
+            throw new InvalidParameterValueException("Storage pool capacity is required for ONTAP primary storage and must be at least "
+                    + ONTAP_MIN_VOLUME_SIZE_IN_BYTES + " bytes (20 MB)");
+        }
+        if (capacityBytes < ONTAP_MIN_VOLUME_SIZE_IN_BYTES) {
+            throw new InvalidParameterValueException("Storage pool capacity " + capacityBytes + " bytes is below the ONTAP minimum volume size of "
+                    + ONTAP_MIN_VOLUME_SIZE_IN_BYTES + " bytes (20 MB)");
         }
 
         // Validate scope
@@ -278,8 +280,6 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             missing.removeAll(providedKeys);
             throw new CloudRuntimeException("ONTAP primary storage creation failed, missing detail(s): " + missing);
         }
-
-        return capacityBytes;
     }
 
     private void processDataLifSelection(Pair<String, String> lifResult, Map<String, String> details,
