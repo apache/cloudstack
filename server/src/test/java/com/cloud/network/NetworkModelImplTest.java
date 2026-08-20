@@ -21,6 +21,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
@@ -231,5 +232,14 @@ public class NetworkModelImplTest {
         ipToServices.put(publicIpAddress2, services2);
         Map<Network.Provider, ArrayList<PublicIpAddress>> result = networkModel.getProviderToIpList(network, ipToServices);
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testIsSharedNetworkWithoutServicesReturnsFalseWhenNetworkMissing() {
+        NetworkDao networksDao = Mockito.mock(NetworkDao.class);
+        ReflectionTestUtils.setField(networkModel, "_networksDao", networksDao);
+        Mockito.when(networksDao.findById(123L)).thenReturn(null);
+
+        Assert.assertFalse(networkModel.isSharedNetworkWithoutServices(123L));
     }
 }
