@@ -39,7 +39,6 @@ import javax.inject.Inject;
         responseObject = ExtractResponse.class, since = "4.24.0.0")
 public class DownloadBackupFileCmd extends BaseAsyncCmd {
 
-    private static final String REGEX = "[$|&*`\\@!%'\"^;<>!()]";
     @Inject
     private BackupManager backupManager;
 

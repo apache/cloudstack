@@ -38,7 +38,6 @@ import java.util.List;
         responseObject = DataStoreObjectResponse.class, since = "4.24.0.0")
 public class ListBackupFilesCmd extends BaseListCmd {
 
-    private static final String REGEX = "[$|&*`\\@!%'\"^;<>!()]";
     @Inject
     private BackupManager backupManager;
 
