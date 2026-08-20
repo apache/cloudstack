@@ -59,6 +59,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1245,16 +1247,16 @@ public class StorageStrategyTest {
         verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
     }
 
-        @Test
-        void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
-                FeignException notFoundException = mock(FeignException.class);
-                when(notFoundException.status()).thenReturn(404);
-                when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
-                                .thenThrow(notFoundException);
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
+        FeignException notFoundException = mock(FeignException.class);
+        when(notFoundException.status()).thenReturn(404);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenThrow(notFoundException);
 
-                storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
 
-                verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
-                verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
-        }
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+        verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+    }
 }
