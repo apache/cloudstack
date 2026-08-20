@@ -184,7 +184,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                 if (iter.hasNext()) {
                     continue;
                 } else {
-                    throw new CloudRuntimeException(String.format("Unable to find the systemvm template for any of the available hypervisors in the Zone: %s", zone.toString()));
+                    throw new CloudRuntimeException(String.format("Unable to find the SystemVM template for any of the available hypervisors in zone %s.", zone.toString()));
                 }
 
             }
