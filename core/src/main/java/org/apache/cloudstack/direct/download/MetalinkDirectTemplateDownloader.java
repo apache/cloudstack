@@ -154,8 +154,9 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             if (url.endsWith("torrent")) {
                 continue;
             }
-            if (downloader.checkUrl(url)) {
-                return downloader.getRemoteFileSize(url, format);
+            DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(url, null, null, null, headers, connectTimeout, soTimeout, null, null);
+            if (urlDownloader != null && urlDownloader.checkUrl(url)) {
+                return urlDownloader.getRemoteFileSize(url, format);
             }
         }
         return null;
