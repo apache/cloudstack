@@ -6378,7 +6378,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
         ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
         Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
-        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
+        List<BackupServiceJobResponse> backupServiceJobResponses = new ArrayList<>();
 
         for (InternalBackupServiceJobVO jobVO : result.first()) {
             BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
@@ -6390,10 +6390,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (jobVO.getHostId() != null) {
                 response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
             }
-            compressionJobResponses.add(response);
+            backupServiceJobResponses.add(response);
         }
 
-        responses.setResponses(compressionJobResponses, result.second());
+        responses.setResponses(backupServiceJobResponses, result.second());
         return responses;
     }
 
