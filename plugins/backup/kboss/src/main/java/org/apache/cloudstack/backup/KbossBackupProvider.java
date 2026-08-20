@@ -55,6 +55,8 @@ import org.apache.cloudstack.backup.dao.InternalBackupDataStoreDao;
 import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
 import org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao;
+import org.apache.cloudstack.backup.to.BackupFileObject;
+import org.apache.cloudstack.backup.to.BackupFileTO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -74,15 +76,20 @@ import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
+import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
 import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
 import org.apache.cloudstack.storage.to.KbossTO;
@@ -101,6 +108,8 @@ import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.FilesystemInfoTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
@@ -271,6 +280,9 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
     @Inject
     private AlertManager alertManager;
+
+    @Inject
+    private ImageStoreObjectDownloadDao imageStoreObjectDownloadDao;
 
     protected final List<Backup.Status> validChildStatesToRemoveBackup = List.of(Backup.Status.Expunged, Backup.Status.Error, Backup.Status.Failed);
 
@@ -1011,6 +1023,141 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(backupVO.getId());
         secondaryStorageUrls.add(imageStoreDao.findById(internalBackupJoinVO.getImageStoreId()).getUrl());
         return secondaryStorageUrls;
+    }
+
+    @Override
+    public List<FilesystemInfoTO> listBackupFilesystems(Backup backup, Backup.VolumeInfo volumeInfo) {
+        List<Backup.VolumeInfo> volumeInfos = new ArrayList<>();
+        if (volumeInfo != null) {
+            volumeInfos.add(volumeInfo);
+        } else {
+            volumeInfos = backup.getBackedUpVolumes();
+        }
+
+        HashMap<Long, String> volumeIdToVolumeBackupPath = new HashMap<>();
+        for (Backup.VolumeInfo info : volumeInfos) {
+            VolumeVO volumeVO = volumeDao.findByUuidIncludingRemoved(info.getUuid());
+            InternalBackupDataStoreVO internalBackupDataStoreVO = internalBackupDataStoreDao.findByBackupIdAndVolumeId(backup.getId(), volumeVO.getId());
+            volumeIdToVolumeBackupPath.put(volumeVO.getId(), internalBackupDataStoreVO.getBackupPath());
+        }
+
+        InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(backup.getId());
+        DataStore dataStore = dataStoreManager.getDataStore(internalBackupJoinVO.getImageStoreId(), DataStoreRole.Image);
+        DataStoreTO dataStoreTO = dataStore.getTO();
+        Set<String> secondaryStorageUrls = getParentSecondaryStorageUrls((BackupVO)backup);
+        ListFilesystemsCommand cmd = new ListFilesystemsCommand(volumeIdToVolumeBackupPath, (NfsTO) dataStoreTO, secondaryStorageUrls);
+
+        String errorMessage = String.format("Unable to list filesystems of backup [%s]. Please check the logs.", backup.getUuid());
+        EndPoint endPoint = getRandomEndpointToListBackupFilesOrFilesystems(backup, errorMessage, "filesystems");
+
+        Answer answer = endPoint.sendMessage(cmd);
+        if (answer == null || !answer.getResult()) {
+            logger.error("Unable to list filesystems of backup [{}] due to [{}].", backup, answer == null ? "null answer" : answer.getDetails());
+            throw new CloudRuntimeException(errorMessage);
+        }
+
+        ListFilesystemsAnswer filesystemsAnswer = (ListFilesystemsAnswer) answer;
+        return filesystemsAnswer.getFilesystemInfoTOList();
+    }
+
+    @Override
+    public List<DataStoreObjectResponse> listBackupFiles(Backup backup, Backup.VolumeInfo volumeInfo, String filesystem, String directory, Boolean isSymlink) {
+        VolumeVO volumeVO = volumeDao.findByUuidIncludingRemoved(volumeInfo.getUuid());
+        InternalBackupDataStoreVO internalBackupDataStoreVO = internalBackupDataStoreDao.findByBackupIdAndVolumeId(backup.getId(), volumeVO.getId());
+        InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(backup.getId());
+        DataStore dataStore = dataStoreManager.getDataStore(internalBackupJoinVO.getImageStoreId(), DataStoreRole.Image);
+        DataStoreTO dataStoreTO = dataStore.getTO();
+        Set<String> secondaryStorageUrls = getParentSecondaryStorageUrls((BackupVO)backup);
+
+        ListFilesCommand cmd = new ListFilesCommand(volumeVO.getId(), filesystem, directory, internalBackupDataStoreVO.getBackupPath(), (NfsTO) dataStoreTO, isSymlink,
+                secondaryStorageUrls);
+
+        String errorMessage = String.format("Unable to list files of backup [%s]. Please check the logs.", backup.getUuid());
+        EndPoint endPoint = getRandomEndpointToListBackupFilesOrFilesystems(backup, errorMessage, "files");
+
+        Answer answer = endPoint.sendMessage(cmd);
+        if (answer == null || !answer.getResult()) {
+            logger.error("Unable to list files of backup [{}] due to [{}].", backup, answer == null ? "null answer" : answer.getDetails());
+            throw new CloudRuntimeException(errorMessage);
+        }
+
+        ListDataStoreObjectsAnswer listAnswer = (ListDataStoreObjectsAnswer) answer;
+
+        if (!listAnswer.isPathExists()) {
+            throw new InvalidParameterValueException(String.format("Directory [%s] was not found in backup [%s] of volume [%s].", directory, backup.getUuid(), volumeVO.getUuid()));
+        }
+
+        List<DataStoreObjectResponse> dataStoreObjectResponseList = new ArrayList<>();
+        for (int i = 0; i < listAnswer.getCount(); i++) {
+            DataStoreObjectResponse dataStoreObjectResponse = new DataStoreObjectResponse(listAnswer.getNames().get(i), listAnswer.getIsDirs().get(i), listAnswer.getSizes().get(i),
+                    new Date(listAnswer.getLastModified().get(i)));
+
+            dataStoreObjectResponse.setCanonicalPath(listAnswer.getAbsPaths().get(i));
+            dataStoreObjectResponse.setIsSymlink(listAnswer.getIsSymlinks().get(i));
+            dataStoreObjectResponse.setVolumeId(volumeVO.getUuid());
+            dataStoreObjectResponse.setVolumeName(volumeVO.getName());
+            dataStoreObjectResponseList.add(dataStoreObjectResponse);
+        }
+        return dataStoreObjectResponseList;
+    }
+
+    @Override
+    public String downloadBackupFile(Backup backup, Backup.VolumeInfo volumeInfo, String filesystem, String file) {
+        BackupOfferingVO offeringVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findByUuidIncludingRemoved(offeringVO.getExternalId());
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.ALLOW_EXTRACT_FILE);
+        if (detail == null || !Boolean.parseBoolean(detail.getValue())) {
+            throw new CloudRuntimeException(String.format("Unable to download backup files from backup [%s] as its backup offering does not allow it.", backup.getUuid()));
+        }
+
+        InternalBackupJoinVO internalBackupJoinVO = internalBackupJoinDao.findById(backup.getId());
+        ImageStoreEntity dataStore = (ImageStoreEntity) dataStoreManager.getDataStore(internalBackupJoinVO.getImageStoreId(), DataStoreRole.Image);
+        VolumeVO volumeVO = volumeDao.findByUuidIncludingRemoved(volumeInfo.getUuid());
+        InternalBackupDataStoreVO internalBackupDataStoreVO = internalBackupDataStoreDao.findByBackupIdAndVolumeId(backup.getId(), volumeVO.getId());
+        DataStoreTO dataStoreTO = dataStore.getTO();
+        String backupPath = internalBackupDataStoreVO.getBackupPath();
+
+        String extractedFile = UUID.nameUUIDFromBytes(file.getBytes()) + ".gz";
+        String extractedFileFullPath = backupPath.substring(0, backupPath.lastIndexOf(File.separator)+ 1 ) + extractedFile;
+
+        ImageStoreObjectDownloadVO imageStoreObj = imageStoreObjectDownloadDao.findByStoreIdAndPath(dataStore.getId(), extractedFileFullPath);
+        if (imageStoreObj != null) {
+            return imageStoreObj.getDownloadUrl();
+        }
+        Set<String> secondaryStorageUrls = getParentSecondaryStorageUrls((BackupVO)backup);
+
+        ExtractBackupFileCommand cmd = new ExtractBackupFileCommand(volumeVO.getId(), filesystem, file, extractedFileFullPath, backupPath, (NfsTO) dataStoreTO, secondaryStorageUrls);
+
+        EndPoint endPoint = endPointSelector.selectRandom(backup.getZoneId(), Hypervisor.HypervisorType.KVM);
+        String errorMessage = String.format("Unable to download files of backup [%s]. Please check the logs.", backup.getUuid());
+        if (endPoint == null) {
+            logger.error("Unable to find KVM host to download files of backup [{}]. Check if there is any KVM host that is is UP for the zone.", backup);
+            throw new CloudRuntimeException(errorMessage);
+        }
+
+        Answer answer = endPoint.sendMessage(cmd);
+        if (answer == null || !answer.getResult()) {
+            logger.error("Unable to download file [{}] of backup [{}] due to [{}].", file, backup, answer == null ? "null answer" : answer.getDetails());
+            throw new CloudRuntimeException(errorMessage);
+        }
+
+        boolean isDir = Boolean.parseBoolean(answer.getDetails());
+        BackupFileTO backupFileTO = new BackupFileTO(dataStoreTO, Hypervisor.HypervisorType.KVM, extractedFileFullPath);
+        BackupFileObject backupFileObject = new BackupFileObject(backupFileTO, dataStore);
+        try {
+            String downloadUrl = dataStore.createEntityExtractUrl(extractedFileFullPath, isDir? Storage.ImageFormat.TARGZ : Storage.ImageFormat.GZIP, backupFileObject);
+            imageStoreObjectDownloadDao.persist(new ImageStoreObjectDownloadVO(dataStore.getId(), extractedFileFullPath, downloadUrl));
+            return downloadUrl;
+        } catch (Exception e) {
+            logger.warn("Caught exception while trying to create the extract URL of backup file [{}] of backup [{}]. We will cleanup the file and rethrow the exception.", file,
+                    backup.getUuid(), e);
+            cmd = new ExtractBackupFileCommand(extractedFileFullPath, (NfsTO) dataStoreTO);
+            answer = endPoint.sendMessage(cmd);
+            if (!answer.getResult()) {
+                logger.warn("Unable to cleanup backup file [{}] of backup [{}] due to [{}].", file, backup.getUuid(), answer.getDetails());
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -2462,6 +2609,15 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         }
 
         return children;
+    }
+
+    private EndPoint getRandomEndpointToListBackupFilesOrFilesystems(Backup backup, String errorMessage, String filesOrFilesystems) {
+        EndPoint endPoint = endPointSelector.selectRandom(backup.getZoneId(), Hypervisor.HypervisorType.KVM);
+        if (endPoint == null) {
+            logger.error("Unable to find KVM host to list {} of backup [{}]. Check if there is any KVM host that is is UP for the zone.", filesOrFilesystems, backup);
+            throw new CloudRuntimeException(errorMessage);
+        }
+        return endPoint;
     }
 
     /**

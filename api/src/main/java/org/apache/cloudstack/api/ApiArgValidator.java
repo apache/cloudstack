@@ -37,4 +37,10 @@ public enum ApiArgValidator {
      * Validates if the parameter is a valid RFC Compliance domain name.
      */
     RFCComplianceDomainName,
+
+    /**
+     * Validates that the parameter does not match the following regex '[$|&*`\@!%'"^;<>!()]'
+     * Some special characters are allowed, such as '/'. If you need to disallow all special characters, a new validator should be created.
+     * */
+    LimitedSpecialCharacters,
 }

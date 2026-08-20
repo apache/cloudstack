@@ -68,6 +68,7 @@ public class ParamProcessWorker implements DispatchWorker {
     private static final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
     public static final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);
     public static final DateFormat newInputFormat = new SimpleDateFormat(newInputFormatString);
+    private static final String REGEX = "[$|&*`\\@!%'\"^;<>!()]";
 
     @Inject
     protected AccountManager _accountMgr;
@@ -126,6 +127,14 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
+    private void validateLimitedSpecialCharacters(final Object param, final String argName) {
+        String value = String.valueOf(param).trim();
+
+        if (value.matches(REGEX)) {
+            throwInvalidParameterValueException(argName, String.format("This parameter cannot contain any of these characters: %s.", REGEX));
+        }
+    }
+
     protected void throwInvalidParameterValueException(String argName) {
         throwInvalidParameterValueException(argName, null);
     }
@@ -174,6 +183,13 @@ public class ParamProcessWorker implements DispatchWorker {
                             validateNameForRFCCompliance(paramObj, argName);
                             break;
                     }
+                case LimitedSpecialCharacters:
+                    switch (annotation.type()) {
+                    case STRING:
+                        validateLimitedSpecialCharacters(paramObj, argName);
+                        break;
+                    }
+                    break;
             }
         }
     }

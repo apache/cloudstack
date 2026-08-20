@@ -507,6 +507,13 @@ export default {
         {
           name: 'instance.metadata',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/BackupMetadata.vue')))
+        },
+        {
+          name: 'backup.files',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/infra/BackupFileBrowser.vue'))),
+          show: (resource, route, userInfo) => {
+            return resource.browsable ?? false
+          }
         }
       ],
       actions: [

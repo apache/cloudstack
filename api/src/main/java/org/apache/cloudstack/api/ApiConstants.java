@@ -1489,6 +1489,10 @@ public class ApiConstants {
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
+    public static final String IS_FILESYSTEM = "isfilesystem";
+    public static final String IS_SYMLINK = "issymlink";
+    public static final String BROWSABLE = "browsable";
+    public static final String CANONICAL_PATH = "canonicalpath";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
