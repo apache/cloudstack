@@ -229,7 +229,7 @@ public class StorageVmSharedFSLifeCycleTest {
 
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
-        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, true, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
@@ -300,7 +300,7 @@ public class StorageVmSharedFSLifeCycleTest {
         when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
-        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, true, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
 
         lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
     }

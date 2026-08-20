@@ -2958,7 +2958,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forVirtualRouter, final Long podId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forSystemVm, final Long podId) {
         final List<HypervisorType> hypervisorTypes = new ArrayList<>();
 
         List<ClusterVO> clustersForZone;
@@ -2970,7 +2970,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         for (final ClusterVO cluster : clustersForZone) {
             final HypervisorType hType = cluster.getHypervisorType();
-            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
+            if (!forSystemVm || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
                 hypervisorTypes.add(hType);
             }
         }

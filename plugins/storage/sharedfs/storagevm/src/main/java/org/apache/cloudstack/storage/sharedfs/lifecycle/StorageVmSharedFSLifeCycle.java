@@ -160,7 +160,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
         DataCenter zone = dataCenterDao.findById(zoneId);
 
-        List<Hypervisor.HypervisorType> hypervisors = resourceMgr.getSupportedHypervisorTypes(zoneId, false, null);
+        List<Hypervisor.HypervisorType> hypervisors = resourceMgr.getSupportedHypervisorTypes(zoneId, true, null);
         if (hypervisors.size() > 0) {
             Collections.shuffle(hypervisors);
         } else {
@@ -180,8 +180,13 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         for (final Iterator<Hypervisor.HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final Hypervisor.HypervisorType hypervisor = iter.next();
             VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor, preferredArchitecture);
-            if (template == null && !iter.hasNext()) {
-                throw new CloudRuntimeException(String.format("Unable to find the systemvm template for %s or it was not downloaded in %s.", hypervisor.toString(), zone.toString()));
+            if (template == null) {
+                if (iter.hasNext()) {
+                    continue;
+                } else {
+                    throw new CloudRuntimeException(String.format("Unable to find the systemvm template for any of the available hypervisors in the Zone: %s", zone.toString()));
+                }
+
             }
 
             LaunchPermissionVO existingPermission = launchPermissionDao.findByTemplateAndAccount(template.getId(), owner.getId());
