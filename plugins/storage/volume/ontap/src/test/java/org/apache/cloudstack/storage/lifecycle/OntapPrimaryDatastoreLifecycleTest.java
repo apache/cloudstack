@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.apache.cloudstack.storage.feign.model.Volume;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.HostVO;
@@ -178,7 +179,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -212,7 +213,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -249,7 +250,37 @@ public class OntapPrimaryDatastoreLifecycleTest {
 
         try (MockedStatic<StorageProviderFactory> storageProviderFactory = Mockito.mockStatic(StorageProviderFactory.class)) {
             storageProviderFactory.when(() -> StorageProviderFactory.getStrategy(any())).thenReturn(storageStrategy);
-            ontapPrimaryDatastoreLifecycle.initialize(dsInfos);
+            Exception ex = assertThrows(InvalidParameterValueException.class, () -> ontapPrimaryDatastoreLifecycle.initialize(dsInfos));
+            assertTrue(ex.getMessage().contains("must be at least"));
+        }
+    }
+
+    @Test
+    public void testInitialize_capacityBelowOntapMinimum() {
+
+        HashMap<String, String> detailsMap = new HashMap<String, String>();
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, "NFS3");
+
+        Map<String, Object> dsInfos = new HashMap<>();
+        dsInfos.put("zoneId",1L);
+        dsInfos.put("podId",1L);
+        dsInfos.put("clusterId", 1L);
+        dsInfos.put("name", "testStoragePool");
+        dsInfos.put("providerName", "testProvider");
+        dsInfos.put("capacityBytes", 20971519L);
+        dsInfos.put("managed",true);
+        dsInfos.put("tags", "testTag");
+        dsInfos.put("isTagARule", false);
+        dsInfos.put("details", detailsMap);
+
+        try (MockedStatic<StorageProviderFactory> storageProviderFactory = Mockito.mockStatic(StorageProviderFactory.class)) {
+            storageProviderFactory.when(() -> StorageProviderFactory.getStrategy(any())).thenReturn(storageStrategy);
+            Exception ex = assertThrows(InvalidParameterValueException.class, () -> ontapPrimaryDatastoreLifecycle.initialize(dsInfos));
+            assertTrue(ex.getMessage().contains("below the ONTAP minimum volume size"));
         }
     }
 
@@ -261,7 +292,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",false);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -284,7 +315,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", null);
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -307,7 +338,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", null);
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -330,7 +361,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", null);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -364,7 +395,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 2L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -396,7 +427,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes",200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed",true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -428,7 +459,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -464,7 +495,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -495,7 +526,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -526,7 +557,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -558,7 +589,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -589,7 +620,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
@@ -621,7 +652,7 @@ public class OntapPrimaryDatastoreLifecycleTest {
         dsInfos.put("clusterId", 1L);
         dsInfos.put("name", "testStoragePool");
         dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 200000L);
+        dsInfos.put("capacityBytes", 1073741824L);
         dsInfos.put("managed", true);
         dsInfos.put("tags", "testTag");
         dsInfos.put("isTagARule", false);
