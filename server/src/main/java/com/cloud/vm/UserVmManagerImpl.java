@@ -2463,14 +2463,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             profiler.start();
 
             List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+            networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
             Map<Long, Boolean> offeringWithoutServices = new HashMap<>();
             int networksScanned = 0;
             int nicsAdded = 0;
 
             for (NetworkVO network : networks) {
-                boolean withoutServices = offeringWithoutServices.computeIfAbsent(network.getNetworkOfferingId(),
-                        offeringId -> _networkModel.listNetworkOfferingServices(offeringId).isEmpty());
-                if (!withoutServices) {
+                boolean eligible = Network.GuestType.L2.equals(network.getGuestType())
+                        || offeringWithoutServices.computeIfAbsent(network.getNetworkOfferingId(),
+                                offeringId -> _networkModel.listNetworkOfferingServices(offeringId).isEmpty());
+                if (!eligible) {
                     continue;
                 }
                 networksScanned++;
@@ -2496,7 +2498,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             profiler.stop();
-            logger.info("External-DHCP VM-IP map seeded: {} shared-without-service networks, {} nics added, took {} ms",
+            logger.info("External-DHCP VM-IP map seeded: {} shared-without-service/L2 networks, {} nics added, took {} ms",
                     networksScanned, nicsAdded, profiler.getDurationInMillis());
         } catch (Exception e) {
             logger.error("Failed to seed external-DHCP VM-IP retrieval map", e);

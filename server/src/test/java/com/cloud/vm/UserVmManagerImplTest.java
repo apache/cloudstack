@@ -3220,6 +3220,7 @@ public class UserVmManagerImplTest {
         when(network.getId()).thenReturn(100L);
         when(network.getNetworkOfferingId()).thenReturn(7L);
         when(_networkDao.listByGuestType(Network.GuestType.Shared)).thenReturn(Arrays.asList(network));
+        when(_networkDao.listByGuestType(Network.GuestType.L2)).thenReturn(new ArrayList<>());
         when(networkModel.listNetworkOfferingServices(7L)).thenReturn(new ArrayList<>());
 
         NicVO runningNullIp = mock(NicVO.class);
@@ -3253,6 +3254,34 @@ public class UserVmManagerImplTest {
         assertFalse(vmIdCountMap.containsKey(12L));
         Mockito.verify(vmInstanceDao, times(1)).listByIds(Mockito.anyList());
         Mockito.verify(vmInstanceDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testLoadVmDetailsInMapForExternalDhcpIpSeedsL2NetworksUnconditionally() {
+        NetworkVO l2Network = mock(NetworkVO.class);
+        when(l2Network.getId()).thenReturn(200L);
+        when(l2Network.getGuestType()).thenReturn(Network.GuestType.L2);
+        when(_networkDao.listByGuestType(Network.GuestType.Shared)).thenReturn(new ArrayList<>());
+        when(_networkDao.listByGuestType(Network.GuestType.L2)).thenReturn(Arrays.asList(l2Network));
+
+        NicVO runningNullIp = mock(NicVO.class);
+        when(runningNullIp.getId()).thenReturn(21L);
+        when(runningNullIp.getInstanceId()).thenReturn(3000L);
+        when(runningNullIp.getIPv4Address()).thenReturn(null);
+        when(nicDao.listByNetworkId(200L)).thenReturn(Arrays.asList(runningNullIp));
+
+        VMInstanceVO running = mock(VMInstanceVO.class);
+        when(running.getId()).thenReturn(3000L);
+        when(running.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceDao.listByIds(Mockito.anyList())).thenReturn(Arrays.asList(running));
+
+        userVmManagerImpl.loadVmDetailsInMapForExternalDhcpIp();
+
+        @SuppressWarnings("unchecked")
+        Map<Long, ?> vmIdCountMap = (Map<Long, ?>) ReflectionTestUtils.getField(userVmManagerImpl, "vmIdCountMap");
+        assertNotNull(vmIdCountMap);
+        assertTrue(vmIdCountMap.containsKey(21L));
+        Mockito.verify(networkModel, Mockito.never()).listNetworkOfferingServices(Mockito.anyLong());
     }
 
     @Test
