@@ -45,12 +45,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.serializer.GsonHelper;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.google.gson.reflect.TypeToken;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
@@ -104,6 +106,7 @@ import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.kms.KMSManager;
@@ -1506,7 +1509,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         for (String command : apiNameList) {
             try {
-                checkApiAccess(apiCheckers, requested, command);
+                checkApiAccess(apiCheckers, requested, command, null);
             } catch (PermissionDeniedException pde) {
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format(
@@ -1525,7 +1528,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     logger.trace(String.format("permission to \"%s\" is requested",
                             command));
                 }
-                checkApiAccess(apiCheckers, caller, command);
+                checkApiAccess(apiCheckers, caller, command, null);
             } catch (PermissionDeniedException pde) {
                 String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
                         caller, _domainMgr.getDomain(caller.getDomainId()));
@@ -1535,9 +1538,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPairPermission... apiKeyPairPermissions) {
+    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) {
         for (final APIChecker apiChecker : apiCheckers) {
-            apiChecker.checkAccess(caller, command, apiKeyPairPermissions);
+            apiChecker.checkAccess(caller, command, keyPair, apiKeyPairPermissions);
         }
     }
 
@@ -1546,20 +1549,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
 
         List<ApiKeyPairPermission> keyPairPermissions = new ArrayList<>();
+        ApiKeyPair keyPair = null;
         if (apiKey != null) {
             Ternary<User, Account, ApiKeyPair> keyPairTernary = findUserByApiKey(apiKey);
             if (keyPairTernary != null) {
                 keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPairTernary.third().getId(), caller.getRoleId());
+                keyPair = keyPairTernary.third();
             }
         }
 
-        checkApiAccess(apiCheckers, caller, command, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
+        checkApiAccess(apiCheckers, caller, command, keyPair, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
     }
 
     @Override
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
-        checkApiAccess(apiCheckers, caller, command);
+        checkApiAccess(apiCheckers, caller, command, null);
     }
 
     @NotNull
@@ -3385,24 +3390,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public String getAccessingApiKey(BaseCmd cmd) {
         try {
-            if (cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd) cmd).getJob().toString().contains("\"signature\"")) {
-                return parseApiKeyFromAsyncJob((BaseAsyncCmd) cmd);
+            Map<String, String> requestPayload = cmd.getFullUrlParams();
+
+            if (cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd) cmd).getJob() instanceof AsyncJobVO) {
+                String asyncJobPayload = ((AsyncJobVO) ((BaseAsyncCmd) cmd).getJob()).getCmdInfo();
+                requestPayload = GsonHelper.getGson().fromJson(asyncJobPayload, new TypeToken<HashMap<String, String>>() {}.getType());
             }
-            boolean accessedByApiKey = cmd.getFullUrlParams().containsKey(ApiConstants.SIGNATURE);
-            String accessingApiKey = cmd.getFullUrlParams().get("apiKey");
+
+            boolean accessedByApiKey = requestPayload.keySet().stream().anyMatch(ApiConstants.SIGNATURE::equalsIgnoreCase);
             if (accessedByApiKey) {
-                return accessingApiKey;
+                String apiKey = requestPayload.entrySet().stream()
+                        .filter(e -> ApiConstants.API_KEY.equalsIgnoreCase(e.getKey()))
+                        .map(Map.Entry::getValue).findFirst().orElse(null);
+                if (apiKey != null) {
+                    logger.info("Request's API key is [{}].", apiKey);
+                    return apiKey;
+                }
             }
         } catch (NullPointerException e) {
-            logger.info("Accessing API through session.");
+            logger.warn("Unable to identify request API key due to: {}.", e);
         }
-        return null;
-    }
 
-    private String parseApiKeyFromAsyncJob(BaseAsyncCmd cmd) {
-        String jobString = cmd.getJob().toString();
-        int indexOfApiKey = jobString.indexOf("apiKey") + 9;
-        return jobString.substring(indexOfApiKey, jobString.indexOf("\"", indexOfApiKey));
+        logger.info("Request's signature or API key were not identified; assuming it has been authenticated via session.");
+        return null;
     }
 
     private Boolean isApiKeySupersetOfPermission(List<RolePermissionEntity> baseKeyPairPermissions, List<RolePermissionEntity> comparedPermissions) {
@@ -3453,8 +3463,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         internalDeleteApiKey(keyPair);
     }
 
+    @Override
+    public List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId) {
+        return apiKeyPairPermissionsDao.findAllByApiKeyPairId(keyPairId);
+    }
+
     private void internalDeleteApiKey(ApiKeyPair keyPair) {
-        List<ApiKeyPairPermissionVO> permissions = apiKeyPairPermissionsDao.findAllByApiKeyPairId(keyPair.getId());
+        List<? extends ApiKeyPairPermission> permissions = getAllExplicitKeyPairPermissions(keyPair.getId());
         for (ApiKeyPairPermission permission : permissions) {
             apiKeyPairPermissionsDao.remove(permission.getId());
         }
@@ -3622,6 +3637,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             permissions.add(new ApiKeyPairPermissionVO(0, rule, rulePermission, ruleDescription));
         }
 
+        if (permissions.isEmpty() && accessingApiKey != null && doesKeyPairHaveExplicitPermissions(accessingApiKey)) {
+            logger.debug("No rules were specified for the new API key pair. Since the accessing API key [{}]" +
+                    " has explicit permissions, these permissions will be defined as the rule set for the new pair.", accessingApiKey);
+            permissions = allPermissions.stream().map(permission -> (
+                        new ApiKeyPairPermissionVO(0, permission.getRule().getRuleString(), permission.getPermission(), permission.getDescription())
+                    )).collect(Collectors.toList());
+        }
+
         if (!isApiKeySupersetOfPermission(allPermissions, permissions)) {
             throw new InvalidParameterValueException(String.format("The key pair being created has a bigger set of permissions than the account [%s] " +
                     "that owns it. This is not allowed.", account.getUuid()));
@@ -3634,6 +3657,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             apiKeyPairPermissionsDao.persist(permissionVO);
         });
         return savedApiKeyPair;
+    }
+
+    private boolean doesKeyPairHaveExplicitPermissions(String apiKey) {
+        ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        if (apiKeyPair == null) {
+            logger.info("Unable to find API key pair entity with the API key [{}].", apiKey);
+            return false;
+        }
+
+        return !getAllExplicitKeyPairPermissions(apiKeyPair.getId()).isEmpty();
     }
 
     @Override

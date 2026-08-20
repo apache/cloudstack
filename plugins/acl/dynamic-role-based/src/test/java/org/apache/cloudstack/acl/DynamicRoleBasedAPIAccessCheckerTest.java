@@ -85,14 +85,14 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
 
         // Enabled plugin
         Mockito.doReturn(true).when(apiAccessCheckerSpy).isEnabled();
-        Mockito.doCallRealMethod().when(apiAccessCheckerSpy).checkAccess(Mockito.any(User.class), Mockito.anyString());
+        Mockito.doCallRealMethod().when(apiAccessCheckerSpy).checkAccess(Mockito.any(User.class), Mockito.anyString(), Mockito.any());
     }
 
     @Test
     public void testInvalidAccountCheckAccess() {
         Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(null);
         try {
-            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi");
+            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi", null);
             fail("Exception was expected");
         } catch (PermissionDeniedException ignored) {
         }
@@ -102,7 +102,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     public void testInvalidAccountRoleCheckAccess() {
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(null);
         try {
-            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi");
+            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi", null);
             fail("Exception was expected");
         } catch (PermissionDeniedException ignored) {
         }
@@ -112,14 +112,14 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     public void testDefaultRootAdminAccess() {
         Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(new AccountVO("root admin", 1L, null, Account.Type.ADMIN, "some-uuid"));
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(new RoleVO(1L, "SomeRole", RoleType.Admin, "default root admin role"));
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), "anyApi"));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), "anyApi", null));
     }
 
     @Test
     public void testInvalidRolePermissionsCheckAccess() {
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.<RolePermission>emptyList());
         try {
-            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi");
+            apiAccessCheckerSpy.checkAccess(getTestUser(), "someApi", null);
             fail("Exception was expected");
         } catch (PermissionDeniedException ignored) {
         }
@@ -130,7 +130,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName, null));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, "some*", Permission.ALLOW, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName, null));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final RolePermission permission = new RolePermissionVO(1L, denyApiName, Permission.DENY, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         try {
-            apiAccessCheckerSpy.checkAccess(getTestUser(), denyApiName);
+            apiAccessCheckerSpy.checkAccess(getTestUser(), denyApiName, null);
             fail("Exception was expected");
         } catch (PermissionDeniedException ignored) {
         }
@@ -159,7 +159,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final RolePermission permission = new RolePermissionVO(1L, "*Deny*", Permission.DENY, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
         try {
-            apiAccessCheckerSpy.checkAccess(getTestUser(), denyApiName);
+            apiAccessCheckerSpy.checkAccess(getTestUser(), denyApiName, null);
             fail("Exception was expected");
         } catch (PermissionDeniedException ignored) {
         }
@@ -169,7 +169,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     public void testAnnotationFallbackCheckAccess() {
         final String allowedApiName = "someApiWithAnnotations";
         apiAccessCheckerSpy.addApiToRoleBasedAnnotationsMap(getTestRole().getRoleType(), allowedApiName);
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), allowedApiName, null));
     }
 
     @Test
@@ -202,21 +202,21 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     public void checkAccessTestInvalidApiKeyPairPermission() {
         final String api = "someDeniedApi";
         final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, api, Permission.DENY, null);
-        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, permission));
     }
 
     @Test(expected = UnavailableCommandException.class)
     public void checkAccessTestUnrelatedApiKeyPairPermission() {
         final String api = "someDeniedApi";
         final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, "apiName", Permission.ALLOW, null);
-        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, permission));
     }
 
     @Test
     public void checkAccessTestValidApiKeyPairPermission() {
         final String api = "someAllowedApi";
         final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, api, Permission.ALLOW, null);
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, permission));
     }
 
     @Test
@@ -226,7 +226,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
             new ApiKeyPairPermissionVO(1L, "someDeniedApi", Permission.DENY, null),
             new ApiKeyPairPermissionVO(1L, api, Permission.ALLOW, null)
         };
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permissions));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, permissions));
     }
 
     @Test(expected = UnavailableCommandException.class)
@@ -236,7 +236,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
                 new ApiKeyPairPermissionVO(1L, "someAllowedApi", Permission.ALLOW, null),
                 new ApiKeyPairPermissionVO(1L, api, Permission.DENY, null)
         };
-        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permissions));
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, permissions));
     }
 
 
@@ -247,7 +247,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final RolePermission permission = new RolePermissionVO(1L, api, Permission.ALLOW, null);
         Mockito.doReturn(Collections.singletonList(permission)).when(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
 
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, emptyPermissionArray));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, emptyPermissionArray));
         Mockito.verify(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
     }
 
@@ -258,7 +258,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final RolePermission permission = new RolePermissionVO(1L, api, Permission.DENY, null);
         Mockito.doReturn(Collections.singletonList(permission)).when(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
 
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, emptyPermissionArray));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, null, emptyPermissionArray));
         Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
     }
 }
