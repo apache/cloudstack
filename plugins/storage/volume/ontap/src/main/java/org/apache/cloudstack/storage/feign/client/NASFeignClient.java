@@ -21,7 +21,9 @@ package org.apache.cloudstack.storage.feign.client;
 
 import feign.QueryMap;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
+import org.apache.cloudstack.storage.feign.model.FileCloneRequest;
 import org.apache.cloudstack.storage.feign.model.FileInfo;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import feign.Headers;
 import feign.Param;
@@ -57,6 +59,15 @@ public interface NASFeignClient {
                     @Param("volumeUuid") String volumeUUID,
                     @Param("path") String filePath,
                     FileInfo file);
+
+    /**
+     * Creates a space-efficient clone of a file within a FlexVolume.
+     *
+     * <p>ONTAP REST: {@code POST /api/storage/file/clone}</p>
+     */
+    @RequestLine("POST /api/storage/file/clone")
+    @Headers({"Authorization: {authHeader}", "Content-Type: application/json"})
+    JobResponse cloneFile(@Param("authHeader") String authHeader, FileCloneRequest request);
 
     // Export Policy Operations
     @RequestLine("POST /api/protocols/nfs/export-policies")

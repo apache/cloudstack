@@ -789,29 +789,78 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testCopyCloudStackVolume_NullRequest_DoesNotThrow() {
-        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
-        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(null));
-    }
-
-    @Test
-    void testCopyCloudStackVolume_NullLun_DoesNotThrow() {
-        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
-        CloudStackVolume request = new CloudStackVolume();
-        request.setLun(null);
-
-        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(request));
-    }
-
-    @Test
-    void testCopyCloudStackVolume_ValidRequest_DoesNotThrow() {
-        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
+    void testCloneCloudStackVolume_Success() {
+        Lun.Source source = new Lun.Source();
+        source.setUuid("source-lun-uuid");
+        Lun.Clone clone = new Lun.Clone();
+        clone.setSource(source);
         Lun lun = new Lun();
-        lun.setName("/vol/vol1/lun1");
+        lun.setName("/vol/vol1/cloned");
+        lun.setClone(clone);
+
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(request));
+        Lun clonedLun = new Lun();
+        clonedLun.setName("/vol/vol1/cloned");
+        clonedLun.setUuid("cloned-lun-uuid");
+
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(clonedLun));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenReturn(response);
+
+            CloudStackVolume result = unifiedSANStrategy.cloneCloudStackVolume(request);
+
+            assertNotNull(result);
+            assertEquals("cloned-lun-uuid", result.getLun().getUuid());
+            verify(sanFeignClient).createLun(eq(authHeader), eq(true), any(Lun.class));
+        }
+    }
+
+    @Test
+    void testCloneCloudStackVolume_NullRequest_ThrowsException() {
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.cloneCloudStackVolume(null));
+    }
+
+    @Test
+    void testCloneCloudStackVolume_MissingSource_ThrowsException() {
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/cloned");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.cloneCloudStackVolume(request));
+    }
+
+    @Test
+    void testResizeCloudStackVolume_ValidRequest_PatchesSize() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L);
+
+        ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+        verify(sanFeignClient).updateLun(any(), eq("lun-uuid-123"), lunCaptor.capture());
+        assertEquals(21474836480L, lunCaptor.getValue().getSpace().getSize());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_NoUuid_Throws() {
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(new Lun());
+
+        assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(request, 100L));
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
     }
 
     @Test
