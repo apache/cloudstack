@@ -160,8 +160,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
                     volumeVO.setPoolType(storagePool.getPoolType());
                     volumeVO.setPoolId(storagePool.getId());
-                    volumeVO.setFormat(getImageFormatByHypervisor(storagePool.getHypervisor()));
-                    logger.info("createAsync: Volume format set to [{}] for hypervisor [{}]", volumeVO.getFormat(), storagePool.getHypervisor());
+                    volumeVO.setFormat(getImageFormatByHypervisorAndProtocol(storagePool.getHypervisor(), details.get(OntapStorageConstants.PROTOCOL)));
+                    logger.info("createAsync: Volume format set to [{}] for hypervisor [{}] and protocol [{}]", volumeVO.getFormat(), storagePool.getHypervisor(), details.get(OntapStorageConstants.PROTOCOL));
 
                     if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
                         String lunName = created != null && created.getLun() != null ? created.getLun().getName() : null;
@@ -988,9 +988,17 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     }
 
 
-    private Storage.ImageFormat getImageFormatByHypervisor(HypervisorType hypervisorType) {
+    private Storage.ImageFormat getImageFormatByHypervisorAndProtocol(HypervisorType hypervisorType, String protocol) {
         if (HypervisorType.KVM.equals(hypervisorType)) {
-            return Storage.ImageFormat.QCOW2;
+            ProtocolType protocolType = ProtocolType.valueOf(protocol);
+            switch (protocolType) {
+                case NFS3:
+                    return Storage.ImageFormat.QCOW2;
+                case ISCSI:
+                    return Storage.ImageFormat.RAW;
+                default:
+                    throw new CloudRuntimeException("Unsupported protocol [" + protocol + "] for ONTAP image format resolution");
+            }
         }
         throw new CloudRuntimeException("Unsupported hypervisor [" + hypervisorType + "] for ONTAP image format resolution");
     }
