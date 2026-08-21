@@ -31,8 +31,9 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -152,7 +153,6 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -204,6 +204,7 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.security.Algorithms;
 import com.google.gson.reflect.TypeToken;
 
 @Component
@@ -467,7 +468,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean start() {
-        Security.addProvider(new BouncyCastleProvider());
         Integer apiPort = IntegrationAPIPort.value(); // api port, null by default
         isPostRequestsAndTimestampsEnforced = EnforcePostRequestsAndTimestamps.value();
 
@@ -1139,18 +1139,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             unsignedRequest = unsignedRequest.toLowerCase();
 
-            final Mac mac = Mac.getInstance("HmacSHA1");
-            final SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
-            mac.init(keySpec);
-            mac.update(unsignedRequest.getBytes());
+            String santizedSignature = signature.replaceAll(SANITIZATION_REGEX, "_");
 
-            final byte[] encryptedBytes = mac.doFinal();
-            final String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
+            final boolean apiLegacyAlgorithmSupported = ApiServiceConfiguration.ApiLegacyAlgorithmSupported.value();
+            List<String> algorithms = apiLegacyAlgorithmSupported ? List.of(Algorithms.HMAC_SHA512, Algorithms.HMAC_SHA1) : List.of(Algorithms.HMAC_SHA512);
+            boolean equalSig = false;
+            for (String algorithm : algorithms) {
+                String computedSignature = getComputedSignature(algorithm, secretKey, unsignedRequest);
+                equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
+                if (!equalSig) {
+                    logger.info("User signature [{}] is not equaled to computed signature [{}] with algorithm {}.", santizedSignature, computedSignature, algorithm);
+                } else {
+                    logger.debug("User signature [{}] is equaled to computed signature [{}] with algorithm {}.", santizedSignature, computedSignature, algorithm);
+                    break;
+                }
+            }
 
             if (!equalSig) {
-                signature = signature.replaceAll(SANITIZATION_REGEX, "_");
-                logger.info("User signature [{}] is not equaled to computed signature [{}].", signature, computedSignature);
                 return false;
             }
             CallContext.register(user, account);
@@ -1168,6 +1173,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             logger.error("Unable to verify request signature.", ex);
         }
         return false;
+    }
+
+    private String getComputedSignature(String algorithm, String secretKey, String unsignedRequest) throws NoSuchAlgorithmException, InvalidKeyException {
+        final Mac mac = Mac.getInstance(algorithm);
+        final SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), algorithm);
+        mac.init(keySpec);
+        mac.update(unsignedRequest.getBytes());
+
+        final byte[] encryptedBytes = mac.doFinal();
+        return Base64.encodeBase64String(encryptedBytes);
     }
 
     private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPair keyPair, ApiKeyPairPermission... rolePermissions) {
