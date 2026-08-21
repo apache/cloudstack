@@ -765,7 +765,11 @@ public class VolumeServiceImpl implements VolumeService {
             volume.setPath(templateObjectTo.getPath());
 
             if (templateObjectTo.getFormat() != null) {
-                volume.setFormat(templateObjectTo.getFormat());
+                PrimaryDataStore primaryDataStore = context.getPrimaryDataStore();
+                boolean isOntap = primaryDataStore != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(primaryDataStore.getStorageProviderName());
+                if (!isOntap || volume.getFormat() == null) {
+                    volume.setFormat(templateObjectTo.getFormat());
+                }
             }
 
             volDao.update(volume.getId(), volume);
