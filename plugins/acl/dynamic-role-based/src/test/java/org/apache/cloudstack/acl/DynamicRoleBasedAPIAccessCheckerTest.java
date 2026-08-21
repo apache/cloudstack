@@ -269,14 +269,14 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     @Test(expected = PermissionDeniedException.class)
     public void testCheckAccessAccountNullRoleShouldThrow() {
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(null);
-        apiAccessCheckerSpy.checkAccess(getTestAccount(), "someApi");
+        apiAccessCheckerSpy.checkAccess(getTestAccount(), "someApi", null);
     }
 
     @Test
     public void testCheckAccessAccountAdminShouldAllow() {
         Account adminAccount = new AccountVO("root admin", 1L, null, Account.Type.ADMIN, "admin-uuid");
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(new RoleVO(1L, "Admin", RoleType.Admin, "default admin role"));
-        assertTrue(apiAccessCheckerSpy.checkAccess(adminAccount, "anyApi"));
+        assertTrue(apiAccessCheckerSpy.checkAccess(adminAccount, "anyApi", null));
     }
 
     @Test
@@ -284,7 +284,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
-        assertTrue(apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName));
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName, null));
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -292,7 +292,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         final String deniedApiName = "someDeniedApi";
         final RolePermission permission = new RolePermissionVO(1L, deniedApiName, Permission.DENY, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
-        apiAccessCheckerSpy.checkAccess(getTestAccount(), deniedApiName);
+        apiAccessCheckerSpy.checkAccess(getTestAccount(), deniedApiName, null);
     }
 
     @Test
@@ -311,9 +311,9 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
 
         // First call should populate the cache
-        apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName);
+        apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName, null);
         // Second call should use cached permissions and not hit the DAO again
-        apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName);
+        apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName, null);
 
         Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
     }

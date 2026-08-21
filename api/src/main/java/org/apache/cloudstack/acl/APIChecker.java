@@ -55,7 +55,7 @@ public interface APIChecker extends Adapter {
         List<String> allowedApis = new ArrayList<>();
         for (String apiName : apiNames) {
             try {
-                checkAccess(account, apiName);
+                checkAccess(account, apiName, null);
                 allowedApis.add(apiName);
             } catch (RequestLimitException e) {
                 // Non-ACL failure (e.g. rate limiting) should not be treated as simple "not allowed".
