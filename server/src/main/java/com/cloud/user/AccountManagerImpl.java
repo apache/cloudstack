@@ -54,6 +54,8 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.google.gson.reflect.TypeToken;
 import com.cloud.utils.db.TransactionCallbackWithException;
+
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
 import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
@@ -1536,6 +1538,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 throw new PermissionDeniedException(msg,pde);
             }
         }
+
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+
+        List<String> allApis = new ArrayList<>(apiNameList);
+        List<String> requestedAllowed = allApis;
+        List<String> callerAllowed = new ArrayList<>();
+        try {
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+            }
+            callerAllowed = requestedAllowed;
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+            }
+        } catch (PermissionDeniedException e) {
+            String msg = String.format("User of account: %s cannot assign this role on the requested account: %s", caller.getAccountName(), requested.getAccountName());
+            String logMsg = String.format("%s: %s", msg, e.getMessage());
+            logger.error(logMsg, e);
+            throw new PermissionDeniedException(msg);
+        }
+
+        if (callerAllowed.size() < requestedAllowed.size()) {
+            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
+            escalatedApis.removeAll(callerAllowed);
+            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
+                    caller, _domainMgr.getDomain(caller.getDomainId()), CollectionUtils.isNotEmpty(escalatedApis) ? escalatedApis.size() : "None");
+            logger.warn(msg);
+            throw new PermissionDeniedException(msg);
+        }
     }
 
     private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) {
@@ -1565,6 +1596,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         checkApiAccess(apiCheckers, caller, command, null);
+    }
+
+    protected List<APIAclChecker> getApiACLCheckers() {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
+            }
+        }
+        return aclCheckers;
     }
 
     @NotNull
@@ -1724,6 +1768,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!Account.Type.PROJECT.equals(userAccount.getType())) {
             checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
             checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
+    }
+
+    @Override
+    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+        for (final APIAclChecker aclChecker : aclCheckers) {
+            aclChecker.refreshRoleCacheOnPermissionsChange(role);
         }
     }
 
@@ -2749,7 +2801,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
         }
 
-        if (projectId != null) {
+        if (projectId != null && projectId != -1L) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
@@ -4226,6 +4278,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
         if (Boolean.TRUE.equals(cmd.getEnable())) {
+            if (cmd.getUserId() != null) {
+                throw new InvalidParameterValueException("User ID should not be provided when enabling 2FA for the current user");
+            }
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
@@ -4274,6 +4329,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
+            verifyCallerPrivilegeForUserOrAccountOperations(userVO);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();

@@ -65,6 +65,15 @@ export function removeLoadingAnimate (id = '', timeout = 1500) {
   }, timeout)
 }
 
+export function escapeHtml (value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 export function sanitizeReverse (value) {
   return value
     .replace(/&amp;/g, '&')
