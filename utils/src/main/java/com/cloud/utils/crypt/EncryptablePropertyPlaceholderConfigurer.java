@@ -19,39 +19,42 @@
 
 package com.cloud.utils.crypt;
 
-import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 
 /**
  * Spring bean that resolves property placeholders, decrypting any value wrapped as
- * {@code ENC(...)} with the given jasypt {@link StringEncryptor}. Values that are not wrapped
- * are passed through unchanged.
+ * {@code ENC(...)} with the management server's own secret key, via
+ * {@link EncryptionSecretKeyChecker} (the same AES-GCM based mechanism already used to
+ * encrypt {@code db.properties}). Values that are not wrapped are passed through unchanged,
+ * and if encryption has not been configured on the management server, decryption is skipped
+ * entirely and the raw (still-wrapped) value is returned.
  *
  * This replaces {@code org.jasypt.spring3.properties.EncryptablePropertyPlaceholderConfigurer}
  * (from the jasypt-spring3 artifact), which is not on the classpath and is incompatible with
- * Spring 5, so beans referencing it fail with a ClassNotFoundException.
+ * Spring 5, so beans referencing it fail with a ClassNotFoundException. Unlike that class, this
+ * one needs no separate {@code StringEncryptor}/algorithm bean wired in: declare it as
+ * <pre>{@code
+ * <bean id="propertyConfigurer" class="com.cloud.utils.crypt.EncryptablePropertyPlaceholderConfigurer">
+ *     <property name="location" value="classpath:/cred.properties" />
+ * </bean>
+ * }</pre>
+ * and it reuses whichever secret key the management server was configured with (file/env/web,
+ * see {@code password.encryption.type} in db.properties).
  */
 public class EncryptablePropertyPlaceholderConfigurer extends PropertyPlaceholderConfigurer {
 
     private static final String ENC_PREFIX = "ENC(";
     private static final String ENC_SUFFIX = ")";
 
-    private final StringEncryptor encryptor;
-
-    public EncryptablePropertyPlaceholderConfigurer(StringEncryptor encryptor) {
-        this.encryptor = encryptor;
-    }
-
     @Override
     protected String convertPropertyValue(String originalValue) {
-        if (originalValue == null) {
-            return null;
+        if (originalValue == null || !EncryptionSecretKeyChecker.useEncryption()) {
+            return originalValue;
         }
 
         String trimmedValue = originalValue.trim();
         if (trimmedValue.startsWith(ENC_PREFIX) && trimmedValue.endsWith(ENC_SUFFIX)) {
-            String encryptedValue = trimmedValue.substring(ENC_PREFIX.length(), trimmedValue.length() - ENC_SUFFIX.length());
-            return encryptor.decrypt(encryptedValue);
+            return EncryptionSecretKeyChecker.decryptPropertyIfNeeded(trimmedValue);
         }
 
         return originalValue;

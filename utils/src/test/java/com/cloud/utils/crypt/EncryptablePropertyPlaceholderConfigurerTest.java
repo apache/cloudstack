@@ -19,55 +19,60 @@
 
 package com.cloud.utils.crypt;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
-import org.jasypt.encryption.StringEncryptor;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class EncryptablePropertyPlaceholderConfigurerTest {
 
+    private static final String ENCRYPTED_VALUE = "ENC(iYVsCZXiGiC6SzZLMNBvBL93hoUpntxkuRjyaqC8L+JYKXw=)";
+
+    private final EncryptablePropertyPlaceholderConfigurer configurer = new EncryptablePropertyPlaceholderConfigurer();
+
+    @After
+    public void tearDown() {
+        EncryptionSecretKeyChecker.resetEncryptor();
+    }
+
     @Test
-    public void convertPropertyValueDecryptsWrappedValue() {
-        StringEncryptor encryptor = mock(StringEncryptor.class);
-        when(encryptor.decrypt("bmb2VaFdQb")).thenReturn("secret");
-        EncryptablePropertyPlaceholderConfigurer configurer = new EncryptablePropertyPlaceholderConfigurer(encryptor);
+    public void convertPropertyValueDecryptsWrappedValueWhenEncryptionEnabled() {
+        EncryptionSecretKeyChecker.initEncryptor("managementkey");
 
-        String result = configurer.convertPropertyValue("ENC(bmb2VaFdQb)");
+        String result = configurer.convertPropertyValue(ENCRYPTED_VALUE);
 
-        Assert.assertEquals("secret", result);
+        Assert.assertEquals("encthis", result);
     }
 
     @Test
     public void convertPropertyValueTrimsSurroundingWhitespaceBeforeDecrypting() {
-        StringEncryptor encryptor = mock(StringEncryptor.class);
-        when(encryptor.decrypt("bmb2VaFdQb")).thenReturn("secret");
-        EncryptablePropertyPlaceholderConfigurer configurer = new EncryptablePropertyPlaceholderConfigurer(encryptor);
+        EncryptionSecretKeyChecker.initEncryptor("managementkey");
 
-        String result = configurer.convertPropertyValue("  ENC(bmb2VaFdQb)  ");
+        String result = configurer.convertPropertyValue("  " + ENCRYPTED_VALUE + "  ");
 
-        Assert.assertEquals("secret", result);
+        Assert.assertEquals("encthis", result);
+    }
+
+    @Test
+    public void convertPropertyValuePassesThroughWrappedValueWhenEncryptionNotConfigured() {
+        String result = configurer.convertPropertyValue(ENCRYPTED_VALUE);
+
+        Assert.assertEquals(ENCRYPTED_VALUE, result);
     }
 
     @Test
     public void convertPropertyValuePassesThroughPlainValues() {
-        StringEncryptor encryptor = mock(StringEncryptor.class);
-        EncryptablePropertyPlaceholderConfigurer configurer = new EncryptablePropertyPlaceholderConfigurer(encryptor);
+        EncryptionSecretKeyChecker.initEncryptor("managementkey");
 
         String result = configurer.convertPropertyValue("guest");
 
         Assert.assertEquals("guest", result);
-        verifyNoInteractions(encryptor);
     }
 
     @Test
     public void convertPropertyValueHandlesNull() {
-        StringEncryptor encryptor = mock(StringEncryptor.class);
-        EncryptablePropertyPlaceholderConfigurer configurer = new EncryptablePropertyPlaceholderConfigurer(encryptor);
+        EncryptionSecretKeyChecker.initEncryptor("managementkey");
 
         Assert.assertNull(configurer.convertPropertyValue(null));
-        verifyNoInteractions(encryptor);
     }
 }
