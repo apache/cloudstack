@@ -158,13 +158,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     /**
-     * Trims and rejects a DNS provider URL that resolves to an illegal address before any provider client
+     * Rejects a DNS provider URL that resolves to an illegal address before any provider client
      * is given the chance to connect to it. See {@link UriUtils#validateUrl(String)} for the exact rules
      * enforced (including the requirement that the URL declares an {@code http}/{@code https} scheme).
      *
      * @throws InvalidParameterValueException if the URL is blank, fails validation
      */
-    private void validateDnsServerUrl(String trimmedUrl, Account caller) {
+    private void validateDnsServerUrl(String trimmedUrl) {
         if (StringUtils.isBlank(trimmedUrl)) {
             throw new InvalidParameterValueException("URL cannot be blank.");
         }
@@ -182,7 +182,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         enforceRootAdminOnly(caller.getId());
 
         String dnsUrl = StringUtils.trim(cmd.getUrl());
-        validateDnsServerUrl(dnsUrl, caller);
+        validateDnsServerUrl(dnsUrl);
         DnsServer existing = dnsServerDao.findByUrlAndAccount(dnsUrl, caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
@@ -272,7 +272,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (StringUtils.isNotBlank(cmd.getUrl())) {
             String dnsUrl = StringUtils.trim(cmd.getUrl());
             if (!dnsUrl.equals(originalUrl)) {
-                validateDnsServerUrl(dnsUrl, caller);
+                validateDnsServerUrl(dnsUrl);
                 DnsServer duplicate = dnsServerDao.findByUrlAndAccount(dnsUrl, dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
                     throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
