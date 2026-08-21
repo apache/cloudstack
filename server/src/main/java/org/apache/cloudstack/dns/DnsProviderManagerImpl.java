@@ -269,7 +269,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             dnsServer.setName(cmd.getName());
         }
 
-        if (cmd.getUrl() != null) {
+        if (StringUtils.isNotBlank(cmd.getUrl())) {
             String dnsUrl = StringUtils.trim(cmd.getUrl());
             if (!dnsUrl.equals(originalUrl)) {
                 validateDnsServerUrl(dnsUrl, caller);
