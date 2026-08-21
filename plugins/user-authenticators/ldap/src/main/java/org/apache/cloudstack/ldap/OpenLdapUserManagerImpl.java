@@ -74,7 +74,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return new LdapUser(username, email, firstname, lastname, principal, domain, disabled, memberships);
     }
 
-    private String generateSearchFilter(final String username, Long domainId) {
+    /**
+     * @param restrictToLinkedGroups scope to groups already linked in this domain; only valid for
+     *                               browsing/importing. Applied to a single known username, it wrongly
+     *                               blocks creating one ldap account once another is linked to a group.
+     */
+    private String generateSearchFilter(final String username, Long domainId, final boolean restrictToLinkedGroups) {
         final StringBuilder userObjectFilter = new StringBuilder();
         userObjectFilter.append("(objectClass=");
         userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
@@ -89,14 +94,16 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         String memberOfAttribute = getMemberOfAttribute(domainId);
         StringBuilder ldapGroupsFilter = new StringBuilder();
-        // this should get the trustmaps for this domain
-        List<String> ldapGroups = getMappedLdapGroups(domainId);
-        if (null != ldapGroups && ldapGroups.size() > 0) {
-            ldapGroupsFilter.append("(|");
-            for (String ldapGroup : ldapGroups) {
-                ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
+        if (restrictToLinkedGroups) {
+            // this should get the trustmaps for this domain
+            List<String> ldapGroups = getMappedLdapGroups(domainId);
+            if (null != ldapGroups && ldapGroups.size() > 0) {
+                ldapGroupsFilter.append("(|");
+                for (String ldapGroup : ldapGroups) {
+                    ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
+                }
+                ldapGroupsFilter.append(')');
             }
-            ldapGroupsFilter.append(')');
         }
         // make sure only users in the principle group are retrieved
         String pricipleGroup = _ldapConfiguration.getSearchGroupPrinciple(domainId);
@@ -167,9 +174,13 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return result.toString();
     }
 
+    /**
+     * Looks up one known username, unscoped by linked groups, so an existing group link
+     * elsewhere in the domain can't block finding this user.
+     */
     @Override
     public LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
-        List<LdapUser> result = searchUsers(username, context, domainId);
+        List<LdapUser> result = searchUsers(username, context, domainId, false);
         if (result!= null && result.size() == 1) {
             return result.get(0);
         } else {
@@ -311,6 +322,10 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     @Override
     public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
+        return searchUsers(username, context, domainId, true);
+    }
+
+    private List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId, final boolean restrictToLinkedGroups) throws NamingException, IOException {
 
         final SearchControls searchControls = new SearchControls();
 
@@ -327,7 +342,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         final List<LdapUser> users = new ArrayList<LdapUser>();
         NamingEnumeration<SearchResult> results;
         do {
-            results = context.search(basedn, generateSearchFilter(username, domainId), searchControls);
+            results = context.search(basedn, generateSearchFilter(username, domainId, restrictToLinkedGroups), searchControls);
             while (results.hasMoreElements()) {
                 final SearchResult result = results.nextElement();
                 if (!isUserDisabled(result)) {
