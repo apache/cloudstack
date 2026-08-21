@@ -137,9 +137,22 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 targetIndexByVolumeUuid.put(getVolumeUuidFromPath(restoreVolumePaths.get(i), restoreVolumePools.get(i)), i);
             }
 
+            // Creating an instance from a backup gives it brand new volumes, so none of the uuids
+            // recorded in the backup can match. Only then fall back to the device id ordering both
+            // lists already carry; when some of them do match, a missing one really is a volume that
+            // was detached, and writing its backup into another volume would be wrong.
+            boolean restoringIntoNewVolumes = backedVolumesUUIDs.stream().noneMatch(targetIndexByVolumeUuid::containsKey);
+            if (restoringIntoNewVolumes && backedVolumesUUIDs.size() != restoreVolumePaths.size()) {
+                throw new CloudRuntimeException(String.format("Unable to restore backup: it holds %d volumes but the instance has %d.",
+                        backedVolumesUUIDs.size(), restoreVolumePaths.size()));
+            }
+            if (restoringIntoNewVolumes) {
+                logger.debug("None of the backed up volumes belong to this instance; restoring into its volumes in device id order.");
+            }
+
             for (int idx = 0; idx < backedVolumesUUIDs.size(); idx++) {
                 String backupVolumeUuid = backedVolumesUUIDs.get(idx);
-                Integer targetIdx = targetIndexByVolumeUuid.get(backupVolumeUuid);
+                Integer targetIdx = restoringIntoNewVolumes ? Integer.valueOf(idx) : targetIndexByVolumeUuid.get(backupVolumeUuid);
                 if (targetIdx == null) {
                     throw new CloudRuntimeException(String.format("Unable to restore backup: volume [%s] recorded in the backup"
                             + " is not attached to the instance any more.", backupVolumeUuid));

@@ -695,4 +695,57 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             }
         }
     }
+
+    /**
+     * Creating an instance from a backup gives it brand new volumes, so none of the uuids recorded in
+     * the backup match. The restore has to fall back to the device id ordering instead of refusing to
+     * run, otherwise no backup can ever be restored into a new instance.
+     */
+    @Test
+    public void testRestoreIntoNewVolumesFallsBackToDeviceIdOrder() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO pool = Mockito.mock(PrimaryDataStoreTO.class);
+        lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(pool, pool));
+        // the new instance's volumes: freshly created, so their uuids are unrelated to the backup
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList(
+                "/var/lib/libvirt/images/new-root-vol",
+                "/var/lib/libvirt/images/new-data-vol"
+        ));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("old-root-vol", "old-data-vol"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("old-root-vol", "old-data-vol"));
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+
+                // each backup file lands in the new volume holding the same device id position
+                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.old-root-vol.qcow2", "/var/lib/libvirt/images/new-root-vol"}));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.old-data-vol.qcow2", "/var/lib/libvirt/images/new-data-vol"}));
+            }
+        }
+    }
+
 }
