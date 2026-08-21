@@ -1267,6 +1267,16 @@ export default {
           })
         }
 
+        if (this.apiName === 'listBackups') {
+          const kbossFields = ['compressionstatus', 'validationstatus']
+          const hasKbossData = this.items.some(backup => kbossFields.some(field => backup[field]))
+          if (!hasKbossData) {
+            this.columns = this.columns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.allColumns = this.allColumns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.selectedColumns = this.selectedColumns.filter(key => !kbossFields.includes(key))
+          }
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {

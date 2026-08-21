@@ -128,11 +128,10 @@ public class BackupVO implements Backup {
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
-        this.compressionStatus = CompressionStatus.Uncompressed;
-        this.validationStatus = ValidationStatus.NotValidated;
     }
 
-    public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize, Status status, Long backupScheduleId) {
+    public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize,
+                    Status status, Long backupScheduleId, CompressionStatus compressionStatus, ValidationStatus validationStatus) {
         this.name = name;
         this.vmId = vmId;
         this.backupOfferingId = backupOfferingId;
@@ -144,8 +143,8 @@ public class BackupVO implements Backup {
         this.setType("FULL");
         this.uuid = UUID.randomUUID().toString();
         this.backupScheduleId = backupScheduleId;
-        this.compressionStatus = CompressionStatus.Uncompressed;
-        this.validationStatus = ValidationStatus.NotValidated;
+        this.compressionStatus = compressionStatus;
+        this.validationStatus = validationStatus;
     }
 
     @Override
