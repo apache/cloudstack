@@ -20,7 +20,10 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
@@ -33,7 +36,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -69,6 +74,9 @@ public class LdapManagerImplTest {
     @Mock
     private AccountDao accountDaoMock;
 
+    @Mock
+    private UserDao userDaoMock;
+
     @Before
     public void setup() {
         ldapManager = new LdapManagerImpl();
@@ -76,8 +84,10 @@ public class LdapManagerImplTest {
         ReflectionTestUtils.setField(ldapManager, "_ldapConfiguration", ldapConfigurationMock);
         ReflectionTestUtils.setField(ldapManager, "domainDao", domainDaoMock);
         ReflectionTestUtils.setField(ldapManager, "accountDao", accountDaoMock);
+        ReflectionTestUtils.setField(ldapManager, "userDao", userDaoMock);
         when(ldapConfigurationMock.getBaseDn(DOMAIN_ID)).thenReturn("dc=my,dc=domain,dc=com");
         when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(new DomainVO());
+        when(accountDaoMock.findActiveAccountsForDomain(DOMAIN_ID)).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -141,6 +151,65 @@ public class LdapManagerImplTest {
         assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com")));
 
         verify(ldapTrustMapDaoMock, never()).persist(any());
+    }
+
+    @Test
+    public void relinkingDomainRefusesWhenLdapAccountDependsOnOldMapping() {
+        LdapTrustMapVO oldMapping = new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=old,dc=my,dc=domain,dc=com", Account.Type.NORMAL, 0);
+        ReflectionTestUtils.setField(oldMapping, "id", OLD_MAPPING_ID);
+        when(ldapTrustMapDaoMock.findByDomainId(DOMAIN_ID)).thenReturn(oldMapping);
+
+        AccountVO dependentAccount = new AccountVO("imported-user", DOMAIN_ID, null, Account.Type.NORMAL, null, "acct-uuid");
+        ReflectionTestUtils.setField(dependentAccount, "id", 99L);
+        when(accountDaoMock.findActiveAccountsForDomain(DOMAIN_ID)).thenReturn(List.of(dependentAccount));
+        when(ldapTrustMapDaoMock.findByAccount(DOMAIN_ID, 99L)).thenReturn(null);
+        UserVO ldapUser = new UserVO();
+        ReflectionTestUtils.setField(ldapUser, "source", User.Source.LDAP);
+        when(userDaoMock.listByAccount(99L)).thenReturn(List.of(ldapUser));
+
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com")));
+
+        verify(ldapTrustMapDaoMock, never()).expunge(any(Long.class));
+        verify(ldapTrustMapDaoMock, never()).persist(any());
+    }
+
+    @Test
+    public void relinkingDomainAllowsDependentAccountWithItsOwnMapping() {
+        LdapTrustMapVO oldMapping = new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=old,dc=my,dc=domain,dc=com", Account.Type.NORMAL, 0);
+        ReflectionTestUtils.setField(oldMapping, "id", OLD_MAPPING_ID);
+        when(ldapTrustMapDaoMock.findByDomainId(DOMAIN_ID)).thenReturn(oldMapping);
+        when(ldapTrustMapDaoMock.persist(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AccountVO explicitlyLinkedAccount = new AccountVO("explicit-user", DOMAIN_ID, null, Account.Type.NORMAL, null, "acct-uuid");
+        ReflectionTestUtils.setField(explicitlyLinkedAccount, "id", 99L);
+        when(accountDaoMock.findActiveAccountsForDomain(DOMAIN_ID)).thenReturn(List.of(explicitlyLinkedAccount));
+        when(ldapTrustMapDaoMock.findByAccount(DOMAIN_ID, 99L))
+                .thenReturn(new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=own,dc=my,dc=domain,dc=com", Account.Type.NORMAL, 99L));
+
+        LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com"));
+
+        assertEquals("cn=new,dc=my,dc=domain,dc=com", response.getLdapDomain());
+        verify(userDaoMock, never()).listByAccount(99L);
+    }
+
+    @Test
+    public void relinkingDomainAllowsAccountThatIsNotLdapSourced() {
+        LdapTrustMapVO oldMapping = new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=old,dc=my,dc=domain,dc=com", Account.Type.NORMAL, 0);
+        ReflectionTestUtils.setField(oldMapping, "id", OLD_MAPPING_ID);
+        when(ldapTrustMapDaoMock.findByDomainId(DOMAIN_ID)).thenReturn(oldMapping);
+        when(ldapTrustMapDaoMock.persist(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AccountVO localAccount = new AccountVO("local-user", DOMAIN_ID, null, Account.Type.NORMAL, null, "acct-uuid");
+        ReflectionTestUtils.setField(localAccount, "id", 99L);
+        when(accountDaoMock.findActiveAccountsForDomain(DOMAIN_ID)).thenReturn(List.of(localAccount));
+        when(ldapTrustMapDaoMock.findByAccount(DOMAIN_ID, 99L)).thenReturn(null);
+        UserVO localUser = new UserVO();
+        ReflectionTestUtils.setField(localUser, "source", User.Source.UNKNOWN);
+        when(userDaoMock.listByAccount(99L)).thenReturn(List.of(localUser));
+
+        LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com"));
+
+        assertEquals("cn=new,dc=my,dc=domain,dc=com", response.getLdapDomain());
     }
 
     private LinkDomainToLdapCmd buildCmd(String ldapDomain) {

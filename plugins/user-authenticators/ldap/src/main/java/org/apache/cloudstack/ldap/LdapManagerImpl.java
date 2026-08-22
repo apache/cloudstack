@@ -58,7 +58,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.db.Transaction;
@@ -76,6 +78,9 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
     @Inject
     private AccountDao accountDao;
+
+    @Inject
+    private UserDao userDao;
 
     @Inject
     private LdapContextFactory _ldapContextFactory;
@@ -501,8 +506,35 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     private void clearOldDomainMapping(Long domainId) {
         LdapTrustMapVO oldVo = _ldapTrustMapDao.findByDomainId(domainId);
         if (oldVo != null) {
+            ensureOldDomainMappingNotInUse(domainId, oldVo);
             logger.warn(String.format("domain %d is already linked to ldap %s '%s'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName()));
             _ldapTrustMapDao.expunge(oldVo.getId());
+        }
+    }
+
+    /**
+     * Refuses to drop the domain's current LDAP mapping while a live account still relies
+     * on it: an LDAP-sourced account with no per-account mapping of its own (see
+     * {@link #linkAccountToLdap}) can only have been provisioned through this domain-wide
+     * mapping, so dropping it would silently orphan that provisioning link.
+     */
+    private void ensureOldDomainMappingNotInUse(Long domainId, LdapTrustMapVO oldMapping) {
+        List<String> dependentAccountNames = new ArrayList<>();
+        for (AccountVO account : accountDao.findActiveAccountsForDomain(domainId)) {
+            if (_ldapTrustMapDao.findByAccount(domainId, account.getAccountId()) != null) {
+                continue;
+            }
+            boolean hasLdapUser = userDao.listByAccount(account.getAccountId()).stream()
+                    .anyMatch(user -> User.Source.LDAP.equals(user.getSource()));
+            if (hasLdapUser) {
+                dependentAccountNames.add(account.getAccountName());
+            }
+        }
+        if (!dependentAccountNames.isEmpty()) {
+            String msg = String.format("domain %d has account(s) %s relying on its current ldap mapping %s '%s'; unlink or migrate them before linking the domain to a different GROUP or OU.",
+                    domainId, String.join(", ", dependentAccountNames), oldMapping.getType(), oldMapping.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
     }
 
