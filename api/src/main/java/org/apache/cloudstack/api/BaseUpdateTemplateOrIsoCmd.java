@@ -83,7 +83,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
             description = "Optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.ARCH,
+            type = CommandType.STRING,
+            allowedValues = {"x86_64", "aarch64", "s390x"},
             description = "the CPU arch of the template/ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;

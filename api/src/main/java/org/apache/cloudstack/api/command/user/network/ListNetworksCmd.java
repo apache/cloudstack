@@ -111,6 +111,7 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
 
     @Parameter(name = ApiConstants.NETWORK_FILTER,
             type = CommandType.STRING,
+            allowedValues = {"account", "domain", "accountdomain", "shared", "all"},
             since = "4.17.0",
             description = "Possible values are \"account\", \"domain\", \"accountdomain\",\"shared\", and \"all\". Default value is \"all\"."
                     + "* account : account networks that have been registered for or created by the calling User. "

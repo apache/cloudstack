@@ -39,7 +39,9 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE,
+            type = CommandType.STRING,
+            allowedValues = {"USER", "VNF", "SYSTEM", "ROUTING", "BUILTIN"},
             description = "The type of the Template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).")
     private String templateType;
 

@@ -67,9 +67,16 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
-    @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    @Parameter(
+        name = ApiConstants.PROVISIONINGTYPE,
+        type = CommandType.STRING,
+        description = "Provisioning type used to create volumes. Valid values are thin, sparse, fat.",
+        allowedValues = {
+                "thin",
+                "sparse",
+                "fat"
+        })
     private String provisioningType = Storage.ProvisioningType.THIN.toString();
-
     @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "The total memory of the service offering in MB")
     private Integer memory;
 
@@ -259,7 +266,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.21.0")
     private Integer leaseDuration;
 
-    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            allowedValues = {"STOP", "DESTROY"},
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
