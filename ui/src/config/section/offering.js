@@ -406,8 +406,7 @@ export default {
         label: 'label.edit',
         dataView: true,
         popup: true,
-        groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-        args: ['name', 'description', 'allowuserdrivenbackups']
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateBackupOffering.vue')))
       }, {
         api: 'cloneBackupOffering',
         icon: 'copy-outlined',
