@@ -74,7 +74,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             String email = ((emailArray == null) ? null : emailArray[0]);
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
-            UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
+            UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider, domainId);
             if (Objects.nonNull(user) && authenticator.verifyUser(email, secretCode, domainId)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
