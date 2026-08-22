@@ -908,7 +908,6 @@ public class ApiConstants {
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MIN_SIZE = "customdiskofferingminsize";
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
-    public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     public static final String LIVE_MIGRATE = "livemigrate";
     public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
