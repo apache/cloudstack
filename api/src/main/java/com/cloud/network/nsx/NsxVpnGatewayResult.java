@@ -14,23 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.network.nsx;
 
-import java.util.List;
+public class NsxVpnGatewayResult {
 
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.utils.db.GenericDao;
+    private final boolean successful;
+    private final boolean endpointMayBeInUse;
 
-public interface Site2SiteVpnConnectionDao extends GenericDao<Site2SiteVpnConnectionVO, Long> {
-    List<Site2SiteVpnConnectionVO> listByCustomerGatewayId(long id);
+    public NsxVpnGatewayResult(boolean successful, boolean endpointMayBeInUse) {
+        this.successful = successful;
+        this.endpointMayBeInUse = endpointMayBeInUse;
+    }
 
-    List<Site2SiteVpnConnectionVO> listByVpnGatewayId(long id);
+    public boolean isSuccessful() {
+        return successful;
+    }
 
-    List<Site2SiteVpnConnectionVO> listByVpcId(long vpcId);
-
-    List<Site2SiteVpnConnectionVO> listByStates(Site2SiteVpnConnection.State... states);
-
-    Site2SiteVpnConnectionVO findByVpnGatewayIdAndCustomerGatewayId(long vpnId, long customerId);
-
-    Site2SiteVpnConnectionVO findByCustomerGatewayId(long customerId);
+    public boolean isEndpointMayBeInUse() {
+        return endpointMayBeInUse;
+    }
 }

@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.vm.DomainRouterVO;
 
@@ -39,4 +41,6 @@ public interface Site2SiteVpnManager extends Site2SiteVpnService {
     boolean deleteCustomerGatewayByAccount(long accountId);
 
     void reconnectDisconnectedVpnByVpc(Long vpcId);
+
+    Site2SiteVpnTunnelInterface getSite2SiteVpnTunnelInterface(Site2SiteVpnConnection connection);
 }

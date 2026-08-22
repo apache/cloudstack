@@ -1034,6 +1034,9 @@ public class ApiConstants {
     public static final String CUSTOMER = "customer";
     public static final String S2S_VPN_GATEWAY_ID = "s2svpngatewayid";
     public static final String S2S_CUSTOMER_GATEWAY_ID = "s2scustomergatewayid";
+    public static final String LOCAL_VTI_IP = "localvtiip";
+    public static final String PEER_VTI_IP = "peervtiip";
+    public static final String VTI_PREFIX_LENGTH = "vtiprefixlength";
     public static final String IPSEC_PSK = "ipsecpsk";
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
