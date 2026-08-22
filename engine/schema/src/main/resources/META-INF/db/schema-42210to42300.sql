@@ -651,3 +651,20 @@ WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 -- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
 CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- @APICommand(authorized=...) alone doesn't grant access under dynamic RBAC (the default) -
+-- Backfill them for any role that can already create accounts natively.
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'ldapCreateAccount', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'ldapCreateAccount');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'linkAccountToLdap', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'linkAccountToLdap');
+
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'importLdapUsers', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'createAccount' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'importLdapUsers');
