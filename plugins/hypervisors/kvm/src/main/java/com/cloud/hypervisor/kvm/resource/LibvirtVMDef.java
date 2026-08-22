@@ -788,14 +788,21 @@ public class LibvirtVMDef {
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
+            String engine; // optional libvirt encryption engine (e.g. "librbd"); null => libvirt/qemu default
 
             public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat) {
+                this(passphraseUuid, encryptFormat, null);
+            }
+
+            public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat, String engine) {
                 this.passphraseUuid = passphraseUuid;
                 this.encryptFormat = encryptFormat;
+                this.engine = engine;
             }
 
             public String getPassphraseUuid() { return this.passphraseUuid; }
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
+            public String getEngine() { return this.engine; }
         }
 
         public static class DiskGeometry {
@@ -1446,7 +1453,11 @@ public class LibvirtVMDef {
             }
 
             if (encryptDetails != null) {
-                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'>\n");
+                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'");
+                if (encryptDetails.engine != null) {
+                    diskBuilder.append(" engine='" + encryptDetails.engine + "'");
+                }
+                diskBuilder.append(">\n");
                 diskBuilder.append("<secret type='passphrase' uuid='" + encryptDetails.passphraseUuid + "' />\n");
                 diskBuilder.append("</encryption>\n");
             }
