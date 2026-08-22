@@ -67,15 +67,25 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     private String templateName;
 
     @Parameter(name = ApiConstants.TEMPLATE_FILTER,
-               type = CommandType.STRING,
-               required = true,
-               description = "Possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
-                   + "* featured : Templates that have been marked as featured and public. "
-                   + "* self : Templates that have been registered or created by the calling user. "
-                   + "* selfexecutable : same as self, but only returns Templates that can be used to deploy a new Instance. "
-                   + "* sharedexecutable : Templates ready to be deployed that have been granted to the calling user by another user. "
-                   + "* executable : Templates that are owned by the calling user, or public Templates, that can be used to deploy an Instance. "
-                   + "* community : Templates that have been marked as public but not featured. " + "* all : all Templates (only usable by admins).")
+           type = CommandType.STRING,
+           required = true,
+           description = "Possible values are \"featured\", \"self\", \"selfexecutable\", \"sharedexecutable\", \"executable\", and \"community\". "
+               + "* featured : Templates that have been marked as featured and public. "
+               + "* self : Templates that have been registered or created by the calling user. "
+               + "* selfexecutable : same as self, but only returns Templates that can be used to deploy a new Instance. "
+               + "* sharedexecutable : Templates ready to be deployed that have been granted to the calling user by another user. "
+               + "* executable : Templates that are owned by the calling user, or public Templates, that can be used to deploy an Instance. "
+               + "* community : Templates that have been marked as public but not featured. "
+               + "* all : all Templates (only usable by admins).",
+           allowedValues = {
+               "featured",
+               "self",
+               "selfexecutable",
+               "sharedexecutable",
+               "executable",
+               "community",
+               "all"
+           })
     private String templateFilter;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List Templates by zoneId")
@@ -111,9 +121,15 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.21.0")
     private Boolean forCks;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
-            since = "4.20")
+    @Parameter(name = ApiConstants.ARCH,
+           type = CommandType.STRING,
+           description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
+           since = "4.20",
+           allowedValues = {
+               "x86_64",
+               "aarch64",
+               "s390x"
+           })
     private String arch;
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
