@@ -44,7 +44,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Map;
 
-@APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "ldapCreateAccount", description = "Creates an account from an LDAP user", responseObject = AccountResponse.class, since = "4.2.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+    authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class LdapCreateAccountCmd extends BaseCmd {
     private static final String s_name = "createaccountresponse";
 

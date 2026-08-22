@@ -56,7 +56,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+    authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class LdapImportUsersCmd extends BaseListCmd {
 
 
