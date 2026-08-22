@@ -18,8 +18,7 @@ package com.cloud.api;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,14 +37,14 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.RoleVO;
-import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
-import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
-import org.apache.cloudstack.acl.dao.RoleDao;
+
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -72,7 +71,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
+
 import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
@@ -120,7 +119,6 @@ import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
-import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -304,7 +302,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
+
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -379,7 +377,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.network.vpn.Site2SiteVpnManager;
+
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -422,14 +420,13 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ApiKeyPairState;
+
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
-import com.cloud.user.dao.AccountDao;
+
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -460,7 +457,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import sun.security.x509.X509CertImpl;
+
 
 public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
@@ -542,8 +539,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
-    @Inject
-    Site2SiteVpnManager site2SiteVpnManager;
+
     @Inject
     ResourceIconManager resourceIconManager;
     @Inject
@@ -561,14 +557,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         return domainPath.toString();
     }
 
-    @Inject
-    private RoleDao roleDao;
 
-    @Inject
-    private AccountDao accountDao;
-
-    @Inject
-    private DomainDao domainDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -614,7 +603,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         if (domain.getChildCount() > 0) {
             domainResponse.setHasChild(true);
         }
-        populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
         return domainResponse;
     }
@@ -1684,7 +1672,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
-        response.setNetworkName(guestNtwk.getName());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
 
@@ -1912,8 +1899,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                             vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
                             vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                         }
-                    } else if (network.getTrafficType() == TrafficType.Storage) {
-                        vmResponse.setStorageIp(singleNicProfile.getIPv4Address());
                     }
                 }
             }
@@ -1938,11 +1923,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     }
 
-    @Override
-    public UserVm findUserVmByNicId(Long nicId) {
-        NicVO nic = ApiDBUtils.findNicById(nicId);
-        return ApiDBUtils.findUserVmById(nic.getInstanceId());
-    }
+
 
     @Override
     public VolumeVO findVolumeById(Long volumeId) {
@@ -2901,10 +2882,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN &&
-                network.getVpcId() == null && network.getGuestType() == Network.GuestType.Isolated) {
-            response.setKeepMacAddressOnPublicNic(network.getKeepMacAddressOnPublicNic());
-        }
+
 
         response.setObjectName("network");
         return response;
@@ -3121,19 +3099,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setDomainPath(getPrettyDomainPath(object.getDomainPath()));
     }
 
-    public static void populateDomainTags(String domainUuid, DomainResponse domainResponse) {
-        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domainUuid,
-                ResourceTag.ResourceObjectType.Domain);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        Set<ResourceTagResponse> tagResponses = new HashSet<>();
-        for (ResourceTagJoinVO tag : tags) {
-            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
-        }
-        domainResponse.setTags(tagResponses);
-    }
+
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
@@ -3348,9 +3314,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
-            if (!pnet.getIsolationMethods().isEmpty()) {
-                response.setIsolationMethods(String.join(",", pnet.getIsolationMethods()));
-            }
+
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
@@ -3361,7 +3325,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setVmwareLabel(result.getVmwareNetworkLabel());
         response.setHypervLabel(result.getHypervNetworkLabel());
         response.setOvm3Label(result.getOvm3NetworkLabel());
-        response.setVlan(result.getVlan());
+
 
         response.setObjectName("traffictype");
         return response;
@@ -3588,7 +3552,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
-            response.setVpcOfferingConserveMode(voff.isConserveMode());
+
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -3684,9 +3648,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
-            response.setKeepMacAddressOnPublicNic(vpc.getKeepMacAddressOnPublicNic());
-        }
+
         response.setObjectName("vpc");
         return response;
     }
@@ -3981,14 +3943,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
 
-        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
-        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
-            response.setContainsObsoleteParameters(obsoleteParameters.toString());
-        }
-        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
-        if (CollectionUtils.isNotEmpty(excludedParameters)) {
-            response.setContainsExcludedParameters(excludedParameters.toString());
-        }
+
 
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
@@ -4210,459 +4165,12 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-        ResourceTag.ResourceObjectType resourceType = null;
-        Long resourceId = null;
-        if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
-            ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
-            //Service Offering Id
-            if(svcOffering != null) {
-                usageRecResponse.setOfferingId(svcOffering.getUuid());
+        UsageResourceDetails resourceDetails = populateUsageTypeSpecificDetails(usageRecord, usageRecResponse, oldFormat, vmInstance, template);
+        if (resourceTagResponseMap != null && resourceDetails.resourceId != null && resourceDetails.resourceType != null) {
+            final String tagKey = resourceDetails.resourceId + ":" + resourceDetails.resourceType;
+            if (resourceTagResponseMap.get(tagKey) != null) {
+                usageRecResponse.setTags(resourceTagResponseMap.get(tagKey));
             }
-            //VM Instance ID
-            VMInstanceVO vm = null;
-            if (usageRecord.getUsageId() != null && usageRecord.getUsageId().equals(usageRecord.getVmInstanceId())) {
-                vm = vmInstance;
-            } else {
-                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
-            }
-            if (vm != null) {
-                resourceType = ResourceTag.ResourceObjectType.UserVm;
-                usageRecResponse.setUsageId(vm.getUuid());
-                resourceId = vm.getId();
-                final GuestOS guestOS = _guestOsDao.findById(vm.getGuestOSId());
-                if (guestOS != null) {
-                    usageRecResponse.setOsTypeId(guestOS.getUuid());
-                    usageRecResponse.setOsDisplayName(guestOS.getDisplayName());
-                    final GuestOsCategory guestOsCategory = _guestOsCategoryDao.findById(guestOS.getCategoryId());
-                    if (guestOsCategory != null) {
-                        usageRecResponse.setOsCategoryId(guestOsCategory.getUuid());
-                        usageRecResponse.setOsCategoryName(guestOsCategory.getName());
-                    }
-                }
-            }
-            //Hypervisor Type
-            usageRecResponse.setType(usageRecord.getType());
-            //Dynamic compute offerings details
-            if(usageRecord.getCpuCores() != null) {
-                usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
-            } else if (svcOffering.getCpu() != null){
-                usageRecResponse.setCpuNumber(svcOffering.getCpu().longValue());
-            }
-            if(usageRecord.getCpuSpeed() != null) {
-                usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
-            } else if(svcOffering.getSpeed() != null){
-                usageRecResponse.setCpuSpeed(svcOffering.getSpeed().longValue());
-            }
-            if(usageRecord.getMemory() != null) {
-                usageRecResponse.setMemory(usageRecord.getMemory());
-            } else if(svcOffering.getRamSize() != null) {
-                usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM) {
-                    builder.append("Running VM usage ");
-                } else if(usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
-                    builder.append("Allocated VM usage ");
-                }
-                if (vm != null) {
-                    builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
-                }
-                if (svcOffering != null) {
-                    builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
-                }
-                if (template != null) {
-                    builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
-            //IP Address ID
-            IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
-            if (ip != null) {
-                Long networkId = ip.getAssociatedWithNetworkId();
-                if (networkId == null) {
-                    networkId = ip.getSourceNetworkId();
-                }
-                resourceType = ResourceObjectType.PublicIpAddress;
-                resourceId = ip.getId();
-                usageRecResponse.setUsageId(ip.getUuid());
-            }
-            //isSourceNAT
-            usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
-            //isSystem
-            usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
-        } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
-            //Device Type
-            resourceType = ResourceObjectType.UserVm;
-            usageRecResponse.setType(usageRecord.getType());
-            VMInstanceVO vm = null;
-            HostVO host = null;
-            if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
-                //Domain Router Id
-                vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
-                if (vm != null) {
-                    resourceId = vm.getId();
-                    usageRecResponse.setUsageId(vm.getUuid());
-                }
-            } else {
-                //External Device Host Id
-                host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId().toString());
-                if (host != null) {
-                    usageRecResponse.setUsageId(host.getUuid());
-                }
-            }
-            //Network ID
-            NetworkVO network = null;
-            if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
-                network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
-                if (network != null) {
-                    resourceType = ResourceObjectType.Network;
-                    if (network.getTrafficType() == TrafficType.Public) {
-                        VirtualRouter router = ApiDBUtils.findDomainRouterById(usageRecord.getUsageId());
-                        Vpc vpc = ApiDBUtils.findVpcByIdIncludingRemoved(router.getVpcId());
-                        usageRecResponse.setVpcId(vpc.getUuid());
-                        resourceId = vpc.getId();
-                    } else {
-                        usageRecResponse.setNetworkId(network.getUuid());
-                        resourceId = network.getId();
-                    }
-                    usageRecResponse.setResourceName(network.getName());
-                }
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT) {
-                    builder.append("Bytes sent by network ");
-                } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
-                    builder.append("Bytes received by network ");
-                }
-                if (network != null) {
-                    if (network.getName() != null) {
-                        builder.append(network.getName());
-                    }
-                    if (network.getUuid() != null){
-                        builder.append(" (").append(network.getUuid()).append(") ");
-                    }
-                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
-                }
-                if (vm != null) {
-                    builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
-                } else if (host != null) {
-                    builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
-                || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
-            //Device Type
-            usageRecResponse.setType(usageRecord.getType());
-            resourceType = ResourceObjectType.Volume;
-            //Volume ID
-            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
-            if (volume != null) {
-                usageRecResponse.setUsageId(volume.getUuid());
-                resourceId = volume.getId();
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ) {
-                    builder.append("Disk I/O read requests");
-                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE) {
-                    builder.append("Disk I/O write requests");
-                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ) {
-                    builder.append("Disk I/O read bytes");
-                } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
-                    builder.append("Disk I/O write bytes");
-                }
-                if (vmInstance != null) {
-                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
-                }
-                if (volume != null) {
-                    builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
-                }
-                if (usageRecord.getRawUsage()!= null){
-                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
-            //Volume ID
-            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.Volume;
-            if (volume != null) {
-                usageRecResponse.setUsageId(volume.getUuid());
-                resourceId = volume.getId();
-            }
-            //Volume Size
-            usageRecResponse.setSize(usageRecord.getSize());
-            //Disk Offering Id
-            DiskOfferingVO diskOff = null;
-            if (usageRecord.getOfferingId() != null) {
-                diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId().toString());
-                usageRecResponse.setOfferingId(diskOff.getUuid());
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Volume usage ");
-                if (volume != null) {
-                    builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
-                }
-                if (vmInstance != null) {
-                    builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
-                }
-                if (diskOff != null) {
-                    builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
-                }
-                if (template != null) {
-                    builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
-                }
-                if (usageRecord.getSize() != null) {
-                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
-            //Template/ISO ID
-            VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
-            if (tmpl != null) {
-                usageRecResponse.setUsageId(tmpl.getUuid());
-                resourceId = tmpl.getId();
-            }
-            //Template/ISO Size
-            usageRecResponse.setSize(usageRecord.getSize());
-            if (usageRecord.getUsageType() == UsageTypes.ISO) {
-                usageRecResponse.setVirtualSize(usageRecord.getSize());
-                resourceType = ResourceObjectType.ISO;
-            } else {
-                usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
-                resourceType = ResourceObjectType.Template;
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                if (usageRecord.getUsageType() == UsageTypes.TEMPLATE) {
-                    builder.append("Template usage");
-                } else if (usageRecord.getUsageType() == UsageTypes.ISO) {
-                    builder.append("ISO usage");
-                }
-                if (tmpl != null) {
-                    builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
-                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize())).append(" and virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
-            //Snapshot ID
-            SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.Snapshot;
-            if (snap != null) {
-                usageRecResponse.setUsageId(snap.getUuid());
-                resourceId = snap.getId();
-            }
-            //Snapshot Size
-            usageRecResponse.setSize(usageRecord.getSize());
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Snapshot usage ");
-                if (snap != null) {
-                    builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
-                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
-            //Load Balancer Policy ID
-            LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.LoadBalancer;
-            if (lb != null) {
-                usageRecResponse.setUsageId(lb.getUuid());
-                resourceId = lb.getId();
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Loadbalancer policy usage ");
-                if (lb != null) {
-                    builder.append(lb.getName()).append(" (").append(lb.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
-            //Port Forwarding Rule ID
-            PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.PortForwardingRule;
-            if (pf != null) {
-                usageRecResponse.setUsageId(pf.getUuid());
-                resourceId = pf.getId();
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Port forwarding rule usage");
-                if (pf != null) {
-                    builder.append(" (").append(pf.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
-            //Network Offering Id
-            NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId().toString());
-            usageRecResponse.setOfferingId(netOff.getUuid());
-            //is Default
-            usageRecResponse.setDefault(usageRecord.getUsageId() == 1);
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Network offering ");
-                if (netOff != null) {
-                    builder.append(netOff.getName()).append(" (").append(netOff.getUuid()).append(") usage ");
-                }
-                if (vmInstance != null) {
-                    builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.VPN_USERS) {
-            //VPN User ID
-            VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId().toString());
-            if (vpnUser != null) {
-                usageRecResponse.setUsageId(vpnUser.getUuid());
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("VPN usage ");
-                if (vpnUser != null) {
-                    builder.append("for user ").append(vpnUser.getUsername()).append(" (").append(vpnUser.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
-            //Security Group Id
-            SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.SecurityGroup;
-            if (sg != null) {
-                resourceId = sg.getId();
-                usageRecResponse.setUsageId(sg.getUuid());
-            }
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Security group");
-                if (sg != null) {
-                    builder.append(" ").append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage");
-                }
-                if (vmInstance != null) {
-                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
-            resourceType = ResourceObjectType.Backup;
-            final StringBuilder builder = new StringBuilder();
-            builder.append("Backup usage");
-            if (vmInstance != null) {
-                resourceId = vmInstance.getId();
-                usageRecResponse.setResourceName(vmInstance.getInstanceName());
-                usageRecResponse.setUsageId(vmInstance.getUuid());
-                builder.append(" for VM ").append(vmInstance.getHostName())
-                        .append(" (").append(vmInstance.getUuid()).append(")");
-                final BackupOffering backupOffering = backupOfferingDao.findByIdIncludingRemoved(usageRecord.getOfferingId());
-                if (backupOffering != null) {
-                    builder.append(" and backup offering ").append(backupOffering.getName())
-                            .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
-                            .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
-                }
-            }
-            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
-            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
-            usageRecResponse.setDescription(builder.toString());
-            usageRecResponse.setSize(usageRecord.getSize());
-            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
-            resourceType = ResourceObjectType.VMSnapshot;
-            VMSnapshotVO vmSnapshotVO = null;
-            if (usageRecord.getUsageId() != null) {
-                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
-                if (vmSnapshotVO != null) {
-                    resourceId = vmSnapshotVO.getId();
-                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
-                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
-                }
-            }
-            usageRecResponse.setSize(usageRecord.getSize());
-            if (usageRecord.getVirtualSize() != null) {
-                usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
-            }
-            if (usageRecord.getOfferingId() != null) {
-                usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
-            }
-            if (!oldFormat) {
-                VolumeVO volume = null;
-                if (vmSnapshotVO == null && usageRecord.getUsageId() != null) {
-                     volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
-                }
-
-                DiskOfferingVO diskOff = null;
-                if (usageRecord.getOfferingId() != null) {
-                    diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
-                }
-                final StringBuilder builder = new StringBuilder();
-                builder.append("VMSnapshot usage");
-                if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
-                }
-                if (vmInstance != null) {
-                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
-                }
-                if (volume != null) {
-                    builder.append(" with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
-                }
-                if (diskOff != null) {
-                    builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
-                }
-                if (usageRecord.getSize() != null){
-                    builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
-            VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("Volume on secondary storage usage");
-                if (volume != null) {
-                    builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ")
-                            .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
-            resourceType = ResourceObjectType.VMSnapshot;
-            VMSnapshotVO vmSnapshotVO = null;
-            if (usageRecord.getUsageId() != null) {
-                vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
-                if (vmSnapshotVO != null) {
-                    resourceId = vmSnapshotVO.getId();
-                    usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
-                    usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
-                }
-            }
-            usageRecResponse.setSize(usageRecord.getVirtualSize());
-            if (!oldFormat) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append("VMSnapshot on primary storage usage");
-                if (vmSnapshotVO != null) {
-                    builder.append(" Id: ").append(vmSnapshotVO.getUuid());
-                }
-                if (vmInstance != null) {
-                    builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ")
-                            .append("with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
-                }
-                usageRecResponse.setDescription(builder.toString());
-            }
-        } else if (usageRecord.getUsageType() == UsageTypes.BUCKET) {
-            BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(bucket.getUuid());
-            usageRecResponse.setResourceName(bucket.getName());
-        }
-        if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
-             usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
         }
 
         if (usageRecord.getRawUsage() != null) {
@@ -4678,6 +4186,581 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         return usageRecResponse;
+    }
+
+    private UsageResourceDetails populateUsageTypeSpecificDetails(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat,
+            VMInstanceVO vmInstance, VMTemplateVO template) {
+        if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
+            return populateRunningOrAllocatedVmUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance, template);
+        } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
+            return populateIpAddressUsageResponse(usageRecord, usageRecResponse);
+        } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
+            return populateNetworkBytesUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
+                || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+            return populateVmDiskUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
+            return populateVolumeUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance, template);
+        } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
+            return populateTemplateOrIsoUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
+            return populateSnapshotUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
+            return populateLoadBalancerPolicyUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
+            return populatePortForwardingRuleUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
+            return populateNetworkOfferingUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.VPN_USERS) {
+            return populateVpnUsersUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
+            return populateSecurityGroupUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
+            return populateBackupUsageResponse(usageRecord, usageRecResponse, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
+            return populateVmSnapshotUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.VOLUME_SECONDARY) {
+            return populateVolumeSecondaryUsageResponse(usageRecord, usageRecResponse, oldFormat);
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+            return populateVmSnapshotOnPrimaryUsageResponse(usageRecord, usageRecResponse, oldFormat, vmInstance);
+        } else if (usageRecord.getUsageType() == UsageTypes.BUCKET) {
+            return populateBucketUsageResponse(usageRecord, usageRecResponse);
+        }
+
+        return new UsageResourceDetails();
+    }
+
+    private UsageResourceDetails populateRunningOrAllocatedVmUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat,
+            VMInstanceVO vmInstance, VMTemplateVO template) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId());
+        //Service Offering Id
+        if(svcOffering != null) {
+            usageRecResponse.setOfferingId(svcOffering.getUuid());
+        }
+        //VM Instance ID
+        VMInstanceVO vm = null;
+        if (usageRecord.getUsageId() != null && usageRecord.getUsageId().equals(usageRecord.getVmInstanceId())) {
+            vm = vmInstance;
+        } else {
+            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId());
+        }
+        if (vm != null) {
+            resourceDetails.resourceType = ResourceTag.ResourceObjectType.UserVm;
+            usageRecResponse.setUsageId(vm.getUuid());
+            resourceDetails.resourceId = vm.getId();
+            final GuestOS guestOS = _guestOsDao.findById(vm.getGuestOSId());
+            if (guestOS != null) {
+                usageRecResponse.setOsTypeId(guestOS.getUuid());
+                usageRecResponse.setOsDisplayName(guestOS.getDisplayName());
+                final GuestOsCategory guestOsCategory = _guestOsCategoryDao.findById(guestOS.getCategoryId());
+                if (guestOsCategory != null) {
+                    usageRecResponse.setOsCategoryId(guestOsCategory.getUuid());
+                    usageRecResponse.setOsCategoryName(guestOsCategory.getName());
+                }
+            }
+        }
+        //Hypervisor Type
+        usageRecResponse.setType(usageRecord.getType());
+        //Dynamic compute offerings details
+        if (usageRecord.getCpuCores() != null) {
+            usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
+        } else if (svcOffering != null && svcOffering.getCpu() != null) {
+            usageRecResponse.setCpuNumber(svcOffering.getCpu().longValue());
+        }
+        if (usageRecord.getCpuSpeed() != null) {
+            usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
+        } else if (svcOffering != null && svcOffering.getSpeed() != null) {
+            usageRecResponse.setCpuSpeed(svcOffering.getSpeed().longValue());
+        }
+        if (usageRecord.getMemory() != null) {
+            usageRecResponse.setMemory(usageRecord.getMemory());
+        } else if (svcOffering != null && svcOffering.getRamSize() != null) {
+            usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM) {
+                builder.append("Running VM usage ");
+            } else if(usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
+                builder.append("Allocated VM usage ");
+            }
+            if (vm != null) {
+                builder.append("for ").append(vm.getHostName()).append(" (").append(vm.getInstanceName()).append(") (").append(vm.getUuid()).append(") ");
+            }
+            if (svcOffering != null) {
+                builder.append("using service offering ").append(svcOffering.getName()).append(" (").append(svcOffering.getUuid()).append(") ");
+            }
+            if (template != null) {
+                builder.append("and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateIpAddressUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //IP Address ID
+        IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId());
+        if (ip != null) {
+            resourceDetails.resourceType = ResourceObjectType.PublicIpAddress;
+            resourceDetails.resourceId = ip.getId();
+            usageRecResponse.setUsageId(ip.getUuid());
+        }
+        //isSourceNAT
+        usageRecResponse.setSourceNat((usageRecord.getType().equals("SourceNat")) ? true : false);
+        //isSystem
+        usageRecResponse.setSystem((usageRecord.getSize() == 1) ? true : false);
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateNetworkBytesUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Device Type
+        resourceDetails.resourceType = ResourceObjectType.UserVm;
+        usageRecResponse.setType(usageRecord.getType());
+        VMInstanceVO vm = null;
+        HostVO host = null;
+        if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
+            //Domain Router Id
+            vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId());
+            if (vm != null) {
+                resourceDetails.resourceId = vm.getId();
+                usageRecResponse.setUsageId(vm.getUuid());
+            }
+        } else {
+            //External Device Host Id
+            host = _entityMgr.findByIdIncludingRemoved(HostVO.class, usageRecord.getUsageId());
+            if (host != null) {
+                usageRecResponse.setUsageId(host.getUuid());
+            }
+        }
+        //Network ID
+        NetworkVO network = null;
+        if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
+            network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId());
+            if (network != null) {
+                resourceDetails.resourceType = ResourceObjectType.Network;
+                if (network.getTrafficType() == TrafficType.Public) {
+                    VirtualRouter router = ApiDBUtils.findDomainRouterById(usageRecord.getUsageId());
+                    Vpc vpc = router != null && router.getVpcId() != null ? ApiDBUtils.findVpcByIdIncludingRemoved(router.getVpcId()) : null;
+                    if (vpc != null) {
+                        usageRecResponse.setVpcId(vpc.getUuid());
+                        resourceDetails.resourceId = vpc.getId();
+                    } else {
+                        usageRecResponse.setNetworkId(network.getUuid());
+                        resourceDetails.resourceId = network.getId();
+                    }
+                } else {
+                    usageRecResponse.setNetworkId(network.getUuid());
+                    resourceDetails.resourceId = network.getId();
+                }
+                usageRecResponse.setResourceName(network.getName());
+            }
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT) {
+                builder.append("Bytes sent by network ");
+            } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
+                builder.append("Bytes received by network ");
+            }
+            if (network != null) {
+                if (network.getName() != null) {
+                    builder.append(network.getName());
+                }
+                if (network.getUuid() != null){
+                    builder.append(" (").append(network.getUuid()).append(") ");
+                }
+                builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
+            }
+            if (vm != null) {
+                builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
+            } else if (host != null) {
+                builder.append("using host ").append(host.getName()).append(" (").append(host.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateVmDiskUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Device Type
+        usageRecResponse.setType(usageRecord.getType());
+        resourceDetails.resourceType = ResourceObjectType.Volume;
+        //Volume ID
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
+        if (volume != null) {
+            usageRecResponse.setUsageId(volume.getUuid());
+            resourceDetails.resourceId = volume.getId();
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ) {
+                builder.append("Disk I/O read requests");
+            } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE) {
+                builder.append("Disk I/O write requests");
+            } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ) {
+                builder.append("Disk I/O read bytes");
+            } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+                builder.append("Disk I/O write bytes");
+            }
+            if (vmInstance != null) {
+                builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+            }
+            if (volume != null) {
+                builder.append(" and volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+            }
+            if (usageRecord.getRawUsage()!= null){
+                builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue()));
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateVolumeUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat,
+            VMInstanceVO vmInstance, VMTemplateVO template) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Volume ID
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
+        resourceDetails.resourceType = ResourceObjectType.Volume;
+        if (volume != null) {
+            usageRecResponse.setUsageId(volume.getUuid());
+            resourceDetails.resourceId = volume.getId();
+        }
+        //Volume Size
+        usageRecResponse.setSize(usageRecord.getSize());
+        //Disk Offering Id
+        DiskOfferingVO diskOff = null;
+        if (usageRecord.getOfferingId() != null) {
+            diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
+            if (diskOff != null) {
+                usageRecResponse.setOfferingId(diskOff.getUuid());
+            }
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Volume usage ");
+            if (volume != null) {
+                builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+            }
+            if (vmInstance != null) {
+                builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+            }
+            if (diskOff != null) {
+                builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+            }
+            if (template != null) {
+                builder.append(" and template ").append(template.getName()).append(" (").append(template.getUuid()).append(")");
+            }
+            if (usageRecord.getSize() != null) {
+                builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateTemplateOrIsoUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Template/ISO ID
+        VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId());
+        if (tmpl != null) {
+            usageRecResponse.setUsageId(tmpl.getUuid());
+            resourceDetails.resourceId = tmpl.getId();
+        }
+        //Template/ISO Size
+        usageRecResponse.setSize(usageRecord.getSize());
+        if (usageRecord.getUsageType() == UsageTypes.ISO) {
+            usageRecResponse.setVirtualSize(usageRecord.getSize());
+            resourceDetails.resourceType = ResourceObjectType.ISO;
+        } else {
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+            resourceDetails.resourceType = ResourceObjectType.Template;
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            if (usageRecord.getUsageType() == UsageTypes.TEMPLATE) {
+                builder.append("Template usage");
+            } else if (usageRecord.getUsageType() == UsageTypes.ISO) {
+                builder.append("ISO usage");
+            }
+            if (tmpl != null) {
+                builder.append(" for ").append(tmpl.getName()).append(" (").append(tmpl.getUuid()).append(") ")
+                        .append("with size ").append(toHumanReadableSize(usageRecord.getSize())).append(" and virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateSnapshotUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Snapshot ID
+        SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId());
+        resourceDetails.resourceType = ResourceObjectType.Snapshot;
+        if (snap != null) {
+            usageRecResponse.setUsageId(snap.getUuid());
+            resourceDetails.resourceId = snap.getId();
+        }
+        //Snapshot Size
+        usageRecResponse.setSize(usageRecord.getSize());
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Snapshot usage ");
+            if (snap != null) {
+                builder.append("for ").append(snap.getName()).append(" (").append(snap.getUuid()).append(") ")
+                        .append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateLoadBalancerPolicyUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Load Balancer Policy ID
+        LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId());
+        resourceDetails.resourceType = ResourceObjectType.LoadBalancer;
+        if (lb != null) {
+            usageRecResponse.setUsageId(lb.getUuid());
+            resourceDetails.resourceId = lb.getId();
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Loadbalancer policy usage ");
+            if (lb != null) {
+                builder.append(lb.getName()).append(" (").append(lb.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populatePortForwardingRuleUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Port Forwarding Rule ID
+        PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId());
+        resourceDetails.resourceType = ResourceObjectType.PortForwardingRule;
+        if (pf != null) {
+            usageRecResponse.setUsageId(pf.getUuid());
+            resourceDetails.resourceId = pf.getId();
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Port forwarding rule usage");
+            if (pf != null) {
+                builder.append(" (").append(pf.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateNetworkOfferingUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
+        //Network Offering Id
+        NetworkOfferingVO netOff = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, usageRecord.getOfferingId());
+        if (netOff != null) {
+            usageRecResponse.setOfferingId(netOff.getUuid());
+        }
+        //is Default
+        usageRecResponse.setDefault(usageRecord.getUsageId() == 1);
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Network offering ");
+            if (netOff != null) {
+                builder.append(netOff.getName()).append(" (").append(netOff.getUuid()).append(") usage ");
+            }
+            if (vmInstance != null) {
+                builder.append("for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return new UsageResourceDetails();
+    }
+
+    private UsageResourceDetails populateVpnUsersUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        //VPN User ID
+        VpnUserVO vpnUser = _entityMgr.findByIdIncludingRemoved(VpnUserVO.class, usageRecord.getUsageId());
+        if (vpnUser != null) {
+            usageRecResponse.setUsageId(vpnUser.getUuid());
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("VPN usage ");
+            if (vpnUser != null) {
+                builder.append("for user ").append(vpnUser.getUsername()).append(" (").append(vpnUser.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return new UsageResourceDetails();
+    }
+
+    private UsageResourceDetails populateSecurityGroupUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        //Security Group Id
+        SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId());
+        resourceDetails.resourceType = ResourceObjectType.SecurityGroup;
+        if (sg != null) {
+            resourceDetails.resourceId = sg.getId();
+            usageRecResponse.setUsageId(sg.getUuid());
+        }
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Security group");
+            if (sg != null) {
+                builder.append(" ").append(sg.getName()).append(" (").append(sg.getUuid()).append(") usage");
+            }
+            if (vmInstance != null) {
+                builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateBackupUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, VMInstanceVO vmInstance) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        resourceDetails.resourceType = ResourceObjectType.Backup;
+        final StringBuilder builder = new StringBuilder();
+        builder.append("Backup usage");
+        if (vmInstance != null) {
+            resourceDetails.resourceId = vmInstance.getId();
+            usageRecResponse.setResourceName(vmInstance.getInstanceName());
+            usageRecResponse.setUsageId(vmInstance.getUuid());
+            builder.append(" for VM ").append(vmInstance.getHostName())
+                    .append(" (").append(vmInstance.getUuid()).append(")");
+            final BackupOffering backupOffering = backupOfferingDao.findByIdIncludingRemoved(usageRecord.getOfferingId());
+            if (backupOffering != null) {
+                builder.append(" and backup offering ").append(backupOffering.getName())
+                        .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
+                        .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
+            }
+        }
+        if (usageRecord.getSize() != null) {
+            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
+        }
+        if (usageRecord.getVirtualSize() != null) {
+            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
+        }
+        usageRecResponse.setDescription(builder.toString());
+        usageRecResponse.setSize(usageRecord.getSize());
+        usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateVmSnapshotUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        resourceDetails.resourceType = ResourceObjectType.VMSnapshot;
+        VMSnapshotVO vmSnapshotVO = null;
+        if (usageRecord.getUsageId() != null) {
+            vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+            if (vmSnapshotVO != null) {
+                resourceDetails.resourceId = vmSnapshotVO.getId();
+                usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+            }
+        }
+        usageRecResponse.setSize(usageRecord.getSize());
+        if (usageRecord.getVirtualSize() != null) {
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+        }
+        if (usageRecord.getOfferingId() != null) {
+            usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
+        }
+        if (!oldFormat) {
+            VolumeVO volume = null;
+            if (vmSnapshotVO == null && usageRecord.getUsageId() != null) {
+                 volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
+            }
+
+            DiskOfferingVO diskOff = null;
+            if (usageRecord.getOfferingId() != null) {
+                diskOff = _entityMgr.findByIdIncludingRemoved(DiskOfferingVO.class, usageRecord.getOfferingId());
+            }
+            final StringBuilder builder = new StringBuilder();
+            builder.append("VMSnapshot usage");
+            if (vmSnapshotVO != null) {
+                builder.append(" Id: ").append(vmSnapshotVO.getUuid());
+            }
+            if (vmInstance != null) {
+                builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+            }
+            if (volume != null) {
+                builder.append(" with volume ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
+            }
+            if (diskOff != null) {
+                builder.append(" using disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
+            }
+            if (usageRecord.getSize() != null){
+                builder.append(" and size " + toHumanReadableSize(usageRecord.getSize()));
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateVolumeSecondaryUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
+        VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId());
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Volume on secondary storage usage");
+            if (volume != null) {
+                builder.append(" for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(") ");
+                if (usageRecord.getSize() != null) {
+                    builder.append("with size ").append(toHumanReadableSize(usageRecord.getSize()));
+                }
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return new UsageResourceDetails();
+    }
+
+    private UsageResourceDetails populateVmSnapshotOnPrimaryUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        resourceDetails.resourceType = ResourceObjectType.VMSnapshot;
+        VMSnapshotVO vmSnapshotVO = null;
+        if (usageRecord.getUsageId() != null) {
+            vmSnapshotVO = vmSnapshotDao.findByIdIncludingRemoved(usageRecord.getUsageId());
+            if (vmSnapshotVO != null) {
+                resourceDetails.resourceId = vmSnapshotVO.getId();
+                usageRecResponse.setResourceName(vmSnapshotVO.getDisplayName());
+                usageRecResponse.setUsageId(vmSnapshotVO.getUuid());
+            }
+        }
+        usageRecResponse.setSize(usageRecord.getVirtualSize());
+        if (!oldFormat) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("VMSnapshot on primary storage usage");
+            if (vmSnapshotVO != null) {
+                builder.append(" Id: ").append(vmSnapshotVO.getUuid());
+            }
+            if (vmInstance != null) {
+                builder.append(" for VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(") ");
+                if (usageRecord.getVirtualSize() != null) {
+                    builder.append("with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
+                }
+            }
+            usageRecResponse.setDescription(builder.toString());
+        }
+        return resourceDetails;
+    }
+
+    private UsageResourceDetails populateBucketUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse) {
+        BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId());
+        if (bucket != null) {
+            usageRecResponse.setUsageId(bucket.getUuid());
+            usageRecResponse.setResourceName(bucket.getName());
+        }
+        return new UsageResourceDetails();
+    }
+
+    private static class UsageResourceDetails {
+        private ResourceObjectType resourceType;
+        private Long resourceId;
     }
 
     public String getDateStringInternal(Date inputDate) {
@@ -4785,7 +4868,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
-        response.setDescription(result.getDescription());
+
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -4872,7 +4955,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
-                    ipRes.setDescription(ip.getDescription());
+
                     setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
@@ -4903,7 +4986,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcName(vpc.getName());
         }
 
-        response.setEnabled(result.isEnabled());
         return response;
     }
 
@@ -5342,12 +5424,12 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
         try {
             Certificate cert = CertificateHelper.buildCertificate(certStr);
-            if (cert instanceof X509CertImpl) {
-                X509CertImpl certificate = (X509CertImpl) cert;
+            if (cert instanceof X509Certificate) {
+                X509Certificate certificate = (X509Certificate) cert;
                 response.setVersion(String.valueOf(certificate.getVersion()));
                 response.setSubject(certificate.getSubjectDN().toString());
                 response.setIssuer(certificate.getIssuerDN().toString());
-                response.setSerialNum(certificate.getSerialNumberObject().toString());
+                response.setSerialNum(certificate.getSerialNumber().toString());
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
         } catch (CertificateException e) {
@@ -5832,81 +5914,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         consoleSessionResponse.setObjectName("consolesession");
         return consoleSessionResponse;
-    }
-
-    @Override
-    public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
-        ApiKeyPairResponse apiKeyPairResponse = new ApiKeyPairResponse();
-
-        populateApiKeyPairInApiKeyPairResponse(keyPair, apiKeyPairResponse);
-        populateUserInApiKeyPairResponse(keyPair, apiKeyPairResponse);
-
-        AccountVO account = accountDao.findByIdIncludingRemoved(keyPair.getAccountId());
-        apiKeyPairResponse.setAccountId(account.getUuid());
-        apiKeyPairResponse.setAccountName(account.getAccountName());
-        apiKeyPairResponse.setAccountType(account.getType().toString());
-
-        populateDomainInApiKeyPairResponse(account.getDomainId(), apiKeyPairResponse);
-        populateRoleInApiKeyPairResponse(account.getRoleId(), apiKeyPairResponse);
-
-        return apiKeyPairResponse;
-    }
-
-    protected void populateRoleInApiKeyPairResponse(Long roleId, ApiKeyPairResponse apiKeyPairResponse) {
-        RoleVO roleVO = roleDao.findById(roleId);
-        apiKeyPairResponse.setRoleId(roleVO.getUuid());
-        apiKeyPairResponse.setRoleName(roleVO.getName());
-        apiKeyPairResponse.setRoleType(roleVO.getRoleType().name());
-    }
-
-    protected static void populateApiKeyPairInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
-        apiKeyPairResponse.setName(keyPair.getName());
-        apiKeyPairResponse.setApiKey(keyPair.getApiKey());
-        apiKeyPairResponse.setSecretKey(keyPair.getSecretKey());
-        apiKeyPairResponse.setDescription(keyPair.getDescription());
-        apiKeyPairResponse.setId(keyPair.getUuid());
-        apiKeyPairResponse.setCreated(keyPair.getCreated());
-        apiKeyPairResponse.setStartDate(keyPair.getStartDate());
-        apiKeyPairResponse.setEndDate(keyPair.getEndDate());
-
-        ApiKeyPairState state = ApiKeyPairState.ENABLED;
-        if (keyPair.getRemoved() != null) {
-            state = ApiKeyPairState.REMOVED;
-        } else if (keyPair.hasEndDatePassed()) {
-            state = ApiKeyPairState.EXPIRED;
-        }
-        apiKeyPairResponse.setState(state);
-    }
-
-    protected void populateUserInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
-        User user = ApiDBUtils.findUserById(keyPair.getUserId());
-        apiKeyPairResponse.setUserId(user.getUuid());
-        apiKeyPairResponse.setUsername(user.getUsername());
-    }
-
-    protected void populateDomainInApiKeyPairResponse(Long domainId, ApiKeyPairResponse apiKeyPairResponse) {
-        DomainVO domainVO = domainDao.findById(domainId);
-        apiKeyPairResponse.setDomainId(domainVO.getUuid());
-        apiKeyPairResponse.setDomainName(domainVO.getName());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domainVO.getPath())).deleteCharAt(domainPath.length() - 1);
-        apiKeyPairResponse.setDomainPath(domainPath.toString());
-    }
-
-    @Override
-    public ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(final List<ApiKeyPairPermission> permissions) {
-        final ListResponse<BaseRolePermissionResponse> response = new ListResponse<>();
-        final List<BaseRolePermissionResponse> permissionResponses = new ArrayList<>();
-        for (final ApiKeyPairPermission permission : permissions) {
-            BaseRolePermissionResponse permissionResponse = new BaseRolePermissionResponse();
-            permissionResponse.setRule(permission.getRule());
-            permissionResponse.setRulePermission(permission.getPermission());
-            permissionResponse.setDescription(permission.getDescription());
-            permissionResponse.setObjectName("keypermission");
-            permissionResponses.add(permissionResponse);
-        }
-        response.setResponses(permissionResponses);
-        return response;
     }
 
     @Override
