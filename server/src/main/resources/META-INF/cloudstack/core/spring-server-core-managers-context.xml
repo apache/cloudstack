@@ -356,6 +356,8 @@
 
     <bean id="kvmBackupExportService" class="org.apache.cloudstack.backup.KVMBackupExportServiceImpl" />
 
+    <bean id="backupReportService" class="org.apache.cloudstack.backup.BackupReportServiceImpl" />
+
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >

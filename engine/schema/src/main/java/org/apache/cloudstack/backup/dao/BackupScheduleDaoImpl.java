@@ -23,10 +23,14 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -34,8 +38,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long> implements BackupScheduleDao {
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+
     private SearchBuilder<BackupScheduleVO> backupScheduleSearch;
     private SearchBuilder<BackupScheduleVO> executableSchedulesSearch;
+    private SearchBuilder<BackupScheduleVO> listExecutableSchedulesByZoneAndDomainAndAccount;
 
     public BackupScheduleDaoImpl() {
     }
@@ -52,6 +61,17 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
         executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         executableSchedulesSearch.done();
+
+        listExecutableSchedulesByZoneAndDomainAndAccount = createSearchBuilder();
+        listExecutableSchedulesByZoneAndDomainAndAccount.and("account_id", listExecutableSchedulesByZoneAndDomainAndAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        listExecutableSchedulesByZoneAndDomainAndAccount.and("domain_id", listExecutableSchedulesByZoneAndDomainAndAccount.entity().getDomainId(), SearchCriteria.Op.EQ);
+        listExecutableSchedulesByZoneAndDomainAndAccount.and("scheduledTimestamp", listExecutableSchedulesByZoneAndDomainAndAccount.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
+        listExecutableSchedulesByZoneAndDomainAndAccount.and("asyncJobId", listExecutableSchedulesByZoneAndDomainAndAccount.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+        SearchBuilder<VMInstanceVO> join = vmInstanceDao.createSearchBuilder();
+        join.and("zone_id", join.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        listExecutableSchedulesByZoneAndDomainAndAccount.join("vms", join, listExecutableSchedulesByZoneAndDomainAndAccount.entity().getVmId(), join.entity().getId(),
+                JoinBuilder.JoinType.INNER);
+        listExecutableSchedulesByZoneAndDomainAndAccount.done();
     }
 
     @Override
@@ -73,6 +93,16 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     public List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
         SearchCriteria<BackupScheduleVO> sc = executableSchedulesSearch.create();
         sc.setParameters("scheduledTimestamp", currentTimestamp);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<BackupScheduleVO> getSchedulesToExecuteForDomainAndAccount(Date currentTimestamp, Long zoneId, Long domainId, Long accountId) {
+        SearchCriteria<BackupScheduleVO> sc = listExecutableSchedulesByZoneAndDomainAndAccount.create();
+        sc.setParameters("scheduledTimestamp", currentTimestamp);
+        sc.setParametersIfNotNull("domain_id", domainId);
+        sc.setParametersIfNotNull("account_id", accountId);
+        sc.setJoinParametersIfNotNull("vms", "zone_id", zoneId);
         return listBy(sc);
     }
 
