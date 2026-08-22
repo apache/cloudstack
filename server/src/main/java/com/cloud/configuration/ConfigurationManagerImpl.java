@@ -7181,8 +7181,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Network Offering cannot be for multiple providers - Tungsten-Fabric, NSX and Netris");
         }
 
-        NetworkOffering.NetworkMode networkMode = null;
-        if (networkModeStr != null) {
+        NetworkOffering.NetworkMode networkMode = NetworkOffering.NetworkMode.NATTED; // Defensive fallback
+        if (StringUtils.isNotEmpty(networkModeStr)) {
             if (!EnumUtils.isValidEnum(NetworkOffering.NetworkMode.class, networkModeStr)) {
                 throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
@@ -7248,6 +7248,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
 
+        if (StringUtils.isEmpty(routingModeString)) {
+            routingModeString = NetworkOffering.RoutingMode.Static.toString(); // Defensive fallback
+        }
         NetworkOffering.RoutingMode routingMode = verifyRoutingMode(routingModeString);
 
         // configure service provider map
