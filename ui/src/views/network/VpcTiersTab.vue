@@ -56,6 +56,12 @@
                 <router-link :to="{ path: '/acllist/' + network.aclid }">
                   {{ network.aclname }}
                 </router-link>
+                <tooltip-button
+                  :tooltip="$t('label.replace.acl')"
+                  icon="swap-outlined"
+                  size="small"
+                  :disabled="!('replaceNetworkACLList' in $store.getters.apis)"
+                  @onClick="() => handleOpenReplaceAclAction(network)" />
               </div>
             </div>
           </div>
@@ -368,14 +374,17 @@ import { ref, reactive, toRaw } from 'vue'
 import { postAPI, getAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getNetmaskFromCidr } from '@/utils/network'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'VpcTiersTab',
   mixins: [mixinForm],
   components: {
     Status,
+    TooltipButton,
     TooltipLabel
   },
   props: {
@@ -723,6 +732,39 @@ export default {
         acl: [{ required: true, message: this.$t('label.required') }],
         vlan: [{ required: true, message: this.$t('message.please.enter.value') }]
       }
+    },
+    handleOpenReplaceAclAction (network) {
+      const action = this.$router.resolve({ path: '/guestnetwork/' + network.id })
+        .meta.actions?.find(candidate => candidate.dataView && candidate.api === 'replaceNetworkACLList')
+      const apis = this.$store.getters.apis
+      const tierResource = { ...network, vpcid: network.vpcid || this.resource.id }
+      const aclMapping = action?.mapping?.aclid
+      const networkMapping = action?.mapping?.networkid
+      if (!action || !(action.api in apis) ||
+        typeof aclMapping?.params !== 'function' ||
+        typeof networkMapping?.value !== 'function' ||
+        (action.show && !action.show(tierResource, this.$store.getters)) ||
+        (action.disabled && action.disabled(tierResource, this.$store.getters))) {
+        return
+      }
+      eventBus.emit('exec-action', {
+        action: {
+          ...action,
+          resource: this.resource,
+          mapping: {
+            ...action.mapping,
+            aclid: {
+              ...aclMapping,
+              params: aclMapping.params.bind(null, tierResource)
+            },
+            networkid: {
+              ...networkMapping,
+              value: networkMapping.value.bind(null, tierResource)
+            }
+          }
+        },
+        isGroupAction: false
+      })
     },
     handleAddInternalLB (id) {
       this.initForm()
