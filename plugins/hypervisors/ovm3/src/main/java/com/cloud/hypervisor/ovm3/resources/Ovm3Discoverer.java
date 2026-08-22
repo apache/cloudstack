@@ -38,7 +38,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -58,6 +57,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -93,11 +93,10 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             return false;
         }
 
-        /* these are in Config.java */
-        publicNetworkDevice = _params.get(Config.Ovm3PublicNetwork.key());
-        privateNetworkDevice = _params.get(Config.Ovm3PrivateNetwork.key());
-        guestNetworkDevice = _params.get(Config.Ovm3GuestNetwork.key());
-        storageNetworkDevice = _params.get(Config.Ovm3StorageNetwork.key());
+        publicNetworkDevice = ManagementServer.Ovm3PublicNetwork.value();
+        privateNetworkDevice = ManagementServer.Ovm3PrivateNetwork.value();
+        guestNetworkDevice = ManagementServer.Ovm3GuestNetwork.value();
+        storageNetworkDevice = ManagementServer.Ovm3StorageNetwork.value();
         resourceMgr.registerResourceStateAdapter(this.getClass()
                 .getSimpleName(), this);
         return true;

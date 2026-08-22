@@ -119,6 +119,21 @@ public interface UserVmManager extends UserVmService {
             "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
             "account/domain.", true, ConfigKey.Scope.Account);
 
+    ConfigKey<Integer> ExpungeDelay = new ConfigKey<>("Advanced", Integer.class, "expunge.delay", "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed vm. The default value = the default value of expunge.interval", true);
+
+    ConfigKey<Integer> ExpungeInterval = new ConfigKey<>("Advanced", Integer.class, "expunge.interval", "86400",
+            "The interval (in seconds) to wait before running the expunge thread.", true);
+
+    ConfigKey<Integer> ScaleRetry = new ConfigKey<>("Advanced", Integer.class, "scale.retry", "2",
+            "Number of times to retry scaling up the vm", true);
+
+    ConfigKey<Boolean> SetVmInternalNameUsingDisplayName = new ConfigKey<>("Advanced", Boolean.class, "vm.instancename.flag", "false",
+            "If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only", true);
+
+    ConfigKey<Integer> CapacitySkipcountingHours = new ConfigKey<>("Advanced", Integer.class, "capacity.skipcounting.hours", "3600",
+            "Time (in seconds) to wait before release VM's cpu and memory when VM in stopped state", true);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";

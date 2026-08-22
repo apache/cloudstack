@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -46,7 +48,6 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
@@ -116,7 +117,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase implements ExternalFirewallDeviceManager, ResourceStateAdapter {
+public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase implements ExternalFirewallDeviceManager, ResourceStateAdapter, Configurable {
 
     @Inject
     HostDao _hostDao;
@@ -179,7 +180,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-        _defaultFwCapacity = NumbersUtil.parseLong(_configDao.getValue(Config.DefaultExternalFirewallCapacity.key()), 50);
+        _defaultFwCapacity = NumbersUtil.parseLong(DefaultExternalFirewallCapacity.value(), 50);
         return true;
     }
 
@@ -776,8 +777,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
     public int getGloballyConfiguredCidrSize() {
         try {
-            String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-            return 8 + Integer.parseInt(globalVlanBits);
+            return 8 + NetworkService.GuestVlanBits.value();
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
         }
@@ -834,5 +834,15 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         sendPortForwardingRules(pfRules, zone, externalFirewall.getId());
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ExternalFirewallDeviceManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DefaultExternalFirewallCapacity};
     }
 }

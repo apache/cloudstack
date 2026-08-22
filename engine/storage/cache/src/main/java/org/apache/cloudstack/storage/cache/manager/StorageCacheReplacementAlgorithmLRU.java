@@ -28,22 +28,19 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 
-import com.cloud.configuration.Config;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacementAlgorithm {
-    @Inject
-    ConfigurationDao configDao;
+
     @Inject
     TemplateDataFactory templateFactory;
     @Inject
@@ -59,7 +56,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
     @PostConstruct
     public void initialize() {
-        /* Avoid using configDao at this time, we can't be sure that the database is already upgraded
+        /* Avoid resolving the config value at this time, we can't be sure that the database is already upgraded
          * and there might be fatal errors when using a dao.
          */
     }
@@ -71,7 +68,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
     @Override
     public DataObject chooseOneToBeReplaced(DataStore store) {
         if (unusedTimeInterval == null) {
-            unusedTimeInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementLRUTimeInterval.key()), 30);
+            unusedTimeInterval = StorageCacheManager.StorageCacheReplacementLRUTimeInterval.value();
         }
         Calendar cal = Calendar.getInstance();
         cal.setTime(DateUtil.now());

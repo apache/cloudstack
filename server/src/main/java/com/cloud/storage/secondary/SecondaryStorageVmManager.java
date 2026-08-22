@@ -50,6 +50,41 @@ public interface SecondaryStorageVmManager extends Manager {
             true, ConfigKey.Scope.Zone, null, "User Data for SSVMs",
             null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_SEC_STORAGE_VM);
 
+    ConfigKey<Boolean> UseSecondaryStorageVm = new ConfigKey<>("Hidden", Boolean.class, "secondary.storage.vm", "false",
+            "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", true);
+
+    ConfigKey<String> MountParent = new ConfigKey<>("Advanced", String.class, "mount.parent", "/var/cloudstack/mnt",
+            "The mount point on the Management Server for Secondary Storage.", true);
+
+    ConfigKey<Boolean> SystemVMAutoReserveCapacity = new ConfigKey<>("Advanced", Boolean.class, "system.vm.auto.reserve.capacity", "true",
+            "Indicates whether or not to automatically reserver system VM standby capacity.", true);
+
+    ConfigKey<Boolean> SystemVMRandomPassword = new ConfigKey<>("Advanced", Boolean.class, "system.vm.random.password", "false",
+            "Randomize system vm password the first time management server starts", true);
+
+    ConfigKey<Long> MaxTemplateAndIsoSize = new ConfigKey<>("Advanced", Long.class, "max.template.iso.size", "50",
+            "The maximum size for a downloaded template or ISO (in GB).", true);
+
+    ConfigKey<String> SecStorageAllowedInternalDownloadSites = new ConfigKey<>("Advanced", String.class, "secstorage.allowed.internal.sites", null,
+            "Comma separated list of cidrs internal to the datacenter that can host template download servers, please note 0.0.0.0 is not a valid site", true);
+
+    ConfigKey<Boolean> SecStorageEncryptCopy = new ConfigKey<>("Advanced", Boolean.class, "secstorage.encrypt.copy", "false",
+            "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when generating links for external access.", true);
+
+    ConfigKey<String> SecStorageSecureCopyCert = new ConfigKey<>("Advanced", String.class, "secstorage.ssl.cert.domain", "",
+            "SSL certificate used to encrypt copy traffic between zones", true);
+
+    ConfigKey<Integer> ExtractURLCleanUpInterval = new ConfigKey<>("Advanced", Integer.class, "extract.url.cleanup.interval", "7200",
+            "The interval (in seconds) to wait before cleaning up the extract URL's ", true);
+
+    ConfigKey<Boolean> DisableExtraction = new ConfigKey<>("Advanced", Boolean.class, "disable.extraction", "false",
+            "Flag for disabling extraction of Templates, ISOs, Snapshots and volumes", true);
+
+    ConfigKey<Integer> ExtractURLExpirationInterval = new ConfigKey<>("Advanced", Integer.class, "extract.url.expiration.interval", "14400",
+            "The life of an extract URL after which it is deleted ", true);
+
+    ConfigKey<String> SecondaryStorageServiceOffering = new ConfigKey<>("Advanced", String.class, "secstorage.service.offering", null,
+            "Uuid of the service offering used by secondary storage; if NULL - system offering will be used", true);
 
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz

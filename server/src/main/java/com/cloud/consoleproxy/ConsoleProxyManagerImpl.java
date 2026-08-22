@@ -62,7 +62,6 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
@@ -108,12 +107,14 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
@@ -1140,10 +1141,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get("secondary.storage.vm");
-        if (value != null && value.equalsIgnoreCase("true")) {
-            useStorageVm = true;
-        }
+        useStorageVm = SecondaryStorageVmManager.UseSecondaryStorageVm.value();
 
         instance = configs.get("instance.name");
         if (instance == null) {
@@ -1240,7 +1238,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = configurationDao.getValue(Config.ManagementNetwork.key());
+                String mgmt_cidr = ManagementServer.ManagementNetwork.value();
                 if (NetUtils.isValidCidrList(mgmt_cidr)) {
                     logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);

@@ -16,7 +16,12 @@
 // under the License.
 package com.cloud.server;
 
+import java.util.UUID;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -30,6 +35,166 @@ import com.cloud.vm.VirtualMachine;
 /**
  */
 public interface ManagementServer extends ManagementService, PluggableService {
+
+    ConfigKey<String> customCsIdentifier = new ConfigKey<>("Advanced", String.class, "custom.cs.identifier",
+            UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+
+    ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true",
+            "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
+
+    ConfigKey<String> ElasticLoadBalancerEnabled = new ConfigKey<>("Advanced", String.class, "network.loadbalancer.basiczone.elb.enabled", "false",
+            "Whether the load balancing service is enabled for basic zones", true);
+
+    ConfigKey<String> ElasticLoadBalancerNetwork = new ConfigKey<>("Advanced", String.class, "network.loadbalancer.basiczone.elb.network", "guest",
+            "Whether the elastic load balancing service public ips are taken from the public or guest network", true);
+
+    ConfigKey<Boolean> ApiLimitEnabled = new ConfigKey<>("Advanced", Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", true);
+
+    ConfigKey<Integer> ApiLimitInterval = new ConfigKey<>("Advanced", Integer.class, "api.throttling.interval", "1", "Time interval (in seconds) to reset API count", true);
+
+    ConfigKey<Integer> ApiLimitMax = new ConfigKey<>("Advanced", Integer.class, "api.throttling.max", "25", "Max allowed number of APIs within fixed interval", true);
+
+    ConfigKey<String> OvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> OvmPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> OvmGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm.guest.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> Ovm3PublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> Ovm3PrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> Ovm3GuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.guest.network.device", null,
+            "Specify the guest bridge on host for guest network", true);
+
+    ConfigKey<String> Ovm3StorageNetwork = new ConfigKey<>("Hidden", String.class,
+            "ovm3.storage.network.device", null,
+            "Specify the storage bridge on host for storage network", true);
+
+    ConfigKey<String> KvmPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.public.network.device", null,
+            "Specify the public bridge on host for public network", true);
+
+    ConfigKey<String> KvmPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.private.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<String> KvmGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "kvm.guest.network.device", null,
+            "Specify the private bridge on host for private network", true);
+
+    ConfigKey<Boolean> PublishActionEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.action.events", "true",
+            "enable or disable publishing of action events on the event bus", true);
+
+    ConfigKey<Boolean> PublishAlertEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.alert.events", "true",
+            "enable or disable publishing of alert events on the event bus", true);
+
+    ConfigKey<Boolean> PublishResourceStateEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.resource.state.events", "true",
+            "enable or disable publishing of alert events on the event bus", true);
+
+    ConfigKey<Boolean> PublishUsageEvent = new ConfigKey<>("Advanced", Boolean.class, "publish.usage.events", "true",
+            "enable or disable publishing of usage events on the event bus", true);
+
+    ConfigKey<Integer> EventPurgeInterval = new ConfigKey<>("Advanced", Integer.class, "event.purge.interval", "86400",
+            "The interval (in seconds) to wait before running the event purge thread", true);
+
+    ConfigKey<Integer> LinkLocalIpNums = new ConfigKey<>("Advanced", Integer.class, "linkLocalIp.nums", "10",
+            "The number of link local ip that needed by domR(in power of 2)", true);
+
+    ConfigKey<String> HypervisorList = new ConfigKey<>("Advanced", String.class, "hypervisor.list",
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
+            "The list of hypervisors that this deployment will use.", true, ConfigKey.Kind.CSV, null);
+
+    ConfigKey<String> ManagementNetwork = new ConfigKey<>("Advanced", String.class, "management.network.cidr", null,
+            "The cidr of management server network", true);
+
+    ConfigKey<Integer> EventPurgeDelay = new ConfigKey<>("Advanced", Integer.class, "event.purge.delay", "15",
+            "Events older than specified number days will be purged. Set this value to 0 to never delete events", true);
+
+    ConfigKey<Integer> AlertPurgeInterval = new ConfigKey<>("Advanced", Integer.class, "alert.purge.interval", "86400",
+            "The interval (in seconds) to wait before running the alert purge thread", true);
+
+    ConfigKey<Integer> AlertPurgeDelay = new ConfigKey<>("Advanced", Integer.class, "alert.purge.delay", "0",
+            "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", true);
+
+    ConfigKey<String> ControlCidr = new ConfigKey<>("Advanced", String.class, "control.cidr", "169.254.0.0/16",
+            "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", true);
+
+    ConfigKey<String> ControlGateway = new ConfigKey<>("Advanced", String.class, "control.gateway", "169.254.0.1",
+            "gateway for the control network traffic", true);
+
+    ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",
+            "Default entity detail batch query size for listing", true);
+
+    ConfigKey<Boolean> S3EnableRRS = new ConfigKey<>("Advanced", Boolean.class, "s3.rrs.enabled", "false",
+            "enable s3 reduced redundancy storage", true);
+
+    ConfigKey<Integer> S3MaxSingleUploadSize = new ConfigKey<>("Advanced", Integer.class, "s3.singleupload.max.size", "5",
+            "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
+                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ", true);
+
+    ConfigKey<String> CloudDnsName = new ConfigKey<>("Advanced", String.class, "cloud.dns.name", null,
+            "DNS name of the cloud for the GSLB service", true);
+
+    ConfigKey<String> InternalLbVmServiceOfferingId = new ConfigKey<>("Advanced", String.class, "internallbvm.service.offering", null,
+            "Uuid of the service offering used by internal lb vm; if NULL - default system internal lb offering will be used", true);
+
+    ConfigKey<Integer> RouterAggregationCommandEachTimeout = new ConfigKey<>("Advanced", Integer.class, "router.aggregation.command.each.timeout", "600",
+            "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ", true);
+
+    ConfigKey<String> VmwareRootDiskControllerType = new ConfigKey<>("Advanced", String.class, "vmware.root.disk.controller", "ide",
+            "Specify the default disk controller for root volumes, valid values are scsi, ide, osdefault. Please check documentation for more details on each of these values.",
+            true, ConfigKey.Kind.Select, "scsi,ide,osdefault");
+
+    ConfigKey<String> VmwareSystemVmNicDeviceType = new ConfigKey<>("Advanced", String.class, "vmware.systemvm.nic.device.type", "E1000",
+            "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
+            true, ConfigKey.Kind.Select, "E1000,PCNet32,Vmxnet2,Vmxnet3");
+
+    ConfigKey<Boolean> VmwareUseNexusVSwitch = new ConfigKey<>("Network", Boolean.class, "vmware.use.nexus.vswitch", "false",
+            "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", true);
+
+    ConfigKey<Boolean> VmwareUseDVSwitch = new ConfigKey<>("Network", Boolean.class, "vmware.use.dvswitch", "false",
+            "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", true);
+
+    ConfigKey<String> XenServerSetupMultipath = new ConfigKey<>("Advanced", String.class, "xenserver.setup.multipath", "false",
+            "Setup the host to do multipath", true);
+
+    ConfigKey<Integer> XenServerHeartBeatTimeout = new ConfigKey<>("Advanced", Integer.class, "xenserver.heartbeat.timeout", "120",
+            "heartbeat timeout to use when implementing XenServer Self Fencing", true);
+
+    ConfigKey<Integer> XenServerHeartBeatInterval = new ConfigKey<>("Advanced", Integer.class, "xenserver.heartbeat.interval", "60",
+            "heartbeat interval to use when checking before XenServer Self Fencing", true);
+
+    ConfigKey<String> XenServerPVdriverVersion = new ConfigKey<>("Advanced", String.class, "xenserver.pvdriver.version", "xenserver61",
+            "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
+            true, ConfigKey.Kind.Select, "xenserver56,xenserver61");
+
+    ConfigKey<Integer> Ovm3HeartBeatTimeout = new ConfigKey<>("Advanced", Integer.class, "ovm3.heartbeat.timeout", "120",
+            "timeout used for primary storage check, upon timeout a panic is triggered.", true);
+
+    ConfigKey<Integer> Ovm3HeartBeatInterval = new ConfigKey<>("Advanced", Integer.class, "ovm3.heartbeat.interval", "1",
+            "interval used to check primary storage availability.", true);
+
+    ConfigKey<Boolean> BaremetalProvisionDoneNotificationEnabled = new ConfigKey<>("Advanced", Boolean.class, "baremetal.provision.done.notification.enabled", "true",
+            "whether to enable baremetal provison done notification", true);
+
+    ConfigKey<Integer> BaremetalProvisionDoneNotificationPort = new ConfigKey<>("Advanced", Integer.class, "baremetal.provision.done.notification.port", "8080",
+            "the port that listens baremetal provision done notification. Should be the same to port management server listening on for now. Please change it to management server port if it's not default 8080", true);
+
+    ConfigKey<String> ExternalBaremetalSystemUrl = new ConfigKey<>("Advanced", String.class, "external.baremetal.system.url", null,
+            "url of external baremetal system that CloudStack will talk to", true);
 
     /**
      * returns the instance id of this management server.

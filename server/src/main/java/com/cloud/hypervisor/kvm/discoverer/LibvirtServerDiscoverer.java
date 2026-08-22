@@ -43,7 +43,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
@@ -62,6 +61,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -311,7 +311,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
             Map<String, Object> params = new HashMap<String, Object>();
 
-            params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+            params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));
@@ -380,17 +380,17 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         // _setupAgentPath = Script.findScript(getPatchPath(),
         // "setup_agent.sh");
-        _kvmPrivateNic = _configDao.getValue(Config.KvmPrivateNetwork.key());
+        _kvmPrivateNic = ManagementServer.KvmPrivateNetwork.value();
         if (_kvmPrivateNic == null) {
             _kvmPrivateNic = "cloudbr0";
         }
 
-        _kvmPublicNic = _configDao.getValue(Config.KvmPublicNetwork.key());
+        _kvmPublicNic = ManagementServer.KvmPublicNetwork.value();
         if (_kvmPublicNic == null) {
             _kvmPublicNic = _kvmPrivateNic;
         }
 
-        _kvmGuestNic = _configDao.getValue(Config.KvmGuestNetwork.key());
+        _kvmGuestNic = ManagementServer.KvmGuestNetwork.value();
         if (_kvmGuestNic == null) {
             _kvmGuestNic = _kvmPrivateNic;
         }

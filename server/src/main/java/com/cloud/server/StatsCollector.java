@@ -59,6 +59,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
@@ -275,6 +276,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<>("Advanced", Integer.class, "stats.timeout", "60000",
             "The timeout for stats call in milli seconds.", true,
             ConfigKey.Scope.Cluster);
+    public static final ConfigKey<Long> StorageStatsInterval = new ConfigKey<>("Storage", Long.class, "storage.stats.interval", "60000",
+            "The interval (in milliseconds) when storage stats (per host) are retrieved from agents.", true);
+    public static final ConfigKey<Integer> HostStatsInterval = new ConfigKey<>("Advanced", Integer.class, "host.stats.interval", "60000",
+            "The interval (in milliseconds) when host stats are retrieved from agents.", true);
+    public static final ConfigKey<Integer> VmStatsInterval = new ConfigKey<>("Advanced", Integer.class, "vm.stats.interval", "60000",
+            "The interval (in milliseconds) when vm stats are retrieved from agents.", true);
+    public static final ConfigKey<Integer> VolumeStatsInterval = new ConfigKey<>("Advanced", Integer.class, "volume.stats.interval", "60000",
+            "Interval (in milliseconds) to report volume statistics.", true);
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
@@ -445,7 +454,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         vmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-        storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        storageStatsInterval = StorageStatsInterval.value();
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = AutoScaleManager.AutoScaleStatsInterval.value();
         ManagementServerStatusAdministrator managementServerStatusAdministrator = new ManagementServerStatusAdministrator();
@@ -546,9 +555,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         //Schedule disk stats update task
         _diskStatsUpdateExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DiskStatsUpdater"));
 
-        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        _usageAggregationRange = NumbersUtil.parseInt(aggregationRange, 1440);
-        _usageTimeZone = configs.get("usage.aggregation.timezone");
+        _usageAggregationRange = UsageService.UsageStatsJobAggregationRange.value();
+        _usageTimeZone = UsageService.UsageAggregationTimezone.value();
         if (_usageTimeZone == null) {
             _usageTimeZone = "GMT";
         }
@@ -2218,7 +2226,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
-                DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
+                DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER,
+                StorageStatsInterval, HostStatsInterval, VmStatsInterval, VolumeStatsInterval};
     }
 
     public double getImageStoreCapacityThreshold() {

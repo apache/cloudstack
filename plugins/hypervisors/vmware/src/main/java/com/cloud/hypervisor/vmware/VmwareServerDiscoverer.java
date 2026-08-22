@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -66,6 +65,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -381,7 +381,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 params.put("guestTrafficInfo", guestTrafficLabelObj);
                 params.put("publicTrafficInfo", publicTrafficLabelObj);
 
-                params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
                 VmwareResource resource = new VmwareResource();
                 try {
@@ -692,12 +692,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     private void _readGlobalConfigParameters() {
-        String value;
         if (_configDao != null) {
-            value = _configDao.getValue(Config.VmwareUseDVSwitch.key());
-            useDVS = Boolean.parseBoolean(value);
-            value = _configDao.getValue(Config.VmwareUseNexusVSwitch.key());
-            nexusDVS = Boolean.parseBoolean(value);
+            useDVS = ManagementServer.VmwareUseDVSwitch.value();
+            nexusDVS = ManagementServer.VmwareUseNexusVSwitch.value();
         }
     }
 

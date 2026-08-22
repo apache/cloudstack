@@ -64,10 +64,10 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
 import com.cloud.agent.api.baremetal.IpmiBootorResetCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.baremetal.manager.BaremetalManager;
-import com.cloud.configuration.Config;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -172,20 +172,20 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
 
         String ipmiIface = "default";
         try {
-            ipmiIface = configDao.getValue(Config.BaremetalIpmiLanInterface.key());
+            ipmiIface = BaremetalManager.BaremetalIpmiLanInterface.value();
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }
 
         try {
-            ipmiRetryTimes = Integer.parseInt(configDao.getValue(Config.BaremetalIpmiRetryTimes.key()));
+            ipmiRetryTimes = Integer.parseInt(BaremetalManager.BaremetalIpmiRetryTimes.value());
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }
 
         try {
-            provisionDoneNotificationOn = Boolean.valueOf(configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()));
-            isProvisionDoneNotificationTimeout = Integer.parseInt(configDao.getValue(Config.BaremetalProvisionDoneNotificationTimeout.key()));
+            provisionDoneNotificationOn = ManagementServer.BaremetalProvisionDoneNotificationEnabled.value();
+            isProvisionDoneNotificationTimeout = BaremetalManager.BaremetalProvisionDoneNotificationTimeout.value();
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }

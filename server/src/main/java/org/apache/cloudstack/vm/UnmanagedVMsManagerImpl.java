@@ -39,7 +39,6 @@ import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -1417,7 +1416,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private void checkVmwareInstanceNameForImportInstance(Hypervisor.HypervisorType hypervisorType, String instanceName, String hostName, DataCenter zone) {
         if (hypervisorType.equals(Hypervisor.HypervisorType.VMware) &&
-                Boolean.parseBoolean(configurationDao.getValue(Config.SetVmInternalNameUsingDisplayName.key()))) {
+                UserVmManager.SetVmInternalNameUsingDisplayName.value()) {
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
             VMInstanceVO vmByHostName = vmDao.findVMByHostNameInZone(hostName, zone.getId());
