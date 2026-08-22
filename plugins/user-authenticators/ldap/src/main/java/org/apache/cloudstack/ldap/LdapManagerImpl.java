@@ -61,6 +61,8 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -425,7 +427,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         //Account type should be 0 or 2. check the constants in com.cloud.user.Account
         Validate.isTrue(accountType== Account.Type.NORMAL || accountType== Account.Type.DOMAIN_ADMIN, "accountype should be either 0(normal user) or 2(domain admin)");
         LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
-        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType, 0));
+        LdapTrustMapVO vo = Transaction.execute((TransactionCallback<LdapTrustMapVO>) status -> {
+            ensureGroupNotClaimedByLiveAccount(domainId, name);
+            clearOldDomainMapping(domainId);
+            return _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType, 0));
+        });
         DomainVO domain = domainDao.findById(vo.getDomainId());
         String domainUuid = "<unknown>";
         if (domain == null) {
@@ -486,6 +492,37 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
         LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal(), account.getUuid(), cmd.getAccountName());
         return response;
+    }
+
+    /**
+     * Replaces a domain's existing LDAP mapping, if any, instead of leaving a second
+     * {@link #linkDomainToLdap} call to fail on the domain_id/account_id unique key.
+     */
+    private void clearOldDomainMapping(Long domainId) {
+        LdapTrustMapVO oldVo = _ldapTrustMapDao.findByDomainId(domainId);
+        if (oldVo != null) {
+            logger.warn(String.format("domain %d is already linked to ldap %s '%s'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName()));
+            _ldapTrustMapDao.expunge(oldVo.getId());
+        }
+    }
+
+    /**
+     * Refuses to hand a GROUP/OU to the domain-wide mapping while a live account still
+     * claims it via {@link #linkAccountToLdap}, mirroring the reverse check in
+     * {@link #clearOldAccountMapping}.
+     */
+    private void ensureGroupNotClaimedByLiveAccount(Long domainId, String ldapDomain) {
+        LdapTrustMapVO existing = _ldapTrustMapDao.findGroupInDomain(domainId, ldapDomain);
+        if (existing == null || existing.getAccountId() == 0L) {
+            return;
+        }
+        AccountVO existingAccount = accountDao.findByIdIncludingRemoved(existing.getAccountId());
+        if (existingAccount.getRemoved() == null) {
+            String msg = String.format("group/OU %s is already mapped to account %d in domain %d; unlink that account before linking the domain to it.",
+                    ldapDomain, existing.getAccountId(), domainId);
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     private void clearOldAccountMapping(LinkAccountToLdapCmd cmd) {
