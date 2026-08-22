@@ -168,6 +168,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         Long domainId = normalizeGlobalScope(resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath()));
         String authorizeUrl = StringUtils.trim(cmd.getAuthorizeUrl());
         String tokenUrl = StringUtils.trim(cmd.getTokenUrl());
+        Boolean enabled = cmd.getEnabled();
 
         if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -183,7 +184,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             }
         }
 
-        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId, enabled);
     }
 
     @Override
@@ -271,7 +272,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return _oauthProviderDao.findById(id);
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl, Long domainId) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl, Long domainId, Boolean enabled) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
@@ -282,7 +283,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setAuthorizeUrl(authorizeUrl);
         oauthProviderVO.setTokenUrl(tokenUrl);
-        oauthProviderVO.setEnabled(true);
+        oauthProviderVO.setEnabled(enabled == null || enabled);
 
         _oauthProviderDao.persist(oauthProviderVO);
 
