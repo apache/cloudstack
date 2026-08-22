@@ -50,6 +50,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.net.NetUtils;
 
 import static com.cloud.network.Network.Service.Dhcp;
 import static com.cloud.network.Network.Service.Dns;
@@ -92,10 +93,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "Desired service capabilities as part of VPC offering", since = "4.4")
     private Map<String, List<String>> serviceCapabilityList;
 
-    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
-            type = CommandType.STRING,
-            description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
-            since = "4.17.0")
+    @Parameter(
+        name = ApiConstants.INTERNET_PROTOCOL,
+        type = CommandType.STRING,
+        description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
+        since = "4.17.0",
+        allowedValueType = NetUtils.InternetProtocol.class)
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
@@ -144,10 +147,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.16")
     private Boolean enable;
 
-    @Parameter(name = ApiConstants.NETWORK_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
+    @Parameter(
+        name = ApiConstants.NETWORK_MODE,
+        type = CommandType.STRING,
+        description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+        since = "4.20.0",
+        allowedValueType = NetworkOffering.NetworkMode.class)
     private String networkMode;
 
     @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN, since = "4.20.0",
@@ -157,7 +162,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ROUTING_MODE,
             type = CommandType.STRING,
             since = "4.20.0",
-            description = "the routing mode for the VPC offering. Supported types are: Static or Dynamic.")
+            description = "the routing mode for the VPC offering. Supported types are: Static or Dynamic.",
+            allowedValueType = NetworkOffering.RoutingMode.class)
     private String routingMode;
 
     @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN,
