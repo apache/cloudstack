@@ -166,7 +166,9 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
-            + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
+            + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup."
+            + " NSX offerings also support nsxipdiscoveryprofileid, nsxmacdiscoveryprofileid, and nsxsegmentsecurityprofileid."
+            + " Values are IDs of existing operator-managed NSX profiles to bind to segments created from the offering.")
     protected Map details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
