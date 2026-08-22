@@ -820,28 +820,37 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd(_idAttributes.get(_table)[0], SearchCriteria.Op.EQ, id);
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        boolean committed = false;
         try {
-            if (ub.getCollectionChanges() != null) {
-                insertElementCollection(entity, _idAttributes.get(_table)[0], id, ub.getCollectionChanges());
+            txn.start();
+
+            try {
+                if (ub.getCollectionChanges() != null) {
+                    insertElementCollection(entity, _idAttributes.get(_table)[0], id, ub.getCollectionChanges());
+                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to persist element collection", e);
             }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to persist element collection", e);
+
+            int rowsUpdated = update(ub, sc, null);
+
+            txn.commit();
+            committed = true;
+
+            return rowsUpdated;
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
-
-        int rowsUpdated = update(ub, sc, null);
-
-        txn.commit();
-
-        return rowsUpdated;
     }
 
     public int update(UpdateBuilder ub, final SearchCriteria<?> sc, Integer rows) {
         StringBuilder sql = null;
         PreparedStatement pstmt = null;
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        boolean committed = false;
         try {
             final String searchClause = sc.getWhereClause();
 
@@ -872,12 +881,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             int result = pstmt.executeUpdate();
             txn.commit();
+            committed = true;
             ub.clear();
             return result;
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             handleEntityExistsException(e);
             throw new CloudRuntimeException("Unable to update on DB, due to: " + e.getLocalizedMessage());
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
     }
 
@@ -1266,6 +1280,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = null;
+        boolean committed = false;
         try {
             txn.start();
             for (final Pair<String, Attribute[]> deletSql : _deleteSqls) {
@@ -1281,6 +1296,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
 
             txn.commit();
+            committed = true;
             if (_cache != null) {
                 _cache.remove(id);
             }
@@ -1288,6 +1304,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
     }
 
@@ -1688,34 +1708,42 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     protected void insertElementCollection(T entity, Attribute idAttribute, ID id, Map<Attribute, Object> ecAttributes) throws SQLException {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        for (Map.Entry<Attribute, Object> entry : ecAttributes.entrySet()) {
-            Attribute attr = entry.getKey();
-            Object obj = entry.getValue();
+        boolean committed = false;
+        try {
+            txn.start();
+            for (Map.Entry<Attribute, Object> entry : ecAttributes.entrySet()) {
+                Attribute attr = entry.getKey();
+                Object obj = entry.getValue();
 
-            EcInfo ec = (EcInfo)attr.attache;
-            Enumeration<?> en = null;
-            if (ec.rawClass == null) {
-                en = Collections.enumeration(Arrays.asList((Object[])obj));
-            } else {
-                en = Collections.enumeration((Collection)obj);
-            }
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement(ec.clearSql);
-            prepareAttribute(1, pstmt, idAttribute, id);
-            pstmt.executeUpdate();
-
-            while (en.hasMoreElements()) {
-                pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
-                if (ec.targetClass == Date.class) {
-                    pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date)en.nextElement()));
+                EcInfo ec = (EcInfo)attr.attache;
+                Enumeration<?> en = null;
+                if (ec.rawClass == null) {
+                    en = Collections.enumeration(Arrays.asList((Object[])obj));
                 } else {
-                    pstmt.setObject(1, en.nextElement());
+                    en = Collections.enumeration((Collection)obj);
                 }
-                prepareAttribute(2, pstmt, idAttribute, id);
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(ec.clearSql);
+                prepareAttribute(1, pstmt, idAttribute, id);
                 pstmt.executeUpdate();
+
+                while (en.hasMoreElements()) {
+                    pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
+                    if (ec.targetClass == Date.class) {
+                        pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date)en.nextElement()));
+                    } else {
+                        pstmt.setObject(1, en.nextElement());
+                    }
+                    prepareAttribute(2, pstmt, idAttribute, id);
+                    pstmt.executeUpdate();
+                }
+            }
+            txn.commit();
+            committed = true;
+        } finally {
+            if (!committed) {
+                txn.rollback();
             }
         }
-        txn.commit();
     }
 
     @DB()
@@ -2018,15 +2046,21 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         sql.append(_table).append(" WHERE ").append(_removed.first()).append(" IS NOT NULL");
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
+        boolean committed = false;
         try {
             txn.start();
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
 
             pstmt.executeUpdate();
             txn.commit();
+            committed = true;
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
     }
 
@@ -2038,6 +2072,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
+        boolean committed = false;
         try {
             txn.start();
             pstmt = txn.prepareAutoCloseStatement(_removeSql.first());
@@ -2049,6 +2084,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             final int result = pstmt.executeUpdate();
             txn.commit();
+            committed = true;
             if (_cache != null) {
                 _cache.remove(id);
             }
@@ -2056,6 +2092,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to unremove on DB, due to: " + e.getLocalizedMessage());
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
     }
 
@@ -2087,6 +2127,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
+        boolean committed = false;
         try {
 
             txn.start();
@@ -2099,6 +2140,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             final int result = pstmt.executeUpdate();
             txn.commit();
+            committed = true;
             if (_cache != null) {
                 _cache.remove(id);
             }
@@ -2106,6 +2148,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to remove on DB, due to: " + e.getLocalizedMessage());
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
     }
 
