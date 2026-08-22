@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -78,6 +79,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     public static final String HOSTGROUP = "hostgroup";
     public static final String STORAGE_POD = "pod";
+    public static final String TRANSPORT = "transport";
+    public static final String TRANSPORT_FC = "fc";
+    public static final String TRANSPORT_NVME_TCP = "nvme-tcp";
     public static final String KEY_TTL = "keyttl";
     public static final String CONNECT_TIMEOUT_MS = "connectTimeoutMs";
     public static final String POST_COPY_WAIT_MS = "postCopyWaitMs";
@@ -90,6 +94,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
     private static final String API_LOGIN_VERSION_DEFAULT = "1.19";
     private static final String API_VERSION_DEFAULT = "2.23";
 
+    /** A FlashArray NVMe namespace EUI-128 is exactly 32 hexadecimal characters. */
+    private static final Pattern EUI128_PATTERN = Pattern.compile("[0-9a-fA-F]{32}");
+
     // URLs for which the legacy-auth deprecation WARN has already been emitted,
     // so we don't spam the logs once per refresh per pool while it's still configured.
     private static final Set<String> WARNED_LEGACY_URLS = ConcurrentHashMap.newKeySet();
@@ -99,7 +106,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
     public String hostgroup = null;
     private static final DateTimeFormatter DELETION_TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
-
+    private AddressType volumeAddressType = AddressType.FIBERWWN;
     private String username;
     private String password;
     private String accessToken;
@@ -133,7 +140,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 request, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
 
-        return (ProviderVolume) getFlashArrayItem(list);
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
     }
 
     /**
@@ -152,22 +159,37 @@ public class FlashArrayAdapter implements ProviderAdapter {
         String volumeName = normalizeName(pod, dataObject.getExternalName());
         try {
             FlashArrayList<FlashArrayConnection> list = null;
-            FlashArrayHost host = getHost(hostname);
-            if (host != null) {
-                list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
+            if (AddressType.NVMETCP.equals(volumeAddressType) && hostgroup != null) {
+                // NVMe-TCP pod volumes are connected at the host-group level so the
+                // array assigns a consistent NSID visible to every member host.
+                list = POST("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName, null,
                     new TypeReference<FlashArrayList<FlashArrayConnection>>() {
                 });
+            } else {
+                FlashArrayHost host = getHost(hostname);
+                if (host != null) {
+                    list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
+                        new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                    });
+                }
             }
 
             if (list == null || list.getItems() == null || list.getItems().size() == 0) {
-                throw new RuntimeException("Volume attach did not return lun information");
+                throw new RuntimeException("Volume attach did not return connection information "
+                        + "(expected lun for Fibre Channel or nsid for NVMe-TCP)");
             }
 
             FlashArrayConnection connection = (FlashArrayConnection) this.getFlashArrayItem(list);
+            if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                // The FlashArray REST API does not return nsid in the connections
+                // payload for NVMe-TCP. The namespace is identified on the host by
+                // EUI-128 (see FlashArrayVolume.getAddress()); the value returned
+                // here is stored by the driver only for informational purposes.
+                return connection.getNsid() != null ? "" + connection.getNsid() : "1";
+            }
             if (connection.getLun() == null) {
                 throw new RuntimeException("Volume attach missing lun field");
             }
-
             return "" + connection.getLun();
 
         } catch (Throwable e) {
@@ -179,15 +201,35 @@ public class FlashArrayAdapter implements ProviderAdapter {
                         });
                 if (list != null && list.getItems() != null) {
                     for (FlashArrayConnection conn : list.getItems()) {
-                        if (conn.getHost() != null && conn.getHost().getName() != null &&
-                            (conn.getHost().getName().equals(hostname) || conn.getHost().getName().equals(hostname.substring(0, hostname.indexOf('.')))) &&
-                            conn.getLun() != null) {
+                        if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                            // Prefer a hostgroup-scoped match when a hostgroup is configured
+                            // on the pool; otherwise fall through to matching the connection
+                            // by host like the Fibre Channel branch below. Covers both
+                            // transport=nvme-tcp deployments with and without hostgroup=.
+                            if (hostgroup != null && conn.getHostGroup() != null
+                                    && conn.getHostGroup().getName() != null
+                                    && conn.getHostGroup().getName().equals(hostgroup)) {
+                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            }
+                            if (conn.getHost() != null && conn.getHost().getName() != null
+                                    && (conn.getHost().getName().equals(hostname)
+                                        || (hostname.indexOf('.') > 0
+                                            && conn.getHost().getName()
+                                                .equals(hostname.substring(0, hostname.indexOf('.')))))) {
+                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            }
+                        } else if (conn.getHost() != null && conn.getHost().getName() != null
+                                && (conn.getHost().getName().equals(hostname)
+                                    || (hostname.indexOf('.') > 0
+                                        && conn.getHost().getName()
+                                            .equals(hostname.substring(0, hostname.indexOf('.')))))
+                                && conn.getLun() != null) {
                             return "" + conn.getLun();
                         }
                     }
-                    throw new RuntimeException("Volume lun is not found in existing connection");
+                    throw new RuntimeException("Volume connection identifier (lun/nsid) not found in existing connection");
                 } else {
-                    throw new RuntimeException("Volume lun is not found in existing connection");
+                    throw new RuntimeException("Volume connection is not found in existing connection list");
                 }
             } else {
                 throw e;
@@ -285,7 +327,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
         FlashArrayVolume volume = null;
         try {
-            volume = getVolume(externalName);
+            volume = withAddressType(getVolume(externalName));
             // if we didn't get an address back its likely an empty object
             if (volume != null && volume.getAddress() == null) {
                 return null;
@@ -307,14 +349,37 @@ public class FlashArrayAdapter implements ProviderAdapter {
             throw new RuntimeException("Invalid search criteria provided for getVolumeByAddress");
         }
 
-        // only support WWN type addresses at this time.
-        if (!ProviderVolume.AddressType.FIBERWWN.equals(addressType)) {
+        String serial;
+        if (ProviderVolume.AddressType.FIBERWWN.equals(addressType)) {
+            // Strip the NAA prefix (1 char) + Pure OUI to recover the volume serial.
+            serial = address.substring(FlashArrayVolume.PURE_OUI.length() + 1).toUpperCase();
+        } else if (ProviderVolume.AddressType.NVMETCP.equals(addressType)) {
+            // Reverse the EUI-128 layout: serial = eui[2:16] + eui[22:32], after
+            // stripping the optional "eui." prefix that appears in udev paths.
+            String eui = address.startsWith("eui.") ? address.substring(4) : address;
+            if (eui == null || !EUI128_PATTERN.matcher(eui).matches()) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address ["
+                        + address + "]: expected 32 hexadecimal characters, got "
+                        + (eui == null ? "null" : String.valueOf(eui.length())));
+            }
+            // Validate the FlashArray EUI-128 layout before deriving a serial from it, so a
+            // malformed or tampered address cannot be mapped onto an unintended volume:
+            //   00 + serial[0:14] + <Pure OUI> + serial[14:24]
+            if (!eui.startsWith("00")) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected a \"00\" prefix for a FlashArray namespace");
+            }
+            if (!eui.regionMatches(true, 16, FlashArrayVolume.PURE_OUI_EUI, 0,
+                    FlashArrayVolume.PURE_OUI_EUI.length())) {
+                throw new RuntimeException("Invalid NVMe-TCP EUI-128 address [" + address
+                        + "]: expected the Pure Storage OUI [" + FlashArrayVolume.PURE_OUI_EUI
+                        + "] at offset 16");
+            }
+            serial = (eui.substring(2, 16) + eui.substring(22)).toUpperCase();
+        } else {
             throw new RuntimeException(
                     "Invalid volume address type [" + addressType + "] requested for volume search");
         }
-
-        // convert WWN to serial to search on. strip out WWN type # + Flash OUI value
-        String serial = address.substring(FlashArrayVolume.PURE_OUI.length() + 1).toUpperCase();
         String query = "serial='" + serial + "'";
 
         FlashArrayVolume volume = null;
@@ -328,7 +393,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 return null;
             }
 
-            volume = (FlashArrayVolume) this.getFlashArrayItem(list);
+            volume = withAddressType((FlashArrayVolume) this.getFlashArrayItem(list));
             if (volume != null && volume.getAddress() == null) {
                 return null;
             }
@@ -365,8 +430,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 "/volume-snapshots?source_names=" + sourceDataObject.getExternalName(), null,
                 new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
-
-        return (FlashArrayVolume) getFlashArrayItem(list);
+        // Stamp the pool's volume address type so ProviderSnapshot.getAddress()
+        // emits an NVMe EUI-128 on NVMe-TCP pools. Without this, the adaptive
+        // driver persists the snapshot with an FC-style WWN and subsequent
+        // revert/list operations cannot locate the namespace.
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
     }
 
     /**
@@ -409,7 +477,12 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 "/volume-snapshots?names=" + dataObject.getExternalName(),
                 new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
-        return (FlashArrayVolume) getFlashArrayItem(list);
+        // Stamp the pool's volume address type so ProviderSnapshot.getAddress()
+        // emits an NVMe EUI-128 on NVMe-TCP pools instead of the FIBERWWN
+        // default. Without this, the adaptive driver persists the snapshot
+        // path with an FC-style WWN and revert/list fails to locate the
+        // namespace on the host.
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
     }
 
     @Override
@@ -764,6 +837,13 @@ public class FlashArrayAdapter implements ProviderAdapter {
             }
         }
 
+        String transport = connectionDetails.get(FlashArrayAdapter.TRANSPORT);
+        if (transport == null) {
+            transport = queryParms.get(FlashArrayAdapter.TRANSPORT);
+        }
+        volumeAddressType = TRANSPORT_NVME_TCP.equalsIgnoreCase(transport)
+                ? AddressType.NVMETCP : AddressType.FIBERWWN;
+
         // retrieve for legacy purposes.  if set, we'll remove any connections to hostgroup we find and use the host
         hostgroup = connectionDetails.get(FlashArrayAdapter.HOSTGROUP);
         if (hostgroup == null) {
@@ -937,7 +1017,14 @@ public class FlashArrayAdapter implements ProviderAdapter {
         FlashArrayList<FlashArrayVolume> list = GET("/volume-snapshots?names=" + snapshotName,
                 new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
-        return (FlashArrayVolume) getFlashArrayItem(list);
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
+    }
+
+    private FlashArrayVolume withAddressType(FlashArrayVolume vol) {
+        if (vol != null) {
+            vol.setAddressType(volumeAddressType);
+        }
+        return vol;
     }
 
     private Object getFlashArrayItem(FlashArrayList<?> list) {
@@ -1246,7 +1333,15 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
             if (list != null && list.getItems() != null) {
                 for (FlashArrayConnection conn : list.getItems()) {
-                    if (conn.getHost() != null) {
+                    if (AddressType.NVMETCP.equals(volumeAddressType)) {
+                        // Host-group-scoped NVMe connections come back as one
+                        // entry per host in the group; key on the host name so
+                        // connid.<hostname> is matched in parseAndValidatePath.
+                        if (conn.getHost() != null && conn.getHost().getName() != null) {
+                            String id = conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            map.put(conn.getHost().getName(), id);
+                        }
+                    } else if (conn.getHost() != null) {
                         map.put(conn.getHost().getName(), "" + conn.getLun());
                     }
                 }
