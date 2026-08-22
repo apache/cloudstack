@@ -19,6 +19,21 @@
 -- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
 
+CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
+ `id` bigint unsigned NOT NULL auto_increment,
+ `name` varchar(255) NOT NULL,
+ `uuid` varchar(40),
+ `sort_key` int NOT NULL DEFAULT 0,
+ PRIMARY KEY  (`id`),
+ CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`),
+ CONSTRAINT `uc_service_offering_category__name` UNIQUE (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());
+
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 1;
+ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__category_id` FOREIGN KEY (`category_id`) REFERENCES `cloud`.`service_offering_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'domain_id', 'bigint unsigned DEFAULT NULL COMMENT "NULL for global provider, domain ID for domain-specific" AFTER `redirect_uri`');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.oauth_provider', 'fk_oauth_provider__domain_id', '(`domain_id`)', '`domain`(`id`)');
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_oauth_provider__domain_id', 'cloud.oauth_provider', '(`domain_id`)');
