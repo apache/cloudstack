@@ -24,8 +24,11 @@
 #
 # Both -4 and -6 may be specified multiple times to cover primary and secondary
 # addresses (e.g. link-local + global unicast for IPv6).
-# On delete the bridge neighbour table is queried for all entries matching the
-# MAC address; no separate state file is required.
+# On delete without any -4/-6, the bridge neighbour table is queried for all
+# entries matching the MAC address and every one of them is removed; no separate
+# state file is required. This is what an unplug uses. Given -4/-6 addresses,
+# delete removes only those, which is what removing a single secondary IP from a
+# running Instance needs.
 
 usage() {
     echo "Usage: $0 -o <add|delete> -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ..."
@@ -69,7 +72,24 @@ add_entries() {
     fi
 }
 
+delete_listed_entries() {
+    for addr in "${IPV4_LIST[@]}"; do
+        ip neigh del "${addr}" dev "${BRIDGE}" 2>/dev/null || true
+        ip route del "${addr}/32" dev "${BRIDGE}" 2>/dev/null || true
+    done
+
+    for addr in "${IPV6_LIST[@]}"; do
+        ip -6 neigh del "${addr}" dev "${BRIDGE}" 2>/dev/null || true
+        ip -6 route del "${addr}/128" dev "${BRIDGE}" 2>/dev/null || true
+    done
+}
+
 delete_entries() {
+    if [[ "${#IPV4_LIST[@]}" -gt 0 || "${#IPV6_LIST[@]}" -gt 0 ]]; then
+        delete_listed_entries
+        return 0
+    fi
+
     # Find all IPv4 neighbour entries on the bridge matching this MAC and remove them
     while read -r addr; do
         ip neigh del "${addr}" dev "${BRIDGE}" 2>/dev/null || true

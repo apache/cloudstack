@@ -52,6 +52,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -659,4 +660,96 @@ public class ConfigDriveBuilderTest {
         Assert.assertEquals(expectedJsonObject, actualJson);
         folder.delete();
     }
+
+    private NicProfile directRoutedNicProfile() {
+        NicProfile nic = new NicProfile();
+        nic.setId(1L);
+        nic.setDeviceId(0);
+        nic.setMacAddress("02:00:4c:5f:00:01");
+        nic.setIPv4Address("203.0.113.55");
+        nic.setIPv4Netmask("255.255.255.255");
+        nic.setIPv4Gateway("169.254.0.1");
+        nic.setIPv6Address("2001:db8:1::55");
+        nic.setIPv6Cidr("2001:db8:1::55/128");
+        nic.setIPv6Gateway("fe80::1");
+        nic.setIPv4Dns1("8.8.8.8");
+        return nic;
+    }
+
+    private NicProfile sharedNicProfile() {
+        NicProfile nic = new NicProfile();
+        nic.setId(1L);
+        nic.setDeviceId(0);
+        nic.setMacAddress("02:00:4c:5f:00:02");
+        nic.setIPv4Address("10.1.1.55");
+        nic.setIPv4Netmask("255.255.255.0");
+        nic.setIPv4Gateway("10.1.1.1");
+        return nic;
+    }
+
+    @Test
+    public void isDirectRoutedNicRecognisesHostRouteForm() {
+        Assert.assertTrue(ConfigDriveBuilder.isDirectRoutedNic(directRoutedNicProfile()));
+    }
+
+    @Test
+    public void isDirectRoutedNicRecognisesIpv6OnlyForm() {
+        NicProfile nic = directRoutedNicProfile();
+        nic.setIPv4Address(null);
+        nic.setIPv4Netmask(null);
+        nic.setIPv4Gateway(null);
+        Assert.assertTrue(ConfigDriveBuilder.isDirectRoutedNic(nic));
+    }
+
+    @Test
+    public void isDirectRoutedNicRejectsOrdinaryNics() {
+        Assert.assertFalse(ConfigDriveBuilder.isDirectRoutedNic(sharedNicProfile()));
+        Assert.assertFalse(ConfigDriveBuilder.isDirectRoutedNic(null));
+        // a /32 with an ordinary gateway is not direct routed
+        NicProfile hostMaskOnly = sharedNicProfile();
+        hostMaskOnly.setIPv4Netmask("255.255.255.255");
+        Assert.assertFalse(ConfigDriveBuilder.isDirectRoutedNic(hostMaskOnly));
+    }
+
+    @Test
+    public void ordinaryNicRouteGenerationIsUnchanged() {
+        JsonArray networks = ConfigDriveBuilder.getNetworksJsonArrayForNic(sharedNicProfile());
+        JsonObject ipv4Network = networks.get(0).getAsJsonObject();
+        JsonArray routes = ipv4Network.getAsJsonArray("routes");
+        Assert.assertEquals(1, routes.size());
+        JsonObject defaultRoute = routes.get(0).getAsJsonObject();
+        Assert.assertEquals("0.0.0.0", defaultRoute.get("network").getAsString());
+        Assert.assertEquals("0.0.0.0", defaultRoute.get("netmask").getAsString());
+        Assert.assertEquals("10.1.1.1", defaultRoute.get("gateway").getAsString());
+    }
+
+    @Test
+    public void networkDataIsGeneratedForDirectRoutedNicWithoutDhcpOrDns() throws Exception {
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        try {
+            Map<Long, List<Network.Service>> userDataOnly = Map.of(1L, List.of(Network.Service.UserData));
+            ConfigDriveBuilder.writeNetworkData(List.of(directRoutedNicProfile()), userDataOnly, folder.getRoot());
+            String json = FileUtils.readFileToString(new File(folder.getRoot(), "network_data.json"), com.cloud.utils.StringUtils.getPreferredCharset());
+            Assert.assertTrue("direct routed nic must appear in network_data.json", json.contains("203.0.113.55"));
+            Assert.assertTrue(json.contains("169.254.0.1"));
+        } finally {
+            folder.delete();
+        }
+    }
+
+    @Test
+    public void networkDataStaysEmptyForOrdinaryNicWithoutDhcpOrDns() throws Exception {
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        try {
+            Map<Long, List<Network.Service>> userDataOnly = Map.of(1L, List.of(Network.Service.UserData));
+            ConfigDriveBuilder.writeNetworkData(List.of(sharedNicProfile()), userDataOnly, folder.getRoot());
+            String json = FileUtils.readFileToString(new File(folder.getRoot(), "network_data.json"), com.cloud.utils.StringUtils.getPreferredCharset());
+            Assert.assertEquals("historical gate must be preserved for ordinary nics", "{}", json);
+        } finally {
+            folder.delete();
+        }
+    }
+
 }
