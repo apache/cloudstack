@@ -50,6 +50,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.net.NetUtils;
 
 import static com.cloud.network.Network.Service.Dhcp;
 import static com.cloud.network.Network.Service.Dns;
@@ -97,10 +98,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         type = CommandType.STRING,
         description = "The internet protocol of the offering. Options are IPv4 and dualstack. Default is IPv4. dualstack will create an offering that supports both IPv4 and IPv6",
         since = "4.17.0",
-        allowedValues = {
-                "IPv4",
-                "DualStack"
-        })
+        allowedValueType = NetUtils.InternetProtocol.class)
     private String internetProtocol;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,

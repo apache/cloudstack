@@ -37,6 +37,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.template.TemplateApiType;
 
 @APICommand(name = "getUploadParamsForTemplate", description = "Upload an existing Template into the CloudStack cloud. ",
         responseObject = GetUploadParamsResponse.class, since = "4.6.0",
@@ -108,7 +109,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     @Parameter(name = ApiConstants.TEMPLATE_TYPE,
             type = CommandType.STRING,
-            allowedValues = {"USER", "VNF", "SYSTEM", "ROUTING", "BUILTIN"},
+            allowedValueType = TemplateApiType.class,
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
             since = "4.22.0")
     private String templateType;

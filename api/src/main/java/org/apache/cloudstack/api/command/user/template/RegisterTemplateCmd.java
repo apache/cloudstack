@@ -45,6 +45,7 @@ import com.cloud.cpu.CPU;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.template.TemplateApiType;
 import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing Template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
@@ -182,7 +183,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.TEMPLATE_TYPE,
             type = CommandType.STRING,
-            allowedValues = {"USER", "VNF", "SYSTEM", "ROUTING", "BUILTIN"},
+            allowedValueType = TemplateApiType.class,
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
             since = "4.19.0")
     private String templateType;
