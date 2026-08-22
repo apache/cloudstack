@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -138,6 +139,12 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             "ca.plugin.root.allow.expired.cert",
             "true",
             "When set to true, it will allow expired client certificate during SSL handshake.", true);
+
+    protected static ConfigKey<Boolean> rootCACertSignatureVerification = new ConfigKey<>("Advanced", Boolean.class,
+            "ca.plugin.root.ca.signature.verification",
+            "false",
+            "Verify that agent, server and peer management certificates are signed by the CloudStack root CA. Enforced only when ca.plugin.root.auth.strictness is true; " +
+            "otherwise signature failures are only logged and the connection is allowed. Enable only after all agents use CA-signed certificates.", true);
 
     private static String managementCertificateCustomSAN;
 
@@ -279,8 +286,9 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
         final boolean authStrictness = rootCAAuthStrictness.value();
         final boolean allowExpiredCertificate = rootCAAllowExpiredCert.value();
+        final boolean certSignatureVerification = rootCACertSignatureVerification.value();
 
-        TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certMap, caCertificates, crlDao)};
+        TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certSignatureVerification, certMap, caCertificates, crlDao)};
 
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         final SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -575,7 +583,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                 rootCACertificate,
                 rootCAIssuerDN,
                 rootCAAuthStrictness,
-                rootCAAllowExpiredCert
+                rootCAAllowExpiredCert,
+                rootCACertSignatureVerification
         };
     }
 
@@ -595,6 +604,30 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             return false;
         }
         X509Certificate x509Certificate = (X509Certificate) certificate;
+
+        // When signature verification is enabled, confirm the certificate was issued by one of our root CAs
+        // before trusting its SAN. Otherwise any self-signed certificate carrying the management SAN
+        // would qualify as a peer management node.
+        if (rootCACertSignatureVerification.value()) {
+            if (CollectionUtils.isEmpty(caCertificates)) {
+                logger.warn("Cannot verify management certificate signature because no root CA certificate is available");
+                return false;
+            }
+            boolean signedByCA = false;
+            for (final X509Certificate ca : caCertificates) {
+                try {
+                    x509Certificate.verify(ca.getPublicKey());
+                    signedByCA = true;
+                    break;
+                } catch (final GeneralSecurityException e) {
+                    // try the next CA certificate
+                }
+            }
+            if (!signedByCA) {
+                logger.warn("Management certificate is not signed by the root CA");
+                return false;
+            }
+        }
 
         // Check for alternative names
         Collection<List<?>> altNames = x509Certificate.getSubjectAlternativeNames();

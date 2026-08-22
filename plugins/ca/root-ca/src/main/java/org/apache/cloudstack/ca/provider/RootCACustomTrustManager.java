@@ -18,6 +18,7 @@
 package org.apache.cloudstack.ca.provider;
 
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -27,6 +28,7 @@ import java.util.Map;
 
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -39,19 +41,34 @@ public final class RootCACustomTrustManager implements X509TrustManager {
     private String clientAddress = "Unknown";
     private boolean authStrictness = true;
     private boolean allowExpiredCertificate = true;
+    private boolean certSignatureVerification = false;
     private CrlDao crlDao;
     private List<X509Certificate> caCertificates;
     private Map<String, X509Certificate> activeCertMap;
 
-    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final Map<String, X509Certificate> activeCertMap, final List<X509Certificate> caCertificates, final CrlDao crlDao) {
+    public RootCACustomTrustManager(final String clientAddress, final boolean authStrictness, final boolean allowExpiredCertificate, final boolean certSignatureVerification,
+            final Map<String, X509Certificate> activeCertMap, final List<X509Certificate> caCertificates, final CrlDao crlDao) {
         if (StringUtils.isNotEmpty(clientAddress)) {
             this.clientAddress = clientAddress.replace("/", "").split(":")[0];
         }
         this.authStrictness = authStrictness;
         this.allowExpiredCertificate = allowExpiredCertificate;
+        this.certSignatureVerification = certSignatureVerification;
         this.activeCertMap = activeCertMap;
         this.caCertificates = caCertificates;
         this.crlDao = crlDao;
+    }
+
+    private boolean isSignedByAnyRootCA(final X509Certificate certificate) {
+        for (final X509Certificate ca : caCertificates) {
+            try {
+                certificate.verify(ca.getPublicKey());
+                return true;
+            } catch (final GeneralSecurityException e) {
+                // try the next CA certificate
+            }
+        }
+        return false;
     }
 
     private void printCertificateChain(final X509Certificate[] certificates, final String s) throws CertificateException {
@@ -89,6 +106,22 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         } else if (primaryClientCertificate == null) {
             logger.info("No certificate was received from client, but continuing since strict auth mode is disabled");
             return;
+        }
+
+        // CA signature check: confirm the cert was actually issued by one of our root CAs
+        if (certSignatureVerification) {
+            if (CollectionUtils.isEmpty(caCertificates)) {
+                final String errorMsg = "Cannot verify client certificate signature because no root CA certificate is available, from address=" + clientAddress;
+                if (authStrictness) {
+                    throw new CertificateException(errorMsg);
+                }
+                logger.warn(errorMsg + "; continuing since strict auth mode is disabled");
+            } else if (!isSignedByAnyRootCA(primaryClientCertificate)) {
+                final String errorMsg = String.format("Client certificate is not signed by the root CA, serial=%x, subject=%s from address=%s",
+                        primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
+                logger.error(errorMsg);
+                exceptionMsg = (StringUtils.isEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
+            }
         }
 
         // Revocation check
@@ -146,7 +179,37 @@ public final class RootCACustomTrustManager implements X509TrustManager {
     }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    public void checkServerTrusted(final X509Certificate[] certificates, final String s) throws CertificateException {
+        if (logger.isDebugEnabled()) {
+            printCertificateChain(certificates, s);
+        }
+        if (!certSignatureVerification) {
+            return;
+        }
+        if (CollectionUtils.isEmpty(caCertificates)) {
+            final String errorMsg = "Cannot verify server certificate signature because no root CA certificate is available, from address=" + clientAddress;
+            if (authStrictness) {
+                throw new CertificateException(errorMsg);
+            }
+            logger.warn(errorMsg + "; continuing since strict auth mode is disabled");
+            return;
+        }
+        final X509Certificate primaryServerCertificate = (certificates != null && certificates.length > 0 && certificates[0] != null) ? certificates[0] : null;
+        if (primaryServerCertificate == null) {
+            final String errorMsg = "No certificate was presented by the server from address=" + clientAddress;
+            logger.error(errorMsg);
+            if (authStrictness) {
+                throw new CertificateException(errorMsg);
+            }
+            return;
+        }
+        if (!isSignedByAnyRootCA(primaryServerCertificate)) {
+            final String errorMsg = "Server certificate is not signed by the root CA from address=" + clientAddress;
+            logger.error(errorMsg);
+            if (authStrictness) {
+                throw new CertificateException(errorMsg);
+            }
+        }
     }
 
     @Override
