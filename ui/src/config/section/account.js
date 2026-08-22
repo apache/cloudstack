@@ -122,6 +122,31 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddLdapAccount.vue')))
     },
     {
+      api: 'linkAccountToLdap',
+      icon: 'LinkOutlined',
+      label: 'label.link.account.to.ldap',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      dataView: true,
+      show: (record, store) => {
+        return store.isLdapEnabled
+      },
+      args: ['type', 'domainid', 'ldapdomain', 'account', 'accounttype', 'roleid', 'admin'],
+      mapping: {
+        type: {
+          options: ['GROUP', 'OU']
+        },
+        accounttype: {
+          options: ['0', '2']
+        },
+        domainid: {
+          value: (record) => { return record.domainid }
+        },
+        account: {
+          value: (record) => { return record.name }
+        }
+      }
+    },
+    {
       api: 'updateAccount',
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
