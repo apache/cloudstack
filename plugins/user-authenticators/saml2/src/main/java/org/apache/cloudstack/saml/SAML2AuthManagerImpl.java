@@ -54,6 +54,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
@@ -92,6 +94,10 @@ import com.cloud.utils.component.AdapterBase;
 @Component
 public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManager, Configurable {
 
+    /** Remembers the user's Source (e.g. LDAP) from before SAML was authorized, so disabling
+     * SAML can fall back to it instead of always defaulting to {@link User.Source#UNKNOWN}. */
+    private static final String PRE_SAML_SOURCE_DETAIL_KEY = "PreSamlSource";
+
     private SAMLProviderMetadata _spMetadata = new SAMLProviderMetadata();
     private Map<String, SAMLProviderMetadata> _idpMetadataMap = new HashMap<String, SAMLProviderMetadata>();
 
@@ -114,6 +120,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
 
     @Inject
     private UserDao _userDao;
+
+    @Inject
+    private UserDetailsDao userDetailsDao;
 
     @Inject
     DomainManager _domainMgr;
@@ -448,13 +457,16 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         UserVO user = _userDao.getUser(userId);
         if (user != null) {
             if (enable) {
+                if (user.getSource() != null && !User.Source.SAML2.equals(user.getSource()) && !User.Source.SAML2DISABLED.equals(user.getSource())) {
+                    userDetailsDao.addDetail(user.getId(), PRE_SAML_SOURCE_DETAIL_KEY, user.getSource().toString(), false);
+                }
                 user.setExternalEntity(entityId);
                 user.setSource(User.Source.SAML2);
             } else {
                 boolean enableLoginAfterSAMLDisable =  SAML2AuthManager.EnableLoginAfterSAMLDisable.value();
                 if (user.getSource().equals(User.Source.SAML2)) {
                     if(enableLoginAfterSAMLDisable) {
-                        user.setSource(User.Source.UNKNOWN);
+                        user.setSource(getPreSamlSource(user.getId()));
                     } else {
                         user.setSource(User.Source.SAML2DISABLED);
                     }
@@ -466,6 +478,22 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             return true;
         }
         return false;
+    }
+
+    /**
+     * The Source (e.g. LDAP) the user had before SAML was authorized for them, so disabling
+     * SAML can restore it instead of always falling back to {@link User.Source#UNKNOWN}.
+     */
+    private User.Source getPreSamlSource(long userId) {
+        UserDetailVO preSamlSource = userDetailsDao.findDetail(userId, PRE_SAML_SOURCE_DETAIL_KEY);
+        if (preSamlSource != null) {
+            try {
+                return User.Source.valueOf(preSamlSource.getValue());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Unrecognized pre-SAML source '{}' stored for user {}; falling back to UNKNOWN", preSamlSource.getValue(), userId);
+            }
+        }
+        return User.Source.UNKNOWN;
     }
 
     @Override
