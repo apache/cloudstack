@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import java.util.List;
+
 import com.cloud.user.Account;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePool;
@@ -52,6 +54,18 @@ public interface SnapshotManager extends Configurable {
 
     public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
             "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
+
+    ConfigKey<Integer> SnapshotRecurringMaxFailures = new ConfigKey<>(Integer.class, "snapshot.recurring.max.failures", "Snapshots", "3",
+            "Maximum number of consecutive failed attempts allowed for a recurring snapshot before it is left until its next regularly scheduled run and a failure event is logged. Set to 0 to retry indefinitely.",
+            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain, ConfigKey.Scope.Zone, ConfigKey.Scope.Global), null);
+
+    ConfigKey<Integer> SnapshotRecurringRetryInterval = new ConfigKey<>(Integer.class, "snapshot.recurring.retry.interval", "Snapshots", "300",
+            "Time in seconds to wait before retrying a failed recurring snapshot attempt.",
+            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain, ConfigKey.Scope.Zone, ConfigKey.Scope.Global), null);
+
+    ConfigKey<Boolean> SnapshotSkipIfVmNotRunning = new ConfigKey<>(Boolean.class, "snapshot.skip.if.vm.not.running", "Snapshots", "false",
+            "For recurring snapshots, skip taking a new snapshot of a volume (and log a skipped event instead) when the VM it is attached to has not been running since the last snapshot was taken, since nothing on the volume could have changed.",
+            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain, ConfigKey.Scope.Zone, ConfigKey.Scope.Global), null);
 
     public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "true", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requires qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
 
