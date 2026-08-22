@@ -2318,6 +2318,7 @@ public class KbossBackupProviderTest {
         doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
         doReturn("/volume/path").when(volumeObjectToMock).getPath();
+        doReturn(true).when(vmSnapshotVoMock).getCurrent();
 
         doReturn(Map.of()).when(kbossBackupProviderSpy)
                 .gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectToMock), vmSnapshotVoMock);
