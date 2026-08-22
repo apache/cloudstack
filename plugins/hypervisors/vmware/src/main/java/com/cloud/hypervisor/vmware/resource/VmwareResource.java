@@ -5295,6 +5295,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 available = dsClusterSummary.getFreeSpace();
 
                 List<ManagedObjectReference> childDatastoreMors = datastoreClusterMo.getDatastoresInDatastoreCluster();
+                if (childDatastoreMors.isEmpty()) {
+                    logger.warn("vCenter reported zero child datastores for datastore cluster {} (pool {}); this host may lack visibility " +
+                            "of the underlying datastores in this Storage Pod, or vCenter's inventory may be out of date", morDatastore.getValue(), pool.getUuid());
+                }
                 for (ManagedObjectReference childDsMor : childDatastoreMors) {
                     DatastoreMO childDsMo = new DatastoreMO(getServiceContext(), childDsMor);
 
