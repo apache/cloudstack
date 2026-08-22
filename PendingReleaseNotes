@@ -39,3 +39,8 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+KVM console:
+  * Added the global setting `consoleproxy.kvm.multiple.viewers.enabled` to allow
+    multiple users to simultaneously access the console of the same KVM user VM.
+    The setting defaults to false to preserve the existing single-viewer behavior.

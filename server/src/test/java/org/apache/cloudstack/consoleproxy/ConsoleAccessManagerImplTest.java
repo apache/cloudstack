@@ -546,6 +546,80 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
+    public void getConsoleConnectionDetailsRequiresNewViewerForKVMUserVmWhenMultipleViewersEnabled() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        String hostAddress = "192.168.1.100";
+        int port = 5900;
+        Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, port);
+
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.when(vm.getHostName()).thenReturn("vm-hostname");
+        Mockito.when(vm.getVncPassword()).thenReturn("vnc-password");
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong(), Mockito.anyList())).thenReturn(Map.of());
+        Mockito.when(managementServer.getVncPort(vm)).thenReturn(hostPortInfo);
+        Mockito.doReturn(new Ternary<>(hostAddress, null, null))
+                .when(consoleAccessManager).parseHostInfo(Mockito.anyString());
+        Mockito.doReturn(true).when(consoleAccessManager).isKvmMultipleConsoleViewersEnabled();
+
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isSessionRequiresNewViewer());
+    }
+
+    @Test
+    public void getConsoleConnectionDetailsDoesNotRequireNewViewerForKVMUserVmWhenMultipleViewersDisabled() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        String hostAddress = "192.168.1.100";
+        int port = 5900;
+        Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, port);
+
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.when(vm.getHostName()).thenReturn("vm-hostname");
+        Mockito.when(vm.getVncPassword()).thenReturn("vnc-password");
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong(), Mockito.anyList())).thenReturn(Map.of());
+        Mockito.when(managementServer.getVncPort(vm)).thenReturn(hostPortInfo);
+        Mockito.doReturn(new Ternary<>(hostAddress, null, null))
+                .when(consoleAccessManager).parseHostInfo(Mockito.anyString());
+        Mockito.doReturn(false).when(consoleAccessManager).isKvmMultipleConsoleViewersEnabled();
+
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isSessionRequiresNewViewer());
+    }
+
+    @Test
+    public void getConsoleConnectionDetailsDoesNotRequireNewViewerForKVMSystemVm() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        String hostAddress = "192.168.1.100";
+        int port = 5900;
+        Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, port);
+
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.when(vm.getHostName()).thenReturn("vm-hostname");
+        Mockito.when(vm.getVncPassword()).thenReturn("vnc-password");
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong(), Mockito.anyList())).thenReturn(Map.of());
+        Mockito.when(managementServer.getVncPort(vm)).thenReturn(hostPortInfo);
+        Mockito.doReturn(new Ternary<>(hostAddress, null, null))
+                .when(consoleAccessManager).parseHostInfo(Mockito.anyString());
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isSessionRequiresNewViewer());
+        Mockito.verify(consoleAccessManager, Mockito.never()).isKvmMultipleConsoleViewersEnabled();
+    }
+
+    @Test
     public void getConsoleConnectionDetailsReturnsDetailsWithRDPForHyperV() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
