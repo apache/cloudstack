@@ -29,6 +29,47 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.configuration.Resource;
+import com.cloud.domain.DomainVO;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network;
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.usage.UsageVO;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.net.Ip;
+import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,40 +83,16 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
-import org.apache.cloudstack.api.response.IpQuarantineResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-import com.cloud.capacity.Capacity;
-import com.cloud.configuration.Resource;
-import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
-import com.cloud.network.PublicIpQuarantine;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.AutoScaleVmProfileVO;
-import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.resource.icon.ResourceIconVO;
@@ -83,19 +100,7 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.usage.UsageVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.UserDataDao;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VMInstanceVO;
 
 import static org.junit.Assert.assertEquals;
@@ -150,6 +155,12 @@ public class ApiResponseHelperTest {
     @Mock
     private VMInstanceVO vmInstanceVOMock;
 
+    @Mock
+    private VpcVO vpcVOMock;
+
+    @Mock
+    private NetworkACL networkACLMock;
+
     @Spy
     @InjectMocks
     ApiResponseHelper apiResponseHelper = new ApiResponseHelper();
@@ -167,6 +178,9 @@ public class ApiResponseHelperTest {
     static String userdataNew = "userdataNew";
 
     static long autoScaleUserId = 7L;
+
+    static final String A_NAME = "name";
+    static final String A_UUID = "021f94d4-73f9-4a9a-b003-1df9dd968a09";
 
     @Before
     public void injectMocks() throws SecurityException, NoSuchFieldException,
@@ -799,5 +813,136 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getVmId(), response.getVmId());
             Assert.assertEquals(expected.getVmName(), response.getVmName());
         }
+    }
+
+    @Test
+    public void setVpcIdInResponseTestNullVpcIdReturnNull() {
+        NetworkResponse networkResponse = new NetworkResponse();
+
+        apiResponseHelper.setVpcIdInResponse(null, networkResponse::setVpcId, networkResponse::setVpcName, networkResponse::setVpcAccess);
+        Assert.assertNull(networkResponse.getVpcId());
+        Assert.assertNull(networkResponse.getVpcName());
+        Assert.assertNull(networkResponse.getVpcAccess());
+    }
+
+    @Test
+    public void setVpcIdInResponseTestNullVpcReturnNull() {
+        NetworkResponse networkResponse = new NetworkResponse();
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findVpcById(1L)).thenReturn(null);
+            apiResponseHelper.setVpcIdInResponse(1L, networkResponse::setVpcId, networkResponse::setVpcName, networkResponse::setVpcAccess);
+        }
+        Assert.assertNull(networkResponse.getVpcId());
+        Assert.assertNull(networkResponse.getVpcName());
+        Assert.assertNull(networkResponse.getVpcAccess());
+    }
+
+    @Test
+    public void setVpcIdInResponseCallerHasAccessReturnVpcAccessTrueAndVpcIdAndVpcName() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        Mockito.when(vpcVOMock.getName()).thenReturn(A_NAME);
+        Mockito.when(vpcVOMock.getUuid()).thenReturn(A_UUID);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findVpcById(1L)).thenReturn(vpcVOMock);
+            apiResponseHelper.setVpcIdInResponse(1L, networkResponse::setVpcId, networkResponse::setVpcName, networkResponse::setVpcAccess);
+        };
+        Assert.assertEquals(A_UUID, networkResponse.getVpcId());
+        Assert.assertEquals(A_NAME, networkResponse.getVpcName());
+        Assert.assertTrue(networkResponse.getVpcAccess());
+    }
+
+    @Test
+    public void setVpcIdInResponseCallerDoesNotHaveAccessReturnVpcAccessFalseAndVpcIdAndVpcName() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        Mockito.when(vpcVOMock.getName()).thenReturn(A_NAME);
+        Mockito.when(vpcVOMock.getUuid()).thenReturn(A_UUID);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findVpcById(1L)).thenReturn(vpcVOMock);
+            Mockito.doThrow(PermissionDeniedException.class).when(accountManagerMock).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+            apiResponseHelper.setVpcIdInResponse(1L, networkResponse::setVpcId, networkResponse::setVpcName, networkResponse::setVpcAccess);
+        };
+        Assert.assertEquals(A_UUID, networkResponse.getVpcId());
+        Assert.assertEquals(A_NAME, networkResponse.getVpcName());
+        Assert.assertFalse(networkResponse.getVpcAccess());
+    }
+
+    @Test
+    public void setAclIdInResponseTestNullNetworkAclIdReturnNull() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(null);
+
+        apiResponseHelper.setAclIdInResponse(networkMock, networkResponse);
+        Assert.assertNull(networkResponse.getAclId());
+        Assert.assertNull(networkResponse.getAclName());
+    }
+
+    @Test
+    public void setAclIdInResponseTestNullAclReturnNull() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(1L);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findByNetworkACLId(1L)).thenReturn(null);
+            apiResponseHelper.setAclIdInResponse(networkMock, networkResponse);
+        }
+        Assert.assertNull(networkResponse.getAclId());
+        Assert.assertNull(networkResponse.getAclName());
+    }
+
+    @Test
+    public void setAclIdInResponseTestCallerDoesNotHaveAccessReturnNull() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        networkResponse.setVpcAccess(false);
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(1L);
+        Mockito.when(networkACLMock.getVpcId()).thenReturn(2L);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findByNetworkACLId(1L)).thenReturn(networkACLMock);
+            apiResponseHelper.setAclIdInResponse(networkMock, networkResponse);
+        }
+        Assert.assertNull(networkResponse.getAclId());
+        Assert.assertNull(networkResponse.getAclName());
+    }
+
+    @Test
+    public void setAclIdInResponseTestCallerDoesNotHaveAccessButAclIsGlobalReturnAclIdAndAclName() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        networkResponse.setVpcAccess(false);
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(1L);
+        Mockito.when(networkACLMock.getVpcId()).thenReturn(0L);
+        Mockito.when(networkACLMock.getName()).thenReturn(A_NAME);
+        Mockito.when(networkACLMock.getUuid()).thenReturn(A_UUID);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findByNetworkACLId(1L)).thenReturn(networkACLMock);
+            apiResponseHelper.setAclIdInResponse(networkMock, networkResponse);
+        }
+        Assert.assertEquals(A_UUID, networkResponse.getAclId());
+        Assert.assertEquals(A_NAME, networkResponse.getAclName());
+    }
+
+    @Test
+    public void setAclIdInResponseTestCallerHasAccessReturnAclIdAndAclName() {
+        NetworkResponse networkResponse = new NetworkResponse();
+        networkResponse.setVpcAccess(true);
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.when(networkMock.getNetworkACLId()).thenReturn(1L);
+        Mockito.lenient().when(networkACLMock.getVpcId()).thenReturn(2L);
+        Mockito.when(networkACLMock.getName()).thenReturn(A_NAME);
+        Mockito.when(networkACLMock.getUuid()).thenReturn(A_UUID);
+
+        try (MockedStatic<ApiDBUtils> utils = Mockito.mockStatic(ApiDBUtils.class)) {
+            utils.when(() -> ApiDBUtils.findByNetworkACLId(1L)).thenReturn(networkACLMock);
+            apiResponseHelper.setAclIdInResponse(networkMock, networkResponse);
+        }
+        Assert.assertEquals(A_UUID, networkResponse.getAclId());
+        Assert.assertEquals(A_NAME, networkResponse.getAclName());
     }
 }
