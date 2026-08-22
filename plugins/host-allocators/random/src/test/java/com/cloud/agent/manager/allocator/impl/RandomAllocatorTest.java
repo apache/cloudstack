@@ -28,15 +28,24 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachineProfile;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RandomAllocatorTest {
 
     @Mock
     HostDao hostDao;
+    @Mock
+    CapacityManager capacityManager;
     @InjectMocks
     RandomAllocator randomAllocator;
 
@@ -76,5 +85,38 @@ public class RandomAllocatorTest {
         result = randomAllocator.listHostsByTags(type, id, id, id, null, templateTag);
         Assert.assertFalse(CollectionUtils.isEmpty(result));
         Assert.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void testAllocateToUsesScopedRuleTagLookup() {
+        Host.Type type = Host.Type.Routing;
+        long dcId = 1L;
+        Long podId = 2L;
+        Long clusterId = 3L;
+        String offeringTag = "compute";
+
+        DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+        Mockito.when(plan.getDataCenterId()).thenReturn(dcId);
+        Mockito.when(plan.getPodId()).thenReturn(podId);
+        Mockito.when(plan.getClusterId()).thenReturn(clusterId);
+
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(vmProfile.getServiceOffering()).thenReturn(offering);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
+        Mockito.when(offering.getHostTag()).thenReturn(offeringTag);
+
+        HostVO host = Mockito.mock(HostVO.class);
+        List<Host> hosts = List.of(host);
+        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, dcId, offeringTag)).thenReturn(List.of(host));
+        Mockito.when(hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId)).thenReturn(new ArrayList<>());
+        Mockito.when(capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, true)).thenReturn(new Pair<>(true, true));
+
+        List<Host> result = randomAllocator.allocateTo(vmProfile, plan, type, new ExcludeList(), hosts, 1, true);
+
+        Assert.assertEquals(1, result.size());
+        Mockito.verify(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+        Mockito.verify(hostDao, Mockito.never()).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
     }
 }
