@@ -21,12 +21,17 @@ package org.apache.cloudstack.storage.vmsnapshot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,6 +49,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroup;
+import org.apache.cloudstack.storage.feign.model.ConsistencyGroupSnapshot;
+import org.apache.cloudstack.storage.feign.model.FlexVolSnapshot;
+import org.apache.cloudstack.storage.feign.model.Job;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
+import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+import org.apache.cloudstack.storage.service.StorageStrategy;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -127,6 +140,10 @@ class OntapVMSnapshotStrategyTest {
     private VolumeDataFactory volumeDataFactory;
     @Mock
     private VolumeDetailsDao volumeDetailsDao;
+    @Mock
+    private StorageStrategy storageStrategy;
+    @Mock
+    private SnapshotFeignClient snapshotFeignClient;
 
     @Spy
     @InjectMocks
@@ -226,14 +243,18 @@ class OntapVMSnapshotStrategyTest {
     }
 
     @Test
-    void testCanHandle_AllocatedDiskType_VmNotRunning_ReturnsCantHandle() {
+    void testCanHandle_AllocatedDiskType_VmStopped_ReturnsHighest() {
         UserVmVO userVm = createMockUserVm(Hypervisor.HypervisorType.KVM, VirtualMachine.State.Stopped);
         when(userVmDao.findById(VM_ID)).thenReturn(userVm);
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Allocated, VMSnapshot.Type.Disk);
+        VolumeVO vol = createMockVolume(VOLUME_ID_1, POOL_ID_1);
+        when(volumeDao.findByInstance(VM_ID)).thenReturn(Collections.singletonList(vol));
+        StoragePoolVO pool = createOntapManagedPool(POOL_ID_1);
+        when(storagePool.findById(POOL_ID_1)).thenReturn(pool);
 
         StrategyPriority result = strategy.canHandle(vmSnapshot);
 
-        assertEquals(StrategyPriority.CANT_HANDLE, result);
+        assertEquals(StrategyPriority.HIGHEST, result);
     }
 
     @Test
@@ -532,6 +553,86 @@ class OntapVMSnapshotStrategyTest {
                 () -> strategy.groupVolumesByFlexVol(Collections.singletonList(volumeTO1)));
     }
 
+    @Test
+    void testCreateTemporaryConsistencyGroup_includesSvmName() {
+        SnapshotFeignClient client = mock(SnapshotFeignClient.class);
+        StorageStrategy storageStrategy = mock(StorageStrategy.class);
+        when(client.createConsistencyGroup(any(), any())).thenReturn(createJobResponse("job-cg-create"));
+        OntapResponse<ConsistencyGroup> cgResponse = new OntapResponse<>();
+        ConsistencyGroup cgRecord = new ConsistencyGroup();
+        cgRecord.setUuid("cg-uuid-1");
+        cgResponse.setRecords(Collections.singletonList(cgRecord));
+        when(client.getConsistencyGroups(any(), any())).thenReturn(cgResponse);
+
+        String cgUuid = strategy.createTemporaryConsistencyGroup(client, storageStrategy, "auth",
+                "cg-name", new OntapVMSnapshotStrategy.ConsistencyGroupScope("10.0.0.1", "vs0", "svm-uuid-1"),
+                java.util.Set.of("flexvol-uuid-1", "flexvol-uuid-2"));
+
+        assertEquals("cg-uuid-1", cgUuid);
+        org.mockito.ArgumentCaptor<ConsistencyGroup> payloadCaptor = org.mockito.ArgumentCaptor.forClass(ConsistencyGroup.class);
+        verify(client).createConsistencyGroup(eq("auth"), payloadCaptor.capture());
+        ConsistencyGroup payload = payloadCaptor.getValue();
+        assertEquals("cg-name", payload.getName());
+        assertEquals("svm-uuid-1", payload.getSvm().getUuid());
+        assertEquals(2, payload.getVolumes().size());
+        assertEquals(OntapStorageConstants.CG_VOLUME_PROVISIONING_ACTION_ADD,
+                payload.getVolumes().get(0).getProvisioningOptions().getAction());
+    }
+
+    @Test
+    void testResolveConsistencyGroupScope_rejectsDifferentStorageIpWithSameSvmName() {
+        Map<String, OntapVMSnapshotStrategy.FlexVolGroupInfo> groups = new HashMap<>();
+        Map<String, String> poolDetails1 = new HashMap<>();
+        poolDetails1.put(OntapStorageConstants.STORAGE_IP, "10.1.1.1");
+        poolDetails1.put(OntapStorageConstants.SVM_NAME, "vs0");
+        groups.put("flexvol-uuid-1", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails1, POOL_ID_1));
+
+        Map<String, String> poolDetails2 = new HashMap<>();
+        poolDetails2.put(OntapStorageConstants.STORAGE_IP, "10.2.2.2");
+        poolDetails2.put(OntapStorageConstants.SVM_NAME, "vs0");
+        groups.put("flexvol-uuid-2", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails2, POOL_ID_2));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.resolveConsistencyGroupScope(groups));
+    }
+
+    @Test
+    void testResolveConsistencyGroupScope_acceptsSameClusterAndSvmUuid() {
+        Map<String, OntapVMSnapshotStrategy.FlexVolGroupInfo> groups = new HashMap<>();
+        Map<String, String> poolDetails1 = new HashMap<>();
+        poolDetails1.put(OntapStorageConstants.STORAGE_IP, "10.1.1.1");
+        poolDetails1.put(OntapStorageConstants.SVM_NAME, "vs0");
+        poolDetails1.put(OntapStorageConstants.SVM_UUID, "svm-uuid-shared");
+        groups.put("flexvol-uuid-1", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails1, POOL_ID_1));
+
+        Map<String, String> poolDetails2 = new HashMap<>();
+        poolDetails2.put(OntapStorageConstants.STORAGE_IP, "10.1.1.1");
+        poolDetails2.put(OntapStorageConstants.SVM_NAME, "vs0");
+        poolDetails2.put(OntapStorageConstants.SVM_UUID, "svm-uuid-shared");
+        groups.put("flexvol-uuid-2", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails2, POOL_ID_2));
+
+        OntapVMSnapshotStrategy.ConsistencyGroupScope scope = strategy.resolveConsistencyGroupScope(groups);
+        assertEquals("svm-uuid-shared", scope.svmUuid);
+        assertEquals("10.1.1.1", scope.storageIp);
+    }
+
+    @Test
+    void testResolveConsistencyGroupScope_rejectsDifferentSvmUuidOnSameCluster() {
+        Map<String, OntapVMSnapshotStrategy.FlexVolGroupInfo> groups = new HashMap<>();
+        Map<String, String> poolDetails1 = new HashMap<>();
+        poolDetails1.put(OntapStorageConstants.STORAGE_IP, "10.1.1.1");
+        poolDetails1.put(OntapStorageConstants.SVM_NAME, "vs0");
+        poolDetails1.put(OntapStorageConstants.SVM_UUID, "svm-uuid-1");
+        groups.put("flexvol-uuid-1", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails1, POOL_ID_1));
+
+        Map<String, String> poolDetails2 = new HashMap<>();
+        poolDetails2.put(OntapStorageConstants.STORAGE_IP, "10.1.1.1");
+        poolDetails2.put(OntapStorageConstants.SVM_NAME, "vs0");
+        poolDetails2.put(OntapStorageConstants.SVM_UUID, "svm-uuid-2");
+        groups.put("flexvol-uuid-2", new OntapVMSnapshotStrategy.FlexVolGroupInfo(poolDetails2, POOL_ID_2));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.resolveConsistencyGroupScope(groups));
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // Tests: FlexVolSnapshotDetail parse/toString
     // ══════════════════════════════════════════════════════════════════════════
@@ -593,10 +694,11 @@ class OntapVMSnapshotStrategyTest {
     void testBuildSnapshotName_Format() {
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
         when(vmSnapshot.getId()).thenReturn(SNAPSHOT_ID);
+        when(vmSnapshot.getName()).thenReturn("UI VM Snapshot");
 
         String name = strategy.buildSnapshotName(vmSnapshot);
 
-        assertEquals(true, name.startsWith("vmsnap_200_"));
+        assertEquals(true, name.startsWith("UI_VM_Snapshot_vm200"));
         assertEquals(true, name.length() <= OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH);
     }
 
@@ -732,6 +834,86 @@ class OntapVMSnapshotStrategyTest {
         assertEquals(true, ex.getMessage().contains("timed out"));
     }
 
+    @Test
+    void testTakeVMSnapshot_SingleFlexVolSuccess_UsesDirectSnapshotNotCg() throws Exception {
+        VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
+        setupTakeSnapshotCommon(vmSnapshot);
+        setupSingleVolumeForTakeSnapshot();
+
+        String snapshotName = strategy.buildSnapshotName(vmSnapshot);
+        setupSingleFlexVolFlowMocks(snapshotName);
+
+        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+        when(freezeAnswer.getResult()).thenReturn(true);
+        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+        when(thawAnswer.getResult()).thenReturn(true);
+        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                .thenReturn(freezeAnswer)
+                .thenReturn(thawAnswer);
+
+        strategy.takeVMSnapshot(vmSnapshot);
+
+        verify(snapshotFeignClient, times(1)).createSnapshot(any(), eq("flexvol-uuid-1"), any());
+        verify(snapshotFeignClient, never()).createConsistencyGroup(any(), any());
+        verify(snapshotFeignClient, never()).createConsistencyGroupSnapshot(any(), any(), any());
+        verify(snapshotFeignClient, never()).commitConsistencyGroupSnapshot(any(), any(), any(), any());
+        verify(snapshotFeignClient, never()).deleteConsistencyGroup(any(), any());
+        verify(vmSnapshotDetailsDao, atLeastOnce()).persist(any(VMSnapshotDetailsVO.class));
+    }
+
+    @Test
+    void testTakeVMSnapshot_TemporaryCgTwoPhaseSuccess_PersistsDetailsAndCleansUpCg() throws Exception {
+        VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
+        setupTakeSnapshotCommon(vmSnapshot);
+        setupMultiFlexVolForTakeSnapshot();
+
+        String snapshotName = strategy.buildSnapshotName(vmSnapshot);
+        setupTemporaryCgFlowMocks(snapshotName);
+
+        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+        when(freezeAnswer.getResult()).thenReturn(true);
+        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+        when(thawAnswer.getResult()).thenReturn(true);
+        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                .thenReturn(freezeAnswer)
+                .thenReturn(thawAnswer);
+
+        strategy.takeVMSnapshot(vmSnapshot);
+
+        verify(snapshotFeignClient, times(1)).createConsistencyGroup(any(), any());
+        verify(snapshotFeignClient, times(1)).createConsistencyGroupSnapshot(any(), eq("cg-uuid-1"), any());
+        verify(snapshotFeignClient, times(1)).commitConsistencyGroupSnapshot(any(), eq("cg-uuid-1"), eq("cg-snap-uuid-1"), any());
+        verify(snapshotFeignClient, times(1)).deleteConsistencyGroup(any(), eq("cg-uuid-1"));
+        verify(vmSnapshotDetailsDao, atLeastOnce()).persist(any(VMSnapshotDetailsVO.class));
+    }
+
+    @Test
+    void testTakeVMSnapshot_TemporaryCgStartFails_TransitionsToOperationFailed() throws Exception {
+        VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
+        setupTakeSnapshotCommon(vmSnapshot);
+        setupMultiFlexVolForTakeSnapshot();
+
+        String snapshotName = strategy.buildSnapshotName(vmSnapshot);
+        setupTemporaryCgFlowMocks(snapshotName);
+        when(snapshotFeignClient.createConsistencyGroupSnapshot(any(), eq("cg-uuid-1"), any()))
+                .thenThrow(new CloudRuntimeException("start phase failed"));
+
+        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+        when(freezeAnswer.getResult()).thenReturn(true);
+        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+        when(thawAnswer.getResult()).thenReturn(true);
+        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                .thenReturn(freezeAnswer)
+                .thenReturn(thawAnswer);
+        when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeVMSnapshot(vmSnapshot));
+
+        verify(snapshotFeignClient, times(1)).deleteConsistencyGroup(any(), eq("cg-uuid-1"));
+        verify(vmSnapshotHelper, atLeastOnce()).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // Tests: Quiesce Behavior
     // ══════════════════════════════════════════════════════════════════════════
@@ -746,20 +928,9 @@ class OntapVMSnapshotStrategyTest {
 
         setupTakeSnapshotCommon(vmSnapshot);
         setupSingleVolumeForTakeSnapshot();
+        setupSingleFlexVolFlowMocks(strategy.buildSnapshotName(vmSnapshot));
 
-        // The FlexVolume snapshot flow will try to call Utility.getStrategyByStoragePoolDetails
-        // which is a static method that makes real connections. We expect this to fail in unit tests.
-        // The important thing is that freeze/thaw was NOT called before the failure.
-        when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
-
-        // Since Utility.getStrategyByStoragePoolDetails is static and creates real Feign clients,
-        // this will fail. We just verify that freeze was never called.
-        try {
-            strategy.takeVMSnapshot(vmSnapshot);
-        } catch (Exception e) {
-            // Expected — static utility can't be mocked in unit test
-        }
+        strategy.takeVMSnapshot(vmSnapshot);
 
         // No freeze/thaw commands should be sent when quiesce is false
         verify(agentMgr, never()).send(eq(HOST_ID), any(FreezeThawVMCommand.class));
@@ -790,16 +961,9 @@ class OntapVMSnapshotStrategyTest {
         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
                 .thenReturn(freezeAnswer)
                 .thenReturn(thawAnswer);
+        setupSingleFlexVolFlowMocks(strategy.buildSnapshotName(vmSnapshot));
 
-        when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
-
-        // FlexVol snapshot flow will fail on static method, but parent should already be set
-        try {
-            strategy.takeVMSnapshot(vmSnapshot);
-        } catch (Exception e) {
-            // Expected
-        }
+        strategy.takeVMSnapshot(vmSnapshot);
 
         // Verify parent was set on the VM snapshot before the FlexVol snapshot attempt
         verify(vmSnapshot).setParent(199L);
@@ -820,15 +984,9 @@ class OntapVMSnapshotStrategyTest {
         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
                 .thenReturn(freezeAnswer)
                 .thenReturn(thawAnswer);
+        setupSingleFlexVolFlowMocks(strategy.buildSnapshotName(vmSnapshot));
 
-        when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
-
-        try {
-            strategy.takeVMSnapshot(vmSnapshot);
-        } catch (Exception e) {
-            // Expected
-        }
+        strategy.takeVMSnapshot(vmSnapshot);
 
         verify(vmSnapshot).setParent(null);
     }
@@ -866,6 +1024,9 @@ class OntapVMSnapshotStrategyTest {
         when(vmSnapshotDao.findCurrentSnapshotByVmId(VM_ID)).thenReturn(null);
 
         doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.CreateRequested);
+        doNothing().when(strategy).processAnswer(any(), any(), any(), any());
+        doNothing().when(strategy).publishUsageEvent(any(), any(), any(), any());
+        doNothing().when(strategy).publishUsageEvent(any(), any(), any(), anyLong(), anyLong());
 
         return userVm;
     }
@@ -880,6 +1041,7 @@ class OntapVMSnapshotStrategyTest {
         VolumeVO volumeVO = mock(VolumeVO.class);
         when(volumeVO.getId()).thenReturn(VOLUME_ID_1);
         when(volumeVO.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeVO.getPath()).thenReturn("volume-301.qcow2");
         when(volumeVO.getVmSnapshotChainSize()).thenReturn(null);
         when(volumeDao.findById(VOLUME_ID_1)).thenReturn(volumeVO);
 
@@ -898,5 +1060,140 @@ class OntapVMSnapshotStrategyTest {
         when(volumeInfo.getId()).thenReturn(VOLUME_ID_1);
         when(volumeInfo.getName()).thenReturn("vol-1");
         when(volumeDataFactory.getVolume(VOLUME_ID_1)).thenReturn(volumeInfo);
+    }
+
+    private void setupMultiFlexVolForTakeSnapshot() {
+        VolumeObjectTO volumeTO1 = mock(VolumeObjectTO.class);
+        when(volumeTO1.getId()).thenReturn(VOLUME_ID_1);
+        when(volumeTO1.getSize()).thenReturn(10737418240L);
+        VolumeObjectTO volumeTO2 = mock(VolumeObjectTO.class);
+        when(volumeTO2.getId()).thenReturn(VOLUME_ID_2);
+        when(volumeTO2.getSize()).thenReturn(10737418240L);
+        List<VolumeObjectTO> volumeTOs = Arrays.asList(volumeTO1, volumeTO2);
+        when(vmSnapshotHelper.getVolumeTOList(VM_ID)).thenReturn(volumeTOs);
+
+        VolumeVO volumeVO1 = mock(VolumeVO.class);
+        when(volumeVO1.getId()).thenReturn(VOLUME_ID_1);
+        when(volumeVO1.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeVO1.getPath()).thenReturn("volume-301.qcow2");
+        when(volumeVO1.getVmSnapshotChainSize()).thenReturn(null);
+        when(volumeDao.findById(VOLUME_ID_1)).thenReturn(volumeVO1);
+
+        VolumeVO volumeVO2 = mock(VolumeVO.class);
+        when(volumeVO2.getId()).thenReturn(VOLUME_ID_2);
+        when(volumeVO2.getPoolId()).thenReturn(POOL_ID_2);
+        when(volumeVO2.getPath()).thenReturn("volume-302.qcow2");
+        when(volumeVO2.getVmSnapshotChainSize()).thenReturn(null);
+        when(volumeDao.findById(VOLUME_ID_2)).thenReturn(volumeVO2);
+
+        Map<String, String> poolDetails1 = new HashMap<>();
+        poolDetails1.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
+        poolDetails1.put(OntapStorageConstants.USERNAME, "admin");
+        poolDetails1.put(OntapStorageConstants.PASSWORD, "pass");
+        poolDetails1.put(OntapStorageConstants.STORAGE_IP, "10.0.0.1");
+        poolDetails1.put(OntapStorageConstants.SVM_NAME, "svm1");
+        poolDetails1.put(OntapStorageConstants.SVM_UUID, "svm-uuid-shared");
+        poolDetails1.put(OntapStorageConstants.SIZE, "107374182400");
+        poolDetails1.put(OntapStorageConstants.PROTOCOL, "NFS3");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_1)).thenReturn(poolDetails1);
+
+        Map<String, String> poolDetails2 = new HashMap<>();
+        poolDetails2.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-2");
+        poolDetails2.put(OntapStorageConstants.USERNAME, "admin");
+        poolDetails2.put(OntapStorageConstants.PASSWORD, "pass");
+        poolDetails2.put(OntapStorageConstants.STORAGE_IP, "10.0.0.1");
+        poolDetails2.put(OntapStorageConstants.SVM_NAME, "svm1");
+        poolDetails2.put(OntapStorageConstants.SVM_UUID, "svm-uuid-shared");
+        poolDetails2.put(OntapStorageConstants.SIZE, "107374182400");
+        poolDetails2.put(OntapStorageConstants.PROTOCOL, "NFS3");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_2)).thenReturn(poolDetails2);
+
+        VolumeInfo volumeInfo1 = mock(VolumeInfo.class);
+        when(volumeInfo1.getId()).thenReturn(VOLUME_ID_1);
+        when(volumeDataFactory.getVolume(VOLUME_ID_1)).thenReturn(volumeInfo1);
+        VolumeInfo volumeInfo2 = mock(VolumeInfo.class);
+        when(volumeInfo2.getId()).thenReturn(VOLUME_ID_2);
+        when(volumeDataFactory.getVolume(VOLUME_ID_2)).thenReturn(volumeInfo2);
+    }
+
+    private JobResponse createJobResponse(String uuid) {
+        Job job = new Job();
+        job.setUuid(uuid);
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        return response;
+    }
+
+    private void setupSingleFlexVolFlowMocks(String snapshotName) {
+        doReturn(storageStrategy).when(strategy).resolveStorageStrategy(any());
+        when(storageStrategy.getSnapshotFeignClient()).thenReturn(snapshotFeignClient);
+        when(storageStrategy.getAuthHeader()).thenReturn("Basic dGVzdDp0ZXN0");
+        when(storageStrategy.jobPollForSuccess(any(), anyInt(), anyInt())).thenReturn(true);
+
+        when(snapshotFeignClient.createSnapshot(any(), eq("flexvol-uuid-1"), any()))
+                .thenReturn(createJobResponse("job-fv-snap"));
+
+        OntapResponse<FlexVolSnapshot> flexVolSnapshots = new OntapResponse<>();
+        FlexVolSnapshot flexVolSnapshot = new FlexVolSnapshot();
+        flexVolSnapshot.setUuid("fv-snap-uuid-1");
+        flexVolSnapshot.setName(snapshotName);
+        flexVolSnapshots.setRecords(Collections.singletonList(flexVolSnapshot));
+        when(snapshotFeignClient.getSnapshots(any(), eq("flexvol-uuid-1"), any()))
+                .thenReturn(flexVolSnapshots);
+    }
+
+    private void setupTemporaryCgFlowMocks(String snapshotName) {
+        doReturn(storageStrategy).when(strategy).resolveStorageStrategy(any());
+        when(storageStrategy.getSnapshotFeignClient()).thenReturn(snapshotFeignClient);
+        when(storageStrategy.getAuthHeader()).thenReturn("Basic dGVzdDp0ZXN0");
+        when(storageStrategy.jobPollForSuccess(any(), anyInt(), anyInt())).thenReturn(true);
+        when(storageStrategy.pollJobIfPresentAndGetCompletedJob(any(), any())).thenAnswer(invocation -> {
+            Job completedJob = new Job();
+            completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+            String operationName = invocation.getArgument(1);
+            if (operationName != null && operationName.startsWith("start CG snapshot")) {
+                completedJob.setDescription(
+                        "POST /api/application/consistency-groups/cg-uuid-1/snapshots/cg-snap-uuid-1");
+            }
+            return completedJob;
+        });
+
+        when(snapshotFeignClient.createConsistencyGroup(any(), any())).thenReturn(createJobResponse("job-cg-create"));
+        OntapResponse<ConsistencyGroup> cgResponse = new OntapResponse<>();
+        ConsistencyGroup cgRecord = new ConsistencyGroup();
+        cgRecord.setUuid("cg-uuid-1");
+        cgResponse.setRecords(Collections.singletonList(cgRecord));
+        when(snapshotFeignClient.getConsistencyGroups(any(), any())).thenReturn(cgResponse);
+
+        when(snapshotFeignClient.createConsistencyGroupSnapshot(any(), eq("cg-uuid-1"), any()))
+                .thenReturn(createJobResponse("job-cg-start"));
+        OntapResponse<ConsistencyGroupSnapshot> cgSnapshotResponse = new OntapResponse<>();
+        ConsistencyGroupSnapshot cgSnapshotRecord = new ConsistencyGroupSnapshot();
+        cgSnapshotRecord.setUuid("cg-snap-uuid-1");
+        cgSnapshotRecord.setName(snapshotName);
+        cgSnapshotResponse.setRecords(Collections.singletonList(cgSnapshotRecord));
+        when(snapshotFeignClient.getConsistencyGroupSnapshots(any(), eq("cg-uuid-1"), any()))
+                .thenReturn(cgSnapshotResponse);
+        when(snapshotFeignClient.commitConsistencyGroupSnapshot(any(), eq("cg-uuid-1"), eq("cg-snap-uuid-1"), any()))
+                .thenReturn(createJobResponse("job-cg-commit"));
+
+        when(snapshotFeignClient.deleteConsistencyGroup(any(), eq("cg-uuid-1")))
+                .thenReturn(createJobResponse("job-cg-delete"));
+
+        OntapResponse<FlexVolSnapshot> flexVolSnapshots = new OntapResponse<>();
+        FlexVolSnapshot flexVolSnapshot = new FlexVolSnapshot();
+        flexVolSnapshot.setUuid("fv-snap-uuid-1");
+        flexVolSnapshot.setName(snapshotName);
+        flexVolSnapshots.setRecords(Collections.singletonList(flexVolSnapshot));
+        when(snapshotFeignClient.getSnapshots(any(), eq("flexvol-uuid-1"), any()))
+                .thenReturn(flexVolSnapshots);
+
+        OntapResponse<FlexVolSnapshot> flexVolSnapshots2 = new OntapResponse<>();
+        FlexVolSnapshot flexVolSnapshot2 = new FlexVolSnapshot();
+        flexVolSnapshot2.setUuid("fv-snap-uuid-2");
+        flexVolSnapshot2.setName(snapshotName);
+        flexVolSnapshots2.setRecords(Collections.singletonList(flexVolSnapshot2));
+        when(snapshotFeignClient.getSnapshots(any(), eq("flexvol-uuid-2"), any()))
+                .thenReturn(flexVolSnapshots2);
     }
 }
