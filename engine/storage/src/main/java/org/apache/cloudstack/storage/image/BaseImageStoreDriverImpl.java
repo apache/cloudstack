@@ -248,7 +248,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
-            String msg = "Failed to register template: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            String msg = "Failed to register template: " + obj + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, _vmTemplateZoneDao.listByTemplateId(obj.getId()).get(0).getZoneId(), null, msg, msg);
             logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -306,7 +306,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
-            String msg = "Failed to upload volume: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            String msg = "Failed to upload volume: " + obj + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     (volStoreVO == null ? -1L : volStoreVO.getZoneId()), null, msg, msg);
             logger.error(msg);
@@ -352,7 +352,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
-            String msg = "Failed to copy snapshot: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            String msg = "Failed to copy snapshot: " + obj + " with error: " + answer.getErrorString();
             Long zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     zoneId, null, msg, msg);

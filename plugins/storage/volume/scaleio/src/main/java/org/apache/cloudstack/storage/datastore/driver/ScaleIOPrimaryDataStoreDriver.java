@@ -1552,7 +1552,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final ScaleIOGatewayClient client = getScaleIOClient(pool);
             return client.listVolumesMappedToSdc(sdcId).isEmpty();
         } catch (Exception e) {
-            logger.warn("Unable to check whether the host: " + host.getId() + " can be disconnected from storage pool: " + pool.getId() + ", due to " + e.getMessage(), e);
+            logger.warn("Unable to check whether the host: " + host + " can be disconnected from storage pool: " + pool + ", due to " + e.getMessage(), e);
             return false;
         }
     }
@@ -1564,7 +1564,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         logger.warn("SDC not connected on the host: {}", host);
         String msg = String.format("SDC not connected on the host: %s, reconnect the SDC to MDM", host);
-        alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host.getUuid(), msg);
+        alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host, msg);
     }
 
     @Override
