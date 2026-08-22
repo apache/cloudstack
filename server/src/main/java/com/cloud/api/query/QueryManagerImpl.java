@@ -158,7 +158,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.InternalBackupServiceJobType;
 import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.BackupVO;
@@ -6436,7 +6435,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
         ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
         Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
-        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
+        List<BackupServiceJobResponse> backupServiceJobResponses = new ArrayList<>();
 
         for (InternalBackupServiceJobVO jobVO : result.first()) {
             BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
@@ -6448,16 +6447,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (jobVO.getHostId() != null) {
                 response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
             }
-            compressionJobResponses.add(response);
+            backupServiceJobResponses.add(response);
         }
 
-        responses.setResponses(compressionJobResponses, result.second());
+        responses.setResponses(backupServiceJobResponses, result.second());
         return responses;
     }
 
     private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
         return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
-                InternalBackupServiceJobType.valueOf(cmd.getType()), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
+                cmd.getType(), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
     }
 
     @Override
