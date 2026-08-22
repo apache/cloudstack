@@ -743,6 +743,7 @@ public class ApiConstants {
     public static final String LINMIN_APID = "linminapid";
     public static final String DHCP_SERVER_TYPE = "dhcpservertype";
     public static final String LINK_LOCAL_IP = "linklocalip";
+    public static final String LINK_LOCAL_IP6 = "linklocalip6";
     public static final String LINK_LOCAL_MAC_ADDRESS = "linklocalmacaddress";
     public static final String LINK_LOCAL_MAC_NETMASK = "linklocalnetmask";
     public static final String LINK_LOCAL_NETWORK_ID = "linklocalnetworkid";
