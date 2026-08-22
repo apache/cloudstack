@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -50,8 +51,14 @@ public class ListSslCertsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = false, description = "ID of SSL certificate")
     private Long certId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID and " + ApiConstants.ACCOUNT + " are mutually exclusive.")
     private Long accountId;
+
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, since = "4.24", description = "Account owning the SSL certificate")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, since = "4.24", entityType = DomainResponse.class, description = "Domain ID of the account owning the SSL certificate")
+    private Long domainId;
 
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Load balancer rule ID")
     private Long lbId;
@@ -77,6 +84,14 @@ public class ListSslCertsCmd extends BaseCmd {
 
     public Long getProjectId() {
         return projectId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
