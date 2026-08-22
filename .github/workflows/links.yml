@@ -1,0 +1,62 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# To run similar tasks locally, install lychee and run the following at the root of the repository:
+# lychee .
+
+name: Links
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  pull_request:
+  schedule:
+    - cron: '9 1 * * 0' # At 01:09 on Sunday.
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # required for Broken Links Report
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Link Checker
+        id: lychee
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        with:
+          args: --config lychee.toml .
+          fail: false
+
+      - name: Broken Links Report
+        if: steps.lychee.outputs.exit_code != 0 && github.event_name == 'schedule'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read the markdown file
+            // Ensure the path is correct relative to the workspace root
+            const reportBody = fs.readFileSync('./lychee/out.md', 'utf8');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Broken Links Report',
+              body: reportBody
+            });
