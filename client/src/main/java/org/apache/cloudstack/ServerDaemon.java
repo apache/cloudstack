@@ -314,25 +314,55 @@ public class ServerDaemon implements Daemon {
         return log;
     }
 
+    private static final String LOGROTATE_CONFIG_NAME = "access";
+    private static final String[] LOGROTATE_CONFIG_DIRS = {
+            "/etc/logrotate.d",
+            "/usr/local/etc/logrotate.d",
+            "/opt/local/etc/logrotate.d"
+    };
+
     private void createRotateFile(File logPath) {
-        String rotatefile = "/etc/logrotate.d/access";
-        String fileContents = logPath.getAbsolutePath() + " {\n"
-                + "  copytruncate"
-                + "  daily"
-                + "  rotate 14"
-                + "  compress"
-                + "  missingok"
-                + "  create 0644 cloud cloud"
-                + "}";
-        File rotateConfigFile = new File(rotatefile);
-        try {
-            FileWriter fw = new FileWriter(rotateConfigFile);
-            fw.write(fileContents);
-            fw.close();
-        } catch (IOException e) {
-            // log but continue without rotate (for now)
-            LOG.warn("no way to rotate access log, continuing as is");
+        final File logrotateDir = findLogrotateConfigDir();
+        if (logrotateDir == null) {
+            logger.info("No logrotate.d directory found on this system, skipping access log rotation setup");
+            return;
         }
+
+        final File rotateConfigFile = new File(logrotateDir, LOGROTATE_CONFIG_NAME);
+        if (rotateConfigFile.exists()) {
+            logger.debug(String.format("Logrotate config [%s] already exists, leaving it untouched", rotateConfigFile.getAbsolutePath()));
+            return;
+        }
+
+        final String fileContents = logPath.getAbsolutePath() + " {\n"
+                + "  copytruncate\n"
+                + "  daily\n"
+                + "  rotate 14\n"
+                + "  compress\n"
+                + "  missingok\n"
+                + "  create 0644 cloud cloud\n"
+                + "}\n";
+        try (FileWriter fw = new FileWriter(rotateConfigFile)) {
+            fw.write(fileContents);
+        } catch (IOException e) {
+            logger.warn(String.format("Unable to create logrotate config [%s] for the access log, continuing without rotation", rotateConfigFile.getAbsolutePath()), e);
+        }
+    }
+
+    /**
+     * Finds the logrotate.d directory for this system. The path is the same across the
+     * Linux distributions CloudStack supports ({@code /etc/logrotate.d}), but is looked up
+     * rather than hardcoded so packagings that relocate it (e.g. under a custom prefix) are
+     * still honoured, and systems without logrotate installed are skipped gracefully.
+     */
+    private File findLogrotateConfigDir() {
+        for (final String candidate : LOGROTATE_CONFIG_DIRS) {
+            final File dir = new File(candidate);
+            if (dir.isDirectory()) {
+                return dir;
+            }
+        }
+        return null;
     }
 
     private URL getResource(String aResource) {
