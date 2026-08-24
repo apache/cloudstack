@@ -87,6 +87,10 @@ public class TransactionLegacy implements Closeable {
     public static final short CONNECTED_DB = -1;
     public static final String CONNECTION_PARAMS = "scrollTolerantForwardOnly=true";
 
+    protected static final String CONNECTION_COLLATION_PARAM = "connectionCollation";
+    protected static final String CHARACTER_ENCODING_PARAM = "characterEncoding";
+    public static final String DEFAULT_CONNECTION_COLLATION = "utf8mb4_general_ci";
+
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
     static {
@@ -1196,6 +1200,9 @@ public class TransactionLegacy implements Closeable {
 
             connectionUri = propertyUri;
         }
+
+        connectionUri = addDefaultConnectionCollation(connectionUri, driver);
+
         LOGGER.info("Using the following URI to connect to {} database [{}].", schema, connectionUri);
         return new Pair<>(connectionUri, driver);
     }
@@ -1258,6 +1265,37 @@ public class TransactionLegacy implements Closeable {
         connectionUri.append(CONNECTION_PARAMS);
 
         return connectionUri.toString();
+    }
+
+    /**
+     * Informs whether {@link #DEFAULT_CONNECTION_COLLATION} should be added to a connection URI. It is only added for
+     * connections that do not already define the charset or the collation, either through {@code db.<schema>.url.params}
+     * or directly in {@code db.<schema>.uri}.
+     *
+     * @param connectionParams the parameters configured by the operator; either the value of
+     *                         {@code db.<schema>.url.params} or the whole {@code db.<schema>.uri}.
+     */
+    protected static boolean shouldPinConnectionCollation(String connectionParams) {
+        return !StringUtils.containsIgnoreCase(connectionParams, CONNECTION_COLLATION_PARAM)
+                && !StringUtils.containsIgnoreCase(connectionParams, CHARACTER_ENCODING_PARAM);
+    }
+
+    /**
+     * Adds {@link #DEFAULT_CONNECTION_COLLATION} to a connection URI provided either through
+     * {@code db.<schema>.url.params} or directly in {@code db.<schema>.uri}, keeping the URI untouched if the operator
+     * already defined the charset or the collation in it.
+     */
+    protected static String addDefaultConnectionCollation(String connectionUri, String driver) {
+        if (!shouldPinConnectionCollation(connectionUri)) {
+            return connectionUri;
+        }
+
+        String separator = "?";
+        if (StringUtils.contains(connectionUri, "?")) {
+            separator = StringUtils.endsWithAny(connectionUri, "?", "&") ? StringUtils.EMPTY : "&";
+        }
+
+        return String.format("%s%s%s=%s", connectionUri, separator, CONNECTION_COLLATION_PARAM, DEFAULT_CONNECTION_COLLATION);
     }
 
     /**
