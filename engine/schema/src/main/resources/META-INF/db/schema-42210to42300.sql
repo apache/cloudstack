@@ -675,4 +675,3 @@ CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('i_event__resource', 'cloud.event', '(resour
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('i_event__start_id', 'cloud.event', '(start_id)');
 -- host table: covers findByName lookups (WHERE name = ? AND removed IS NULL)
 CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('i_host__name_removed', 'cloud.host', '(name, removed)');
-
