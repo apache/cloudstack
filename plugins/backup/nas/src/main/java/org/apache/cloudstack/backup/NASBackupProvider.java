@@ -348,6 +348,19 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return backupDao.persist(backup);
     }
 
+    /**
+     * Restore-side counterpart of {@link #applyBackupEnhancementDetails}: hands the zone's LUKS passphrase
+     * to the host so encrypted backup files can be checked and converted back. It is sent whenever a
+     * passphrase is configured, not only while encryption is switched on, so backups taken before
+     * encryption was disabled stay restorable; the host ignores it for plain backups.
+     */
+    protected void applyRestoreEncryptionDetails(RestoreBackupCommand command, Long zoneId) {
+        String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
+        if (passphrase != null && !passphrase.isEmpty()) {
+            command.setEncryptionPassphrase(passphrase);
+        }
+    }
+
     @Override
     public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return restoreVMBackup(vm, backup);
@@ -387,6 +400,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
+        applyRestoreEncryptionDetails(restoreCommand, vm.getDataCenterId());
 
         BackupAnswer answer;
         try {
@@ -504,6 +518,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
         restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
+        applyRestoreEncryptionDetails(restoreCommand, backup.getZoneId());
 
         BackupAnswer answer;
         try {

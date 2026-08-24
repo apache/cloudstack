@@ -35,16 +35,9 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -177,21 +170,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      * flag. Scheduled for deletion on JVM exit; the caller removes it after the backup.
      */
     private File writePassphraseFile(String passphrase) throws BackupConfigException {
-        File passphraseFile = null;
         try {
-            passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
-            passphraseFile.deleteOnExit();
-            Files.setPosixFilePermissions(passphraseFile.toPath(),
-                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
-            try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
-                fw.write(passphrase);
-            }
-            return passphraseFile;
+            return NasBackupPassphraseFile.write(passphrase);
         } catch (IOException e) {
             logger.error("Failed to create encryption passphrase file", e);
-            if (passphraseFile != null && passphraseFile.exists()) {
-                passphraseFile.delete();
-            }
             throw new BackupConfigException("Failed to create encryption passphrase file: " + e.getMessage());
         }
     }

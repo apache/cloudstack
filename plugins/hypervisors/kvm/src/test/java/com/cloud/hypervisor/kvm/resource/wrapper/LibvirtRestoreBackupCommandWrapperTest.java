@@ -36,9 +36,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
@@ -564,6 +567,97 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(result instanceof BackupAnswer);
                 BackupAnswer backupAnswer = (BackupAnswer) result;
                 Assert.assertTrue(backupAnswer.getResult());
+            }
+        }
+    }
+
+    /** Mockito hands varargs to the answer as individual arguments; rebuild the command line from {@code from}. */
+    private static String joinArgs(Object[] args, int from) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < args.length; i++) {
+            if (args[i] instanceof String[]) {
+                sb.append(String.join(" ", (String[]) args[i]));
+            } else {
+                sb.append(args[i]);
+            }
+            if (i < args.length - 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    private void stubEncryptedNfsRestore(String passphrase) {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(false);
+        when(command.getWait()).thenReturn(60);
+        when(command.getEncryptionPassphrase()).thenReturn(passphrase);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getMountTimeout()).thenReturn(30);
+    }
+
+    @Test
+    public void testEncryptedBackupIsCheckedAndDecryptedWithTheSecret() throws Exception {
+        stubEncryptedNfsRestore("s3cret");
+        List<String> qemuImgCalls = new ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn("{\"encrypted\": true}");
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(inv -> { qemuImgCalls.add(joinArgs(inv.getArguments(), 0)); return 0; });
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(inv -> { qemuImgCalls.add(joinArgs(inv.getArguments(), 1)); return 0; });
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(answer.getDetails(), answer.getResult());
+                Assert.assertEquals(2, qemuImgCalls.size());
+                Assert.assertTrue(qemuImgCalls.get(0), qemuImgCalls.get(0).startsWith("qemu-img check --object secret,id=sec0,file="));
+                Assert.assertTrue(qemuImgCalls.get(0), qemuImgCalls.get(0).contains("encrypt.key-secret=sec0"));
+                Assert.assertTrue(qemuImgCalls.get(1), qemuImgCalls.get(1).startsWith("qemu-img convert -O qcow2 --object secret,id=sec0,file="));
+                Assert.assertTrue(qemuImgCalls.get(1), qemuImgCalls.get(1).endsWith(" /var/lib/libvirt/images/volume-123"));
+                // the rsync used for plain backups must not run for an encrypted one
+                scriptMock.verify(() -> Script.runSimpleBashScriptForExitValue(Mockito.startsWith("rsync"), anyInt(), any(Boolean.class)), Mockito.never());
+            }
+        }
+    }
+
+    @Test
+    public void testEncryptedBackupWithoutPassphraseFailsClearly() throws Exception {
+        stubEncryptedNfsRestore(null);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn("{\"encrypted\": true}");
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertFalse(answer.getResult());
+                Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("LUKS-encrypted but no passphrase is configured"));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)), Mockito.never());
             }
         }
     }

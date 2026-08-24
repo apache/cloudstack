@@ -41,10 +41,12 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -60,6 +62,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String ATTACH_RBD_DISK_XML_COMMAND = " virsh attach-device %s /dev/stdin <<EOF%sEOF";
     private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
     private static final String RSYNC_COMMAND = "rsync -az %s %s";
+    /** id of the qemu secret object that carries the LUKS passphrase on the qemu-img command line. */
+    private static final String LUKS_SECRET_ID = "sec0";
 
     private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -93,7 +97,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         List<String> backupFiles = command.getBackupFiles();
 
         String newVolumeId = null;
+        File keyFile = null;
         try {
+            keyFile = NasBackupPassphraseFile.write(command.getEncryptionPassphrase());
             String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions, mountTimeout);
             if (Objects.isNull(vmExists)) {
                 PrimaryDataStoreTO volumePool = restoreVolumePools.get(0);
@@ -102,32 +108,36 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 newVolumeId = getVolumeUuidFromPath(volumePath, volumePool);
                 Long size = command.getRestoreVolumeSizes().get(0);
                 restoreVolume(storagePoolMgr, backupPath, volumePool, volumePath, diskType, backupFile, size,
-                        new Pair<>(vmName, command.getVmState()), mountDirectory, timeout);
+                        new Pair<>(vmName, command.getVmState()), mountDirectory, timeout, keyFile);
             } else if (Boolean.TRUE.equals(vmExists)) {
-                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupPath, backupFiles, mountDirectory, timeout);
+                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupPath, backupFiles, mountDirectory, timeout, keyFile);
             } else {
-                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupPath, backupFiles, mountDirectory, timeout);
+                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupPath, backupFiles, mountDirectory, timeout, keyFile);
             }
         } catch (CloudRuntimeException e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
             return new BackupAnswer(command, false, errorMessage);
+        } catch (IOException e) {
+            return new BackupAnswer(command, false, "Failed to prepare the backup encryption passphrase: " + e.getMessage());
+        } finally {
+            NasBackupPassphraseFile.delete(keyFile);
         }
 
         return new BackupAnswer(command, true, newVolumeId);
     }
 
-    private void verifyBackupFile(String backupPath, String volUuid) {
+    private void verifyBackupFile(String backupPath, String volUuid, File keyFile) {
         if (!checkBackupPathExists(backupPath)) {
             throw new CloudRuntimeException(String.format("Backup file for the volume [%s] does not exist.", volUuid));
         }
-        if (!checkBackupFileImage(backupPath)) {
+        if (!checkBackupFileImage(backupPath, keyFile)) {
             throw new CloudRuntimeException(String.format("Backup qcow2 file for the volume [%s] is corrupt.", volUuid));
         }
     }
 
     private void restoreVolumesOfExistingVM(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> restoreVolumePools,
                                             List<String> restoreVolumePaths, List<String> backedVolumesUUIDs,
-                                            String backupPath, List<String> backupFiles, String mountDirectory, int timeout) {
+                                            String backupPath, List<String> backupFiles, String mountDirectory, int timeout, File keyFile) {
         String diskType = "root";
         try {
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
@@ -138,8 +148,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 String fullPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
                 diskType = "datadisk";
 
-                verifyBackupFile(fullPath, backupVolumeUuid);
-                if (!replaceVolumeWithBackup(storagePoolMgr, restoreVolumePool, restoreVolumePath, fullPath, timeout)) {
+                verifyBackupFile(fullPath, backupVolumeUuid, keyFile);
+                if (!replaceVolumeWithBackup(storagePoolMgr, restoreVolumePool, restoreVolumePath, fullPath, timeout, keyFile)) {
                     throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", backupVolumeUuid));
                 }
             }
@@ -150,7 +160,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolumesOfDestroyedVMs(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> volumePools,
-                                              List<String> volumePaths, String backupPath, List<String> backupFiles, String mountDirectory, int timeout) {
+                                              List<String> volumePaths, String backupPath, List<String> backupFiles, String mountDirectory, int timeout, File keyFile) {
         String diskType = "root";
         try {
             for (int i = 0; i < volumePaths.size(); i++) {
@@ -160,8 +170,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 String bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
                 String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
                 diskType = "datadisk";
-                verifyBackupFile(bkpPath, volumeUuid);
-                if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout)) {
+                verifyBackupFile(bkpPath, volumeUuid, keyFile);
+                if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout, keyFile)) {
                     throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", volumeUuid));
                 }
             }
@@ -172,14 +182,14 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolume(KVMStoragePoolManager storagePoolMgr, String backupPath, PrimaryDataStoreTO volumePool, String volumePath, String diskType, String backupFile,
-                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, int timeout) {
+                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, int timeout, File keyFile) {
         String bkpPath;
         String volumeUuid;
         try {
             bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
             volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
-            verifyBackupFile(bkpPath, volumeUuid);
-            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout, true, size)) {
+            verifyBackupFile(bkpPath, volumeUuid, keyFile);
+            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout, true, size, keyFile)) {
                 throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", volumeUuid));
 
             }
@@ -251,9 +261,36 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return bkpPath;
     }
 
-    private boolean checkBackupFileImage(String backupPath) {
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format("qemu-img check %s", backupPath));
-        return exitValue == 0;
+    private boolean checkBackupFileImage(String backupPath, File keyFile) {
+        if (!isEncryptedImage(backupPath)) {
+            int exitValue = Script.runSimpleBashScriptForExitValue(String.format("qemu-img check %s", backupPath));
+            return exitValue == 0;
+        }
+        List<String> cmd = new ArrayList<>(List.of("qemu-img", "check"));
+        cmd.addAll(encryptedSourceArgs(backupPath, keyFile));
+        return Script.executeCommandForExitValue(cmd.toArray(new String[0])) == 0;
+    }
+
+    /**
+     * True when qemu reports the backup qcow2 as encrypted (LUKS, produced by nasbackup.sh {@code -e}).
+     * Reading the header needs no secret, so this works before any passphrase is involved.
+     */
+    private boolean isEncryptedImage(String backupPath) {
+        String info = Script.executeCommand("qemu-img", "info", "--output=json", backupPath);
+        return info != null && info.replaceAll("\\s", "").contains("\"encrypted\":true");
+    }
+
+    /**
+     * qemu-img arguments that open an encrypted {@code backupPath} as the source image, with the LUKS
+     * secret read from {@code keyFile}. Fails clearly when the backup is encrypted but no passphrase
+     * reached the host, instead of letting qemu-img fail with an opaque "Could not open" error.
+     */
+    private static List<String> encryptedSourceArgs(String backupPath, File keyFile) {
+        if (keyFile == null) {
+            throw new CloudRuntimeException(String.format("Backup file [%s] is LUKS-encrypted but no passphrase is configured (nas.backup.encryption.passphrase).", backupPath));
+        }
+        return List.of("--object", "secret,id=" + LUKS_SECRET_ID + ",file=" + keyFile.getAbsolutePath(),
+                "--image-opts", "driver=qcow2,file.filename=" + backupPath + ",encrypt.key-secret=" + LUKS_SECRET_ID);
     }
 
     private boolean checkBackupPathExists(String backupPath) {
@@ -261,20 +298,28 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return exitValue == 0;
     }
 
-    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout) {
-        return replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, false, null);
+    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, File keyFile) {
+        return replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, false, null, keyFile);
     }
 
-    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size) {
+    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size, File keyFile) {
         if (List.of(Storage.StoragePoolType.RBD, Storage.StoragePoolType.Linstor).contains(volumePool.getPoolType())) {
-            return replaceBlockDeviceWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, createTargetVolume, size);
+            return replaceBlockDeviceWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, createTargetVolume, size, keyFile);
+        }
+
+        if (isEncryptedImage(backupPath)) {
+            // A plain copy would leave the volume LUKS-encrypted and unbootable: decrypt while converting.
+            List<String> cmd = new ArrayList<>(List.of("qemu-img", "convert", "-O", "qcow2"));
+            cmd.addAll(encryptedSourceArgs(backupPath, keyFile));
+            cmd.add(volumePath);
+            return Script.executeCommandForExitValue(timeout, cmd.toArray(new String[0])) == 0;
         }
 
         int exitValue = Script.runSimpleBashScriptForExitValue(String.format(RSYNC_COMMAND, backupPath, volumePath), timeout, false);
         return exitValue == 0;
     }
 
-    private boolean replaceBlockDeviceWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size) {
+    private boolean replaceBlockDeviceWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size, File keyFile) {
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
         QemuImg qemu;
         try {
@@ -320,6 +365,21 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             }
             destVolumeFile = new QemuImgFile(destVolume, QemuImg.PhysicalDiskFormat.RAW);
             logger.debug("Starting convert backup  {} to volume  {}", backupPath, volumePath);
+            if (isEncryptedImage(backupPath)) {
+                // QemuImg cannot pass a secret object, so build the decrypting convert directly.
+                List<String> cmd = new ArrayList<>(List.of("qemu-img", "convert", "-O", "raw"));
+                if (!createTargetVolume) {
+                    cmd.add("-n");
+                }
+                cmd.addAll(encryptedSourceArgs(backupPath, keyFile));
+                cmd.add(destVolume);
+                if (Script.executeCommandForExitValue(timeout, cmd.toArray(new String[0])) != 0) {
+                    logger.error("Failed to convert encrypted backup {} to volume {}", backupPath, volumePath);
+                    return false;
+                }
+                logger.debug("Successfully converted encrypted backup {} to volume  {}", backupPath, volumePath);
+                return true;
+            }
             qemu.convert(srcBackupFile, destVolumeFile);
             logger.debug("Successfully converted backup {} to volume  {}", backupPath, volumePath);
         } catch (QemuImgException | LibvirtException e) {

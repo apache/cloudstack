@@ -562,4 +562,17 @@ public class NASBackupProviderTest {
             overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
         }
     }
+
+    @Test
+    public void testRestoreCommandCarriesPassphraseOnlyWhenConfigured() {
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "my-secret-passphrase");
+        RestoreBackupCommand withPassphrase = new RestoreBackupCommand();
+        nasBackupProvider.applyRestoreEncryptionDetails(withPassphrase, 6L);
+        Assert.assertEquals("my-secret-passphrase", withPassphrase.getEncryptionPassphrase());
+
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");
+        RestoreBackupCommand without = new RestoreBackupCommand();
+        nasBackupProvider.applyRestoreEncryptionDetails(without, 6L);
+        Assert.assertNull(without.getEncryptionPassphrase());
+    }
 }
