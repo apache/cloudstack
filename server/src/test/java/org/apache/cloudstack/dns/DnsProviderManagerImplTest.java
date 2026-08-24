@@ -893,7 +893,7 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
         when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
-        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.isPublic()).thenReturn(true);
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
         manager.addDnsServer(cmd);
