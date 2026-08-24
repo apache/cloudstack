@@ -56,9 +56,10 @@ BACKUP_TIMEOUT=${BACKUP_TIMEOUT:-21600}
 # we fail fast rather than mid-write when the NAS is near-full.
 MIN_FREE_SPACE=${MIN_FREE_SPACE:-1073741824}
 
-# Guards cleanup() against double-execution when both an explicit call
-# and the EXIT trap fire (e.g. error path calls cleanup; exit 1 → trap).
-CLEANUP_DONE=0
+# Re-entrancy guard for cleanup(). It is set the moment cleanup() is ENTERED, not when it
+# finishes: cleanup() can exit the script itself (EXIT_CLEANUP_FAILED), and that exit fires
+# the EXIT trap, which would call cleanup() a second time while the first is still running.
+CLEANUP_STARTED=0
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -515,10 +516,10 @@ check_free_space() {
 }
 
 cleanup() {
-  # Idempotent: skip if a prior explicit call already ran. Without this guard,
-  # the EXIT trap would re-run cleanup and fail on the already-unmounted point.
-  [[ $CLEANUP_DONE -eq 1 ]] && return 0
-  CLEANUP_DONE=1
+  # Mark "started" first (see CLEANUP_STARTED above): an explicit call followed by exit, or an
+  # 'exit $EXIT_CLEANUP_FAILED' from inside this function, both re-enter here via the EXIT trap.
+  [[ $CLEANUP_STARTED -eq 1 ]] && return 0
+  CLEANUP_STARTED=1
 
   local status=0
 
