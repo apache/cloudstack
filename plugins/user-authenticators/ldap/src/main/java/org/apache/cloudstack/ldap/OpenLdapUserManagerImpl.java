@@ -181,7 +181,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     @Override
     public LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
         List<LdapUser> result = searchUsers(username, context, domainId, false);
-        if (result!= null && result.size() == 1) {
+        if (result.size() == 1) {
             return result.get(0);
         } else {
             throw new NamingException("No user found for username " + username);
@@ -349,20 +349,23 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                     users.add(createUser(result, domainId));
                 }
             }
-            Control[] contextControls = context.getResponseControls();
-            if (contextControls != null) {
-                for (Control control : contextControls) {
-                    if (control instanceof PagedResultsResponseControl) {
-                        PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
-                        cookie = prrc.getCookie();
-                    }
-                }
-            } else {
-                logger.info("No controls were sent from the ldap server");
-            }
+            cookie = extractPagedResultsCookie(context.getResponseControls());
             context.setRequestControls(new Control[] {new PagedResultsControl(pageSize, cookie, Control.CRITICAL)});
         } while (cookie != null);
 
         return users;
+    }
+
+    private byte[] extractPagedResultsCookie(Control[] contextControls) {
+        if (contextControls == null) {
+            logger.info("No controls were sent from the ldap server");
+            return null;
+        }
+        for (Control control : contextControls) {
+            if (control instanceof PagedResultsResponseControl) {
+                return ((PagedResultsResponseControl) control).getCookie();
+            }
+        }
+        return null;
     }
 }
