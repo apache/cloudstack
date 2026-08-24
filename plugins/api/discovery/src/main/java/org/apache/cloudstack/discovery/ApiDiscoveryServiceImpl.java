@@ -263,7 +263,6 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     if (parameterAnnotation.authorized() != null) {
                         paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
                     }
-
                     response.addParam(paramResponse);
             }
         }
