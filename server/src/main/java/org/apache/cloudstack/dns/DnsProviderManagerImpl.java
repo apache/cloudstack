@@ -184,6 +184,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(publicDomainSuffix);
         }
 
+        if (isDnsPublic && StringUtils.isBlank(publicDomainSuffix)) {
+            throw new InvalidParameterValueException("A public DNS server requires a public domain suffix so that " +
+                    "DNS zones created by other accounts are contained under it.");
+        }
+
         DnsProviderType type = cmd.getProvider();
         DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), type,
                 cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
@@ -273,12 +278,20 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (accountMgr.isRootAdmin(caller.getId()) || accountMgr.isDomainAdmin(caller.getId())) {
             if (cmd.isPublic() != null) {
                 boolean isPublic = BooleanUtils.isTrue(cmd.isPublic());
-                dnsServer.setPublicServer(isPublic);
 
                 String publicDomainSuffix = null;
-                if (isPublic && StringUtils.isNotBlank(cmd.getPublicDomainSuffix())) {
-                    publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix());
+                if (isPublic) {
+                    if (StringUtils.isNotBlank(cmd.getPublicDomainSuffix())) {
+                        publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix());
+                    } else {
+                        publicDomainSuffix = dnsServer.getPublicDomainSuffix();
+                    }
+                    if (StringUtils.isBlank(publicDomainSuffix)) {
+                        throw new InvalidParameterValueException("A public DNS server requires a public domain " +
+                                "suffix so that DNS zones created by other accounts are contained under it.");
+                    }
                 }
+                dnsServer.setPublicServer(isPublic);
                 dnsServer.setPublicDomainSuffix(publicDomainSuffix);
             }
         }
@@ -590,6 +603,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 throw new PermissionDeniedException("You do not have permission to use this DNS server.");
             }
             dnsZoneName = DnsProviderUtil.appendPublicSuffixToZone(dnsZoneName, server.getPublicDomainSuffix());
+            checkDnsZoneNameConflictsAcrossAccounts(dnsZoneName, server.getId(), caller.getId());
         }
         DnsZone.ZoneType type = cmd.getType();
         DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(dnsZoneName, server.getId(), type);
@@ -598,6 +612,28 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
         DnsZoneVO dnsZoneVO = new DnsZoneVO(dnsZoneName, type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
         return dnsZoneDao.persist(dnsZoneVO);
+    }
+
+    /**
+     * Rejects a DNS zone name that is equal to, a DNS child of, or a DNS parent of an existing zone owned by a
+     * different account on the same DNS server. Without this, a co-tenant could register e.g.
+     * {@code www.victimzone.<suffix>} on a shared public server and shadow the victim's records in the
+     * authoritative name server, since the more specific zone wins resolution.
+     */
+    private void checkDnsZoneNameConflictsAcrossAccounts(String dnsZoneName, long dnsServerId, long callerAccountId) {
+        String requestedName = dnsZoneName.toLowerCase();
+        List<DnsZoneVO> existingZones = dnsZoneDao.listByDnsServerId(dnsServerId);
+        for (DnsZoneVO zone : existingZones) {
+            if (zone.getAccountId() == callerAccountId) {
+                continue;
+            }
+            String existingName = zone.getName().toLowerCase();
+            if (requestedName.equals(existingName) || requestedName.endsWith("." + existingName)
+                    || existingName.endsWith("." + requestedName)) {
+                throw new PermissionDeniedException(String.format("DNS zone name %s conflicts with an existing DNS " +
+                        "zone owned by another account on this DNS server.", dnsZoneName));
+            }
+        }
     }
 
     @Override
