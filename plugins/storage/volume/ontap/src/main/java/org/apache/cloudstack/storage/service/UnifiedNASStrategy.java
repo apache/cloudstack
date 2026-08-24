@@ -141,14 +141,17 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
 
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(Long.parseLong(cloudstackVolume.getDatastoreId()));
-        String svmName = details.get(OntapStorageConstants.SVM_NAME);
+        String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
         String flexVolName = details.get(OntapStorageConstants.VOLUME_NAME);
+        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
+            throw new CloudRuntimeException("Failed to clone file, FlexVolume uuid is missing from pool details");
+        }
         String sourcePath = cloudstackVolume.getFile().getPath();
         String destinationPath = cloudstackVolume.getDestinationPath();
 
         logger.info("cloneCloudStackVolume: Cloning file [{}] to [{}] in FlexVol [{}]", sourcePath, destinationPath, flexVolName);
         try {
-            FileCloneRequest request = new FileCloneRequest(svmName, flexVolName, sourcePath, destinationPath);
+            FileCloneRequest request = new FileCloneRequest(flexVolUuid, flexVolName, sourcePath, destinationPath);
             JobResponse jobResponse = nasFeignClient.cloneFile(getAuthHeader(), request);
             pollJobIfPresent(jobResponse, "clone file [" + sourcePath + "] to [" + destinationPath + "]");
 

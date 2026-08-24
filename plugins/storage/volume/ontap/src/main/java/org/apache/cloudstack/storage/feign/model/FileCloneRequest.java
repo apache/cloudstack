@@ -34,9 +34,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileCloneRequest {
 
-    @JsonProperty("svm")
-    private Svm svm;
-
     @JsonProperty("volume")
     private VolumeRef volume;
 
@@ -52,20 +49,10 @@ public class FileCloneRequest {
     public FileCloneRequest() {
     }
 
-    public FileCloneRequest(String svmName, String flexVolName, String sourcePath, String destinationPath) {
-        this.svm = new Svm();
-        this.svm.setName(svmName);
-        this.volume = new VolumeRef(flexVolName);
+    public FileCloneRequest(String flexVolUuid, String flexVolName, String sourcePath, String destinationPath) {
+        this.volume = new VolumeRef(flexVolUuid, flexVolName);
         this.sourcePath = sourcePath;
         this.destinationPath = destinationPath;
-    }
-
-    public Svm getSvm() {
-        return svm;
-    }
-
-    public void setSvm(Svm svm) {
-        this.svm = svm;
     }
 
     public VolumeRef getVolume() {
@@ -104,14 +91,26 @@ public class FileCloneRequest {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class VolumeRef {
 
+        @JsonProperty("uuid")
+        private String uuid;
+
         @JsonProperty("name")
         private String name;
 
         public VolumeRef() {
         }
 
-        public VolumeRef(String name) {
+        public VolumeRef(String uuid, String name) {
+            this.uuid = uuid;
             this.name = name;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
         }
 
         public String getName() {
@@ -125,7 +124,7 @@ public class FileCloneRequest {
 
     @Override
     public String toString() {
-        return "FileCloneRequest{volume=" + (volume != null ? volume.getName() : null)
+        return "FileCloneRequest{volume=" + (volume != null ? volume.getUuid() : null)
                 + ", sourcePath=" + sourcePath
                 + ", destinationPath=" + destinationPath + "}";
     }

@@ -976,6 +976,7 @@ public class UnifiedNASStrategyTest {
         Map<String, String> details = new HashMap<>();
         details.put(OntapStorageConstants.SVM_NAME, "svm1");
         details.put(OntapStorageConstants.VOLUME_NAME, "flexvol1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         FileInfo source = new FileInfo();
@@ -997,6 +998,7 @@ public class UnifiedNASStrategyTest {
         assertEquals("template-uuid", captor.getValue().getSourcePath());
         assertEquals("volume-uuid", captor.getValue().getDestinationPath());
         assertEquals("flexvol1", captor.getValue().getVolume().getName());
+        assertEquals("flexvol-uuid-1", captor.getValue().getVolume().getUuid());
     }
 
     @Test
