@@ -647,6 +647,11 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'isolated', 'TINYI
 UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ', backupValidationCommandTimeout, backupValidationScreenshotWait, backupValidationBootTimeout')
 WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 
+-- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the two volume
+-- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
+CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
 -- Composite index on nics(instance_id, removed) to fix wrong-index pick in user_vm_view.
 -- The optimizer picks i_nics__removed over fk_nics__instance_id for the
 -- LEFT JOIN nics ON (vm_instance.id = nics.instance_id AND nics.removed IS NULL)

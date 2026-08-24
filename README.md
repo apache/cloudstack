@@ -29,6 +29,11 @@
 [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml)
 [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ui.yml)
 
+[![Good First Issues](https://img.shields.io/badge/good%20first%20issues-94D5DA)](https://github.com/apache/cloudstack/issues?q=is%3Aissue%20state%3Aopen%20label%3Agood-first-issue)
+[![CloudStack Documentation Status](https://app.readthedocs.org/projects/cloudstack-documentation/badge/?version=latest)](https://app.readthedocs.org/projects/cloudstack-documentation/builds/)
+[![CloudStack Website Status](https://img.shields.io/website?url=https%3A%2F%2Fcloudstack.apache.org%2F
+)](https://cloudstack.apache.org/)
+
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
