@@ -446,7 +446,7 @@ public class SystemVmTemplateRegistration {
                     urlPath);
             if (registeredTemplate != null) {
                 LOGGER.debug("Found existing registered template by urlPath: {} for {}: {}",
-                        getHypervisorArchLog(hypervisorType, arch), registeredTemplate);
+                        urlPath, getHypervisorArchLog(hypervisorType, arch), registeredTemplate);
                 return registeredTemplate;
             }
         }
