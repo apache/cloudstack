@@ -32,10 +32,10 @@ fence_action() {
 
   if [ -r "$AGENT_PROPS" ]; then
     local val
-    val=$(grep -E '^[[:space:]]*kvm\.heartbeat\.fence\.action[[:space:]]*=' "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')
+    val=$(grep "^kvm.heartbeat.fence.action=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')
     [ -n "$val" ] && FENCE_ACTION="$val"
     local cval
-    cval=$(grep -E '^[[:space:]]*kvm\.heartbeat\.fence\.custom\.script[[:space:]]*=' "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    cval=$(grep "^kvm.heartbeat.fence.custom.script=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')
     [ -n "$cval" ] && CUSTOM_SCRIPT="$cval"
   fi
 
@@ -73,8 +73,8 @@ fence_action() {
         exit $?
       fi
       ;;
-    hard-reboot|reboot|*)
-      # 'reboot' kept as alias for back-compat with pre-existing deployments.
+    hard-reboot|*)
+      # Default, and the fallback for any unrecognised value: identical to the pre-existing behaviour.
       /usr/bin/logger -t heartbeat "${source_script} will reboot system because it was unable to write the heartbeat to the storage."
       sync &
       sleep 5
