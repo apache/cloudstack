@@ -444,7 +444,7 @@ public class DomainResponse extends BaseResponseWithTagInformation implements Re
 
     @Override
     public void setVpcLimit(String vpcLimit) {
-        this.vpcLimit = networkLimit;
+        this.vpcLimit = vpcLimit;
     }
 
     @Override

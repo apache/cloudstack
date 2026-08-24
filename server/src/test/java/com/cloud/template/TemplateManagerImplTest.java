@@ -67,8 +67,11 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uservm.UserVm;
@@ -83,6 +86,7 @@ import com.cloud.vm.dao.VmIsoMapDao;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -130,6 +134,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
@@ -247,6 +252,12 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     UserVmJoinDao _userVmJoinDao;
+
+    @Mock
+    private UserDataDao userDataDaoMock;
+
+    @Mock
+    private UserDataVO userDataMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -552,6 +563,8 @@ public class TemplateManagerImplTest extends TestCase {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(vmTemplateDao.findById(anyLong())).thenReturn(template);
 
+        when(userDataDaoMock.findById(anyLong())).thenReturn(userDataMock);
+
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
 
         Assert.assertEquals(template, resultTemplate);
@@ -653,6 +666,57 @@ public class TemplateManagerImplTest extends TestCase {
 
         templateManager.getImageStore(null, 1L, volumeVO);
         Mockito.verify(dataStoreManager, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());
+    }
+
+    private HypervisorTemplateAdapter mockHypervisorTemplateAdapter() {
+        HypervisorTemplateAdapter adapter = Mockito.mock(HypervisorTemplateAdapter.class);
+        when(adapter.getName()).thenReturn(TemplateAdapter.TemplateAdapterType.Hypervisor.getName());
+        templateManager.setTemplateAdapters(new ArrayList<>(List.of(adapter)));
+        return adapter;
+    }
+
+    @Test
+    public void testRegisterTemplateValidatesUrlBeforeProbingSize() {
+        RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
+        when(cmd.getTemplateTag()).thenReturn(null);
+        when(cmd.isRoutingType()).thenReturn(null);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/template.qcow2");
+        when(cmd.getFormat()).thenReturn("QCOW2");
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerTemplate(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
+    }
+
+    @Test
+    public void testRegisterIsoValidatesUrlBeforeProbingSize() throws Exception {
+        RegisterIsoCmd cmd = Mockito.mock(RegisterIsoCmd.class);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/image.iso");
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerIso(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
     }
 
     @Test
