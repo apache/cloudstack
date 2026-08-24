@@ -20,6 +20,7 @@ import com.cloud.utils.db.GlobalLock;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.poll.BackgroundPollTask;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -32,6 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -72,12 +75,6 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
     /** 24 hours in milliseconds */
     private static final long DAILY_INTERVAL_MS = 86400L * 1000L;
-
-    private final NASBackupProvider provider;
-
-    public InfrastructureBackupTask(NASBackupProvider provider) {
-        this.provider = provider;
-    }
 
     @Override
     public Long getDelay() {
@@ -123,7 +120,8 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         boolean includeUsageDb = isUsageDbIncluded();
 
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        String backupDir = nasBackupPath + "/infra-backup/" + timestamp;
+        String infraBackupRoot = nasBackupPath + "/infra-backup/" + getManagementServerLabel();
+        String backupDir = infraBackupRoot + "/" + timestamp;
 
         LOG.info("Starting infrastructure backup to {} (database included: {})", backupDir, includeDatabase);
 
@@ -143,49 +141,11 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
                 return;
             }
 
-            // 1 & 2. Database backup — opt-in via nas.infra.backup.include.database.
-            // Production deployments typically run their own mysqldump cron jobs and disable this;
-            // it exists for small/edge deployments wanting unified DR on the same NAS as VM backups.
-            if (includeDatabase) {
-                Properties dbProps = loadDbProperties();
-                if (dbProps == null) {
-                    LOG.error("Database backup requested but failed to load properties from {} — skipping DB component", DB_PROPERTIES_PATH);
-                } else {
-                    String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
-                    String dbUser = dbProps.getProperty("db.cloud.username", "cloud");
-                    String dbPassword = dbProps.getProperty("db.cloud.password", "");
-
-                    backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
-
-                    if (includeUsageDb) {
-                        String usageHost = dbProps.getProperty("db.usage.host", dbHost);
-                        String usageUser = dbProps.getProperty("db.usage.username", dbUser);
-                        String usagePassword = dbProps.getProperty("db.usage.password", dbPassword);
-                        backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
-                    }
-                }
-            } else {
-                LOG.debug("Database backup skipped (nas.infra.backup.include.database=false). " +
-                        "Manage DB backups externally for production deployments.");
-            }
-
-            // 3. Backup management server configs
+            backupDatabases(backupDir, timestamp, includeDatabase, includeUsageDb);
             backupDirectory(MANAGEMENT_CONFIG_PATH, backupDir, "management-config");
-
-            // 4. Backup agent configs (if present on this host)
-            File agentDir = new File(AGENT_CONFIG_PATH);
-            if (agentDir.exists()) {
-                backupDirectory(AGENT_CONFIG_PATH, backupDir, "agent-config");
-            }
-
-            // 5. Backup SSL certificates
-            File sslDir = new File(SSL_CERT_PATH);
-            if (sslDir.exists()) {
-                backupDirectory(SSL_CERT_PATH, backupDir, "ssl-certs");
-            }
-
-            // 6. Cleanup old backups based on retention policy
-            cleanupOldBackups(nasBackupPath, retentionCount);
+            backupDirectoryIfPresent(AGENT_CONFIG_PATH, backupDir, "agent-config");
+            backupDirectoryIfPresent(SSL_CERT_PATH, backupDir, "ssl-certs");
+            cleanupOldBackups(infraBackupRoot, retentionCount);
 
             LOG.info("Infrastructure backup completed successfully: {}", backupDir);
 
@@ -193,6 +153,63 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
             LOG.error("Infrastructure backup failed: {}", e.getMessage(), e);
         } finally {
             releaseRunLock(lock);
+        }
+    }
+
+    /**
+     * Name of the sub-directory that keeps this management server's backups apart from those of the
+     * other servers in the cluster. Management configs and certificates are per server, so they must
+     * not overwrite each other, and the retention count applies per server. Uses the host name and
+     * falls back to the management server id.
+     */
+    protected String getManagementServerLabel() {
+        String label = null;
+        try {
+            label = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            LOG.debug("Could not determine the local host name for the infrastructure backup directory: {}", e.getMessage());
+        }
+        if (label == null || label.isBlank()) {
+            label = "ms-" + ManagementServerNode.getManagementServerId();
+        }
+        return label.replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    /**
+     * Dumps the cloud database, and the usage database when requested, into {@code backupDir}.
+     * The database component is opt-in ({@code nas.infra.backup.include.database}): production
+     * deployments typically run their own mysqldump jobs and leave it off; it exists for small and
+     * edge deployments that want unified disaster recovery on the same NAS as their VM backups.
+     */
+    protected void backupDatabases(String backupDir, String timestamp, boolean includeDatabase, boolean includeUsageDb) {
+        if (!includeDatabase) {
+            LOG.debug("Database backup skipped (nas.infra.backup.include.database=false). " +
+                    "Manage DB backups externally for production deployments.");
+            return;
+        }
+        Properties dbProps = loadDbProperties();
+        if (dbProps == null) {
+            LOG.error("Database backup requested but failed to load properties from {}, skipping DB component", DB_PROPERTIES_PATH);
+            return;
+        }
+        String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
+        String dbUser = dbProps.getProperty("db.cloud.username", "cloud");
+        String dbPassword = dbProps.getProperty("db.cloud.password", "");
+
+        backupDatabase("cloud", backupDir, timestamp, dbHost, dbUser, dbPassword);
+
+        if (includeUsageDb) {
+            String usageHost = dbProps.getProperty("db.usage.host", dbHost);
+            String usageUser = dbProps.getProperty("db.usage.username", dbUser);
+            String usagePassword = dbProps.getProperty("db.usage.password", dbPassword);
+            backupDatabase("cloud_usage", backupDir, timestamp, usageHost, usageUser, usagePassword);
+        }
+    }
+
+    /** Archives {@code sourcePath} like {@link #backupDirectory} but silently skips it when it does not exist on this server. */
+    protected void backupDirectoryIfPresent(String sourcePath, String backupDir, String archiveName) {
+        if (new File(sourcePath).exists()) {
+            backupDirectory(sourcePath, backupDir, archiveName);
         }
     }
 
@@ -345,13 +362,14 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
-    protected void cleanupOldBackups(String nasBackupPath, int retentionCount) {
+    /** Keeps the newest {@code retentionCount} backups under {@code infraBackupRoot} (this server's directory) and deletes the rest. */
+    protected void cleanupOldBackups(String infraBackupRoot, int retentionCount) {
         // A negative retention (misconfiguration) would make toDelete exceed backups.length below and
         // throw ArrayIndexOutOfBoundsException; clamp it so we never compute a delete count > available.
         if (retentionCount < 0) {
             retentionCount = 0;
         }
-        File infraDir = new File(nasBackupPath + "/infra-backup");
+        File infraDir = new File(infraBackupRoot);
         if (!infraDir.exists()) {
             return;
         }
