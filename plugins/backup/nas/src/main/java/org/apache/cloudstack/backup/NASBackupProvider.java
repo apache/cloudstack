@@ -190,7 +190,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        backgroundPollManager.submitTask(new InfrastructureBackupTask(this));
+        backgroundPollManager.submitTask(new InfrastructureBackupTask());
         return true;
     }
 

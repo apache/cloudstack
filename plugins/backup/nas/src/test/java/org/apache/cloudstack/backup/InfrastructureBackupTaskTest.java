@@ -62,9 +62,10 @@ public class InfrastructureBackupTaskTest {
         final List<String> directoryBackupNames = new ArrayList<>();
         final AtomicInteger retentionCalls = new AtomicInteger(0);
 
-        RecordingTask() {
-            super(null);
-        }
+        final List<String> directoryBackupDirs = new ArrayList<>();
+
+        @Override
+        protected String getManagementServerLabel() { return "ms-a"; }
 
         @Override
         protected boolean isEnabled() { return enabled; }
@@ -91,6 +92,7 @@ public class InfrastructureBackupTaskTest {
         @Override
         protected void backupDirectory(String sourcePath, String backupDir, String archiveName) {
             directoryBackupNames.add(archiveName);
+            directoryBackupDirs.add(backupDir);
         }
 
         @Override
@@ -236,6 +238,33 @@ public class InfrastructureBackupTaskTest {
     }
 
     @Test
+    public void backupsAreWrittenUnderThisManagementServersDirectory() {
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+        task.runInContext();
+        Assert.assertFalse(task.directoryBackupDirs.isEmpty());
+        for (String dir : task.directoryBackupDirs) {
+            Assert.assertTrue(dir, dir.startsWith(tmpRoot + "/infra-backup/ms-a/"));
+        }
+    }
+
+    @Test
+    public void retentionIsCountedPerManagementServer() throws IOException {
+        File msA = new File(infraBackupDir(), "ms-a");
+        File msB = new File(infraBackupDir(), "ms-b");
+        for (String name : new String[] {"20240101-000000", "20240102-000000", "20240103-000000"}) {
+            Assert.assertTrue(new File(msA, name).mkdirs());
+        }
+        Assert.assertTrue(new File(msB, "20240101-000000").mkdirs());
+
+        realTask.cleanupOldBackups(msA.toString(), 2);
+
+        Assert.assertArrayEquals(new String[] {"20240102-000000", "20240103-000000"},
+                Arrays.stream(msA.listFiles(File::isDirectory)).map(File::getName).sorted().toArray(String[]::new));
+        Assert.assertEquals(1, msB.listFiles(File::isDirectory).length);
+    }
+
+    @Test
     public void dailyIntervalIs24Hours() {
         InfrastructureBackupTask task = new RecordingTask();
         Assert.assertEquals(Long.valueOf(86_400_000L), task.getDelay());
@@ -244,7 +273,7 @@ public class InfrastructureBackupTaskTest {
     // ---- retention / delete logic (exercises the REAL cleanupOldBackups + deleteDirectory,
     //      which RecordingTask above stubs out) ----
 
-    private final InfrastructureBackupTask realTask = new InfrastructureBackupTask(null);
+    private final InfrastructureBackupTask realTask = new InfrastructureBackupTask();
 
     private File infraBackupDir() {
         return new File(tmpRoot.toFile(), "infra-backup");
@@ -274,7 +303,7 @@ public class InfrastructureBackupTaskTest {
         // A negative retention (misconfiguration) previously made toDelete (= count - retention)
         // larger than the array length and threw ArrayIndexOutOfBoundsException. It must now clamp
         // to 0 and simply remove everything, without throwing.
-        realTask.cleanupOldBackups(tmpRoot.toString(), -5);
+        realTask.cleanupOldBackups(infraBackupDir().toString(), -5);
 
         Assert.assertEquals(0, remainingBackups().length);
     }
@@ -287,7 +316,7 @@ public class InfrastructureBackupTaskTest {
         makeBackup("20240104-000000");
         makeBackup("20240105-000000");
 
-        realTask.cleanupOldBackups(tmpRoot.toString(), 2);
+        realTask.cleanupOldBackups(infraBackupDir().toString(), 2);
 
         Assert.assertArrayEquals(new String[] {"20240104-000000", "20240105-000000"}, remainingBackups());
     }
@@ -312,7 +341,7 @@ public class InfrastructureBackupTaskTest {
         }
 
         // Retain only the newest; the two oldest (including the one holding the symlink) are deleted.
-        realTask.cleanupOldBackups(tmpRoot.toString(), 1);
+        realTask.cleanupOldBackups(infraBackupDir().toString(), 1);
 
         Assert.assertArrayEquals(new String[] {"20240103-000000"}, remainingBackups());
         // The symlink target and its contents MUST survive — the delete must not follow the link out.
