@@ -1357,7 +1357,12 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     }
 
     /**
-     * Builds the request that clones {@code local_download_path} (LUN uuid) into a new LUN.
+     * Builds the request that clones the cached template LUN into a new volume LUN.
+     *
+     * <p>Source identity mirrors the NFS file-clone path workflow: {@code clone.source.name} is
+     * the same deterministic ONTAP path used at template create
+     * ({@code /vol/<flexVol>/cs_tmpl_<templateId>}). {@code local_download_path} (LUN uuid) is
+     * still sent as a secondary identity.</p>
      *
      * <p>Size is omitted: ONTAP rejects a size on a clone create, and the clone inherits the
      * source size. Growing to the requested volume size is a separate PATCH.</p>
@@ -1381,6 +1386,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }
 
         Lun.Source source = new Lun.Source();
+        source.setName(getTemplateLunName(storagePool, templateId));
         source.setUuid(sourceLunUuid);
         Lun.Clone clone = new Lun.Clone();
         clone.setSource(source);

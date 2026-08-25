@@ -735,6 +735,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             ArgumentCaptor<CloudStackVolume> requestCaptor = ArgumentCaptor.forClass(CloudStackVolume.class);
             verify(sanStrategy).cloneCloudStackVolume(requestCaptor.capture());
+            assertEquals("/vol/vol1/cs_tmpl_50", requestCaptor.getValue().getLun().getClone().getSource().getName());
             assertEquals("template-lun-uuid", requestCaptor.getValue().getLun().getClone().getSource().getUuid());
             verify(sanStrategy, never()).createCloudStackVolume(any());
             verify(sanStrategy, never()).resizeCloudStackVolume(any(), anyLong());

@@ -142,7 +142,10 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("cloneCloudStackVolume: LUN clone failed. No clone source in request for Lun {}", lunRequest.getName());
             throw new CloudRuntimeException("Failed to clone Lun, no clone source provided");
         }
-        logger.trace("cloneCloudStackVolume: Cloning Lun {} from source {}", lunRequest.getName(), lunRequest.getClone().getSource().getUuid());
+        logger.trace("cloneCloudStackVolume: Cloning Lun {} from source name={} uuid={}",
+                lunRequest.getName(),
+                lunRequest.getClone().getSource().getName(),
+                lunRequest.getClone().getSource().getUuid());
         try {
             String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             OntapResponse<Lun> clonedLun = sanFeignClient.createLun(authHeader, true, lunRequest);
