@@ -455,29 +455,36 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     @Override
     public boolean authorizeUser(Long userId, String entityId, boolean enable) {
         UserVO user = _userDao.getUser(userId);
-        if (user != null) {
-            if (enable) {
-                if (user.getSource() != null && !User.Source.SAML2.equals(user.getSource()) && !User.Source.SAML2DISABLED.equals(user.getSource())) {
-                    userDetailsDao.addDetail(user.getId(), PRE_SAML_SOURCE_DETAIL_KEY, user.getSource().toString(), false);
-                }
-                user.setExternalEntity(entityId);
-                user.setSource(User.Source.SAML2);
-            } else {
-                boolean enableLoginAfterSAMLDisable =  SAML2AuthManager.EnableLoginAfterSAMLDisable.value();
-                if (user.getSource().equals(User.Source.SAML2)) {
-                    if(enableLoginAfterSAMLDisable) {
-                        user.setSource(getPreSamlSource(user.getId()));
-                    } else {
-                        user.setSource(User.Source.SAML2DISABLED);
-                    }
-                } else {
-                    return false;
-                }
-            }
-            _userDao.update(user.getId(), user);
-            return true;
+        if (user == null) {
+            return false;
         }
-        return false;
+        if (enable) {
+            enableSAMLForUser(user, entityId);
+        } else if (!disableSAMLForUser(user)) {
+            return false;
+        }
+        _userDao.update(user.getId(), user);
+        return true;
+    }
+
+    private void enableSAMLForUser(UserVO user, String entityId) {
+        if (user.getSource() != null && !User.Source.SAML2.equals(user.getSource()) && !User.Source.SAML2DISABLED.equals(user.getSource())) {
+            userDetailsDao.addDetail(user.getId(), PRE_SAML_SOURCE_DETAIL_KEY, user.getSource().toString(), false);
+        }
+        user.setExternalEntity(entityId);
+        user.setSource(User.Source.SAML2);
+    }
+
+    private boolean disableSAMLForUser(UserVO user) {
+        if (!user.getSource().equals(User.Source.SAML2)) {
+            return false;
+        }
+        if (SAML2AuthManager.EnableLoginAfterSAMLDisable.value()) {
+            user.setSource(getPreSamlSource(user.getId()));
+        } else {
+            user.setSource(User.Source.SAML2DISABLED);
+        }
+        return true;
     }
 
     /**

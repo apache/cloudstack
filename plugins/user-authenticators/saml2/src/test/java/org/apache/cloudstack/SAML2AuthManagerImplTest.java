@@ -19,6 +19,10 @@
 
 package org.apache.cloudstack;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -132,11 +136,11 @@ public class SAML2AuthManagerImplTest extends TestCase {
         UserVO user = new UserVO(200L);
         user.setUsername("someuser");
         user.setSource(User.Source.LDAP);
-        Mockito.when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
         saml2AuthManager.authorizeUser(200L, "someID", true);
 
-        Mockito.verify(userDetailsDao).addDetail(200L, "PreSamlSource", "LDAP", false);
+        verify(userDetailsDao).addDetail(200L, "PreSamlSource", "LDAP", false);
         assertEquals(User.Source.SAML2, user.getSource());
     }
 
@@ -145,30 +149,30 @@ public class SAML2AuthManagerImplTest extends TestCase {
         UserVO user = new UserVO(200L);
         user.setUsername("someuser");
         user.setSource(User.Source.SAML2);
-        Mockito.when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
         saml2AuthManager.authorizeUser(200L, "someID", true);
 
-        Mockito.verify(userDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        verify(userDetailsDao, never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
     }
 
     @Test
     public void testGetPreSamlSourceRestoresStoredSource() throws Exception {
-        Mockito.when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "LDAP"));
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "LDAP"));
 
         assertEquals(User.Source.LDAP, invokeGetPreSamlSource(200L));
     }
 
     @Test
     public void testGetPreSamlSourceDefaultsToUnknownWhenNothingStored() throws Exception {
-        Mockito.when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(null);
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(null);
 
         assertEquals(User.Source.UNKNOWN, invokeGetPreSamlSource(200L));
     }
 
     @Test
     public void testGetPreSamlSourceDefaultsToUnknownOnGarbageValue() throws Exception {
-        Mockito.when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "not-a-real-source"));
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "not-a-real-source"));
 
         assertEquals(User.Source.UNKNOWN, invokeGetPreSamlSource(200L));
     }
