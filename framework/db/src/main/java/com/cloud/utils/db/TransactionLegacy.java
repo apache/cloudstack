@@ -87,9 +87,9 @@ public class TransactionLegacy implements Closeable {
     public static final short CONNECTED_DB = -1;
     public static final String CONNECTION_PARAMS = "scrollTolerantForwardOnly=true";
 
-    protected static final String CONNECTION_COLLATION_PARAM = "connectionCollation";
-    protected static final String CHARACTER_ENCODING_PARAM = "characterEncoding";
-    public static final String DEFAULT_CONNECTION_COLLATION = "utf8mb4_general_ci";
+    private static final String CONNECTION_COLLATION_PARAM = "connectionCollation";
+    private static final String CHARACTER_ENCODING_PARAM = "characterEncoding";
+    private static final String DEFAULT_CONNECTION_COLLATION = "utf8mb4_general_ci";
 
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
