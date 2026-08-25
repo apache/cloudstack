@@ -76,7 +76,7 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PASSWORD,
                type = CommandType.STRING,
-               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section. "
+               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you will need to write a custom authentication adapter See Docs section. "
                        + "If omitted, a random password is generated, e.g. for an account that will only ever authenticate externally via SAML/LDAP.")
     private String password;
 
