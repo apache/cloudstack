@@ -86,7 +86,7 @@ public class PrometheusExporterServerImplTest {
     }
 
     @Test
-    public void testStopWhenNeverStartedDoesNotThrow() throws Exception {
+    public void testStopWhenNeverStartedDoesNotThrow() {
         boolean result = server.stop();
 
         assertTrue("stop() should return true even if the server was never started", result);
