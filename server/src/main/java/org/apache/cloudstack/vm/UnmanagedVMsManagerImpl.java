@@ -1325,10 +1325,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> managedVms = new ArrayList<>(additionalNameFilters);
         managedVms.addAll(getHostsManagedVms(hosts));
 
-        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
-             CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, Long.valueOf(serviceOffering.getCpu()), reservationDao, resourceLimitService);
-             CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, Long.valueOf(serviceOffering.getRamSize()), reservationDao, resourceLimitService)) {
+        try {
 
             ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
                     cmd.getEventDescription(), null, null, true, 0);
@@ -2673,10 +2670,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UserVm userVm = null;
 
-        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
-             CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, Long.valueOf(serviceOffering.getCpu()), reservationDao, resourceLimitService);
-             CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, Long.valueOf(serviceOffering.getRamSize()), reservationDao, resourceLimitService)) {
+        try {
 
             if (ImportSource.EXTERNAL == importSource) {
                 String username = cmd.getUsername();

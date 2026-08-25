@@ -49,8 +49,8 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
         KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
 
         if (primaryPool.isPoolSupportHA()) {
-            final HAStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
-            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
+            final HAStoragePool haPool = monitor.getStoragePool(pool.getUuid());
+            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(haPool, command.getHost(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
             final Future<Boolean> future = executors.submit(ha);
             try {
                 final Boolean result = future.get();

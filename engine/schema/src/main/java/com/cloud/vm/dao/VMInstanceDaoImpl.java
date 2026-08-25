@@ -358,7 +358,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 IdsPowerStateSelectSearch.entity().getPowerHostId(),
                 IdsPowerStateSelectSearch.entity().getPowerState(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
-                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
+                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime(),
+                IdsPowerStateSelectSearch.entity().getState());
         IdsPowerStateSelectSearch.done();
 
         CountByOfferingId = createSearchBuilder(Integer.class);
@@ -1105,10 +1106,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
         State instanceState = instance.getState();
+        if (instanceState == null) {
+            logger.warn("VM {} has null instance state during power state sync check, treating as out of sync", instance);
+            return false;
+        }
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
                 || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
             HostVO instanceHost = hostDao.findById(instance.getHostId());
-            HostVO powerHost = powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
+            HostVO powerHost = instance.getHostId() != null && powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
             logger.debug("VM: {} on host: {} and power host : {} is in {} state, but power state is {}",
                     instance, instanceHost, powerHost, instanceState, powerState);
             return false;

@@ -104,7 +104,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     }
 
     @Override
-    public Status isAgentAlive(Host agent) {
+    public Status getHostAgentStatus(Host agent) {
         return null;
     }
 

@@ -169,10 +169,10 @@ import com.cloud.vm.ImportVMTaskVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -260,7 +260,6 @@ public class UnmanagedVMsManagerImplTest {
     ImportVMTaskVO importVMTaskVO;
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
-
     @Mock
     private ConfigKey<Boolean> configKeyMockParamsAllowed;
     @Mock

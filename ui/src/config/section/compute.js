@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'compute',
@@ -376,7 +377,7 @@ export default {
           show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }
@@ -533,7 +534,12 @@ export default {
           api: 'deleteVMSnapshot',
           icon: 'delete-outlined',
           label: 'label.action.vmsnapshot.delete',
-          message: 'message.action.vmsnapshot.delete',
+          message: (record) => {
+            if (record.hypervisor !== 'KVM' || record.type === 'Disk') {
+              return 'message.action.vmsnapshot.disk-only.delete'
+            }
+            return 'message.action.vmsnapshot.delete'
+          },
           dataView: true,
           show: (record) => { return ['Ready', 'Expunging', 'Error'].includes(record.state) },
           args: ['vmsnapshotid'],

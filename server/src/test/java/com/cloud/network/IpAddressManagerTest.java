@@ -356,6 +356,7 @@ public class IpAddressManagerTest {
         Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
         Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
         Mockito.doReturn(false).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
+        Mockito.doNothing().when(ipAddressManager).removePublicIpAddressFromQuarantine(Mockito.anyLong(), Mockito.anyString());
 
         boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
 

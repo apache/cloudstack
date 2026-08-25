@@ -61,6 +61,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     @Override
+    public void refreshRoleCacheOnPermissionsChange(Role role) {
+        invalidateRolePermissionsCache(role.getId());
+    }
+
+    @Override
     public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
         if (!isEnabled()) {
             return apiNames;
@@ -70,6 +75,29 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         List<String> allowedApis = new ArrayList<>();
         for (String api : apiNames) {
             if (checkApiPermissionByRole(role, api, allPermissions)) {
+                allowedApis.add(api);
+            }
+        }
+        return allowedApis;
+    }
+
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+        Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
+        final Role accountRole = roleAndPermissions.first();
+        if (accountRole == null) {
+            throw new PermissionDeniedException("The account [" + account + "] has role null or unknown.");
+        }
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            return apiNames;
+        }
+        List<RolePermission> allPermissions = roleAndPermissions.second();
+        List<String> allowedApis = new ArrayList<>();
+        for (String api : apiNames) {
+            if (checkApiPermissionByRole(accountRole, api, allPermissions)) {
                 allowedApis.add(api);
             }
         }
@@ -118,6 +146,12 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
+    }
+
+    protected void invalidateRolePermissionsCache(long roleId) {
+        if (cachePeriod > 0) {
+            rolePermissionsCache.invalidate(roleId);
+        }
     }
 
     protected Pair<Role, List<RolePermission>> getRolePermissionsUsingCache(long roleId) {
@@ -173,7 +207,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
-        List<RolePermission> allPermissions = roleService.findAllPermissionsBy(accountRole.getId());
+        List<RolePermission> allPermissions = roleAndPermissions.second();
         if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }
