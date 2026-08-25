@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -87,6 +88,13 @@ public class TransactionLegacy implements Closeable {
     public static final short CONNECTED_DB = -1;
     public static final String CONNECTION_PARAMS = "scrollTolerantForwardOnly=true";
 
+    /**
+     * Format of the pattern that matches a parameter of a connection URI: the name must be at the start of the URI
+     * parameters or right after a parameter separator, and must be followed by "=". Searching for the bare name would
+     * consider the parameter as configured when it is just part of a host, of a database name or of the value of
+     * another parameter.
+     */
+    private static final String URI_PARAM_PATTERN_FORMAT = "(?:^|[?&])%s=";
     private static final String CONNECTION_COLLATION_PARAM = "connectionCollation";
     private static final String CHARACTER_ENCODING_PARAM = "characterEncoding";
     private static final String DEFAULT_CONNECTION_COLLATION = "utf8mb4_general_ci";
@@ -1275,8 +1283,20 @@ public class TransactionLegacy implements Closeable {
      * @param connectionUri the connection URI configured by the operator.
      */
     protected static boolean shouldPinConnectionCollation(String connectionUri) {
-        return !StringUtils.containsIgnoreCase(connectionUri, CONNECTION_COLLATION_PARAM)
-                && !StringUtils.containsIgnoreCase(connectionUri, CHARACTER_ENCODING_PARAM);
+        return !containsUriParam(connectionUri, CONNECTION_COLLATION_PARAM)
+                && !containsUriParam(connectionUri, CHARACTER_ENCODING_PARAM);
+    }
+
+    /**
+     * Informs whether the given parameter is defined in the connection URI.
+     *
+     * @param connectionUri the connection URI configured by the operator; it also accepts only the parameters of a URI,
+     *                      as in {@code db.<schema>.url.params};
+     * @param param the name of the parameter to look for.
+     */
+    protected static boolean containsUriParam(String connectionUri, String param) {
+        Pattern pattern = Pattern.compile(String.format(URI_PARAM_PATTERN_FORMAT, Pattern.quote(param)), Pattern.CASE_INSENSITIVE);
+        return pattern.matcher(StringUtils.defaultString(connectionUri)).find();
     }
 
     /**

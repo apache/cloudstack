@@ -252,4 +252,104 @@ public class TransactionLegacyTest {
 
         Assert.assertEquals(uri, TransactionLegacy.addDefaultConnectionCollation(uri));
     }
+
+    @Test
+    public void shouldPinConnectionCollationTestUriWithHostContainingTheParameterNamesReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://characterEncoding:5555/name"));
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://connectionCollation.example.com:5555/name?someParams"));
+    }
+
+    @Test
+    public void shouldPinConnectionCollationTestUriWithDatabaseNameContainingTheParameterNamesReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/connectionCollation"));
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/characterEncoding?someParams"));
+    }
+
+    @Test
+    public void shouldPinConnectionCollationTestParameterValueContainingTheParameterNamesReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/name?user=connectionCollation"));
+        Assert.assertTrue(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/name?user=characterEncoding&someParams"));
+    }
+
+    @Test
+    public void shouldPinConnectionCollationTestUriDefiningTheParametersAsTheFirstOneReturnsFalse() {
+        Assert.assertFalse(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/name?connectionCollation=utf8mb4_unicode_ci"));
+        Assert.assertFalse(TransactionLegacy.shouldPinConnectionCollation("jdbc:mysql://host:5555/name?characterEncoding=UTF-8&someParams"));
+    }
+
+    @Test
+    public void addDefaultConnectionCollationTestUriWithHostContainingTheParameterNamesAddsTheDefaultCollation() {
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://characterEncoding.example.com:5555/name");
+
+        Assert.assertEquals("jdbc:mysql://characterEncoding.example.com:5555/name?connectionCollation=utf8mb4_general_ci", result);
+    }
+
+    @Test
+    public void addDefaultConnectionCollationTestUriWithDatabaseNameContainingTheParameterNamesAddsTheDefaultCollation() {
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/connectionCollation?someParams");
+
+        Assert.assertEquals("jdbc:mysql://host:5555/connectionCollation?someParams&connectionCollation=utf8mb4_general_ci", result);
+    }
+
+    @Test
+    public void getConnectionUriAndDriverTestWithUriWhoseDatabaseNameContainsTheParameterNamePinsTheDefaultCollation() {
+        properties.setProperty("db.cloud.uri", "jdbc:mysql://host:5555/characterEncoding");
+
+        Pair<String, String> result = TransactionLegacy.getConnectionUriAndDriver(properties, null, false, "cloud");
+
+        Assert.assertEquals("jdbc:mysql://host:5555/characterEncoding?connectionCollation=utf8mb4_general_ci", result.first());
+    }
+
+    @Test
+    public void getConnectionUriAndDriverTestWithoutUriAndDatabaseNameContainingTheParameterNamePinsTheDefaultCollation() {
+        properties.setProperty("db.cloud.uri", "");
+        properties.setProperty("db.cloud.driver", "driver");
+        properties.setProperty("db.cloud.name", "connectionCollation");
+
+        Pair<String, String> result = TransactionLegacy.getConnectionUriAndDriver(properties, null, false, "cloud");
+
+        Assert.assertEquals("driver://host:5555/connectionCollation?autoReconnect=false&someParams&scrollTolerantForwardOnly=true"
+                + "&connectionCollation=utf8mb4_general_ci", result.first());
+    }
+
+    @Test
+    public void containsUriParamTestParamDefinedAsTheFirstOneReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/name?serverTimezone=UTC", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestParamDefinedAfterOtherParamsReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/name?someParams&serverTimezone=UTC", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestOnlyTheUriParamsReturnsTrue() {
+        Assert.assertTrue(TransactionLegacy.containsUriParam("serverTimezone=UTC&someParams", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestParamIsPartOfTheHostOrOfTheDatabaseNameReturnsFalse() {
+        Assert.assertFalse(TransactionLegacy.containsUriParam("jdbc:mysql://serverTimezone:5555/name", "serverTimezone"));
+        Assert.assertFalse(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/serverTimezone?someParams", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestParamIsTheValueOfAnotherParamReturnsFalse() {
+        Assert.assertFalse(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/name?user=serverTimezone", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestParamIsNotDefinedReturnsFalse() {
+        Assert.assertFalse(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/name?someParams", "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestNullConnectionUriReturnsFalse() {
+        Assert.assertFalse(TransactionLegacy.containsUriParam(null, "serverTimezone"));
+    }
+
+    @Test
+    public void containsUriParamTestIsCaseInsensitive() {
+        Assert.assertTrue(TransactionLegacy.containsUriParam("jdbc:mysql://host:5555/name?SERVERTIMEZONE=UTC", "serverTimezone"));
+    }
 }
