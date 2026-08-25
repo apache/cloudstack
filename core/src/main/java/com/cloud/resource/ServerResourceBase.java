@@ -118,7 +118,7 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     private void checkForPrivateInterfaceDefinedByIp(Map<String, Object> params) {
-        final String ifAddr = (String) params.get("private.network.address");
+        final String ifAddr = StringUtils.trimToNull((String) params.get("private.network.address"));
         if (ifAddr != null) {
             logger.debug(String.format("Trying to use private address to resolve interface: [%s]", ifAddr));
             try {
