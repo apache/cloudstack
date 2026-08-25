@@ -32,9 +32,12 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.naming.ldap.Control;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.PagedResultsResponseControl;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,6 +45,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -120,6 +124,42 @@ public class OpenLdapUserManagerImplTest {
         String filter = capturedSearchFilter();
         assertTrue("browsing/importing users should still be scoped to already-linked groups: " + filter,
                 filter.contains("memberOf=" + LINKED_GROUP));
+    }
+
+    @Test
+    public void getUsersDoesNotAddGroupScopeWhenDomainHasNoLinkedGroups() throws Exception {
+        when(ldapTrustMapDaoMock.searchByDomainId(anyLong())).thenReturn(Collections.emptyList());
+
+        openLdapUserManager.getUsers("test_user", ldapContextMock, DOMAIN_ID);
+
+        String filter = capturedSearchFilter();
+        assertFalse("no linked groups in the domain means no group scoping should be applied: " + filter,
+                filter.contains("memberOf="));
+    }
+
+    @Test
+    public void searchStopsAfterOnePageWhenNoPagedResultsControlIsReturned() throws Exception {
+        Control unrelatedControl = mock(Control.class);
+        when(ldapContextMock.getResponseControls()).thenReturn(new Control[]{unrelatedControl});
+
+        List<LdapUser> result = openLdapUserManager.searchUsers("test_user", ldapContextMock, DOMAIN_ID);
+
+        assertTrue(result.isEmpty());
+        verify(ldapContextMock, times(1)).search(any(String.class), any(String.class), any(SearchControls.class));
+    }
+
+    @Test
+    public void searchFollowsCookieFromPagedResultsControlToNextPage() throws Exception {
+        PagedResultsResponseControl pagedControl = mock(PagedResultsResponseControl.class);
+        when(pagedControl.getCookie()).thenReturn(new byte[]{1, 2, 3});
+        when(ldapContextMock.getResponseControls())
+                .thenReturn(new Control[]{pagedControl})
+                .thenReturn(null);
+
+        List<LdapUser> result = openLdapUserManager.searchUsers("test_user", ldapContextMock, DOMAIN_ID);
+
+        assertTrue(result.isEmpty());
+        verify(ldapContextMock, times(2)).search(any(String.class), any(String.class), any(SearchControls.class));
     }
 
     private String capturedSearchFilter() throws Exception {
