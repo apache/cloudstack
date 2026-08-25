@@ -213,28 +213,28 @@ public class TransactionLegacyTest {
 
     @Test
     public void addDefaultConnectionCollationTestUriWithoutParametersAddsTheQueryStringSeparator() {
-        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name", "jdbc:mysql");
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name");
 
         Assert.assertEquals("jdbc:mysql://host:5555/name?connectionCollation=utf8mb4_general_ci", result);
     }
 
     @Test
     public void addDefaultConnectionCollationTestUriWithParametersAddsTheParameterSeparator() {
-        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?someParams", "jdbc:mysql");
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?someParams");
 
         Assert.assertEquals("jdbc:mysql://host:5555/name?someParams&connectionCollation=utf8mb4_general_ci", result);
     }
 
     @Test
     public void addDefaultConnectionCollationTestUriEndingWithQueryStringSeparatorDoesNotDuplicateIt() {
-        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?", "jdbc:mysql");
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?");
 
         Assert.assertEquals("jdbc:mysql://host:5555/name?connectionCollation=utf8mb4_general_ci", result);
     }
 
     @Test
     public void addDefaultConnectionCollationTestUriEndingWithParameterSeparatorDoesNotDuplicateIt() {
-        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?someParams&", "jdbc:mysql");
+        String result = TransactionLegacy.addDefaultConnectionCollation("jdbc:mysql://host:5555/name?someParams&");
 
         Assert.assertEquals("jdbc:mysql://host:5555/name?someParams&connectionCollation=utf8mb4_general_ci", result);
     }
@@ -243,13 +243,13 @@ public class TransactionLegacyTest {
     public void addDefaultConnectionCollationTestUriDefiningConnectionCollationKeepsItUntouched() {
         String uri = "jdbc:mysql://host:5555/name?connectionCollation=utf8mb4_unicode_ci";
 
-        Assert.assertEquals(uri, TransactionLegacy.addDefaultConnectionCollation(uri, "jdbc:mysql"));
+        Assert.assertEquals(uri, TransactionLegacy.addDefaultConnectionCollation(uri));
     }
 
     @Test
     public void addDefaultConnectionCollationTestUriDefiningCharacterEncodingKeepsItUntouched() {
         String uri = "jdbc:mysql://host:5555/name?characterEncoding=UTF-8";
 
-        Assert.assertEquals(uri, TransactionLegacy.addDefaultConnectionCollation(uri, "jdbc:mysql"));
+        Assert.assertEquals(uri, TransactionLegacy.addDefaultConnectionCollation(uri));
     }
 }

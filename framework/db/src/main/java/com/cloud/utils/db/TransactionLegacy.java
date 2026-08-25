@@ -1201,7 +1201,7 @@ public class TransactionLegacy implements Closeable {
             connectionUri = propertyUri;
         }
 
-        connectionUri = addDefaultConnectionCollation(connectionUri, driver);
+        connectionUri = addDefaultConnectionCollation(connectionUri);
 
         LOGGER.info("Using the following URI to connect to {} database [{}].", schema, connectionUri);
         return new Pair<>(connectionUri, driver);
@@ -1272,20 +1272,19 @@ public class TransactionLegacy implements Closeable {
      * connections that do not already define the charset or the collation, either through {@code db.<schema>.url.params}
      * or directly in {@code db.<schema>.uri}.
      *
-     * @param connectionParams the parameters configured by the operator; either the value of
-     *                         {@code db.<schema>.url.params} or the whole {@code db.<schema>.uri}.
+     * @param connectionUri the connection URI configured by the operator.
      */
-    protected static boolean shouldPinConnectionCollation(String connectionParams) {
-        return !StringUtils.containsIgnoreCase(connectionParams, CONNECTION_COLLATION_PARAM)
-                && !StringUtils.containsIgnoreCase(connectionParams, CHARACTER_ENCODING_PARAM);
+    protected static boolean shouldPinConnectionCollation(String connectionUri) {
+        return !StringUtils.containsIgnoreCase(connectionUri, CONNECTION_COLLATION_PARAM)
+                && !StringUtils.containsIgnoreCase(connectionUri, CHARACTER_ENCODING_PARAM);
     }
 
     /**
-     * Adds {@link #DEFAULT_CONNECTION_COLLATION} to a connection URI provided either through
+     * Adds {@link #DEFAULT_CONNECTION_COLLATION} to a connection URI configured either through
      * {@code db.<schema>.url.params} or directly in {@code db.<schema>.uri}, keeping the URI untouched if the operator
      * already defined the charset or the collation in it.
      */
-    protected static String addDefaultConnectionCollation(String connectionUri, String driver) {
+    protected static String addDefaultConnectionCollation(String connectionUri) {
         if (!shouldPinConnectionCollation(connectionUri)) {
             return connectionUri;
         }
