@@ -528,7 +528,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     private void clearAccountsOwnMapping(Long domainId, long accountId) {
         LdapTrustMapVO ownVo = _ldapTrustMapDao.findByAccount(domainId, accountId);
         if (ownVo != null) {
-            logger.warn(String.format("account %d in domain %d is already linked to ldap %s '%s'; replacing with the new mapping", accountId, domainId, ownVo.getType(), ownVo.getName()));
+            logger.warn("account {} in domain {} is already linked to ldap {} '{}'; replacing with the new mapping", accountId, domainId, ownVo.getType(), ownVo.getName());
             _ldapTrustMapDao.expunge(ownVo.getId());
         }
     }

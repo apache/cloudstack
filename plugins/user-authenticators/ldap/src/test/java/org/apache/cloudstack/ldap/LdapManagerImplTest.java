@@ -41,6 +41,7 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -137,7 +138,8 @@ public class LdapManagerImplTest {
         AccountVO otherAccount = new AccountVO();
         when(accountDaoMock.findByIdIncludingRemoved(otherAccountId)).thenReturn(otherAccount);
 
-        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkAccountToLdap(buildCmd("cn=claimed,dc=my,dc=domain,dc=com")));
+        LinkAccountToLdapCmd cmd = buildCmd("cn=claimed,dc=my,dc=domain,dc=com");
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkAccountToLdap(cmd));
 
         verify(ldapTrustMapDaoMock, never()).persist(any());
     }
@@ -162,9 +164,10 @@ public class LdapManagerImplTest {
         LdapTrustMapVO ownMapping = new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=old,dc=my,dc=domain,dc=com", Account.Type.NORMAL, ACCOUNT_ID);
         ReflectionTestUtils.setField(ownMapping, "id", OLD_MAPPING_ID);
         when(ldapTrustMapDaoMock.findByAccount(DOMAIN_ID, ACCOUNT_ID)).thenReturn(ownMapping);
-        Mockito.doThrow(new CloudRuntimeException("db blip")).when(ldapTrustMapDaoMock).expunge(Long.valueOf(OLD_MAPPING_ID));
+        doThrow(new CloudRuntimeException("db blip")).when(ldapTrustMapDaoMock).expunge(Long.valueOf(OLD_MAPPING_ID));
 
-        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkAccountToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com")));
+        LinkAccountToLdapCmd cmd = buildCmd("cn=new,dc=my,dc=domain,dc=com");
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkAccountToLdap(cmd));
 
         verify(ldapTrustMapDaoMock, never()).persist(any());
     }
