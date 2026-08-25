@@ -39,6 +39,12 @@ import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class FirstFitAllocatorTest {
 
@@ -58,32 +64,32 @@ public class FirstFitAllocatorTest {
         Long clusterId = 3L;
         String offeringTag = "compute";
 
-        DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
-        Mockito.when(plan.getDataCenterId()).thenReturn(dcId);
-        Mockito.when(plan.getPodId()).thenReturn(podId);
-        Mockito.when(plan.getClusterId()).thenReturn(clusterId);
+        DeploymentPlan plan = mock(DeploymentPlan.class);
+        when(plan.getDataCenterId()).thenReturn(dcId);
+        when(plan.getPodId()).thenReturn(podId);
+        when(plan.getClusterId()).thenReturn(clusterId);
 
-        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        Account account = Mockito.mock(Account.class);
-        Mockito.when(vmProfile.getServiceOffering()).thenReturn(offering);
-        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
-        Mockito.when(vmProfile.getOwner()).thenReturn(account);
-        Mockito.when(offering.getHostTag()).thenReturn(offeringTag);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        ServiceOffering offering = mock(ServiceOffering.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        Account account = mock(Account.class);
+        when(vmProfile.getServiceOffering()).thenReturn(offering);
+        when(vmProfile.getTemplate()).thenReturn(template);
+        when(vmProfile.getOwner()).thenReturn(account);
+        when(offering.getHostTag()).thenReturn(offeringTag);
 
-        HostVO host = Mockito.mock(HostVO.class);
+        HostVO host = mock(HostVO.class);
         List<Host> selectedHosts = List.of(host);
-        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, dcId, offeringTag)).thenReturn(List.of(host));
-        Mockito.when(hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId)).thenReturn(new ArrayList<>());
-        Mockito.doReturn(selectedHosts).when(firstFitAllocator).allocateTo(
+        when(hostDao.listByHostTag(type, clusterId, podId, dcId, offeringTag)).thenReturn(List.of(host));
+        when(hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId)).thenReturn(new ArrayList<>());
+        doReturn(selectedHosts).when(firstFitAllocator).allocateTo(
                 Mockito.eq(plan), Mockito.eq(offering), Mockito.eq(template), Mockito.any(ExcludeList.class), Mockito.anyList(), Mockito.eq(1), Mockito.eq(true), Mockito.eq(account));
 
         List<Host> result = firstFitAllocator.allocateTo(vmProfile, plan, type, new ExcludeList(), selectedHosts, 1, true);
 
         Assert.assertEquals(1, result.size());
-        Mockito.verify(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
-        Mockito.verify(hostDao, Mockito.never()).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+        verify(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+        verify(hostDao, never()).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
     }
 
     @Test
@@ -94,33 +100,33 @@ public class FirstFitAllocatorTest {
         Long clusterId = 3L;
         String offeringTag = "compute";
 
-        DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
-        Mockito.when(plan.getDataCenterId()).thenReturn(dcId);
-        Mockito.when(plan.getPodId()).thenReturn(podId);
-        Mockito.when(plan.getClusterId()).thenReturn(clusterId);
+        DeploymentPlan plan = mock(DeploymentPlan.class);
+        when(plan.getDataCenterId()).thenReturn(dcId);
+        when(plan.getPodId()).thenReturn(podId);
+        when(plan.getClusterId()).thenReturn(clusterId);
 
-        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
-        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        Account account = Mockito.mock(Account.class);
-        Mockito.when(vmProfile.getServiceOffering()).thenReturn(offering);
-        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
-        Mockito.when(vmProfile.getOwner()).thenReturn(account);
-        Mockito.when(offering.getHostTag()).thenReturn(offeringTag);
-        Mockito.when(userVmDetailsDao.findDetail(Mockito.anyLong(), Mockito.eq("UEFI"))).thenReturn(null);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        ServiceOffering offering = mock(ServiceOffering.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        Account account = mock(Account.class);
+        when(vmProfile.getServiceOffering()).thenReturn(offering);
+        when(vmProfile.getTemplate()).thenReturn(template);
+        when(vmProfile.getOwner()).thenReturn(account);
+        when(offering.getHostTag()).thenReturn(offeringTag);
+        when(userVmDetailsDao.findDetail(Mockito.anyLong(), Mockito.eq("UEFI"))).thenReturn(null);
 
-        HostVO host = Mockito.mock(HostVO.class);
+        HostVO host = mock(HostVO.class);
         List<Host> selectedHosts = List.of(host);
-        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, dcId, offeringTag)).thenReturn(new ArrayList<>(List.of(host)));
-        Mockito.when(hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId)).thenReturn(new ArrayList<>());
-        Mockito.when(hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null)).thenReturn(new ArrayList<>());
-        Mockito.doReturn(selectedHosts).when(firstFitAllocator).allocateTo(
+        when(hostDao.listByHostTag(type, clusterId, podId, dcId, offeringTag)).thenReturn(new ArrayList<>(List.of(host)));
+        when(hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId)).thenReturn(new ArrayList<>());
+        when(hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null)).thenReturn(new ArrayList<>());
+        doReturn(selectedHosts).when(firstFitAllocator).allocateTo(
                 Mockito.eq(plan), Mockito.eq(offering), Mockito.eq(template), Mockito.any(ExcludeList.class), Mockito.anyList(), Mockito.eq(1), Mockito.eq(true), Mockito.eq(account));
 
         List<Host> result = firstFitAllocator.allocateTo(vmProfile, plan, type, new ExcludeList(), 1, true);
 
         Assert.assertEquals(1, result.size());
-        Mockito.verify(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
-        Mockito.verify(hostDao, Mockito.never()).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+        verify(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+        verify(hostDao, never()).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
     }
 }
