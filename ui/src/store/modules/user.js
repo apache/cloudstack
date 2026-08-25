@@ -304,6 +304,11 @@ const user = {
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
         if (hasAuth) {
+          if (!Cookies.get('userid')) {
+            reject(new Error('Identity session expired'))
+            return
+          }
+
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
           commit('SET_SHOW_SECURITY_GROUPS', cachedShowSecurityGroups)
