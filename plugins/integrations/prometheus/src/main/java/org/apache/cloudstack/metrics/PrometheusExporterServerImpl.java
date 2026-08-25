@@ -110,7 +110,6 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
     @Override
     public boolean stop() {
         if (httpServer != null) {
-            httpServer.setExecutor(null);
             httpServer.stop(0);
             logger.debug("Stopped Prometheus exporter http server");
         }
