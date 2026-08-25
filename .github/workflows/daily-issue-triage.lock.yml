@@ -72,6 +72,7 @@ run-name: "Daily Issue Triage"
 
 jobs:
   activation:
+    if: github.repository == 'apache/cloudstack'
     runs-on: ubuntu-slim
     permissions:
       actions: read
