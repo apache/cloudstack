@@ -828,6 +828,102 @@ public class InstanceBootGroupApiServiceImplTest {
     }
 
     @Test
+    public void testListInstanceBootGroupMembersInstanceGroupMemberQuorumOverridesFailingMemberTargetedRule() {
+        ListInstanceBootGroupMembersCmd cmd = baseListMembersCmd(true, true, false);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+        InstanceBootGroupMemberVO member = newMember(1L, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID, 0);
+        when(instanceBootGroupMemberDao.searchAndCountByBootGroupId(GROUP_ID))
+                .thenReturn(new com.cloud.utils.Pair<>(new ArrayList<>(Collections.singletonList(member)), 1));
+        InstanceGroupVO instanceGroup = newInstanceGroup(INSTANCE_GROUP_ID, "ig1", ACCOUNT_ID);
+        when(instanceGroupDao.findById(INSTANCE_GROUP_ID)).thenReturn(instanceGroup);
+
+        InstanceGroupVMMapVO map1 = new InstanceGroupVMMapVO(INSTANCE_GROUP_ID, VM_ID);
+        InstanceGroupVMMapVO map2 = new InstanceGroupVMMapVO(INSTANCE_GROUP_ID, VM2_ID);
+        when(instanceGroupVMMapDao.listByGroupId(INSTANCE_GROUP_ID)).thenReturn(Arrays.asList(map1, map2));
+        when(userVmDao.listByIds(any())).thenReturn(Arrays.asList(
+                newVm(VM_ID, "vm1", "vm1host", ACCOUNT_ID, VirtualMachine.State.Running),
+                newVm(VM2_ID, "vm2", "vm2host", ACCOUNT_ID, VirtualMachine.State.Running)));
+        when(userVmDao.findById(VM_ID)).thenReturn(newVm(VM_ID, "vm1", "vm1host", ACCOUNT_ID, VirtualMachine.State.Running));
+        when(userVmDao.findById(VM2_ID)).thenReturn(newVm(VM2_ID, "vm2", "vm2host", ACCOUNT_ID, VirtualMachine.State.Running));
+
+        InstanceBootGroupReadinessRuleVO guestAgentRule = newRule(RULE_ID, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID,
+                InstanceBootGroupReadinessRule.RuleType.GuestAgentLiveness, true, "guest-agent-rule");
+        InstanceBootGroupReadinessRuleVO quorumRule = newRule(501L, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID,
+                InstanceBootGroupReadinessRule.RuleType.MemberQuorum, true, "quorum-rule");
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID))
+                .thenReturn(Arrays.asList(guestAgentRule, quorumRule));
+        when(instanceBootGroupReadinessCheckResultDao.findByRuleAndVm(501L, 0L))
+                .thenReturn(new InstanceBootGroupReadinessCheckResultVO(501L, 0L, InstanceBootGroupReadinessRule.Status.Ready, "quorum met", new Date()));
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID))
+                .thenReturn(Collections.emptyList());
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM2_ID))
+                .thenReturn(Collections.emptyList());
+        when(instanceBootGroupReadinessRuleService.findInheritedGroupRules(eq(GROUP_ID), anyLong())).thenReturn(Collections.emptyList());
+
+        ListResponse<InstanceBootGroupMemberResponse> response = service.listInstanceBootGroupMembers(cmd);
+
+        InstanceBootGroupMemberResponse memberResponse = response.getResponses().get(0);
+        // The failing GuestAgentLiveness aggregate must not veto the group once MemberQuorum is met —
+        // its cached row isn't even consulted for the overall verdict.
+        assertEquals("Ready", field(memberResponse, "readinessStatus"));
+        verify(instanceBootGroupReadinessCheckResultDao, never()).findByRuleAndVm(RULE_ID, 0L);
+    }
+
+    /**
+     * A group-scope rule (MemberQuorum in particular) isn't tied to any one VM, so nothing else
+     * re-derives it once a member stops outside of active orchestration — reading the member list
+     * must refresh it first, or it can keep reporting a stale Ready from the last successful start.
+     */
+    @Test
+    public void testListInstanceBootGroupMembersRefreshesGroupOwnRulesBeforeReadingCache() {
+        ListInstanceBootGroupMembersCmd cmd = baseListMembersCmd(true, false, false);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+        InstanceBootGroupMemberVO member = newMember(1L, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID, 0);
+        when(instanceBootGroupMemberDao.searchAndCountByBootGroupId(GROUP_ID))
+                .thenReturn(new com.cloud.utils.Pair<>(new ArrayList<>(Collections.singletonList(member)), 1));
+        InstanceGroupVO instanceGroup = newInstanceGroup(INSTANCE_GROUP_ID, "ig1", ACCOUNT_ID);
+        when(instanceGroupDao.findById(INSTANCE_GROUP_ID)).thenReturn(instanceGroup);
+        when(instanceGroupVMMapDao.listByGroupId(INSTANCE_GROUP_ID)).thenReturn(Collections.emptyList());
+
+        InstanceBootGroupReadinessRuleVO quorumRule = newRule(RULE_ID, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID,
+                InstanceBootGroupReadinessRule.RuleType.MemberQuorum, true, "quorum-rule");
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID))
+                .thenReturn(Collections.singletonList(quorumRule));
+        when(instanceBootGroupReadinessCheckResultDao.findByRuleAndVm(RULE_ID, 0L))
+                .thenReturn(new InstanceBootGroupReadinessCheckResultVO(RULE_ID, 0L, InstanceBootGroupReadinessRule.Status.Ready, "stale", new Date()));
+
+        service.listInstanceBootGroupMembers(cmd);
+
+        verify(instanceBootGroupReadinessRuleService).evaluateInstanceGroupReadiness(GROUP_ID, INSTANCE_GROUP_ID, Collections.emptySet());
+    }
+
+    @Test
+    public void testListInstanceBootGroupMembersIgnoreVmStateSkipsGroupOwnRuleRefresh() {
+        ListInstanceBootGroupMembersCmd cmd = baseListMembersCmd(true, false, true);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+        InstanceBootGroupMemberVO member = newMember(1L, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID, 0);
+        when(instanceBootGroupMemberDao.searchAndCountByBootGroupId(GROUP_ID))
+                .thenReturn(new com.cloud.utils.Pair<>(new ArrayList<>(Collections.singletonList(member)), 1));
+        InstanceGroupVO instanceGroup = newInstanceGroup(INSTANCE_GROUP_ID, "ig1", ACCOUNT_ID);
+        when(instanceGroupDao.findById(INSTANCE_GROUP_ID)).thenReturn(instanceGroup);
+        when(instanceGroupVMMapDao.listByGroupId(INSTANCE_GROUP_ID)).thenReturn(Collections.emptyList());
+
+        InstanceBootGroupReadinessRuleVO quorumRule = newRule(RULE_ID, GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID,
+                InstanceBootGroupReadinessRule.RuleType.MemberQuorum, true, "quorum-rule");
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(GROUP_ID, InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID))
+                .thenReturn(Collections.singletonList(quorumRule));
+        when(instanceBootGroupReadinessCheckResultDao.findByRuleAndVm(RULE_ID, 0L))
+                .thenReturn(new InstanceBootGroupReadinessCheckResultVO(RULE_ID, 0L, InstanceBootGroupReadinessRule.Status.Ready, "last known", new Date()));
+
+        service.listInstanceBootGroupMembers(cmd);
+
+        verify(instanceBootGroupReadinessRuleService, never()).evaluateInstanceGroupReadiness(anyLong(), anyLong(), any());
+    }
+
+    @Test
     public void testListInstanceBootGroupMembersInstanceGroupWithoutQuorumRequiresAllChildrenReady() {
         ListInstanceBootGroupMembersCmd cmd = baseListMembersCmd(true, true, false);
         InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);

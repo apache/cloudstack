@@ -116,7 +116,9 @@ export default {
         order: this.memberCount
       })
       this.rules = reactive({
-        order: [{ required: true, type: 'number', message: `${this.$t('message.error.required.input')}` }]
+        order: [{ required: true, type: 'number', message: `${this.$t('message.error.required.input')}` }],
+        virtualmachineid: [{ required: true, message: this.$t('message.error.select') }],
+        instancegroupid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
     onMemberTypeChange () {

@@ -89,10 +89,8 @@ public class InstanceBootGroupMembershipGuard {
                     "VM %s is already an independent member of an instance boot group", vm));
         }
 
-        List<InstanceGroupVMMapVO> currentMappings = instanceGroupVMMapDao.listByInstanceId(vmId);
-        if (CollectionUtils.isNotEmpty(currentMappings)) {
-            long currentGroupId = currentMappings.get(0).getGroupId();
-            if (instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, currentGroupId) != null) {
+        for (InstanceGroupVMMapVO mapping : instanceGroupVMMapDao.listByInstanceId(vmId)) {
+            if (instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId()) != null) {
                 throw new InvalidParameterValueException(String.format(
                         "VM %s is currently in an instance group that is already a member of an instance boot group", vm));
             }

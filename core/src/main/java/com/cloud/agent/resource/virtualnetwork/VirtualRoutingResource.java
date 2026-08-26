@@ -491,7 +491,7 @@ public class VirtualRoutingResource {
     }
 
     private Answer execute(InstanceReadinessCheckCommand cmd) {
-        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt("60", 60));
+        _eachTimeout = Duration.standardSeconds(Math.max(cmd.getWait(), 1));
         String args = cmd.getPort() == null ?
                 String.format("%s %s", cmd.getCheckType(), cmd.getIpAddress()) :
                 String.format("%s %s %s", cmd.getCheckType(), cmd.getIpAddress(), cmd.getPort());

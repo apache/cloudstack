@@ -712,6 +712,32 @@ public class InstanceBootGroupReadinessRuleManagerImplTest {
     }
 
     @Test
+    public void evaluateInstanceGroupReadinessQuorumMetOverridesFailingMemberTargetedRule() {
+        InstanceBootGroupReadinessRuleVO guestAgentRule = ruleVO(RULE_ID, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.GuestAgentLiveness, true);
+        InstanceBootGroupReadinessRuleVO quorumRule = ruleVO(20L, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.MemberQuorum, true);
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID))
+                .thenReturn(Arrays.asList(guestAgentRule, quorumRule));
+        when(instanceBootGroupReadinessRuleDetailsDao.getDetails(20L)).thenReturn(thresholdDetails("COUNT", "1"));
+
+        InstanceGroupVMMapVO m1 = new InstanceGroupVMMapVO(GROUP_ID, VM_ID);
+        InstanceGroupVMMapVO m2 = new InstanceGroupVMMapVO(GROUP_ID, VM_ID_2);
+        when(instanceGroupVMMapDao.listByGroupId(GROUP_ID)).thenReturn(Arrays.asList(m1, m2));
+        stubNoRuleVm(VM_ID, VirtualMachine.State.Running);
+        stubNoRuleVm(VM_ID_2, VirtualMachine.State.Running);
+
+        InstanceBootGroupReadinessCheckResultVO ready = new InstanceBootGroupReadinessCheckResultVO(RULE_ID, VM_ID, Status.Ready, "ok", new Date());
+        InstanceBootGroupReadinessCheckResultVO notReady = new InstanceBootGroupReadinessCheckResultVO(RULE_ID, VM_ID_2, Status.NotReady, "no agent", new Date());
+        when(instanceBootGroupReadinessCheckResultDao.findByRuleAndVm(RULE_ID, VM_ID)).thenReturn(ready);
+        when(instanceBootGroupReadinessCheckResultDao.findByRuleAndVm(RULE_ID, VM_ID_2)).thenReturn(notReady);
+
+        Status status = manager.evaluateInstanceGroupReadiness(BOOT_GROUP_ID, GROUP_ID, Collections.emptySet());
+
+        assertEquals(Status.Ready, status);
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(RULE_ID), eq(0L), eq(Status.NotReady), any(), any(Date.class));
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(20L), eq(0L), eq(Status.Ready), any(), any(Date.class));
+    }
+
+    @Test
     public void evaluateInstanceGroupReadinessMemberTargetedRuleAggregatesCachedResults() {
         InstanceBootGroupReadinessRuleVO pingRule = ruleVO(RULE_ID, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.Ping, true);
         when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID)).thenReturn(Collections.singletonList(pingRule));

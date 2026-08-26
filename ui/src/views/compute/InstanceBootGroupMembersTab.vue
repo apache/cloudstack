@@ -52,7 +52,7 @@
           </a-tooltip>
           <tooltip-button
             v-if="record.readinessmode == 'RuleBased' && isReadinessFailing(record.readinessstatus)"
-            :tooltip="$t('label.view.failing.readiness.rules')"
+            :tooltip="computedReadinessStateTooltip(record)"
             size="small"
             icon="exclamation-circle-outlined"
             @click="openReadinessRulesModal(record.membertype, record.memberid, record.membername, true)" />
@@ -111,7 +111,7 @@
               </a-tooltip>
               <tooltip-button
                 v-if="vmRecord.readinessmode == 'RuleBased' && isReadinessFailing(vmRecord.readinessstatus)"
-                :tooltip="$t('label.view.failing.readiness.rules')"
+                :tooltip="vmRecord.state == 'Running' ? $t('label.view.failing.readiness.rules') : $t('label.instance.not.running.view.last.readiness.results')"
                 size="small"
                 icon="exclamation-circle-outlined"
                 @click="openReadinessRulesModal('VirtualMachine', vmRecord.id, vmRecord.name, true)" />
@@ -332,6 +332,22 @@ export default {
       }).finally(() => {
         this.removeLoading = false
       })
+    },
+    computedReadinessStateTooltip (record) {
+      console.log('1@@@', record)
+      if (record.readinessmode !== 'RuleBased' || !this.isReadinessFailing(record.readinessstatus)) {
+        return ''
+      }
+      if (record.membertype === 'VirtualMachine') {
+        return record.state === 'Running'
+          ? this.$t('label.view.failing.readiness.rules')
+          : this.$t('label.instance.not.running.view.last.readiness.results')
+      }
+      console.log('@@@', record.children.filter(c => c.state === 'Running'))
+      if (record.children.filter(c => c.state === 'Running').length === 0) {
+        return this.$t('label.instancegroup.instances.not.running.view.last.readiness.results')
+      }
+      return this.$t('label.view.failing.readiness.rules')
     }
   }
 }

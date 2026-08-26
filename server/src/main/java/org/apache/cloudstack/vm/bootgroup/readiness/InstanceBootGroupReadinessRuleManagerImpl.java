@@ -84,17 +84,6 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
             InstanceBootGroupReadinessRule.RuleType.GuestAgentLiveness,
             InstanceBootGroupReadinessRule.RuleType.MemberQuorum);
 
-    /**
-     * VM-targeted rule types — when attached to an InstanceGroup rather than a VM, these are
-     * evaluated against every current member individually (and inherited by each member's own
-     * {@link #evaluateVmReadiness}) rather than aggregated purely at the group level, unlike
-     * MemberQuorum/CustomScript which only ever operate at group scope.
-     */
-    private static final Set<InstanceBootGroupReadinessRule.RuleType> MEMBER_TARGETED_RULE_TYPES = EnumSet.of(
-            InstanceBootGroupReadinessRule.RuleType.Ping,
-            InstanceBootGroupReadinessRule.RuleType.PortCheck,
-            InstanceBootGroupReadinessRule.RuleType.GuestAgentLiveness);
-
     @Inject
     private InstanceBootGroupReadinessRuleDao instanceBootGroupReadinessRuleDao;
 
@@ -341,7 +330,7 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
             InstanceBootGroupMemberVO groupMember = instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId());
             if (groupMember != null && groupMember.getBootGroupId() == bootGroupId) {
                 return instanceBootGroupReadinessRuleDao.listEnabledByItem(bootGroupId, InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId()).stream()
-                        .filter(rule -> MEMBER_TARGETED_RULE_TYPES.contains(rule.getRuleType()))
+                        .filter(rule -> rule.getRuleType().isMemberTargeted())
                         .collect(Collectors.toList());
             }
         }
@@ -352,6 +341,9 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
      * AND of the group's own rules and every member's cached readiness (read-only — the per-VM loop
      * already dispatched this poll). A MemberQuorum rule's own tolerance-aware verdict decides
      * Ready/Error on its own; without one, a member still mid-retry only counts as NotReady, never Error.
+     * Once a MemberQuorum rule governs the group, every other member-targeted rule's own all-members
+     * aggregate becomes informational only — it's still evaluated and shown, but no longer gates the
+     * overall verdict, since that's exactly what attaching a quorum rule is meant to relax.
      */
     @Override
     public InstanceBootGroupReadinessRule.Status evaluateInstanceGroupReadiness(long bootGroupId, long instanceGroupId, Set<Long> permanentlyFailedVmIds) {
@@ -379,11 +371,12 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
 
         for (InstanceBootGroupReadinessRuleVO rule : groupRules) {
             ReadinessChecker.Result result;
+            boolean memberTargeted = rule.getRuleType().isMemberTargeted();
             if (rule.getRuleType() == InstanceBootGroupReadinessRule.RuleType.MemberQuorum) {
                 logger.debug("Evaluating group-scoped rule {} for instance group id {} via member quorum", rule, instanceGroupId);
                 Map<String, String> details = instanceBootGroupReadinessRuleDetailsDao.getDetails(rule.getId());
                 result = evaluateInstanceQuorum(bootGroupId, instanceGroupId, details, permanentlyFailedVmIds);
-            } else if (MEMBER_TARGETED_RULE_TYPES.contains(rule.getRuleType())) {
+            } else if (memberTargeted) {
                 logger.debug("Evaluating group-scoped rule {} for instance group id {} by aggregating its {} member(s)' own cached results", rule, instanceGroupId, members.size());
                 result = aggregateMemberTargetedGroupRule(rule, members);
             } else {
@@ -393,6 +386,9 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
             logger.debug("Group-scoped rule {} evaluated for instance group id {}: status={}, message={}", rule, instanceGroupId, result.getStatus(), result.getMessage());
             instanceBootGroupReadinessCheckResultDao.upsert(rule.getId(), 0, result.getStatus(), result.getMessage(), new Date());
 
+            if (memberTargeted && hasMemberQuorumRule) {
+                continue;
+            }
             if (result.getStatus() == InstanceBootGroupReadinessRule.Status.Error) {
                 anyError = true;
             } else if (result.getStatus() != InstanceBootGroupReadinessRule.Status.Ready) {

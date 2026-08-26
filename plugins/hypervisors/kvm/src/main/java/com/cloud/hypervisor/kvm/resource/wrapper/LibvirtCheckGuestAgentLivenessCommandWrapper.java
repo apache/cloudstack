@@ -31,12 +31,15 @@ import com.cloud.agent.api.CheckGuestAgentLivenessCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 @ResourceWrapper(handles = CheckGuestAgentLivenessCommand.class)
 public class LibvirtCheckGuestAgentLivenessCommandWrapper extends CommandWrapper<CheckGuestAgentLivenessCommand, Answer, LibvirtComputingResource> {
 
-    private static final int AGENT_PING_TIMEOUT_SECONDS = 5;
+    private static final int MIN_AGENT_PING_TIMEOUT_SECONDS = 1;
+    private static final int MAX_RESULT_MESSAGE_LENGTH = 256;
 
     @Override
     public Answer execute(CheckGuestAgentLivenessCommand command, LibvirtComputingResource serverResource) {
@@ -55,11 +58,9 @@ public class LibvirtCheckGuestAgentLivenessCommandWrapper extends CommandWrapper
                 return new CheckGuestAgentLivenessAnswer(command, false, String.format("VM %s is in %s state", vmName, domainState));
             }
 
-            String result = domain.qemuAgentCommand(QemuCommand.buildQemuCommand(QemuCommand.AGENT_PING, null), AGENT_PING_TIMEOUT_SECONDS, 0);
-            if (result != null && new JsonParser().parse(result).isJsonObject() && !new JsonParser().parse(result).getAsJsonObject().has("error")) {
-                return new CheckGuestAgentLivenessAnswer(command, true, "guest agent responded");
-            }
-            return new CheckGuestAgentLivenessAnswer(command, false, "guest agent did not respond as expected: " + result);
+            int timeoutSeconds = Math.max(command.getWait(), MIN_AGENT_PING_TIMEOUT_SECONDS);
+            String result = domain.qemuAgentCommand(QemuCommand.buildQemuCommand(QemuCommand.AGENT_PING, null), timeoutSeconds, 0);
+            return parseJsonResult(command, result);
         } catch (LibvirtException e) {
             return new CheckGuestAgentLivenessAnswer(command, false, "guest agent did not respond: " + e.getMessage());
         } finally {
@@ -71,5 +72,28 @@ public class LibvirtCheckGuestAgentLivenessCommandWrapper extends CommandWrapper
                 }
             }
         }
+    }
+
+    private CheckGuestAgentLivenessAnswer parseJsonResult(CheckGuestAgentLivenessCommand command, String result) {
+        if (result == null || result.isBlank()) {
+            logger.error("Guest agent returned empty response");
+            return new CheckGuestAgentLivenessAnswer(command, false, "guest agent returned empty response");
+        }
+        try {
+            JsonElement parsedResult = JsonParser.parseString(result);
+            if (parsedResult.isJsonObject() && parsedResult.getAsJsonObject().has("return") && !parsedResult.getAsJsonObject().has("error")) {
+                return new CheckGuestAgentLivenessAnswer(command, true, "guest agent responded");
+            }
+        } catch (JsonParseException e) {
+            return new CheckGuestAgentLivenessAnswer(command, false, "guest agent returned invalid JSON: " + abbreviateResultForMessage(result));
+        }
+        return new CheckGuestAgentLivenessAnswer(command, false, "guest agent did not respond as expected: " + abbreviateResultForMessage(result));
+    }
+
+    private String abbreviateResultForMessage(String result) {
+        if (result.length() <= MAX_RESULT_MESSAGE_LENGTH) {
+            return result;
+        }
+        return result.substring(0, MAX_RESULT_MESSAGE_LENGTH) + "...";
     }
 }

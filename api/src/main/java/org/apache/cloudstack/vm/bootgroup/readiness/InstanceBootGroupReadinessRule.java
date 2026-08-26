@@ -52,11 +52,26 @@ public interface InstanceBootGroupReadinessRule extends Identity, InternalIdenti
      * (group-scope) CustomScript apply to InstanceGroup items.
      */
     enum RuleType {
-        GuestAgentLiveness,
-        Ping,
-        PortCheck,
-        CustomScript,
-        MemberQuorum
+        GuestAgentLiveness(true),
+        Ping(true),
+        PortCheck(true),
+        CustomScript(false),
+        MemberQuorum(false);
+
+        private final boolean memberTargeted;
+
+        RuleType(boolean memberTargeted) {
+            this.memberTargeted = memberTargeted;
+        }
+
+        /**
+         * True for a rule type that, when attached to an InstanceGroup, is evaluated against every
+         * current member individually and inherited by each member's own readiness — unlike
+         * MemberQuorum/(group-scope) CustomScript, which only ever operate at group scope.
+         */
+        public boolean isMemberTargeted() {
+            return memberTargeted;
+        }
     }
 
     enum Status {

@@ -18,6 +18,7 @@
 package org.apache.cloudstack.vm.bootgroup;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -603,14 +604,24 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     }
 
     /**
-     * With a MemberQuorum rule, a member's own status stays out of the aggregate — {@code ownResult}
-     * already carries the quorum's tolerance-aware verdict. Without one, every member must be ready.
+     * With a MemberQuorum rule, neither a member's own status nor any other member-targeted group
+     * rule's all-members aggregate gates {@code ownResult} — the quorum rule's own tolerance-aware
+     * verdict is the one that counts. Without one, every member (and every group rule) must be ready.
+     * Unless {@code ignoreVmState}, the group's own rule rows are refreshed first — a group-scope
+     * rule (MemberQuorum in particular) isn't tied to any one VM's state, so nothing else re-derives
+     * it once a member stops outside of active boot-group orchestration.
      */
     private ReadinessChecker.Result computeCachedInstanceGroupReadinessResult(long bootGroupId, long instanceGroupId, List<Long> memberVmIds, boolean ignoreVmState) {
         List<InstanceBootGroupReadinessRuleVO> groupRules = instanceBootGroupReadinessRuleDao.listEnabledByItem(bootGroupId, InstanceBootGroupMember.MemberType.InstanceGroup, instanceGroupId);
+        if (!ignoreVmState && !groupRules.isEmpty()) {
+            instanceBootGroupReadinessRuleService.evaluateInstanceGroupReadiness(bootGroupId, instanceGroupId, Collections.emptySet());
+        }
         boolean hasMemberQuorumRule = groupRules.stream().anyMatch(rule -> rule.getRuleType() == InstanceBootGroupReadinessRule.RuleType.MemberQuorum);
         List<Pair<InstanceBootGroupReadinessRule, Long>> ownRuleAndCacheVmIds = new ArrayList<>();
         for (InstanceBootGroupReadinessRuleVO rule : groupRules) {
+            if (hasMemberQuorumRule && rule.getRuleType().isMemberTargeted()) {
+                continue;
+            }
             ownRuleAndCacheVmIds.add(new Pair<>(rule, 0L));
         }
         ReadinessChecker.Result ownResult = combineCachedRuleResults(ownRuleAndCacheVmIds);
