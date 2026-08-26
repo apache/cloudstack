@@ -69,7 +69,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -114,12 +113,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return response;
     }
 
-    protected List<Long> getIdsOfAccessibleWebhooks(Account caller) {
-        if (Account.Type.ADMIN.equals(caller.getType())) {
+    protected List<Long> getIdsOfAccessibleWebhooks(Account caller, boolean isCallerRootAdmin) {
+        if (isCallerRootAdmin) {
             return new ArrayList<>();
         }
         String domainPath = null;
-        if (Account.Type.DOMAIN_ADMIN.equals(caller.getType())) {
+        if (accountManager.isDomainAdmin(caller.getId())) {
             Domain domain = domainDao.findById(caller.getDomainId());
             domainPath = domain.getPath();
         }
@@ -128,7 +127,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     protected ManagementServerHostVO basicWebhookDeliveryApiCheck(Account caller, final Long id, final Long webhookId,
-                final Long managementServerId, final Date startDate, final Date endDate) {
+              final Long managementServerId, final Date startDate, final Date endDate, boolean isCallerRootAdmin) {
         if (id != null) {
             WebhookDeliveryVO webhookDeliveryVO = webhookDeliveryDao.findById(id);
             if (webhookDeliveryVO == null) {
@@ -151,7 +150,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         ManagementServerHostVO managementServerHostVO = null;
         if (managementServerId != null) {
-            if (!Account.Type.ADMIN.equals(caller.getType())) {
+            if (!isCallerRootAdmin) {
                 throw new PermissionDeniedException("Invalid parameter specified");
             }
             managementServerHostVO = managementServerHostDao.findById(managementServerId);
@@ -231,7 +230,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             return;
         }
         String error = String.format("Payload URL: %s is already in use by another webhook", payloadUrl);
-        logger.error(String.format("%s: %s for Account [%s]", error, webhookVO, owner));
+        logger.error("{}: {} for Account [{}]", error, webhookVO, owner);
         throw new InvalidParameterValueException(error);
     }
 
@@ -254,6 +253,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return response;
     }
 
+    protected URI validatePayloadUrlByDeliverySecurityPolicy(String payloadUrl, long domainId) {
+        return WebhookUrlValidator.validateWebhookDestinationUrl(payloadUrl,
+                WebhookService.WebhookDeliveryAllowHttp.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlocklist.valueIn(domainId),
+                WebhookService.WebhookDeliveryBlockLocalAddresses.value());
+    }
+
     @Override
     public ListResponse<WebhookResponse> listWebhooks(ListWebhooksCmd cmd) {
         final CallContext ctx = CallContext.current();
@@ -263,6 +269,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
         final String scopeStr = cmd.getScope();
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
+        final boolean isCallerAdmin = isCallerRootAdmin || accountManager.isAdmin(caller.getId());
+
         Webhook.Scope scope = null;
         if (StringUtils.isNotEmpty(scopeStr)) {
             scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
@@ -270,9 +279,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
         }
-        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(caller.getType())) ||
-                (Webhook.Scope.Domain.equals(scope) &&
-                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(caller.getType()))) {
+        if ((Webhook.Scope.Global.equals(scope) && !isCallerRootAdmin) ||
+                (Webhook.Scope.Domain.equals(scope) && !isCallerAdmin)) {
             throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
         }
         Webhook.State state = null;
@@ -342,15 +350,16 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String scopeStr = cmd.getScope();
         final String stateStr = cmd.getState();
         Webhook.Scope scope = Webhook.Scope.Local;
+        final boolean isOwnerRootAdmin = accountManager.isRootAdmin(owner.getId());
+        final boolean isOwnerAdmin = isOwnerRootAdmin || accountManager.isAdmin(owner.getId());
         if (StringUtils.isNotEmpty(scopeStr)) {
             scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
             if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
         }
-        if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
-                (Webhook.Scope.Domain.equals(scope) &&
-                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
+        if ((Webhook.Scope.Global.equals(scope) && !isOwnerRootAdmin) ||
+                (Webhook.Scope.Domain.equals(scope) && !isOwnerAdmin)) {
             throw new InvalidParameterValueException(
                     String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
         }
@@ -361,7 +370,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
-        UriUtils.validateUrl(payloadUrl);
+        validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
         validateWebhookOwnerPayloadUrl(owner, payloadUrl, null);
         URI uri = URI.create(payloadUrl);
         if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
@@ -370,9 +379,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         long domainId = owner.getDomainId();
         Long cmdDomainId = cmd.getDomainId();
-        if (cmdDomainId != null &&
-                List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()) &&
-                Webhook.Scope.Domain.equals(scope)) {
+        if (cmdDomainId != null && isOwnerAdmin && Webhook.Scope.Domain.equals(scope)) {
             domainId = cmdDomainId;
         }
         WebhookVO webhook = new WebhookVO(name, description, state, domainId, owner.getId(), payloadUrl, secretKey,
@@ -432,14 +439,15 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             updateNeeded = true;
         }
         Account owner = accountManager.getAccount(webhook.getAccountId());
+        final boolean isOwnerRootAdmin = accountManager.isRootAdmin(owner.getId());
+        final boolean isOwnerAdmin = isOwnerRootAdmin || accountManager.isAdmin(owner.getId());
         if (StringUtils.isNotEmpty(scopeStr)) {
             Webhook.Scope scope = EnumUtils.getEnumIgnoreCase(Webhook.Scope.class, scopeStr);
             if (scope == null) {
                 throw new InvalidParameterValueException("Invalid scope specified");
             }
-            if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
-                    (Webhook.Scope.Domain.equals(scope) &&
-                            !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
+            if ((Webhook.Scope.Global.equals(scope) && !isOwnerRootAdmin) ||
+                    (Webhook.Scope.Domain.equals(scope) && !isOwnerAdmin)) {
                 throw new InvalidParameterValueException(
                         String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
             }
@@ -448,7 +456,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         }
         URI uri = URI.create(webhook.getPayloadUrl());
         if (StringUtils.isNotEmpty(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, owner.getDomainId());
             validateWebhookOwnerPayloadUrl(owner, payloadUrl, webhook);
             uri = URI.create(payloadUrl);
             webhook.setPayloadUrl(payloadUrl);
@@ -492,9 +500,10 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Date startDate = cmd.getStartDate();
         final Date endDate = cmd.getEndDate();
         final String eventType = cmd.getEventType();
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
         List<WebhookDeliveryResponse> responsesList = new ArrayList<>();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
-                startDate, endDate);
+                startDate, endDate, isCallerRootAdmin);
 
         Filter searchFilter = new Filter(WebhookDeliveryJoinVO.class, "id", false, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
@@ -502,11 +511,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (webhookId != null) {
             webhookIds.add(webhookId);
         } else {
-            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller));
+            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller, isCallerRootAdmin));
         }
         Pair<List<WebhookDeliveryJoinVO>, Integer> deliveriesAndCount =
                 webhookDeliveryJoinDao.searchAndCountByListApiParameters(id, webhookIds,
-                        (host != null ? host.getMsid() : null), keyword, startDate, endDate, eventType, searchFilter);
+                        (host != null ? host.getMsid() : null), keyword, startDate, endDate, eventType, searchFilter,
+                        isCallerRootAdmin);
         for (WebhookDeliveryJoinVO delivery : deliveriesAndCount.first()) {
             WebhookDeliveryResponse response = createWebhookDeliveryResponse(delivery);
             responsesList.add(response);
@@ -526,9 +536,16 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Date startDate = cmd.getStartDate();
         final Date endDate = cmd.getEndDate();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
-                startDate, endDate);
-        int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookId,
-                (host != null ? host.getMsid() : null), startDate, endDate);
+                startDate, endDate, false);
+        final boolean isCallerRootAdmin = accountManager.isRootAdmin(caller.getId());
+        List<Long> webhookIds = new ArrayList<>();
+        if (webhookId != null) {
+            webhookIds.add(webhookId);
+        } else {
+            webhookIds.addAll(getIdsOfAccessibleWebhooks(caller, isCallerRootAdmin));
+        }
+        int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookIds,
+                (host != null ? host.getMsid() : null), startDate, endDate, isCallerRootAdmin);
         logger.info("{} webhook deliveries removed", removed);
         return removed;
     }
@@ -542,6 +559,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String secretKey = cmd.getSecretKey();
         final Boolean sslVerification = cmd.isSslVerification();
         final String payload = cmd.getPayload();
+        final Account owner = accountManager.finalizeOwner(caller, null, null, null);
 
         if (ObjectUtils.allNull(deliveryId, webhookId) && StringUtils.isBlank(payloadUrl)) {
             throw new InvalidParameterValueException(String.format("One of the %s, %s or %s must be specified",
@@ -561,8 +579,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             }
             webhook = webhookDao.findById(existingDelivery.getWebhookId());
         }
+        URI uri = null;
         if (StringUtils.isNotBlank(payloadUrl)) {
-            UriUtils.validateUrl(payloadUrl);
+            long domainId = owner.getDomainId();
+            if (webhook != null) {
+                domainId = webhook.getDomainId();
+            }
+            uri = validatePayloadUrlByDeliverySecurityPolicy(payloadUrl, domainId);
         }
         if (webhookId != null) {
             webhook = webhookDao.findById(webhookId);
@@ -586,7 +609,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             webhook = new WebhookVO(caller.getDomainId(), caller.getId(), payloadUrl, secretKey,
                     Boolean.TRUE.equals(sslVerification));
         }
-        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload);
+        WebhookDelivery webhookDelivery = webhookService.executeWebhookDelivery(existingDelivery, webhook, payload, uri);
         if (webhookDelivery.getId() != WebhookDelivery.ID_DUMMY) {
             return createWebhookDeliveryResponse(webhookDeliveryJoinDao.findById(webhookDelivery.getId()));
         }
