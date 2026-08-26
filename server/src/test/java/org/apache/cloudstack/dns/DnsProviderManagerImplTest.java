@@ -262,6 +262,60 @@ public class DnsProviderManagerImplTest {
         manager.allocateDnsZone(cmd);
     }
 
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneNonOwnerShadowingOtherAccountZoneRejected() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("www.tenant1.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        DnsZoneVO victimZone = new DnsZoneVO("tenant1.cloud.example", DnsZone.ZoneType.Public, SERVER_ID,
+                ACCOUNT_ID + 50, DOMAIN_ID, "victim zone");
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.singletonList(victimZone));
+
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneNonOwnerParentOfOtherAccountZoneRejected() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("tenant1.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        DnsZoneVO victimZone = new DnsZoneVO("www.tenant1.cloud.example", DnsZone.ZoneType.Public, SERVER_ID,
+                ACCOUNT_ID + 50, DOMAIN_ID, "victim zone");
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.singletonList(victimZone));
+
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test
+    public void testAllocateDnsZoneNonOwnerPublicServerSuccess() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("tenant2.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.emptyList());
+        when(dnsZoneDao.findByNameServerAndType(anyString(), anyLong(), any())).thenReturn(null);
+        when(dnsZoneDao.persist(any(DnsZoneVO.class))).thenReturn(zoneVO);
+
+        DnsZone result = manager.allocateDnsZone(cmd);
+        assertNotNull(result);
+        verify(dnsZoneDao).persist(Mockito.argThat(z -> "tenant2.cloud.example".equals(((DnsZoneVO) z).getName())));
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void testProvisionDnsZoneNotFound() {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
@@ -804,6 +858,28 @@ public class DnsProviderManagerImplTest {
         assertNotNull(result);
         verify(dnsServerDao).persist(Mockito.argThat(
                 s -> !((DnsServerVO) s).getPublicServer() && ((DnsServerVO) s).getPublicDomainSuffix() == null));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddDnsServerPublicWithoutSuffixRejected() {
+        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+        when(cmd.isPublic()).thenReturn(true);
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        manager.addDnsServer(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateDnsServerPublicWithoutSuffixRejected() {
+        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
+                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.isPublic()).thenReturn(true);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        manager.updateDnsServer(cmd);
     }
 
     @Test(expected = CloudRuntimeException.class)

@@ -1022,8 +1022,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(String.format("VM %s should be stopped to do UserData reset", userVm));
         }
 
-        String userData = cmd.getUserData();
         Long userDataId = cmd.getUserdataId();
+        if (userDataId != null) {
+            UserData userData = userDataDao.findById(userDataId);
+            if (userData == null) {
+                throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+            }
+            _accountMgr.checkAccess(caller, null, false, userData);
+        }
+
+        String userData = cmd.getUserData();
         String userDataDetails = null;
         if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
             userDataDetails = cmd.getUserdataDetails().toString();
@@ -3686,7 +3694,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (checkExpunge && expunge) {
             String jobParamsString = ((AsyncJobVO) cmd.getJob()).getCmdInfo();
             HashMap<String,String> jobParams = GsonHelper.getGson().fromJson(jobParamsString, jobParamsType);
-            String apiKey = jobParams.get("apiKey");
+            String apiKey = jobParams.entrySet().stream()
+                    .filter(e -> ApiConstants.API_KEY.equalsIgnoreCase(e.getKey()))
+                    .map(Map.Entry::getValue).findFirst().orElse(null);
             checkExpungeVmPermission(ctx.getCallingAccount(), apiKey);
         }
 
