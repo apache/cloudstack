@@ -57,7 +57,9 @@ public class AddMemberToInstanceBootGroupCmd extends BaseCmd implements UserCmd 
     @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "The ID of the instance group to add (exclusive with virtualmachineid)")
     private Long instanceGroupId;
 
-    @Parameter(name = ApiConstants.BOOT_ORDER, type = CommandType.INTEGER, required = true, description = "The boot order value for this member (0 or greater; non-contiguous values are allowed)")
+    @Parameter(name = ApiConstants.BOOT_ORDER, type = CommandType.INTEGER, required = true,
+            description = "The boot order value for this member (0 or greater; non-contiguous values are allowed). "
+                    + "Any existing member already at or past this value is shifted one slot later to make room.")
     private int order;
 
     public Long getId() {

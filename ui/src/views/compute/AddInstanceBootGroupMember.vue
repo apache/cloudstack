@@ -90,6 +90,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    memberCount: {
+      type: Number,
+      default: 0
     }
   },
   inject: ['parentFetchData'],
@@ -109,7 +113,7 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         membertype: 'VirtualMachine',
-        order: 0
+        order: this.memberCount
       })
       this.rules = reactive({
         order: [{ required: true, type: 'number', message: `${this.$t('message.error.required.input')}` }]

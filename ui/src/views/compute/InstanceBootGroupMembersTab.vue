@@ -97,7 +97,7 @@
           :columns="vmColumns"
           :dataSource="record.children || []"
           :rowKey="item => item.id"
-          :pagination="false">
+          :pagination="childrenPagination">
           <template #bodyCell="{ column, text, record: vmRecord }">
             <template v-if="column.key === 'name'">
               <router-link :to="{ path: '/vm/' + vmRecord.id }">{{ text }}</router-link>
@@ -138,6 +138,7 @@
       @cancel="closeModals">
       <add-instance-boot-group-member
         :resource="resource"
+        :memberCount="members.length"
         @close-action="closeModals" />
     </a-modal>
 
@@ -222,6 +223,18 @@ export default {
         { key: 'readiness', title: this.$t('label.readiness'), dataIndex: 'readinessstatus' },
         { key: 'vmactions', title: this.$t('label.actions') }
       ]
+    }
+  },
+  computed: {
+    childrenPagination () {
+      var sizes = [10, 20, 40, 80, this.$store.getters.defaultListViewPageSize]
+      var pageSizeOptions = [...new Set(sizes)].sort((a, b) => a - b).map(String)
+      return {
+        size: 'small',
+        pageSize: pageSizeOptions[0] * 1,
+        pageSizeOptions: pageSizeOptions,
+        showSizeChanger: true
+      }
     }
   },
   created () {

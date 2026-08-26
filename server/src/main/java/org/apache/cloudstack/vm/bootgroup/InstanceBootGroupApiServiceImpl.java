@@ -321,8 +321,22 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             throw new InvalidParameterValueException(String.format("This %s already belongs to an instance boot group", memberType.name()));
         }
 
+        shiftSiblingOrdersForInsert(group.getId(), cmd.getOrder());
         InstanceBootGroupMemberVO member = new InstanceBootGroupMemberVO(group.getId(), memberType, memberId, cmd.getOrder());
         return instanceBootGroupMemberDao.persist(member);
+    }
+
+    /**
+     * Makes room for a new member at {@code order} by bumping every existing member already at or
+     * past it up by one slot, rather than letting the new member silently share that order.
+     */
+    private void shiftSiblingOrdersForInsert(long bootGroupId, int order) {
+        for (InstanceBootGroupMemberVO sibling : instanceBootGroupMemberDao.listByBootGroupId(bootGroupId)) {
+            if (sibling.getOrder() >= order) {
+                sibling.setOrder(sibling.getOrder() + 1);
+                instanceBootGroupMemberDao.update(sibling.getId(), sibling);
+            }
+        }
     }
 
     @NotNull
