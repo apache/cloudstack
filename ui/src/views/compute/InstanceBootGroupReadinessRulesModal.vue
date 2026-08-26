@@ -128,7 +128,7 @@
           <template #label>
             <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           </template>
-          <a-input v-model:value="form.name" :placeholder="$t('label.optional')" />
+          <a-input v-model:value="form.name" :placeholder="apiParams.name.description" />
         </a-form-item>
         <template v-if="form.ruletype === 'PortCheck'">
           <a-form-item name="port" ref="port" :label="$t('label.port')">

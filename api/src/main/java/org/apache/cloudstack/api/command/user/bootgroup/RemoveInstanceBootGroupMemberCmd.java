@@ -46,7 +46,7 @@ public class RemoveInstanceBootGroupMemberCmd extends BaseCmd implements UserCmd
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupMemberResponse.class, required = true, description = "The UUID of the boot group member entry to remove")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupMemberResponse.class, required = true, description = "The ID of the boot group member entry to remove")
     private Long id;
 
     public Long getId() {
