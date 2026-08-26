@@ -30,6 +30,7 @@ public class StartupAnswer extends Answer {
 
     Integer agentHostStatusCheckDelaySec;
     private Map<String, String> params;
+    private boolean retryCurrentMs;
 
     protected StartupAnswer() {
         params = new HashMap<>();
@@ -79,5 +80,13 @@ public class StartupAnswer extends Answer {
 
     public void setAgentHostStatusCheckDelaySec(Integer agentHostStatusCheckDelaySec) {
         this.agentHostStatusCheckDelaySec = agentHostStatusCheckDelaySec;
+    }
+
+    public boolean isRetryCurrentMs() {
+        return retryCurrentMs;
+    }
+
+    public void setRetryCurrentMs(boolean retryCurrentMs) {
+        this.retryCurrentMs = retryCurrentMs;
     }
 }
