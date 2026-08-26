@@ -1079,6 +1079,7 @@
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+                            <exclude>services/console-proxy/rdpconsole/src/test/doc/rdp-key.pem</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
                             <exclude>services/console-proxy/server/conf/uefi.properties</exclude>
                             <exclude>services/console-proxy/server/conf/environment.properties</exclude>
