@@ -506,6 +506,24 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
+     * True when any of the VM's volumes sits on a StorPool pool. Used to decide whether volume
+     * pool/path info must be sent to the agent even though the VM currently looks Running — see
+     * the caller in {@link #takeBackup}.
+     */
+    private boolean hasStorPoolVolume(List<VolumeVO> volumes) {
+        if (volumes == null) {
+            return false;
+        }
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (pool != null && Storage.StoragePoolType.StorPool.equals(pool.getPoolType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Read the {@code nas.active_checkpoint_id} VM detail. Returns {@code null} when no detail
      * exists (post-restore, first backup, or after explicit reset).
      */
@@ -717,8 +735,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         // A stopped VM is copied straight from its volumes. A running VM backed up with the content method
         // takes the scratch space of its pull-mode backup from the volumes' primary storage.
-        if (VirtualMachine.State.Stopped.equals(vm.getState()) || decision.isContentBased()) {
-            List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        // Also always sent when any volume is on StorPool: nasbackup.sh re-checks the VM's actual
+        // liveness itself right before acting, and that fresh check can disagree with this state
+        // read taken here. If it does and the VM turns out to be stopped, nasbackup.sh needs the
+        // StorPool volume path to clone a backup source disk from — without it there is nothing
+        // to derive that from.
+        boolean vmStopped = VirtualMachine.State.Stopped.equals(vm.getState());
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        boolean hasStorPoolVolume = hasStorPoolVolume(vmVolumes);
+        if (vmStopped || decision.isContentBased() || hasStorPoolVolume) {
+            if (!vmStopped && !decision.isContentBased()) {
+                logger.debug("VM {} looks {} but has a StorPool volume — sending volume pool/path info to the agent anyway, "
+                        + "in case nasbackup.sh's own liveness check finds it already stopped by execution time",
+                        vm.getInstanceName(), vm.getState());
+            }
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
             Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(vmVolumes);
             command.setVolumePools(volumePoolsAndPaths.first());
@@ -936,9 +966,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private List<String> getBackupFiles(List<Backup.VolumeInfo> backedVolumes) {
         List<String> backupFiles = new ArrayList<>();
         for (Backup.VolumeInfo backedVolume : backedVolumes) {
-            backupFiles.add(backedVolume.getPath());
+            backupFiles.add(getBackupFileIdentifier(backedVolume.getPath()));
         }
         return backupFiles;
+    }
+
+    // nasbackup.sh names each qcow2 after the basename of the volume's disk path. No-op for
+    // most drivers (bare volume path already); reduces StorPool's full device path to match.
+    private String getBackupFileIdentifier(String volumePath) {
+        int idx = volumePath.lastIndexOf('/');
+        return idx >= 0 ? volumePath.substring(idx + 1) : volumePath;
     }
 
     private Pair<List<PrimaryDataStoreTO>, List<String>> getVolumePoolsAndPaths(List<VolumeVO> volumes) {
@@ -953,9 +990,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             DataStore dataStore = dataStoreMgr.getDataStore(storagePool.getId(), DataStoreRole.Primary);
             volumePools.add(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null);
 
-            String volumePathPrefix = getVolumePathPrefix(storagePool);
-            String volumePathSuffix = getVolumePathSuffix(storagePool);
-            volumePaths.add(String.format("%s%s%s", volumePathPrefix, volume.getPath(), volumePathSuffix));
+            if (Storage.StoragePoolType.StorPool.equals(storagePool.getPoolType())) {
+                volumePaths.add(volume.getPath());
+            } else {
+                String volumePathPrefix = getVolumePathPrefix(storagePool);
+                String volumePathSuffix = getVolumePathSuffix(storagePool);
+                volumePaths.add(String.format("%s%s%s", volumePathPrefix, volume.getPath(), volumePathSuffix));
+            }
         }
         return new Pair<>(volumePools, volumePaths);
     }
@@ -968,6 +1009,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             volumePathPrefix = storagePool.getPath() + "/";
         } else if (Storage.StoragePoolType.Linstor.equals(storagePool.getPoolType())) {
             volumePathPrefix = "/dev/drbd/by-res/cs-";
+        } else if (Storage.StoragePoolType.StorPool.equals(storagePool.getPoolType())) {
+            volumePathPrefix = storagePool.getPath();
         } else {
             // Should be Storage.StoragePoolType.NetworkFilesystem
             volumePathPrefix = String.format("/mnt/%s/", storagePool.getUuid());
@@ -1038,7 +1081,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
-        restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
+        restoreCommand.setBackupFiles(Collections.singletonList(getBackupFileIdentifier(matchingVolume.getPath())));
 
         BackupAnswer answer;
         try {
@@ -1050,6 +1093,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
 
         if (answer.getResult()) {
+            if (answer.getRestoredVolumePath() != null) {
+                restoredVolume.setPath(answer.getRestoredVolumePath());
+            }
             try {
                 volumeDao.persist(restoredVolume);
             } catch (Exception e) {
