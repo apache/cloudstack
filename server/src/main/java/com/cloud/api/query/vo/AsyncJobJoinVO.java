@@ -27,6 +27,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDataHelper;
 
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
@@ -184,7 +185,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     public String getResult() {
-        return result;
+        return AsyncJobDataHelper.decryptResultIfNeeded(cmd, result);
     }
 
     public Date getCreated() {
