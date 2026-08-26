@@ -855,6 +855,7 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
+                        <inherited>false</inherited>
                         <goals>
                             <goal>makeAggregateBom</goal>
                         </goals>

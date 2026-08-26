@@ -17,14 +17,102 @@
 
 name: generate sboms
 
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
-  build:
+  ui-sbom:
     name: ui sbom
-    uses: sbomify/github-action@master
-    env:
-      LOCK_FILE: ui/package-lock.json
-      OUTPUT_FILE: sbom.ui.cdx.json
-      COMPONENT_NAME: my-app
-      COMPONENT_VERSION: ${{ github.ref_name }}
-      UPLOAD: false
-      ENRICH: true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Generate UI SBOM
+        uses: sbomify/sbomify-action@master
+        env:
+          LOCK_FILE: ui/package-lock.json
+          OUTPUT_FILE: sbom.ui.cdx.json
+          COMPONENT_NAME: cloudstack-ui
+          COMPONENT_VERSION: ${{ github.ref_name }}
+          UPLOAD: false
+          ENRICH: true
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-ui
+          path: sbom.ui.cdx.json
+
+  java-sbom:
+    name: java sbom
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Generate Java SBOM
+        run: mvn -B -ntp -Dnoredist org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-java
+          path: target/ACS.sbom.*
+
+  marvin-sbom:
+    name: marvin sbom
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+        with:
+          install-python: 'true'
+
+      - name: Resolve marvin dependencies
+        run: |
+          # marvin's `packages` list includes the generated marvin.cloudstackAPI
+          # module, which is created at build time from the API spec and isn't
+          # checked in, so setup.py can't be built directly. Read the declared
+          # install_requires instead of building the package.
+          python3 -c "
+          import ast
+          tree = ast.parse(open('tools/marvin/setup.py').read())
+          for node in ast.walk(tree):
+              if isinstance(node, ast.Call) and getattr(node.func, 'id', None) == 'setup':
+                  for kw in node.keywords:
+                      if kw.arg == 'install_requires':
+                          for elt in kw.value.elts:
+                              print(elt.value)
+          " > marvin-install-requires.txt
+          python3 -m venv marvin-venv
+          marvin-venv/bin/pip install --quiet -r marvin-install-requires.txt
+          marvin-venv/bin/pip freeze > marvin-requirements.txt
+
+      - name: Generate marvin SBOM
+        uses: sbomify/sbomify-action@master
+        env:
+          LOCK_FILE: marvin-requirements.txt
+          OUTPUT_FILE: sbom.marvin.cdx.json
+          COMPONENT_NAME: cloudstack-marvin
+          COMPONENT_VERSION: ${{ github.ref_name }}
+          UPLOAD: false
+          ENRICH: true
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-marvin
+          path: sbom.marvin.cdx.json
