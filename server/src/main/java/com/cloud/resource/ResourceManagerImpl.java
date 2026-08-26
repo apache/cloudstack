@@ -1067,9 +1067,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 logger.debug("Deleting tags from database for host with UUID [{}].", host.getUuid());
                 _hostTagsDao.deleteTags(hostId);
 
-                // Note: the host GUID is intentionally preserved on the (soft-)deleted record so that a
-                // returning agent with the same GUID can be detected and refused re-registration when
-                // 'add.host.on.service.restart.kvm' is false. See getNewHost()/rejectReAddOfDeletedHost().
                 final Long clusterId = host.getClusterId();
                 host.setClusterId(null);
                 _hostDao.update(host.getId(), host);
@@ -3221,9 +3218,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         logger.debug(String.format("Could not find Host by guid %s", fullGuid));
 
-        // No live host matches this GUID. Before letting the caller create a brand-new host,
-        // make sure this GUID does not belong to a host that was previously deleted. Otherwise a
-        // still-running agent whose host was deleted would silently re-register itself as a new host.
         rejectReAddOfDeletedHost(fullGuid, guidPrefix);
 
         return null;
