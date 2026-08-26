@@ -159,7 +159,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     CopyOnWriteArrayList<IAgentControlListener> controlListeners = new CopyOnWriteArrayList<>();
 
     IAgentShell shell;
-    NioConnection connection;
+    NioClient connection;
     ServerResource serverResource;
     Link link;
     Long id;
@@ -857,8 +857,20 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             if (serverResource != null && !serverResource.isExitOnFailures()) {
                 logger.trace("{} does not allow exit on failure, reconnecting",
                         serverResource.getClass().getSimpleName());
+                // If the MS flagged this as a duplicate connection, retry the same MS using
+                // the host we just connected to — the agent already knows the correct hostname.
+                final String preferredHost = startup.isRetryCurrentMs() && connection != null
+                        ? connection.getHost() : null;
+                if (preferredHost != null) {
+                    logger.info("Duplicate connection rejected, will retry same MS: {}", preferredHost);
+                }
                 logger.info("Reconnecting for {}", link);
-                requestHandler.submit(() -> reconnect(link, null, false));
+                requestHandler.submit(() -> {
+                    if (preferredHost != null) {
+                        shell.getBackoffAlgorithm().waitBeforeRetry();
+                    }
+                    reconnect(link, preferredHost, false);
+                });
                 return;
             }
             logger.fatal("Got unsuccessful result {} from the answer {}, details: {}",

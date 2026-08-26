@@ -18,9 +18,12 @@ package com.cloud.agent.manager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.transport.Request;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
@@ -41,6 +44,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -280,5 +285,113 @@ public class AgentManagerImplTest {
         when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
+    }
+
+    private ThreadPoolExecutor setupConnectAgentMocks() throws Exception {
+        ManagementServiceConfiguration mgmtServiceConf = Mockito.mock(ManagementServiceConfiguration.class);
+        Mockito.when(mgmtServiceConf.getPingInterval()).thenReturn(60);
+        mgr.mgmtServiceConf = mgmtServiceConf;
+
+        ConfigKey<String> backoffConfig = Mockito.mock(ConfigKey.class);
+        Mockito.when(backoffConfig.value()).thenReturn("");
+        FieldUtils.writeField(mgr, "BackoffConfiguration", backoffConfig, true);
+
+        ConfigKey<Integer> healthCheckDelay = Mockito.mock(ConfigKey.class);
+        Mockito.when(healthCheckDelay.value()).thenReturn(15);
+        FieldUtils.writeField(mgr, "AgentHostStatusCheckDelay", healthCheckDelay, true);
+
+        ThreadPoolExecutor executor = Mockito.mock(ThreadPoolExecutor.class);
+        FieldUtils.writeField(mgr, "_connectExecutor", executor, true);
+        return executor;
+    }
+
+    private Request buildRequest() {
+        return new Request(-1L, -1L, new Command[0], false, false);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConnectAgentNewGuidRegistersGuidAndSubmitsTask() throws Exception {
+        ThreadPoolExecutor executor = setupConnectAgentMocks();
+        String guid = "test-guid-new-ISCloudComputingResource";
+        StartupRoutingCommand cmd = new StartupRoutingCommand();
+        cmd.setGuid(guid);
+        Link link = Mockito.mock(Link.class);
+
+        mgr.connectAgent(link, new Command[]{cmd}, buildRequest());
+
+        ConcurrentHashMap<String, Boolean> processingGuids = (ConcurrentHashMap<String, Boolean>)
+                FieldUtils.readField(mgr, "_processingAgentGuids", true);
+        Assert.assertTrue("GUID should be registered for new connection", processingGuids.containsKey(guid));
+        Mockito.verify(executor).execute(Mockito.any(AgentManagerImpl.HandleAgentConnectTask.class));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConnectAgentDuplicateGuidRejectsAndDoesNotSubmitTask() throws Exception {
+        ThreadPoolExecutor executor = setupConnectAgentMocks();
+        String guid = "test-guid-dup-ISCloudComputingResource";
+        StartupRoutingCommand cmd = new StartupRoutingCommand();
+        cmd.setGuid(guid);
+        Link link = Mockito.mock(Link.class);
+        // Reject path now unregisters the new connection, which reads the socket address.
+        Mockito.when(link.getSocketAddress()).thenReturn(new java.net.InetSocketAddress("localhost", 8250));
+
+        // Pre-register GUID to simulate in-flight connection
+        ConcurrentHashMap<String, Boolean> processingGuids = (ConcurrentHashMap<String, Boolean>)
+                FieldUtils.readField(mgr, "_processingAgentGuids", true);
+        processingGuids.put(guid, Boolean.TRUE);
+
+        mgr.connectAgent(link, new Command[]{cmd}, buildRequest());
+
+        Mockito.verify(executor, Mockito.never()).execute(Mockito.any());
+        Assert.assertTrue("GUID should still be in map after duplicate rejection", processingGuids.containsKey(guid));
+        Mockito.verify(link).send(Mockito.any(java.nio.ByteBuffer[].class));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testHandleAgentConnectTaskRemovesGuidAfterCompletion() throws Exception {
+        String guid = "test-guid-task-ISCloudComputingResource";
+        StartupRoutingCommand startupCmd = new StartupRoutingCommand();
+        startupCmd.setGuid(guid);
+        Link link = Mockito.mock(Link.class);
+        Mockito.when(link.getSocketAddress()).thenReturn(new java.net.InetSocketAddress("localhost", 8250));
+
+        // Pre-register GUID
+        ConcurrentHashMap<String, Boolean> processingGuids = (ConcurrentHashMap<String, Boolean>)
+                FieldUtils.readField(mgr, "_processingAgentGuids", true);
+        processingGuids.put(guid, Boolean.TRUE);
+
+        // handleConnectedAgent will throw internally (deps not wired) but finally block must still remove GUID
+        AgentManagerImpl.HandleAgentConnectTask task =
+                mgr.new HandleAgentConnectTask(link, new Command[]{startupCmd}, buildRequest());
+        task.runInContext();
+
+        Assert.assertFalse("GUID should be removed from map after task completes", processingGuids.containsKey(guid));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testHandleAgentConnectTaskSkipsProcessingAndRemovesGuidWhenLinkTerminated() throws Exception {
+        String guid = "test-guid-terminated-ISCloudComputingResource";
+        StartupRoutingCommand startupCmd = new StartupRoutingCommand();
+        startupCmd.setGuid(guid);
+
+        Link link = Mockito.mock(Link.class);
+        Mockito.when(link.getSocketAddress()).thenReturn(new java.net.InetSocketAddress("localhost", 8250));
+        Mockito.when(link.isTerminated()).thenReturn(true);
+
+        ConcurrentHashMap<String, Boolean> processingGuids = (ConcurrentHashMap<String, Boolean>)
+                FieldUtils.readField(mgr, "_processingAgentGuids", true);
+        processingGuids.put(guid, Boolean.TRUE);
+
+        AgentManagerImpl.HandleAgentConnectTask task =
+                mgr.new HandleAgentConnectTask(link, new Command[]{startupCmd}, buildRequest());
+        task.runInContext();
+
+        Assert.assertFalse("GUID should be removed even when link is terminated", processingGuids.containsKey(guid));
+        // notifyMonitorsOfConnection should never be called since we exit early on terminated link
+        Mockito.verify(mgr, Mockito.never()).notifyMonitorsOfConnection(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
     }
 }

@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -251,6 +252,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private int maxConcurrentNewAgentConnections;
     private final ConcurrentHashMap<String, Long> newAgentConnections = new ConcurrentHashMap<>();
     protected ScheduledExecutorService newAgentConnectionsMonitor;
+    private final ConcurrentHashMap<String, Boolean> _processingAgentGuids = new ConcurrentHashMap<>();
 
     private boolean _reconcileCommandsEnabled = false;
     private Integer _reconcileCommandInterval;
@@ -2005,37 +2007,93 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 startups[i] = (StartupCommand)_cmds[i];
             }
 
-            AgentAttache attache = handleConnectedAgent(_link, startups, _request);
-            if (attache == null) {
-                logger.warn("Unable to create attache for agent: {}", _request);
+            if (_link.isTerminated()) {
+                logger.warn("Link is already terminated for agent: {}, skipping connection processing", _request);
+                if (startups[0] != null && startups[0].getGuid() != null) {
+                    _processingAgentGuids.remove(startups[0].getGuid());
+                }
+                unregisterNewConnection(_link.getSocketAddress());
+                return;
             }
-            unregisterNewConnection(_link.getSocketAddress());
+
+            try {
+                AgentAttache attache = handleConnectedAgent(_link, startups, _request);
+                if (attache == null) {
+                    logger.warn("Unable to create attache for agent: {}", _request);
+                }
+            } finally {
+                if (startups[0] != null && startups[0].getGuid() != null) {
+                    _processingAgentGuids.remove(startups[0].getGuid());
+                }
+                unregisterNewConnection(_link.getSocketAddress());
+            }
         }
     }
 
     protected void connectAgent(final Link link, final Command[] cmds, final Request request) {
         // send startup answer to agent in the very beginning, so agent can move on without waiting for the answer for an undetermined time,
         // if we put this logic into another thread pool.
-        Map<String, String> backoffConfiguration = ConfigKeyUtil.toMap(BackoffConfiguration.value());
+        // Build the startup answer — populated for all cases (success and reject)
         StartupAnswer[] answers = new StartupAnswer[cmds.length];
-        Command cmd;
         for (int i = 0; i < cmds.length; i++) {
-            cmd = cmds[i];
-            if (cmd instanceof StartupRoutingCommand || cmd instanceof StartupProxyCommand || cmd instanceof StartupSecondaryStorageCommand
-                    || cmd instanceof StartupStorageCommand) {
+            Command cmd = cmds[i];
+            if (cmd instanceof StartupRoutingCommand || cmd instanceof StartupProxyCommand
+                    || cmd instanceof StartupSecondaryStorageCommand || cmd instanceof StartupStorageCommand) {
                 StartupAnswer answer = new StartupAnswer((StartupCommand) cmds[i], 0, "", "", mgmtServiceConf.getPingInterval());
-                answer.setParams(backoffConfiguration);
+                answer.setParams(ConfigKeyUtil.toMap(BackoffConfiguration.value()));
                 answer.setAgentHostStatusCheckDelaySec(AgentHostStatusCheckDelay.value());
                 answers[i] = answer;
             }
         }
-        Response response = new Response(request, answers[0], _nodeId, -1);
+
+        if (answers[0] == null) {
+            // The leading command has no startup answer (an unhandled StartupCommand subtype, or a
+            // non-startup command as cmds[0]). Avoid the NullPointerException in the send/getResult
+            // path below and release the connection slot before returning.
+            logger.warn("No startup answer built for leading command {}; skipping connect processing", cmds[0] != null ? cmds[0].getClass().getSimpleName() : "null");
+            unregisterNewConnection(link.getSocketAddress());
+            return;
+        }
+
+        // Dedup: if this agent GUID is already being processed, reject and redirect back to this MS
+        String agentGuid = null;
+        for (Command cmd : cmds) {
+            if (cmd instanceof StartupCommand) {
+                agentGuid = ((StartupCommand) cmd).getGuid();
+                break;
+            }
+        }
+        if (agentGuid != null && _processingAgentGuids.putIfAbsent(agentGuid, Boolean.TRUE) != null) {
+            logger.info("Duplicate connection from agent GUID {}, rejecting and redirecting to same MS", agentGuid);
+            answers[0].setResult(false);
+            answers[0].setDetails("Duplicate connection, retry this MS");
+            answers[0].setRetryCurrentMs(true);
+        }
+
         try {
-            link.send(response.toBytes());
+            link.send(new Response(request, answers[0], _nodeId, -1).toBytes());
         } catch (ClosedChannelException e) {
             logger.debug("Failed to send startup answer: {}", e.getMessage(), e);
         }
-        _connectExecutor.execute(new HandleAgentConnectTask(link, cmds, request));
+
+        if (answers[0].getResult()) {
+            try {
+                _connectExecutor.execute(new HandleAgentConnectTask(link, cmds, request));
+            } catch (RejectedExecutionException e) {
+                // The task that would release the dedup GUID and the new-connection slot will not run,
+                // so clean them up here to avoid leaking the connection and permanently stranding the GUID.
+                logger.warn("Failed to schedule agent connect task for GUID {}; releasing dedup state", agentGuid, e);
+                if (agentGuid != null) {
+                    _processingAgentGuids.remove(agentGuid);
+                }
+                unregisterNewConnection(link.getSocketAddress());
+            }
+        } else {
+            // Duplicate/rejected connection: HandleAgentConnectTask (which unregisters the connection) is
+            // not scheduled, so release the new-connection slot here. The GUID is owned by the in-flight
+            // task that claimed it first, so it is intentionally not removed here.
+            unregisterNewConnection(link.getSocketAddress());
+        }
     }
 
     public class AgentHandler extends Task {
