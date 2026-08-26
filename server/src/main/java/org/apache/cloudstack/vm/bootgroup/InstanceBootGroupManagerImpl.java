@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
 import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRuleService;
 import org.springframework.stereotype.Component;
@@ -185,7 +186,6 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
             long tierStartedAtMs = System.currentTimeMillis();
 
             try {
-                // ToDo: fix issue with start VM lock warning
                 runTierConcurrently(tierVmIds, group, "start", vmId -> {
                     UserVmVO vm = userVmDao.findById(vmId);
                     boolean alreadyRunning = vm != null && VirtualMachine.State.Running.equals(vm.getState());
@@ -494,46 +494,65 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
      * thread gets a copied {@link CallContext} — without one, a VM lifecycle action routed through
      * the job-queue path fails to submit its sub-job ("no lock found").
      */
-    private void runTierConcurrently(List<Long> vmIds, InstanceBootGroupVO group, String actionName, VmAction action) {
+    private void runTierConcurrently(List<Long> vmIds, InstanceBootGroupVO group,
+                                     String actionName, VmAction action) {
         if (vmIds.isEmpty()) {
             return;
         }
 
-        logger.debug("Running '{}' action for a tier of {}: {} VM id(s) {}", actionName, group, vmIds.size(), vmIds);
+        logger.debug("Running '{}' action for a tier of {}: {} VM id(s) {}",
+                actionName, group, vmIds.size(), vmIds);
         long actionStartedAtMs = System.currentTimeMillis();
-
         CallContext callerContext = CallContext.current();
+        int threadCount = Math.min(vmIds.size(), ReadinessCheckConcurrency.value().intValue());
+        ExecutorService executor = Executors.newFixedThreadPool(
+                threadCount, new NamedThreadFactory("InstanceBootGroup-" + actionName));
 
-        ExecutorService executor = Executors.newFixedThreadPool(vmIds.size(), new NamedThreadFactory("InstanceBootGroup-" + actionName));
         try {
-            List<Future<Void>> futures = new ArrayList<>();
+            List<Future<?>> futures = new ArrayList<>(vmIds.size());
+
             for (Long vmId : vmIds) {
-                futures.add(executor.submit(() -> {
-                    CallContext.register(callerContext, ApiCommandResourceType.VirtualMachine);
-                    try {
-                        action.run(vmId);
-                    } finally {
-                        CallContext.unregister();
+                futures.add(executor.submit(new ManagedContextRunnable() {
+                    @Override
+                    protected void runInContext() {
+                        CallContext.register(callerContext, ApiCommandResourceType.VirtualMachine);
+                        CallContext.current().setEventResourceId(vmId);
+                        try {
+                            action.run(vmId);
+                        } catch (Exception e) {
+                            throw new CloudRuntimeException(String.format("Failed to %s VM %d", actionName, vmId), e);
+                        } finally {
+                            CallContext.unregister();
+                        }
                     }
-                    return null;
                 }));
             }
-            for (Future<Void> future : futures) {
+
+            for (Future<?> future : futures) {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
-                    throw new CloudRuntimeException("Failed to " + actionName + " a VM in boot group " + group.getName() + ": " + cause.getMessage(), cause);
+                    throw new CloudRuntimeException(
+                            String.format("Failed to %s a VM in boot group %s: %s",
+                                    actionName, group.getName(), cause.getMessage()),
+                            cause);
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new CloudRuntimeException("Interrupted while waiting to " + actionName + " VMs in boot group " + group.getName(), e);
+                    throw new CloudRuntimeException(
+                            String.format("Interrupted while waiting to %s VMs in boot group %s",
+                                    actionName, group.getName()),
+                            e);
                 }
             }
         } finally {
             executor.shutdown();
         }
 
-        logger.debug("'{}' action for a tier of {} completed for {} VM(s) in {}ms", actionName, group, vmIds.size(), System.currentTimeMillis() - actionStartedAtMs);
+        logger.debug(
+                "'{}' action for a tier of {} completed for {} VM(s) in {}ms",
+                actionName, group, vmIds.size(), System.currentTimeMillis() - actionStartedAtMs);
     }
 
     private Map<Integer, List<InstanceBootGroupMemberVO>> groupByOrder(List<InstanceBootGroupMemberVO> members) {
