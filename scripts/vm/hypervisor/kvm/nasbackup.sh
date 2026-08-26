@@ -33,6 +33,9 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+# StorPool volumes cloned via sp_create_backup_source_disk during this run, so cleanup() can
+# always release them even if the script exits before their normal per-disk cleanup runs.
+SP_CLEANUP_VOLUMES=()
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
@@ -134,6 +137,129 @@ get_linstor_uuid_from_device() {
   # raw device name would produce a backup that restore cannot find, so fail hard.
   return 1
 }
+
+# StorPool volume name (with the "~globalId" form the storpool/storpool_req CLIs expect) from
+# /dev/storpool-byid/<globalId>.
+sp_volume_name_from_path() {
+  local fullpath="$1"
+  local name
+  if [[ "$fullpath" == /dev/storpool-byid/* ]]; then
+    name="${fullpath#/dev/storpool-byid/}"
+    name="~${name%%/*}"
+  else
+    return 1
+  fi
+  echo "$name"
+}
+
+# Poll for the device node to actually appear after a successful attach: udev creates the
+# symlink asynchronously, so a successful "attach" CLI call doesn't guarantee the device path
+# is usable yet.
+sp_wait_for_device_symlink() {
+  local name="$1"
+  local devpath="/dev/storpool-byid/${name#\~}"
+  local tries=10 i
+  for ((i = 0; i < tries; i++)); do
+    if [[ -e "$devpath" ]] && [[ "$(blockdev --getsize64 "$devpath" 2>/dev/null || echo 0)" -gt 0 ]]; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  return 1
+}
+
+# detach is retried (a live volume's detach can transiently fail while still in use), attach is
+# not. A successful attach also waits for the device symlink.
+sp_attach_detach_volume() {
+  local cmd="$1" name="$2"
+  local tries=10 i
+  for ((i = 0; i < tries; i++)); do
+    if [[ "$cmd" == "attach" ]]; then
+      storpool -M -B attach volume "$name" here onRemoteAttached export >>"$logFile" 2>&1 && { sp_wait_for_device_symlink "$name"; return $?; }
+      break
+    else
+      storpool -M -B detach volume "$name" here >>"$logFile" 2>&1 && return 0
+      sleep 1
+    fi
+  done
+  return 1
+}
+
+# Clones $1 (a live StorPool volume path) into a new, point-in-time StorPool volume via the
+# VolumeCreate API's baseOn option, attaches it, and echoes the clone's device path. Only called
+# once this script's own (fresh, right-here) VM liveness check has already routed to the cold
+# path — see backup_stopped_vm.
+sp_create_backup_source_disk() {
+  local volume_path="$1"
+  local base_on
+  if ! base_on=$(sp_volume_name_from_path "$volume_path"); then
+    echo "Could not resolve a StorPool volume name from path $volume_path to create a backup source volume" >&2
+    return 1
+  fi
+
+  log -ne "StorPool: creating backup source volume based on $base_on (from $volume_path)"
+
+  local resp
+  if ! resp=$(storpool_req -P -M --json "{\"baseOn\":\"$base_on\",\"tags\":{\"cs\":\"backup\"}}" VolumeCreate 2>>"$logFile"); then
+    log -ne "StorPool: VolumeCreate baseOn=$base_on failed, see above for storpool_req output"
+    echo "Could not create a backup source volume based on $base_on" >&2
+    return 1
+  fi
+
+  local global_id
+  global_id=$(python3 -c '
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    gid = data.get("globalId")
+except Exception:
+    gid = None
+if not gid:
+    sys.exit(1)
+print(gid)
+' <<< "$resp" 2>>"$logFile") || {
+    log -ne "StorPool: VolumeCreate baseOn=$base_on returned no globalId, response: $resp -- the volume was created but its name could not be parsed; it must be found (tag cs=backup, baseOn=$base_on) and deleted manually to avoid an orphaned volume"
+    echo "StorPool did not return a volume name when cloning $base_on for backup" >&2
+    return 1
+  }
+
+  local clone_path="/dev/storpool-byid/$global_id"
+  local clone_name="~$global_id"
+  log -ne "StorPool: created backup source volume $clone_name ($clone_path), attaching"
+  if ! sp_attach_detach_volume "attach" "$clone_name"; then
+    log -ne "StorPool: failed to attach backup source volume $clone_name, deleting it"
+    storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1 || true
+    echo "Could not attach backup source volume $clone_path cloned from $base_on" >&2
+    return 1
+  fi
+
+  SP_CLEANUP_VOLUMES+=("$clone_name")
+  log -ne "StorPool: backup source volume $clone_name attached at $clone_path, reading from it for this backup"
+  echo "$clone_path"
+}
+
+# Detach + delete a volume previously returned by sp_create_backup_source_disk. Best-effort:
+# logs on failure rather than aborting the backup, matching the wrapper's old cleanup semantics.
+sp_delete_backup_source_disk() {
+  local clone_name="$1"
+  log -ne "StorPool: releasing backup source volume $clone_name"
+  sp_attach_detach_volume "detach" "$clone_name" || log -ne "Failed to detach StorPool backup source volume $clone_name"
+  storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1 || log -ne "Failed to delete StorPool backup source volume $clone_name"
+}
+
+# Safety net for any clone not already released by its own per-disk cleanup (e.g. the script
+# exiting between creating it and reaching that point). A cleanup here means an earlier step
+# didn't run its normal release — worth noticing, so it's logged even though it isn't fatal.
+sp_cleanup_backup_source_disks() {
+  local clone_name
+  for clone_name in "${SP_CLEANUP_VOLUMES[@]:-}"; do
+    [[ -z "$clone_name" ]] && continue
+    log -ne "StorPool: cleaning up backup source volume $clone_name left over on script exit"
+    sp_delete_backup_source_disk "$clone_name"
+  done
+  SP_CLEANUP_VOLUMES=()
+}
+trap sp_cleanup_backup_source_disks EXIT
 
 backup_running_vm() {
   mount_operation
@@ -412,12 +538,12 @@ for dev in data.get("return", []) or []:
     )
   fi
 
-  # Print statistics
-  virsh -c qemu:///system domjobinfo $VM --completed
+  # Print statistics (informational only — logged, not parsed; see BACKUP_SIZE_TOTAL below)
+  virsh -c qemu:///system domjobinfo $VM --completed >>"$logFile" 2>&1
   backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
   timeout "$UNMOUNT_TIMEOUT" umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed or timed out"; true; }
   rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
-  echo "$backup_size"
+  echo "BACKUP_SIZE_TOTAL=$backup_size"
 }
 
 backup_stopped_vm() {
@@ -426,10 +552,13 @@ backup_stopped_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
-  IFS=","
+  local -a disk_arr=()
+  IFS=',' read -ra disk_arr <<< "$DISK_PATHS"
 
   name="root"
-  for disk in $DISK_PATHS; do
+  for disk in "${disk_arr[@]}"; do
+    local read_disk="$disk"
+    local sp_clone_name=""
     if [[ "$disk" == rbd:* ]]; then
       volUuid=$(get_ceph_uuid_from_path "$disk")
     elif [[ "$disk" == /dev/drbd/by-res/* ]]; then
@@ -440,25 +569,48 @@ backup_stopped_vm() {
         cleanup
         exit 1
       fi
+    elif [[ "$disk" == /dev/storpool-byid/* ]]; then
+      volUuid="${disk##*/}"
+      # Clone before reading, so this backup never depends on (or interferes with) the live
+      # volume's attach state — safe even if the VM is started again before this finishes.
+      if ! read_disk=$(sp_create_backup_source_disk "$disk"); then
+        log -ne "Failed to create a StorPool backup source volume for $disk"
+        echo "Failed to create a StorPool backup source volume for $disk"
+        cleanup
+        exit 1
+      fi
+      sp_clone_name=$(sp_volume_name_from_path "$read_disk")
     else
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! qemu-img convert -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
-      echo "qemu-img convert failed for $disk $output"
+    if ! qemu-img convert -O qcow2 "$read_disk" "$output" >> "$logFile" 2> >(cat >&2); then
+      log -ne "qemu-img convert failed for $read_disk $output"
+      echo "qemu-img convert failed for $read_disk $output"
       cleanup
       exit 1
+    fi
+    log -ne "Wrote $output from $read_disk"
+
+    if [[ -n "$sp_clone_name" ]]; then
+      sp_delete_backup_source_disk "$sp_clone_name"
+      local -a remaining_clones=()
+      local tracked_clone
+      for tracked_clone in "${SP_CLEANUP_VOLUMES[@]}"; do
+        [[ "$tracked_clone" == "$sp_clone_name" ]] || remaining_clones+=("$tracked_clone")
+      done
+      SP_CLEANUP_VOLUMES=("${remaining_clones[@]}")
     fi
 
     # Pre-seed a persistent bitmap on the source disk so the NEXT backup (taken
     # after this VM is started again) can be incremental against the qcow2 we
     # just wrote. Without this, every backup after a stopped-VM backup would
     # fall back to full because no parent bitmap exists on the host yet.
-    # Only applies to file-backed qcow2 sources — RBD/LINSTOR have their own
+    # Only applies to file-backed qcow2 sources — RBD/LINSTOR/StorPool have their own
     # snapshot mechanisms and qemu-img bitmap is not the right primitive there.
     # bitmap --add should not fail on a file-backed qcow2; if it does, fail the backup so the
     # underlying problem is surfaced rather than silently degrading future backups to full.
-    if [[ -n "$BITMAP_NEW" && "$disk" != rbd:* && "$disk" != /dev/drbd/by-res/* ]]; then
+    if [[ -n "$BITMAP_NEW" && "$disk" != rbd:* && "$disk" != /dev/drbd/by-res/* && "$disk" != /dev/storpool-byid/* ]]; then
       if ! qemu-img bitmap --add "$disk" "$BITMAP_NEW" 2>>"$logFile"; then
         echo "Failed to pre-seed bitmap $BITMAP_NEW on $disk"
         cleanup
@@ -470,7 +622,8 @@ backup_stopped_vm() {
   done
   sync
 
-  find "$dest" -type f -exec stat -c '%s' {} +
+  backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
+  echo "BACKUP_SIZE_TOTAL=$backup_size"
 }
 
 delete_backup() {
