@@ -22,11 +22,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,20 +37,26 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.StartupAnswer;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.nio.NioClient;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.nio.Link;
-import com.cloud.utils.nio.NioConnection;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AgentTest {
@@ -222,7 +231,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionValidConnectionNoWaitStopsAndCleansUp() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         agent.connection = mockConnection;
         agent.stopAndCleanupConnection();
         verify(mockConnection).stop();
@@ -231,7 +240,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionCleanupThrowsIOExceptionLogsWarning() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         agent.connection = mockConnection;
         doThrow(new IOException("Cleanup failed")).when(mockConnection).cleanUp();
         agent.stopAndCleanupConnection();
@@ -241,7 +250,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionValidConnectionWaitForStopWaitsForStartupToStop() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         ConstantTimeBackoff mockBackoff = mock(ConstantTimeBackoff.class);
         mockBackoff.setTimeToWait(0);
         agent.connection = mockConnection;
@@ -289,5 +298,78 @@ public class AgentTest {
         String result = agent.selectReconnectionHost(null, mockLink);
         assertEquals("fallback.host.com", result);
         verify(shell, times(1)).getNextHost();
+    }
+
+    private Agent setupAgentSpyForStartupAnswerTests(String currentHost) throws ConfigurationException {
+        Agent spyAgent = Mockito.spy(agent);
+        doNothing().when(spyAgent).reconnect(any(), any(), eq(false));
+
+        NioClient mockConnection = mock(NioClient.class);
+        when(mockConnection.getHost()).thenReturn(currentHost);
+        spyAgent.connection = mockConnection;
+
+        spyAgent.requestHandler = mock(ExecutorService.class);
+        when(serverResource.isExitOnFailures()).thenReturn(false);
+        when(shell.getBackoffAlgorithm()).thenReturn(mock(BackoffAlgorithm.class));
+        return spyAgent;
+    }
+
+    @Test
+    public void testProcessStartupAnswerRetryCurrentMsReconnectsToCurrentHost() throws Exception {
+        String currentHost = "ms-host-0.example.com";
+        Agent spyAgent = setupAgentSpyForStartupAnswerTests(currentHost);
+        Link link = mock(Link.class);
+
+        StartupAnswer answer = new StartupAnswer(new StartupRoutingCommand(), "duplicate");
+        answer.setRetryCurrentMs(true);
+
+        spyAgent.processStartupAnswer(answer, null, link);
+
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(spyAgent.requestHandler).submit(captor.capture());
+        captor.getValue().run();
+
+        verify(spyAgent).reconnect(eq(link), eq(currentHost), eq(false));
+    }
+
+    @Test
+    public void testProcessStartupAnswerRetryCurrentMsAppliesBackoffBeforeReconnect() throws Exception {
+        Agent spyAgent = setupAgentSpyForStartupAnswerTests("ms-host-0.example.com");
+        Link link = mock(Link.class);
+
+        BackoffAlgorithm mockBackoff = mock(BackoffAlgorithm.class);
+        when(shell.getBackoffAlgorithm()).thenReturn(mockBackoff);
+
+        StartupAnswer answer = new StartupAnswer(new StartupRoutingCommand(), "duplicate");
+        answer.setRetryCurrentMs(true);
+
+        spyAgent.processStartupAnswer(answer, null, link);
+
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(spyAgent.requestHandler).submit(captor.capture());
+        captor.getValue().run();
+
+        verify(mockBackoff).waitBeforeRetry();
+    }
+
+    @Test
+    public void testProcessStartupAnswerNoRetryCurrentMsReconnectsWithNullAndNoBackoff() throws Exception {
+        Agent spyAgent = setupAgentSpyForStartupAnswerTests("ms-host-0.example.com");
+        Link link = mock(Link.class);
+
+        BackoffAlgorithm mockBackoff = mock(BackoffAlgorithm.class);
+        when(shell.getBackoffAlgorithm()).thenReturn(mockBackoff);
+
+        StartupAnswer answer = new StartupAnswer(new StartupRoutingCommand(), "not a duplicate");
+        // retryCurrentMs defaults to false
+
+        spyAgent.processStartupAnswer(answer, null, link);
+
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(spyAgent.requestHandler).submit(captor.capture());
+        captor.getValue().run();
+
+        verify(spyAgent).reconnect(eq(link), isNull(), eq(false));
+        verify(mockBackoff, never()).waitBeforeRetry();
     }
 }
