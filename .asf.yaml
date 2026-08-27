@@ -58,6 +58,7 @@ github:
     - GaOrtiga
     - bhouse-nexthop
     - Dogface2k
+    - prashanthr2
 
   rulesets:
     - name: "Default Branch Protection"
