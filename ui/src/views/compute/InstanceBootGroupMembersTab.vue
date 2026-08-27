@@ -338,7 +338,7 @@ export default {
         return ''
       }
       if (record.membertype === 'VirtualMachine') {
-        return record.state === 'Running'
+        return record.memberstate === 'Running'
           ? this.$t('label.view.failing.readiness.rules')
           : this.$t('label.instance.not.running.view.last.readiness.results')
       }

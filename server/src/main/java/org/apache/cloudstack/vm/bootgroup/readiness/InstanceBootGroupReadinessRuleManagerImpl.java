@@ -321,6 +321,37 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
     }
 
     /**
+     * Resets a VM's own cached rule results (direct and inherited) to Unknown when it starts, so a
+     * VM restarted outside boot group orchestration can't keep reporting a stale Ready from before
+     * it stopped. A no-op for a VM with no boot-group involvement at all.
+     */
+    @Override
+    public void invalidateCachedReadinessOnRestart(long vmId) {
+        InstanceBootGroupMemberVO directMember = instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, vmId);
+        if (directMember != null) {
+            invalidateRuleResults(instanceBootGroupReadinessRuleDao.listEnabledByItem(directMember.getBootGroupId(), InstanceBootGroupMember.MemberType.VirtualMachine, vmId), 0L);
+        }
+        for (InstanceGroupVMMapVO mapping : instanceGroupVMMapDao.listByInstanceId(vmId)) {
+            InstanceBootGroupMemberVO groupMember = instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId());
+            if (groupMember == null) {
+                continue;
+            }
+            List<InstanceBootGroupReadinessRuleVO> memberTargetedRules = instanceBootGroupReadinessRuleDao.listEnabledByItem(groupMember.getBootGroupId(),
+                    InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId()).stream()
+                    .filter(rule -> rule.getRuleType().isMemberTargeted())
+                    .collect(Collectors.toList());
+            invalidateRuleResults(memberTargetedRules, vmId);
+        }
+    }
+
+    private void invalidateRuleResults(List<InstanceBootGroupReadinessRuleVO> rules, long cacheVmId) {
+        for (InstanceBootGroupReadinessRuleVO rule : rules) {
+            instanceBootGroupReadinessCheckResultDao.upsert(rule.getId(), cacheVmId, InstanceBootGroupReadinessRule.Status.Unknown,
+                    "Instance (re)started; not yet re-verified this session", new Date());
+        }
+    }
+
+    /**
      * A VM inherits its owning InstanceGroup's Ping/PortCheck/GuestAgentLiveness rules (not
      * MemberQuorum/CustomScript, which only ever make sense at group scope) — resolved by finding
      * the InstanceGroup, among any this VM belongs to, that is itself a member of this boot group.
@@ -547,11 +578,11 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
         }
         UserVmVO vm = userVmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find a VM with ID: " + vmId);
+            throw new InvalidParameterValueException("Unable to find an Instance with ID: " + vmId);
         }
         if (vm.getHypervisorType() != HypervisorType.KVM) {
             throw new InvalidParameterValueException(String.format(
-                    "%s rules are only supported on KVM VMs; this VM's hypervisor is %s", ruleType.name(), vm.getHypervisorType()));
+                    "%s rules are only supported on KVM Instances; this Instance's hypervisor is %s", ruleType.name(), vm.getHypervisorType()));
         }
     }
 

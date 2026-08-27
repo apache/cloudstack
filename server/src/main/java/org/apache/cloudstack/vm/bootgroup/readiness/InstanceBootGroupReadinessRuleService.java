@@ -65,4 +65,11 @@ public interface InstanceBootGroupReadinessRuleService {
      * InstanceGroup, if any — empty if none apply.
      */
     List<InstanceBootGroupReadinessRule> findInheritedGroupRules(long bootGroupId, long vmId);
+
+    /**
+     * Resets {@code vmId}'s own cached rule results (direct and inherited) to Unknown — called when
+     * the VM starts, so a restart outside boot group orchestration can't keep reporting a stale Ready
+     * from before it stopped. A no-op if the VM has no boot-group involvement.
+     */
+    void invalidateCachedReadinessOnRestart(long vmId);
 }

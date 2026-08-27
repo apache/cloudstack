@@ -640,6 +640,80 @@ public class InstanceBootGroupReadinessRuleManagerImplTest {
     }
 
     // ==================================================================
+    // invalidateCachedReadinessOnRestart
+    // ==================================================================
+
+    @Test
+    public void invalidateCachedReadinessOnRestartNoBootGroupInvolvementIsNoOp() {
+        when(instanceBootGroupMemberDao.findByMember(MemberType.VirtualMachine, VM_ID)).thenReturn(null);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.emptyList());
+
+        manager.invalidateCachedReadinessOnRestart(VM_ID);
+
+        verify(instanceBootGroupReadinessCheckResultDao, never()).upsert(anyLong(), anyLong(), any(), any(), any());
+    }
+
+    @Test
+    public void invalidateCachedReadinessOnRestartDirectMemberInvalidatesOwnRules() {
+        when(instanceBootGroupMemberDao.findByMember(MemberType.VirtualMachine, VM_ID)).thenReturn(memberVO(BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID));
+        InstanceBootGroupReadinessRuleVO pingRule = ruleVO(RULE_ID, BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID, RuleType.Ping, true);
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID)).thenReturn(Collections.singletonList(pingRule));
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.emptyList());
+
+        manager.invalidateCachedReadinessOnRestart(VM_ID);
+
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(RULE_ID), eq(0L), eq(Status.Unknown), any(), any(Date.class));
+    }
+
+    @Test
+    public void invalidateCachedReadinessOnRestartInheritedGroupRulesInvalidateOnlyMemberTargetedTypes() {
+        when(instanceBootGroupMemberDao.findByMember(MemberType.VirtualMachine, VM_ID)).thenReturn(null);
+        InstanceGroupVMMapVO mapping = new InstanceGroupVMMapVO(GROUP_ID, VM_ID);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(mapping));
+        when(instanceBootGroupMemberDao.findByMember(MemberType.InstanceGroup, GROUP_ID)).thenReturn(memberVO(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID));
+
+        InstanceBootGroupReadinessRuleVO pingRule = ruleVO(11L, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.Ping, true);
+        InstanceBootGroupReadinessRuleVO quorumRule = ruleVO(12L, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.MemberQuorum, true);
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID))
+                .thenReturn(Arrays.asList(pingRule, quorumRule));
+
+        manager.invalidateCachedReadinessOnRestart(VM_ID);
+
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(11L), eq(VM_ID), eq(Status.Unknown), any(), any(Date.class));
+        verify(instanceBootGroupReadinessCheckResultDao, never()).upsert(eq(12L), anyLong(), any(), any(), any());
+    }
+
+    @Test
+    public void invalidateCachedReadinessOnRestartGroupNotABootGroupMemberIsNoOp() {
+        when(instanceBootGroupMemberDao.findByMember(MemberType.VirtualMachine, VM_ID)).thenReturn(null);
+        InstanceGroupVMMapVO mapping = new InstanceGroupVMMapVO(GROUP_ID, VM_ID);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(mapping));
+        when(instanceBootGroupMemberDao.findByMember(MemberType.InstanceGroup, GROUP_ID)).thenReturn(null);
+
+        manager.invalidateCachedReadinessOnRestart(VM_ID);
+
+        verify(instanceBootGroupReadinessCheckResultDao, never()).upsert(anyLong(), anyLong(), any(), any(), any());
+    }
+
+    @Test
+    public void invalidateCachedReadinessOnRestartInvalidatesBothDirectAndInheritedRules() {
+        when(instanceBootGroupMemberDao.findByMember(MemberType.VirtualMachine, VM_ID)).thenReturn(memberVO(BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID));
+        InstanceBootGroupReadinessRuleVO directRule = ruleVO(RULE_ID, BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID, RuleType.PortCheck, true);
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.VirtualMachine, VM_ID)).thenReturn(Collections.singletonList(directRule));
+
+        InstanceGroupVMMapVO mapping = new InstanceGroupVMMapVO(GROUP_ID, VM_ID);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(mapping));
+        when(instanceBootGroupMemberDao.findByMember(MemberType.InstanceGroup, GROUP_ID)).thenReturn(memberVO(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID));
+        InstanceBootGroupReadinessRuleVO groupRule = ruleVO(11L, BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.GuestAgentLiveness, true);
+        when(instanceBootGroupReadinessRuleDao.listEnabledByItem(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID)).thenReturn(Collections.singletonList(groupRule));
+
+        manager.invalidateCachedReadinessOnRestart(VM_ID);
+
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(RULE_ID), eq(0L), eq(Status.Unknown), any(), any(Date.class));
+        verify(instanceBootGroupReadinessCheckResultDao).upsert(eq(11L), eq(VM_ID), eq(Status.Unknown), any(), any(Date.class));
+    }
+
+    // ==================================================================
     // evaluateInstanceGroupReadiness
     // ==================================================================
 

@@ -62,17 +62,17 @@ public class GuestAgentLivenessChecker implements ReadinessChecker {
     public Result check(InstanceBootGroupReadinessRule rule, Map<String, String> details, long vmId, long remainingMs) {
         UserVmVO vm = userVmDao.findById(vmId);
         if (vm == null) {
-            return logAndReturn(rule, vmId, new Result(InstanceBootGroupReadinessRule.Status.Error, "VM not found"));
+            return logAndReturn(rule, vmId, new Result(InstanceBootGroupReadinessRule.Status.Error, "Instance not found"));
         }
 
         LOGGER.debug("Checking guest agent liveness for {} due to rule {}", vm, rule);
 
         if (vm.getHypervisorType() != HypervisorType.KVM) {
             return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.Error,
-                    "Guest agent liveness checks are only supported on KVM; VM's hypervisor is " + vm.getHypervisorType()));
+                    "Guest agent liveness checks are only supported on KVM; Instance's hypervisor is " + vm.getHypervisorType()));
         }
-        if (vm.getState() != VirtualMachine.State.Running || vm.getHostId() == null) {
-            return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.NotReady, "VM is not running"));
+        if (!VirtualMachine.State.Running.equals(vm.getState()) || vm.getHostId() == null) {
+            return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.NotReady, "Instance is not running"));
         }
 
         if (remainingMs < MIN_REMAINING_MS_TO_DISPATCH) {
@@ -90,7 +90,7 @@ public class GuestAgentLivenessChecker implements ReadinessChecker {
             return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.Error, "Failed to dispatch guest agent liveness check: " + e.getMessage()));
         }
         if (answer == null) {
-            return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.Error, "No answer from the VM's host"));
+            return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.Error, "No answer from the Instance's host"));
         }
         if (answer.getResult()) {
             return logAndReturn(rule, vm, new Result(InstanceBootGroupReadinessRule.Status.Ready, "guest agent responded"));

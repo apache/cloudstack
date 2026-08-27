@@ -24,13 +24,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 /**
  * Per-boot-group override of the global readiness ConfigKeys. {@code name} is the exact ConfigKey
  * key string, so override resolution needs no separate key-mapping.
  */
 @Entity
 @Table(name = "instance_boot_group_details")
-public class InstanceBootGroupDetailsVO {
+public class InstanceBootGroupDetailsVO implements ResourceDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +40,7 @@ public class InstanceBootGroupDetailsVO {
     private long id;
 
     @Column(name = "boot_group_id")
-    private long bootGroupId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -46,21 +48,25 @@ public class InstanceBootGroupDetailsVO {
     @Column(name = "value")
     private String value;
 
+    @Column(name = "display")
+    private boolean display = true;
+
     protected InstanceBootGroupDetailsVO() {
     }
 
     public InstanceBootGroupDetailsVO(long bootGroupId, String name, String value) {
-        this.bootGroupId = bootGroupId;
+        this.resourceId = bootGroupId;
         this.name = name;
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
-    public long getBootGroupId() {
-        return bootGroupId;
+    public long getResourceId() {
+        return resourceId;
     }
 
     public String getName() {
@@ -73,5 +79,10 @@ public class InstanceBootGroupDetailsVO {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 }

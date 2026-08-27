@@ -90,7 +90,7 @@ public class InstanceBootGroupDetailsDaoImplTest {
 
         ArgumentCaptor<InstanceBootGroupDetailsVO> voCaptor = ArgumentCaptor.forClass(InstanceBootGroupDetailsVO.class);
         Mockito.verify(instanceBootGroupDetailsDaoImplSpy).persist(voCaptor.capture());
-        Assert.assertEquals(BOOT_GROUP_ID, voCaptor.getValue().getBootGroupId());
+        Assert.assertEquals(BOOT_GROUP_ID, voCaptor.getValue().getResourceId());
         Assert.assertEquals(NAME, voCaptor.getValue().getName());
         Assert.assertEquals(VALUE, voCaptor.getValue().getValue());
         Mockito.verify(instanceBootGroupDetailsDaoImplSpy, Mockito.never()).update(Mockito.anyLong(), Mockito.any());

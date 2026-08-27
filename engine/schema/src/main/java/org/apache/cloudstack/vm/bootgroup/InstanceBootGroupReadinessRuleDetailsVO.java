@@ -51,6 +51,9 @@ public class InstanceBootGroupReadinessRuleDetailsVO implements ResourceDetail {
     @Column(name = "value")
     private String value;
 
+    @Column(name = "display")
+    private boolean display = true;
+
     protected InstanceBootGroupReadinessRuleDetailsVO() {
     }
 
@@ -86,6 +89,6 @@ public class InstanceBootGroupReadinessRuleDetailsVO implements ResourceDetail {
 
     @Override
     public boolean isDisplay() {
-        return true;
+        return display;
     }
 }

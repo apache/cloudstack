@@ -179,24 +179,26 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             throw new InvalidParameterValueException("An instance boot group with name '" + cmd.getName() + "' already exists in this account");
         }
 
-        InstanceBootGroupVO group = new InstanceBootGroupVO(cmd.getName(), cmd.getDescription(), owner.getId(), owner.getDomainId());
-        group = instanceBootGroupDao.persist(group);
-        CallContext.current().setEventResourceId(group.getId());
+        return Transaction.execute((TransactionCallback<InstanceBootGroupVO>) status -> {
+            InstanceBootGroupVO group = new InstanceBootGroupVO(cmd.getName(), cmd.getDescription(), owner.getId(), owner.getDomainId());
+            group = instanceBootGroupDao.persist(group);
+            CallContext.current().setEventResourceId(group.getId());
 
-        if (cmd.getReadinessAttemptTimeoutSeconds() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessAttemptTimeoutSeconds.key(), cmd.getReadinessAttemptTimeoutSeconds());
-        }
-        if (cmd.getReadinessMaxRetryAttempts() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessMaxRetryAttempts.key(), cmd.getReadinessMaxRetryAttempts());
-        }
-        if (cmd.getReadinessRebootOnRetry() != null) {
-            instanceBootGroupDetailsDao.setDetail(group.getId(), InstanceBootGroupManagerImpl.ReadinessRebootOnRetry.key(), String.valueOf(cmd.getReadinessRebootOnRetry()));
-        }
-        if (cmd.getReadinessInitialDelaySeconds() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessInitialDelaySeconds.key(), cmd.getReadinessInitialDelaySeconds());
-        }
+            if (cmd.getReadinessAttemptTimeoutSeconds() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessAttemptTimeoutSeconds.key(), cmd.getReadinessAttemptTimeoutSeconds());
+            }
+            if (cmd.getReadinessMaxRetryAttempts() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessMaxRetryAttempts.key(), cmd.getReadinessMaxRetryAttempts());
+            }
+            if (cmd.getReadinessRebootOnRetry() != null) {
+                instanceBootGroupDetailsDao.setDetail(group.getId(), InstanceBootGroupManagerImpl.ReadinessRebootOnRetry.key(), String.valueOf(cmd.getReadinessRebootOnRetry()));
+            }
+            if (cmd.getReadinessInitialDelaySeconds() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessInitialDelaySeconds.key(), cmd.getReadinessInitialDelaySeconds());
+            }
 
-        return group;
+            return group;
+        });
     }
 
     @Override
@@ -225,21 +227,24 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         if (cmd.getDescription() != null) {
             group.setDescription(cmd.getDescription());
         }
-        if (cmd.getReadinessAttemptTimeoutSeconds() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessAttemptTimeoutSeconds.key(), cmd.getReadinessAttemptTimeoutSeconds());
-        }
-        if (cmd.getReadinessMaxRetryAttempts() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessMaxRetryAttempts.key(), cmd.getReadinessMaxRetryAttempts());
-        }
-        if (cmd.getReadinessRebootOnRetry() != null) {
-            instanceBootGroupDetailsDao.setDetail(group.getId(), InstanceBootGroupManagerImpl.ReadinessRebootOnRetry.key(), String.valueOf(cmd.getReadinessRebootOnRetry()));
-        }
-        if (cmd.getReadinessInitialDelaySeconds() != null) {
-            setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessInitialDelaySeconds.key(), cmd.getReadinessInitialDelaySeconds());
-        }
 
-        instanceBootGroupDao.update(group.getId(), group);
-        return instanceBootGroupDao.findById(group.getId());
+        return Transaction.execute((TransactionCallback<InstanceBootGroupVO>) status -> {
+            if (cmd.getReadinessAttemptTimeoutSeconds() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessAttemptTimeoutSeconds.key(), cmd.getReadinessAttemptTimeoutSeconds());
+            }
+            if (cmd.getReadinessMaxRetryAttempts() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessMaxRetryAttempts.key(), cmd.getReadinessMaxRetryAttempts());
+            }
+            if (cmd.getReadinessRebootOnRetry() != null) {
+                instanceBootGroupDetailsDao.setDetail(group.getId(), InstanceBootGroupManagerImpl.ReadinessRebootOnRetry.key(), String.valueOf(cmd.getReadinessRebootOnRetry()));
+            }
+            if (cmd.getReadinessInitialDelaySeconds() != null) {
+                setOrClearOverride(group.getId(), InstanceBootGroupManagerImpl.ReadinessInitialDelaySeconds.key(), cmd.getReadinessInitialDelaySeconds());
+            }
+
+            instanceBootGroupDao.update(group.getId(), group);
+            return instanceBootGroupDao.findById(group.getId());
+        });
     }
 
     private void setOrClearOverride(long bootGroupId, String key, long value) {

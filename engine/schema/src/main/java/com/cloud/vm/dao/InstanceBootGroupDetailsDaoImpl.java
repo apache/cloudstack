@@ -36,11 +36,11 @@ public class InstanceBootGroupDetailsDaoImpl extends GenericDaoBase<InstanceBoot
 
     public InstanceBootGroupDetailsDaoImpl() {
         bootGroupSearch = createSearchBuilder();
-        bootGroupSearch.and("bootGroupId", bootGroupSearch.entity().getBootGroupId(), SearchCriteria.Op.EQ);
+        bootGroupSearch.and("bootGroupId", bootGroupSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         bootGroupSearch.done();
 
         bootGroupNameSearch = createSearchBuilder();
-        bootGroupNameSearch.and("bootGroupId", bootGroupNameSearch.entity().getBootGroupId(), SearchCriteria.Op.EQ);
+        bootGroupNameSearch.and("bootGroupId", bootGroupNameSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         bootGroupNameSearch.and("name", bootGroupNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         bootGroupNameSearch.done();
     }

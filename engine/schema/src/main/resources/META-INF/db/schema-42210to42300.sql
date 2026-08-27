@@ -707,6 +707,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_readiness_rule_details` 
     `rule_id` bigint unsigned NOT NULL,
     `name`    varchar(255)    NOT NULL,
     `value`   text            DEFAULT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Whether detail be displayed to the end user',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_readiness_rule_details__rule_id` FOREIGN KEY (`rule_id`) REFERENCES `instance_boot_group_readiness_rule` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -734,6 +735,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     `boot_group_id` bigint unsigned NOT NULL,
     `name`          varchar(255)    NOT NULL,
     `value`         varchar(255)    DEFAULT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Whether detail be displayed to the end user',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

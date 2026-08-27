@@ -124,6 +124,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        VirtualMachine.State.getStateMachine().registerListener(new InstanceBootGroupVmStateListener(instanceBootGroupReadinessRuleService));
         return true;
     }
 
