@@ -48,6 +48,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
     protected GenericSearchBuilder<ManagementServerHostVO, String> NonUpStateMsSearch;
+    protected GenericSearchBuilder<ManagementServerHostVO, String> NonUpStateMsHostSearch;
 
     @Override
     public void invalidateRunSession(long id, long runid) {
@@ -239,6 +240,12 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         NonUpStateMsSearch.selectFields(NonUpStateMsSearch.entity().getServiceIP());
         NonUpStateMsSearch.and("state", NonUpStateMsSearch.entity().getState(), SearchCriteria.Op.NLIKE);
         NonUpStateMsSearch.done();
+
+        NonUpStateMsHostSearch = createSearchBuilder(String.class);
+        NonUpStateMsHostSearch.selectFields(NonUpStateMsHostSearch.entity().getName());
+        NonUpStateMsHostSearch.and("name", NonUpStateMsHostSearch.entity().getName(), SearchCriteria.Op.NNULL);
+        NonUpStateMsHostSearch.and("state", NonUpStateMsHostSearch.entity().getState(), SearchCriteria.Op.NLIKE);
+        NonUpStateMsHostSearch.done();
     }
 
     @Override
@@ -275,6 +282,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     @Override
     public List<String> listNonUpStateMsIPs() {
         SearchCriteria<String> sc = NonUpStateMsSearch.create();
+        sc.addAnd("state", SearchCriteria.Op.NLIKE, State.Up);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<String> listNonUpStateMsHostnames() {
+        SearchCriteria<String> sc = NonUpStateMsHostSearch.create();
         sc.addAnd("state", SearchCriteria.Op.NLIKE, State.Up);
         return customSearch(sc, null);
     }
