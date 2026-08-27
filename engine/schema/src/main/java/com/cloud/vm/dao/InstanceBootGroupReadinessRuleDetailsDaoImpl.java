@@ -46,7 +46,7 @@ public class InstanceBootGroupReadinessRuleDetailsDaoImpl extends ResourceDetail
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         String storedValue = ENCRYPTED_KEY.equals(key) ? DBEncryptionUtil.encrypt(value) : value;
-        super.addDetail(new InstanceBootGroupReadinessRuleDetailsVO(resourceId, key, storedValue));
+        super.addDetail(new InstanceBootGroupReadinessRuleDetailsVO(resourceId, key, storedValue, display));
     }
 
     @Override

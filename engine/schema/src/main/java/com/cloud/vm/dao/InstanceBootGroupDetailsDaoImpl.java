@@ -17,19 +17,15 @@
 
 package com.cloud.vm.dao;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupDetailsVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-public class InstanceBootGroupDetailsDaoImpl extends GenericDaoBase<InstanceBootGroupDetailsVO, Long> implements InstanceBootGroupDetailsDao {
+public class InstanceBootGroupDetailsDaoImpl extends ResourceDetailsDaoBase<InstanceBootGroupDetailsVO> implements InstanceBootGroupDetailsDao {
 
     private final SearchBuilder<InstanceBootGroupDetailsVO> bootGroupSearch;
     private final SearchBuilder<InstanceBootGroupDetailsVO> bootGroupNameSearch;
@@ -43,6 +39,11 @@ public class InstanceBootGroupDetailsDaoImpl extends GenericDaoBase<InstanceBoot
         bootGroupNameSearch.and("bootGroupId", bootGroupNameSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         bootGroupNameSearch.and("name", bootGroupNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         bootGroupNameSearch.done();
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new InstanceBootGroupDetailsVO(resourceId, key, value, display));
     }
 
     @Override
@@ -66,17 +67,5 @@ public class InstanceBootGroupDetailsDaoImpl extends GenericDaoBase<InstanceBoot
             existing.setValue(value);
             update(existing.getId(), existing);
         }
-    }
-
-    @Override
-    public Map<String, String> listDetails(long bootGroupId) {
-        SearchCriteria<InstanceBootGroupDetailsVO> sc = bootGroupSearch.create();
-        sc.setParameters("bootGroupId", bootGroupId);
-        List<InstanceBootGroupDetailsVO> details = listBy(sc);
-        Map<String, String> result = new HashMap<>();
-        for (InstanceBootGroupDetailsVO detail : details) {
-            result.put(detail.getName(), detail.getValue());
-        }
-        return result;
     }
 }

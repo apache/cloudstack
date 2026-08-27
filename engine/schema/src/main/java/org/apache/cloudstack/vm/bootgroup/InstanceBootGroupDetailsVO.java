@@ -60,6 +60,11 @@ public class InstanceBootGroupDetailsVO implements ResourceDetail {
         this.value = value;
     }
 
+    public InstanceBootGroupDetailsVO(long bootGroupId, String name, String value, boolean display) {
+        this(bootGroupId, name, value);
+        this.display = display;
+    }
+
     @Override
     public long getId() {
         return id;

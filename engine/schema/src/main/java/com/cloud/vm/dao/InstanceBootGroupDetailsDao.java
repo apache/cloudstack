@@ -17,17 +17,12 @@
 
 package com.cloud.vm.dao;
 
-import java.util.Map;
-
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupDetailsVO;
 
-import com.cloud.utils.db.GenericDao;
-
-public interface InstanceBootGroupDetailsDao extends GenericDao<InstanceBootGroupDetailsVO, Long> {
+public interface InstanceBootGroupDetailsDao extends ResourceDetailsDao<InstanceBootGroupDetailsVO> {
 
     String getDetail(long bootGroupId, String name);
 
     void setDetail(long bootGroupId, String name, String value);
-
-    Map<String, String> listDetails(long bootGroupId);
 }

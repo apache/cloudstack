@@ -116,16 +116,16 @@ public class InstanceBootGroupDetailsDaoImplTest {
         List<InstanceBootGroupDetailsVO> details = new ArrayList<>();
         details.add(new InstanceBootGroupDetailsVO(BOOT_GROUP_ID, "key1", "value1"));
         details.add(new InstanceBootGroupDetailsVO(BOOT_GROUP_ID, "key2", "value2"));
-        Mockito.doReturn(details).when(instanceBootGroupDetailsDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
+        Mockito.doReturn(details).when(instanceBootGroupDetailsDaoImplSpy).search(Mockito.any(SearchCriteria.class), Mockito.isNull());
 
-        Map<String, String> result = instanceBootGroupDetailsDaoImplSpy.listDetails(BOOT_GROUP_ID);
+        Map<String, String> result = instanceBootGroupDetailsDaoImplSpy.listDetailsKeyPairs(BOOT_GROUP_ID);
 
         Assert.assertEquals(2, result.size());
         Assert.assertEquals("value1", result.get("key1"));
         Assert.assertEquals("value2", result.get("key2"));
 
         ArgumentCaptor<SearchCriteria> scCaptor = ArgumentCaptor.forClass(SearchCriteria.class);
-        Mockito.verify(instanceBootGroupDetailsDaoImplSpy).listBy(scCaptor.capture());
+        Mockito.verify(instanceBootGroupDetailsDaoImplSpy).search(scCaptor.capture(), Mockito.isNull());
         Map<String, Object> params = paramMap(scCaptor.getValue());
         Assert.assertEquals(BOOT_GROUP_ID, params.get("boot_group_id"));
     }
@@ -133,9 +133,9 @@ public class InstanceBootGroupDetailsDaoImplTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testListDetailsEmpty() {
-        Mockito.doReturn(new ArrayList<>()).when(instanceBootGroupDetailsDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
+        Mockito.doReturn(new ArrayList<>()).when(instanceBootGroupDetailsDaoImplSpy).search(Mockito.any(SearchCriteria.class), Mockito.isNull());
 
-        Map<String, String> result = instanceBootGroupDetailsDaoImplSpy.listDetails(BOOT_GROUP_ID);
+        Map<String, String> result = instanceBootGroupDetailsDaoImplSpy.listDetailsKeyPairs(BOOT_GROUP_ID);
 
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());

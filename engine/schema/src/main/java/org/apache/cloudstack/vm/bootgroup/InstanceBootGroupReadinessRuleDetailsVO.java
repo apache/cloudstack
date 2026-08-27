@@ -63,6 +63,11 @@ public class InstanceBootGroupReadinessRuleDetailsVO implements ResourceDetail {
         this.value = value;
     }
 
+    public InstanceBootGroupReadinessRuleDetailsVO(long ruleId, String name, String value, boolean display) {
+        this(ruleId, name, value);
+        this.display = display;
+    }
+
     @Override
     public long getId() {
         return id;
