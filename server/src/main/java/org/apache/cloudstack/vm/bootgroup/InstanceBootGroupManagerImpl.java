@@ -100,7 +100,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
 
     public static final ConfigKey<Long> MaxMembersPerBootGroup = new ConfigKey<>("Advanced", Long.class,
             "instance.boot.group.max.members", "10",
-            "Maximum number of members (VMs and instance groups) that can be added to a single instance boot group.", true, ConfigKey.Scope.Domain);
+            "Maximum number of members that can be added to a single instance boot group.", true, ConfigKey.Scope.Domain);
 
     @Inject
     private InstanceBootGroupMemberDao instanceBootGroupMemberDao;
