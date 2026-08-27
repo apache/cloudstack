@@ -1125,7 +1125,8 @@ export default {
           label: 'label.action.stop.instance.boot.group',
           message: 'message.action.stop.instance.boot.group',
           dataView: true,
-          popup: true
+          popup: true,
+          args: ['forced']
         },
         {
           api: 'rebootInstanceBootGroup',
@@ -1133,7 +1134,8 @@ export default {
           label: 'label.action.reboot.instance.boot.group',
           message: 'message.action.reboot.instance.boot.group',
           dataView: true,
-          popup: true
+          popup: true,
+          args: ['forced']
         },
         {
           api: 'deleteInstanceBootGroup',

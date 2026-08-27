@@ -477,6 +477,29 @@ public class InstanceBootGroupApiServiceImplTest {
         service.addMemberToInstanceBootGroup(cmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddMemberToInstanceBootGroupAtMaxMembersThrows() {
+        AddMemberToInstanceBootGroupCmd cmd = mock(AddMemberToInstanceBootGroupCmd.class);
+        when(cmd.getId()).thenReturn(GROUP_ID);
+        when(cmd.getOrder()).thenReturn(0);
+        when(cmd.getVirtualMachineId()).thenReturn(VM_ID);
+        when(cmd.getInstanceGroupId()).thenReturn(null);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+        UserVmVO vm = newVm(VM_ID, "vm1", "vm1host", ACCOUNT_ID, VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID)).thenReturn(null);
+
+        long maxMembers = InstanceBootGroupManagerImpl.MaxMembersPerBootGroup.value();
+        List<InstanceBootGroupMemberVO> existingMembers = new ArrayList<>();
+        for (int i = 0; i < maxMembers; i++) {
+            existingMembers.add(newMember(100L + i, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 200L + i, i));
+        }
+        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(existingMembers);
+
+        service.addMemberToInstanceBootGroup(cmd);
+    }
+
     @Test(expected = PermissionDeniedException.class)
     public void testAddMemberToInstanceBootGroupDifferentAccountThrows() {
         AddMemberToInstanceBootGroupCmd cmd = mock(AddMemberToInstanceBootGroupCmd.class);
@@ -991,7 +1014,20 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceBootGroup result = service.stopInstanceBootGroup(cmd);
 
         assertEquals(group, result);
-        verify(instanceBootGroupManager).stopInstanceBootGroup(group);
+        verify(instanceBootGroupManager).stopInstanceBootGroup(group, false);
+    }
+
+    @Test
+    public void testStopInstanceBootGroupDelegatesForcedFlagToManager() {
+        StopInstanceBootGroupCmd cmd = mock(StopInstanceBootGroupCmd.class);
+        when(cmd.getId()).thenReturn(GROUP_ID);
+        when(cmd.isForced()).thenReturn(true);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+
+        service.stopInstanceBootGroup(cmd);
+
+        verify(instanceBootGroupManager).stopInstanceBootGroup(group, true);
     }
 
     @Test
@@ -1004,7 +1040,20 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceBootGroup result = service.rebootInstanceBootGroup(cmd);
 
         assertEquals(group, result);
-        verify(instanceBootGroupManager).rebootInstanceBootGroup(group);
+        verify(instanceBootGroupManager).rebootInstanceBootGroup(group, false);
+    }
+
+    @Test
+    public void testRebootInstanceBootGroupDelegatesForcedFlagToManager() {
+        RebootInstanceBootGroupCmd cmd = mock(RebootInstanceBootGroupCmd.class);
+        when(cmd.getId()).thenReturn(GROUP_ID);
+        when(cmd.isForced()).thenReturn(true);
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+
+        service.rebootInstanceBootGroup(cmd);
+
+        verify(instanceBootGroupManager).rebootInstanceBootGroup(group, true);
     }
 
     // ---------------------------------------------------------------- readiness rule create/update/delete

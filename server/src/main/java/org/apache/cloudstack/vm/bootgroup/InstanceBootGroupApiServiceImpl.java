@@ -327,7 +327,14 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             throw new InvalidParameterValueException(String.format("This %s already belongs to an instance boot group", memberType.name()));
         }
 
-        shiftSiblingOrdersForInsert(group.getId(), cmd.getOrder());
+        List<InstanceBootGroupMemberVO> siblings = instanceBootGroupMemberDao.listByBootGroupId(group.getId());
+        long maxMembers = InstanceBootGroupManagerImpl.MaxMembersPerBootGroup.valueIn(group.getDomainId());
+        if (siblings.size() >= maxMembers) {
+            throw new InvalidParameterValueException(String.format(
+                    "Instance boot group %s already has the maximum of %d member(s) allowed", group, maxMembers));
+        }
+
+        shiftSiblingOrdersForInsert(siblings, cmd.getOrder());
         InstanceBootGroupMemberVO member = new InstanceBootGroupMemberVO(group.getId(), memberType, memberId, cmd.getOrder());
         return instanceBootGroupMemberDao.persist(member);
     }
@@ -336,8 +343,8 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
      * Makes room for a new member at {@code order} by bumping every existing member already at or
      * past it up by one slot, rather than letting the new member silently share that order.
      */
-    private void shiftSiblingOrdersForInsert(long bootGroupId, int order) {
-        for (InstanceBootGroupMemberVO sibling : instanceBootGroupMemberDao.listByBootGroupId(bootGroupId)) {
+    private void shiftSiblingOrdersForInsert(List<InstanceBootGroupMemberVO> siblings, int order) {
+        for (InstanceBootGroupMemberVO sibling : siblings) {
             if (sibling.getOrder() >= order) {
                 sibling.setOrder(sibling.getOrder() + 1);
                 instanceBootGroupMemberDao.update(sibling.getId(), sibling);
@@ -465,7 +472,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     @ActionEvent(eventType = EventTypes.EVENT_INSTANCE_BOOT_GROUP_STOP, eventDescription = "stopping Instance Boot Group", async = true)
     public InstanceBootGroup stopInstanceBootGroup(final StopInstanceBootGroupCmd cmd) {
         InstanceBootGroupVO group = getGroupAndCheckAccess(cmd.getId());
-        instanceBootGroupManager.stopInstanceBootGroup(group);
+        instanceBootGroupManager.stopInstanceBootGroup(group, cmd.isForced());
         return group;
     }
 
@@ -473,7 +480,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     @ActionEvent(eventType = EventTypes.EVENT_INSTANCE_BOOT_GROUP_REBOOT, eventDescription = "rebooting Instance Boot Group", async = true)
     public InstanceBootGroup rebootInstanceBootGroup(final RebootInstanceBootGroupCmd cmd) {
         InstanceBootGroupVO group = getGroupAndCheckAccess(cmd.getId());
-        instanceBootGroupManager.rebootInstanceBootGroup(group);
+        instanceBootGroupManager.rebootInstanceBootGroup(group, cmd.isForced());
         return group;
     }
 

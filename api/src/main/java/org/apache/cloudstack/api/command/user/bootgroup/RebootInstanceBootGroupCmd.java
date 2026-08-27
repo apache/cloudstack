@@ -51,8 +51,16 @@ public class RebootInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
     private Long id;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false,
+            description = "Force stop every Instance in the instance boot group during the stop phase of the reboot (It is force-stopped and then started)")
+    private Boolean forced;
+
     public Long getId() {
         return id;
+    }
+
+    public boolean isForced() {
+        return forced != null && forced;
     }
 
     @Override

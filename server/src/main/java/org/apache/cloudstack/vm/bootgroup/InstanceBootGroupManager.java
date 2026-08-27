@@ -29,7 +29,7 @@ public interface InstanceBootGroupManager extends Manager {
 
     void startInstanceBootGroup(InstanceBootGroupVO group);
 
-    void stopInstanceBootGroup(InstanceBootGroupVO group);
+    void stopInstanceBootGroup(InstanceBootGroupVO group, boolean forced);
 
-    void rebootInstanceBootGroup(InstanceBootGroupVO group);
+    void rebootInstanceBootGroup(InstanceBootGroupVO group, boolean forced);
 }

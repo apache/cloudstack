@@ -637,7 +637,7 @@ public class InstanceBootGroupManagerImplTest {
         when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
         when(userVmDao.findById(VM_ID_2)).thenReturn(vm2);
 
-        manager.stopInstanceBootGroup(group);
+        manager.stopInstanceBootGroup(group, false);
 
         InOrder inOrder = Mockito.inOrder(userVmService);
         inOrder.verify(userVmService).stopVirtualMachine(VM_ID_2, false);
@@ -654,23 +654,51 @@ public class InstanceBootGroupManagerImplTest {
         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(userVmDao.findById(VM_ID_1)).thenReturn(vm);
 
-        manager.stopInstanceBootGroup(group);
+        manager.stopInstanceBootGroup(group, false);
 
         verify(userVmService, never()).stopVirtualMachine(anyLong(), any(Boolean.class));
+    }
+
+    @Test
+    public void testStopInstanceBootGroupPropagatesForcedFlag() {
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
+        InstanceBootGroupMemberVO member = newMember(MEMBER_ID_1, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID_1, 1);
+        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(List.of(member));
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID_1)).thenReturn(vm);
+
+        manager.stopInstanceBootGroup(group, true);
+
+        verify(userVmService).stopVirtualMachine(VM_ID_1, true);
     }
 
     @Test
     public void testRebootInstanceBootGroupCallsStopThenStart() {
         InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
         InstanceBootGroupManagerImpl spyManager = Mockito.spy(manager);
-        Mockito.doNothing().when(spyManager).stopInstanceBootGroup(group);
+        Mockito.doNothing().when(spyManager).stopInstanceBootGroup(group, false);
         Mockito.doNothing().when(spyManager).startInstanceBootGroup(group);
 
-        spyManager.rebootInstanceBootGroup(group);
+        spyManager.rebootInstanceBootGroup(group, false);
 
         InOrder inOrder = Mockito.inOrder(spyManager);
-        inOrder.verify(spyManager).stopInstanceBootGroup(group);
+        inOrder.verify(spyManager).stopInstanceBootGroup(group, false);
         inOrder.verify(spyManager).startInstanceBootGroup(group);
+    }
+
+    @Test
+    public void testRebootInstanceBootGroupPropagatesForcedFlagToStop() {
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
+        InstanceBootGroupManagerImpl spyManager = Mockito.spy(manager);
+        Mockito.doNothing().when(spyManager).stopInstanceBootGroup(group, true);
+        Mockito.doNothing().when(spyManager).startInstanceBootGroup(group);
+
+        spyManager.rebootInstanceBootGroup(group, true);
+
+        verify(spyManager).stopInstanceBootGroup(group, true);
+        verify(spyManager, never()).stopInstanceBootGroup(group, false);
     }
 
     //
@@ -678,9 +706,9 @@ public class InstanceBootGroupManagerImplTest {
     //
 
     @Test
-    public void testGetConfigKeysReturnsAllSixKeys() {
+    public void testGetConfigKeysReturnsAllKeys() {
         ConfigKey<?>[] keys = manager.getConfigKeys();
-        assertEquals(6, keys.length);
+        assertEquals(7, keys.length);
     }
 
     @Test

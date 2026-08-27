@@ -98,6 +98,10 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
             "instance.boot.group.readiness.check.concurrency", "10",
             "Maximum number of instances within a single boot-order tier whose readiness is checked concurrently during boot group orchestration, so one slow check cannot delay every other instance's check in the same poll. Global only, not overridable per boot group.", true);
 
+    public static final ConfigKey<Long> MaxMembersPerBootGroup = new ConfigKey<>("Advanced", Long.class,
+            "instance.boot.group.max.members", "10",
+            "Maximum number of members (VMs and instance groups) that can be added to a single instance boot group.", true, ConfigKey.Scope.Domain);
+
     @Inject
     private InstanceBootGroupMemberDao instanceBootGroupMemberDao;
 
@@ -135,7 +139,8 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{ReadinessAttemptTimeoutSeconds, ReadinessMaxRetryAttempts, ReadinessPollIntervalSeconds, ReadinessInitialDelaySeconds, ReadinessRebootOnRetry, ReadinessCheckConcurrency};
+        return new ConfigKey<?>[]{ReadinessAttemptTimeoutSeconds, ReadinessMaxRetryAttempts, ReadinessPollIntervalSeconds, ReadinessInitialDelaySeconds, ReadinessRebootOnRetry, ReadinessCheckConcurrency,
+                MaxMembersPerBootGroup};
     }
 
     /** In-memory-only per-VM progress for a single start attempt — never persisted. */
@@ -464,10 +469,10 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
     }
 
     @Override
-    public void stopInstanceBootGroup(InstanceBootGroupVO group) {
+    public void stopInstanceBootGroup(InstanceBootGroupVO group, boolean forced) {
         List<InstanceBootGroupMemberVO> members = instanceBootGroupMemberDao.listByBootGroupId(group.getId());
         Map<Integer, List<InstanceBootGroupMemberVO>> tiers = groupByOrderDescending(members);
-        logger.info("Stopping {}: {} tier(s), {} member(s) total", group, tiers.size(), members.size());
+        logger.info("Stopping {}: {} tier(s), {} member(s) total, forced={}", group, tiers.size(), members.size(), forced);
         long groupStoppedAtMs = System.currentTimeMillis();
 
         for (Map.Entry<Integer, List<InstanceBootGroupMemberVO>> tier : tiers.entrySet()) {
@@ -475,7 +480,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
             runTierConcurrently(vmIds, group, "stop", vmId -> {
                 UserVmVO vm = userVmDao.findById(vmId);
                 if (vm != null && vm.getState() != com.cloud.vm.VirtualMachine.State.Stopped) {
-                    userVmService.stopVirtualMachine(vmId, false);
+                    userVmService.stopVirtualMachine(vmId, forced);
                 }
             });
         }
@@ -484,9 +489,9 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
     }
 
     @Override
-    public void rebootInstanceBootGroup(InstanceBootGroupVO group) {
+    public void rebootInstanceBootGroup(InstanceBootGroupVO group, boolean forced) {
         logger.info("Rebooting {}: stopping, then starting", group);
-        stopInstanceBootGroup(group);
+        stopInstanceBootGroup(group, forced);
         startInstanceBootGroup(group);
     }
 
