@@ -26,12 +26,12 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 # Import Integration Libraries
 from marvin.lib.base import Account, Configurations, ServiceOffering, \
     Snapshot, StoragePool, Template, User, VirtualMachine, Volume
-from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, list_virtual_machines, list_volumes
+from marvin.lib.common import get_domain, get_zone, list_hosts, list_virtual_machines, list_volumes
 from marvin.lib.utils import cleanup_resources
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 
-from linstor_test_utils import ServiceReady
+from linstor_test_utils import ServiceReady, get_guest_template
 
 # Prerequisites:
 #  Only one zone / pod / cluster
@@ -140,7 +140,7 @@ class TestLinstorIncrementalSnapshots(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
-        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor="KVM")
+        cls.template = get_guest_template(cls.apiClient, cls.zone.id, hypervisor="KVM")
 
         # Host SSH credentials, needed by the tests that inspect or manipulate the backed-up qcow2
         # files on secondary storage. A full marvin config carries these under

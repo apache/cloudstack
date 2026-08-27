@@ -29,7 +29,7 @@ from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, St
 from marvin.lib.base import VirtualMachine, Volume, VmSnapshot
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_virtual_machines, \
+from marvin.lib.common import get_domain, get_zone, list_clusters, list_hosts, list_virtual_machines, \
     list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
@@ -37,7 +37,7 @@ from marvin.lib.utils import cleanup_resources, validateList
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
-from linstor_test_utils import ServiceReady
+from linstor_test_utils import ServiceReady, get_guest_template
 
 # Prerequisites:
 #  Only one zone
@@ -260,7 +260,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
+        cls.template = get_guest_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account

@@ -20,6 +20,35 @@
 import socket
 import time
 
+from marvin.codes import FAILED
+from marvin.lib.common import get_template
+
+# Registered by `cs-linstor.py setup-test-template`. Optional: clusters without it fall
+# back to the builtin template, so nothing here requires the extra setup step.
+TEST_TEMPLATE_NAME = "marvin-alpine"
+
+
+def get_guest_template(api_client, zone_id, hypervisor="KVM", name=TEST_TEMPLATE_NAME):
+    """The small purpose-built guest template if it is registered, else the builtin one.
+
+    The builtin CentOS 5.5 template is an 8 GiB volume that takes ~55s to reach sshd.
+    Worse, creating an *encrypted* volume from a template cannot share blocks with the
+    source - a new passphrase means different ciphertext - so LINSTOR does a full
+    block-level re-encrypt copy of the whole virtual size, measured at ~500s per VM.
+    A ~512 MiB template makes that negligible.
+
+    Note marvin's get_template() only returns FAILED when the list call itself comes back
+    empty; otherwise it falls through to the first result even if nothing matched the
+    requested type. So detection has to key off FAILED, and the type has to be USER
+    because our template is registered rather than built in.
+    """
+    template = get_template(api_client, zone_id, template_filter="all",
+                            template_type="USER", template_name=name,
+                            hypervisor=hypervisor)
+    if template != FAILED and getattr(template, "isready", False):
+        return template
+    return get_template(api_client, zone_id, hypervisor=hypervisor)
+
 
 class ServiceReady:
     @classmethod
