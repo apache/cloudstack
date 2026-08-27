@@ -56,6 +56,8 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 
     List<String> listNonUpStateMsIPs();
 
+    List<String> listNonUpStateMsHostnames();
+
     /**
      * Lists msids for which hosts are orphaned, i.e. msids that hosts refer as their owning ms whilst no mshost entry exists with those msids
      *

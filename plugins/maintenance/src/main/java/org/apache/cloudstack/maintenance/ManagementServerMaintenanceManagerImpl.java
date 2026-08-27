@@ -466,9 +466,20 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         boolean ignoreMaintenanceHosts = ManagementServerMaintenanceIgnoreMaintenanceHosts.value();
         if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid(), ignoreMaintenanceHosts)) {
             List<String> indirectAgentMsList = indirectAgentLB.getManagementServerList();
-            indirectAgentMsList.remove(msHost.getServiceIP());
-            List<String> nonUpMsList = msHostDao.listNonUpStateMsIPs();
-            indirectAgentMsList.removeAll(nonUpMsList);
+            // Remove current server by both hostname and IP since the list could contain either
+            if (msHost.getName() != null) {
+                indirectAgentMsList.remove(msHost.getName());
+            }
+            if (msHost.getServiceIP() != null) {
+                indirectAgentMsList.remove(msHost.getServiceIP());
+            }
+
+            // Remove non-up servers by both IPs and hostnames since the list could contain either
+            List<String> nonUpMsIPs = msHostDao.listNonUpStateMsIPs();
+            List<String> nonUpMsHostnames = msHostDao.listNonUpStateMsHostnames();
+            indirectAgentMsList.removeAll(nonUpMsIPs);
+            indirectAgentMsList.removeAll(nonUpMsHostnames);
+
             if (CollectionUtils.isEmpty(indirectAgentMsList)) {
                 throw new CloudRuntimeException(String.format("Cannot prepare for maintenance, no other active management servers found from '%s' setting", ApiServiceConfiguration.ManagementServerAddresses.key()));
             }
