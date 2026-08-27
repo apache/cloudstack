@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.AgentConnectStatusAnswer;
 import com.cloud.agent.api.AgentConnectStatusCommand;
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.event.EventTypes;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
@@ -1829,10 +1830,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    public List<String> getAvoidMsList() {
+        // Detect config format and build avoid list using matching format
+        boolean isUsingHostnames = ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames();
+        return isUsingHostnames ? _mshostDao.listNonUpStateMsHostnames() : _mshostDao.listNonUpStateMsIPs();
+    }
+
     private void setReadyCommandMSList(HostVO host, ReadyCommand ready) {
         List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
         ready.setMsHostList(newMSList);
-        List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
+        List<String> avoidMsList = getAvoidMsList();
         ready.setAvoidMsHostList(avoidMsList);
         ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
         ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
@@ -2349,10 +2356,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
             }
             return requestStartup;
-        }
-
-        private List<String> getAvoidMsList() {
-            return _mshostDao.listNonUpStateMsIPs();
         }
 
         protected void processResponse(final Link link, final Response response) {

@@ -43,6 +43,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -541,14 +542,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     logger.info("Unable to find peer: {}",  peerName);
                     return null;
                 }
-                final String ip = ms.getServiceIP();
-                InetAddress addr;
-                int port = Port.value();
-                try {
-                    addr = InetAddress.getByName(ip);
-                } catch (final UnknownHostException e) {
-                    throw new CloudRuntimeException("Unable to resolve " + ip);
-                }
+                final String hostName = getHostIdentifier(ms);
+                final int port = Port.value();
+                final InetAddress addr = resolveManagementServerAddress(ms);
                 SocketChannel ch1 = null;
                 try {
                     ch1 = SocketChannel.open(new InetSocketAddress(addr, port));
@@ -557,20 +553,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     ch1.socket().setSoTimeout(60 * 1000);
                     try {
                         SSLContext sslContext = Link.initManagementSSLContext(caService);
-                        sslEngine = sslContext.createSSLEngine(ip, port);
+                        sslEngine = sslContext.createSSLEngine(hostName, port);
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
                         sslEngine.beginHandshake();
                         if (!Link.doHandshake(ch1, sslEngine)) {
                             ch1.close();
-                            throw new IOException(String.format("SSL: Handshake failed with peer management server '%s' on %s:%d ", peerName, ip, port));
+                            throw new IOException(String.format("SSL: Handshake failed with peer management server '%s' on %s:%d ", peerName, hostName, port));
                         }
-                        logger.info("SSL: Handshake done with peer management server '{}' on {}:{} ", peerName, ip, port);
+                        logger.info("SSL: Handshake done with peer management server '{}' on {}:{} ", peerName, hostName, port);
                     } catch (final Exception e) {
                         ch1.close();
                         throw new IOException("SSL: Fail to init SSL! " + e);
                     }
-                    logger.debug("Connection to peer opened: {}, IP: {}", peerName, ip);
+                    logger.debug("Connection to peer opened: {}, host: {}", peerName, hostName);
                     _peers.put(peerName, ch1);
                     _sslEngines.put(peerName, sslEngine);
                     return ch1;
@@ -582,13 +578,45 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             logger.error("failed to close failed peer socket: {}",  ex);
                         }
                     }
-                    logger.warn("Unable to connect to peer management server: {}, IP {} due to {}", peerName, ip, e.getMessage(), e);
+                    logger.warn("Unable to connect to peer management server: {}, host {} due to {}", peerName, hostName, e.getMessage(), e);
                     return null;
                 }
             }
 
             logger.trace("Found open channel for peer: {}",  peerName);
             return ch;
+        }
+    }
+
+    /**
+     * Gets the hostname or IP address to use for connecting to a management server.
+     * Prefers hostname (for CNAME support) but falls back to IP if hostname is null.
+     *
+     * @param host the management server host
+     * @return hostname if available, otherwise service IP
+     * @throws CloudRuntimeException if both hostname and IP are null
+     */
+    private String getHostIdentifier(final ManagementServerHost host) {
+        final String hostName = host.getName();
+        if (StringUtils.isNotBlank(hostName)) {
+            return hostName;
+        }
+
+        final String serviceIP = host.getServiceIP();
+        if (StringUtils.isNotBlank(serviceIP)) {
+            return serviceIP;
+        }
+
+        throw new CloudRuntimeException("Management server host has neither hostname nor IP address: " + host);
+    }
+
+    private InetAddress resolveManagementServerAddress(final ManagementServerHost host) {
+        final String addressToResolve = getHostIdentifier(host);
+
+        try {
+            return InetAddress.getByName(addressToResolve);
+        } catch (final UnknownHostException e) {
+            throw new CloudRuntimeException("Unable to resolve " + addressToResolve, e);
         }
     }
 

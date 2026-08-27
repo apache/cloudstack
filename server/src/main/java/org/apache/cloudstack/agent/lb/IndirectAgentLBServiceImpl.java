@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.dc.ClusterVO;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBRoundRobinAlgorithm;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBShuffleAlgorithm;
@@ -331,7 +332,9 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 zoneHostIds.addAll(hostIds);
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
-            final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+
+            final List<String> avoidMsList = agentManager.getAvoidMsList();
+
             for (Long nonRoutingHostId : nonRoutingHostIds) {
                 setupMSListExecutorService.submit(new SetupMSListTask(nonRoutingHostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, globalLbCheckInterval, triggerHostLB));
             }
@@ -377,7 +380,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         final String lbAlgorithm = getLBAlgorithmName();
         List<Long> clusterHostIds = getAllAgentBasedRoutingHostsFromDB(zone.getId(), clusterId, null, false);
         clusterHostIds.sort(Comparator.comparingLong(x -> x));
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
         final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
         for (Long hostId : clusterHostIds) {
             setupMSListInClusterExecutorService.submit(new SetupMSListTask(hostId, zone.getId(), clusterHostIds, avoidMsList, lbAlgorithm, clusterLbCheckInterval, false));
@@ -533,10 +536,16 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             lbAlgorithmChanged = true;
         }
 
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
+
+        // Add the source management server in the same format as the config
         ManagementServerHostVO ms = mshostDao.findByMsid(fromMsId);
-        if (ms != null && !avoidMsList.contains(ms.getServiceIP())) {
-            avoidMsList.add(ms.getServiceIP());
+        if (ms != null) {
+            final boolean usingHostnames = ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames();
+            final String msAddress = usingHostnames ? ms.getName() : ms.getServiceIP();
+            if (msAddress != null && !avoidMsList.contains(msAddress)) {
+                avoidMsList.add(msAddress);
+            }
         }
 
         List<DataCenterVO> dataCenterList = dcDao.listAll();
