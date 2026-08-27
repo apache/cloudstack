@@ -71,7 +71,7 @@ public interface ReadinessChecker {
 
     default Result logAndReturn(InstanceBootGroupReadinessRule rule, Object vmOrId, Result result) {
         Logger log = getLogger();
-        if (getLogger() == null) {
+        if (log == null) {
             return result;
         }
         Level level = InstanceBootGroupReadinessRule.Status.Ready.equals(result.getStatus())

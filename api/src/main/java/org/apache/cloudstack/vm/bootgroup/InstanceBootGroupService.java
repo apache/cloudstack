@@ -76,4 +76,6 @@ public interface InstanceBootGroupService {
 
     InstanceBootGroupReadinessRuleResponse createInstanceBootGroupReadinessRuleResponse(InstanceBootGroupReadinessRule rule);
 
+    Long getInstanceBootGroupIdForMember(long memberId);
+
 }

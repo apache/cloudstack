@@ -54,8 +54,10 @@ public class UpdateInstanceBootGroupMemberCmdTest extends BaseBootGroupCmdTest {
     @Test
     public void testGetApiResourceType() throws Exception {
         UpdateInstanceBootGroupMemberCmd cmd = createCmd();
+        Long groupId = 101L;
+        when(instanceBootGroupService.getInstanceBootGroupIdForMember(ENTITY_ID)).thenReturn(groupId);
         assertEquals(ApiCommandResourceType.InstanceBootGroup, cmd.getApiResourceType());
-        assertEquals(Long.valueOf(ENTITY_ID), cmd.getApiResourceId());
+        assertEquals(groupId, cmd.getApiResourceId());
     }
 
     @Test

@@ -720,7 +720,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_readiness_check_result` 
     `id`         bigint unsigned NOT NULL AUTO_INCREMENT,
     `rule_id`    bigint unsigned NOT NULL,
     `vm_id`      bigint unsigned NOT NULL DEFAULT 0,
-    `status`     varchar(32)     NOT NULL DEFAULT 'UNKNOWN',
+    `status`     varchar(32)     NOT NULL DEFAULT 'Unknown',
     `message`    varchar(4096)   DEFAULT NULL,
     `checked_on` datetime        DEFAULT NULL,
     PRIMARY KEY (`id`),

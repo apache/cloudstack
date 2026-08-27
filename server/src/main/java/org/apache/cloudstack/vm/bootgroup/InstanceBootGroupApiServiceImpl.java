@@ -840,6 +840,12 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         return createInstanceBootGroupReadinessRuleResponse(rule, false, 0);
     }
 
+    @Override
+    public Long getInstanceBootGroupIdForMember(long memberId) {
+        InstanceBootGroupMember member = instanceBootGroupMemberDao.findById(memberId);
+        return member == null ? null : member.getBootGroupId();
+    }
+
     private InstanceBootGroupReadinessRuleResponse createInstanceBootGroupReadinessRuleResponse(InstanceBootGroupReadinessRule rule, boolean inherited, long statusVmId) {
         InstanceBootGroupReadinessRuleResponse response = new InstanceBootGroupReadinessRuleResponse();
         response.setId(rule.getUuid());

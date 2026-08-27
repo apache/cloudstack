@@ -60,7 +60,7 @@ public class RemoveInstanceBootGroupMemberCmd extends BaseCmd implements UserCmd
 
     @Override
     public Long getApiResourceId() {
-        return id;
+        return instanceBootGroupService.getInstanceBootGroupIdForMember(getId());
     }
 
     @Override
