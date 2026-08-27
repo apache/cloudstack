@@ -977,7 +977,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         // Tombstoned chain backups (Status.Hidden) are never shown to users; they exist only so the
         // incremental chain GC can sweep them once their last descendant is deleted.
         sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
-        sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
