@@ -334,7 +334,6 @@ export default {
       })
     },
     computedReadinessStateTooltip (record) {
-      console.log('1@@@', record)
       if (record.readinessmode !== 'RuleBased' || !this.isReadinessFailing(record.readinessstatus)) {
         return ''
       }
@@ -343,7 +342,6 @@ export default {
           ? this.$t('label.view.failing.readiness.rules')
           : this.$t('label.instance.not.running.view.last.readiness.results')
       }
-      console.log('@@@', record.children.filter(c => c.state === 'Running'))
       if (record.children.filter(c => c.state === 'Running').length === 0) {
         return this.$t('label.instancegroup.instances.not.running.view.last.readiness.results')
       }
