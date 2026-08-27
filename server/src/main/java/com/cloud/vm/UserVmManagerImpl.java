@@ -996,8 +996,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(String.format("VM %s should be stopped to do UserData reset", userVm));
         }
 
-        String userData = cmd.getUserData();
         Long userDataId = cmd.getUserdataId();
+        if (userDataId != null) {
+            UserData userData = userDataDao.findById(userDataId);
+            if (userData == null) {
+                throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+            }
+            _accountMgr.checkAccess(caller, null, false, userData);
+        }
+
+        String userData = cmd.getUserData();
         String userDataDetails = null;
         if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
             userDataDetails = cmd.getUserdataDetails().toString();
@@ -9267,17 +9275,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
             if (hostId != null) {
-                // default findById() won't search entries with removed field not null
-                Host host = _hostDao.findById(hostId);
+                Host host = _hostDao.findByIdIncludingRemoved(hostId);
+
+                // host row may have been hard-deleted from DB, treat like removed
                 if (host == null) {
-                    logger.warn("Host {} not found", hostId);
+                    logger.warn(String.format("Host with id {} not found in DB for VM %s ({})",
+                            hostId, vm.getUuid(), vm.getName()));
+                    return;
+                }
+                // host could be in removed state, in which case no operation is performed.
+                if (host.getStatus() == Status.Removed) {
+                    logger.warn("Host {} ({}) for VM {} ({}) removed on {}",
+                            host.getUuid(), host.getName(), vm.getUuid(), vm.getName(), host.getRemoved());
                     return;
                 }
 
-                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
-
                 final Command cmd;
 
+                VolumeInfo volumeInfo = volFactory.getVolume(root.getId());
                 if (host.getHypervisorType() == HypervisorType.XenServer) {
                     DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
 

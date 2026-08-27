@@ -42,8 +42,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.APIAclChecker;
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -176,9 +176,9 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -2608,7 +2608,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
         }
 
-        if (projectId != null) {
+        if (projectId != null && projectId != -1L) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
@@ -3697,6 +3697,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
         if (Boolean.TRUE.equals(cmd.getEnable())) {
+            if (cmd.getUserId() != null) {
+                throw new InvalidParameterValueException("User ID should not be provided when enabling 2FA for the current user");
+            }
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
@@ -3745,6 +3748,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
+            verifyCallerPrivilegeForUserOrAccountOperations(userVO);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();

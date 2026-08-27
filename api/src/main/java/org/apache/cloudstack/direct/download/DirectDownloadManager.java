@@ -59,6 +59,16 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
             "Requesting a connection from connection manager timeout in milliseconds for direct download",
             true);
 
+    ConfigKey<String> DirectDownloadMetalinkAllowedHostsAndCidrs = new ConfigKey<>("Advanced", String.class,
+            "direct.download.metalink.allowed.hosts.and.cidrs",
+            "",
+            "Comma-separated list of hosts and CIDR ranges permitted as inner URL targets inside metalink files. "
+                    + "Each entry may be a CIDR range (e.g. \"10.0.0.0/8\"), an exact hostname or IP "
+                    + "(e.g. \"storage.corp.com\"), or a wildcard domain suffix (e.g. \"*.mylocal.net\"). "
+                    + "By default all private/site-local addresses are blocked to prevent SSRF. "
+                    + "Loopback and link-local addresses are always blocked regardless of this setting.",
+            true);
+
     class HostCertificateStatus {
         public enum CertificateStatus {
             REVOKED, FAILED, SKIPPED, UPLOADED
