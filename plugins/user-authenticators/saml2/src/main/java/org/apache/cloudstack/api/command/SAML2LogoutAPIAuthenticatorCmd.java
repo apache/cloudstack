@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
@@ -87,6 +88,8 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         response.setDescription("success");
         response.setResponseName(getCommandName());
         String responseString = ApiResponseSerializer.toSerializedString(response, responseType);
+
+        ApiServlet.clearRequestCookies(req, resp);
 
         if (session == null) {
             try {
