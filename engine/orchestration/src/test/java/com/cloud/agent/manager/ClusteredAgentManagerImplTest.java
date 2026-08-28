@@ -17,10 +17,13 @@
 
 package com.cloud.agent.manager;
 
+import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManagerImpl;
 import org.junit.Before;
@@ -33,9 +36,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -146,5 +152,46 @@ public class ClusteredAgentManagerImplTest {
         clusteredAgentManagerImpl.scanDirectAgentToLoad();
         verify(clusteredAgentManagerImpl).investigate(agentAttache);
         verify(clusteredAgentManagerImpl).loadDirectlyConnectedHost(hostVO, false);
+    }
+
+    // https://github.com/apache/cloudstack/issues/9640
+    // Indirectly connected agents (KVM hosts, SSVM, CPVM) dial in to a management server rather than
+    // being loaded directly by it, so they must be disconnected (and left to reconnect on their own)
+    // instead of going through the direct-agent rebalance dance that expects a ClusteredDirectAgentAttache.
+    @Test
+    public void rebalanceHostDisconnectsIndirectAgentInsteadOfDirectRebalanceTest() throws AgentUnavailableException {
+        ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(new ClusteredAgentManagerImpl());
+        clusteredAgentManagerImpl._nodeId = 1L;
+        clusteredAgentManagerImpl._hostTransferDao = mock(HostTransferMapDao.class);
+
+        long hostId = 10L;
+        AgentAttache indirectAttache = mock(ClusteredAgentAttache.class);
+        when(clusteredAgentManagerImpl.findAttache(hostId)).thenReturn(indirectAttache);
+        doReturn(true).when(clusteredAgentManagerImpl).handleDisconnectWithoutInvestigation(indirectAttache, Event.AgentDisconnected, true, true);
+        doNothing().when(clusteredAgentManagerImpl).finishRebalance(hostId, 2L, Event.RebalanceCompleted);
+
+        boolean result = clusteredAgentManagerImpl.rebalanceHost(hostId, 1L, 2L, false);
+
+        assertTrue(result);
+        verify(clusteredAgentManagerImpl).handleDisconnectWithoutInvestigation(indirectAttache, Event.AgentDisconnected, true, true);
+        verify(clusteredAgentManagerImpl, never()).startRebalance(hostId);
+    }
+
+    @Test
+    public void rebalanceHostStillUsesDirectRebalanceForDirectAgentTest() throws AgentUnavailableException {
+        ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(new ClusteredAgentManagerImpl());
+        clusteredAgentManagerImpl._nodeId = 1L;
+
+        long hostId = 11L;
+        AgentAttache directAttache = mock(ClusteredDirectAgentAttache.class);
+        when(clusteredAgentManagerImpl.findAttache(hostId)).thenReturn(directAttache);
+        doReturn(false).when(clusteredAgentManagerImpl).startRebalance(hostId);
+        doNothing().when(clusteredAgentManagerImpl).finishRebalance(hostId, 2L, Event.RebalanceFailed);
+
+        boolean result = clusteredAgentManagerImpl.rebalanceHost(hostId, 1L, 2L, false);
+
+        assertFalse(result);
+        verify(clusteredAgentManagerImpl).startRebalance(hostId);
+        verify(clusteredAgentManagerImpl, never()).handleDisconnectWithoutInvestigation(any(), any(), anyBoolean(), anyBoolean());
     }
 }

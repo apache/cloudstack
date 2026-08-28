@@ -29,7 +29,6 @@ import javax.inject.Inject;
 import com.cloud.cluster.ManagementServerHostVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -47,7 +46,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
     public List<HostVO> getHostsToRebalance(ManagementServerHostVO ms, int avLoad) {
         long msId = ms.getMsid();
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+        sc.and(sc.entity().getType(), Op.IN, (Object[]) REBALANCEABLE_HOST_TYPES);
         sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
         List<HostVO> allHosts = sc.list();
 
@@ -60,7 +59,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
 
         sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
-        sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
+        sc.and(sc.entity().getType(), Op.IN, (Object[]) REBALANCEABLE_HOST_TYPES);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         List<HostVO> directHosts = sc.list();
 
