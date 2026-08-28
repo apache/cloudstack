@@ -371,12 +371,10 @@ public class AgentShellTest {
     }
 
     private void mockLastSetupCompletedHost(String value) {
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.LAST_SETUP_COMPLETED_HOST))).thenReturn(value);
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.LAST_SETUP_COMPLETED_HOST))).thenReturn(value);
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getHostsTestAppendsLastSetupCompletedHostAsFallback() {
         mockLastSetupCompletedHost("30.3.3.3");
         agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
@@ -385,7 +383,6 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getHostsTestSubstringHostDoesNotSuppressFallback() {
         // 10.0.0.1 is a substring of 10.0.0.10 but not the same host, so it must still be appended.
         mockLastSetupCompletedHost("10.0.0.1");
@@ -395,7 +392,6 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getHostsTestExactMatchIsNotDuplicated() {
         mockLastSetupCompletedHost("20.2.2.2");
         agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
@@ -404,7 +400,6 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getHostsTestMatchIsCaseInsensitiveAndTrimmed() {
         mockLastSetupCompletedHost("  HOSTA.EXAMPLE.COM  ");
         agentShellSpy.setHosts("hosta.example.com,hostb.example.com");
@@ -413,7 +408,6 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getHostsTestBlankLastSetupCompletedHostReturnsConfiguredHostsOnly() {
         mockLastSetupCompletedHost("  ");
         agentShellSpy.setHosts("10.1.1.1,20.2.2.2");
