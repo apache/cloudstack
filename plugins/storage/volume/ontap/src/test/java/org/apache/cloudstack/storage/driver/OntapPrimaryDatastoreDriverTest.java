@@ -25,6 +25,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -33,6 +34,7 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -617,7 +619,11 @@ class OntapPrimaryDatastoreDriverTest {
     void testGetBytesRequiredForTemplate_AlreadyCached_ReturnsZero() {
         when(storagePool.getId()).thenReturn(1L);
         when(templateInfo.getId()).thenReturn(50L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
+        when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
 
         assertEquals(0L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
     }
@@ -627,9 +633,51 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePool.getId()).thenReturn(1L);
         when(templateInfo.getId()).thenReturn(50L);
         when(templateInfo.getSize()).thenReturn(5368709120L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(null);
 
         assertEquals(5368709120L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
+    }
+
+    @Test
+    void testGetBytesRequiredForTemplate_SpoolRefNotDownloaded_ReturnsVirtualSize() {
+        when(storagePool.getId()).thenReturn(1L);
+        when(templateInfo.getId()).thenReturn(50L);
+        when(templateInfo.getSize()).thenReturn(5368709120L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+        when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Allocated);
+
+        assertEquals(5368709120L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
+    }
+
+    @Test
+    void testGetBytesRequiredForTemplate_DownloadedWithoutBackendIdentity_ReturnsVirtualSize() {
+        when(storagePool.getId()).thenReturn(1L);
+        when(templateInfo.getId()).thenReturn(50L);
+        when(templateInfo.getSize()).thenReturn(5368709120L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
+        when(templatePoolRef.getLocalDownloadPath()).thenReturn(null);
+
+        assertEquals(5368709120L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
+    }
+
+    @Test
+    void testGetBytesRequiredForTemplate_NfsCached_ReturnsZero() {
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.NFS3.name());
+        when(storagePool.getId()).thenReturn(1L);
+        when(templateInfo.getId()).thenReturn(50L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
+        when(templatePoolRef.getInstallPath()).thenReturn("/mnt/pool/template-uuid");
+
+        assertEquals(0L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
     }
 
     @Test
@@ -906,6 +954,34 @@ class OntapPrimaryDatastoreDriverTest {
             verify(commandCallback).complete(resultCaptor.capture());
             assertTrue(resultCaptor.getValue().isSuccess());
             verify(nasStrategy).deleteFileByPath("flexvol-uuid", "template-uuid");
+        }
+    }
+
+    @Test
+    void testDeleteAsync_Template_NFS_FailsWhenFlexVolUuidMissing() {
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.NFS3.name());
+        storagePoolDetails.remove(OntapStorageConstants.VOLUME_UUID);
+
+        when(dataStore.getId()).thenReturn(1L);
+        when(templateInfo.getType()).thenReturn(TEMPLATE);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getInstallPath()).thenReturn("template-uuid");
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(nasStrategy);
+
+            driver.deleteAsync(dataStore, templateInfo, commandCallback);
+
+            ArgumentCaptor<CommandResult> resultCaptor = ArgumentCaptor.forClass(CommandResult.class);
+            verify(commandCallback).complete(resultCaptor.capture());
+            assertFalse(resultCaptor.getValue().isSuccess());
+            assertTrue(resultCaptor.getValue().getResult().contains("volumeUUID"));
+            verify(nasStrategy, never()).deleteFileByPath(any(), any());
         }
     }
 

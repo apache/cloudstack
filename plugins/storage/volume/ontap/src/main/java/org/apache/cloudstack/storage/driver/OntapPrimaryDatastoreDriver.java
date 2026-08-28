@@ -34,6 +34,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -48,11 +49,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -399,6 +402,14 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             return;
         }
         String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
+        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
+            // Misconfigured pool detail — fail eviction rather than calling ONTAP with a null
+            // volume UUID (which would hit /api/storage/volumes/null and still look like success
+            // upstream if we swallowed the error).
+            throw new CloudRuntimeException("FlexVolume UUID (volumeUUID) is missing from storage pool details; "
+                    + "cannot delete NFS template cache file [" + filePath + "] for template ["
+                    + templateInfo.getId() + "]");
+        }
         ((UnifiedNASStrategy) storageStrategy).deleteFileByPath(flexVolUuid, filePath);
         logger.info("deleteTemplateOnPrimary: Deleted template cache file [{}] for template [{}]",
                 filePath, templateInfo.getId());
@@ -938,11 +949,35 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         if (templateInfo == null || storagePool == null) {
             return 0;
         }
-        // Already cached on this pool, so deploying from it costs no additional space.
-        if (vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(), templateInfo.getId(), null) != null) {
+        // template_spool_ref is inserted in Allocated/NOT_DOWNLOADED before the cache exists;
+        // only skip reservation when the template is truly cached on this pool.
+        VMTemplateStoragePoolVO templatePoolRef =
+                vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(), templateInfo.getId(), null);
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
+        if (isTemplateCachedOnPool(templatePoolRef, details)) {
             return 0;
         }
         return getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
+    }
+
+    /**
+     * Returns true when the primary template cache is present and usable for clone/deploy.
+     * A spool_ref row alone is not enough: CloudStack creates it before the LUN/file exists.
+     */
+    private boolean isTemplateCachedOnPool(VMTemplateStoragePoolVO templatePoolRef, Map<String, String> details) {
+        if (templatePoolRef == null) {
+            return false;
+        }
+        if (templatePoolRef.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            return false;
+        }
+        if (templatePoolRef.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+            return false;
+        }
+        if (details != null && isIscsi(details)) {
+            return StringUtils.isNotBlank(templatePoolRef.getLocalDownloadPath());
+        }
+        return StringUtils.isNotBlank(templatePoolRef.getInstallPath());
     }
 
     @Override
