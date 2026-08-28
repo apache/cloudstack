@@ -45,23 +45,40 @@ class TestHostMaintenanceBase(cloudstackTestCase):
 
         return ssh_client
 
-    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=3, retries=20):
+    def wait_until_host_is_in_state(self, hostid, resourcestate, interval=3, retries=20, abort_states=None):
+        """
+        Wait until the host reaches resourcestate. If abort_states is given and the host lands
+        in one of those states instead, skip the test immediately rather than waiting out the
+        full timeout: ErrorInPrepareForMaintenance/ErrorInMaintenance while waiting for
+        "Maintenance" usually means the hypervisor refused to migrate a VM off this host (most
+        commonly because the hosts in the cluster have incompatible CPUs), which is an
+        environment limitation, not something this test can exercise meaningfully.
+        """
         def check_resource_state():
             response = Host.list(
                 self.apiclient,
                 id=hostid
             )
             if isinstance(response, list):
-                if response[0].resourcestate == resourcestate:
+                current_state = response[0].resourcestate
+                if current_state == resourcestate:
                     self.logger.debug('Host with id %s is in resource state = %s' % (hostid, resourcestate))
                     return True, None
-                else:
-                    self.logger.debug("Waiting for host " + hostid +
-                                      " to reach state " + resourcestate +
-                                      ", with current state " + response[0].resourcestate)
+                if abort_states and current_state in abort_states:
+                    self.logger.debug('Host with id %s entered abort state = %s' % (hostid, current_state))
+                    return True, current_state
+                self.logger.debug("Waiting for host " + hostid +
+                                  " to reach state " + resourcestate +
+                                  ", with current state " + current_state)
             return False, None
 
-        done, _ = wait_until(interval, retries, check_resource_state)
+        done, abort_state = wait_until(interval, retries, check_resource_state)
+        if abort_state:
+            raise unittest.SkipTest(
+                "Host %s entered resource state %s while waiting to reach %s -- the hypervisor "
+                "rejected the VM migration needed for this test (commonly caused by incompatible "
+                "CPUs between hosts in the cluster). Skipping this migration-dependent test."
+                % (hostid, abort_state, resourcestate))
         if not done:
             raise Exception("Failed to wait for host %s to be on resource state %s" % (hostid, resourcestate))
         return True
@@ -84,6 +101,20 @@ class TestHostMaintenanceBase(cloudstackTestCase):
         return res
 
     def revert_host_state_on_failure(self, hostId):
+        # updateHost(allocationstate=Enable) only has a transition defined from the
+        # Disabled resource state. If a migration failed while putting the host into
+        # maintenance, the host is left in one of the maintenance-related error states
+        # (PrepareForMaintenance, ErrorInPrepareForMaintenance, Maintenance,
+        # ErrorInMaintenance) instead, and only cancelHostMaintenance (AdminCancelMaintenance)
+        # can move it back to Enabled from there. Recover via whichever API actually applies.
+        host = Host.list(self.apiclient, id=hostId)[0]
+        if host.resourcestate == "Enabled":
+            return
+        if host.resourcestate in ("PrepareForMaintenance", "ErrorInPrepareForMaintenance",
+                                   "Maintenance", "ErrorInMaintenance"):
+            self.cancel_host_maintenance(hostId)
+            self.wait_until_host_is_in_state(hostId, "Enabled", 5, 60)
+            return
         cmd = updateHost.updateHostCmd()
         cmd.id = hostId
         cmd.allocationstate = "Enable"
@@ -247,7 +278,9 @@ class TestHostMaintenance(TestHostMaintenanceBase):
         self.prepare_host_for_maintenance(target_host_id)
         migrations_finished = wait_until(5, 200, self.migrationsFinished, target_host_id)
 
-        self.wait_until_host_is_in_state(target_host_id, "Maintenance", 5, 200)
+        self.wait_until_host_is_in_state(
+            target_host_id, "Maintenance", 5, 200,
+            abort_states=("ErrorInPrepareForMaintenance", "ErrorInMaintenance"))
 
         vm_count_after_maintenance = self.noOfVMsOnHost(target_host_id)
 
@@ -301,11 +334,15 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             else:
                 raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
 
+        except unittest.SkipTest:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
+            raise
         except Exception as e:
             self.revert_host_state_on_failure(listHost[0].id)
             self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Host maintenance test failed {}".format(e[0]))
+            self.fail("Host maintenance test failed {}".format(str(e)))
 
 
     @attr(
@@ -362,11 +399,15 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             else:
                 raise unittest.SkipTest("VMs are still migrating so reverse migration /maintenace skipped")
 
+        except unittest.SkipTest:
+            self.revert_host_state_on_failure(listHost[0].id)
+            self.revert_host_state_on_failure(listHost[1].id)
+            raise
         except Exception as e:
             self.revert_host_state_on_failure(listHost[0].id)
             self.revert_host_state_on_failure(listHost[1].id)
             self.logger.debug("Exception {}".format(e))
-            self.fail("Host maintenance test failed {}".format(e[0]))
+            self.fail("Host maintenance test failed {}".format(str(e)))
 
     @attr(
         tags=[
@@ -437,7 +478,7 @@ class TestHostMaintenance(TestHostMaintenanceBase):
             self.revert_host_state_on_failure(listHost[1].id)
             Host.update(self.apiclient, id=target_host_id, hosttags="")
             self.logger.debug("Exception {}".format(e))
-            self.fail("Host maintenance test failed {}".format(e[0]))
+            self.fail("Host maintenance test failed {}".format(str(e)))
 
 
 class TestHostMaintenanceAgents(TestHostMaintenanceBase):
