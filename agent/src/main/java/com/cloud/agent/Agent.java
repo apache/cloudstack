@@ -91,7 +91,6 @@ import com.cloud.utils.exception.TaskExecutionException;
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
-import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.Script;
 
