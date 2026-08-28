@@ -93,7 +93,10 @@ router.beforeEach((to, from, next) => {
           return
         }
         store.commit('SET_LOGIN_FLAG', true)
-        store.commit('SET_MS_ID', Cookies.get('managementserverid'))
+        const MS_ID = Cookies.get('managementserverid')
+        if (MS_ID) {
+          store.commit('SET_MS_ID', MS_ID)
+        }
       }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})

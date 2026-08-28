@@ -408,11 +408,31 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         } else if (protocol.equals(DownloadProtocol.NFS)) {
             return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
-                    soTimeout, followRedirects);
+            MetalinkDirectDownloadCommand cmd = new MetalinkDirectDownloadCommand(url, templateId, destPool,
+                    checksum, httpHeaders, connectTimeout, soTimeout, followRedirects);
+            cmd.setAllowedCidrs(parseAllowedCidrs(DirectDownloadMetalinkAllowedHostsAndCidrs.value()));
+            return cmd;
         } else {
             return null;
         }
+    }
+
+    /**
+     * Parses a comma-separated CIDR string from the global setting into a list.
+     * Blank values return an empty list (all site-local addresses blocked).
+     */
+    private List<String> parseAllowedCidrs(String rawValue) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(rawValue)) {
+            return java.util.Collections.emptyList();
+        }
+        List<String> cidrs = new java.util.ArrayList<>();
+        for (String cidr : rawValue.split(",")) {
+            String trimmed = cidr.trim();
+            if (!trimmed.isEmpty()) {
+                cidrs.add(trimmed);
+            }
+        }
+        return cidrs;
     }
 
     /**
@@ -783,7 +803,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                 DirectDownloadCertificateUploadInterval,
                 DirectDownloadConnectTimeout,
                 DirectDownloadSocketTimeout,
-                DirectDownloadConnectionRequestTimeout
+                DirectDownloadConnectionRequestTimeout,
+                DirectDownloadMetalinkAllowedHostsAndCidrs
         };
     }
 

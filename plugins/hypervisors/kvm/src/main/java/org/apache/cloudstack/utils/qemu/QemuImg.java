@@ -61,7 +61,7 @@ public class QemuImg {
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
     private String cloudQemuImgPath = "cloud-qemu-img";
-    private int timeout;
+    private long timeout;
     private boolean skipZero = false;
     private boolean skipTargetVolumeCreation = false;
     private boolean noCache = false;
@@ -129,7 +129,7 @@ public class QemuImg {
      * @param skipZeroIfSupported Don't write zeroes to target device during convert, if supported by qemu-img
      * @param noCache Ensure we flush writes to target disk (useful for block device targets)
      */
-    public QemuImg(final int timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
+    public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
             final Script s = new Script(_qemuImgPath, timeout);
             s.add("--help");
@@ -159,7 +159,7 @@ public class QemuImg {
      * @param timeout
      *            The timeout of scripts executed by this QemuImg object.
      */
-    public QemuImg(final int timeout) throws LibvirtException, QemuImgException {
+    public QemuImg(final long timeout) throws LibvirtException, QemuImgException {
         this(timeout, false, false);
     }
 
@@ -927,7 +927,10 @@ public class QemuImg {
     }
 
     protected static boolean helpSupportsImageFormat(String text, QemuImg.PhysicalDiskFormat format) {
-        Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
+        // QEMU >= 10.1.0 changed the qemu-img --help header from
+        // "Supported formats:" to "Supported image formats:", so the word
+        // "image" must be treated as optional here.
+        Pattern pattern = Pattern.compile("Supported\\s(image\\s)?formats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
     }
 
