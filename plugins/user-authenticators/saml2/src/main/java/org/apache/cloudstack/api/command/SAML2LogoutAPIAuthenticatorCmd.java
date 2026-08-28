@@ -41,6 +41,7 @@ import org.opensaml.xml.io.UnmarshallingException;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -89,6 +90,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         String responseString = ApiResponseSerializer.toSerializedString(response, responseType);
 
         if (session == null) {
+            clearSessionCookies(req, resp);
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
@@ -119,6 +121,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             } catch (ConfigurationException | FactoryConfigurationError | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
                 logger.error("SAMLResponse processing error: " + e.getMessage());
             }
+            clearSessionCookies(req, resp);
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
@@ -131,6 +134,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         SAMLProviderMetadata idpMetadata = _samlAuthManager.getIdPMetadata(idpId);
         String nameId = (String) session.getAttribute(SAMLPluginConstants.SAML_NAMEID);
         if (idpMetadata == null || nameId == null || nameId.isEmpty()) {
+            clearSessionCookies(req, resp);
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
@@ -142,6 +146,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
         try {
             String redirectUrl = idpMetadata.getSloUrl() + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(logoutRequest);
+            clearSessionCookies(req, resp);
             resp.sendRedirect(redirectUrl);
         } catch (MarshallingException | IOException e) {
             logger.error("SAML SLO error: " + e.getMessage());
@@ -150,6 +155,24 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                     params, responseType));
         }
         return responseString;
+    }
+
+    /**
+     * Clears the session cookies (JSESSIONID, sessionkey, userid, ...) received from the browser so the
+     * SAML SLO redirect response actually instructs the browser to drop them. ApiServlet runs its cookie
+     * cleanup only after this authenticator returns, but {@code sendRedirect} commits the response first,
+     * so those Set-Cookie headers would be lost and the session key would survive the logout.
+     */
+    private void clearSessionCookies(final HttpServletRequest req, final HttpServletResponse resp) {
+        final Cookie[] cookies = req.getCookies();
+        if (cookies == null) {
+            return;
+        }
+        for (final Cookie cookie : cookies) {
+            cookie.setValue("");
+            cookie.setMaxAge(0);
+            resp.addCookie(cookie);
+        }
     }
 
     @Override

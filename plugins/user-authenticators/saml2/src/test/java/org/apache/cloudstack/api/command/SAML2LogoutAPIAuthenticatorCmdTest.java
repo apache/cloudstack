@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.security.cert.X509Certificate;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -84,5 +85,33 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
     @Test
     public void testGetAPIType() throws Exception {
         Assert.assertTrue(new SAML2LogoutAPIAuthenticatorCmd().getAPIType() == APIAuthenticationType.LOGOUT_API);
+    }
+
+    @Test
+    public void testAuthenticateClearsSessionCookiesBeforeRedirect() throws Exception {
+        SAML2LogoutAPIAuthenticatorCmd cmd = new SAML2LogoutAPIAuthenticatorCmd();
+
+        Field apiServerField = SAML2LogoutAPIAuthenticatorCmd.class.getDeclaredField("_apiServer");
+        apiServerField.setAccessible(true);
+        apiServerField.set(cmd, apiServer);
+
+        Field managerField = SAML2LogoutAPIAuthenticatorCmd.class.getDeclaredField("_samlAuthManager");
+        managerField.setAccessible(true);
+        managerField.set(cmd, samlAuthManager);
+
+        Cookie jsessionid = new Cookie("JSESSIONID", "dummy-session-id");
+        Cookie sessionkey = new Cookie("sessionkey", "dummy-session-key");
+        Cookie[] cookies = new Cookie[]{jsessionid, sessionkey};
+        Mockito.when(req.getCookies()).thenReturn(cookies);
+        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
+
+        cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
+
+        Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.any());
+        Mockito.verify(resp, Mockito.times(2)).addCookie(Mockito.any(Cookie.class));
+        Assert.assertEquals(0, jsessionid.getMaxAge());
+        Assert.assertEquals("", jsessionid.getValue());
+        Assert.assertEquals(0, sessionkey.getMaxAge());
+        Assert.assertEquals("", sessionkey.getValue());
     }
 }
