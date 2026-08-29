@@ -261,8 +261,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
-                scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenThrow(new RuntimeException("failure")); // Mount failure
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenReturn(1); // Mount failure
 
                 Answer result = wrapper.execute(command, libvirtComputingResource);
 
@@ -404,7 +404,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                         .thenAnswer(invocation -> invocation.getArgument(0));
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
                         .thenReturn(null);
-                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
                         .thenAnswer(invocation -> {
                             if (Arrays.stream(invocation.getArguments()).map(String::valueOf).anyMatch("rsync"::equals)) {
                                 return 1; // Rsync failure
@@ -576,6 +576,40 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(result instanceof BackupAnswer);
                 BackupAnswer backupAnswer = (BackupAnswer) result;
                 Assert.assertTrue(backupAnswer.getResult());
+            }
+        }
+    }
+
+    @Test
+    public void testMountUsesTheConfiguredTimeout() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                final long[] mountTimeout = new long[1];
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            if (Arrays.stream(invocation.getArguments()).map(String::valueOf).anyMatch("mount"::equals)) {
+                                mountTimeout[0] = invocation.getArgument(0);
+                                return 1; // stop the restore right after the mount
+                            }
+                            return 0;
+                        });
+
+                wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertEquals(30 * 1000L, mountTimeout[0]);
             }
         }
     }

@@ -201,6 +201,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             logger.error("Failed to create the tmp mount directory {} for restore", mountDirectory, e);
             throw new CloudRuntimeException("Failed to create the tmp mount directory for restore on the KVM host");
         }
+        int exitValue;
         try {
             String mountPath = Script.getExecutableAbsolutePath("mount");
             List<String> mountCmd = new ArrayList<>();
@@ -221,21 +222,31 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 mountCmd.add("-o");
                 mountCmd.add(mountOptions);
             }
-            Script.executeCommand(mountCmd.toArray(new String[0]));
+            exitValue = Script.executeCommandForExitValue(mountTimeout, mountCmd.toArray(new String[0]));
         } catch (Exception e) {
             logger.error("Failed to mount repository {} of type {} to the directory {}", backupRepoAddress, backupRepoType, mountDirectory, e);
+            throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
+        }
+        if (exitValue != 0) {
+            logger.error("Failed to mount repository {} of type {} to the directory {}, mount exited with {}", backupRepoAddress,
+                    backupRepoType, mountDirectory, exitValue);
             throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
         }
         return mountDirectory;
     }
 
     private void unmountBackupDirectory(String backupDirectory) {
+        int exitValue;
         try {
             String umountPath = Script.getExecutableAbsolutePath("umount");
             String[] umountCmd = new String[] { "sudo", umountPath, backupDirectory };
-            Script.executeCommand(umountCmd);
+            exitValue = Script.executeCommandForExitValue(umountCmd);
         } catch (Exception e) {
             logger.error("Failed to unmount backup directory {}", backupDirectory, e);
+            throw new CloudRuntimeException("Failed to unmount the backup directory");
+        }
+        if (exitValue != 0) {
+            logger.error("Failed to unmount backup directory {}, umount exited with {}", backupDirectory, exitValue);
             throw new CloudRuntimeException("Failed to unmount the backup directory");
         }
     }
@@ -276,7 +287,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
 
         String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
-        int exitValue = Script.executeCommandForExitValue(rsyncCmd);
+        int exitValue = Script.executeCommandForExitValue(timeout, rsyncCmd);
         return exitValue == 0;
     }
 
