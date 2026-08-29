@@ -55,7 +55,7 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
     private String address;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options",
-            validations = {ApiArgValidator.SafeCommandOptions})
+            validations = {ApiArgValidator.SafeMountCommandOptions})
     private String mountOptions;
 
     @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups in this repository can be used to create Instances on all Zones")
