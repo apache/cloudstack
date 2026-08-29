@@ -95,7 +95,7 @@ public class ParamProcessWorkerTest {
         @Parameter(name = "vmHostNameParam", type = CommandType.STRING, validations = {ApiArgValidator.RFCComplianceDomainName})
         String vmHostNameParam;
 
-        @Parameter(name = "mountOptions", type = CommandType.STRING, validations = {ApiArgValidator.SafeCommandOptions})
+        @Parameter(name = "mountOptions", type = CommandType.STRING, validations = {ApiArgValidator.SafeMountCommandOptions})
         String mountOptions;
 
         @Override
@@ -149,6 +149,108 @@ public class ParamProcessWorkerTest {
         final TestCmd cmd = new TestCmd();
         paramProcessWorkerSpy.processParameters(cmd, params);
         Assert.assertEquals("vers=4.1,soft,timeo=600,retrans=2", cmd.mountOptions);
+    }
+
+    @Test
+    public void processMountOptionsParameter_AcceptsCifsCredentials() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        // CIFS credentials routinely contain punctuation that is harmless in a mount option list.
+        final String options = "username=backup@corp.example.com,password=P@ssw0rd!#%^~,vers=3.0";
+        params.put("mountOptions", options);
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals(options, cmd.mountOptions);
+    }
+
+    @Test
+    public void processMountOptionsParameter_AcceptsBase64LikePassword() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        final String options = "username=backup,password=YWJjZGVmZ2g=";
+        params.put("mountOptions", options);
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals(options, cmd.mountOptions);
+    }
+
+    @Test
+    public void processMountOptionsParameter_AcceptsCephFsOptions() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        // A CephFS repository is mounted with the cephx user and a bare option such as defaults.
+        final String options = "name=user,secret=xyz,defaults";
+        params.put("mountOptions", options);
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals(options, cmd.mountOptions);
+    }
+
+    @Test
+    public void processMountOptionsParameter_AcceptsCephFsBase64Secret() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        // A cephx key is base64, so it can contain + / and trailing =.
+        final String options = "name=cloudstack,secret=AQBvE2VmS0J8FxAA9F1c2Wq+8kZ3Xn5Yz7Lw==,defaults";
+        params.put("mountOptions", options);
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals(options, cmd.mountOptions);
+    }
+
+    @Test
+    public void processMountOptionsParameter_AcceptsCephFsSecretFile() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        final String options = "name=user,secretfile=/etc/ceph/secret.key,_netdev";
+        params.put("mountOptions", options);
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals(options, cmd.mountOptions);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectCephFsSecretWithCommandSubstitution() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "name=user,secret=$(cat /etc/ceph/keyring)");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectWhitespace() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        // Whitespace would turn into additional arguments to mount.
+        params.put("mountOptions", "vers=4.1,soft -o remount,rw");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectCommandSubstitution() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "vers=4.1,password=$(id)");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectBackticks() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "vers=4.1,password=`id`");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectGlob() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "vers=4.1,credentials=/etc/*");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectOptionWithoutKey() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "vers=4.1,=value");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
     }
 
     @Test(expected = ServerApiException.class)
