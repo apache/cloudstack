@@ -613,4 +613,77 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             }
         }
     }
+
+    @Test
+    public void testMountFailureRemovesTheTemporaryDirectory() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenReturn(1); // the mount fails
+
+                wrapper.execute(command, libvirtComputingResource);
+
+                // the directory created for the mount must not be left behind
+                filesMock.verify(() -> Files.deleteIfExists(any(Path.class)));
+            }
+        }
+    }
+
+    @Test
+    public void testUnmountIsBoundedByTheConfiguredTimeout() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                final long[] umountTimeout = new long[] { -1 };
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            if (Arrays.stream(invocation.getArguments()).map(String::valueOf).anyMatch("umount"::equals)) {
+                                umountTimeout[0] = invocation.getArgument(0);
+                            }
+                            return 0;
+                        });
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+
+                wrapper.execute(command, libvirtComputingResource);
+
+                // an unreachable repository blocks umount just as it blocks mount
+                Assert.assertEquals(30 * 1000L, umountTimeout[0]);
+            }
+        }
+    }
 }
