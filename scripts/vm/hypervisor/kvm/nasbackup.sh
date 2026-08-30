@@ -289,7 +289,7 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount_args=(-t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}")
+  local mount_args=(-t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}")
   [[ -n "${MOUNT_OPTS}" ]] && mount_args+=(-o "${MOUNT_OPTS}")
   mount "${mount_args[@]}" 2>&1 | tee -a "$logFile"
   if [ $? -eq 0 ]; then
