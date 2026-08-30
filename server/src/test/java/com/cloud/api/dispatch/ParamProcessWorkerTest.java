@@ -212,6 +212,24 @@ public class ParamProcessWorkerTest {
         paramProcessWorkerSpy.processParameters(cmd, params);
     }
 
+    @Test
+    public void processMountOptionsParameter_AcceptsEmptyValueToClearTheOptions() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals("", cmd.mountOptions);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectWhitespaceOnly() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        // Only looks empty: the backup script would hand this to mount as an option.
+        params.put("mountOptions", "   ");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+    }
+
     @Test(expected = ServerApiException.class)
     public void processMountOptionsParameter_RejectWhitespace() {
         final HashMap<String, String> params = new HashMap<String, String>();

@@ -90,7 +90,10 @@ public enum ApiArgValidator {
             return;
         }
         final String value = String.valueOf(param);
-        if (StringUtils.isBlank(value)) {
+        // An empty value clears the mount options and is allowed. A value that only looks empty is
+        // not: whitespace is rejected everywhere else in the list, and the backup script would pass
+        // it on to mount as an option of its own.
+        if (value.isEmpty()) {
             return;
         }
 
