@@ -159,4 +159,13 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
 
         return listBy(sc);
     }
+
+    @Override
+    @DB
+    public VersionVO getInitialVersion() {
+        final Filter filter = new Filter(VersionVO.class, "id", true, 0L, 1L);
+        final List<VersionVO> versions = listAll(filter);
+
+        return versions.isEmpty() ? null : versions.get(0);
+    }
 }

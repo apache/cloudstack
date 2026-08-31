@@ -27,4 +27,11 @@ public interface VersionDao extends GenericDao<VersionVO, Long> {
     String getCurrentVersion();
 
     List<VersionVO> getAllVersions();
+
+    /**
+     * @return the oldest row of the version table, which records the version the
+     *         database was originally created with and when, or null if the table
+     *         is empty
+     */
+    VersionVO getInitialVersion();
 }

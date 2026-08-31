@@ -25,10 +25,6 @@ import java.util.HashMap;
 import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.net.URL;
 import java.net.SocketTimeoutException;
 import java.net.MalformedURLException;
@@ -47,11 +43,10 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.utils.identity.InstallationIdentity;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.apache.commons.codec.digest.DigestUtils;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -64,8 +59,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -77,15 +70,19 @@ import com.google.common.util.concurrent.AtomicLongMap;
 @Component
 public class UsageReporter extends ManagerBase implements Configurable {
 
-    public static final ConfigKey<Integer> UsageReportInterval = new ConfigKey<>("Advanced", Integer.class,
-            "usage.report.interval", "0",
-            "The interval in days between usage reports sent to the CloudStack project. 0 is the default (disabled) and when enabled a value of 7 is recommended. Changing this setting requires a restart of the Management Server.",
-            false, ConfigKey.Scope.Global);
+    /**
+     * The canonical endpoint of the Apache CloudStack project. Deliberately not a
+     * Global Setting: telemetry is meant to give the project authoritative
+     * statistics, so "telemetry enabled" has to mean the data reaches the project
+     * and not some other destination. DNS provides whatever indirection the
+     * receiving infrastructure needs.
+     */
+    protected static final String TELEMETRY_URI = "https://call-home.cloudstack.org/report";
 
-    public static final ConfigKey<String> UsageReportUri = new ConfigKey<>("Advanced", String.class,
-            "usage.report.uri", "https://reporting.cloudstack.org/report",
-            "The URI to which usage reports are sent. Only HTTPS is supported.",
-            true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> TelemetryInterval = new ConfigKey<>("Advanced", Integer.class,
+            "telemetry.interval", "0",
+            "The interval in days between telemetry reports sent to the CloudStack project. 0 is the default (disabled) and when enabled a value of 7 is recommended. Changing this setting requires a restart of the Management Server.",
+            false, ConfigKey.Scope.Global);
 
     private String uniqueID = null;
 
@@ -119,7 +116,7 @@ public class UsageReporter extends ManagerBase implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UsageReportInterval, UsageReportUri};
+        return new ConfigKey<?>[] {TelemetryInterval};
     }
 
     private void init() {
@@ -127,7 +124,7 @@ public class UsageReporter extends ManagerBase implements Configurable {
             _executor.shutdown();
         }
 
-        int interval = UsageReportInterval.value();
+        int interval = TelemetryInterval.value();
         if (interval > 0) {
             _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("UsageReporter"));
             _executor.scheduleWithFixedDelay(new UsageCollector(), interval, interval, TimeUnit.DAYS);
@@ -202,33 +199,19 @@ public class UsageReporter extends ManagerBase implements Configurable {
         }
     }
 
-    @DB
-    private String getUniqueId() {
-        String unique = null;
-        Connection conn = null;
-
-        try {
-            conn = TransactionLegacy.getStandaloneConnection();
-
-            try (PreparedStatement pstmt = conn.prepareStatement("SELECT version,updated FROM version ORDER BY id ASC LIMIT 1");
-                 ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    unique = DigestUtils.sha256Hex(rs.getString(1) + rs.getString(2));
-                } else {
-                    logger.debug("No rows found in the version table. Unable to obtain unique ID for this environment");
-                }
-            }
-        } catch (SQLException e) {
-            logger.debug("Unable to get the unique ID of this environment: " + e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    logger.debug("Failed to close database connection: " + e.getMessage());
-                }
-            }
+    /**
+     * The identity of this installation, derived from the version the database was
+     * created with and when. Every Management Server sharing the database derives
+     * the same value, so no identity has to be generated or stored.
+     */
+    protected String getUniqueId() {
+        final VersionVO initialVersion = _versionDao.getInitialVersion();
+        if (initialVersion == null) {
+            logger.debug("No rows found in the version table. Unable to obtain unique ID for this environment");
+            return null;
         }
+
+        final String unique = InstallationIdentity.generate(initialVersion.getVersion(), initialVersion.getUpdated());
 
         logger.debug("Usage Report Unique ID is: " + unique);
 
@@ -476,7 +459,7 @@ public class UsageReporter extends ManagerBase implements Configurable {
                 reportMap.put("versions", getVersionReport());
                 reportMap.put("current_version", getCurrentVersion());
 
-                sendReport(UsageReportUri.value(), uniqueID, reportMap);
+                sendReport(TELEMETRY_URI, uniqueID, reportMap);
 
             } catch (Exception e) {
                 logger.warn("Failed to compile Usage Report: " + e.getMessage());

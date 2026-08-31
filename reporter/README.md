@@ -25,12 +25,23 @@ All data collected is anonymous. No personally identifiable information, IP addr
 
 ## Enabling usage reporting
 
-Usage reporting is configured through CloudStack's Global Settings. Two settings are available:
+Usage reporting is configured through CloudStack's Global Settings. One setting is available:
 
 | Setting | Default | Description |
 |---|---|---|
-| `usage.report.interval` | `0` (disabled) | Interval in days between reports. Set to `7` to enable weekly reporting. Changing this setting requires a restart of the Management Server. |
-| `usage.report.uri` | `https://reporting.cloudstack.org/report` | The endpoint reports are sent to. Only HTTPS is supported. |
+| `telemetry.interval` | `0` (disabled) | Interval in days between reports. Set to `7` to enable weekly reporting. Changing this setting requires a restart of the Management Server. |
+
+The destination is not configurable. Reports are always sent to the canonical
+Apache CloudStack endpoint:
+
+```
+https://call-home.cloudstack.org/report
+```
+
+The point of telemetry is to give the Apache CloudStack project authoritative
+project-wide statistics, so enabling it has to mean the data reaches the project
+rather than an arbitrary destination. DNS provides whatever indirection the
+receiving infrastructure needs.
 
 ## The webservice
 
@@ -40,7 +51,14 @@ The collector is a Python Flask application (`usage-report-collector.py`) that r
 POST /report/<unique_id>
 ```
 
-The `unique_id` is a SHA-256 hash derived from the management server's database, ensuring reports from the same installation can be correlated across time without identifying the operator.
+The `unique_id` is a SHA-256 hash derived from the oldest row of the management
+server's `version` table, that is the version the database was created with and
+when. It is computed by `InstallationIdentity` in the `utils` module and is not
+stored anywhere: every Management Server sharing the database derives the same
+value, it survives restarts and upgrades, and it differs for every installation
+because the creation timestamp differs. The hash is one-way, so reports from the
+same installation can be correlated across time without identifying the operator
+or revealing when the cloud was installed.
 
 ### Storage
 

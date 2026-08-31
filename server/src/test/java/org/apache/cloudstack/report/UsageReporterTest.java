@@ -28,8 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.InstallationIdentity;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,8 +69,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * Documents the exact JSON payload {@link UsageReporter} POSTs to the usage
- * reporting service, so any change to the wire format is a deliberate one.
+ * Documents the exact JSON payload {@link UsageReporter} POSTs to the telemetry
+ * service, so any change to the wire format is a deliberate one.
  *
  * The report body is assembled by the private {@code get*Report()} methods and
  * serialized inside the private {@code sendReport()}. Rather than open up
@@ -339,6 +341,46 @@ public class UsageReporterTest {
     // ------------------------------------------------------------------- tests
 
     /**
+     * The reporting destination is a constant, not a Global Setting: telemetry has
+     * to reach the Apache CloudStack project rather than wherever an operator points
+     * it. Only the interval is configurable.
+     */
+    @Test
+    public void testTelemetryEndpointIsStaticAndHttps() {
+        Assert.assertEquals("https://call-home.cloudstack.org/report", UsageReporter.TELEMETRY_URI);
+        Assert.assertTrue(UsageReporter.TELEMETRY_URI.startsWith("https://"));
+
+        ConfigKey<?>[] configKeys = usageReporter.getConfigKeys();
+        Assert.assertEquals(1, configKeys.length);
+        Assert.assertEquals("telemetry.interval", configKeys[0].key());
+    }
+
+    /**
+     * The installation identity is derived from the version table rather than stored,
+     * so every Management Server sharing the database reports under the same ID.
+     */
+    @Test
+    public void testUniqueIdIsDerivedFromTheInitialVersionRow() {
+        VersionVO initial = Mockito.mock(VersionVO.class);
+        Mockito.when(initial.getVersion()).thenReturn("4.19.0.0");
+        Mockito.when(initial.getUpdated()).thenReturn(Date.from(Instant.parse("2024-01-15T10:30:00Z")));
+        Mockito.when(versionDao.getInitialVersion()).thenReturn(initial);
+
+        String uniqueId = usageReporter.getUniqueId();
+
+        Assert.assertEquals(InstallationIdentity.generate("4.19.0.0",
+                Date.from(Instant.parse("2024-01-15T10:30:00Z"))), uniqueId);
+        Assert.assertTrue(uniqueId, uniqueId.matches("[0-9a-f]{64}"));
+    }
+
+    @Test
+    public void testUniqueIdIsNullOnAnEmptyVersionTable() {
+        Mockito.when(versionDao.getInitialVersion()).thenReturn(null);
+
+        Assert.assertNull(usageReporter.getUniqueId());
+    }
+
+    /**
      * The contract test: given the mocked environment set up in {@link #setUp()}, the
      * management server must produce exactly the payload in
      * {@code src/test/resources/usage-report-expected.json} -- no extra sections, no
@@ -537,13 +579,14 @@ public class UsageReporterTest {
 
     /**
      * Not an assertion so much as documentation: prints the payload the management
-     * server would POST to usage.report.uri, so the shape can be eyeballed and
+     * server would POST to the telemetry endpoint, so the shape can be eyeballed and
      * handed to whoever implements the receiving end.
      */
     @Test
     public void testPrintExamplePayload() throws Exception {
         String pretty = reportGson(true).toJson(buildReportMap());
-        System.out.println("---8<--- usage report payload POSTed to usage.report.uri/<uniqueID> ---8<---");
+        System.out.println("---8<--- usage report payload POSTed to "
+                + UsageReporter.TELEMETRY_URI + "/<uniqueID> ---8<---");
         System.out.println(pretty);
         System.out.println("---8<--- end of usage report payload ---8<---");
 
