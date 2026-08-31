@@ -1247,16 +1247,117 @@ public class StorageStrategyTest {
         verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
     }
 
+        @Test
+        void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
+                FeignException notFoundException = mock(FeignException.class);
+                when(notFoundException.status()).thenReturn(404);
+                when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                                .thenThrow(notFoundException);
+
+                storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+                verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+                verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        }
+
+    // ========== updateStorageVolume() Tests ==========
+
     @Test
-    void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
-        FeignException notFoundException = mock(FeignException.class);
-        when(notFoundException.status()).thenReturn(404);
-        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
-                .thenThrow(notFoundException);
+    public void testUpdateStorageVolume_positive() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L); // 5 GB
 
-        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
 
-        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
-        verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("resize-job-uuid");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(completedJob);
+
+        // Execute
+        Volume result = storageStrategy.updateStorageVolume(volume);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(5368709120L, result.getSize());
+        verify(volumeFeignClient, times(1)).updateVolume(anyString(), eq("vol-uuid-resize"), any());
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("resize-job-uuid"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_jobFailed() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L);
+
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
+
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("resize-job-uuid");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("Resize failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(failedJob);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Job failed"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_feignException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-fail");
+        volume.setName("flexvol-fail");
+        volume.setSize(3221225472L);
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(500);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-fail"), any()))
+                .thenThrow(feignException);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Failed to resize ONTAP FlexVolume"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_notFound_404_throwsCloudRuntimeException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-notfound");
+        volume.setName("flexvol-notfound");
+        volume.setSize(1073741824L);
+
+        FeignException feignEx = mock(FeignException.class);
+        when(feignEx.status()).thenReturn(404);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-notfound"), any()))
+                .thenThrow(feignEx);
+
+        // Execute & Verify — 404 means volume not found on ONTAP, should throw
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("not found on ONTAP"));
     }
 }

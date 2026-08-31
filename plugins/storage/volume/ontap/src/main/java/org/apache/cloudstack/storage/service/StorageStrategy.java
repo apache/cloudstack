@@ -387,7 +387,25 @@ public abstract class StorageStrategy {
      * @return the updated Volume object
      */
     public Volume updateStorageVolume(Volume volume) {
-        return null;
+        logger.info("Resizing ONTAP FlexVolume '{}' (UUID: {}) to {} bytes", volume.getName(), volume.getUuid(), volume.getSize());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            Volume resizeRequest = new Volume();
+            resizeRequest.setSize(volume.getSize());
+            JobResponse jobResponse = volumeFeignClient.updateVolume(authHeader, volume.getUuid(), resizeRequest);
+            pollJobIfPresent(jobResponse, "resize FlexVolume [" + volume.getUuid() + "]",
+                    OntapStorageConstants.ONTAP_VOLUME_JOB_MAX_RETRIES, OntapStorageConstants.ONTAP_VOLUME_JOB_POLL_INTERVAL_MS);
+            logger.info("FlexVolume '{}' (UUID: {}) resized successfully to {} bytes", volume.getName(), volume.getUuid(), volume.getSize());
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                String msg = String.format("Cannot resize FlexVolume '%s' (UUID: %s): volume not found on ONTAP (404). ", volume.getName(), volume.getUuid());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
+            logger.error("Exception while resizing FlexVolume '{}' (UUID: {}): {}", volume.getName(), volume.getUuid(), e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to resize ONTAP FlexVolume: " + e.getMessage(), e);
+        }
+        return volume;
     }
 
     /**
