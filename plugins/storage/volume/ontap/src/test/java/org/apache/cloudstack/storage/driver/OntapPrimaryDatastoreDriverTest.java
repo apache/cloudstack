@@ -25,7 +25,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -681,7 +680,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(templateInfo.getId()).thenReturn(50L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
-        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
         when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
 
@@ -700,25 +698,24 @@ class OntapPrimaryDatastoreDriverTest {
     }
 
     @Test
-    void testGetBytesRequiredForTemplate_SpoolRefNotDownloaded_ReturnsVirtualSize() {
+    void testGetBytesRequiredForTemplate_SpoolRefNotReady_ReturnsVirtualSize() {
         when(storagePool.getId()).thenReturn(1L);
         when(templateInfo.getId()).thenReturn(50L);
         when(templateInfo.getSize()).thenReturn(5368709120L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
-        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+        when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Allocated);
 
         assertEquals(5368709120L, driver.getBytesRequiredForTemplate(templateInfo, storagePool));
     }
 
     @Test
-    void testGetBytesRequiredForTemplate_DownloadedWithoutBackendIdentity_ReturnsVirtualSize() {
+    void testGetBytesRequiredForTemplate_ReadyWithoutBackendIdentity_ReturnsVirtualSize() {
         when(storagePool.getId()).thenReturn(1L);
         when(templateInfo.getId()).thenReturn(50L);
         when(templateInfo.getSize()).thenReturn(5368709120L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
-        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
         when(templatePoolRef.getLocalDownloadPath()).thenReturn(null);
 
@@ -732,7 +729,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(templateInfo.getId()).thenReturn(50L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
-        when(templatePoolRef.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         when(templatePoolRef.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
         when(templatePoolRef.getInstallPath()).thenReturn("/mnt/pool/template-uuid");
 

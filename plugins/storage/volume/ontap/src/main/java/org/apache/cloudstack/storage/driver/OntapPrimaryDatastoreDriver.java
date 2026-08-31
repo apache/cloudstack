@@ -34,7 +34,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -949,8 +948,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         if (templateInfo == null || storagePool == null) {
             return 0;
         }
-        // template_spool_ref is inserted in Allocated/NOT_DOWNLOADED before the cache exists;
-        // only skip reservation when the template is truly cached on this pool.
+        // template_spool_ref is inserted in Allocated before the cache exists;
+        // only skip reservation when the template is Ready and has a backend identity.
         VMTemplateStoragePoolVO templatePoolRef =
                 vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(), templateInfo.getId(), null);
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
@@ -962,13 +961,11 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     /**
      * Returns true when the primary template cache is present and usable for clone/deploy.
-     * A spool_ref row alone is not enough: CloudStack creates it before the LUN/file exists.
+     * A spool_ref row alone is not enough: CloudStack creates it in Allocated before the LUN/file exists.
+     * Ready is sufficient; downloadState is set alongside Ready on the managed-cache success path.
      */
     private boolean isTemplateCachedOnPool(VMTemplateStoragePoolVO templatePoolRef, Map<String, String> details) {
         if (templatePoolRef == null) {
-            return false;
-        }
-        if (templatePoolRef.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             return false;
         }
         if (templatePoolRef.getState() != ObjectInDataStoreStateMachine.State.Ready) {
