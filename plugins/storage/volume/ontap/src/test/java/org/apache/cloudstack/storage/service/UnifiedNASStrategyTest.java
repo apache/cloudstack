@@ -291,7 +291,7 @@ public class UnifiedNASStrategyTest {
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
-        when(volumeFeignClient.updateVolumeRebalancing(anyString(), anyString(), any())).thenReturn(jobResponse);
+        when(volumeFeignClient.updateVolume(anyString(), anyString(), any())).thenReturn(jobResponse);
         when(jobFeignClient.getJobByUUID(anyString(), anyString())).thenReturn(job);
         doNothing().when(storagePoolDetailsDao).addDetail(anyLong(), anyString(), anyString(), eq(true));
 
@@ -302,7 +302,7 @@ public class UnifiedNASStrategyTest {
         assertNotNull(result);
         verify(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         verify(nasFeignClient).getExportPolicyResponse(anyString(), anyMap());
-        verify(volumeFeignClient).updateVolumeRebalancing(anyString(), eq("vol-uuid-123"), any());
+        verify(volumeFeignClient).updateVolume(anyString(), eq("vol-uuid-123"), any());
         verify(storagePoolDetailsDao, times(2)).addDetail(anyLong(), anyString(), anyString(), eq(true));
     }
 
@@ -397,7 +397,7 @@ public class UnifiedNASStrategyTest {
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
-        when(volumeFeignClient.updateVolumeRebalancing(anyString(), anyString(), any())).thenReturn(jobResponse);
+        when(volumeFeignClient.updateVolume(anyString(), anyString(), any())).thenReturn(jobResponse);
         when(jobFeignClient.getJobByUUID(anyString(), anyString())).thenReturn(job);
 
         assertThrows(CloudRuntimeException.class, () -> {
@@ -441,7 +441,7 @@ public class UnifiedNASStrategyTest {
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
-        when(volumeFeignClient.updateVolumeRebalancing(anyString(), anyString(), any())).thenReturn(jobResponse);
+        when(volumeFeignClient.updateVolume(anyString(), anyString(), any())).thenReturn(jobResponse);
         when(jobFeignClient.getJobByUUID(anyString(), anyString())).thenReturn(job);
         doNothing().when(storagePoolDetailsDao).addDetail(anyLong(), anyString(), anyString(), eq(true));
 
