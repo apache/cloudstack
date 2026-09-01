@@ -72,6 +72,16 @@
         </template>
         <template v-if="column.key === 'actions'" class="account-button-action" :name="text">
           <tooltip-button
+            v-if="resource !== null"
+            tooltipPlacement="top"
+            :tooltip="$t('label.edit')"
+            type="default"
+            :danger="false"
+            icon="edit-outlined"
+            size="small"
+            :loading="actionLoading"
+            @onClick="handleClickEdit(record)"/>
+          <tooltip-button
             tooltipPlacement="top"
             :tooltip="$t('label.delete')"
             type="primary"
@@ -84,16 +94,34 @@
       </template>
     </a-table>
   </div>
+  <a-modal
+    v-model:visible="showEditSchedule"
+    :title="$t('label.backup.edit.schedule')"
+    :closable="true"
+    :maskClosable="true"
+    centered
+    :footer="null">
+      <FormSchedule
+        :loading="loading"
+        :resource="resource"
+        :dataSource="dataSource"
+        :schedule-to-edit="scheduleBeingEdited"
+        :unavailableIntervalTypes="{}"
+        @close-action="closeAction"
+        @refresh="handleRefresh"/>
+  </a-modal>
 </template>
 
 <script>
 import { postAPI } from '@/api'
 import { timeZoneName } from '@/utils/timezone'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import FormSchedule from '@/views/compute/backup/FormSchedule.vue'
 
 export default {
   name: 'BackupSchedule',
   components: {
+    FormSchedule,
     TooltipButton
   },
   props: {
@@ -108,13 +136,24 @@ export default {
     deleteFn: {
       type: Function,
       default: null
+    },
+    resource: {
+      type: Object,
+      default: null
     }
   },
   data () {
     return {
       actionLoading: false,
       dataSchedules: [],
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      showEditSchedule: false,
+      scheduleBeingEdited: {}
+    }
+  },
+  provide () {
+    return {
+      closeSchedule: this.closeAction
     }
   },
   computed: {
@@ -213,8 +252,20 @@ export default {
         this.actionLoading = false
       })
     },
+    handleClickEdit (record) {
+      this.scheduleBeingEdited = record
+      this.showEditSchedule = true
+    },
     getTimeZone (timeZone) {
       return timeZoneName(timeZone)
+    },
+    handleRefresh () {
+      this.showEditSchedule = false
+      this.$emit('refresh')
+    },
+    closeAction () {
+      this.showEditSchedule = false
+      this.$emit('refresh')
     }
   }
 }

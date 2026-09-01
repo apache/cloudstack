@@ -23,7 +23,7 @@
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
-     >
+    >
       <a-form-item name="name" ref="name">
         <template #label>
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -38,80 +38,12 @@
         </template>
         <a-input v-model:value="form.description"/>
       </a-form-item>
-      <a-form-item name="zoneid" ref="zoneid">
-        <template #label>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
-        </template>
-        <a-select
-          allowClear
-          v-model:value="form.zoneid"
-          :loading="zones.loading"
-          @change="onChangeZone"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="zone in zones.opts" :key="zone.name" :label="zone.name">
-            <span>
-              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <global-outlined v-else style="margin-right: 5px"/>
-              {{ zone.name }}
-            </span>
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item name="externalid" ref="externalid">
-        <template #label>
-          <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
-        </template>
-        <a-select
-          allowClear
-          v-model:value="form.externalid"
-          :loading="externals.loading"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="opt in externals.opts" :key="opt.id" :label="opt.name">
-            {{ opt.name }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
       <a-form-item name="allowuserdrivenbackups" ref="allowuserdrivenbackups">
         <template #label>
           <tooltip-label :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
         </template>
         <a-switch v-model:checked="form.allowuserdrivenbackups"/>
       </a-form-item>
-      <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
-          <a-switch v-model:checked="form.ispublic" />
-        </a-form-item>
-        <a-form-item name="domainid" ref="domainid" v-if="!form.ispublic">
-          <template #label>
-            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-          </template>
-          <a-select
-            mode="multiple"
-            :getPopupContainer="(trigger) => trigger.parentNode"
-            v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domains.loading"
-            :placeholder="apiParams.domainid.description">
-            <a-select-option v-for="(opt, optIndex) in domains.opts" :key="optIndex" :label="opt.path || opt.name || opt.description">
-              <span>
-                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <block-outlined v-else style="margin-right: 5px" />
-                {{ opt.path || opt.name || opt.description }}
-              </span>
-            </a-select-option>
-          </a-select>
-        </a-form-item>
       <a-form-item name="maxschedules" ref="maxschedules">
         <template #label>
           <tooltip-label :title="$t('label.maxschedules')" :tooltip="apiParams.maxschedules.description"/>
@@ -165,12 +97,17 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
-import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportBackupOffering',
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
+  },
   components: {
     TooltipLabel,
     ResourceIcon
@@ -178,10 +115,6 @@ export default {
   data () {
     return {
       loading: false,
-      domains: {
-        loading: false,
-        opts: []
-      },
       zones: {
         loading: false,
         opts: []
@@ -210,60 +143,23 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
+        name: '',
+        description: '',
         allowuserdrivenbackups: true,
-        ispublic: true,
         maxSchedule: 1
       })
-      this.rules = reactive({
-        name: [{ required: true, message: this.$t('message.error.required.input') }],
-        description: [{ required: true, message: this.$t('message.error.required.input') }],
-        zoneid: [{ required: true, message: this.$t('message.error.select') }],
-        externalid: [{ required: true, message: this.$t('message.error.select') }],
-        domainid: [{ type: 'array', message: this.$t('message.error.select') }]
-      })
-    },
-    isAdmin () {
-      return isAdmin()
     },
     fetchData () {
-      this.fetchZone()
-      this.fetchDomainData()
-    },
-    fetchZone () {
-      this.zones.loading = true
-      getAPI('listZones', { available: true, showicon: true }).then(json => {
-        this.zones.opts = json.listzonesresponse.zone || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(f => {
-        this.zones.loading = false
-      })
-    },
-    fetchDomainData () {
-      const params = {}
-      params.listAll = true
-      params.details = 'min'
-      this.domains.loading = true
-      getAPI('listDomains', params).then(json => {
-        this.domains.opts = json.listdomainsresponse.domain || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.domains.loading = false
-      })
-    },
-    fetchExternal (zoneId) {
-      if (!zoneId) {
-        this.externals.opts = []
-        return
-      }
-      this.externals.loading = true
-      getAPI('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
-        this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(f => {
-        this.externals.loading = false
+      const params = { id: this.resource.id }
+      getAPI('listBackupOfferings', params).then(json => {
+        const backupOffering = json.listbackupofferingsresponse.backupoffering[0]
+        this.form.name = backupOffering.name
+        this.form.description = backupOffering.description
+        this.form.allowuserdrivenbackups = backupOffering.allowuserdrivenbackups
+        this.maxSchedule.HOURLY = backupOffering.backupofferingdetails?.HOURLY ?? 1
+        this.maxSchedule.DAILY = backupOffering.backupofferingdetails?.DAILY ?? 1
+        this.maxSchedule.WEEKLY = backupOffering.backupofferingdetails?.WEEKLY ?? 1
+        this.maxSchedule.MONTHLY = backupOffering.backupofferingdetails?.MONTHLY ?? 1
       })
     },
     handleSubmit (e) {
@@ -283,57 +179,22 @@ export default {
             params[key] = input
           }
         }
-        if (values.ispublic !== true) {
-          var domainIndexes = values.domainid
-          var domainId = null
-          if (domainIndexes && domainIndexes.length > 0) {
-            var domainIds = []
-            for (var i = 0; i < domainIndexes.length; i++) {
-              domainIds = domainIds.concat(this.domains.opts[domainIndexes[i]].id)
-            }
-            domainId = domainIds.join(',')
-          }
-          if (domainId) {
-            params.domainid = domainId
-          }
-        }
         params.allowuserdrivenbackups = values.allowuserdrivenbackups
         Object.keys(this.maxSchedule).forEach(key => {
           params['maxschedules[0].' + key] = this.maxSchedule[key]
         })
+        params.id = this.resource.id
         this.loading = true
-        const title = this.$t('label.import.offering')
-        postAPI('importBackupOffering', params).then(json => {
-          const jobId = json.importbackupofferingresponse.jobid
-          if (jobId) {
-            this.$pollJob({
-              jobId,
-              title,
-              description: values.name,
-              successMethod: result => {
-                this.closeAction()
-                this.loading = false
-              },
-              loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,
-              catchMessage: this.$t('error.fetching.async.job.result'),
-              catchMethod: () => {
-                this.loading = false
-              }
-            })
-          }
-        }).catch(error => {
+        postAPI('updateBackupOffering', params).then(
+          this.$emit('refresh-data')
+        ).catch(error => {
           this.$notifyError(error)
           this.loading = false
         })
+        this.loading = false
+        this.closeAction()
+        this.$emit('refresh-data')
       })
-    },
-    onChangeZone (value) {
-      if (!value) {
-        this.externals.opts = []
-        return
-      }
-      const zoneId = this.zones.opts.filter(zone => zone.name === value)[0].id || null
-      this.fetchExternal(zoneId)
     },
     closeAction () {
       this.$emit('close-action')
