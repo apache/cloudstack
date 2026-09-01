@@ -56,14 +56,36 @@ public class InstanceReadinessCheckAnswerTest {
         new InstanceReadinessCheckAnswer(cmd(), true, "out&&err").getExecutionDetails();
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void malformedFailedDetailsThrow() {
+        new InstanceReadinessCheckAnswer(cmd(), false, "out&&err").getExecutionDetails();
+    }
+
     @Test
-    public void failedResultIsNotParsedEvenIfWellFormed() {
-        InstanceReadinessCheckAnswer answer = new InstanceReadinessCheckAnswer(cmd(), false, "out&&err&&0");
+    public void failedResultIsStillParsedWhenWellFormed() {
+        // executeInVR (and the VR script) typically reports result=false whenever the underlying
+        // check (ping unreachable, port closed) exits non-zero, even though it still printed a
+        // well-formed "stdout&&stderr&&exitcode" triple. The non-zero exit code must not be
+        // discarded in favor of a generic -1/raw-blob fallback.
+        InstanceReadinessCheckAnswer answer = new InstanceReadinessCheckAnswer(cmd(), false, "out&&unreachable&&1");
+
+        Map<String, String> details = answer.getExecutionDetails();
+
+        Assert.assertEquals("out", details.get(InstanceReadinessCheckAnswer.STDOUT));
+        Assert.assertEquals("unreachable", details.get(InstanceReadinessCheckAnswer.STDERR));
+        Assert.assertEquals("1", details.get(InstanceReadinessCheckAnswer.EXITCODE));
+    }
+
+    @Test
+    public void failedResultWithoutDelimiterFallsBackToDefaults() {
+        // A dispatch-level failure (e.g. an exception message) never contains the delimiter and
+        // must still fall back to the raw-message/-1 defaults rather than throwing.
+        InstanceReadinessCheckAnswer answer = new InstanceReadinessCheckAnswer(cmd(), false, "agent down");
 
         Map<String, String> details = answer.getExecutionDetails();
 
         Assert.assertEquals("", details.get(InstanceReadinessCheckAnswer.STDOUT));
-        Assert.assertEquals("out&&err&&0", details.get(InstanceReadinessCheckAnswer.STDERR));
+        Assert.assertEquals("agent down", details.get(InstanceReadinessCheckAnswer.STDERR));
         Assert.assertEquals("-1", details.get(InstanceReadinessCheckAnswer.EXITCODE));
     }
 

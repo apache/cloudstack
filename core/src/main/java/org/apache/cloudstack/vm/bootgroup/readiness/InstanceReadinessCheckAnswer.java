@@ -37,8 +37,9 @@ public class InstanceReadinessCheckAnswer extends Answer {
 
     public Map<String, String> getExecutionDetails() {
         final Map<String, String> executionDetails = new HashMap<>();
-        if (getResult() && StringUtils.isNotEmpty(getDetails())) {
-            final String[] parts = getDetails().split("&&");
+        final String details = getDetails();
+        if (StringUtils.isNotEmpty(details) && details.contains("&&")) {
+            final String[] parts = details.split("&&");
             if (parts.length >= 3) {
                 executionDetails.put(STDOUT, parts[0].trim());
                 executionDetails.put(STDERR, parts[1].trim());
@@ -48,7 +49,7 @@ public class InstanceReadinessCheckAnswer extends Answer {
             }
         } else {
             executionDetails.put(STDOUT, "");
-            executionDetails.put(STDERR, getDetails());
+            executionDetails.put(STDERR, details);
             executionDetails.put(EXITCODE, "-1");
         }
         return executionDetails;
