@@ -22,7 +22,13 @@ set -o pipefail
 DATE=""
 SSH_USER="${SSH_USER:-root}"
 REQUESTED_HOSTS=()
-SSH_OPTS="${SSH_OPTS:--o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no}"
+SSH_OPTS="${SSH_OPTS:--o BatchMode=yes -o ConnectTimeout=10}"
+SSH_KEY="${SSH_KEY:-}"
+SSH_PASSWORD="${SSH_PASSWORD:-}"
+HOST_PASSWORDS_FILE=""
+WORKDIR_BASE=""
+
+declare -A HOST_PASSWORDS=()
 
 MANAGEMENT_LOG_DIR="/var/log/cloudstack/management"
 MANAGEMENT_LOG="management-server.log"
@@ -40,7 +46,8 @@ kvm_hosts=()
 usage() {
     cat <<EOF
 Usage:
-  $0 [--date YYYY-MM-DD] [--hosts HOST1,HOST2,...]
+  $0 [--date YYYY-MM-DD] [--hosts HOST1,HOST2,...] [--workdir DIR]
+     [--ssh-key FILE | --ssh-password PASSWORD | --host-passwords FILE]
 
 Examples:
   $0
@@ -48,10 +55,16 @@ Examples:
   $0 --hosts 10.0.0.21
   $0 --hosts 10.0.0.21,10.0.0.22,kvm03.example.com
   $0 --date 2026-08-25 --hosts 10.0.0.21,10.0.0.22
+  $0 --workdir /data/cloudstack-logs
+  $0 --ssh-key /root/.ssh/id_rsa
+  $0 --ssh-password 'secret'
+  $0 --host-passwords /root/host-passwords.txt
 
 Environment variables:
   SSH_USER=root
   SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=10"
+  SSH_KEY
+  SSH_PASSWORD
 
 Behavior:
   KVM host:
@@ -61,6 +74,24 @@ Behavior:
     Discovers active management servers and KVM hosts using CloudMonkey.
     If CloudMonkey is unavailable or API discovery fails, falls back to
     the CloudStack database.
+
+    Logs are pulled from other management servers and KVM hosts over
+    SSH as \$SSH_USER, authenticating with (in order of precedence):
+      1. A per-host password from --host-passwords, if the host appears
+         in that file.
+      2. A single password from --ssh-password or \$SSH_PASSWORD, applied
+         to every remote host.
+      3. A single private key from --ssh-key or \$SSH_KEY, applied to
+         every remote host.
+      4. Whatever SSH would otherwise use (agent, default identity
+         files), if none of the above are given.
+
+    Password-based authentication requires the "sshpass" utility.
+
+  --host-passwords FILE:
+    FILE contains one "host=password" pair per line (blank lines and
+    lines starting with # are ignored). host must match the IP or
+    hostname used to reach that server.
 
   Without --date:
     Collects the current active log files.
@@ -74,6 +105,14 @@ Behavior:
 
     On a KVM host, --hosts is ignored because only the local agent log is
     collected.
+
+  Without --workdir:
+    Collected logs and the resulting archive are placed in a directory
+    under \${TMPDIR:-/tmp}.
+
+  With --workdir:
+    Collected logs and the resulting archive are placed in the specified
+    directory instead, which must already exist.
 EOF
 }
 
@@ -106,6 +145,26 @@ while [[ $# -gt 0 ]]; do
 
             shift 2
             ;;
+        --workdir)
+            [[ $# -ge 2 ]] || die "--workdir requires a directory path"
+            WORKDIR_BASE="$2"
+            shift 2
+            ;;
+        --ssh-key)
+            [[ $# -ge 2 ]] || die "--ssh-key requires a file path"
+            SSH_KEY="$2"
+            shift 2
+            ;;
+        --ssh-password)
+            [[ $# -ge 2 ]] || die "--ssh-password requires a password"
+            SSH_PASSWORD="$2"
+            shift 2
+            ;;
+        --host-passwords)
+            [[ $# -ge 2 ]] || die "--host-passwords requires a file path"
+            HOST_PASSWORDS_FILE="$2"
+            shift 2
+            ;;
         -h|--help)
             usage
             exit 0
@@ -125,7 +184,29 @@ else
     SUFFIX="$(date '+%Y%m%d-%H%M%S')"
 fi
 
-WORKDIR="cloudstack-logs-${SUFFIX}"
+WORKDIR_BASE="${WORKDIR_BASE:-${TMPDIR:-/tmp}}"
+[[ -d "$WORKDIR_BASE" ]] || die "Working directory does not exist: $WORKDIR_BASE"
+
+if [[ -n "$SSH_KEY" ]]; then
+    [[ -f "$SSH_KEY" ]] || die "SSH key not found: $SSH_KEY"
+fi
+
+if [[ -n "$HOST_PASSWORDS_FILE" ]]; then
+    [[ -r "$HOST_PASSWORDS_FILE" ]] || die "Cannot read host password file: $HOST_PASSWORDS_FILE"
+
+    while IFS='=' read -r host password; do
+        host="$(printf '%s' "$host" | xargs)"
+        [[ -z "$host" || "$host" == \#* ]] && continue
+        HOST_PASSWORDS["$host"]="$password"
+    done < "$HOST_PASSWORDS_FILE"
+fi
+
+if [[ -n "$SSH_PASSWORD" || ${#HOST_PASSWORDS[@]} -gt 0 ]]; then
+    command -v sshpass >/dev/null 2>&1 ||
+        die "sshpass is required for password-based SSH authentication"
+fi
+
+WORKDIR="${WORKDIR_BASE%/}/cloudstack-logs-${SUFFIX}"
 ARCHIVE="${WORKDIR}.tar.gz"
 
 rm -rf "$WORKDIR"
@@ -203,19 +284,51 @@ collect_local_log() {
     fi
 }
 
+host_password() {
+    local host="$1"
+
+    if [[ -n "${HOST_PASSWORDS[$host]:-}" ]]; then
+        printf '%s' "${HOST_PASSWORDS[$host]}"
+    else
+        printf '%s' "$SSH_PASSWORD"
+    fi
+}
+
 collect_remote_log() {
     local host="$1"
     local log_dir="$2"
     local log_name="$3"
     local output="$4"
+    local password
+    local passfile=""
+    local ssh_cmd=(ssh)
+    local ssh_opts="$SSH_OPTS"
+    local rc
 
-    if [[ -z "$DATE" ]]; then
-        ssh ${SSH_OPTS} "${SSH_USER}@${host}" \
-            "cat '${log_dir}/${log_name}'" > "$output"
-        return
+    password="$(host_password "$host")"
+
+    if [[ -n "$password" ]]; then
+        passfile="$(mktemp)" || return 1
+        chmod 600 "$passfile"
+        printf '%s' "$password" > "$passfile"
+        ssh_cmd=(sshpass -f "$passfile" ssh)
+        # BatchMode disables password/keyboard-interactive auth outright; an
+        # earlier -o wins over a later one for the same key, so this has to
+        # come before $SSH_OPTS to override any BatchMode=yes already in it.
+        ssh_opts="-o BatchMode=no $ssh_opts"
+    elif [[ -n "$SSH_KEY" ]]; then
+        ssh_cmd=(ssh -i "$SSH_KEY")
     fi
 
-    ssh ${SSH_OPTS} "${SSH_USER}@${host}" \
+    if [[ -z "$DATE" ]]; then
+        "${ssh_cmd[@]}" ${ssh_opts} "${SSH_USER}@${host}" \
+            "cat '${log_dir}/${log_name}'" > "$output"
+        rc=$?
+        [[ -n "$passfile" ]] && rm -f "$passfile"
+        return $rc
+    fi
+
+    "${ssh_cmd[@]}" ${ssh_opts} "${SSH_USER}@${host}" \
         bash -s -- "$log_dir" "$log_name" "$DATE" > "$output" <<'REMOTE'
 LOG_DIR="$1"
 LOG_NAME="$2"
@@ -247,6 +360,9 @@ awk -v requested_date="$REQUESTED_DATE" '
     }
 '
 REMOTE
+    rc=$?
+    [[ -n "$passfile" ]] && rm -f "$passfile"
+    return $rc
 }
 
 # --- CloudMonkey discovery ---
@@ -333,11 +449,26 @@ discover_with_cloudmonkey() {
 get_property() {
     local property="$1"
 
-    awk -F= -v property="$property" '
-        $1 == property {
-            sub(/^[^=]*=/, "")
-            print
-            exit
+    awk -v property="$property" '
+        {
+            line = $0
+            sub(/^[ \t]+/, "", line)
+            sub(/[ \t]+$/, "", line)
+
+            if (line == "" || line ~ /^[#!]/) next
+
+            eq = index(line, "=")
+            if (eq == 0) next
+
+            key = substr(line, 1, eq - 1)
+            sub(/[ \t]+$/, "", key)
+
+            if (key == property) {
+                value = substr(line, eq + 1)
+                sub(/^[ \t]+/, "", value)
+                print value
+                exit
+            }
         }
     ' "$DB_PROPERTIES"
 }
@@ -349,6 +480,8 @@ query_cloudstack_db() {
     local db_name
     local db_user
     local db_password
+    local defaults_file
+    local rc
 
     [[ -r "$DB_PROPERTIES" ]] || return 1
     command -v mysql >/dev/null 2>&1 || return 1
@@ -364,14 +497,27 @@ query_cloudstack_db() {
     db_port="${db_port:-3306}"
     db_name="${db_name:-cloud}"
 
-    MYSQL_PWD="$db_password" mysql \
+    defaults_file="$(mktemp)" || return 1
+    chmod 600 "$defaults_file"
+
+    {
+        printf '[client]\n'
+        printf 'host=%s\n' "$db_host"
+        printf 'port=%s\n' "$db_port"
+        printf 'user=%s\n' "$db_user"
+        printf 'password=%s\n' "$db_password"
+    } > "$defaults_file"
+
+    mysql \
+        --defaults-extra-file="$defaults_file" \
         --batch \
         --skip-column-names \
-        -h "$db_host" \
-        -P "$db_port" \
-        -u "$db_user" \
         "$db_name" \
         -e "$query"
+    rc=$?
+
+    rm -f "$defaults_file"
+    return $rc
 }
 
 discover_with_database() {
@@ -445,10 +591,13 @@ collect_from_kvm_host() {
 
     mkdir -p "$WORKDIR/kvm/$host_name"
 
-    collect_local_log \
+    if ! collect_local_log \
         "$AGENT_LOG_DIR" \
         "$AGENT_LOG" \
-        "$WORKDIR/kvm/$host_name/$AGENT_LOG"
+        "$WORKDIR/kvm/$host_name/$AGENT_LOG"; then
+        log "WARNING: Failed to collect local agent log"
+        rm -f "$WORKDIR/kvm/$host_name/$AGENT_LOG"
+    fi
 }
 
 collect_from_management_server() {
@@ -478,6 +627,7 @@ collect_from_management_server() {
                 "$MANAGEMENT_LOG" \
                 "$WORKDIR/management/$host/$MANAGEMENT_LOG"; then
                 log "WARNING: Failed to collect local management log"
+                rm -f "$WORKDIR/management/$host/$MANAGEMENT_LOG"
             fi
         elif ! collect_remote_log \
             "$host" \
@@ -536,8 +686,11 @@ Requested KVM hosts: ${REQUESTED_HOSTS[*]:-all}
 EOF
 
 log "Creating archive $ARCHIVE"
-tar -czf "$ARCHIVE" "$WORKDIR"
-rm -rf "$WORKDIR"
+if tar -czf "$ARCHIVE" -C "$WORKDIR_BASE" "$(basename "$WORKDIR")"; then
+    rm -rf "$WORKDIR"
+else
+    die "Failed to create archive $ARCHIVE; collected logs remain in $WORKDIR"
+fi
 
 echo
 echo "CloudStack logs collected:"
