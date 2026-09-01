@@ -74,7 +74,7 @@ public class StopInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping instance boot group with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Stopping Instance Boot Group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -71,7 +71,7 @@ public class StopInstanceBootGroupCmdTest extends BaseBootGroupCmdTest {
         StopInstanceBootGroupCmd cmd = createCmd();
         when(CallContext.current().getApiResourceUuid(ApiConstants.ID)).thenReturn("group-uuid");
 
-        assertEquals("Stopping instance boot group with ID: group-uuid", cmd.getEventDescription());
+        assertEquals("Stopping Instance Boot Group with ID: group-uuid", cmd.getEventDescription());
     }
 
     @Test

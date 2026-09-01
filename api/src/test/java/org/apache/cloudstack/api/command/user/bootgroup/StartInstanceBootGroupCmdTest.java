@@ -72,7 +72,7 @@ public class StartInstanceBootGroupCmdTest extends BaseBootGroupCmdTest {
         StartInstanceBootGroupCmd cmd = createCmd();
         when(CallContext.current().getApiResourceUuid(ApiConstants.ID)).thenReturn("group-uuid");
 
-        assertEquals("Starting instance boot group with ID: group-uuid", cmd.getEventDescription());
+        assertEquals("Starting Instance Boot Group with ID: group-uuid", cmd.getEventDescription());
     }
 
     @Test

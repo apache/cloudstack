@@ -72,7 +72,7 @@ public class RebootInstanceBootGroupCmdTest extends BaseBootGroupCmdTest {
         RebootInstanceBootGroupCmd cmd = createCmd();
         when(CallContext.current().getApiResourceUuid(ApiConstants.ID)).thenReturn("group-uuid");
 
-        assertEquals("Rebooting instance boot group with ID: group-uuid", cmd.getEventDescription());
+        assertEquals("Rebooting Instance Boot Group with ID: group-uuid", cmd.getEventDescription());
     }
 
     @Test
