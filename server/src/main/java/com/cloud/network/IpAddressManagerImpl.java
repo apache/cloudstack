@@ -828,7 +828,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if(networkPublicIp != null)
             return null;
         IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(dcId, requestedIp);
-        if (ipAddressVO.getState() != State.Free) {
+        if (ipAddressVO == null || ipAddressVO.getState() != State.Free) {
             throw new InsufficientAddressCapacityException("can not assign to this network", Network.class, networkId);
         }
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, true, true, requestedIp, null, isSystem, null, null, forSystemVms);
