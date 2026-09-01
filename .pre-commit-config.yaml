@@ -64,7 +64,7 @@ repos:
           - --fuzzy-match-generates-todo
       - id: insert-license
         name: add license for all conf files
-        description: automatically adds a licence header to all conf files that don't have a license header
+        description: automatically adds a license header to all conf files that don't have a license header
         files: \.conf$
         args:
           - --comment-style
