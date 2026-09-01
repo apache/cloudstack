@@ -34,7 +34,7 @@ import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRu
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "listInstanceBootGroupReadinessRules",
-        description = "Lists readiness rules for an instance boot group",
+        description = "Lists readiness rules for an Instance Boot Group",
         responseObject = InstanceBootGroupReadinessRuleResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,
@@ -46,16 +46,16 @@ public class ListInstanceBootGroupReadinessRulesCmd extends BaseListCmd implemen
     InstanceBootGroupService instanceBootGroupService;
 
     @Parameter(name = ApiConstants.BOOT_GROUP_ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true,
-            description = "The ID of the instance boot group; listing is always scoped to one boot group")
+            description = "The ID of the Instance Boot Group; listing is always scoped to one boot group")
     private Long bootGroupId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupReadinessRuleResponse.class, description = "List by readiness rule ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "Narrow to this VM's rules")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "List rules for the Instance")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "Narrow to this instance group's rules")
+    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "List rules for the Instance Group")
     private Long instanceGroupId;
 
     @Parameter(name = ApiConstants.RULE_TYPE, type = CommandType.STRING, description = "Filter by readiness rule type")

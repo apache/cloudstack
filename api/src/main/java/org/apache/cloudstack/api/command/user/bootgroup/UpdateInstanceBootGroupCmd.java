@@ -34,7 +34,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroup;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "updateInstanceBootGroup",
-        description = "Updates an instance boot group",
+        description = "Updates an Instance Boot Group",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -45,21 +45,21 @@ public class UpdateInstanceBootGroupCmd extends BaseCmd implements UserCmd {
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the Instance Boot Group")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "New name for the instance boot group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "New name for the Instance Boot Group")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "New description for the instance boot group")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "New description for the Instance Boot Group")
     private String description;
 
     @Parameter(name = ApiConstants.READINESS_ATTEMPT_TIMEOUT_SECONDS, type = CommandType.LONG,
-            description = "Per-boot-group override of the global timeout (seconds) for each readiness retry attempt. Pass -1 to clear the override and fall back to the global setting.")
+            description = "Per-boot-group override of the global timeout (seconds) for each readiness retry attempt. Pass -1 to clear the override and fall back to the global setting")
     private Long readinessAttemptTimeoutSeconds;
 
     @Parameter(name = ApiConstants.READINESS_MAX_RETRY_ATTEMPTS, type = CommandType.LONG,
-            description = "Per-boot-group override of the global maximum number of readiness retry attempts. Pass -1 to clear the override and fall back to the global setting.")
+            description = "Per-boot-group override of the global maximum number of readiness retry attempts. Pass -1 to clear the override and fall back to the global setting")
     private Long readinessMaxRetryAttempts;
 
     @Parameter(name = ApiConstants.READINESS_REBOOT_ON_RETRY, type = CommandType.BOOLEAN,
@@ -67,7 +67,7 @@ public class UpdateInstanceBootGroupCmd extends BaseCmd implements UserCmd {
     private Boolean readinessRebootOnRetry;
 
     @Parameter(name = ApiConstants.READINESS_INITIAL_DELAY_SECONDS, type = CommandType.LONG,
-            description = "Per-boot-group override of the global delay (seconds) after starting or rebooting an instance before its first readiness check of that attempt. Pass -1 to clear the override and fall back to the global setting.")
+            description = "Per-boot-group override of the global delay (seconds) after starting or rebooting an instance before its first readiness check of that attempt. Pass -1 to clear the override and fall back to the global setting")
     private Long readinessInitialDelaySeconds;
 
     public Long getId() {

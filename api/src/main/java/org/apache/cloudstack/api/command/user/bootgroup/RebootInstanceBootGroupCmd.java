@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "rebootInstanceBootGroup",
-        description = "Reboots all VMs in an instance boot group: stops in reverse order then starts in forward order.",
+        description = "Reboots all VMs in an Instance Boot Group: stops in reverse order then starts in forward order",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -48,11 +48,11 @@ public class RebootInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd 
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the Instance Boot Group")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false,
-            description = "Force stop every Instance in the instance boot group during the stop phase of the reboot (It is force-stopped and then started)")
+            description = "Whether to force stop every Instance in the Instance Boot Group during the stop phase of the reboot (It is force-stopped and then started)")
     private Boolean forced;
 
     public Long getId() {
@@ -75,7 +75,7 @@ public class RebootInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd 
 
     @Override
     public String getEventDescription() {
-        return "Rebooting instance boot group with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Rebooting Instance Boot Group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

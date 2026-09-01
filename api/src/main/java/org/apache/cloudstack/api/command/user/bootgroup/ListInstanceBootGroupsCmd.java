@@ -33,7 +33,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroup;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "listInstanceBootGroups",
-        description = "Lists instance boot groups",
+        description = "Lists Instance Boot Groups",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -44,16 +44,16 @@ public class ListInstanceBootGroupsCmd extends BaseListProjectAndAccountResource
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, description = "List instance boot groups by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, description = "List Instance Boot Group by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, description = "List instance boot groups by name keyword")
+    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, description = "List Instance Boot Groups by name keyword")
     private String keyword;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "List boot groups that contain this VM")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "List Instance Boot Groups that contain the Instance")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "List boot groups that contain this instance group")
+    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "List Instance Boot Groups that contain the Instance Group")
     private Long instanceGroupId;
 
     public Long getId() {

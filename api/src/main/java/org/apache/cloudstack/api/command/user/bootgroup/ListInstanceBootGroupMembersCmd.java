@@ -36,7 +36,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMember;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "listInstanceBootGroupMembers",
-        description = "Lists members of an instance boot group, sorted by boot order",
+        description = "Lists members of an Instance Boot Group, sorted by boot order",
         responseObject = InstanceBootGroupMemberResponse.class,
         entityType = {InstanceBootGroupMember.class},
         requestHasSensitiveInfo = false,
@@ -47,7 +47,7 @@ public class ListInstanceBootGroupMembersCmd extends BaseListCmd implements User
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.BOOT_GROUP_ID, type = CommandType.UUID, required = true, entityType = InstanceBootGroupResponse.class, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.BOOT_GROUP_ID, type = CommandType.UUID, required = true, entityType = InstanceBootGroupResponse.class, description = "The ID of the Instance Boot Group")
     private Long bootGroupId;
 
     @Parameter(name = ApiConstants.MEMBER_TYPE, type = CommandType.STRING, description = "Filter by member type: VirtualMachine or InstanceGroup")
@@ -58,12 +58,12 @@ public class ListInstanceBootGroupMembersCmd extends BaseListCmd implements User
                collectionType = CommandType.STRING,
                description = "Comma separated list of additional details requested, value can be a list of [all, readiness, children]. "
                        + "Readiness fields are computed from cached check results (not a live re-check) and are omitted unless requested, since computing them is not free. "
-                       + "Children returns the member VMs of InstanceGroup-type members (omitted for VirtualMachine-type members); combine with readiness to also include per-child readiness.")
+                       + "Children returns the member Instances of InstanceGroup-type members (omitted for VirtualMachine-type members); combine with readiness to also include per-child readiness")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.IGNORE_INSTANCE_STATE, type = CommandType.BOOLEAN,
                description = "If true, readiness status/message reflect the last cached rule check regardless of the member's current instance state. "
-                       + "If false (default), a VM that isn't Running is always reported NotReady, even if its rules were last cached Ready.")
+                       + "If false (default), an Instance that isn't Running is always reported NotReady, even if its rules were last cached Ready")
     private Boolean ignoreInstanceState;
 
     public Long getBootGroupId() {

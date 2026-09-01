@@ -37,7 +37,7 @@ import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRu
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "updateInstanceBootGroupReadinessRule",
-        description = "Updates an instance boot group readiness rule. The rule type, boot group and item are immutable after creation.",
+        description = "Updates an Instance Boot Group readiness rule. The rule type, Instance Boot Group and item are immutable after creation.",
         responseObject = InstanceBootGroupReadinessRuleResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,

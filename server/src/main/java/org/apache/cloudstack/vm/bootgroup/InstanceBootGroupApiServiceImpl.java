@@ -327,28 +327,30 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             throw new InvalidParameterValueException(String.format("This %s already belongs to an instance boot group", memberType.name()));
         }
 
-        List<InstanceBootGroupMemberVO> siblings = instanceBootGroupMemberDao.listByBootGroupId(group.getId());
+        long groupMembersCount = instanceBootGroupMemberDao.countByBootGroupId(group.getId());
         long maxMembers = InstanceBootGroupManagerImpl.MaxMembersPerBootGroup.valueIn(group.getDomainId());
-        if (siblings.size() >= maxMembers) {
+        if (groupMembersCount >= maxMembers) {
             throw new InvalidParameterValueException(String.format(
                     "Instance boot group %s already has the maximum of %d member(s) allowed", group, maxMembers));
         }
 
-        shiftSiblingOrdersForInsert(siblings, cmd.getOrder());
-        InstanceBootGroupMemberVO member = new InstanceBootGroupMemberVO(group.getId(), memberType, memberId, cmd.getOrder());
-        return instanceBootGroupMemberDao.persist(member);
+        return Transaction.execute((TransactionCallback<InstanceBootGroupMemberVO>) status -> {
+            shiftSiblingOrdersForInsert(group.getId(), cmd.getOrder());
+            InstanceBootGroupMemberVO member = new InstanceBootGroupMemberVO(group.getId(), memberType, memberId, cmd.getOrder());
+            return instanceBootGroupMemberDao.persist(member);
+        });
     }
 
     /**
      * Makes room for a new member at {@code order} by bumping every existing member already at or
      * past it up by one slot, rather than letting the new member silently share that order.
      */
-    private void shiftSiblingOrdersForInsert(List<InstanceBootGroupMemberVO> siblings, int order) {
+    private void shiftSiblingOrdersForInsert(long groupId, int order) {
+        List<InstanceBootGroupMemberVO> siblings =
+                instanceBootGroupMemberDao.listByBootGroupIdAndEqualOrHigherOrder(groupId, order);
         for (InstanceBootGroupMemberVO sibling : siblings) {
-            if (sibling.getOrder() >= order) {
-                sibling.setOrder(sibling.getOrder() + 1);
-                instanceBootGroupMemberDao.update(sibling.getId(), sibling);
-            }
+            sibling.setOrder(sibling.getOrder() + 1);
+            instanceBootGroupMemberDao.update(sibling.getId(), sibling);
         }
     }
 
@@ -356,7 +358,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     private UserVm getValidatedVmForAddMember(InstanceBootGroupVO group, long virtualMachineId) {
         UserVm vm = userVmDao.findById(virtualMachineId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virtual machine with ID: " + virtualMachineId);
+            throw new InvalidParameterValueException("Unable to find Instance with the specified ID");
         }
         validateMemberAccount(vm.getAccountId(), group.getAccountId());
         instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(vm.getId());
@@ -366,8 +368,8 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
     @NotNull
     private InstanceGroupVO getValidatedInstanceGroupAddMember(InstanceBootGroupVO group, long instanceGroupId) {
         InstanceGroupVO instanceGroup = instanceGroupDao.findById(instanceGroupId);
-        if (instanceGroup == null || instanceGroup.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find instance group with ID: " + instanceGroupId);
+        if (instanceGroup == null) {
+            throw new InvalidParameterValueException("Unable to find instance group with the specified ID");
         }
         validateMemberAccount(instanceGroup.getAccountId(), group.getAccountId());
         instanceBootGroupMembershipGuard.validateInstanceGroupEligibleForBootGroupMembership(instanceGroup.getId());
@@ -409,12 +411,15 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         getGroupAndCheckAccess(member.getBootGroupId());
 
         int oldOrder = member.getOrder();
-        if (newOrder != oldOrder) {
+        if (newOrder == oldOrder) {
+            return member;
+        }
+        return Transaction.execute((TransactionCallback<InstanceBootGroupMemberVO>) status -> {
             shiftSiblingOrders(member, oldOrder, newOrder);
             member.setOrder(newOrder);
             instanceBootGroupMemberDao.update(member.getId(), member);
-        }
-        return instanceBootGroupMemberDao.findById(member.getId());
+            return instanceBootGroupMemberDao.findById(member.getId());
+        });
     }
 
     /**
@@ -422,19 +427,17 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
      * semantics, not just moving the single member whose order was explicitly given.
      */
     private void shiftSiblingOrders(InstanceBootGroupMemberVO member, int oldOrder, int newOrder) {
-        List<InstanceBootGroupMemberVO> siblings = instanceBootGroupMemberDao.listByBootGroupId(member.getBootGroupId());
+        int low = Math.min(oldOrder, newOrder);
+        int high = Math.max(oldOrder, newOrder);
+        int delta = newOrder > oldOrder ? -1 : 1;
+        List<InstanceBootGroupMemberVO> siblings =
+                instanceBootGroupMemberDao.listByBootGroupIdAndOrderRange(member.getBootGroupId(), low, high);
         for (InstanceBootGroupMemberVO sibling : siblings) {
             if (sibling.getId() == member.getId()) {
                 continue;
             }
-            int siblingOrder = sibling.getOrder();
-            if (newOrder > oldOrder && siblingOrder > oldOrder && siblingOrder <= newOrder) {
-                sibling.setOrder(siblingOrder - 1);
-                instanceBootGroupMemberDao.update(sibling.getId(), sibling);
-            } else if (newOrder < oldOrder && siblingOrder >= newOrder && siblingOrder < oldOrder) {
-                sibling.setOrder(siblingOrder + 1);
-                instanceBootGroupMemberDao.update(sibling.getId(), sibling);
-            }
+            sibling.setOrder(sibling.getOrder() + delta);
+            instanceBootGroupMemberDao.update(sibling.getId(), sibling);
         }
     }
 

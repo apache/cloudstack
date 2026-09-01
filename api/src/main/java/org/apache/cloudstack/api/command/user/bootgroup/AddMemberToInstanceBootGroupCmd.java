@@ -37,7 +37,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMember;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "addMemberToInstanceBootGroup",
-        description = "Adds a VM or instance group to an instance boot group. Exactly one of virtualmachineid or instancegroupid must be specified.",
+        description = "Adds an Instance or instance group to an instance boot group. Exactly one of virtualmachineid or instancegroupid must be specified.",
         responseObject = InstanceBootGroupMemberResponse.class,
         entityType = {InstanceBootGroupMember.class},
         requestHasSensitiveInfo = false,
@@ -51,15 +51,15 @@ public class AddMemberToInstanceBootGroupCmd extends BaseCmd implements UserCmd 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
     private Long id;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the VM to add (exclusive with instancegroupid)")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance to add (exclusive with instancegroupid)")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "The ID of the instance group to add (exclusive with virtualmachineid)")
+    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "The ID of the Instance Group to add (exclusive with virtualmachineid)")
     private Long instanceGroupId;
 
     @Parameter(name = ApiConstants.BOOT_ORDER, type = CommandType.INTEGER, required = true,
             description = "The boot order value for this member (0 or greater; non-contiguous values are allowed). "
-                    + "Any existing member already at or past this value is shifted one slot later to make room.")
+                    + "Any existing member already at or past this value is shifted one slot later to make room")
     private int order;
 
     public Long getId() {

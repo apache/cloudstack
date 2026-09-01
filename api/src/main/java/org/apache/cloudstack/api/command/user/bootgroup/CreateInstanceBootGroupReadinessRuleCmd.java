@@ -40,8 +40,7 @@ import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRu
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "createInstanceBootGroupReadinessRule",
-        description = "Creates a readiness rule for a VM or instance group that is a member (directly, or via its instance group) of an instance boot group. " +
-                "Exactly one of virtualmachineid or instancegroupid must be specified.",
+        description = "Creates a readiness rule for an Instance or Instance Group that is a member (directly, or via its instance group) of an Instance Boot Group",
         responseObject = InstanceBootGroupReadinessRuleResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,
@@ -53,15 +52,15 @@ public class CreateInstanceBootGroupReadinessRuleCmd extends BaseCmd implements 
     InstanceBootGroupService instanceBootGroupService;
 
     @Parameter(name = ApiConstants.BOOT_GROUP_ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true,
-            description = "The ID of the boot group this rule belongs to")
+            description = "The ID of the Instance Boot Group this rule belongs to")
     private Long bootGroupId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            description = "The ID of the VM this rule applies to (exclusive with instancegroupid)")
+            description = "The ID of the Instance this rule applies to (exclusive with instancegroupid)")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class,
-            description = "The ID of the instance group this rule applies to (exclusive with virtualmachineid)")
+            description = "The ID of the Instance Group this rule applies to (exclusive with virtualmachineid)")
     private Long instanceGroupId;
 
     @Parameter(name = ApiConstants.RULE_TYPE, type = CommandType.STRING, required = true,

@@ -45,7 +45,7 @@ public class UpdateInstanceBootGroupMemberCmd extends BaseCmd implements UserCmd
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupMemberResponse.class, required = true, description = "The UUID of the boot group member entry")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupMemberResponse.class, required = true, description = "The ID of the boot group member entry")
     private Long id;
 
     @Parameter(name = ApiConstants.BOOT_ORDER, type = CommandType.INTEGER, required = true, description = "The new boot order value (0 or greater)")

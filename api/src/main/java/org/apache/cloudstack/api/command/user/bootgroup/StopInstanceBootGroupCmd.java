@@ -36,7 +36,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 import com.cloud.event.EventTypes;
 
 @APICommand(name = "stopInstanceBootGroup",
-        description = "Stops all VMs in an instance boot group in reverse order (highest boot order first). Continues through all tiers even if some VMs fail to stop.",
+        description = "Stops all Instances in an Instance Boot Group in reverse order (highest boot order first). Continues through all tiers even if some Instances fail to stop",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -47,11 +47,11 @@ public class StopInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd {
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the Instance Boot Group")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false,
-            description = "Force stop every Instance in the instance boot group (marked as Stopped even when the stop command fails to be sent to the backend, otherwise a force poweroff is attempted)")
+            description = "Force stop every Instance in the Instance Boot Group (marked as Stopped even when the stop command fails to be sent to the backend, otherwise a force poweroff is attempted)")
     private Boolean forced;
 
     public Long getId() {

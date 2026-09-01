@@ -35,7 +35,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroup;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "deleteInstanceBootGroup",
-        description = "Deletes an instance boot group",
+        description = "Deletes an Instance Boot Group",
         responseObject = SuccessResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -46,7 +46,7 @@ public class DeleteInstanceBootGroupCmd extends BaseCmd implements UserCmd {
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the Instance Boot Group")
     private Long id;
 
     public Long getId() {

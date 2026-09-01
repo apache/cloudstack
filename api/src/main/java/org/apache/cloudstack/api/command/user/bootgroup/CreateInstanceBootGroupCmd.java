@@ -36,7 +36,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroup;
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "createInstanceBootGroup",
-        description = "Creates an instance boot group",
+        description = "Creates an Instance Boot Group",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -47,19 +47,19 @@ public class CreateInstanceBootGroupCmd extends BaseCmd implements UserCmd {
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the instance boot group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Instance Boot Group")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the instance boot group")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the Instance Boot Group")
     private String description;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the instance boot group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account of the Instance Boot Group. Must be used with domainid")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The domain ID of the account owning the instance boot group")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The domain ID of the account owning the Instance Boot Group")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "The project of the instance boot group")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "The project of the Instance Boot Group")
     private Long projectId;
 
     @Parameter(name = ApiConstants.READINESS_ATTEMPT_TIMEOUT_SECONDS, type = CommandType.LONG,

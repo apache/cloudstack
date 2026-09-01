@@ -59,6 +59,39 @@ public class InstanceBootGroupMemberDaoImpl extends GenericDaoBase<InstanceBootG
     }
 
     @Override
+    public int countByBootGroupId(long bootGroupId) {
+        SearchCriteria<InstanceBootGroupMemberVO> sc = bootGroupSearch.create();
+        sc.setParameters("bootGroupId", bootGroupId);
+        return getCount(sc);
+    }
+
+    @Override
+    public List<InstanceBootGroupMemberVO> listByBootGroupIdAndEqualOrHigherOrder(long bootGroupId, int order) {
+        SearchBuilder<InstanceBootGroupMemberVO> bootGroupOrderSearch = createSearchBuilder();
+        bootGroupOrderSearch.and("bootGroupId", bootGroupOrderSearch.entity().getBootGroupId(), SearchCriteria.Op.EQ);
+        bootGroupOrderSearch.and("order", bootGroupOrderSearch.entity().getOrder(), SearchCriteria.Op.GTEQ);
+        bootGroupOrderSearch.done();
+        SearchCriteria<InstanceBootGroupMemberVO> sc = bootGroupOrderSearch.create();
+        sc.setParameters("bootGroupId", bootGroupId);
+        sc.setParameters("order", order);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<InstanceBootGroupMemberVO> listByBootGroupIdAndOrderRange(long bootGroupId, int low, int high) {
+        SearchBuilder<InstanceBootGroupMemberVO> bootGroupOrderSearch = createSearchBuilder();
+        bootGroupOrderSearch.and("bootGroupId", bootGroupOrderSearch.entity().getBootGroupId(), SearchCriteria.Op.EQ);
+        bootGroupOrderSearch.and("low", bootGroupOrderSearch.entity().getOrder(), SearchCriteria.Op.GTEQ);
+        bootGroupOrderSearch.and("high", bootGroupOrderSearch.entity().getOrder(), SearchCriteria.Op.LTEQ);
+        bootGroupOrderSearch.done();
+        SearchCriteria<InstanceBootGroupMemberVO> sc = bootGroupOrderSearch.create();
+        sc.setParameters("bootGroupId", bootGroupId);
+        sc.setParameters("low", low);
+        sc.setParameters("high", high);
+        return listBy(sc, null);
+    }
+
+    @Override
     public Pair<List<InstanceBootGroupMemberVO>, Integer> searchAndCountByBootGroupId(long bootGroupId) {
         SearchCriteria<InstanceBootGroupMemberVO> sc = bootGroupSearch.create();
         sc.setParameters("bootGroupId", bootGroupId);

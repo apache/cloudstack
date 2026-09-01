@@ -28,6 +28,12 @@ public interface InstanceBootGroupMemberDao extends GenericDao<InstanceBootGroup
 
     List<InstanceBootGroupMemberVO> listByBootGroupId(long bootGroupId);
 
+    int countByBootGroupId(long bootGroupId);
+
+    List<InstanceBootGroupMemberVO> listByBootGroupIdAndEqualOrHigherOrder(long bootGroupId, int order);
+
+    List<InstanceBootGroupMemberVO> listByBootGroupIdAndOrderRange(long bootGroupId, int low, int high);
+
     Pair<List<InstanceBootGroupMemberVO>, Integer> searchAndCountByBootGroupId(long bootGroupId);
 
     Pair<List<InstanceBootGroupMemberVO>, Integer> searchAndCountByBootGroupIdAndType(long bootGroupId, InstanceBootGroupMember.MemberType memberType);

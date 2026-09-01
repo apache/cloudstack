@@ -35,7 +35,7 @@ import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRu
 import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "deleteInstanceBootGroupReadinessRule",
-        description = "Deletes an instance boot group readiness rule",
+        description = "Deletes an Instance Boot Group readiness rule",
         responseObject = SuccessResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,
@@ -47,7 +47,7 @@ public class DeleteInstanceBootGroupReadinessRuleCmd extends BaseCmd implements 
     InstanceBootGroupService instanceBootGroupService;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupReadinessRuleResponse.class, required = true,
-            description = "The ID of the readiness rule")
+            description = "The ID of the Instance Boot Group readiness rule")
     private Long id;
 
     public Long getId() {

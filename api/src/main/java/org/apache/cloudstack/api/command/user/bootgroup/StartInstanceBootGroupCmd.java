@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "startInstanceBootGroup",
-        description = "Starts all VMs in an instance boot group in order (lowest boot order first). VMs within the same order tier start concurrently.",
+        description = "Starts all Instances in an Instance Boot Group in order (lowest boot order first). Instances within the same order tier start concurrently",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
@@ -48,7 +48,7 @@ public class StartInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd {
     @Inject
     InstanceBootGroupService instanceBootGroupService;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the instance boot group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true, description = "The ID of the Instance Boot Group")
     private Long id;
 
     public Long getId() {
@@ -67,7 +67,7 @@ public class StartInstanceBootGroupCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Starting instance boot group with ID: " + getResourceUuid(ApiConstants.ID);
+        return "Starting Instance Boot Group with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

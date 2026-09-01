@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -388,7 +389,8 @@ public class InstanceBootGroupApiServiceImplTest {
         UserVmVO vm = newVm(VM_ID, "vm1", "vm1host", ACCOUNT_ID, VirtualMachine.State.Running);
         when(userVmDao.findById(VM_ID)).thenReturn(vm);
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID)).thenReturn(null);
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(new ArrayList<>());
+        when(instanceBootGroupMemberDao.countByBootGroupId(GROUP_ID)).thenReturn(0);
+        when(instanceBootGroupMemberDao.listByBootGroupIdAndEqualOrHigherOrder(GROUP_ID, 0)).thenReturn(new ArrayList<>());
         when(instanceBootGroupMemberDao.persist(any(InstanceBootGroupMemberVO.class))).thenAnswer(inv -> inv.getArgument(0));
 
         InstanceBootGroupMember result = service.addMemberToInstanceBootGroup(cmd);
@@ -412,7 +414,8 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceGroupVO instanceGroup = newInstanceGroup(INSTANCE_GROUP_ID, "ig1", ACCOUNT_ID);
         when(instanceGroupDao.findById(INSTANCE_GROUP_ID)).thenReturn(instanceGroup);
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID)).thenReturn(null);
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(new ArrayList<>());
+        when(instanceBootGroupMemberDao.countByBootGroupId(GROUP_ID)).thenReturn(0);
+        when(instanceBootGroupMemberDao.listByBootGroupIdAndEqualOrHigherOrder(GROUP_ID, 0)).thenReturn(new ArrayList<>());
         when(instanceBootGroupMemberDao.persist(any(InstanceBootGroupMemberVO.class))).thenAnswer(inv -> inv.getArgument(0));
 
         InstanceBootGroupMember result = service.addMemberToInstanceBootGroup(cmd);
@@ -491,11 +494,7 @@ public class InstanceBootGroupApiServiceImplTest {
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID)).thenReturn(null);
 
         long maxMembers = InstanceBootGroupManagerImpl.MaxMembersPerBootGroup.value();
-        List<InstanceBootGroupMemberVO> existingMembers = new ArrayList<>();
-        for (int i = 0; i < maxMembers; i++) {
-            existingMembers.add(newMember(100L + i, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 200L + i, i));
-        }
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(existingMembers);
+        when(instanceBootGroupMemberDao.countByBootGroupId(GROUP_ID)).thenReturn((int) maxMembers);
 
         service.addMemberToInstanceBootGroup(cmd);
     }
@@ -545,7 +544,8 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceBootGroupMemberVO siblingBelow = newMember(1L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 11L, 1);
         InstanceBootGroupMemberVO siblingAtOrder = newMember(2L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 12L, 2);
         InstanceBootGroupMemberVO siblingAbove = newMember(3L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 13L, 5);
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(Arrays.asList(siblingBelow, siblingAtOrder, siblingAbove));
+        when(instanceBootGroupMemberDao.countByBootGroupId(GROUP_ID)).thenReturn(3);
+        when(instanceBootGroupMemberDao.listByBootGroupIdAndEqualOrHigherOrder(GROUP_ID, 2)).thenReturn(Arrays.asList(siblingAtOrder, siblingAbove));
         when(instanceBootGroupMemberDao.persist(any(InstanceBootGroupMemberVO.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.addMemberToInstanceBootGroup(cmd);
@@ -623,7 +623,7 @@ public class InstanceBootGroupApiServiceImplTest {
         service.updateInstanceBootGroupMember(cmd);
 
         verify(instanceBootGroupMemberDao, never()).update(anyLong(), any());
-        verify(instanceBootGroupMemberDao, never()).listByBootGroupId(anyLong());
+        verify(instanceBootGroupMemberDao, never()).listByBootGroupIdAndOrderRange(anyLong(), anyInt(), anyInt());
     }
 
     @Test
@@ -640,8 +640,8 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceBootGroupMemberVO siblingB = newMember(12L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 2L, 2);
         InstanceBootGroupMemberVO siblingC = newMember(13L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 3L, 3);
         InstanceBootGroupMemberVO siblingUnaffectedHigh = newMember(14L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 4L, 5);
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID))
-                .thenReturn(Arrays.asList(member, siblingUnaffectedLow, siblingB, siblingC, siblingUnaffectedHigh));
+        when(instanceBootGroupMemberDao.listByBootGroupIdAndOrderRange(GROUP_ID, 1, 3))
+                .thenReturn(Arrays.asList(member, siblingB, siblingC));
 
         service.updateInstanceBootGroupMember(cmd);
 
@@ -670,8 +670,8 @@ public class InstanceBootGroupApiServiceImplTest {
         InstanceBootGroupMemberVO siblingB = newMember(12L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 2L, 1);
         InstanceBootGroupMemberVO siblingC = newMember(13L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 3L, 2);
         InstanceBootGroupMemberVO siblingUnaffectedHigh = newMember(14L, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, 4L, 4);
-        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID))
-                .thenReturn(Arrays.asList(member, siblingUnaffectedLow, siblingB, siblingC, siblingUnaffectedHigh));
+        when(instanceBootGroupMemberDao.listByBootGroupIdAndOrderRange(GROUP_ID, 1, 3))
+                .thenReturn(Arrays.asList(member, siblingB, siblingC));
 
         service.updateInstanceBootGroupMember(cmd);
 
