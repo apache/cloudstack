@@ -385,39 +385,29 @@ public class VmwareContext {
         conn.setRequestProperty("content-type", contentType);
         conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
-        OutputStream out = null;
-        InputStream in = null;
-        BufferedReader br = null;
-        long bytesWritten = 0;
 
         try {
-            try {
-                out = conn.getOutputStream();
-                in = new FileInputStream(localFileName);
-                byte[] buf = new byte[ChunkSize];
-                int len = 0;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                    bytesWritten += len;
-                }
-                out.flush();
-            } catch (IOException e) {
-                throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes: %s",
-                        localFileName, httpMethod, urlString, bytesWritten, new File(localFileName).length(), e.getMessage()), e);
-            } finally {
-                if (in != null)
-                    in.close();
-
-                if (out != null)
-                    out.close();
-
-                if (br != null)
-                    br.close();
-            }
-
+            writeFileToConnection(conn, httpMethod, urlString, localFileName);
             checkUploadResponse(conn, httpMethod, urlString, localFileName);
         } finally {
             conn.disconnect();
+        }
+    }
+
+    private void writeFileToConnection(HttpURLConnection conn, String httpMethod, String urlString, String localFileName) throws IOException {
+        long bytesWritten = 0;
+        try (OutputStream out = conn.getOutputStream();
+             InputStream in = new FileInputStream(localFileName)) {
+            byte[] buf = new byte[ChunkSize];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+                bytesWritten += len;
+            }
+            out.flush();
+        } catch (IOException e) {
+            throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes: %s",
+                    localFileName, httpMethod, urlString, bytesWritten, new File(localFileName).length(), e.getMessage()), e);
         }
     }
 
@@ -453,42 +443,37 @@ public class VmwareContext {
         conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 
-        BufferedOutputStream bos = null;
-        BufferedInputStream is = null;
-        long bytesWrittenThisCall = 0;
         try {
-            try {
-                bos = new BufferedOutputStream(conn.getOutputStream());
-                is = new BufferedInputStream(new FileInputStream(localFileName));
-                int bufferSize = ChunkSize;
-                byte[] buffer = new byte[bufferSize];
-                while (true) {
-                    int bytesRead = is.read(buffer, 0, bufferSize);
-                    if (bytesRead == -1) {
-                        break;
-                    }
-                    bos.write(buffer, 0, bytesRead);
-                    totalBytesUpdated += bytesRead;
-                    bytesWrittenThisCall += bytesRead;
-                    bos.flush();
-                    if (progressUpdater != null)
-                        progressUpdater.action(new Long(totalBytesUpdated));
-                }
-                bos.flush();
-            } catch (IOException e) {
-                throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes for this file " +
-                                "(%d bytes total written so far for this import): %s",
-                        localFileName, httpMethod, urlString, bytesWrittenThisCall, new File(localFileName).length(), totalBytesUpdated, e.getMessage()), e);
-            } finally {
-                if (is != null)
-                    is.close();
-                if (bos != null)
-                    bos.close();
-            }
-
+            writeVmdkFileToConnection(conn, httpMethod, urlString, localFileName, totalBytesUpdated, progressUpdater);
             checkUploadResponse(conn, httpMethod, urlString, localFileName);
         } finally {
             conn.disconnect();
+        }
+    }
+
+    private void writeVmdkFileToConnection(HttpURLConnection conn, String httpMethod, String urlString, String localFileName, long totalBytesUpdated,
+            ActionDelegate<Long> progressUpdater) throws IOException {
+        long bytesWrittenThisCall = 0;
+        try (BufferedOutputStream bos = new BufferedOutputStream(conn.getOutputStream());
+             BufferedInputStream is = new BufferedInputStream(new FileInputStream(localFileName))) {
+            byte[] buffer = new byte[ChunkSize];
+            while (true) {
+                int bytesRead = is.read(buffer, 0, ChunkSize);
+                if (bytesRead == -1) {
+                    break;
+                }
+                bos.write(buffer, 0, bytesRead);
+                totalBytesUpdated += bytesRead;
+                bytesWrittenThisCall += bytesRead;
+                bos.flush();
+                if (progressUpdater != null)
+                    progressUpdater.action(new Long(totalBytesUpdated));
+            }
+            bos.flush();
+        } catch (IOException e) {
+            throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes for this file " +
+                            "(%d bytes total written so far for this import): %s",
+                    localFileName, httpMethod, urlString, bytesWrittenThisCall, new File(localFileName).length(), totalBytesUpdated, e.getMessage()), e);
         }
     }
 
