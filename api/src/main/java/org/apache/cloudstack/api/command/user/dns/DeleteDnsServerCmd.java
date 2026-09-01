@@ -40,7 +40,7 @@ import com.cloud.user.Account;
         entityType = {DnsServer.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.23.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin})
 public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////

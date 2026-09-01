@@ -164,7 +164,10 @@ export default {
       ]
     }
     if (this.isAdminOrDomainAdmin()) {
-      this.rules.publicdomainsuffix = [{ validator: this.validatePublicDomainSuffix }]
+      this.rules.publicdomainsuffix = [{
+        required: true,
+        validator: this.validatePublicDomainSuffix
+      }]
     }
     this.form.name = this.resource.name
     this.form.url = this.resource.url
@@ -272,7 +275,7 @@ export default {
     validatePublicDomainSuffix (rule, value) {
       const normalized = value?.toLowerCase().trim()
       if (!normalized) {
-        return Promise.resolve()
+        return Promise.reject(new Error(this.$t('message.error.required.input')))
       }
       if (!FQDN_REGEX.test(normalized)) {
         return Promise.reject(new Error('Invalid domain suffix'))

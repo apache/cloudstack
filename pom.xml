@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.23.0.0-SNAPSHOT</version>
+    <version>4.24.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -1079,6 +1079,7 @@
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>
                             <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
+                            <exclude>services/console-proxy/rdpconsole/src/test/doc/rdp-key.pem</exclude>
                             <exclude>services/console-proxy/server/conf/agent.properties</exclude>
                             <exclude>services/console-proxy/server/conf/uefi.properties</exclude>
                             <exclude>services/console-proxy/server/conf/environment.properties</exclude>

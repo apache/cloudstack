@@ -42,11 +42,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd;
+import org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd;
+import org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsZoneCmd;
+import org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsServerCmd;
 
 import org.apache.cloudstack.api.command.user.dns.DisassociateDnsZoneFromNetworkCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
+import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
+import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
+import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
@@ -83,6 +92,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.dao.NetworkDao;
@@ -90,9 +101,13 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
@@ -174,7 +189,9 @@ public class DnsProviderManagerImplTest {
         manager.setDnsProviders(Collections.singletonList(dnsProviderMock));
 
         doNothing().when(accountMgr).checkAccess(any(Account.class),
-                nullable(org.apache.cloudstack.acl.SecurityChecker.AccessType.class), eq(true), any());
+                nullable(SecurityChecker.AccessType.class), eq(true), any());
+
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
     }
 
     @After
@@ -260,6 +277,60 @@ public class DnsProviderManagerImplTest {
         Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
 
         manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneNonOwnerShadowingOtherAccountZoneRejected() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("www.tenant1.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        DnsZoneVO victimZone = new DnsZoneVO("tenant1.cloud.example", DnsZone.ZoneType.Public, SERVER_ID,
+                ACCOUNT_ID + 50, DOMAIN_ID, "victim zone");
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.singletonList(victimZone));
+
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testAllocateDnsZoneNonOwnerParentOfOtherAccountZoneRejected() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("tenant1.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        DnsZoneVO victimZone = new DnsZoneVO("www.tenant1.cloud.example", DnsZone.ZoneType.Public, SERVER_ID,
+                ACCOUNT_ID + 50, DOMAIN_ID, "victim zone");
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.singletonList(victimZone));
+
+        manager.allocateDnsZone(cmd);
+    }
+
+    @Test
+    public void testAllocateDnsZoneNonOwnerPublicServerSuccess() {
+        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+        when(cmd.getName()).thenReturn("tenant2.cloud.example");
+        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
+        when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+        Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+        Mockito.doReturn(true).when(serverVO).getPublicServer();
+        Mockito.doReturn("cloud.example").when(serverVO).getPublicDomainSuffix();
+        when(dnsZoneDao.listByDnsServerId(SERVER_ID)).thenReturn(Collections.emptyList());
+        when(dnsZoneDao.findByNameServerAndType(anyString(), anyLong(), any())).thenReturn(null);
+        when(dnsZoneDao.persist(any(DnsZoneVO.class))).thenReturn(zoneVO);
+
+        DnsZone result = manager.allocateDnsZone(cmd);
+        assertNotNull(result);
+        verify(dnsZoneDao).persist(Mockito.argThat(z -> "tenant2.cloud.example".equals(((DnsZoneVO) z).getName())));
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -370,7 +441,7 @@ public class DnsProviderManagerImplTest {
         when(cmd.getCleanup()).thenReturn(true);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
         doNothing().when(accountMgr).checkAccess(any(Account.class),
-                nullable(org.apache.cloudstack.acl.SecurityChecker.AccessType.class), eq(true), any());
+                nullable(SecurityChecker.AccessType.class), eq(true), any());
 
         List<Long> zones = Collections.singletonList(ZONE_ID);
         when(dnsZoneDao.findDnsZoneIdsByServerId(SERVER_ID)).thenReturn(zones);
@@ -397,7 +468,7 @@ public class DnsProviderManagerImplTest {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(anyLong())).thenReturn(serverVO);
         doNothing().when(accountMgr).checkAccess(any(Account.class),
-                nullable(org.apache.cloudstack.acl.SecurityChecker.AccessType.class), eq(true), any());
+                nullable(SecurityChecker.AccessType.class), eq(true), any());
         when(dnsZoneNetworkMapDao.findByZoneId(ZONE_ID)).thenReturn(null);
         when(dnsZoneDao.remove(ZONE_ID)).thenReturn(true);
 
@@ -561,8 +632,8 @@ public class DnsProviderManagerImplTest {
         Mockito.doReturn(true).when(serverVO).getPublicServer();
         when(serverOwner.getDomainId()).thenReturn(20L);
         when(callerMock.getDomainId()).thenReturn(DOMAIN_ID);
-        ReflectionTestUtils.setField(manager, "accountDao", Mockito.mock(com.cloud.user.dao.AccountDao.class));
-        com.cloud.user.dao.AccountDao accountDaoMock = (com.cloud.user.dao.AccountDao) ReflectionTestUtils
+        ReflectionTestUtils.setField(manager, "accountDao", Mockito.mock(AccountDao.class));
+        AccountDao accountDaoMock = (AccountDao) ReflectionTestUtils
                 .getField(manager, "accountDao");
         when(accountDaoMock.findByIdIncludingRemoved(ACCOUNT_ID)).thenReturn(serverOwner);
         when(domainDao.isChildDomain(20L, DOMAIN_ID)).thenReturn(false);
@@ -605,8 +676,7 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testAssociateZoneToNetworkZoneNotFound() {
-        org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd.class);
+        AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
         manager.associateZoneToNetwork(cmd);
@@ -614,8 +684,7 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testAssociateZoneToNetworkNetworkNotFound() {
-        org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd.class);
+        AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
@@ -626,8 +695,7 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testAssociateZoneToNetworkNonSharedNetwork() {
-        org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd.class);
+        AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
@@ -640,8 +708,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testAssociateZoneToNetworkSuccess() {
-        org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd.class);
+        AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
 
@@ -661,8 +728,7 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testAssociateZoneToNetworkAlreadyAssociated() {
-        org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd.class);
+        AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
@@ -677,8 +743,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testCreateDnsRecordSuccess() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd.class);
+        CreateDnsRecordCmd cmd = mock(CreateDnsRecordCmd.class);
         when(cmd.getName()).thenReturn("www");
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getType()).thenReturn(DnsRecord.RecordType.A);
@@ -694,8 +759,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testDeleteDnsRecordSuccess() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd.class);
+        DeleteDnsRecordCmd cmd = mock(DeleteDnsRecordCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getName()).thenReturn("www");
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
@@ -715,10 +779,8 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testAddDnsServerSuccess() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
-        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
         when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
@@ -730,11 +792,10 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testListDnsServers() {
-        org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd.class);
+        ListDnsServersCmd cmd = mock(ListDnsServersCmd.class);
         when(domainDao.getDomainParentIds(anyLong())).thenReturn(Collections.emptySet());
         List<DnsServerVO> servers = Collections.singletonList(serverVO);
-        com.cloud.utils.Pair<List<DnsServerVO>, Integer> searchPair = new com.cloud.utils.Pair<>(servers, 1);
+        Pair<List<DnsServerVO>, Integer> searchPair = new Pair<>(servers, 1);
         when(dnsServerDao.searchDnsServer(any(), anyLong(), any(), any(), any(), any())).thenReturn(searchPair);
 
         DnsServerJoinVO joinVO = mock(DnsServerJoinVO.class);
@@ -748,8 +809,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testUpdateDnsServer() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
         when(cmd.getName()).thenReturn("updated-name");
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
@@ -761,13 +821,12 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testListDnsZones() {
-        org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd.class);
+        ListDnsZonesCmd cmd = mock(ListDnsZonesCmd.class);
         when(cmd.getId()).thenReturn(null);
         when(cmd.getDnsServerId()).thenReturn(null);
         when(dnsServerDao.listDnsServerIdsByAccountId(anyLong())).thenReturn(Collections.emptyList());
         List<DnsZoneVO> zones = Collections.singletonList(zoneVO);
-        com.cloud.utils.Pair<List<DnsZoneVO>, Integer> searchPair = new com.cloud.utils.Pair<>(zones, 1);
+        Pair<List<DnsZoneVO>, Integer> searchPair = new Pair<>(zones, 1);
         when(dnsZoneDao.searchZones(any(), anyLong(), any(), any(), any(), any())).thenReturn(searchPair);
 
         DnsZoneJoinVO joinVO = mock(DnsZoneJoinVO.class);
@@ -779,39 +838,79 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testAddDnsServerAlreadyExists() {
-        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(serverVO);
         manager.addDnsServer(cmd);
     }
 
     @Test
-    public void testAddDnsServerNormalUser() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
-        when(accountMgr.isDomainAdmin(callerMock.getId())).thenReturn(false);
-        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+    public void testAddDnsServerTrimsUrlBeforeDuplicateCheckAndPersistence() throws Exception {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("  http://192.0.2.1:8081  ");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
-        when(cmd.getNameServers()).thenReturn(Collections.emptyList());
-        when(cmd.isPublic()).thenReturn(true);
-        when(cmd.getPublicDomainSuffix()).thenReturn("example.com");
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
         when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
         when(dnsServerDao.persist(any())).thenReturn(serverVO);
+
+        manager.addDnsServer(cmd);
+
+        verify(dnsServerDao).findByUrlAndAccount(eq("http://192.0.2.1:8081"), anyLong());
+        verify(dnsServerDao).persist(Mockito.argThat(s -> "http://192.0.2.1:8081".equals(((DnsServerVO) s).getUrl())));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddDnsServerRejectsLoopbackUrl() {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("http://127.0.0.1:8081");
+        manager.addDnsServer(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddDnsServerRejectsUrlWithoutScheme() {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("192.0.2.1:8081");
+        manager.addDnsServer(cmd);
+    }
+
+    @Test
+    public void testAddDnsServerAllowsPrivateAddressForRootAdmin() throws Exception {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        when(dnsProviderMock.validateAndResolveServer(any())).thenReturn("resolved-id");
+        when(dnsServerDao.persist(any())).thenReturn(serverVO);
+
         DnsServer result = manager.addDnsServer(cmd);
         assertNotNull(result);
-        verify(dnsServerDao).persist(Mockito.argThat(
-                s -> !((DnsServerVO) s).getPublicServer() && ((DnsServerVO) s).getPublicDomainSuffix() == null));
+        verify(dnsServerDao).persist(any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddDnsServerPublicWithoutSuffixRejected() {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
+        when(cmd.isPublic()).thenReturn(true);
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        manager.addDnsServer(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateDnsServerPublicWithoutSuffixRejected() {
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.isPublic()).thenReturn(true);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        manager.updateDnsServer(cmd);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testAddDnsServerValidationFailure() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd.class);
-        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(true);
-        when(cmd.getUrl()).thenReturn("http://newpdns:8081");
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(cmd.getProvider()).thenReturn(DnsProviderType.PowerDNS);
         when(cmd.getNameServers()).thenReturn(Collections.emptyList());
         when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
@@ -819,12 +918,18 @@ public class DnsProviderManagerImplTest {
         manager.addDnsServer(cmd);
     }
 
+    @Test(expected = PermissionDeniedException.class)
+    public void testAddDnsServerNormalUser() throws Exception {
+        AddDnsServerCmd cmd = mock(AddDnsServerCmd.class);
+        when(accountMgr.isRootAdmin(callerMock.getId())).thenReturn(false);
+        manager.addDnsServer(cmd);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateDnsServerUrlDuplicate() {
-        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
-        when(cmd.getUrl()).thenReturn("http://duplicate:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         DnsServerVO existingServer = mock(DnsServerVO.class);
         when(existingServer.getId()).thenReturn(SERVER_ID + 1); // Different ID implies duplicate
 
@@ -835,12 +940,56 @@ public class DnsProviderManagerImplTest {
         manager.updateDnsServer(cmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateDnsServerRejectsLoopbackUrl() {
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("http://127.0.0.1:8081");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
+
+        manager.updateDnsServer(cmd);
+    }
+
+    @Test
+    public void testUpdateDnsServerAllowsPrivateAddressForRootAdmin() throws Exception {
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("http://192.168.1.1:8081");
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
+        Mockito.doReturn(DnsProviderType.PowerDNS).when(serverVO).getProviderType();
+        when(dnsServerDao.findByUrlAndAccount(anyString(), anyLong())).thenReturn(null);
+        doNothing().when(dnsProviderMock).validate(any());
+        when(dnsServerDao.update(anyLong(), any())).thenReturn(true);
+
+        DnsServer result = manager.updateDnsServer(cmd);
+        assertNotNull(result);
+        verify(dnsProviderMock).validate(any());
+    }
+
+    @Test
+    public void testUpdateDnsServerTreatsWhitespaceOnlyUrlChangeAsUnchanged() throws Exception {
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
+        Integer unchangedPort = serverVO.getPort();
+        when(cmd.getId()).thenReturn(SERVER_ID);
+        when(cmd.getUrl()).thenReturn("  http://192.0.2.1:8081  ");
+        when(cmd.getPort()).thenReturn(unchangedPort);
+        when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+        Mockito.doReturn("http://192.0.2.1:8081").when(serverVO).getUrl();
+        when(dnsServerDao.update(anyLong(), any())).thenReturn(true);
+
+        DnsServer result = manager.updateDnsServer(cmd);
+        assertNotNull(result);
+        verify(dnsProviderMock, never()).validate(any());
+        verify(serverVO, never()).setUrl(anyString());
+    }
+
     @Test
     public void testUpdateDnsServerUrlValid() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
-        when(cmd.getUrl()).thenReturn("http://new-url:8081");
+        when(cmd.getUrl()).thenReturn("http://192.0.2.1:8081");
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
@@ -856,8 +1005,7 @@ public class DnsProviderManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateDnsServerValidationException() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
+        UpdateDnsServerCmd cmd = mock(UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
         when(cmd.getDnsApiKey()).thenReturn("new-api-key");
 
@@ -874,10 +1022,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testVmLifecycleSubscriberStateUnchanged() {
         DnsProviderManagerImpl.VmLifecycleSubscriber subscriber = manager.new VmLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Running);
-        event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, com.cloud.vm.VirtualMachine.State.Running);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 10L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.OLD_STATE, VirtualMachine.State.Running);
+        event.put(ApiConstants.NEW_STATE, VirtualMachine.State.Running);
+        event.put(ApiConstants.INSTANCE_ID, 10L);
 
         subscriber.onPublishMessage("sender", "subject", event);
         verify(vmInstanceDao, never()).findByIdIncludingRemoved(anyLong());
@@ -886,10 +1034,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testVmLifecycleSubscriberRunning() {
         DnsProviderManagerImpl.VmLifecycleSubscriber subscriber = manager.new VmLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Starting);
-        event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, com.cloud.vm.VirtualMachine.State.Running);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 12L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.OLD_STATE, VirtualMachine.State.Starting);
+        event.put(ApiConstants.NEW_STATE, VirtualMachine.State.Running);
+        event.put(ApiConstants.INSTANCE_ID, 12L);
 
         // Expect handleVmEvent to be called, which accesses
         // vmInstanceDao.findByIdIncludingRemoved
@@ -902,10 +1050,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testVmLifecycleSubscriberDestroyed() {
         DnsProviderManagerImpl.VmLifecycleSubscriber subscriber = manager.new VmLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Running);
-        event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, VirtualMachine.State.Destroyed);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 15L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.OLD_STATE, VirtualMachine.State.Running);
+        event.put(ApiConstants.NEW_STATE, VirtualMachine.State.Destroyed);
+        event.put(ApiConstants.INSTANCE_ID, 15L);
         when(nicDnsJoinDao.listIncludingRemovedByVmId(15L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
         verify(nicDnsJoinDao, times(1)).listIncludingRemovedByVmId(15L);
@@ -914,10 +1062,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testVmLifecycleSubscriberUnsupportedState() {
         DnsProviderManagerImpl.VmLifecycleSubscriber subscriber = manager.new VmLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Running);
-        event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, com.cloud.vm.VirtualMachine.State.Starting);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 20L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.OLD_STATE, VirtualMachine.State.Running);
+        event.put(ApiConstants.NEW_STATE, VirtualMachine.State.Starting);
+        event.put(ApiConstants.INSTANCE_ID, 20L);
 
         subscriber.onPublishMessage("sender", "subject", event);
         verify(vmInstanceDao, never()).findByIdIncludingRemoved(anyLong());
@@ -935,10 +1083,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testNicLifecycleSubscriberCreate() {
         DnsProviderManagerImpl.NicLifecycleSubscriber subscriber = manager.new NicLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, com.cloud.event.EventTypes.EVENT_NIC_CREATE);
-        event.put(org.apache.cloudstack.api.ApiConstants.NIC_ID, 100L);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 200L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.EVENT_TYPE, EventTypes.EVENT_NIC_CREATE);
+        event.put(ApiConstants.NIC_ID, 100L);
+        event.put(ApiConstants.INSTANCE_ID, 200L);
 
         when(vmInstanceDao.findById(200L)).thenReturn(null); // Short circuits handleNicEvent
 
@@ -949,10 +1097,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testNicLifecycleSubscriberDelete() {
         DnsProviderManagerImpl.NicLifecycleSubscriber subscriber = manager.new NicLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, com.cloud.event.EventTypes.EVENT_NIC_DELETE);
-        event.put(org.apache.cloudstack.api.ApiConstants.NIC_ID, 101L);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 201L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.EVENT_TYPE, EventTypes.EVENT_NIC_DELETE);
+        event.put(ApiConstants.NIC_ID, 101L);
+        event.put(ApiConstants.INSTANCE_ID, 201L);
         when(nicDnsJoinDao.findByIdIncludingRemoved(101L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
         verify(nicDnsJoinDao, times(1)).findByIdIncludingRemoved(101L);
@@ -961,8 +1109,8 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testNicLifecycleSubscriberMissingData() {
         DnsProviderManagerImpl.NicLifecycleSubscriber subscriber = manager.new NicLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, com.cloud.event.EventTypes.EVENT_NIC_CREATE);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.EVENT_TYPE, EventTypes.EVENT_NIC_CREATE);
         // Missing NIC_ID and INSTANCE_ID
 
         subscriber.onPublishMessage("sender", "subject", event);
@@ -972,10 +1120,10 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testNicLifecycleSubscriberUnsupportedEvent() {
         DnsProviderManagerImpl.NicLifecycleSubscriber subscriber = manager.new NicLifecycleSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, "unsupported-event");
-        event.put(org.apache.cloudstack.api.ApiConstants.NIC_ID, 102L);
-        event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 202L);
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.EVENT_TYPE, "unsupported-event");
+        event.put(ApiConstants.NIC_ID, 102L);
+        event.put(ApiConstants.INSTANCE_ID, 202L);
 
         subscriber.onPublishMessage("sender", "subject", event);
         verify(vmInstanceDao, never()).findById(anyLong());
@@ -1009,8 +1157,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testCreateDnsRecordAlreadyExistsThrowsCloudRuntimeException() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd.class);
+        CreateDnsRecordCmd cmd = mock(CreateDnsRecordCmd.class);
         when(cmd.getName()).thenReturn("www");
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getType()).thenReturn(DnsRecord.RecordType.A);
@@ -1029,8 +1176,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testDeleteDnsRecordProviderReturnsNullReturnsFalse() throws Exception {
-        org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd cmd = mock(
-                org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd.class);
+        DeleteDnsRecordCmd cmd = mock(DeleteDnsRecordCmd.class);
         when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
         when(cmd.getName()).thenReturn("www");
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
@@ -1075,7 +1221,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmCreateEventFoundButNoActiveNics() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(30L)).thenReturn(instanceMock);
         when(nicDnsJoinDao.listActiveByVmId(30L)).thenReturn(Collections.emptyList());
 
@@ -1087,8 +1233,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmDestroyEventNicWithNullDnsUrlIsSkipped() throws DnsProviderException {
-        NicDnsJoinVO nicMock =
-                mock(NicDnsJoinVO.class);
+        NicDnsJoinVO nicMock = mock(NicDnsJoinVO.class);
         when(nicMock.getNicDnsName()).thenReturn(null);
         when(nicDnsJoinDao.listIncludingRemovedByVmId(31L))
                 .thenReturn(Collections.singletonList(nicMock));
@@ -1100,8 +1245,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmDestroyEventWithValidDnsUrlTriggersCleanup() throws Exception {
-        NicDnsJoinVO nicMock =
-                mock(NicDnsJoinVO.class);
+        NicDnsJoinVO nicMock = mock(NicDnsJoinVO.class);
         when(nicMock.getNicDnsName()).thenReturn("myvm.example.com");
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicDnsJoinDao.listIncludingRemovedByVmId(32L))
@@ -1112,12 +1256,12 @@ public class DnsProviderManagerImplTest {
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(32L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class)) {
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class)) {
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try {
                             cb.doInTransactionWithoutResult(null);
@@ -1129,14 +1273,14 @@ public class DnsProviderManagerImplTest {
 
             manager.handleVmDestroyEvent(32L);
 
-            verify(nicDetailsDao).removeDetail(nicMock.getId(), org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME);
+            verify(nicDetailsDao).removeDetail(nicMock.getId(), ApiConstants.NIC_DNS_NAME);
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
 
     @Test
     public void testHandleNicPlugVmNotRunningExitsEarly() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(instanceMock.getState()).thenReturn(VirtualMachine.State.Destroyed);
         when(vmInstanceDao.findById(33L)).thenReturn(instanceMock);
         manager.handleNicPlug(33L, 500L);
@@ -1146,8 +1290,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleNicUnplugNicHasValidDnsUrlTriggersSyncCleanup() throws Exception {
-        NicDnsJoinVO nicMock =
-                mock(NicDnsJoinVO.class);
+        NicDnsJoinVO nicMock = mock(NicDnsJoinVO.class);
         when(nicMock.getNicDnsName()).thenReturn("myvm.example.com");
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicDnsJoinDao.findByIdIncludingRemoved(600L)).thenReturn(nicMock);
@@ -1157,12 +1300,12 @@ public class DnsProviderManagerImplTest {
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(34L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class)) {
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class)) {
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try {
                             cb.doInTransactionWithoutResult(null);
@@ -1174,14 +1317,14 @@ public class DnsProviderManagerImplTest {
 
             manager.handleNicUnplug(34L, 600L);
 
-            verify(nicDetailsDao).removeDetail(600L, org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME);
+            verify(nicDetailsDao).removeDetail(600L, ApiConstants.NIC_DNS_NAME);
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
 
     @Test
     public void testHandleVmHostnameChangedVmFoundButNoActiveNicsExitsEarly() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(35L)).thenReturn(instanceMock);
         when(nicDnsJoinDao.listActiveByVmId(35L)).thenReturn(Collections.emptyList());
 
@@ -1193,14 +1336,13 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testIsDnsCollisionReturnsTrueForDifferentInstance() {
-        NicDnsJoinVO existing =
-                mock(NicDnsJoinVO.class);
+        NicDnsJoinVO existing = mock(NicDnsJoinVO.class);
         when(existing.getInstanceId()).thenReturn(99L);
         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(existing);
 
-        try (MockedStatic<com.cloud.event.ActionEventUtils> aeMock =
-                Mockito.mockStatic(com.cloud.event.ActionEventUtils.class)) {
-            aeMock.when(() -> com.cloud.event.ActionEventUtils.onActionEvent(
+        try (MockedStatic<ActionEventUtils> aeMock =
+                Mockito.mockStatic(ActionEventUtils.class)) {
+            aeMock.when(() -> ActionEventUtils.onActionEvent(
                     anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString()))
                     .thenReturn(1L);
             boolean result = (boolean) ReflectionTestUtils.invokeMethod(
@@ -1230,8 +1372,8 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleNicPlugRunningVmNicFoundButZoneNullExitsGracefully() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
-        when(instanceMock.getState()).thenReturn(com.cloud.vm.VirtualMachine.State.Running);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
+        when(instanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceDao.findById(40L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1249,7 +1391,7 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testHandleVmHostnameChangedNonEmptyNicsAllZonesMissingSkipsTransactions()
             throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(41L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1266,7 +1408,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmCreateEventNonEmptyNicsAllZonesMissingSkipsSync() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(42L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1293,11 +1435,10 @@ public class DnsProviderManagerImplTest {
     public void testVmRenameSubscriberMissingInstanceIdSwallowsNpe() {
         DnsProviderManagerImpl.VmRenameActionSubscriber subscriber =
                 manager.new VmRenameActionSubscriber();
-        java.util.Map<String, Object> event = new java.util.HashMap<>();
-        event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE,
-                com.cloud.event.EventTypes.EVENT_VM_UPDATE);
-        event.put(org.apache.cloudstack.api.ApiConstants.HOST_NAME, "newvm");
-        event.put(org.apache.cloudstack.api.ApiConstants.OLD_HOST_NAME, "oldvm");
+        Map<String, Object> event = new HashMap<>();
+        event.put(ApiConstants.EVENT_TYPE, EventTypes.EVENT_VM_UPDATE);
+        event.put(ApiConstants.HOST_NAME, "newvm");
+        event.put(ApiConstants.OLD_HOST_NAME, "oldvm");
         // INSTANCE_ID intentionally absent → (long) null → NullPointerException → caught internally
         subscriber.onPublishMessage("sender", "topic", event);
         verify(vmInstanceDao, never()).findById(anyLong());
@@ -1314,7 +1455,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmCreateEventFullSyncNoCollision() throws Exception {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(instanceMock.getHostName()).thenReturn("myvm");
         when(vmInstanceDao.findById(51L)).thenReturn(instanceMock);
 
@@ -1332,12 +1473,12 @@ public class DnsProviderManagerImplTest {
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(51L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class)) {
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class)) {
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try { cb.doInTransactionWithoutResult(null); }
                         catch (Exception e) { throw new RuntimeException(e); }
@@ -1347,14 +1488,14 @@ public class DnsProviderManagerImplTest {
             manager.handleVmCreateEvent(51L);
 
             verify(nicDetailsDao).addDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
+                    eq(ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
 
     @Test
     public void testHandleVmCreateEventCollisionSkipsAddDetail() throws Exception {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(instanceMock.getHostName()).thenReturn("myvm");
         when(vmInstanceDao.findById(52L)).thenReturn(instanceMock);
 
@@ -1371,17 +1512,17 @@ public class DnsProviderManagerImplTest {
         when(colliding.getInstanceId()).thenReturn(999L);
         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(colliding);
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class);
-             MockedStatic<com.cloud.event.ActionEventUtils> aeMock =
-                Mockito.mockStatic(com.cloud.event.ActionEventUtils.class)) {
-            aeMock.when(() -> com.cloud.event.ActionEventUtils.onActionEvent(
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class);
+             MockedStatic<ActionEventUtils> aeMock =
+                Mockito.mockStatic(ActionEventUtils.class)) {
+            aeMock.when(() -> ActionEventUtils.onActionEvent(
                     anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString()))
                     .thenReturn(1L);
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try { cb.doInTransactionWithoutResult(null); }
                         catch (Exception e) { throw new RuntimeException(e); }
@@ -1406,7 +1547,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmHostnameChangedFqdnUnchangedSkipsNic() throws DnsProviderException {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(61L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1427,7 +1568,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmHostnameChangedFullRenamePath() throws Exception {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(62L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1445,12 +1586,12 @@ public class DnsProviderManagerImplTest {
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(62L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class)) {
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class)) {
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try { cb.doInTransactionWithoutResult(null); }
                         catch (Exception e) { throw new RuntimeException(e); }
@@ -1461,10 +1602,10 @@ public class DnsProviderManagerImplTest {
 
             // Tx1: old URL removed from nic_details
             verify(nicDetailsDao).removeDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME));
+                    eq(ApiConstants.NIC_DNS_NAME));
             // Tx2: new URL written to nic_details
             verify(nicDetailsDao).addDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
+                    eq(ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
             // deleteRecord called for both old-sync (A+AAAA) and new-sync (A+AAAA) = 4 total
             verify(dnsProviderMock, times(4)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
@@ -1472,7 +1613,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmHostnameChangedCollisionOnNewUrlSkipsAddDetail() {
-        com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
+        VMInstanceVO instanceMock = mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(63L)).thenReturn(instanceMock);
 
         NicDnsJoinVO nicMock =
@@ -1492,17 +1633,17 @@ public class DnsProviderManagerImplTest {
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(63L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
-        try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
-                Mockito.mockStatic(com.cloud.utils.db.Transaction.class);
-             MockedStatic<com.cloud.event.ActionEventUtils> aeMock =
-                Mockito.mockStatic(com.cloud.event.ActionEventUtils.class)) {
-            aeMock.when(() -> com.cloud.event.ActionEventUtils.onActionEvent(
+        try (MockedStatic<Transaction> txMock =
+                Mockito.mockStatic(Transaction.class);
+             MockedStatic<ActionEventUtils> aeMock =
+                Mockito.mockStatic(ActionEventUtils.class)) {
+            aeMock.when(() -> ActionEventUtils.onActionEvent(
                     anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString()))
                     .thenReturn(1L);
-            txMock.when(() -> com.cloud.utils.db.Transaction.execute(
-                    any(com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn.class)))
+            txMock.when(() -> Transaction.execute(
+                    any(TransactionCallbackWithExceptionNoReturn.class)))
                     .thenAnswer(invocation -> {
-                        com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn<?> cb =
+                        TransactionCallbackWithExceptionNoReturn<?> cb =
                                 invocation.getArgument(0);
                         try { cb.doInTransactionWithoutResult(null); }
                         catch (Exception e) { throw new RuntimeException(e); }
