@@ -278,6 +278,10 @@
   <bean id="internalBackupServiceJobDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupServiceJobDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
   <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
+  <bean id="backupReportDaoImpl" class="org.apache.cloudstack.backup.dao.BackupReportDaoImpl" />
+  <bean id="backupReportJoinDaoImpl" class="org.apache.cloudstack.backup.dao.BackupReportJoinDaoImpl" />
+  <bean id="backupReportKbossJoinDaoImpl" class="org.apache.cloudstack.backup.dao.BackupReportKbossJoinDaoImpl" />
+  <bean id="emailTemplateDaoImpl" class="org.apache.cloudstack.email.template.dao.EmailTemplateDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
   <bean id="directDownloadCertificateHostMapDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMapDaoImpl" />
   <bean id="routerHealthCheckResultsDaoImpl" class="com.cloud.network.dao.RouterHealthCheckResultDaoImpl" />

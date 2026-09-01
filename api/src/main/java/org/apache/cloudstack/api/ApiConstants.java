@@ -1489,6 +1489,18 @@ public class ApiConstants {
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
+    public static final String SCHEDULE_REPORT = "schedulereport";
+    public static final String DOMAIN_REPORT = "domainreport";
+    public static final String ACCOUNT_REPORT = "accountreport";
+    public static final String FAILURE_REASON = "failurereason";
+    public static final String SUCCESSFUL_BACKUP = "sucessfulbackup";
+    public static final String FAILED_BACKUP = "failedbackup";
+    public static final String DELETED_BACKUP = "deletedbackup";
+    public static final String PROVIDER_INFO = "providerinfo";
+    public static final String LOGID = "logid";
+    public static final String COMPRESSION_REPORT = "compressionreport";
+    public static final String VALIDATION_REPORT = "validationreport";
+    public static final String JOB_TYPE = "jobtype";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
