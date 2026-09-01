@@ -1768,7 +1768,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private boolean copySnapshotOnPool(SnapshotInfo snapshot, SnapshotStrategy snapshotStrategy, Long storagePoolId) {
+    protected boolean copySnapshotOnPool(SnapshotInfo snapshot, SnapshotStrategy snapshotStrategy, Long storagePoolId) {
         DataStore store = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         SnapshotInfo snapshotOnStore =  (SnapshotInfo) store.create(snapshot);
 
@@ -1780,8 +1780,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 return false;
             }
             snapshotZoneDao.addSnapshotToZone(snapshot.getId(), snapshotOnStore.getDataCenterId());
-            _resourceLimitMgr.incrementResourceCount(CallContext.current().getCallingUserId(), ResourceType.primary_storage, snapshot.getSize());
-            if (CallContext.current().getCallingUserId() != Account.ACCOUNT_ID_SYSTEM) {
+            _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, snapshot.getSize());
+            if (CallContext.current().getCallingAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshot.getSnapshotId());
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, CallContext.current().getCallingAccountId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
