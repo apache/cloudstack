@@ -3207,4 +3207,19 @@ public class UserVmManagerImplTest {
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
         Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
     }
+
+    @Test
+    public void getRootVolumeSizeForVmRestoreAppliesMaxIopsToTheMaxIopsField() {
+        VolumeVO volume = new VolumeVO(Volume.Type.ROOT, "root", 1L, 1L, 1L, 1L,
+                com.cloud.storage.Storage.ProvisioningType.THIN, 10L, null, null, null);
+        UserVmVO restoreVm = Mockito.mock(UserVmVO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.MIN_IOPS, "500");
+        details.put(ApiConstants.MAX_IOPS, "2000");
+
+        userVmManagerImpl.getRootVolumeSizeForVmRestore(volume, null, restoreVm, null, details, true);
+
+        Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+        Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+    }
 }
