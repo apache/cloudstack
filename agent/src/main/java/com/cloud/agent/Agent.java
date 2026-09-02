@@ -66,6 +66,7 @@ import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.threadcontext.ThreadContextCommandUtil;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -947,9 +948,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 final Command cmd = cmds[i];
                 Answer answer;
                 try {
-                    if (cmd.getContextParam("logid") != null) {
-                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
-                    }
+                    ThreadContextCommandUtil.propagateContextFromCommand(cmd);
                     if (logger.isDebugEnabled()) {
                         // ensures request is logged only once per method call
                         if (!requestLogged)
@@ -1324,9 +1323,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         } else if (obj instanceof Request) {
             final Request req = (Request) obj;
             final Command command = req.getCommand();
-            if (command.getContextParam("logid") != null) {
-                ThreadContext.put("logcontextid", command.getContextParam("logid"));
-            }
+            ThreadContextCommandUtil.propagateContextFromCommand(command);
             Answer answer = null;
             commandsInProgress.incrementAndGet();
             try {

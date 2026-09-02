@@ -32,11 +32,11 @@ import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.nio.Link;
+import org.apache.cloudstack.threadcontext.ThreadContextCommandUtil;
 import org.apache.cloudstack.threadcontext.ThreadContextUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.ThreadContext;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -229,8 +229,6 @@ public class HostConnectProcess {
                 logger.warn("No startup commands returned from {}, Startup command sending skipped", serverResource.getName());
                 return;
             }
-            String logId = Optional.ofNullable(ThreadContext.get("logcontextid"))
-                    .map(String.class::cast).orElse(null);
             String msHostList = _agent.getPersistentProperty("host");
             // need to downcast StartupCommand[] to Command[], otherwise logger will fail to decode JSON on MS side
             Command[] commands = new Command[startup.length];
@@ -240,9 +238,7 @@ public class HostConnectProcess {
                 _agent.setupStartupCommand(command);
                 command.setMSHostList(msHostList);
                 command.setConnectionTransferred(connectionTransfer);
-                if (logId != null) {
-                    command.setContextParam("logid", logId);
-                }
+                ThreadContextCommandUtil.setContextInCommand(command);
             }
             String commandName = commands[0].getClass().getSimpleName();
             boolean needAdditionalValidation = false;
@@ -298,16 +294,8 @@ public class HostConnectProcess {
 
         default <T> T send(ServerAttache attache, Command[] commands, Class<T> answerType,
                            int asyncCommandTimeoutSec) throws IOException {
-            String logId = Optional.ofNullable(ThreadContext.get("logcontextid"))
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .orElse(null);
-            if (logId != null) {
-                for (Command command : commands) {
-                    if (command.getContextParam("logid") == null) {
-                        command.setContextParam("logid", logId);
-                    }
-                }
+            for (Command command : commands) {
+                ThreadContextCommandUtil.setContextInCommand(command);
             }
             Link link = attache.getLink();
             String commandName = commands[0].getClass().getSimpleName();
