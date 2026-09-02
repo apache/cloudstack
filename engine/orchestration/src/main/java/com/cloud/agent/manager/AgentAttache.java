@@ -468,11 +468,12 @@ public abstract class AgentAttache {
         logger.debug(LOG_SEQ_FORMATTED_STRING, req.getSequence(), "Sending now.  is current sequence.");
         try {
             send(req);
+            _currentSequence = req.getSequence();
         } catch (AgentUnavailableException e) {
             logger.debug(LOG_SEQ_FORMATTED_STRING, req.getSequence(), "Unable to send the next sequence");
             cancel(req.getSequence());
+            sendNext(req.getSequence());
         }
-        _currentSequence = req.getSequence();
     }
 
     public void process(final Answer[] answers) {
