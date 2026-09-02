@@ -134,7 +134,7 @@ qcow2-file and RBD paths are unchanged.
 ## Migration support matrix (Linstor destination)
 
 | Mode | Trigger | Source VM state | Data movement | Guest downtime |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Cold, staged | `importVm` (no `forceconverttopool`) | Running (auto-cloned on vSphere) or stopped | virt-v2v -> qcow2 on NFS temp -> qemu-img copy to DRBD device | Offline copy (running source undisturbed via clone) |
 | Cold, direct VDDK | `importVm usevddk=true forceconverttopool=true` -> Linstor pool | Stopped only (non-cloned) | nbdkit/VDDK -> qemu-img convert -n into DRBD device -> virt-v2v-in-place | Whole migration (VM is off) |
 | Warm, CBT | `startVmwareCbtMigration` -> sync cycles -> `cutoverVmwareCbtMigration` | Running | Initial full sync + incremental CBT deltas into DRBD device; final delta + in-place finalize at cutover | Minimal (only the final cutover delta) |
