@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -40,7 +42,13 @@ public class Upgrade42030to42040 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public InputStream[] getPrepareScripts() {
-        return null;
+        final String scriptFile = "META-INF/db/schema-42030to42040.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+
+        return new InputStream[] {script};
     }
 
     @Override
