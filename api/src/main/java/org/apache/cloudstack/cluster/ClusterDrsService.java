@@ -62,9 +62,10 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
 
     ConfigKey<String> ClusterDrsMetric = new ConfigKey<>(String.class, "drs.metric", ConfigKey.CATEGORY_ADVANCED,
             "memory",
-            "The allocated resource metric used to measure imbalance in a cluster. Possible values are memory, cpu.",
+            "The allocated resource metric used to measure imbalance in a cluster. Possible values are memory, cpu, both. " +
+                    "'both' balances on the worse of the cpu and memory imbalance so neither resource is left contended.",
             true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
-            "memory,cpu");
+            "memory,cpu,both");
 
     ConfigKey<String> ClusterDrsMetricType = new ConfigKey<>(String.class, "drs.metric.type", ConfigKey.CATEGORY_ADVANCED,
             "used",
