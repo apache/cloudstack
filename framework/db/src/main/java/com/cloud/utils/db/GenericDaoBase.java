@@ -34,6 +34,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -67,7 +70,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.amazonaws.util.CollectionUtils;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -128,6 +130,28 @@ import org.springframework.util.ClassUtils;
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+
+    /**
+     * Returns a fresh GMT {@link Calendar} for a single JDBC get/set timestamp call. Calendar is
+     * mutable and JDBC drivers may mutate the instance passed to them, so a new one is used per call
+     * rather than sharing a single instance across concurrent DAO operations.
+     */
+    protected static Calendar gmtCalendar() {
+        return Calendar.getInstance(s_gmtTimeZone);
+    }
+
+    /**
+     * Returns the SQL type ({@link Types}) matching the temporal flag of the given attribute, so a
+     * null date/time/timestamp column is bound with the correct type instead of always TIMESTAMP.
+     */
+    protected static int temporalSqlType(Attribute attr) {
+        if (attr.is(Attribute.Flag.Date)) {
+            return Types.DATE;
+        } else if (attr.is(Attribute.Flag.Time)) {
+            return Types.TIME;
+        }
+        return Types.TIMESTAMP;
+    }
 
     protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
     private final ConversionSupport _conversionSupport;
@@ -598,20 +622,16 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     field.set(entity, rs.getInt(index));
                 }
             } else if (type == Date.class) {
-                final Object data = rs.getDate(index);
-                if (data == null) {
-                    field.set(entity, null);
-                    return;
-                }
-                field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                final Timestamp ts = rs.getTimestamp(index, gmtCalendar());
+                field.set(entity, ts == null ? null : new Date(ts.getTime()));
             } else if (type == Calendar.class) {
-                final Object data = rs.getDate(index);
+                final Timestamp data = rs.getTimestamp(index, gmtCalendar());
                 if (data == null) {
                     field.set(entity, null);
                     return;
                 }
-                final Calendar cal = Calendar.getInstance();
-                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                final Calendar cal = Calendar.getInstance(s_gmtTimeZone);
+                cal.setTime(data);
                 field.set(entity, cal);
             } else if (type == boolean.class) {
                 field.setBoolean(entity, rs.getBoolean(index));
@@ -732,11 +752,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return (M) (Long) rs.getLong(index);
             }
         } else if (type == Date.class) {
-            final Object data = rs.getDate(index);
-            if (data == null) {
+            final Timestamp ts = rs.getTimestamp(index, gmtCalendar());
+            if (ts == null) {
                 return null;
             } else {
-                return (M)DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index));
+                return (M) new Date(ts.getTime());
             }
         } else if (type == short.class) {
             return (M) (Short) rs.getShort(index);
@@ -779,12 +799,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return (M) (Byte) rs.getByte(index);
             }
         } else if (type == Calendar.class) {
-            final Object data = rs.getDate(index);
+            final Timestamp data = rs.getTimestamp(index, gmtCalendar());
             if (data == null) {
                 return null;
             } else {
-                final Calendar cal = Calendar.getInstance();
-                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                final Calendar cal = Calendar.getInstance(s_gmtTimeZone);
+                cal.setTime(data);
                 return (M)cal;
             }
         } else if (type == byte[].class) {
@@ -1696,7 +1716,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             while (en.hasMoreElements()) {
                 pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
                 if (ec.targetClass == Date.class) {
-                    pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date)en.nextElement()));
+                    Date d = (Date) en.nextElement();
+                    if (d == null) {
+                        pstmt.setNull(1, Types.TIMESTAMP);
+                    } else {
+                        pstmt.setTimestamp(1, new Timestamp(d.getTime()), gmtCalendar());
+                    }
                 } else {
                     pstmt.setObject(1, en.nextElement());
                 }
@@ -1800,28 +1825,28 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } else if (attr.field.getType() == Date.class) {
             final Date date = (Date)value;
             if (date == null || date.equals(DATE_TO_NULL)) {
-                pstmt.setObject(j, null);
+                pstmt.setNull(j, temporalSqlType(attr));
                 return;
             }
             if (attr.is(Attribute.Flag.Date)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
+                pstmt.setDate(j, new java.sql.Date(date.getTime()), gmtCalendar());
             } else if (attr.is(Attribute.Flag.TimeStamp)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
+                pstmt.setTimestamp(j, new Timestamp(date.getTime()), gmtCalendar());
             } else if (attr.is(Attribute.Flag.Time)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
+                pstmt.setTime(j, new java.sql.Time(date.getTime()), gmtCalendar());
             }
         } else if (attr.field.getType() == Calendar.class) {
             final Calendar cal = (Calendar)value;
             if (cal == null) {
-                pstmt.setObject(j, null);
+                pstmt.setNull(j, temporalSqlType(attr));
                 return;
             }
             if (attr.is(Attribute.Flag.Date)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
+                pstmt.setDate(j, new java.sql.Date(cal.getTimeInMillis()), gmtCalendar());
             } else if (attr.is(Attribute.Flag.TimeStamp)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
+                pstmt.setTimestamp(j, new Timestamp(cal.getTimeInMillis()), gmtCalendar());
             } else if (attr.is(Attribute.Flag.Time)) {
-                pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, cal.getTime()));
+                pstmt.setTime(j, new Time(cal.getTimeInMillis()), gmtCalendar());
             }
         } else if (attr.field.getType().isEnum()) {
             final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
@@ -1955,7 +1980,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     }
                 } else if (ec.targetClass == Date.class) {
                     while (rs.next()) {
-                        lst.add(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(1)));
+                        final Timestamp ts = rs.getTimestamp(1, gmtCalendar());
+                        lst.add(ts == null ? null : new Date(ts.getTime()));
                     }
                 } else if (ec.targetClass == Boolean.class) {
                     while (rs.next()) {
