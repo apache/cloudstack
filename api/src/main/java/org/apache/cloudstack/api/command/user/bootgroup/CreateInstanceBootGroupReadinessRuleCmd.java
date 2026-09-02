@@ -64,7 +64,7 @@ public class CreateInstanceBootGroupReadinessRuleCmd extends BaseCmd implements 
     private Long instanceGroupId;
 
     @Parameter(name = ApiConstants.RULE_TYPE, type = CommandType.STRING, required = true,
-            description = "The readiness rule type: GuestAgentLiveness, Ping, PortCheck, MemberQuorum or CustomScript")
+            description = "The readiness rule type: GuestAgentLiveness, Ping, PortCheck or MemberQuorum")
     private String ruleType;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the readiness rule; auto-generated if not provided")

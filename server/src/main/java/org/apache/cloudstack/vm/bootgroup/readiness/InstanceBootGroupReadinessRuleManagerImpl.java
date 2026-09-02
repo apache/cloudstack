@@ -65,19 +65,17 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
             InstanceBootGroupMember.MemberType.VirtualMachine, EnumSet.of(
                     InstanceBootGroupReadinessRule.RuleType.GuestAgentLiveness,
                     InstanceBootGroupReadinessRule.RuleType.Ping,
-                    InstanceBootGroupReadinessRule.RuleType.PortCheck,
-                    InstanceBootGroupReadinessRule.RuleType.CustomScript),
+                    InstanceBootGroupReadinessRule.RuleType.PortCheck),
             InstanceBootGroupMember.MemberType.InstanceGroup, EnumSet.of(
                     InstanceBootGroupReadinessRule.RuleType.GuestAgentLiveness,
                     InstanceBootGroupReadinessRule.RuleType.Ping,
                     InstanceBootGroupReadinessRule.RuleType.PortCheck,
-                    InstanceBootGroupReadinessRule.RuleType.CustomScript,
                     InstanceBootGroupReadinessRule.RuleType.MemberQuorum));
 
     /**
      * Rule types an item may have at most one of — Ping/GuestAgentLiveness each check a single fixed
      * target on the VM, and MemberQuorum aggregates the whole InstanceGroup, so a second one would
-     * just be redundant. PortCheck (different ports) and CustomScript are not singletons.
+     * just be redundant. PortCheck (different ports) is not a singleton.
      */
     private static final Set<InstanceBootGroupReadinessRule.RuleType> SINGLETON_RULE_TYPES = EnumSet.of(
             InstanceBootGroupReadinessRule.RuleType.Ping,

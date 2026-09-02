@@ -48,8 +48,9 @@ public interface InstanceBootGroupReadinessRule extends Identity, InternalIdenti
     /**
      * Which rule types are valid depends on {@link InstanceBootGroupMember.MemberType},
      * hypervisor-agnostic at the DB/API layer (no qemu/KVM naming stored). Ping/PortCheck/
-     * CustomScript/GuestAgentLiveness apply to VirtualMachine items; MemberQuorum and
-     * (group-scope) CustomScript apply to InstanceGroup items.
+     * GuestAgentLiveness apply to VirtualMachine items; MemberQuorum applies to InstanceGroup
+     * items. CustomScript is reserved for a future checker/evaluator implementation and is not
+     * currently accepted by the API for either item type.
      */
     enum RuleType {
         GuestAgentLiveness(true),
@@ -67,7 +68,7 @@ public interface InstanceBootGroupReadinessRule extends Identity, InternalIdenti
         /**
          * True for a rule type that, when attached to an InstanceGroup, is evaluated against every
          * current member individually and inherited by each member's own readiness — unlike
-         * MemberQuorum/(group-scope) CustomScript, which only ever operate at group scope.
+         * MemberQuorum, which only ever operates at group scope.
          */
         public boolean isMemberTargeted() {
             return memberTargeted;
