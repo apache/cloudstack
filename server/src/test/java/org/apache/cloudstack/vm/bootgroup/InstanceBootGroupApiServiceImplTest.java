@@ -553,9 +553,9 @@ public class InstanceBootGroupApiServiceImplTest {
         verify(instanceBootGroupMemberDao, never()).update(eq(1L), any());
         ArgumentCaptor<InstanceBootGroupMemberVO> captor = ArgumentCaptor.forClass(InstanceBootGroupMemberVO.class);
         verify(instanceBootGroupMemberDao).update(eq(2L), captor.capture());
-        assertEquals(3, captor.getValue().getOrder());
+        assertEquals(3, captor.getValue().getBootOrder());
         verify(instanceBootGroupMemberDao).update(eq(3L), captor.capture());
-        assertEquals(6, captor.getValue().getOrder());
+        assertEquals(6, captor.getValue().getBootOrder());
     }
 
     // ---------------------------------------------------------------- removeInstanceBootGroupMember
@@ -649,11 +649,11 @@ public class InstanceBootGroupApiServiceImplTest {
         verify(instanceBootGroupMemberDao, never()).update(eq(14L), any());
         ArgumentCaptor<InstanceBootGroupMemberVO> captor = ArgumentCaptor.forClass(InstanceBootGroupMemberVO.class);
         verify(instanceBootGroupMemberDao).update(eq(12L), captor.capture());
-        assertEquals(1, captor.getValue().getOrder());
+        assertEquals(1, captor.getValue().getBootOrder());
         verify(instanceBootGroupMemberDao).update(eq(13L), captor.capture());
-        assertEquals(2, captor.getValue().getOrder());
+        assertEquals(2, captor.getValue().getBootOrder());
         verify(instanceBootGroupMemberDao).update(eq(MEMBER_ID), captor.capture());
-        assertEquals(3, captor.getValue().getOrder());
+        assertEquals(3, captor.getValue().getBootOrder());
     }
 
     @Test
@@ -679,11 +679,11 @@ public class InstanceBootGroupApiServiceImplTest {
         verify(instanceBootGroupMemberDao, never()).update(eq(14L), any());
         ArgumentCaptor<InstanceBootGroupMemberVO> captor = ArgumentCaptor.forClass(InstanceBootGroupMemberVO.class);
         verify(instanceBootGroupMemberDao).update(eq(12L), captor.capture());
-        assertEquals(2, captor.getValue().getOrder());
+        assertEquals(2, captor.getValue().getBootOrder());
         verify(instanceBootGroupMemberDao).update(eq(13L), captor.capture());
-        assertEquals(3, captor.getValue().getOrder());
+        assertEquals(3, captor.getValue().getBootOrder());
         verify(instanceBootGroupMemberDao).update(eq(MEMBER_ID), captor.capture());
-        assertEquals(1, captor.getValue().getOrder());
+        assertEquals(1, captor.getValue().getBootOrder());
     }
 
     // ---------------------------------------------------------------- listInstanceBootGroupMembers / readiness

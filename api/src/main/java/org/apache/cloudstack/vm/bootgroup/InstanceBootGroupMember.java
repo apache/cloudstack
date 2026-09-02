@@ -30,7 +30,7 @@ public interface InstanceBootGroupMember extends Identity, InternalIdentity {
 
     long getMemberId();
 
-    int getOrder();
+    int getBootOrder();
 
     Date getCreated();
 

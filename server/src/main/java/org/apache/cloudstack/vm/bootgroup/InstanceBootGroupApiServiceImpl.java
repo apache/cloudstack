@@ -349,7 +349,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         List<InstanceBootGroupMemberVO> siblings =
                 instanceBootGroupMemberDao.listByBootGroupIdAndEqualOrHigherOrder(groupId, order);
         for (InstanceBootGroupMemberVO sibling : siblings) {
-            sibling.setOrder(sibling.getOrder() + 1);
+            sibling.setBootOrder(sibling.getBootOrder() + 1);
             instanceBootGroupMemberDao.update(sibling.getId(), sibling);
         }
     }
@@ -410,13 +410,13 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         }
         getGroupAndCheckAccess(member.getBootGroupId());
 
-        int oldOrder = member.getOrder();
+        int oldOrder = member.getBootOrder();
         if (newOrder == oldOrder) {
             return member;
         }
         return Transaction.execute((TransactionCallback<InstanceBootGroupMemberVO>) status -> {
             shiftSiblingOrders(member, oldOrder, newOrder);
-            member.setOrder(newOrder);
+            member.setBootOrder(newOrder);
             instanceBootGroupMemberDao.update(member.getId(), member);
             return instanceBootGroupMemberDao.findById(member.getId());
         });
@@ -436,7 +436,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             if (sibling.getId() == member.getId()) {
                 continue;
             }
-            sibling.setOrder(sibling.getOrder() + delta);
+            sibling.setBootOrder(sibling.getBootOrder() + delta);
             instanceBootGroupMemberDao.update(sibling.getId(), sibling);
         }
     }
@@ -454,7 +454,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         }
 
         List<InstanceBootGroupMemberVO> members = result.first();
-        members.sort(Comparator.comparingInt(InstanceBootGroupMemberVO::getOrder));
+        members.sort(Comparator.comparingInt(InstanceBootGroupMemberVO::getBootOrder));
         boolean includeReadiness = cmd.isReadinessDetailRequested();
         boolean includeChildren = cmd.isChildrenDetailRequested();
         boolean ignoreVmState = cmd.isIgnoreInstanceState();
@@ -505,7 +505,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
             response.setBootGroupId(group.getUuid());
         }
         response.setMemberType(member.getMemberType().name());
-        response.setOrder(member.getOrder());
+        response.setOrder(member.getBootOrder());
         response.setCreated(member.getCreated());
 
         List<Long> childVmIds = new ArrayList<>();

@@ -564,7 +564,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
     private Map<Integer, List<InstanceBootGroupMemberVO>> groupByOrder(List<InstanceBootGroupMemberVO> members) {
         Map<Integer, List<InstanceBootGroupMemberVO>> tiers = new TreeMap<>();
         for (InstanceBootGroupMemberVO m : members) {
-            tiers.computeIfAbsent(m.getOrder(), k -> new ArrayList<>()).add(m);
+            tiers.computeIfAbsent(m.getBootOrder(), k -> new ArrayList<>()).add(m);
         }
         return tiers;
     }
@@ -572,7 +572,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
     private Map<Integer, List<InstanceBootGroupMemberVO>> groupByOrderDescending(List<InstanceBootGroupMemberVO> members) {
         Map<Integer, List<InstanceBootGroupMemberVO>> tiers = new TreeMap<>(Comparator.reverseOrder());
         for (InstanceBootGroupMemberVO m : members) {
-            tiers.computeIfAbsent(m.getOrder(), k -> new ArrayList<>()).add(m);
+            tiers.computeIfAbsent(m.getBootOrder(), k -> new ArrayList<>()).add(m);
         }
         return tiers;
     }

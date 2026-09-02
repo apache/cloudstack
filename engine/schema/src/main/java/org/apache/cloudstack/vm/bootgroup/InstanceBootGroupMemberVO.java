@@ -53,8 +53,8 @@ public class InstanceBootGroupMemberVO implements InstanceBootGroupMember {
     @Column(name = "member_id")
     private long memberId;
 
-    @Column(name = "order")
-    private int order;
+    @Column(name = "boot_order")
+    private int bootOrder;
 
     @Column(name = "created")
     private Date created;
@@ -62,11 +62,11 @@ public class InstanceBootGroupMemberVO implements InstanceBootGroupMember {
     protected InstanceBootGroupMemberVO() {
     }
 
-    public InstanceBootGroupMemberVO(long bootGroupId, MemberType memberType, long memberId, int order) {
+    public InstanceBootGroupMemberVO(long bootGroupId, MemberType memberType, long memberId, int bootOrder) {
         this.bootGroupId = bootGroupId;
         this.memberType = memberType;
         this.memberId = memberId;
-        this.order = order;
+        this.bootOrder = bootOrder;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -96,12 +96,12 @@ public class InstanceBootGroupMemberVO implements InstanceBootGroupMember {
     }
 
     @Override
-    public int getOrder() {
-        return order;
+    public int getBootOrder() {
+        return bootOrder;
     }
 
-    public void setOrder(int order) {
-        this.order = order;
+    public void setBootOrder(int bootOrder) {
+        this.bootOrder = bootOrder;
     }
 
     @Override
@@ -111,6 +111,6 @@ public class InstanceBootGroupMemberVO implements InstanceBootGroupMember {
 
     @Override
     public String toString() {
-        return String.format("BootGroupMember %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "bootGroupId", "memberType", "memberId", "order"));
+        return String.format("BootGroupMember %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "bootGroupId", "memberType", "memberId", "bootOrder"));
     }
 }
