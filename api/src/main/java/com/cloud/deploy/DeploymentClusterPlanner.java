@@ -30,6 +30,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
     static final String ClusterCPUCapacityDisableThresholdCK = "cluster.cpu.allocated.capacity.disablethreshold";
     static final String ClusterMemoryCapacityDisableThresholdCK = "cluster.memory.allocated.capacity.disablethreshold";
     static final String ClusterThresholdEnabledCK = "cluster.threshold.enabled";
+    static final String ClusterHAFailoverReserveThresholdCK = "cluster.ha.failover.capacity.reservethreshold";
 
     static final ConfigKey<Float> ClusterCPUCapacityDisableThreshold =
         new ConfigKey<Float>(
@@ -56,6 +57,15 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             "Enable/Disable cluster thresholds. If disabled, an instance can start in a cluster even though the threshold may be crossed.",
             false,
             ConfigKey.Scope.Global);
+    // Reserve spare cluster capacity for HA failover.
+    static final ConfigKey<Float> ClusterHAFailoverReserveThreshold =
+        new ConfigKey<Float>(
+            Float.class,
+            ClusterHAFailoverReserveThresholdCK,
+            "Alert",
+            "1.0",
+            "Fraction (0-1) of a cluster's CPU/memory allocation above which the allocator stops placing new instances in the cluster, reserving the remaining capacity for HA failover restarts. 1.0 (the default) disables the reservation. For example, 0.8 keeps about 20% of the cluster's CPU and memory free for HA-triggered restarts, which are not subject to this reserve. Set it below the corresponding cluster.*.allocated.capacity.disablethreshold to take effect.",
+            true, ConfigKey.Scope.Cluster, null);
 
     static final ConfigKey<String> VmAllocationAlgorithm = new ConfigKey<>(
             String.class,
