@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallRuleResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,6 +67,7 @@ public class CreateTungstenFabricFirewallRuleCmdTest {
         ReflectionTestUtils.setField(createTungstenFabricFirewallRuleCmd, "sequence", 1);
     }
 
+    @After
     public void tearDown() throws Exception {
         closeable.close();
     }
