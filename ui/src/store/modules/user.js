@@ -529,6 +529,24 @@ const user = {
         })
       })
     },
+    RefreshZones ({ commit }) {
+      return new Promise((resolve, reject) => {
+        api('listZones').then(json => {
+          const zones = json.listzonesresponse.zone || []
+          commit('SET_ZONES', zones)
+          resolve(zones)
+        }).catch(error => {
+          reject(error)
+        })
+        api(
+          'listNetworkServiceProviders',
+          { name: 'SecurityGroupProvider', state: 'Enabled' }
+        ).then(response => {
+          const showSecurityGroups = response.listnetworkserviceprovidersresponse.count > 0
+          commit('SET_SHOW_SECURITY_GROUPS', showSecurityGroups)
+        }).catch(ignored => {})
+      })
+    },
     RefreshFeatures ({ commit }) {
       return new Promise((resolve, reject) => {
         api('listCapabilities').then(response => {
