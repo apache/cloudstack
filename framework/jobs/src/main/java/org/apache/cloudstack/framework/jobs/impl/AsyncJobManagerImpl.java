@@ -523,7 +523,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return StringUtils.obfuscatePasswordInJsonLikeString(result);
     }
 
-    private void scheduleExecution(final AsyncJobVO job) {
+    protected void scheduleExecution(final AsyncJobVO job) {
         scheduleExecution(job, false);
     }
 
@@ -701,7 +701,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return signals;
     }
 
-    private void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
+    protected void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
         AsyncJobVO job = _jobDao.findById(item.getContentId());
         if (job != null) {
             if (logger.isDebugEnabled()) {
@@ -726,6 +726,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 } catch (Throwable thr) {
                     logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", thr);
                 }
+                return;
             }
 
             try {
