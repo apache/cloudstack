@@ -1327,7 +1327,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         try {
             _privateIPAddressDao.releasePodIpAddress(id);
         } catch (Exception e) {
-            new CloudRuntimeException(e.getMessage());
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 

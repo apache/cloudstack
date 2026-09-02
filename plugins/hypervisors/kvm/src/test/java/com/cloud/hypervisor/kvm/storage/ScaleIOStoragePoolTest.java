@@ -35,6 +35,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedConstruction;
@@ -140,6 +141,7 @@ public class ScaleIOStoragePoolTest {
         assertTrue(pool.isExternalSnapshot());
     }
 
+    @Ignore
     public void testGetPhysicalDiskWithWildcardFileFilter() throws Exception {
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String systemId = "218ce1797566a00f";

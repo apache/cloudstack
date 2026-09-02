@@ -40,9 +40,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
@@ -120,6 +122,9 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private AffinityGroupVMMapDao affinityGroupVMMapDao;
+
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
 
     @Spy
     @InjectMocks
@@ -294,6 +299,8 @@ public class ClusterDrsServiceImplTest {
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
+        Mockito.verify(managementServer, Mockito.never()).listHostsForMigrationOfVM(
+                Mockito.eq(systemVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
     }
 
     @Test
@@ -334,6 +341,8 @@ public class ClusterDrsServiceImplTest {
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
+        Mockito.verify(managementServer, Mockito.never()).listHostsForMigrationOfVM(
+                Mockito.eq(stoppedVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
     }
 
     @Test
@@ -350,9 +359,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(skippedVm.getHostId()).thenReturn(1L);
         Mockito.when(skippedVm.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(skippedVm.getState()).thenReturn(VirtualMachine.State.Running);
-        Map<String, String> details = new HashMap<>();
-        details.put(VmDetailConstants.SKIP_DRS, "true");
-        Mockito.when(skippedVm.getDetails()).thenReturn(details);
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -370,6 +376,11 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoin1.getMemReservedCapacity()).thenReturn(0L);
         Mockito.when(hostJoin1.getTotalMemory()).thenReturn(8192L);
 
+        // Return the SKIP_DRS detail for skippedVm so the flag is actually honoured
+        UserVmDetailVO skipDrsDetail = new UserVmDetailVO(1L, VmDetailConstants.SKIP_DRS, "true", true);
+        Mockito.when(userVmDetailsDao.listDetailsForResourceIdsAndKey(Mockito.anyList(),
+                Mockito.eq(VmDetailConstants.SKIP_DRS))).thenReturn(List.of(skipDrsDetail));
+
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
         Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
@@ -377,6 +388,9 @@ public class ClusterDrsServiceImplTest {
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
+        // Verify the VM was skipped before any host-compatibility lookup was attempted
+        Mockito.verify(managementServer, Mockito.never()).listHostsForMigrationOfVM(
+                Mockito.eq(skippedVm), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
     }
 
     @Test
@@ -393,7 +407,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(vm1.getHostId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -418,6 +431,10 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
+        // Return a Ternary with an empty suitable-hosts list to exercise the "no compatible hosts" path
+        Mockito.when(managementServer.listHostsForMigrationOfVM(Mockito.eq(vm1), Mockito.anyLong(),
+                Mockito.anyLong(), Mockito.any(), Mockito.anyList()))
+                .thenReturn(new Ternary<>(new Pair<>(Collections.emptyList(), 0), Collections.emptyList(), Collections.emptyMap()));
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
@@ -438,7 +455,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(vm1.getHostId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -463,6 +479,10 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
+        // Throw an explicit exception so the catch-and-log path is exercised intentionally
+        Mockito.when(managementServer.listHostsForMigrationOfVM(Mockito.eq(vm1), Mockito.anyLong(),
+                Mockito.anyLong(), Mockito.any(), Mockito.anyList()))
+                .thenThrow(new RuntimeException("Simulated host compatibility check failure"));
 
         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
         assertEquals(0, result.size());
@@ -484,7 +504,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(vm1.getHostId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -539,14 +558,12 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(vm1.getHostId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(2L);
         Mockito.when(vm2.getHostId()).thenReturn(1L);
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm2.getDetails()).thenReturn(Collections.emptyMap());
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -619,7 +636,6 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(vm1.getHostId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         List<HostVO> hostList = new ArrayList<>();
         hostList.add(host1);
@@ -811,15 +827,9 @@ public class ClusterDrsServiceImplTest {
 
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
-        Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(2L);
-        Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm2.getDetails()).thenReturn(Collections.emptyMap());
 
         List<VirtualMachine> vmList = new ArrayList<>();
         vmList.add(vm1);
@@ -890,15 +900,9 @@ public class ClusterDrsServiceImplTest {
 
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
-        Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(2L);
-        Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.User);
-        Mockito.when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(vm2.getDetails()).thenReturn(Collections.emptyMap());
 
         List<VirtualMachine> vmList = new ArrayList<>();
         vmList.add(vm1);
