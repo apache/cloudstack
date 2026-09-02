@@ -39,7 +39,7 @@ public class RedfishWrapper {
         case SOFT:
             return RedfishClient.RedfishResetCmd.GracefulShutdown;
         case STATUS:
-            throw new IllegalStateException(String.format("%s is not a valid Redfish Reset command [%s]", operation));
+            throw new IllegalStateException(String.format("%s is not a valid Redfish Reset command", operation));
         default:
             throw new IllegalStateException(String.format("Redfish does not support operation [%s]", operation));
         }
