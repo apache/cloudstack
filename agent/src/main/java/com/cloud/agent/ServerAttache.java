@@ -26,6 +26,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.nio.Link;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.threadcontext.ThreadContextCommandUtil;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -421,6 +422,9 @@ public class ServerAttache {
                     command.setContextParam("logid", logId);
                 }
             }
+        }
+        for (Command command : commands) {
+            ThreadContextCommandUtil.setContextInCommand(command);
         }
         Link link = getLink();
         String commandName = commands[0].getClass().getSimpleName();
