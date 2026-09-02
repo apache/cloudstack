@@ -82,6 +82,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
@@ -223,6 +224,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private ServiceOfferingDao _serviceOfferingDao;
+
+    @Mock
+    private InternalBackupService internalBackupService;
 
     @Mock
     private DiskOfferingDao diskOfferingDao;
