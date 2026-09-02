@@ -61,8 +61,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.host.Status;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
