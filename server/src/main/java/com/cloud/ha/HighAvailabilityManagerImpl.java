@@ -1174,10 +1174,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         final VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
         try {
             if (vm != null && !VmHaEnabled.valueIn(vm.getDataCenterId())) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("VM high availability manager is disabled, rescheduling the HA work {} for the VM {} ({}) " +
+                logger.debug("VM high availability manager is disabled, rescheduling the HA work {}, for the VM {} (id: {})" +
                             "to retry later in case VM high availability manager is enabled on retry attempt", work, vm.getName(), vm.getId());
-                }
                 long nextTime = getRescheduleTime(wt);
                 rescheduleWork(work, nextTime);
                 return;
