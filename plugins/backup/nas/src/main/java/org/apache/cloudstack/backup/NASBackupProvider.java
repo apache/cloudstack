@@ -159,6 +159,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
+        command.setExecuteInSequence(!BackupManager.NASBackupParallelExecution.valueIn(vm.getDataCenterId()));
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
