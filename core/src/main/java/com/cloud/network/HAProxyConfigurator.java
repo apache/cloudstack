@@ -514,7 +514,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
             dstSubRule.add(sb.toString());
             if (stickinessSubRule != null) {
-                sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort()).toString();
+                sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort());
                 dstWithCookieSubRule.add(sb.toString());
             }
             destsAvailable = true;
