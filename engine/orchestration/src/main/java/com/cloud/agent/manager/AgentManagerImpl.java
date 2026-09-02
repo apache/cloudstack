@@ -76,11 +76,11 @@ import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.threadcontext.ThreadContextCommandUtil;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -568,21 +568,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs, cleanupTimeInSecs, TimeUnit.SECONDS);
     }
 
-    private AgentControlAnswer handleControlCommand(final AgentAttache attache, final AgentControlCommand cmd) {
-        AgentControlAnswer answer;
-
-        for (final Pair<Integer, Listener> listener : _cmdMonitors) {
-            answer = listener.second().processControlCommand(attache.getId(), cmd);
-
-            if (answer != null) {
-                return answer;
-            }
-        }
-
-        logger.warn("No handling of agent control command: {} sent from {}", cmd, attache);
-        return new AgentControlAnswer(cmd);
-    }
-
     private AgentConnectStatusAnswer handleAgentConnectStatusCommand(AgentAttache attache, AgentConnectStatusCommand cmd) {
         HostVO hostVo = _hostDao.findById(attache.getId());
         if (hostVo == null) {
@@ -710,10 +695,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 cmd.setContextParam("job", "job-" + job.getId());
             }
         }
-        String logcontextid = ThreadContext.get("logcontextid");
-        if (StringUtils.isNotEmpty(logcontextid)) {
-            cmd.setContextParam("logid", logcontextid);
-        }
+        ThreadContextCommandUtil.setContextInCommand(cmd);
     }
 
     /**
@@ -2150,12 +2132,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
          * and request to reconnect (instead of throwing away).
          */
         private void processPingCommand(Link link, PingCommand cmd, Request request) {
-            request.logD("Processing:", true);
-            if (cmd.getContextParam("logid") != null) {
-                ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
-            }
-            boolean requestStartupCommand = cmd instanceof PingRoutingCommand && ((PingRoutingCommand) cmd).isGatewayAccessible();
-            PingAnswer answer = new PingAnswer(cmd, getAvoidMsList(), requestStartupCommand);
+            ThreadContextCommandUtil.propagateContextFromCommand(cmd);
+            boolean sendStartup = cmd instanceof PingRoutingCommand && ((PingRoutingCommand) cmd).isGatewayAccessible();
+            PingAnswer answer = new PingAnswer(cmd, getAvoidMsList(), sendStartup);
             Response response = new Response(request, new Answer[]{answer}, _nodeId, cmd.getHostId());
             response.setSequence(request.getSequence());
             response.logD("Sending:", true);
@@ -2181,9 +2160,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Command cmd = cmds[0];
             boolean logD = true;
 
-            if (cmd !=null && cmd.getContextParam("logid") != null) {
-                ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
-            }
+            ThreadContextCommandUtil.propagateContextFromCommand(cmd);
 
             if (attache == null) {
                 // FIXME: if there are more than one command and first is not startup command,
@@ -2251,13 +2228,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                         return;
                     } else if (cmd instanceof AgentControlCommand) {
-                        answer = handleControlCommand(attache, (AgentControlCommand) cmd);
+                        answer = handleAgentControlCommand(attache, (AgentControlCommand) cmd);
                     } else if (cmd instanceof AgentConnectStatusCommand) {
                         answer = handleAgentConnectStatusCommand(attache, (AgentConnectStatusCommand) cmd);
                     } else {
                         handleCommands(attache, request.getSequence(), new Command[] {cmd});
                         if (cmd instanceof PingCommand) {
                             final long cmdHostId = ((PingCommand)cmd).getHostId();
+                            boolean requestStartupCommand = false;
 
                             final HostVO host = _hostDao.findById(cmdHostId);
                             boolean gatewayAccessible = true;
@@ -2285,7 +2263,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                 }
                             }
 
-                            boolean requestStartupCommand = false;
                             if (host != null && gatewayAccessible) {
                                 requestStartupCommand = sendRequestStartupCommand(hostId, host);;
                             }
@@ -2365,6 +2342,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } else if (!attache.processAnswers(response.getSequence(), response)) {
                 logger.info("Host {} - Seq {}: Response is not processed: {}", attache, response.getSequence(), response);
             }
+        }
+
+        private AgentControlAnswer handleAgentControlCommand(final AgentAttache attache, final AgentControlCommand cmd) {
+            AgentControlAnswer answer;
+
+            for (final Pair<Integer, Listener> listener : _cmdMonitors) {
+                answer = listener.second().processControlCommand(attache.getId(), cmd);
+                if (answer != null) {
+                    return answer;
+                }
+            }
+
+            logger.warn("No handling of agent control command: {} sent from {}", cmd, attache);
+            return new AgentControlAnswer(cmd);
         }
 
         private void processAgentConnectStatusCommand(Link link, AgentConnectStatusCommand cmd, Request request) {

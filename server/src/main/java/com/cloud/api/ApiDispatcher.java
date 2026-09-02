@@ -36,6 +36,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.threadcontext.ThreadContextUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -120,6 +121,9 @@ public class ApiDispatcher {
         standardDispatchChain.dispatch(new DispatchTask(cmd, params));
 
         final CallContext ctx = CallContext.current();
+
+        ThreadContextUtil.setUuid(params.get(ApiConstants.UUID));
+
         ctx.setEventDisplayEnabled(cmd.isDisplay());
         if(params.get(ApiConstants.PROJECT_ID) != null) {
             Project project = _entityMgr.findByUuidIncludingRemoved(Project.class, params.get(ApiConstants.PROJECT_ID));
