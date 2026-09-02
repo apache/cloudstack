@@ -433,6 +433,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     @Override
     public void scheduleRestart(VMInstanceVO vm, boolean investigate, ReasonType reasonType) {
+        if (VirtualMachine.State.Error.equals(vm.getState())) {
+            logger.info("Skipping HA restart for VM {} because it is in Error state", vm);
+            return;
+        }
+
         if (!VmHaEnabled.valueIn(vm.getDataCenterId())) {
             String message = String.format("Unable to schedule restart for the VM %s (%d), VM high availability manager is disabled.", vm.getName(), vm.getId());
             if (logger.isDebugEnabled()) {
@@ -600,6 +605,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info("Unable to find vm: " + vmId);
             return null;
         }
+        if (VirtualMachine.State.Error.equals(vm.getState())) {
+            logger.info("Skipping HA restart for VM {} because it is in Error state", vm);
+            return null;
+        }
+
         if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
