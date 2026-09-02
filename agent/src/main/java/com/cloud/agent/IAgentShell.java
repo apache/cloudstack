@@ -72,4 +72,14 @@ public interface IAgentShell {
     void launchNewAgent(ServerResource resource) throws ConfigurationException;
 
     Integer getSslHandshakeTimeout();
+
+    /**
+     * Sets the last host where the agent successfully completed its setup process
+     * and received a Ready command. This value is persisted across agent restarts
+     * and used as a last-resort fallback during reconnection: it is appended after
+     * the configured hosts and tried only once all of them have failed.
+     *
+     * @param host the hostname or IP address where the agent setup completed successfully
+     */
+    void setLastSetupCompletedHost(String host);
 }

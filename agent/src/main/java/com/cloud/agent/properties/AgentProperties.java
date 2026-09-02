@@ -58,6 +58,14 @@ public class AgentProperties{
     public static final Property<String> HOST = new Property<>("host", "localhost");
 
     /**
+     * The name of the last host where the agent successfully completed its setup process
+     * and received a Ready command
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> LAST_SETUP_COMPLETED_HOST = new Property<>("last.setup.completed.host", null, String.class);
+
+    /**
      * The time interval (in seconds) after which the agent will check if the connected host is the preferred host.<br>
      * After that interval, if the agent is connected to one of the secondary/backup hosts, it will attempt to reconnect to the preferred host.<br>
      * For more information see the agent.properties file.<br>

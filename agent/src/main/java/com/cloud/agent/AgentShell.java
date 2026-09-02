@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -154,7 +155,24 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public String[] getHosts() {
-        return _host.split(",");
+        String lastSetupCompletedHost = getLastSetupCompletedHost();
+        String host;
+        // Add the last successful setup host as a fallback option at the end of the host list.
+        // This host is tried only after all configured hosts have failed, providing a
+        // last-resort connection option since this host previously completed setup successfully.
+        if (StringUtils.isNotBlank(lastSetupCompletedHost) && StringUtils.isNotBlank(_host)) {
+            final String candidate = lastSetupCompletedHost.trim();
+            // Match against the exact comma-separated entries so a substring (e.g. 10.0.0.1 in
+            // 10.0.0.10) does not wrongly suppress the fallback.
+            final boolean alreadyPresent = Arrays.stream(_host.split(","))
+                    .map(String::trim)
+                    .anyMatch(candidate::equalsIgnoreCase);
+            host = alreadyPresent ? _host : _host + "," + candidate;
+        } else {
+            host = _host;
+        }
+
+        return host.split(",");
     }
 
     @Override
@@ -462,6 +480,26 @@ public class AgentShell implements IAgentShell, Daemon {
     @Override
     public Integer getSslHandshakeTimeout() {
         return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SSL_HANDSHAKE_TIMEOUT);
+    }
+
+    @Override
+    public void setLastSetupCompletedHost(String host) {
+        if (StringUtils.isNotBlank(host)) {
+            setPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName(), host);
+        }
+    }
+
+    /**
+     * Gets the last host where the agent successfully completed its setup process
+     * and received a Ready command.
+     *
+     * @return the hostname or IP address of the last successfully setup host, or null if none exists
+     */
+    private String getLastSetupCompletedHost() {
+        if (_storage != null) {
+            return getPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName());
+        }
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LAST_SETUP_COMPLETED_HOST);
     }
 
     public synchronized int getNextAgentId() {
