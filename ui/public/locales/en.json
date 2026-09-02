@@ -1561,6 +1561,7 @@
 "label.lastupdated": "Last update",
 "label.lastannotated": "Last annotation date",
 "label.lastheartbeat": "Last heartbeat",
+"label.lastpinged": "Last connected",
 "label.lastsuccessfuljob": "Last successful job",
 "label.lastboottime": "Boot time of the management server machine",
 "label.lastname": "Last name",

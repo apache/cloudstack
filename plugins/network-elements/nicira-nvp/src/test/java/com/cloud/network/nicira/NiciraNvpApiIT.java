@@ -273,8 +273,6 @@ public class NiciraNvpApiIT {
                 }
             }
 
-            UUID.randomUUID().toString();
-
             // Test CRUD for Nat Rules
             SourceNatRule snr = new SourceNatRule();
             snr.setToSourceIpAddressMin("192.168.10.10");
