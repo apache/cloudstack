@@ -78,6 +78,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterDrsServiceImplTest {
@@ -950,5 +951,115 @@ public class ClusterDrsServiceImplTest {
         clusterDrsService.processPlans();
 
         Mockito.verify(clusterDrsService, Mockito.times(2)).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
+    }
+
+    // ---- event-driven DRS ----
+    // The ConfigKeys are shared interface constants, so each test that overrides a default restores it
+    // in a finally block to avoid leaking into other tests.
+
+    private static String getConfigDefault(ConfigKey<?> key) throws Exception {
+        Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        return (String) f.get(key);
+    }
+
+    private static void setConfigDefault(ConfigKey<?> key, String value) throws Exception {
+        Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(key, value);
+    }
+
+    @Test
+    public void testShouldTriggerEventDrivenDrsDisabledByDefault() throws Exception {
+        // Automatic DRS enabled but event-driven off -> must not trigger.
+        String origDrs = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        String origEvt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, "false");
+            assertFalse(clusterDrsService.shouldTriggerEventDrivenDrs(1L));
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, origDrs);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, origEvt);
+        }
+    }
+
+    @Test
+    public void testShouldTriggerEventDrivenDrsRequiresAutomaticDrs() throws Exception {
+        // Event-driven on but automatic DRS off -> must not trigger (event-driven depends on drs.automatic.enable).
+        String origDrs = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        String origEvt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "false");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, "true");
+            assertFalse(clusterDrsService.shouldTriggerEventDrivenDrs(1L));
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, origDrs);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, origEvt);
+        }
+    }
+
+    @Test
+    public void testShouldTriggerEventDrivenDrsEnabledThenDebounced() throws Exception {
+        String origDrs = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        String origEvt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled);
+        String origInt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenInterval);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, "true");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenInterval, "5");
+            // First event fires; the per-cluster cooldown then suppresses an immediate second event.
+            assertTrue(clusterDrsService.shouldTriggerEventDrivenDrs(1L));
+            assertFalse(clusterDrsService.shouldTriggerEventDrivenDrs(1L));
+            // A different cluster has an independent cooldown and still fires.
+            assertTrue(clusterDrsService.shouldTriggerEventDrivenDrs(2L));
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, origDrs);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, origEvt);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenInterval, origInt);
+        }
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmSchedulesWhenEnabled() throws Exception {
+        String origDrs = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        String origEvt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, "true");
+
+            VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+            Mockito.when(vm.getHostId()).thenReturn(10L);
+            HostVO host = Mockito.mock(HostVO.class);
+            Mockito.when(host.getClusterId()).thenReturn(1L);
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(vmInstanceDao.findById(100L)).thenReturn(vm);
+            Mockito.when(hostDao.findById(10L)).thenReturn(host);
+            Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+            // Don't actually run DRS on a background thread in the test.
+            Mockito.doNothing().when(clusterDrsService).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+
+            clusterDrsService.triggerEventDrivenDrsForVm(100L);
+
+            Mockito.verify(clusterDrsService, Mockito.times(1)).submitEventDrivenDrs(Mockito.eq(cluster), Mockito.anyInt());
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, origDrs);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, origEvt);
+        }
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmDoesNotScheduleWhenDisabled() {
+        // Defaults: both flags false -> must not schedule, even though the VM resolves to a cluster.
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getHostId()).thenReturn(10L);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(1L);
+        Mockito.when(vmInstanceDao.findById(100L)).thenReturn(vm);
+        Mockito.when(hostDao.findById(10L)).thenReturn(host);
+
+        clusterDrsService.triggerEventDrivenDrsForVm(100L);
+
+        Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
     }
 }

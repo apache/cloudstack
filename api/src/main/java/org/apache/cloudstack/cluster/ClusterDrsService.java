@@ -45,6 +45,20 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             "The interval in minutes after which a periodic background thread will schedule DRS for a cluster.", true,
             ConfigKey.Scope.Cluster, null, "Interval for Automatic DRS ", null, null, null);
 
+    ConfigKey<Boolean> ClusterDrsEventDrivenEnabled = new ConfigKey<>(Boolean.class, "drs.event.driven.enable",
+            ConfigKey.CATEGORY_ADVANCED, "false",
+            "In addition to the periodic drs.automatic.interval timer, trigger DRS for a cluster on VM " +
+                    "power-state events (deploy, start, stop, migrate) so it reacts to imbalance in near-real-time " +
+                    "rather than waiting a whole interval. Requires drs.automatic.enable; rate-limited per cluster " +
+                    "by drs.event.driven.interval.", true,
+            ConfigKey.Scope.Cluster, null, "Enable event-driven DRS", null, null, null);
+
+    ConfigKey<Integer> ClusterDrsEventDrivenInterval = new ConfigKey<>(Integer.class, "drs.event.driven.interval",
+            ConfigKey.CATEGORY_ADVANCED, "5",
+            "Minimum minutes between event-triggered DRS runs for a cluster (debounce). " +
+                    "Only applies when drs.event.driven.enable is true.", true,
+            ConfigKey.Scope.Cluster, null, "Event-driven DRS min interval", null, null, null);
+
     ConfigKey<Integer> ClusterDrsMaxMigrations = new ConfigKey<>(Integer.class, "drs.max.migrations",
             ConfigKey.CATEGORY_ADVANCED, "50",
             "Maximum number of live migrations in a DRS execution.",
