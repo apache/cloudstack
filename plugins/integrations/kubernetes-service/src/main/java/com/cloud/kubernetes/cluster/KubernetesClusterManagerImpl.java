@@ -611,7 +611,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (Network.State.Allocated.equals(network.getState())) { // Allocated networks won't have IP and rules
             return;
         }
-        if (network.getNetworkACLId() == NetworkACL.DEFAULT_DENY) {
+        if (Objects.equals(network.getNetworkACLId(), NetworkACL.DEFAULT_DENY)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s can not be used for Kubernetes cluster as it uses default deny ACL", network.getUuid()));
         }
     }
