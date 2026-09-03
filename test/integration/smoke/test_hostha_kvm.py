@@ -156,20 +156,6 @@ class TestHAKVM(cloudstackTestCase):
         response = self.apiclient.enableHAForHost(self.getHostHaEnableCmd())
         self.assertEqual(response.haenable, True)
     
-    def setupDummyOOBM(self):
-        from apache.cloudstack.api.command.admin.outOfBandManagement import configureOutOfBandManagementForHost, enableOutOfBandManagementForHost
-        oobm_cmd = configureOutOfBandManagementForHost.configureOutOfBandManagementForHostCmd()
-        oobm_cmd.hostid = self.host.id
-        oobm_cmd.address = "10.1.1.1"
-        oobm_cmd.driver = "ipmitool"
-        oobm_cmd.username = "admin"
-        oobm_cmd.password = "password"
-        self.apiclient.configureOutOfBandManagementForHost(oobm_cmd)
-        
-        enable_oobm_cmd = enableOutOfBandManagementForHost.enableOutOfBandManagementForHostCmd()
-        enable_oobm_cmd.hostid = self.host.id
-        self.apiclient.enableOutOfBandManagementForHost(enable_oobm_cmd)
-
     def configureAndDisableHostHa(self):
         self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())

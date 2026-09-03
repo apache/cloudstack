@@ -126,21 +126,6 @@ class TestHostHA(cloudstackTestCase):
         cmd = listHostHAResources.listHostHAResourcesCmd()
         cmd.hostid = self.getHost().id
         return cmd
-
-    def setupDummyOOBM(self):
-        from apache.cloudstack.api.command.admin.outOfBandManagement import configureOutOfBandManagementForHost, enableOutOfBandManagementForHost
-        
-        oobm_cmd = configureOutOfBandManagementForHost.configureOutOfBandManagementForHostCmd()
-        oobm_cmd.hostid = self.host.id
-        oobm_cmd.address = "10.1.1.1"
-        oobm_cmd.driver = "ipmitool"
-        oobm_cmd.username = "admin"
-        oobm_cmd.password = "password"
-        self.apiclient.configureOutOfBandManagementForHost(oobm_cmd)
-        
-        enable_oobm_cmd = enableOutOfBandManagementForHost.enableOutOfBandManagementForHostCmd()
-        enable_oobm_cmd.hostid = self.host.id
-        self.apiclient.enableOutOfBandManagementForHost(enable_oobm_cmd)
         
     def configureAndEnableHostHa(self, initialize=True):
         self.setupDummyOOBM()
