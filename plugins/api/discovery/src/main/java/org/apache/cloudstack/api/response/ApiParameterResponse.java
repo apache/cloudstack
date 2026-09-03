@@ -54,6 +54,10 @@ public class ApiParameterResponse extends BaseResponse {
     @Param(description = "Comma separated related APIs to get the parameter")
     private String related;
 
+    @SerializedName("allowedvalues")
+    @Param(description = "List of allowed values for this parameter")
+    private List<String> allowedValues;
+
     private transient List<RoleType> authorizedRoleTypes = null;
 
     public ApiParameterResponse() {
@@ -89,6 +93,14 @@ public class ApiParameterResponse extends BaseResponse {
 
     public void setRelated(String related) {
         this.related = related;
+    }
+
+    public List<String> getAllowedValues() {
+        return allowedValues;
+    }
+
+    public void setAllowedValues(List<String> allowedValues) {
+        this.allowedValues = allowedValues;
     }
 
     public void setAuthorizedRoleTypes(List<RoleType> authorizedRoleTypes) {
