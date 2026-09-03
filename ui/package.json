@@ -80,7 +80,7 @@
     "vuex": "^4.0.0-0"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.5",
+    "@babel/core": "^7.29.6",
     "@vue/cli": "^4.4.1",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
