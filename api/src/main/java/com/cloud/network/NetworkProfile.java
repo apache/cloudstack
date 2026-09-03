@@ -62,7 +62,6 @@ public class NetworkProfile implements Network {
     private Long networkAclId;
     private final String guruName;
     private boolean strechedL2Subnet;
-    private String externalId;
     private Integer networkCidrSize;
 
     public NetworkProfile(Network network) {
@@ -99,7 +98,6 @@ public class NetworkProfile implements Network {
         strechedL2Subnet = network.isStrechedL2Network();
         isRedundant = network.isRedundant();
         isRollingRestart = network.isRollingRestart();
-        externalId = network.getExternalId();
         networkCidrSize = network.getNetworkCidrSize();
     }
 
@@ -343,11 +341,6 @@ public class NetworkProfile implements Network {
     @Override
     public boolean isStrechedL2Network() {
         return false;
-    }
-
-    @Override
-    public String getExternalId() {
-        return externalId;
     }
 
     @Override
