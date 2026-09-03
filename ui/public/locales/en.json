@@ -3983,6 +3983,7 @@
 "message.restart.vpc": "Please confirm that you want to restart the VPC.",
 "message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><i>Remark: making a non-redundant VPC redundant will force a clean up. The Networks will not be available for a couple of minutes</i>.</p>",
 "message.running.custom.action": "Running action",
+"message.saml.account.no.password": "This account will authenticate via SAML SSO, so no password is needed — one will be generated automatically.",
 "message.scale.processing": "Scale in progress",
 "message.scaledown.policies": "Please add at least a ScaleDown policy. The AutoScale Group will be scaled down when all conditions in a ScaleDown policy are matched. ScaleDown policies will be checked after ScaleUp policies.",
 "message.scaledown.policy.continue": "Please add at least condition to ScaleDown policy to continue",
