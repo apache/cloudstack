@@ -1216,14 +1216,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
             // remove the status for those ones
             for (ManagementServerHost node : nodeList) {
-                logger.info(String.format("node %s (%s) at %s (%od) is reported to have left the cluster, invalidating status.",node.getName(), node.getUuid(), node.getServiceIP(), node.getMsid()));
+                logger.info("node {} ({}) at {} ({}) is reported to have left the cluster, invalidating status.",
+                        node.getHostIdentifier(), node.getUuid(), node.getServiceIP(), node.getMsid());
                 managementServerHostStats.remove(node.getUuid());
             }
         }
 
         @Override
         public void onManagementNodeIsolated() {
-            logger.error(String.format("This management server is reported to be isolated (msid %d", mgmtSrvrId));
+            logger.error("This management server is reported to be isolated (msid {})", mgmtSrvrId);
             // not sure if anything should be done now.
         }
     }
