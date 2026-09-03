@@ -172,7 +172,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             Pair<String, Long> subGroup = key.subGroup();
             ConfigurationSubGroupVO subGroupVO = _configSubGroupDao.findByNameAndGroup(subGroup.first(), groupId);
             if (subGroupVO == null) {
-                subGroupVO = new ConfigurationSubGroupVO();
+                subGroupVO = new ConfigurationSubGroupVO(subGroup.first(), null, subGroup.second());
+                subGroupVO.setGroupId(groupId);
                 subGroupVO = _configSubGroupDao.persist(subGroupVO);
             }
             subGroupId = subGroupVO.getId();
