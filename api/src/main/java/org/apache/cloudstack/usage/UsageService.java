@@ -45,6 +45,9 @@ public interface UsageService {
     ConfigKey<Boolean> EnableUsageServer = new ConfigKey<>("Usage", Boolean.class, "enable.usage.server", "true",
             "Flag for enabling usage", true);
 
+    ConfigKey<Boolean> UsageSnapshotVirtualSizeSelect = new ConfigKey<>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
+            "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered", true);
+
     /**
      * Generate Billing Records from the last time it was generated to the
      * time specified.
