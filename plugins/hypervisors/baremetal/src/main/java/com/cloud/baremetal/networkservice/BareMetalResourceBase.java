@@ -178,7 +178,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
 
         try {
-            ipmiRetryTimes = Integer.parseInt(BaremetalManager.BaremetalIpmiRetryTimes.value());
+            ipmiRetryTimes = BaremetalManager.BaremetalIpmiRetryTimes.value();
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
         }

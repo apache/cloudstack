@@ -129,10 +129,10 @@ public interface ManagementServer extends ManagementService, PluggableService {
     ConfigKey<Integer> AlertPurgeDelay = new ConfigKey<>("Advanced", Integer.class, "alert.purge.delay", "0",
             "Alerts older than specified number days will be purged. Set this value to 0 to never delete alerts", true);
 
-    ConfigKey<String> ControlCidr = new ConfigKey<>("Advanced", String.class, "control.cidr", "169.254.0.0/16",
+    ConfigKey<String> ControlCidr = new ConfigKey<>("Advanced", String.class, "control.cidr", "169.254.0.0/16", //NOSONAR: RFC 3927 link-local block, not a real/routable address
             "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", true);
 
-    ConfigKey<String> ControlGateway = new ConfigKey<>("Advanced", String.class, "control.gateway", "169.254.0.1",
+    ConfigKey<String> ControlGateway = new ConfigKey<>("Advanced", String.class, "control.gateway", "169.254.0.1", //NOSONAR: RFC 3927 link-local block, not a real/routable address
             "gateway for the control network traffic", true);
 
     ConfigKey<Integer> DetailBatchQuerySize = new ConfigKey<>("Advanced", Integer.class, "detail.batch.query.size", "2000",

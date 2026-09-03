@@ -57,7 +57,7 @@ public interface SecondaryStorageVmManager extends Manager {
             "The mount point on the Management Server for Secondary Storage.", true);
 
     ConfigKey<Boolean> SystemVMAutoReserveCapacity = new ConfigKey<>("Advanced", Boolean.class, "system.vm.auto.reserve.capacity", "true",
-            "Indicates whether or not to automatically reserver system VM standby capacity.", true);
+            "Indicates whether or not to automatically reserve system VM standby capacity.", true);
 
     ConfigKey<Boolean> SystemVMRandomPassword = new ConfigKey<>("Advanced", Boolean.class, "system.vm.random.password", "false",
             "Randomize system vm password the first time management server starts", true);
