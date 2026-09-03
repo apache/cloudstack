@@ -704,7 +704,7 @@ export default {
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
-        egressdefaultpolicy: 'deny',
+        egressdefaultpolicy: 'allow',
         ispublic: this.isPublic,
         nsxsupportlb: true,
         routingmode: 'static'
