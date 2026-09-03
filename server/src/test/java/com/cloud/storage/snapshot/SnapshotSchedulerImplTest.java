@@ -48,6 +48,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -349,12 +350,35 @@ public class SnapshotSchedulerImplTest {
 
     // --- handleFailedSnapshotDispatch (#13454) ---
 
-    @Test
-    public void handleFailedSnapshotDispatchTestUnderMaxReschedulesWithRetryIntervalOnly() {
+    private void stubVolumeAndAccount() {
         Mockito.doReturn(1L).when(volumeVoMock).getId();
         Mockito.doReturn(1L).when(volumeVoMock).getAccountId();
         Mockito.doReturn(1L).when(volumeVoMock).getDataCenterId();
         Mockito.doReturn(accountVoMock).when(accountDaoMock).findById(Mockito.anyLong());
+    }
+
+    private void stubConsecutiveFailureEvents(int count) {
+        List<EventVO> events = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            EventVO event = Mockito.mock(EventVO.class);
+            Mockito.doReturn(EventVO.LEVEL_ERROR).when(event).getLevel();
+            events.add(event);
+        }
+        Mockito.doReturn(events).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+    }
+
+    // Must use a distinct event type from EVENT_SNAPSHOT_CREATE, otherwise it becomes the "latest event" scanned
+    // by countConsecutiveFailedAttempts and silently resets the consecutive-failure count on the next attempt.
+    private void verifyFailureThresholdEventsRaised(MockedStatic<ActionEventUtils> actionEventUtilsMocked) {
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_ERROR), Mockito.eq(EventTypes.EVENT_SNAPSHOT_CREATE), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_WARN), Mockito.eq(EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+    }
+
+    @Test
+    public void handleFailedSnapshotDispatchTestUnderMaxReschedulesWithRetryIntervalOnly() {
+        stubVolumeAndAccount();
         Mockito.doReturn(Collections.emptyList()).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
         ReflectionTestUtils.setField(snapshotSchedulerImplSpy, "_currentTimestamp", new Date());
 
@@ -373,16 +397,8 @@ public class SnapshotSchedulerImplTest {
 
     @Test
     public void handleFailedSnapshotDispatchTestAtMaxGivesUpAndNotifies() {
-        Mockito.doReturn(1L).when(volumeVoMock).getId();
-        Mockito.doReturn(1L).when(volumeVoMock).getAccountId();
-        Mockito.doReturn(1L).when(volumeVoMock).getDataCenterId();
-        Mockito.doReturn(accountVoMock).when(accountDaoMock).findById(Mockito.anyLong());
-
-        EventVO error1 = Mockito.mock(EventVO.class);
-        Mockito.doReturn(EventVO.LEVEL_ERROR).when(error1).getLevel();
-        EventVO error2 = Mockito.mock(EventVO.class);
-        Mockito.doReturn(EventVO.LEVEL_ERROR).when(error2).getLevel();
-        Mockito.doReturn(List.of(error1, error2)).when(eventDaoMock).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        stubVolumeAndAccount();
+        stubConsecutiveFailureEvents(2);
 
         Mockito.doReturn(1L).when(snapshotScheduleVoMock).getPolicyId();
         Mockito.doReturn(null).when(snapshotPolicyDaoMock).findById(Mockito.anyLong());
@@ -390,15 +406,23 @@ public class SnapshotSchedulerImplTest {
         try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
             snapshotSchedulerImplSpy.handleFailedSnapshotDispatch(snapshotScheduleVoMock, volumeVoMock, snapshotScheduleVoMock, null, new Exception("boom"));
 
-            actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
-                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_ERROR), Mockito.eq(EventTypes.EVENT_SNAPSHOT_CREATE), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
-            // Must use a distinct event type from EVENT_SNAPSHOT_CREATE, otherwise it becomes the "latest event" scanned
-            // by countConsecutiveFailedAttempts and silently resets the consecutive-failure count on the next attempt.
-            actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
-                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_WARN), Mockito.eq(EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+            verifyFailureThresholdEventsRaised(actionEventUtilsMocked);
         }
 
         Mockito.verify(snapshotScheduleDaoMock).update(Mockito.anyLong(), Mockito.eq(snapshotScheduleVoMock));
+    }
+
+    @Test
+    public void recordSnapshotAttemptOutcomeTestAtMaxNotifiesWithDistinctEventType() {
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        stubVolumeAndAccount();
+        stubConsecutiveFailureEvents(2);
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
+            snapshotSchedulerImplSpy.recordSnapshotAttemptOutcome(snapshotScheduleVoMock, false, "boom");
+
+            verifyFailureThresholdEventsRaised(actionEventUtilsMocked);
+        }
     }
 
     // --- shouldSkipUnchangedVolumeSnapshot (#6827) ---

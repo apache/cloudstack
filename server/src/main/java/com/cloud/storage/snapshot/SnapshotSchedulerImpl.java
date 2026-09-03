@@ -248,10 +248,20 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
         if (maxFailures > 0 && totalFailures >= maxFailures) {
             logger.warn("Snapshot schedule [{}] for volume [{}] has failed [{}] consecutive times.", snapshotSchedule, volume, totalFailures);
-            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_CREATE, true,
-                    String.format("Recurring snapshot for volume [%s] has failed %d consecutive times.", volume, totalFailures),
-                    volume.getId(), ApiCommandResourceType.Volume.toString());
+            raiseFailureLimitReachedEvent(volume, String.format("Recurring snapshot for volume [%s] has failed %d consecutive times.", volume, totalFailures));
         }
+    }
+
+    /**
+     * Raises the WARN notification event for a volume's recurring snapshot having reached
+     * {@link SnapshotManager#SnapshotRecurringMaxFailures} consecutive failures. Kept as a single call site (used by
+     * both {@link #recordSnapshotAttemptOutcome} and {@link #handleFailedSnapshotDispatch}) so it can't drift onto
+     * {@link EventTypes#EVENT_SNAPSHOT_CREATE} again, which would make it part of the event stream that
+     * {@link #countConsecutiveFailedAttempts} scans and silently reset the count.
+     */
+    private void raiseFailureLimitReachedEvent(final VolumeVO volume, final String message) {
+        ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED, true,
+                message, volume.getId(), ApiCommandResourceType.Volume.toString());
     }
 
     @DB
@@ -384,9 +394,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             lockedSchedule.setScheduledTimestamp(nextRegularRun);
             logger.warn("Snapshot schedule [{}] for volume [{}] has failed [{}] consecutive times; it will not be retried until its next regularly scheduled run at [{}].",
                     snapshotToBeExecuted, volume, totalFailures, nextRegularRun);
-            ActionEventUtils.onCreatedActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_SNAPSHOT_RECURRING_FAILURE_LIMIT_REACHED, true,
-                    String.format("Recurring snapshot for volume [%s] has failed %d consecutive times and will not be retried until its next regularly scheduled run.", volume, totalFailures),
-                    volumeId, ApiCommandResourceType.Volume.toString());
+            raiseFailureLimitReachedEvent(volume, String.format(
+                    "Recurring snapshot for volume [%s] has failed %d consecutive times and will not be retried until its next regularly scheduled run.", volume, totalFailures));
         } else {
             final Date nextRetry = new Date(_currentTimestamp.getTime() + retryInterval * 1000L);
             lockedSchedule.setScheduledTimestamp(nextRetry);
