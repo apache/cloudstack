@@ -2006,7 +2006,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     if (_resourceMgr.checkAndMaintain(host.getId())) {
                         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                         final HostPodVO podVO = _podDao.findById(host.getPodId());
-                        final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                        final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
                         _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc,
                                 "Host [" + hostDesc + "] is ready for maintenance");
                     }

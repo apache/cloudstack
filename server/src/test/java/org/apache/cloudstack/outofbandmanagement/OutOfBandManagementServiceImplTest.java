@@ -97,24 +97,32 @@ public class OutOfBandManagementServiceImplTest {
 
     private OutOfBandManagementServiceImpl service;
 
+    private static Field cacheField;
+    private static Field executorField;
+    private static Object originalCache;
+    private static Object originalExecutor;
+
     @BeforeClass
     public static void setUpStaticFields() throws Exception {
-        Field cacheField = OutOfBandManagementServiceImpl.class.getDeclaredField("hostAlertCache");
+        cacheField = OutOfBandManagementServiceImpl.class.getDeclaredField("hostAlertCache");
         cacheField.setAccessible(true);
+        originalCache = cacheField.get(null);
         cacheField.set(null, CacheBuilder.newBuilder().build());
 
-        Field executorField = OutOfBandManagementServiceImpl.class.getDeclaredField("backgroundSyncBlockingExecutor");
+        executorField = OutOfBandManagementServiceImpl.class.getDeclaredField("backgroundSyncBlockingExecutor");
         executorField.setAccessible(true);
+        originalExecutor = executorField.get(null);
         executorField.set(null, Executors.newSingleThreadExecutor());
     }
 
     @AfterClass
     public static void tearDownStaticFields() throws Exception {
-        Field executorField = OutOfBandManagementServiceImpl.class.getDeclaredField("backgroundSyncBlockingExecutor");
-        executorField.setAccessible(true);
         ExecutorService executor = (ExecutorService) executorField.get(null);
         executor.shutdownNow();
         executor.awaitTermination(5, TimeUnit.SECONDS);
+
+        cacheField.set(null, originalCache);
+        executorField.set(null, originalExecutor);
     }
 
     @Before

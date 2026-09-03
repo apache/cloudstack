@@ -281,9 +281,9 @@ public class DateraHostListener implements HypervisorHostListener {
 
         if (!answer.getResult()) {
             HostVO host = _hostDao.findById(hostId);
-            String msg = String.format("Unable to modify targets on the following host: %s", host);
+            String msg = String.format("Unable to modify targets on the following host: %s", host != null ? host : "id " + hostId);
 
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host != null ? host.getDataCenterId() : -1L, host != null ? host.getPodId() : null, msg, msg);
 
             throw new CloudRuntimeException(msg);
         }
@@ -298,7 +298,7 @@ public class DateraHostListener implements HypervisorHostListener {
 
         if (!answer.getResult()) {
             HostVO host = _hostDao.findById(hostId);
-            String msg = String.format("Unable to attach storage pool %s to host %s", storagePool, host);
+            String msg = String.format("Unable to attach storage pool %s to host %s", storagePool, host != null ? host : "id " + hostId);
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
