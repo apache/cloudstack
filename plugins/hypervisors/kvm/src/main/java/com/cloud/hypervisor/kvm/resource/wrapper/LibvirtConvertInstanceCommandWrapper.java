@@ -19,7 +19,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -214,10 +214,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         if (StringUtils.isNotBlank(path)) {
             logger.info("({}) VM path: {}", originalVMName, path);
             return String.format("vi://%s:%s@%s/%s/%s/%s",
-                    encodedUsername, encodedPassword, vcenter, datacenter, path, vm);
+                    encodedUsername, encodedPassword, vcenter, encodePathSegments(datacenter), encodePathSegments(path), encodePathSegment(vm));
         }
         return String.format("vi://%s:%s@%s/%s/vm/%s",
-                encodedUsername, encodedPassword, vcenter, datacenter, vm);
+                encodedUsername, encodedPassword, vcenter, encodePathSegments(datacenter), encodePathSegment(vm));
     }
 
     protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
@@ -296,7 +296,28 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     }
 
     protected String encodeUsername(String username) {
-        return URLEncoder.encode(username, Charset.defaultCharset());
+        return URLEncoder.encode(username, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private String encodePathSegment(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private String encodePathSegments(String value) {
+        if (StringUtils.isBlank(value)) {
+            return value;
+        }
+        StringBuilder encoded = new StringBuilder();
+        for (String seg : value.split("/", -1)) {
+            if (encoded.length() > 0) {
+                encoded.append("/");
+            }
+            encoded.append(encodePathSegment(seg));
+        }
+        return encoded.toString();
     }
 
     private String resolveVddkSetting(String commandValue, String agentValue) {
@@ -477,14 +498,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 .append("@")
                 .append(vcenter)
                 .append("/")
-                .append(datacenter);
+                .append(encodePathSegments(datacenter));
 
         if (StringUtils.isNotBlank(cluster)) {
-            url.append("/").append(cluster);
+            url.append("/").append(encodePathSegments(cluster));
         }
 
         if (StringUtils.isNotBlank(host)) {
-            url.append("/").append(host);
+            url.append("/").append(encodePathSegment(host));
         }
 
         url.append("?no_verify=1");
