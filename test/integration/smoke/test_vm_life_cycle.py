@@ -858,6 +858,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             zoneid=self.zone.id
         )
 
+        time.sleep(10)
         small_virtual_machine.attach_volume(self.apiclient, vol1)
 
         self.debug("Destroy VM - ID: %s" % small_virtual_machine.id)
