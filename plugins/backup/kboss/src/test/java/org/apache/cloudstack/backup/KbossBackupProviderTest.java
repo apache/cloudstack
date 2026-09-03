@@ -787,6 +787,8 @@ public class KbossBackupProviderTest {
         doNothing().when(kbossBackupProviderSpy).validateStorages(any(), any());
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(any());
         doReturn(dataStoreMock).when(kbossBackupProviderSpy).getImageStoreForBackup(any(), any());
+        doReturn(false).when(kbossBackupProviderSpy).offeringSupportsCompression(any());
+        doReturn(false).when(kbossBackupProviderSpy).checkSyncCompressionAndConfigureCommand(any(), anyBoolean(), any(), any());
 
         Pair<Boolean, Long> result = kbossBackupProviderSpy.orchestrateTakeBackup(backupVoMock, false, true);
         assertFalse(result.first());
@@ -815,9 +817,10 @@ public class KbossBackupProviderTest {
         doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
-        doReturn(true).when(kbossBackupProviderSpy).offeringSupportsCompression(internalBackupJoinVoMock);
+                anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
         doNothing().when(kbossBackupProviderSpy).compressBackupAsync(internalBackupJoinVoMock, 0, 0);
+        doReturn(true).when(kbossBackupProviderSpy).offeringSupportsCompression(any());
+        doReturn(false).when(kbossBackupProviderSpy).checkSyncCompressionAndConfigureCommand(any(), anyBoolean(), any(), any());
 
         Pair<Boolean, Long> result = kbossBackupProviderSpy.orchestrateTakeBackup(backupVoMock, false, true);
         assertTrue(result.first());
@@ -825,7 +828,7 @@ public class KbossBackupProviderTest {
         verify(kbossBackupProviderSpy, Mockito.times(1)).setBackupAsIsolated(backupVoMock);
         verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
         verify(kbossBackupProviderSpy, Mockito.times(1)).compressBackupAsync(internalBackupJoinVoMock, 0, 0);
     }
 
@@ -850,9 +853,10 @@ public class KbossBackupProviderTest {
         doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
-        doReturn(false).when(kbossBackupProviderSpy).offeringSupportsCompression(internalBackupJoinVoMock);
+                anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
         doNothing().when(kbossBackupProviderSpy).validateBackupAsyncIfHasOfferingSupport(any(), anyLong(), anyLong());
+        doReturn(false).when(kbossBackupProviderSpy).offeringSupportsCompression(any());
+        doReturn(false).when(kbossBackupProviderSpy).checkSyncCompressionAndConfigureCommand(any(), anyBoolean(), any(), any());
 
         Pair<Boolean, Long> result = kbossBackupProviderSpy.orchestrateTakeBackup(backupVoMock, false, false);
         assertTrue(result.first());
@@ -861,7 +865,7 @@ public class KbossBackupProviderTest {
         verify(internalBackupDataStoreDaoMock).listByBackupId(0);
         verify(kbossBackupProviderSpy, Mockito.times(2)).createDeltaReferences(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), any(), any(), any(), any(), any(), any(), any());
         verify(kbossBackupProviderSpy, Mockito.times(1)).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
-                anyLong(), anyBoolean(), anyBoolean());
+                anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
         verify(kbossBackupProviderSpy, Mockito.times(1)).validateBackupAsyncIfHasOfferingSupport(internalBackupJoinVoMock, 0, 0);
     }
 

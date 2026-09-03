@@ -629,6 +629,7 @@
 "label.complete": "Complete",
 "label.completed": "Completed",
 "label.compress": "Compress",
+"label.compressasync": "Compress asynchronously",
 "label.compressionstatus": "Compression status",
 "label.compressionlibrary": "Compression library",
 "label.compute": "Compute",
