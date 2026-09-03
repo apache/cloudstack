@@ -160,6 +160,38 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxipdiscoveryprofileid" ref="nsxipdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.ip.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.ip.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxipdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxmacdiscoveryprofileid" ref="nsxmacdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.mac.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.mac.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxmacdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxsegmentsecurityprofileid" ref="nsxsegmentsecurityprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.segment.security.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.segment.security.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxsegmentsecurityprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated'">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
@@ -707,6 +739,9 @@ export default {
         egressdefaultpolicy: 'deny',
         ispublic: this.isPublic,
         nsxsupportlb: true,
+        nsxipdiscoveryprofileid: '',
+        nsxmacdiscoveryprofileid: '',
+        nsxsegmentsecurityprofileid: '',
         routingmode: 'static'
       })
       this.rules = reactive({
@@ -1136,7 +1171,8 @@ export default {
         var params = {}
 
         var keys = Object.keys(values)
-        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
+        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning',
+          'nsxipdiscoveryprofileid', 'nsxmacdiscoveryprofileid', 'nsxsegmentsecurityprofileid']
         const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
           if (!ignoredKeys.includes(key) &&
