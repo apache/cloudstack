@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -228,5 +229,49 @@ public class KubernetesClusterActionWorkerTest {
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains(99L));
         Assert.assertTrue(result.contains(2L));
+    }
+
+    @Test
+    public void testCleanupScriptFilesDeletesAllTempFiles() throws Exception {
+        actionWorker.deploySecretsScriptFile = File.createTempFile("deploy-cloudstack-secret", ".sh");
+        actionWorker.deployProviderScriptFile = File.createTempFile("deploy-provider", ".sh");
+        actionWorker.deployCsiDriverScriptFile = File.createTempFile("deploy-csi-driver", ".sh");
+        actionWorker.deletePvScriptFile = File.createTempFile("delete-pv-reclaimpolicy-delete", ".sh");
+        actionWorker.autoscaleScriptFile = File.createTempFile("autoscale-kube-cluster", ".sh");
+
+        List<File> files = Arrays.asList(actionWorker.deploySecretsScriptFile, actionWorker.deployProviderScriptFile,
+                actionWorker.deployCsiDriverScriptFile, actionWorker.deletePvScriptFile, actionWorker.autoscaleScriptFile);
+        for (File f : files) {
+            Assert.assertTrue(f.exists());
+        }
+
+        actionWorker.cleanupScriptFiles();
+
+        for (File f : files) {
+            Assert.assertFalse("Temporary script file should have been deleted: " + f.getAbsolutePath(), f.exists());
+        }
+    }
+
+    @Test
+    public void testDeleteScriptFileQuietlyHandlesNullAndMissingFiles() throws Exception {
+        // null must not throw
+        actionWorker.deleteScriptFileQuietly(null);
+
+        // a File that does not exist must not throw
+        File missing = new File(System.getProperty("java.io.tmpdir"), "cks-nonexistent-" + UUID.randomUUID() + ".sh");
+        Assert.assertFalse(missing.exists());
+        actionWorker.deleteScriptFileQuietly(missing);
+
+        // an existing file is deleted
+        File present = File.createTempFile("cks-present", ".sh");
+        Assert.assertTrue(present.exists());
+        actionWorker.deleteScriptFileQuietly(present);
+        Assert.assertFalse(present.exists());
+    }
+
+    @Test
+    public void testCleanupScriptFilesWithNullFieldsDoesNotThrow() {
+        // No retrieveScriptFiles() was called, so all file fields are null.
+        actionWorker.cleanupScriptFiles();
     }
 }
