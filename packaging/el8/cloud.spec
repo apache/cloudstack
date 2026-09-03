@@ -359,6 +359,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent.service
 install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
+install -D packaging/systemd/cloudstack-pcap@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-pcap@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/uefi.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/uefi.properties
@@ -663,6 +664,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
 %attr(0644,root,root) %{_unitdir}/%{name}-rolling-maintenance@.service
+%attr(0644,root,root) %{_unitdir}/%{name}-pcap@.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
