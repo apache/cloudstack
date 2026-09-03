@@ -1603,8 +1603,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private boolean networkMeetsPersistenceCriteria(NetworkVO network, NetworkOfferingVO offering, boolean cleanup) {
+        BroadcastDomainType broadcastDomainType = network.getBroadcastUri() != null ? BroadcastDomainType.getSchemeValue(network.getBroadcastUri()) : null;
         boolean criteriaMet = offering.isPersistent() &&
-                (network.getBroadcastUri() != null && BroadcastDomainType.getSchemeValue(network.getBroadcastUri()) == BroadcastDomainType.Vlan);
+                (broadcastDomainType == BroadcastDomainType.Vlan || broadcastDomainType == BroadcastDomainType.Vxlan);
         if (!cleanup) {
             return criteriaMet && network.getGuestType() == GuestType.L2;
         } else {
