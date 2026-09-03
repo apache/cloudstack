@@ -179,10 +179,10 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> VmDiskThrottlingIopsWriteRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.iops_write_rate", "0",
             "Default disk I/O writerate in requests per second allowed in User vm's disk.", true);
 
-    ConfigKey<Integer> VmDiskThrottlingBytesReadRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.bytes_read_rate", "0",
+    ConfigKey<Long> VmDiskThrottlingBytesReadRate = new ConfigKey<>("Advanced", Long.class, "vm.disk.throttling.bytes_read_rate", "0",
             "Default disk I/O read rate in bytes per second allowed in User vm's disk.", true);
 
-    ConfigKey<Integer> VmDiskThrottlingBytesWriteRate = new ConfigKey<>("Advanced", Integer.class, "vm.disk.throttling.bytes_write_rate", "0",
+    ConfigKey<Long> VmDiskThrottlingBytesWriteRate = new ConfigKey<>("Advanced", Long.class, "vm.disk.throttling.bytes_write_rate", "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.", true);
 
     ConfigKey<Integer> ExpungeWorkers = new ConfigKey<>("Advanced", Integer.class, "expunge.workers", "1",

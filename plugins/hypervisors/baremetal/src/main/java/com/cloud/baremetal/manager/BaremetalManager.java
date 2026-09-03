@@ -41,9 +41,9 @@ public interface BaremetalManager extends Manager, PluggableService {
             "After starting provision process, periodcially echo security agent installed in the template. Treat provisioning as success only if echo successfully", true);
 
     ConfigKey<String> BaremetalIpmiLanInterface = new ConfigKey<>("Advanced", String.class, "baremetal.ipmi.lan.interface", "default",
-            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool", true);
+            "option specified in -I option of ipmitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool", true);
 
-    ConfigKey<String> BaremetalIpmiRetryTimes = new ConfigKey<>("Advanced", String.class, "baremetal.ipmi.fail.retry", "5",
+    ConfigKey<Integer> BaremetalIpmiRetryTimes = new ConfigKey<>("Advanced", Integer.class, "baremetal.ipmi.fail.retry", "5",
             "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure", true);
 
     void notifyProvisionDone(BaremetalProvisionDoneNotificationCmd cmd);

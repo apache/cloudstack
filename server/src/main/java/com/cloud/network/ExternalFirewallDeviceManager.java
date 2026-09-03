@@ -36,7 +36,7 @@ import com.cloud.utils.component.Manager;
 
 public interface ExternalFirewallDeviceManager extends Manager {
 
-    ConfigKey<String> DefaultExternalFirewallCapacity = new ConfigKey<>("Advanced", String.class, "external.firewall.default.capacity", "50",
+    ConfigKey<Integer> DefaultExternalFirewallCapacity = new ConfigKey<>("Advanced", Integer.class, "external.firewall.default.capacity", "50",
             "default number of networks permitted per external load firewall device", true);
 
     /**

@@ -180,7 +180,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-        _defaultFwCapacity = NumbersUtil.parseLong(DefaultExternalFirewallCapacity.value(), 50);
+        _defaultFwCapacity = DefaultExternalFirewallCapacity.value();
         return true;
     }
 

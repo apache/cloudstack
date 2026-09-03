@@ -38,7 +38,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager {
 
     public static final int DEFAULT_LOAD_BALANCER_CAPACITY = 50;
 
-    ConfigKey<String> DefaultExternalLoadBalancerCapacity = new ConfigKey<>("Advanced", String.class, "external.lb.default.capacity", "50",
+    ConfigKey<Integer> DefaultExternalLoadBalancerCapacity = new ConfigKey<>("Advanced", Integer.class, "external.lb.default.capacity", "50",
             "default number of networks permitted per external load balancer device", true);
 
     /**
