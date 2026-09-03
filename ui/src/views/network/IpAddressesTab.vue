@@ -145,7 +145,9 @@
       centered
       width="450px">
       <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
-        <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
+        <div v-if="$route.path.startsWith('/vpc') && !isNormalUserOrProject()">
+          <ownership-selection :override="possibleOwnership" @fetch-owner="fetchOwnerOptions"/>
+        </div>
         <a-form layout="vertical" style="margin-top: 10px">
           <a-form-item :label="$t('label.ipaddress')">
             <infinite-scroll-select
@@ -160,6 +162,7 @@
               :autoSelectFirstOption="true"
               @change-option-value="(ip) => acquireIp = ip" />
           </a-form-item>
+          <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
             <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
@@ -210,6 +213,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'IpAddressesTab',
@@ -217,7 +221,8 @@ export default {
     Status,
     TooltipButton,
     BulkActionView,
-    InfiniteScrollSelect
+    InfiniteScrollSelect,
+    OwnershipSelection
   },
   props: {
     resource: {
@@ -281,7 +286,12 @@ export default {
       acquireLoading: false,
       acquireIp: null,
       changeSourceNat: false,
-      zoneExtNetProvider: ''
+      zoneExtNetProvider: '',
+      possibleOwnership: {
+        domains: null,
+        projects: null,
+        accounts: null
+      }
     }
   },
   async created () {
@@ -321,6 +331,9 @@ export default {
     }
   },
   methods: {
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || this.$store.getters.project?.id
+    },
     fetchData () {
       const params = {
         listall: true,
@@ -334,6 +347,7 @@ export default {
         if (this.vpcTier) {
           params.associatednetworkid = this.vpcTier
         }
+        this.getAvailableOwnersForIP()
       } else if (this.resource.type === 'Shared') {
         params.networkid = this.resource.id
         params.allocatedonly = false
@@ -362,13 +376,20 @@ export default {
         }).catch(reject)
       })
     },
-    fetchListPublicIpAddress (state) {
-      return new Promise((resolve, reject) => {
-        getAPI('listPublicIpAddresses', this.listApiParams).then(json => {
-          const listPublicIps = json.listpublicipaddressesresponse.publicipaddress || []
-          resolve(listPublicIps)
-        }).catch(reject)
-      })
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {}
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
     },
     handleTierSelect (tier) {
       this.vpcTier = tier
@@ -453,6 +474,11 @@ export default {
       const params = {}
       if (this.$route.path.startsWith('/vpc')) {
         params.vpcid = this.resource.id
+        if (this.owner) {
+          params.domainid = this.owner.domainid
+          params.account = this.owner.projectid ? null : this.owner.account
+          params.projectid = this.owner.projectid ? this.owner.projectid : null
+        }
         if (this.vpcTier) {
           params.networkid = this.vpcTier
         }
@@ -559,6 +585,20 @@ export default {
         case 'SecondaryStorageVm': return '/systemvm/'
         default: return '/vm/'
       }
+    },
+    getAvailableOwnersForIP () {
+      this.possibleOwnership.domains = new Set([this.resource.domainid])
+      this.possibleOwnership.projects = this.resource.projectid ? new Set([this.resource.projectid]) : new Set([])
+      this.possibleOwnership.accounts = this.resource.projectid ? new Set([]) : new Set([this.resource.account])
+
+      this.resource.network.forEach(network => {
+        this.possibleOwnership.domains.add(network.domainid)
+        if (network.projectid) {
+          this.possibleOwnership.projects.add(network.projectid)
+        } else {
+          this.possibleOwnership.accounts.add(network.account)
+        }
+      })
     },
     async onShowAcquireIp () {
       this.showAcquireIp = true
