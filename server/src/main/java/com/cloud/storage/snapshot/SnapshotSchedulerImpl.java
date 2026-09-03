@@ -107,9 +107,9 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @Inject
     public TaggedResourceService taggedResourceService;
     @Inject
-    protected EventDao _eventDao;
+    protected EventDao eventDao;
     @Inject
-    protected VMInstanceDao _vmInstanceDao;
+    protected VMInstanceDao vmInstanceDao;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -297,60 +297,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             Long eventId = null;
             final long snapshotScheId = snapshotToBeExecuted.getId();
-            final long policyId = snapshotToBeExecuted.getPolicyId();
-            final long volumeId = snapshotToBeExecuted.getVolumeId();
             final VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotToBeExecuted.getVolumeId());
             try {
-                if (!canSnapshotBeScheduled(snapshotToBeExecuted, volume)) {
-                    continue;
-                }
-
-                if (shouldSkipUnchangedVolumeSnapshot(volume)) {
-                    skipAndRescheduleSnapshot(snapshotToBeExecuted, volume);
+                if (shouldSkipSchedule(snapshotToBeExecuted, volume)) {
                     continue;
                 }
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                eventId =
-                    ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
-
-                logger.trace("Mapping parameters required to generate a CreateSnapshotCmd for snapshot [{}].", snapshotToBeExecuted);
-                final Map<String, String> params = new HashMap<String, String>();
-                params.put(ApiConstants.VOLUME_ID, "" + volumeId);
-                params.put(ApiConstants.POLICY_ID, "" + policyId);
-                params.put("ctxUserId", "1");
-                params.put("ctxAccountId", "" + volume.getAccountId());
-                params.put("ctxStartEventId", String.valueOf(eventId));
-                List<? extends ResourceTag> resourceTags = taggedResourceService.listByResourceTypeAndId(ResourceTag.ResourceObjectType.SnapshotPolicy, policyId);
-                if (resourceTags != null && !resourceTags.isEmpty()) {
-                    int tagNumber = 0;
-                    for (ResourceTag resourceTag : resourceTags) {
-                        params.put("tags[" + tagNumber + "].key", resourceTag.getKey());
-                        params.put("tags[" + tagNumber + "].value", resourceTag.getValue());
-                        tagNumber++;
-                    }
-                }
-
-                logger.trace("Generating a CreateSnapshotCmd for snapshot [{}] with parameters: [{}].", snapshotToBeExecuted, params.toString());
-                final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
-                ComponentContext.inject(cmd);
-                _dispatcher.dispatchCreateCmd(cmd, params);
-                params.put("id", "" + cmd.getEntityId());
-                params.put("ctxStartEventId", "1");
-
-                final Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
-                displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                logger.debug("Scheduling snapshot [{}] for volume [{}] at [{}].", snapshotToBeExecuted, volume, displayTime);
-                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
-                        ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
-                        cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
-                job.setDispatcher(_asyncDispatcher.getName());
-                final long jobId = _asyncMgr.submitAsyncJob(job);
-                logger.debug("Scheduled snapshot [{}] for volume [{}] as job [{}].", snapshotToBeExecuted, volume, job);
-
-                tmpSnapshotScheduleVO.setAsyncJobId(jobId);
-                _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
+                eventId = dispatchSnapshotCreateJob(snapshotToBeExecuted, volume, tmpSnapshotScheduleVO);
             } catch (final Exception e) {
                 logger.error("The scheduling of snapshot [{}] for volume [{}] failed due to [{}].", snapshotToBeExecuted, volume, e.toString(), e);
                 if (tmpSnapshotScheduleVO != null) {
@@ -362,6 +316,76 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 }
             }
         }
+    }
+
+    /**
+     * Returns true (after rescheduling as needed) when this iteration's snapshot should not be dispatched: either
+     * because it can't be scheduled at all, or because it's a redundant snapshot of an unchanged volume that gets
+     * skipped and rescheduled to its next regular run instead. Kept as a single decision point so the caller only
+     * needs one {@code continue}.
+     */
+    private boolean shouldSkipSchedule(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume) {
+        if (!canSnapshotBeScheduled(snapshotToBeExecuted, volume)) {
+            return true;
+        }
+        if (shouldSkipUnchangedVolumeSnapshot(volume)) {
+            skipAndRescheduleSnapshot(snapshotToBeExecuted, volume);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Builds and dispatches the CreateSnapshotCmd async job for a scheduled snapshot, returning the "scheduled"
+     * action event id so the caller can complete it if dispatch subsequently fails.
+     */
+    private Long dispatchSnapshotCreateJob(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume, final SnapshotScheduleVO tmpSnapshotScheduleVO) throws Exception {
+        final long snapshotScheId = snapshotToBeExecuted.getId();
+        final long policyId = snapshotToBeExecuted.getPolicyId();
+        final long volumeId = snapshotToBeExecuted.getVolumeId();
+
+        final Long eventId =
+            ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
+                volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
+
+        logger.trace("Mapping parameters required to generate a CreateSnapshotCmd for snapshot [{}].", snapshotToBeExecuted);
+        final Map<String, String> params = new HashMap<String, String>();
+        params.put(ApiConstants.VOLUME_ID, "" + volumeId);
+        params.put(ApiConstants.POLICY_ID, "" + policyId);
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", "" + volume.getAccountId());
+        params.put("ctxStartEventId", String.valueOf(eventId));
+        List<? extends ResourceTag> resourceTags = taggedResourceService.listByResourceTypeAndId(ResourceTag.ResourceObjectType.SnapshotPolicy, policyId);
+        if (resourceTags != null && !resourceTags.isEmpty()) {
+            int tagNumber = 0;
+            for (ResourceTag resourceTag : resourceTags) {
+                params.put("tags[" + tagNumber + "].key", resourceTag.getKey());
+                params.put("tags[" + tagNumber + "].value", resourceTag.getValue());
+                tagNumber++;
+            }
+        }
+
+        logger.trace("Generating a CreateSnapshotCmd for snapshot [{}] with parameters: [{}].", snapshotToBeExecuted, params.toString());
+        final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+        ComponentContext.inject(cmd);
+        _dispatcher.dispatchCreateCmd(cmd, params);
+        params.put("id", "" + cmd.getEntityId());
+        params.put("ctxStartEventId", "1");
+
+        final Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
+        final String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+        logger.debug("Scheduling snapshot [{}] for volume [{}] at [{}].", snapshotToBeExecuted, volume, displayTime);
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
+                ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
+                cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
+        job.setDispatcher(_asyncDispatcher.getName());
+        final long jobId = _asyncMgr.submitAsyncJob(job);
+        logger.debug("Scheduled snapshot [{}] for volume [{}] as job [{}].", snapshotToBeExecuted, volume, job);
+
+        tmpSnapshotScheduleVO.setAsyncJobId(jobId);
+        _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
+
+        return eventId;
     }
 
     /**
@@ -415,7 +439,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         if (limit <= 0) {
             return 0;
         }
-        final List<EventVO> recentEvents = _eventDao.listLatestEventsByResource(volumeId, ApiCommandResourceType.Volume.toString(),
+        final List<EventVO> recentEvents = eventDao.listLatestEventsByResource(volumeId, ApiCommandResourceType.Volume.toString(),
                 EventTypes.EVENT_SNAPSHOT_CREATE, limit);
         int count = 0;
         for (final EventVO event : recentEvents) {
@@ -453,7 +477,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
      */
     protected boolean shouldSkipUnchangedVolumeSnapshot(final VolumeVO volume) {
         final Account account = _acctDao.findById(volume.getAccountId());
-        if (!getScopedConfigValue(SnapshotManager.SnapshotSkipIfVmNotRunning, volume, account)) {
+        if (!Boolean.TRUE.equals(getScopedConfigValue(SnapshotManager.SnapshotSkipIfVmNotRunning, volume, account))) {
             return false;
         }
 
@@ -467,7 +491,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             return false;
         }
 
-        final VMInstanceVO vm = _vmInstanceDao.findById(instanceId);
+        final VMInstanceVO vm = vmInstanceDao.findById(instanceId);
         if (vm == null || vm.getPowerState() == VirtualMachine.PowerState.PowerOn) {
             return false;
         }
