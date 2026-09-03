@@ -21,6 +21,7 @@ package com.cloud.hypervisor.kvm.storage;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.storage.Storage;
 import com.cloud.storage.template.TemplateConstants;
@@ -665,5 +666,26 @@ public class KVMStorageProcessorTest {
         } catch (Exception e) {
             Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugRejectsOldLibvirt() {
+        Mockito.when(resource.getHypervisorLibvirtVersion()).thenReturn(10000000L); // libvirt 10.0.0
+        CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
+                () -> storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD));
+        Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("Libvirt version 10.1.0 required"));
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugAllowsNewLibvirt() {
+        Mockito.when(resource.getHypervisorLibvirtVersion()).thenReturn(10001000L); // libvirt 10.1.0
+        storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD); // must not throw
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugIgnoresNonRbd() {
+        // The libvirt hot-plug apply-order bug is RBD-specific; other pool types are not gated, and the libvirt
+        // version is not even consulted for them.
+        storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
     }
 }

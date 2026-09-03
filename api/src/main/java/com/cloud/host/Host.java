@@ -56,6 +56,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
 
     String HOST_UEFI_ENABLE = "host.uefi.enable";
     String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    String HOST_RBD_VOLUME_ENCRYPTION = "host.volume.encryption.rbd";
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
     String HOST_VDDK_SUPPORT = "host.vddk.support";
     String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
