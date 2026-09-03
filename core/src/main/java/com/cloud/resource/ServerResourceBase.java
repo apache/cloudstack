@@ -125,14 +125,14 @@ public abstract class ServerResourceBase implements ServerResource {
                 InetAddress rawAddr = InetAddress.getByAddress(InetAddress.getByName(ifAddr).getAddress());
                 final NetworkInterface nic = NetworkInterface.getByInetAddress(rawAddr);
                 if (nic != null) {
-                    logger.info(String.format("Using NIC [%s] as private NIC. Source: InterfaceAddress [%s]", nic, ifAddr));
+                    logger.info("Using NIC [{}] as private NIC. Source: InterfaceAddress [{}]", nic, ifAddr);
                     privateNic = nic;
                 } else {
-                    logger.info(String.format("Unable to found private NIC with defined ip [%s]", ifAddr));
+                    logger.info("Unable to found private NIC with defined ip [{}]", ifAddr);
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                  // Logging only, if this method was unable to find a valid interface, iteration will be tested
-                logger.info(String.format("Unable to use private address to get the management interface: [%s]", e.getMessage()));
+                logger.info("Unable to use private address to get the management interface: [{}]", e.getMessage());
             }
         }
     }
