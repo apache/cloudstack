@@ -79,6 +79,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                 throw new CloudRuntimeException("Failed to create Lun: " + cloudstackVolume.getLun().getName());
             }
             Lun lun = createdLun.getRecords().get(0);
+            validateCreatedLun(lun, cloudstackVolume.getLun().getName(), "createCloudStackVolume");
             logger.debug("createCloudStackVolume: LUN created successfully. Lun: {}", lun);
 
             CloudStackVolume createdCloudStackVolume = new CloudStackVolume();
@@ -88,6 +89,8 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("FeignException occurred while creating LUN: {}, Status: {}, Exception: {}",
                     cloudstackVolume.getLun().getName(), e.status(), e.getMessage());
             throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Exception occurred while creating LUN: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
             throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
@@ -154,6 +157,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                 throw new CloudRuntimeException("Failed to clone Lun: " + lunRequest.getName());
             }
             Lun lun = clonedLun.getRecords().get(0);
+            validateCreatedLun(lun, lunRequest.getName(), "cloneCloudStackVolume");
             logger.debug("cloneCloudStackVolume: LUN cloned successfully. Lun: {}", lun);
 
             CloudStackVolume clonedCloudStackVolume = new CloudStackVolume();
@@ -163,9 +167,23 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("FeignException occurred while cloning LUN: {}, Status: {}, Exception: {}",
                     lunRequest.getName(), e.status(), e.getMessage());
             throw new CloudRuntimeException("Failed to clone Lun: " + e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Exception occurred while cloning LUN: {}, Exception: {}", lunRequest.getName(), e.getMessage());
             throw new CloudRuntimeException("Failed to clone Lun: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Ensures ONTAP returned a usable LUN identity from create/clone. Callers in the datastore
+     * driver rely on non-null name and uuid, so reject incomplete records at the Feign boundary.
+     */
+    private void validateCreatedLun(Lun lun, String requestName, String operation) {
+        if (lun == null || lun.getName() == null || lun.getUuid() == null) {
+            logger.error("{}: ONTAP returned incomplete LUN for {}", operation, requestName);
+            throw new CloudRuntimeException("ONTAP returned incomplete LUN for: " + requestName);
         }
     }
 

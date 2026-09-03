@@ -1468,6 +1468,85 @@ class UnifiedSANStrategyTest {
         }
     }
 
+
+    @Test
+    void testCreateCloudStackVolume_IncompleteLunMissingName_ThrowsException() {
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/lun1");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        Lun incomplete = new Lun();
+        incomplete.setUuid("lun-uuid-123");
+        // name intentionally null
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(incomplete));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenReturn(response);
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.createCloudStackVolume(request));
+            assertTrue(ex.getMessage().contains("incomplete LUN"));
+        }
+    }
+
+    @Test
+    void testCreateCloudStackVolume_IncompleteLunMissingUuid_ThrowsException() {
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/lun1");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        Lun incomplete = new Lun();
+        incomplete.setName("/vol/vol1/lun1");
+        // uuid intentionally null
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(incomplete));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenReturn(response);
+
+            assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.createCloudStackVolume(request));
+        }
+    }
+
+    @Test
+    void testCloneCloudStackVolume_IncompleteLunMissingUuid_ThrowsException() {
+        Lun.Source source = new Lun.Source();
+        source.setUuid("source-lun-uuid");
+        Lun.Clone clone = new Lun.Clone();
+        clone.setSource(source);
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/cloned");
+        lun.setClone(clone);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        Lun incomplete = new Lun();
+        incomplete.setName("/vol/vol1/cloned");
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(incomplete));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenReturn(response);
+
+            assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.cloneCloudStackVolume(request));
+        }
+    }
+
     @Test
     void testCreateCloudStackVolume_NullResponse_ThrowsException() {
         Lun lun = new Lun();

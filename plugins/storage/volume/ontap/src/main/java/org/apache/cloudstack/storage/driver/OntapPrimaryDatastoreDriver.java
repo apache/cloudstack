@@ -170,7 +170,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     // Create the backend storage object: a clone of the cached template when the
                     // orchestrator asked for one, otherwise a blank LUN (iSCSI) or qcow2 file (NFS).
                     Long cloneOfTemplateId = getTemplateIdForCloning(volInfo.getId());
-                    CloudStackVolume created = cloneOfTemplateId != null
+                    CloudStackVolume clonedCloudStackVolume = cloneOfTemplateId != null
                             ? cloneCloudStackVolumeFromTemplate(storagePool, volInfo, details, cloneOfTemplateId)
                             : createCloudStackVolume(storagePool, volInfo, details);
 
@@ -180,17 +180,14 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     logger.info("createAsync: Volume format set to [{}] for hypervisor [{}]", volumeVO.getFormat(), storagePool.getHypervisor());
 
                     if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
-                        String lunName = created != null && created.getLun() != null ? created.getLun().getName() : null;
-                        if (lunName == null) {
-                            throw new CloudRuntimeException("Missing LUN name for volume " + volInfo.getId());
-                        }
+                        // createCloudStackVolume validates the Feign response (LUN name + uuid) before returning
+                        Lun createdLun = clonedCloudStackVolume.getLun();
+                        String lunName = createdLun.getName();
 
                         // Persist LUN details for future operations (delete, grant/revoke access)
-                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_UUID, created.getLun().getUuid(), false);
+                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_UUID, createdLun.getUuid(), false);
                         volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_NAME, lunName, false);
-                        if (created.getLun().getUuid() != null) {
-                            volumeVO.setFolder(created.getLun().getUuid());
-                        }
+                        volumeVO.setFolder(createdLun.getUuid());
 
                         logger.info("createAsync: Created LUN [{}] for volume [{}]. LUN mapping will occur during grantAccess() to per-host igroup.",
                                 lunName, volumeVO.getId());
@@ -263,22 +260,31 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }
 
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-        CloudStackVolume created = storageStrategy.createCloudStackVolume(
-                createTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes));
+        CloudStackVolume createdCloudStackVolume = null;
+        try {
+            createdCloudStackVolume = storageStrategy.createCloudStackVolume(
+                    createTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes));
+            // createCloudStackVolume validates the Feign response (LUN name + uuid) before returning
+            Lun lun = createdCloudStackVolume.getLun();
+            templatePoolRef.setLocalDownloadPath(lun.getUuid());
+            templatePoolRef.setTemplateSize(sizeInBytes);
+            vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
 
-        if (created == null || created.getLun() == null || created.getLun().getName() == null) {
-            throw new CloudRuntimeException("ONTAP returned no LUN for the cache of template [" + templateInfo.getId() + "]");
+            logger.info("createTemplateOnPrimary: Created template cache LUN [{}] (uuid [{}], {} bytes) on pool [{}] for template [{}]",
+                    lun.getName(), lun.getUuid(), sizeInBytes, storagePool.getId(), templateInfo.getId());
+
+            return new CreateCmdResult(lun.getName(), new Answer(null, true, null));
+        } catch (Exception e) {
+            // Compensating delete: orchestrator only cleans DB metadata on create failure.
+            bestEffortDeleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME),
+                    getTemplateLunName(storagePool, templateInfo.getId()),
+                    createdCloudStackVolume != null && createdCloudStackVolume.getLun() != null ? createdCloudStackVolume.getLun().getUuid() : null);
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to create template cache LUN for template [" + templateInfo.getId()
+                    + "]: " + e.getMessage(), e);
         }
-
-        Lun lun = created.getLun();
-        templatePoolRef.setLocalDownloadPath(lun.getUuid());
-        templatePoolRef.setTemplateSize(sizeInBytes);
-        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
-
-        logger.info("createTemplateOnPrimary: Created template cache LUN [{}] (uuid [{}], {} bytes) on pool [{}] for template [{}]",
-                lun.getName(), lun.getUuid(), sizeInBytes, storagePool.getId(), templateInfo.getId());
-
-        return new CreateCmdResult(lun.getName(), new Answer(null, true, null));
     }
 
     /**
@@ -298,7 +304,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 : createCloneFileRequest(storagePool, volumeInfo, templatePoolRef, templateId);
 
         CloudStackVolume cloned = storageStrategy.cloneCloudStackVolume(request);
-        if (cloned == null || (iscsi && (cloned.getLun() == null || cloned.getLun().getName() == null))) {
+        // SAN cloneCloudStackVolume validates the Feign response (LUN name + uuid) before returning
+        if (cloned == null) {
             throw new CloudRuntimeException("ONTAP returned nothing when cloning template [" + templateId
                     + "] for volume [" + volumeInfo.getId() + "]");
         }
@@ -365,31 +372,60 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
         if (isIscsi(details)) {
-            deleteIscsiTemplateCache(storagePool, templateInfo, templatePoolRef, storageStrategy);
+            deleteIscsiTemplateCache(storagePool, templateInfo, templatePoolRef, storageStrategy, details);
         } else {
             deleteNfsTemplateCache(details, templateInfo, templatePoolRef, storageStrategy);
         }
     }
 
     private void deleteIscsiTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
-                                          VMTemplateStoragePoolVO templatePoolRef, StorageStrategy storageStrategy) {
+                                          VMTemplateStoragePoolVO templatePoolRef, StorageStrategy storageStrategy,
+                                          Map<String, String> details) {
+        String lunName = getTemplateLunName(storagePool, templateInfo.getId());
         String lunUuid = templatePoolRef.getLocalDownloadPath();
-        if (lunUuid == null || lunUuid.isEmpty()) {
-            logger.warn("deleteTemplateOnPrimary: No cached LUN recorded for template [{}] on pool [{}]; nothing to delete",
-                    templateInfo.getId(), storagePool.getId());
-            return;
+        deleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME), lunName, lunUuid);
+        logger.info("deleteTemplateOnPrimary: Deleted template cache LUN [{}] for template [{}] on pool [{}]",
+                lunName, templateInfo.getId(), storagePool.getId());
+    }
+
+    /**
+     * Deletes a template-cache LUN. When {@code lunUuid} is missing, resolves the LUN by its
+     * deterministic name so eviction and create-time rollback still work.
+     */
+    private void deleteTemplateCacheLun(StorageStrategy storageStrategy, String svmName, String lunName, String lunUuid) {
+        String uuid = lunUuid;
+        if (uuid == null || uuid.isEmpty()) {
+            CloudStackVolume existing = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
+            if (existing == null || existing.getLun() == null || existing.getLun().getUuid() == null) {
+                logger.warn("deleteTemplateCacheLun: LUN [{}] not found on SVM [{}]; nothing to delete", lunName, svmName);
+                return;
+            }
+            uuid = existing.getLun().getUuid();
         }
 
         Lun lun = new Lun();
-        lun.setUuid(lunUuid);
-        lun.setName(getTemplateLunName(storagePool, templateInfo.getId()));
+        lun.setUuid(uuid);
+        lun.setName(lunName);
 
         CloudStackVolume deleteRequest = new CloudStackVolume();
         deleteRequest.setLun(lun);
         storageStrategy.deleteCloudStackVolume(deleteRequest);
+    }
 
-        logger.info("deleteTemplateOnPrimary: Deleted template cache LUN [{}] for template [{}] on pool [{}]",
-                lun.getName(), templateInfo.getId(), storagePool.getId());
+    /**
+     * Best-effort cleanup of a template-cache LUN after a failed create. Never masks the original
+     * create failure.
+     */
+    private void bestEffortDeleteTemplateCacheLun(StorageStrategy storageStrategy, String svmName, String lunName,
+                                                  String lunUuid) {
+        try {
+            deleteTemplateCacheLun(storageStrategy, svmName, lunName, lunUuid);
+            logger.info("bestEffortDeleteTemplateCacheLun: Removed leftover template cache LUN [{}] on SVM [{}]",
+                    lunName, svmName);
+        } catch (Exception cleanupEx) {
+            logger.warn("bestEffortDeleteTemplateCacheLun: Failed to remove leftover template cache LUN [{}] on SVM [{}]: {}",
+                    lunName, svmName, cleanupEx.getMessage());
+        }
     }
 
     private void deleteNfsTemplateCache(Map<String, String> details, TemplateInfo templateInfo,
@@ -682,15 +718,30 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
         ensureAccessGroupForHost(sanStrategy, host, storagePool, svmName, accessGroupName);
 
-        String lunNumber = sanStrategy.ensureLunMapped(svmName, lunName, accessGroupName);
-        String iscsiPath = buildIscsiPath(storagePool, lunNumber);
+        boolean lunMapped = false;
+        try {
+            String lunNumber = sanStrategy.ensureLunMapped(svmName, lunName, accessGroupName);
+            lunMapped = true;
+            String iscsiPath = buildIscsiPath(storagePool, lunNumber);
 
-        templatePoolRef.setInstallPath(iscsiPath);
-        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
-        refreshManagedStoreTarget(dataStore, iscsiPath);
+            templatePoolRef.setInstallPath(iscsiPath);
+            vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+            refreshManagedStoreTarget(dataStore, iscsiPath);
 
-        logger.info("grantAccessTemplate: Mapped template cache LUN [{}] to igroup [{}] as [{}] for template [{}]",
-                lunName, accessGroupName, iscsiPath, templateInfo.getId());
+            logger.info("grantAccessTemplate: Mapped template cache LUN [{}] to igroup [{}] as [{}] for template [{}]",
+                    lunName, accessGroupName, iscsiPath, templateInfo.getId());
+        } catch (RuntimeException e) {
+            // Undo only this call's side effect (map). Do not delete the cache LUN — create already succeeded.
+            if (lunMapped) {
+                try {
+                    unmapLunFromHost(sanStrategy, svmName, lunName, accessGroupName, host);
+                } catch (Exception rollbackEx) {
+                    logger.warn("grantAccessTemplate: Failed to unmap template cache LUN [{}] from igroup [{}] after grant failure: {}",
+                            lunName, accessGroupName, rollbackEx.getMessage());
+                }
+            }
+            throw e;
+        }
     }
 
     /**

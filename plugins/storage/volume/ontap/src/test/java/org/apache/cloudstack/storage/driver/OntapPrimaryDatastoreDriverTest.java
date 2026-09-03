@@ -78,6 +78,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -428,6 +429,46 @@ class OntapPrimaryDatastoreDriverTest {
         }
     }
 
+
+    @Test
+    void testDeleteAsync_Template_ResolvesLunByNameWhenUuidMissing() {
+        when(dataStore.getId()).thenReturn(1L);
+        when(templateInfo.getType()).thenReturn(TEMPLATE);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getLocalDownloadPath()).thenReturn(null);
+
+        Lun templateLun = new Lun();
+        templateLun.setName("/vol/vol1/cs_tmpl_50");
+        templateLun.setUuid("resolved-lun-uuid");
+        CloudStackVolume existing = new CloudStackVolume();
+        existing.setLun(templateLun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(sanStrategy);
+            when(sanStrategy.getCloudStackVolume(argThat(map ->
+                    map != null && "/vol/vol1/cs_tmpl_50".equals(map.get("name")))))
+                    .thenReturn(existing);
+            doNothing().when(sanStrategy).deleteCloudStackVolume(any());
+
+            driver.deleteAsync(dataStore, templateInfo, commandCallback);
+
+            ArgumentCaptor<CommandResult> resultCaptor = ArgumentCaptor.forClass(CommandResult.class);
+            verify(commandCallback).complete(resultCaptor.capture());
+            assertTrue(resultCaptor.getValue().isSuccess());
+
+            ArgumentCaptor<CloudStackVolume> deleteCaptor = ArgumentCaptor.forClass(CloudStackVolume.class);
+            verify(sanStrategy).deleteCloudStackVolume(deleteCaptor.capture());
+            assertEquals("resolved-lun-uuid", deleteCaptor.getValue().getLun().getUuid());
+            assertEquals("/vol/vol1/cs_tmpl_50", deleteCaptor.getValue().getLun().getName());
+        }
+    }
+
     @Test
     void testDeleteAsync_Template_NoCachedLun_SucceedsWithoutCallingOntap() {
         when(dataStore.getId()).thenReturn(1L);
@@ -775,6 +816,49 @@ class OntapPrimaryDatastoreDriverTest {
         }
     }
 
+
+    @Test
+    void testCreateAsync_TemplateWithISCSI_RollsBackLunWhenDbUpdateFails() {
+        when(dataStore.getId()).thenReturn(1L);
+        when(dataStore.getName()).thenReturn("ontap-pool");
+        when(templateInfo.getType()).thenReturn(TEMPLATE);
+        when(templateInfo.getId()).thenReturn(50L);
+        when(templateInfo.getSize()).thenReturn(5368709120L);
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getId()).thenReturn(7L);
+        doThrow(new RuntimeException("db update failed")).when(vmTemplatePoolDao)
+                .update(eq(7L), any(VMTemplateStoragePoolVO.class));
+
+        Lun templateLun = new Lun();
+        templateLun.setName("/vol/vol1/cs_tmpl_50");
+        templateLun.setUuid("template-lun-uuid");
+        CloudStackVolume created = new CloudStackVolume();
+        created.setLun(templateLun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+            when(sanStrategy.createCloudStackVolume(any())).thenReturn(created);
+            doNothing().when(sanStrategy).deleteCloudStackVolume(any());
+
+            driver.createAsync(dataStore, templateInfo, createCallback);
+
+            ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+            verify(createCallback).complete(resultCaptor.capture());
+            assertFalse(resultCaptor.getValue().isSuccess());
+
+            ArgumentCaptor<CloudStackVolume> deleteCaptor = ArgumentCaptor.forClass(CloudStackVolume.class);
+            verify(sanStrategy).deleteCloudStackVolume(deleteCaptor.capture());
+            assertEquals("template-lun-uuid", deleteCaptor.getValue().getLun().getUuid());
+            assertEquals("/vol/vol1/cs_tmpl_50", deleteCaptor.getValue().getLun().getName());
+        }
+    }
+
     @Test
     void testCreateAsync_TemplateWithISCSI_UnknownSize_Fails() {
         when(dataStore.getId()).thenReturn(1L);
@@ -938,6 +1022,66 @@ class OntapPrimaryDatastoreDriverTest {
             ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass(Map.class);
             verify(primaryDataStore).setDetails(detailsCaptor.capture());
             assertEquals(expectedPath, detailsCaptor.getValue().get(PrimaryDataStore.MANAGED_STORE_TARGET));
+        }
+    }
+
+
+    @Test
+    void testGrantAccess_Template_UnmapsWhenInstallPathUpdateFails() {
+        PrimaryDataStore primaryDataStore = mock(PrimaryDataStore.class);
+        Map<String, String> dataStoreDetails = new HashMap<>();
+        dataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET, "stale-value");
+
+        when(primaryDataStore.getId()).thenReturn(1L);
+        when(primaryDataStore.getDetails()).thenReturn(dataStoreDetails);
+        when(templateInfo.getType()).thenReturn(TEMPLATE);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(storagePool.getPath()).thenReturn("iqn.1992-08.com.netapp:sn.123456");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getId()).thenReturn(7L);
+        doThrow(new RuntimeException("install path update failed")).when(vmTemplatePoolDao)
+                .update(eq(7L), any(VMTemplateStoragePoolVO.class));
+
+        when(host.getName()).thenReturn("host1");
+        when(host.getUuid()).thenReturn("host-uuid-1");
+        when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
+
+        AccessGroup existingAccessGroup = new AccessGroup();
+        Igroup existingIgroup = new Igroup();
+        existingIgroup.setName("igroup1");
+        existingIgroup.setUuid("igroup-uuid-123");
+        existingAccessGroup.setIgroup(existingIgroup);
+
+        Lun templateLun = new Lun();
+        templateLun.setName("/vol/vol1/cs_tmpl_50");
+        templateLun.setUuid("template-lun-uuid");
+        CloudStackVolume cachedTemplate = new CloudStackVolume();
+        cachedTemplate.setLun(templateLun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(sanStrategy);
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString())).thenReturn("igroup1");
+
+            when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
+            when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
+            when(sanStrategy.getCloudStackVolume(argThat(map ->
+                    map != null && "/vol/vol1/cs_tmpl_50".equals(map.get("name")))))
+                    .thenReturn(cachedTemplate);
+            when(sanStrategy.validateInitiatorInAccessGroup(anyString(), anyString(), any(Igroup.class))).thenReturn(true);
+            doNothing().when(sanStrategy).disableLogicalAccess(any());
+
+            assertThrows(CloudRuntimeException.class,
+                    () -> driver.grantAccess(templateInfo, host, primaryDataStore));
+
+            verify(sanStrategy).disableLogicalAccess(argThat(map ->
+                    map != null && "template-lun-uuid".equals(map.get("lun.uuid"))
+                            && "igroup-uuid-123".equals(map.get("igroup.uuid"))));
         }
     }
 
