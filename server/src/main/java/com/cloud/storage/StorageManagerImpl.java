@@ -2685,6 +2685,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" +
                     pool.getId() + "Host=" + hostId;
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
+            if (CollectionUtils.isEmpty(mspAnswer.getDatastoreClusterChildren())) {
+                throw new CloudRuntimeException(String.format("Host %s reported no child datastores for datastore cluster %s. " +
+                        "This usually means the host was unable to enumerate the datastores in the vCenter Storage Pod for this " +
+                        "sync attempt (check host connectivity and the vCenter account's permissions on the datastore cluster and " +
+                        "its underlying datastores). Refusing to sync so that already known child storage pools are not detached.",
+                        _hostDao.findById(hostId), pool));
+            }
             StoragePoolVO poolVO = _storagePoolDao.findById(poolId);
             updateStoragePoolHostVOAndBytes(poolVO, hostId, mspAnswer);
             validateChildDatastoresToBeAddedInUpState(poolVO, mspAnswer.getDatastoreClusterChildren());
@@ -2767,6 +2774,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         StoragePoolVO datastoreClusterPool = _storagePoolDao.findById(datastoreClusterPoolId);
         List<StoragePoolTagVO> storageTags = _storagePoolTagsDao.findStoragePoolTags(datastoreClusterPoolId);
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterPoolId);
+
+        if (CollectionUtils.isEmpty(childDatastoreAnswerList)) {
+            if (CollectionUtils.isNotEmpty(childDatastores)) {
+                logger.warn(String.format("Host %d reported zero child datastores for datastore cluster %s while %d child storage pool(s) " +
+                        "are already known to CloudStack; skipping this sync so they are not incorrectly detached. This likely means the host " +
+                        "could not fully enumerate the vCenter Storage Pod's datastores (check host connectivity and the vCenter account's " +
+                        "permissions on the datastore cluster).", hostId, datastoreClusterPool, childDatastores.size()));
+            } else {
+                logger.warn(String.format("Host %d reported zero child datastores for datastore cluster %s, and no child storage pools are " +
+                        "known to CloudStack yet; check host connectivity and the vCenter account's permissions on the datastore cluster and " +
+                        "its underlying datastores if this persists.", hostId, datastoreClusterPool));
+            }
+            return;
+        }
+
         Set<String> childDatastoreUUIDs = new HashSet<>();
         for (StoragePoolVO childDatastore : childDatastores) {
             childDatastoreUUIDs.add(childDatastore.getUuid());
