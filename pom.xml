@@ -98,7 +98,7 @@
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.26.0</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
-        <cs.commons-fileupload.version>1.4</cs.commons-fileupload.version>
+        <cs.commons-fileupload.version>1.6.0</cs.commons-fileupload.version>
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
         <cs.commons-io.version>2.8.0</cs.commons-io.version>
         <cs.commons-lang3.version>3.11</cs.commons-lang3.version>
