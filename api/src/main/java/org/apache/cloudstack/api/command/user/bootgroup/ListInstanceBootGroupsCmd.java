@@ -34,6 +34,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "listInstanceBootGroups",
         description = "Lists Instance Boot Groups",
+        since = "4.24.0",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,

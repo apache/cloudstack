@@ -35,6 +35,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "updateInstanceBootGroup",
         description = "Updates an Instance Boot Group",
+        since = "4.24.0",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,

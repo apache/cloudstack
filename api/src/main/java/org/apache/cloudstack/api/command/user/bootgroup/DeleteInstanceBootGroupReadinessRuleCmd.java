@@ -36,6 +36,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "deleteInstanceBootGroupReadinessRule",
         description = "Deletes an Instance Boot Group readiness rule",
+        since = "4.24.0",
         responseObject = SuccessResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,

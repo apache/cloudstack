@@ -38,6 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "startInstanceBootGroup",
         description = "Starts all Instances in an Instance Boot Group in order (lowest boot order first). Instances within the same order tier start concurrently",
+        since = "4.24.0",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,

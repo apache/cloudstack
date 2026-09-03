@@ -41,6 +41,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "createInstanceBootGroupReadinessRule",
         description = "Creates a readiness rule for an Instance or Instance Group that is a member (directly, or via its instance group) of an Instance Boot Group",
+        since = "4.24.0",
         responseObject = InstanceBootGroupReadinessRuleResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,

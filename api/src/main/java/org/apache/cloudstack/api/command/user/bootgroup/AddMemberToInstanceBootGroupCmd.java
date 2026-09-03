@@ -38,6 +38,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "addMemberToInstanceBootGroup",
         description = "Adds an Instance or instance group to an instance boot group. Exactly one of virtualmachineid or instancegroupid must be specified.",
+        since = "4.24.0",
         responseObject = InstanceBootGroupMemberResponse.class,
         entityType = {InstanceBootGroupMember.class},
         requestHasSensitiveInfo = false,

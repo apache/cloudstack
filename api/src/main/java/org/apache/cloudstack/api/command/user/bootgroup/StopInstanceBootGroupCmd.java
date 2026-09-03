@@ -37,6 +37,7 @@ import com.cloud.event.EventTypes;
 
 @APICommand(name = "stopInstanceBootGroup",
         description = "Stops all Instances in an Instance Boot Group in reverse order (highest boot order first). Continues through all tiers even if some Instances fail to stop",
+        since = "4.24.0",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,

@@ -36,6 +36,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "deleteInstanceBootGroup",
         description = "Deletes an Instance Boot Group",
+        since = "4.24.0",
         responseObject = SuccessResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,

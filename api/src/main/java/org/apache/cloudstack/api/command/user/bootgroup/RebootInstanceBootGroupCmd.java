@@ -38,6 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "rebootInstanceBootGroup",
         description = "Reboots all VMs in an Instance Boot Group: stops in reverse order then starts in forward order",
+        since = "4.24.0",
         responseObject = InstanceBootGroupResponse.class,
         entityType = {InstanceBootGroup.class},
         requestHasSensitiveInfo = false,
