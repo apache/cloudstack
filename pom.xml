@@ -1098,6 +1098,7 @@
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
+                            <exclude>tools/apidoc-versions-diff/**</exclude>
                             <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
                             <exclude>tools/docker/Dockerfile</exclude>
                             <exclude>tools/docker/supervisord.conf</exclude>
