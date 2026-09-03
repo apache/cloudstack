@@ -22,6 +22,7 @@ import com.cloud.agent.api.Command;
 public class NsxAnswer extends Answer {
 
     private boolean objectExists;
+    private boolean endpointMayBeInUse;
 
     public NsxAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -37,5 +38,13 @@ public class NsxAnswer extends Answer {
 
     public void setObjectExists(boolean objectExisted) {
         this.objectExists = objectExisted;
+    }
+
+    public boolean isEndpointMayBeInUse() {
+        return endpointMayBeInUse;
+    }
+
+    public void setEndpointMayBeInUse(boolean endpointMayBeInUse) {
+        this.endpointMayBeInUse = endpointMayBeInUse;
     }
 }

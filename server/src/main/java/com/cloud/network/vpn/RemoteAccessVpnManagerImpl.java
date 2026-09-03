@@ -60,6 +60,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
@@ -282,8 +283,41 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
     }
 
+    private RemoteAccessVPNServiceProvider getRemoteAccessVpnServiceProvider(Long networkId, Long vpcId) {
+        List<RemoteAccessVPNServiceProvider> providers = new ArrayList<>();
+        for (RemoteAccessVPNServiceProvider provider : _vpnServiceProviders) {
+            if (!(provider instanceof NetworkElement)) {
+                continue;
+            }
+            Network.Provider networkProvider = ((NetworkElement) provider).getProvider();
+            boolean supportsRemoteAccessVpn = vpcId != null
+                    ? vpcManager.isProviderSupportServiceInVpc(vpcId, Service.Vpn, networkProvider)
+                    : networkId != null && _networkMgr.isProviderSupportServiceInNetwork(networkId, Service.Vpn, networkProvider);
+            if (supportsRemoteAccessVpn) {
+                providers.add(provider);
+            }
+        }
+        if (providers.size() > 1) {
+            throw new InvalidParameterValueException(String.format(
+                    "More than one Remote Access VPN provider is configured for %s %s",
+                    vpcId != null ? "VPC" : "network", vpcId != null ? vpcId : networkId));
+        }
+        return providers.isEmpty() ? null : providers.get(0);
+    }
+
+    private RemoteAccessVPNServiceProvider requireRemoteAccessVpnServiceProvider(Long networkId, Long vpcId) {
+        RemoteAccessVPNServiceProvider provider = getRemoteAccessVpnServiceProvider(networkId, vpcId);
+        if (provider == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Remote Access VPN is not supported for %s %s because its configured Vpn provider does not implement the Remote Access VPN service",
+                    vpcId != null ? "VPC" : "network", vpcId != null ? vpcId : networkId));
+        }
+        return provider;
+    }
+
     private void validateIpAddressForVpnServiceOnNetwork(Network network, IPAddressVO ipAddress) {
         Long networkId = network.getId();
+        requireRemoteAccessVpnServiceProvider(networkId, null);
         if (_networkMgr.isProviderSupportServiceInNetwork(networkId, Service.Vpn, Network.Provider.VirtualRouter)) {
             // if VR is the VPN provider,
             // (1) if VR is Source NAT, the IP address must be used as Source NAT
@@ -303,6 +337,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     private void validateIpAddressForVpnServiceOnVpc(Vpc vpc, IPAddressVO ipAddress) {
         Long vpcId = vpc.getId();
+        requireRemoteAccessVpnServiceProvider(null, vpcId);
         if (vpcManager.isProviderSupportServiceInVpc(vpcId, Service.Vpn, Network.Provider.VPCVirtualRouter)) {
             // if VPC VR is the VPN provider,
             // (1) if VPC VR is Source NAT, the IP address must be used as Source NAT
@@ -545,6 +580,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         _accountMgr.checkAccess(caller, null, true, vpn);
 
+        RemoteAccessVPNServiceProvider provider = requireRemoteAccessVpnServiceProvider(vpn.getNetworkId(), vpn.getVpcId());
         boolean started = false;
         try {
             boolean firewallOpened = true;
@@ -552,13 +588,13 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 firewallOpened = _firewallMgr.applyIngressFirewallRules(vpn.getServerAddressId(), caller);
             }
 
-            if (firewallOpened) {
-                for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
-                    if (element.startVpn(vpn)) {
-                        started = true;
-                        break;
-                    }
-                }
+            if (firewallOpened && provider.startVpn(vpn)) {
+                started = true;
+            }
+            if (!started) {
+                throw new ResourceUnavailableException(String.format(
+                        "Failed to start Remote Access VPN %s using provider %s", vpn.getId(), provider.getName()),
+                        RemoteAccessVpn.class, vpn.getId());
             }
 
             return vpn;
