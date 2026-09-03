@@ -858,8 +858,6 @@ public enum Config {
             "30",
             "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5",
             null),
-    EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
-    EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
     RecreateSystemVmEnabled(
             "Advanced",
             ManagementServer.class,
