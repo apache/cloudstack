@@ -42,11 +42,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.usage.UsageUtils;
@@ -92,7 +92,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
@@ -144,8 +143,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject
     protected UsageEventDetailsDao _usageEventDetailsDao;
     @Inject
-    ConfigurationDao _configDao;
-    @Inject
     private UsageVMSnapshotDao _usageVMSnapshotDao;
     @Inject
     private UsageVMSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
@@ -195,12 +192,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     public UsageManagerImpl() {
     }
 
-    private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {
-        for (Map.Entry<String, Object> param : xmlParams.entrySet()) {
-            dbParams.put(param.getKey(), (String)param.getValue());
-        }
-    }
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         final String run = "usage.vmops.pid";
@@ -217,27 +208,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             logger.info("Implementation Version is " + _version);
         }
 
-        Map<String, String> configs;
-        try {
-            configs = _configDao.getConfiguration(params);
-
-            if (params != null) {
-                mergeConfigs(configs, params);
-                logger.info("configs = " + configs);
-            }
-        } catch (CloudRuntimeException e) {
-            logger.error("Unhandled configuration exception: " + e.getMessage());
-            throw new CloudRuntimeException("Unhandled configuration exception", e);
-        }
-
         String execTime = UsageService.UsageStatsJobExecTime.value();
         Integer aggregationRange = UsageService.UsageStatsJobAggregationRange.value();
         String execTimeZone = UsageService.UsageExecutionTimezone.value();
         String aggregationTimeZone = UsageService.UsageAggregationTimezone.value();
         Integer sanityCheckInterval = UsageService.UsageSanityCheckInterval.value();
-        String quotaEnable = configs.get("quota.enable.service");
-        _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
-        usageSnapshotSelection  = Boolean.valueOf(configs.get("usage.snapshot.virtualsize.select"));
+        _runQuota = QuotaConfig.QuotaPluginEnabled.value();
+        usageSnapshotSelection = UsageService.UsageSnapshotVirtualSizeSelect.value();
         if (sanityCheckInterval != null) {
             _sanityCheckInterval = sanityCheckInterval;
         }
