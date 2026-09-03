@@ -486,9 +486,6 @@ public class UserVmManagerImplTest {
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
-    @Mock
-    InternalBackupService internalBackupService;
-
     private static final long vmId = 1L;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
