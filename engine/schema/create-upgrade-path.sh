@@ -25,14 +25,17 @@
 #   - engine/schema/src/main/resources/META-INF/db/schema-<from>to<to>-cleanup.sql
 # and wires the new class into DatabaseUpgradeChecker.java (import + .next() entry).
 #
+# Accepts both the legacy 4-position x.y.z.w scheme and the x.y.z scheme CloudStack is
+# moving to (dropping the leading "4."), matching what CloudStackVersion.parse() supports.
+#
 # Usage: engine/schema/create-upgrade-path.sh <fromVersion> <toVersion>
-# Example: engine/schema/create-upgrade-path.sh 4.23.0.0 4.24.0.0
+# Example: engine/schema/create-upgrade-path.sh 4.23.0.0 24.0.0
 
 set -euo pipefail
 
 usage() {
     echo "Usage: $0 <fromVersion> <toVersion>"
-    echo "Example: $0 4.23.0.0 4.24.0.0"
+    echo "Example: $0 4.23.0.0 24.0.0"
     exit 1
 }
 
@@ -41,9 +44,9 @@ usage() {
 FROM_VERSION="$1"
 TO_VERSION="$2"
 
-VERSION_REGEX='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
-[[ "$FROM_VERSION" =~ $VERSION_REGEX ]] || { echo "Invalid fromVersion '$FROM_VERSION' (expected x.y.z.w)"; exit 1; }
-[[ "$TO_VERSION" =~ $VERSION_REGEX ]] || { echo "Invalid toVersion '$TO_VERSION' (expected x.y.z.w)"; exit 1; }
+VERSION_REGEX='^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$'
+[[ "$FROM_VERSION" =~ $VERSION_REGEX ]] || { echo "Invalid fromVersion '$FROM_VERSION' (expected x.y.z or x.y.z.w)"; exit 1; }
+[[ "$TO_VERSION" =~ $VERSION_REGEX ]] || { echo "Invalid toVersion '$TO_VERSION' (expected x.y.z or x.y.z.w)"; exit 1; }
 
 FROM_COMPACT="${FROM_VERSION//./}"
 TO_COMPACT="${TO_VERSION//./}"
@@ -122,19 +125,37 @@ ${LICENSE_SQL}
 EOF
 
 # 3. Wire the new class into DatabaseUpgradeChecker.java: add the import in its
-#    existing sorted block, and append a .next() entry right before .build().
+#    existing sorted block, and append a .next() entry right before the upgrade-path
+#    builder's .build().
 IMPORT_LINE="import com.cloud.upgrade.dao.${CLASS_NAME};"
-FIRST_IMPORT_LINE=$(grep -n '^import com\.cloud\.upgrade\.dao\.Upgrade' "$CHECKER_FILE" | head -1 | cut -d: -f1)
-LAST_IMPORT_LINE=$(grep -n '^import com\.cloud\.upgrade\.dao\.Upgrade' "$CHECKER_FILE" | tail -1 | cut -d: -f1)
+# The `|| true` on each keeps a no-match grep (exit 1, fatal under `set -e -o pipefail`)
+# from aborting the script before the guard below gets a chance to print a clear error.
+FIRST_IMPORT_LINE=$(grep -n '^import com\.cloud\.upgrade\.dao\.Upgrade' "$CHECKER_FILE" | head -1 | cut -d: -f1) || true
+LAST_IMPORT_LINE=$(grep -n '^import com\.cloud\.upgrade\.dao\.Upgrade' "$CHECKER_FILE" | tail -1 | cut -d: -f1) || true
+
+if [[ -z "$FIRST_IMPORT_LINE" || -z "$LAST_IMPORT_LINE" ]]; then
+    echo "Could not find any 'import com.cloud.upgrade.dao.Upgrade*;' lines in $CHECKER_FILE" \
+         " (expected an existing block of upgrade-path imports to insert alongside)."
+    exit 1
+fi
+
+BUILDER_LINE=$(grep -n 'DatabaseVersionHierarchy\.builder()' "$CHECKER_FILE" | head -1 | cut -d: -f1) || true
+if [[ -z "$BUILDER_LINE" ]]; then
+    echo "Could not find the 'DatabaseVersionHierarchy.builder()' line in $CHECKER_FILE" \
+         " (needed to anchor where the new .next(...) entry gets inserted)."
+    exit 1
+fi
 
 SORTED_IMPORTS_FILE="$(mktemp)"
-trap 'rm -f "$SORTED_IMPORTS_FILE"' EXIT
+TMP_CHECKER="$(mktemp)"
+FINAL_CHECKER="$(mktemp)"
+trap 'rm -f "$SORTED_IMPORTS_FILE" "$TMP_CHECKER" "$FINAL_CHECKER"' EXIT
+
 {
     grep '^import com\.cloud\.upgrade\.dao\.Upgrade' "$CHECKER_FILE"
     echo "$IMPORT_LINE"
 } | sed 's/;$//' | LC_ALL=C sort -u | sed 's/$/;/' > "$SORTED_IMPORTS_FILE"
 
-TMP_CHECKER="$(mktemp)"
 awk -v first="$FIRST_IMPORT_LINE" -v last="$LAST_IMPORT_LINE" -v importfile="$SORTED_IMPORTS_FILE" '
     NR == first {
         while ((getline line < importfile) > 0) print line
@@ -143,15 +164,26 @@ awk -v first="$FIRST_IMPORT_LINE" -v last="$LAST_IMPORT_LINE" -v importfile="$SO
     { print }
 ' "$CHECKER_FILE" > "$TMP_CHECKER"
 
+# Re-locate the builder line in TMP_CHECKER: inserting the new import shifted every
+# later line number by one, so the line found earlier in $CHECKER_FILE no longer applies.
+BUILDER_LINE_IN_TMP=$(grep -n 'DatabaseVersionHierarchy\.builder()' "$TMP_CHECKER" | head -1 | cut -d: -f1) || true
+if [[ -z "$BUILDER_LINE_IN_TMP" ]]; then
+    echo "Lost track of the 'DatabaseVersionHierarchy.builder()' line while rewriting imports; aborting without touching $CHECKER_FILE."
+    exit 1
+fi
+
+# Only match .build(); on/after the builder line, so an unrelated .build() call
+# elsewhere in the file (before the upgrade-path builder) is never touched.
 NEXT_LINE="                .next(\"${FROM_VERSION}\", new ${CLASS_NAME}())"
-awk -v nextline="$NEXT_LINE" '
-    /^[ \t]*\.build\(\);/ && !inserted {
+awk -v builder="$BUILDER_LINE_IN_TMP" -v nextline="$NEXT_LINE" '
+    NR >= builder && /^[ \t]*\.build\(\);/ && !inserted {
         print nextline
         inserted = 1
     }
     { print }
-' "$TMP_CHECKER" > "$CHECKER_FILE"
-rm -f "$TMP_CHECKER"
+' "$TMP_CHECKER" > "$FINAL_CHECKER"
+
+mv "$FINAL_CHECKER" "$CHECKER_FILE"
 
 echo "Created:"
 echo "  $JAVA_FILE"
