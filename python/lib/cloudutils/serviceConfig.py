@@ -519,75 +519,6 @@ class hostConfig(serviceCfgBase):
             logging.debug(e)
             return False
 
-class securityPolicyConfigUbuntu(serviceCfgBase):
-    def __init__(self, syscfg):
-        super(securityPolicyConfigUbuntu, self).__init__(syscfg)
-        self.serviceName = "Apparmor"
-
-    def config(self):
-        try:
-            cmd = bash("service apparmor status")
-            if not cmd.isSuccess() or cmd.getStdout() == "":
-                self.spRunning = False
-                return True
-
-            if not bash("apparmor_status |grep libvirt").isSuccess():
-                return True
-
-            bash("ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/")
-            bash("ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/")
-            bash("apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd")
-            bash("apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper")
-
-            return True
-        except:
-            raise CloudRuntimeException("Failed to configure apparmor, please see the /var/log/cloudstack/agent/setup.log for detail, \
-                                        or you can manually disable it before starting myCloud")
-
-    def restore(self):
-        try:
-            self.syscfg.svo.enableService("apparmor")
-            self.syscfg.svo.startService("apparmor")
-            return True
-        except:
-            logging.debug(formatExceptionInfo())
-            return False
-
-class securityPolicyConfigRedhat(serviceCfgBase):
-    def __init__(self, syscfg):
-        super(securityPolicyConfigRedhat, self).__init__(syscfg)
-        self.serviceName = "SElinux"
-
-    def config(self):
-        selinuxEnabled = True
-
-        if not bash("selinuxenabled").isSuccess():
-            selinuxEnabled = False
-
-        if selinuxEnabled:
-            try:
-                bash("setenforce 0")
-                cfo = configFileOps("/etc/selinux/config", self)
-                cfo.replace_line("SELINUX=", "SELINUX=permissive")
-                return True
-            except:
-                raise CloudRuntimeException("Failed to configure selinux, please see the /var/log/cloudstack/agent/setup.log for detail, \
-                                            or you can manually disable it before starting myCloud")
-        else:
-            return True
-
-    def restore(self):
-        try:
-            bash("setenforce 1")
-            return True
-        except:
-            logging.debug(formatExceptionInfo())
-            return False
-
-class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
-    pass
-
-
 def configure_libvirt_tls(tls_enabled=False, cfo=None):
     save = False
     if not cfo:
@@ -652,7 +583,6 @@ class libvirtConfigRedhat(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
@@ -690,7 +620,6 @@ class libvirtConfigSUSE(serviceCfgBase):
 
             filename = "/etc/libvirt/qemu.conf"
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
@@ -745,7 +674,6 @@ class libvirtConfigUbuntu(serviceCfgBase):
             filename = "/etc/libvirt/qemu.conf"
 
             cfo = configFileOps(filename, self)
-            cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             configure_libvirt_tls(self.syscfg.env.secure, cfo)

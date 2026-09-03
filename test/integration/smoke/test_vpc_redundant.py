@@ -571,7 +571,7 @@ class TestVPCRedundancy(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers(self):
         """ Create a redundant VPC with two networks with two VMs in each network """
-        self.logger.debug("Starting test_01_create_redundant_VPC_2tiers_4VMs_4IPs_4PF_ACL")
+        self.logger.debug("Starting test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers")
         self.query_routers()
         self.networks.append(self.create_network(self.services["network_offering"], "10.1.1.1"))
         self.check_routers_state()
