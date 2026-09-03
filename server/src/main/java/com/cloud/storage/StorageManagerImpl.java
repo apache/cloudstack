@@ -4567,7 +4567,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
             return diskOffering.getBytesReadRate();
         } else {
-            Long bytesReadRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingBytesReadRate.key()));
+            Long bytesReadRate = VmDiskThrottlingBytesReadRate.value();
             if ((bytesReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesReadRate;
             }
@@ -4581,7 +4581,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
             return diskOffering.getBytesWriteRate();
         } else {
-            Long bytesWriteRate = Long.parseLong(_configDao.getValue(VmDiskThrottlingBytesWriteRate.key()));
+            Long bytesWriteRate = VmDiskThrottlingBytesWriteRate.value();
             if ((bytesWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesWriteRate;
             }
