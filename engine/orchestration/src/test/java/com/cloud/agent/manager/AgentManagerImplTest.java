@@ -18,6 +18,7 @@ package com.cloud.agent.manager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -136,5 +137,85 @@ public class AgentManagerImplTest {
         Mockito.when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
+    }
+
+    /*
+     * When the first registered listener throws a RuntimeException,
+     * handleCommands must catch it, log a warning, and continue so that
+     * the second listener still runs.
+     */
+    @Test
+    public void testHandleCommandsListenerExceptionDoesNotAbortLoop() throws Exception {
+        Listener throwingListener = Mockito.mock(Listener.class);
+        Mockito.when(throwingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenThrow(new RuntimeException("simulated NPE from power-state sync"));
+
+        Listener goodListener = Mockito.mock(Listener.class);
+        Mockito.when(goodListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenReturn(true);
+
+        mgr._cmdMonitors = new ArrayList<>();
+        mgr._cmdMonitors.add(new Pair<>(1, throwingListener));
+        mgr._cmdMonitors.add(new Pair<>(2, goodListener));
+
+        Command[] cmds = new Command[]{Mockito.mock(Command.class)};
+
+        // Must not throw; the exception from throwingListener must be swallowed.
+        mgr.handleCommands(attache, 1L, cmds);
+
+        // The second listener must still have been invoked.
+        Mockito.verify(goodListener, Mockito.times(1))
+                .processCommands(Mockito.eq(attache.getId()), Mockito.eq(1L), Mockito.eq(cmds));
+    }
+
+    @Test
+    public void testHandleCommandsAllListenersSucceed() throws Exception {
+        Listener listenerA = Mockito.mock(Listener.class);
+        Mockito.when(listenerA.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenReturn(true);
+
+        Listener listenerB = Mockito.mock(Listener.class);
+        Mockito.when(listenerB.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenReturn(false);
+
+        mgr._cmdMonitors = new ArrayList<>();
+        mgr._cmdMonitors.add(new Pair<>(1, listenerA));
+        mgr._cmdMonitors.add(new Pair<>(2, listenerB));
+
+        Command[] cmds = new Command[]{Mockito.mock(Command.class)};
+        mgr.handleCommands(attache, 1L, cmds);
+
+        Mockito.verify(listenerA, Mockito.times(1))
+                .processCommands(Mockito.eq(attache.getId()), Mockito.eq(1L), Mockito.eq(cmds));
+        Mockito.verify(listenerB, Mockito.times(1))
+                .processCommands(Mockito.eq(attache.getId()), Mockito.eq(1L), Mockito.eq(cmds));
+    }
+
+    /*
+     * Simulates the reported failure: a power-state sync listener throws
+     * partway through, and a downstream ping-style listener must still run
+     * so pingBy() isn't starved.
+     */
+    @Test
+    public void testHandleCommandsThrowingListenerDoesNotStarveDownstreamListener() throws Exception {
+        Listener powerStateSyncListener = Mockito.mock(Listener.class);
+        Mockito.when(powerStateSyncListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenThrow(new NullPointerException("hostId was null in isPowerStateInSyncWithInstanceState"));
+
+        Listener pingListener = Mockito.mock(Listener.class);
+        Mockito.when(pingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+                .thenReturn(false);
+
+        mgr._cmdMonitors = new ArrayList<>();
+        mgr._cmdMonitors.add(new Pair<>(1, powerStateSyncListener));
+        mgr._cmdMonitors.add(new Pair<>(2, pingListener));
+
+        Command[] cmds = new Command[]{Mockito.mock(Command.class)};
+
+        // Before the fix this would abort on the NPE and pingListener would never run.
+        mgr.handleCommands(attache, 42L, cmds);
+
+        Mockito.verify(pingListener, Mockito.times(1))
+                .processCommands(Mockito.eq(attache.getId()), Mockito.eq(42L), Mockito.eq(cmds));
     }
 }
