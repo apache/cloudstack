@@ -147,6 +147,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setMaxResolutionY(offering.getMaxResolutionY());
         offeringResponse.setGpuCount(offering.getGpuCount());
         offeringResponse.setGpuDisplay(offering.getGpuDisplay());
+
+        // Set category information if available (joined via service_offering_view)
+        if (offering.getCategoryUuid() != null) {
+            offeringResponse.setCategoryId(offering.getCategoryUuid());
+            offeringResponse.setCategoryName(offering.getCategoryName());
+        }
+
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());
