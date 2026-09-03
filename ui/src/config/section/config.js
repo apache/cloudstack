@@ -53,6 +53,34 @@ export default {
           ]
         },
         {
+          api: 'testLdapConfiguration',
+          icon: 'ExperimentOutlined',
+          label: 'label.test.ldap.configuration',
+          docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+          listView: true,
+          args: [
+            'hostname', 'port', 'domainid'
+          ]
+        },
+        {
+          api: 'testLdapConfiguration',
+          icon: 'ExperimentOutlined',
+          label: 'label.test.ldap.configuration',
+          dataView: true,
+          args: ['hostname', 'port', 'domainid'],
+          mapping: {
+            hostname: {
+              value: (record) => { return record.hostname }
+            },
+            port: {
+              value: (record) => { return record.port }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
+        },
+        {
           api: 'deleteLdapConfiguration',
           icon: 'delete-outlined',
           label: 'label.remove.ldap',
