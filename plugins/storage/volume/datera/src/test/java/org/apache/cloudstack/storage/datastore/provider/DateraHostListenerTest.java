@@ -81,27 +81,27 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class DateraHostListenerTest {
 
     @Mock
-    private AgentManager _agentMgr;
+    private AgentManager agentMgr;
     @Mock
-    private AlertManager _alertMgr;
+    private AlertManager alertMgr;
     @Mock
-    private ClusterDao _clusterDao;
+    private ClusterDao clusterDao;
     @Mock
-    private ClusterDetailsDao _clusterDetailsDao;
+    private ClusterDetailsDao clusterDetailsDao;
     @Mock
-    private DataStoreManager _dataStoreMgr;
+    private DataStoreManager dataStoreMgr;
     @Mock
-    private HostDao _hostDao;
+    private HostDao hostDao;
     @Mock
-    private PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao storagePoolDao;
     @Mock
-    private StoragePoolDetailsDao _storagePoolDetailsDao;
+    private StoragePoolDetailsDao storagePoolDetailsDao;
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
-    private VMInstanceDao _vmDao;
+    private VMInstanceDao vmDao;
     @Mock
-    private VolumeDao _volumeDao;
+    private VolumeDao volumeDao;
 
     private DateraHostListener listener;
 
@@ -109,17 +109,17 @@ public class DateraHostListenerTest {
     public void setup() {
         listener = new DateraHostListener();
 
-        ReflectionTestUtils.setField(listener, "_agentMgr", _agentMgr);
-        ReflectionTestUtils.setField(listener, "_alertMgr", _alertMgr);
-        ReflectionTestUtils.setField(listener, "_clusterDao", _clusterDao);
-        ReflectionTestUtils.setField(listener, "_clusterDetailsDao", _clusterDetailsDao);
-        ReflectionTestUtils.setField(listener, "_dataStoreMgr", _dataStoreMgr);
-        ReflectionTestUtils.setField(listener, "_hostDao", _hostDao);
-        ReflectionTestUtils.setField(listener, "_storagePoolDao", _storagePoolDao);
-        ReflectionTestUtils.setField(listener, "_storagePoolDetailsDao", _storagePoolDetailsDao);
+        ReflectionTestUtils.setField(listener, "_agentMgr", agentMgr);
+        ReflectionTestUtils.setField(listener, "_alertMgr", alertMgr);
+        ReflectionTestUtils.setField(listener, "_clusterDao", clusterDao);
+        ReflectionTestUtils.setField(listener, "_clusterDetailsDao", clusterDetailsDao);
+        ReflectionTestUtils.setField(listener, "_dataStoreMgr", dataStoreMgr);
+        ReflectionTestUtils.setField(listener, "_hostDao", hostDao);
+        ReflectionTestUtils.setField(listener, "_storagePoolDao", storagePoolDao);
+        ReflectionTestUtils.setField(listener, "_storagePoolDetailsDao", storagePoolDetailsDao);
         ReflectionTestUtils.setField(listener, "storagePoolHostDao", storagePoolHostDao);
-        ReflectionTestUtils.setField(listener, "_vmDao", _vmDao);
-        ReflectionTestUtils.setField(listener, "_volumeDao", _volumeDao);
+        ReflectionTestUtils.setField(listener, "_vmDao", vmDao);
+        ReflectionTestUtils.setField(listener, "_volumeDao", volumeDao);
     }
 
     private StoragePool mockStoragePool() {
@@ -140,7 +140,7 @@ public class DateraHostListenerTest {
         long hostId = 10L;
         long storagePoolId = 100L;
 
-        when(_hostDao.findById(hostId)).thenReturn(null);
+        when(hostDao.findById(hostId)).thenReturn(null);
 
         assertFalse(listener.hostConnect(hostId, storagePoolId));
 
@@ -154,7 +154,7 @@ public class DateraHostListenerTest {
 
         HostVO host = mock(HostVO.class);
         when(host.getHypervisorType()).thenReturn(HypervisorType.Hyperv);
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
         when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(null);
 
         assertTrue(listener.hostConnect(hostId, storagePoolId));
@@ -169,8 +169,9 @@ public class DateraHostListenerTest {
 
         HostVO host = mock(HostVO.class);
         when(host.getHypervisorType()).thenReturn(HypervisorType.Hyperv);
-        when(_hostDao.findById(hostId)).thenReturn(host);
-        when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(mock(StoragePoolHostVO.class));
+        when(hostDao.findById(hostId)).thenReturn(host);
+        StoragePoolHostVO existingStoragePoolHost = mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(existingStoragePoolHost);
 
         assertTrue(listener.hostConnect(hostId, storagePoolId));
 
@@ -188,11 +189,11 @@ public class DateraHostListenerTest {
         when(host.getId()).thenReturn(hostId);
         when(host.getClusterId()).thenReturn(clusterId);
         when(host.getHypervisorType()).thenReturn(HypervisorType.XenServer);
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
         when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(null);
 
         StoragePool storagePool = mockStoragePool();
-        when(_dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
+        when(dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
 
         VolumeVO volume1 = mock(VolumeVO.class);
         when(volume1.getInstanceId()).thenReturn(1001L);
@@ -202,27 +203,27 @@ public class DateraHostListenerTest {
         when(volume2.getInstanceId()).thenReturn(1002L);
         when(volume2.get_iScsiName()).thenReturn("iqn-2");
 
-        when(_volumeDao.findNonDestroyedVolumesByPoolId(eq(storagePoolId), isNull())).thenReturn(Arrays.asList(volume1, volume2));
+        when(volumeDao.findNonDestroyedVolumesByPoolId(eq(storagePoolId), isNull())).thenReturn(Arrays.asList(volume1, volume2));
 
         VMInstanceVO vm1 = mock(VMInstanceVO.class);
         when(vm1.getHostId()).thenReturn(vmHostId);
-        when(_vmDao.findById(1001L)).thenReturn(vm1);
+        when(vmDao.findById(1001L)).thenReturn(vm1);
 
         VMInstanceVO vm2 = mock(VMInstanceVO.class);
         when(vm2.getHostId()).thenReturn(vmHostId);
-        when(_vmDao.findById(1002L)).thenReturn(vm2);
+        when(vmDao.findById(1002L)).thenReturn(vm2);
 
         HostVO vmHost = mock(HostVO.class);
         when(vmHost.getClusterId()).thenReturn(clusterId);
-        when(_hostDao.findById(vmHostId)).thenReturn(vmHost);
+        when(hostDao.findById(vmHostId)).thenReturn(vmHost);
 
-        when(_agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
+        when(agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
                 .thenReturn(new ModifyStoragePoolAnswer(null, true, "ok"));
 
         assertTrue(listener.hostConnect(hostId, storagePoolId));
 
-        verify(_agentMgr, times(2)).easySend(eq(hostId), any(ModifyStoragePoolCommand.class));
-        verify(_alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
+        verify(agentMgr, times(2)).easySend(eq(hostId), any(ModifyStoragePoolCommand.class));
+        verify(alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
     }
 
     @Test
@@ -237,26 +238,26 @@ public class DateraHostListenerTest {
         when(host.getClusterId()).thenReturn(clusterId);
         when(host.getHypervisorType()).thenReturn(HypervisorType.XenServer);
         when(host.toString()).thenReturn("Host {id=10, name=xen-01}");
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
         when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(null);
 
         StoragePool storagePool = mockStoragePool();
-        when(_dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
+        when(dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
 
         VolumeVO volume = mock(VolumeVO.class);
         when(volume.getInstanceId()).thenReturn(1001L);
         when(volume.get_iScsiName()).thenReturn("iqn-1");
-        when(_volumeDao.findNonDestroyedVolumesByPoolId(eq(storagePoolId), isNull())).thenReturn(Collections.singletonList(volume));
+        when(volumeDao.findNonDestroyedVolumesByPoolId(eq(storagePoolId), isNull())).thenReturn(Collections.singletonList(volume));
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
         when(vm.getHostId()).thenReturn(vmHostId);
-        when(_vmDao.findById(1001L)).thenReturn(vm);
+        when(vmDao.findById(1001L)).thenReturn(vm);
 
         HostVO vmHost = mock(HostVO.class);
         when(vmHost.getClusterId()).thenReturn(clusterId);
-        when(_hostDao.findById(vmHostId)).thenReturn(vmHost);
+        when(hostDao.findById(vmHostId)).thenReturn(vmHost);
 
-        when(_agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
+        when(agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
                 .thenReturn(new Answer(null, false, "failure"));
 
         try {
@@ -267,7 +268,7 @@ public class DateraHostListenerTest {
         }
 
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(), messageCaptor.capture(), anyString());
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(), messageCaptor.capture(), anyString());
         assertTrue(messageCaptor.getValue().contains("Host {id=10, name=xen-01}"));
     }
 
@@ -278,20 +279,20 @@ public class DateraHostListenerTest {
 
         HostVO host = mock(HostVO.class);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
         when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(null);
 
         StoragePool storagePool = mockStoragePool();
-        when(_dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
+        when(dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary)).thenReturn((DataStore) storagePool);
 
-        when(_agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
+        when(agentMgr.easySend(eq(hostId), any(ModifyStoragePoolCommand.class)))
                 .thenReturn(new ModifyStoragePoolAnswer(null, true, "ok"));
 
         assertTrue(listener.hostConnect(hostId, storagePoolId));
 
-        verify(_agentMgr, times(1)).easySend(eq(hostId), any(ModifyStoragePoolCommand.class));
+        verify(agentMgr, times(1)).easySend(eq(hostId), any(ModifyStoragePoolCommand.class));
         // the 2-arg handleKVM overload does not consult volumes/VMs at all
-        verify(_volumeDao, never()).findNonDestroyedVolumesByPoolId(anyLong(), any());
+        verify(volumeDao, never()).findNonDestroyedVolumesByPoolId(anyLong(), any());
     }
 
     // ---------- hostDisconnected ----------
@@ -301,7 +302,8 @@ public class DateraHostListenerTest {
         long hostId = 10L;
         long storagePoolId = 100L;
 
-        when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(mock(StoragePoolHostVO.class));
+        StoragePoolHostVO existingStoragePoolHost = mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(storagePoolId, hostId)).thenReturn(existingStoragePoolHost);
 
         assertTrue(listener.hostDisconnected(hostId, storagePoolId));
 
@@ -331,22 +333,22 @@ public class DateraHostListenerTest {
         when(host.getId()).thenReturn(hostId);
         when(host.getClusterId()).thenReturn(clusterId);
         when(host.getHypervisorType()).thenReturn(HypervisorType.VMware);
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
 
         StoragePoolVO storagePool = mock(StoragePoolVO.class);
         when(storagePool.getId()).thenReturn(100L);
-        when(_storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
-        when(_storagePoolDao.findById(100L)).thenReturn(storagePool);
+        when(storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
+        when(storagePoolDao.findById(100L)).thenReturn(storagePool);
 
-        when(_volumeDao.findNonDestroyedVolumesByPoolId(eq(100L), isNull())).thenReturn(Collections.emptyList());
+        when(volumeDao.findNonDestroyedVolumesByPoolId(eq(100L), isNull())).thenReturn(Collections.emptyList());
 
-        when(_agentMgr.easySend(eq(hostId), any(ModifyTargetsCommand.class)))
+        when(agentMgr.easySend(eq(hostId), any(ModifyTargetsCommand.class)))
                 .thenReturn(new Answer(null, true, "ok"));
 
         assertTrue(listener.hostAboutToBeRemoved(hostId));
 
         ArgumentCaptor<ModifyTargetsCommand> cmdCaptor = ArgumentCaptor.forClass(ModifyTargetsCommand.class);
-        verify(_agentMgr).easySend(eq(hostId), cmdCaptor.capture());
+        verify(agentMgr).easySend(eq(hostId), cmdCaptor.capture());
         assertFalse(cmdCaptor.getValue().getAdd());
     }
 
@@ -360,16 +362,16 @@ public class DateraHostListenerTest {
         when(host.getClusterId()).thenReturn(clusterId);
         when(host.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(host.toString()).thenReturn("Host {id=10, name=vmware-01}");
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
 
         StoragePoolVO storagePool = mock(StoragePoolVO.class);
         when(storagePool.getId()).thenReturn(100L);
-        when(_storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
-        when(_storagePoolDao.findById(100L)).thenReturn(storagePool);
+        when(storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
+        when(storagePoolDao.findById(100L)).thenReturn(storagePool);
 
-        when(_volumeDao.findNonDestroyedVolumesByPoolId(eq(100L), isNull())).thenReturn(Collections.emptyList());
+        when(volumeDao.findNonDestroyedVolumesByPoolId(eq(100L), isNull())).thenReturn(Collections.emptyList());
 
-        when(_agentMgr.easySend(eq(hostId), any(ModifyTargetsCommand.class)))
+        when(agentMgr.easySend(eq(hostId), any(ModifyTargetsCommand.class)))
                 .thenReturn(new Answer(null, false, "failure"));
 
         try {
@@ -380,7 +382,7 @@ public class DateraHostListenerTest {
         }
 
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(), messageCaptor.capture(), anyString());
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(), messageCaptor.capture(), anyString());
         assertTrue(messageCaptor.getValue().contains("Host {id=10, name=vmware-01}"));
     }
 
@@ -390,12 +392,12 @@ public class DateraHostListenerTest {
 
         HostVO host = mock(HostVO.class);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        when(_hostDao.findById(hostId)).thenReturn(host);
+        when(hostDao.findById(hostId)).thenReturn(host);
 
         assertTrue(listener.hostAboutToBeRemoved(hostId));
 
-        verify(_agentMgr, never()).easySend(anyLong(), any());
-        verify(_storagePoolDao, never()).findPoolsByProvider(anyString());
+        verify(agentMgr, never()).easySend(anyLong(), any());
+        verify(storagePoolDao, never()).findPoolsByProvider(anyString());
     }
 
     // ---------- hostRemoved ----------
@@ -415,13 +417,13 @@ public class DateraHostListenerTest {
 
         ClusterVO clusterVO = mock(ClusterVO.class);
         when(clusterVO.getUuid()).thenReturn("cluster-uuid");
-        when(_clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
 
         HostVO hostVO = mock(HostVO.class);
         when(hostVO.getUuid()).thenReturn("host-uuid");
-        when(_hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
+        when(hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
 
-        when(_storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.emptyList());
+        when(storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.emptyList());
 
         GlobalLock lock = mock(GlobalLock.class);
         when(lock.lock(5)).thenReturn(true);
@@ -443,18 +445,18 @@ public class DateraHostListenerTest {
 
         ClusterVO clusterVO = mock(ClusterVO.class);
         when(clusterVO.getUuid()).thenReturn("cluster-uuid");
-        when(_clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
 
         HostVO hostVO = mock(HostVO.class);
         when(hostVO.getUuid()).thenReturn("host-uuid");
-        when(_hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
+        when(hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
 
         StoragePoolVO storagePool = mock(StoragePoolVO.class);
         when(storagePool.getId()).thenReturn(100L);
-        when(_storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
+        when(storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
 
         // no ClusterDetailsVO configured for the initiator group key -> clusterDetail is null
-        when(_clusterDetailsDao.findDetail(eq(clusterId), anyString())).thenReturn(null);
+        when(clusterDetailsDao.findDetail(eq(clusterId), anyString())).thenReturn(null);
 
         GlobalLock lock = mock(GlobalLock.class);
         when(lock.lock(5)).thenReturn(true);
@@ -470,7 +472,7 @@ public class DateraHostListenerTest {
     }
 
     @Test
-    public void hostRemovedRemovesInitiatorFromMatchingInitiatorGroup() throws Exception {
+    public void hostRemovedRemovesInitiatorFromMatchingInitiatorGroup() {
         long hostId = 10L;
         long clusterId = 5L;
         long storagePoolId = 100L;
@@ -478,23 +480,23 @@ public class DateraHostListenerTest {
 
         ClusterVO clusterVO = mock(ClusterVO.class);
         when(clusterVO.getUuid()).thenReturn("cluster-uuid");
-        when(_clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
 
         HostVO hostVO = mock(HostVO.class);
         when(hostVO.getUuid()).thenReturn("host-uuid");
         when(hostVO.getStorageUrl()).thenReturn("iqn.host");
-        when(_hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
+        when(hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
 
         StoragePoolVO storagePool = mock(StoragePoolVO.class);
         when(storagePool.getId()).thenReturn(storagePoolId);
-        when(_storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
+        when(storagePoolDao.findPoolsByProvider(DateraUtil.PROVIDER_NAME)).thenReturn(Collections.singletonList(storagePool));
 
         // computed with the real DateraUtil implementation, before DateraUtil gets static-mocked below
         String initiatorGroupKey = DateraUtil.getInitiatorGroupKey(storagePoolId);
 
         ClusterDetailsVO clusterDetail = mock(ClusterDetailsVO.class);
         when(clusterDetail.getValue()).thenReturn(initiatorGroupName);
-        when(_clusterDetailsDao.findDetail(clusterId, initiatorGroupKey)).thenReturn(clusterDetail);
+        when(clusterDetailsDao.findDetail(clusterId, initiatorGroupKey)).thenReturn(clusterDetail);
 
         DateraObject.DateraConnection connection = mock(DateraObject.DateraConnection.class);
         DateraObject.Initiator initiator = mock(DateraObject.Initiator.class);
@@ -513,7 +515,7 @@ public class DateraHostListenerTest {
 
             dateraUtilMock.when(() -> DateraUtil.getInitiatorGroupKey(storagePoolId)).thenReturn(initiatorGroupKey);
             dateraUtilMock.when(() -> DateraUtil.hostSupport_iScsi(hostVO)).thenReturn(true);
-            dateraUtilMock.when(() -> DateraUtil.getDateraConnection(storagePoolId, _storagePoolDetailsDao)).thenReturn(connection);
+            dateraUtilMock.when(() -> DateraUtil.getDateraConnection(storagePoolId, storagePoolDetailsDao)).thenReturn(connection);
             dateraUtilMock.when(() -> DateraUtil.getInitiator(connection, "iqn.host")).thenReturn(initiator);
             dateraUtilMock.when(() -> DateraUtil.getInitiatorGroup(connection, initiatorGroupName)).thenReturn(initiatorGroup);
             dateraUtilMock.when(() -> DateraUtil.isInitiatorPresentInGroup(initiator, initiatorGroup)).thenReturn(true);
@@ -534,11 +536,11 @@ public class DateraHostListenerTest {
 
         ClusterVO clusterVO = mock(ClusterVO.class);
         when(clusterVO.getUuid()).thenReturn("cluster-uuid");
-        when(_clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
 
         HostVO hostVO = mock(HostVO.class);
         when(hostVO.getUuid()).thenReturn("host-uuid");
-        when(_hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
+        when(hostDao.findByIdIncludingRemoved(hostId)).thenReturn(hostVO);
 
         GlobalLock lock = mock(GlobalLock.class);
         when(lock.lock(5)).thenReturn(false);

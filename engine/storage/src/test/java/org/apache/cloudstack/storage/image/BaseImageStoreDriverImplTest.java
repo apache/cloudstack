@@ -85,35 +85,35 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 public class BaseImageStoreDriverImplTest {
 
     @Mock
-    VMTemplateDao _templateDao;
+    VMTemplateDao templateDao;
     @Mock
-    DownloadMonitor _downloadMonitor;
+    DownloadMonitor downloadMonitor;
     @Mock
     VolumeDao volumeDao;
     @Mock
-    VolumeDataStoreDao _volumeStoreDao;
+    VolumeDataStoreDao volumeStoreDao;
     @Mock
-    TemplateDataStoreDao _templateStoreDao;
+    TemplateDataStoreDao templateStoreDao;
     @Mock
     SnapshotDataStoreDao snapshotDataStoreDao;
     @Mock
-    EndPointSelector _epSelector;
+    EndPointSelector epSelector;
     @Mock
     ConfigurationDao configDao;
     @Mock
-    VMTemplateZoneDao _vmTemplateZoneDao;
+    VMTemplateZoneDao vmTemplateZoneDao;
     @Mock
-    AlertManager _alertMgr;
+    AlertManager alertMgr;
     @Mock
-    DefaultEndPointSelector _defaultEpSelector;
+    DefaultEndPointSelector defaultEpSelector;
     @Mock
     DeployAsIsHelper deployAsIsHelper;
     @Mock
     HostDao hostDao;
     @Mock
-    CommandExecLogDao _cmdExecLogDao;
+    CommandExecLogDao cmdExecLogDao;
     @Mock
-    SecondaryStorageVmDao _secStorageVmDao;
+    SecondaryStorageVmDao secStorageVmDao;
     @Mock
     AgentManager agentMgr;
     @Mock
@@ -141,21 +141,21 @@ public class BaseImageStoreDriverImplTest {
     @Before
     public void setup() {
         driver = new TestDriver();
-        ReflectionTestUtils.setField(driver, "_templateDao", _templateDao);
-        ReflectionTestUtils.setField(driver, "_downloadMonitor", _downloadMonitor);
+        ReflectionTestUtils.setField(driver, "_templateDao", templateDao);
+        ReflectionTestUtils.setField(driver, "_downloadMonitor", downloadMonitor);
         ReflectionTestUtils.setField(driver, "volumeDao", volumeDao);
-        ReflectionTestUtils.setField(driver, "_volumeStoreDao", _volumeStoreDao);
-        ReflectionTestUtils.setField(driver, "_templateStoreDao", _templateStoreDao);
+        ReflectionTestUtils.setField(driver, "_volumeStoreDao", volumeStoreDao);
+        ReflectionTestUtils.setField(driver, "_templateStoreDao", templateStoreDao);
         ReflectionTestUtils.setField(driver, "snapshotDataStoreDao", snapshotDataStoreDao);
-        ReflectionTestUtils.setField(driver, "_epSelector", _epSelector);
+        ReflectionTestUtils.setField(driver, "_epSelector", epSelector);
         ReflectionTestUtils.setField(driver, "configDao", configDao);
-        ReflectionTestUtils.setField(driver, "_vmTemplateZoneDao", _vmTemplateZoneDao);
-        ReflectionTestUtils.setField(driver, "_alertMgr", _alertMgr);
-        ReflectionTestUtils.setField(driver, "_defaultEpSelector", _defaultEpSelector);
+        ReflectionTestUtils.setField(driver, "_vmTemplateZoneDao", vmTemplateZoneDao);
+        ReflectionTestUtils.setField(driver, "_alertMgr", alertMgr);
+        ReflectionTestUtils.setField(driver, "_defaultEpSelector", defaultEpSelector);
         ReflectionTestUtils.setField(driver, "deployAsIsHelper", deployAsIsHelper);
         ReflectionTestUtils.setField(driver, "hostDao", hostDao);
-        ReflectionTestUtils.setField(driver, "_cmdExecLogDao", _cmdExecLogDao);
-        ReflectionTestUtils.setField(driver, "_secStorageVmDao", _secStorageVmDao);
+        ReflectionTestUtils.setField(driver, "_cmdExecLogDao", cmdExecLogDao);
+        ReflectionTestUtils.setField(driver, "_secStorageVmDao", secStorageVmDao);
         ReflectionTestUtils.setField(driver, "agentMgr", agentMgr);
         ReflectionTestUtils.setField(driver, "dataStoreManager", dataStoreManager);
     }
@@ -178,13 +178,12 @@ public class BaseImageStoreDriverImplTest {
     public void createTemplateAsyncCallbackSendsAlertOnErrorDownloadState() {
         when(dataObject.getId()).thenReturn(10L);
         when(dataObject.getDataStore()).thenReturn(dataStore);
-        when(dataObject.toString()).thenReturn("Template[id=10]");
         when(dataStore.getId()).thenReturn(20L);
-        when(_templateStoreDao.findByStoreTemplate(20L, 10L)).thenReturn(null);
+        when(templateStoreDao.findByStoreTemplate(20L, 10L)).thenReturn(null);
 
         VMTemplateZoneVO zoneVO = mock(VMTemplateZoneVO.class);
         when(zoneVO.getZoneId()).thenReturn(5L);
-        when(_vmTemplateZoneDao.listByTemplateId(10L)).thenReturn(Collections.singletonList(zoneVO));
+        when(vmTemplateZoneDao.listByTemplateId(10L)).thenReturn(Collections.singletonList(zoneVO));
 
         DownloadAnswer answer = new DownloadAnswer("job-1", 0, "download failed", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 null, null, 0L, 0L, null);
@@ -200,8 +199,8 @@ public class BaseImageStoreDriverImplTest {
         assertEquals("download failed", resultCaptor.getValue().getResult());
 
         ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(5L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
-        assertTrue(msgCaptor.getValue().contains("Template[id=10]"));
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(5L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
+        assertTrue(msgCaptor.getValue().contains("id: 10"));
         assertTrue(msgCaptor.getValue().contains("Failed to register template"));
     }
 
@@ -210,8 +209,8 @@ public class BaseImageStoreDriverImplTest {
         when(dataObject.getId()).thenReturn(11L);
         when(dataObject.getDataStore()).thenReturn(dataStore);
         when(dataStore.getId()).thenReturn(21L);
-        when(_templateStoreDao.findByStoreTemplate(21L, 11L)).thenReturn(null);
-        when(_templateDao.createForUpdate()).thenReturn(new com.cloud.storage.VMTemplateVO());
+        when(templateStoreDao.findByStoreTemplate(21L, 11L)).thenReturn(null);
+        when(templateDao.createForUpdate()).thenReturn(new com.cloud.storage.VMTemplateVO());
 
         DownloadAnswer answer = new DownloadAnswer("job-2", 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
                 "/path", "/install", 1024L, 1024L, "abcd1234");
@@ -221,9 +220,9 @@ public class BaseImageStoreDriverImplTest {
 
         driver.createTemplateAsyncCallback(dispatcher, context);
 
-        verify(_templateDao).update(eq(11L), any(com.cloud.storage.VMTemplateVO.class));
+        verify(templateDao).update(eq(11L), any(com.cloud.storage.VMTemplateVO.class));
         verify(parentCallback).complete(any(CreateCmdResult.class));
-        verify(_alertMgr, never()).sendAlert(any(AlertManager.AlertType.class), anyLong(), any(), anyString(), anyString());
+        verify(alertMgr, never()).sendAlert(any(AlertManager.AlertType.class), anyLong(), any(), anyString(), anyString());
     }
 
     // ---------- createVolumeAsyncCallback ----------
@@ -232,15 +231,14 @@ public class BaseImageStoreDriverImplTest {
     public void createVolumeAsyncCallbackSendsAlertWithVolStoreZoneIdOnError() {
         when(dataObject.getId()).thenReturn(30L);
         when(dataObject.getDataStore()).thenReturn(dataStore);
-        when(dataObject.toString()).thenReturn("Volume[id=30]");
         when(dataStore.getId()).thenReturn(40L);
 
         VolumeDataStoreVO volStoreVO = mock(VolumeDataStoreVO.class);
         when(volStoreVO.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
         when(volStoreVO.getZoneId()).thenReturn(99L);
         when(volStoreVO.getId()).thenReturn(1L);
-        when(_volumeStoreDao.findByStoreVolume(40L, 30L)).thenReturn(volStoreVO);
-        when(_volumeStoreDao.createForUpdate()).thenReturn(new VolumeDataStoreVO());
+        when(volumeStoreDao.findByStoreVolume(40L, 30L)).thenReturn(volStoreVO);
+        when(volumeStoreDao.createForUpdate()).thenReturn(new VolumeDataStoreVO());
 
         DownloadAnswer answer = new DownloadAnswer("job-3", 0, "upload failed", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 null, null, 0L, 0L, null);
@@ -251,8 +249,8 @@ public class BaseImageStoreDriverImplTest {
         driver.createVolumeAsyncCallback(dispatcher, context);
 
         ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(99L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
-        assertTrue(msgCaptor.getValue().contains("Volume[id=30]"));
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(99L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
+        assertTrue(msgCaptor.getValue().contains("id: 30"));
         assertTrue(msgCaptor.getValue().contains("Failed to upload volume"));
     }
 
@@ -260,9 +258,8 @@ public class BaseImageStoreDriverImplTest {
     public void createVolumeAsyncCallbackSendsAlertWithNegativeOneZoneIdWhenVolStoreNull() {
         when(dataObject.getId()).thenReturn(31L);
         when(dataObject.getDataStore()).thenReturn(dataStore);
-        when(dataObject.toString()).thenReturn("Volume[id=31]");
         when(dataStore.getId()).thenReturn(41L);
-        when(_volumeStoreDao.findByStoreVolume(41L, 31L)).thenReturn(null);
+        when(volumeStoreDao.findByStoreVolume(41L, 31L)).thenReturn(null);
 
         DownloadAnswer answer = new DownloadAnswer("job-4", 0, "upload failed again", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 null, null, 0L, 0L, null);
@@ -272,7 +269,7 @@ public class BaseImageStoreDriverImplTest {
 
         driver.createVolumeAsyncCallback(dispatcher, context);
 
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(-1L), eq((Long) null), any(), any());
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(-1L), eq((Long) null), any(), any());
     }
 
     // ---------- createSnapshotAsyncCallback ----------
@@ -281,7 +278,6 @@ public class BaseImageStoreDriverImplTest {
     public void createSnapshotAsyncCallbackSendsAlertUsingDataStoreManagerZoneId() {
         when(dataObject.getId()).thenReturn(50L);
         when(dataObject.getDataStore()).thenReturn(dataStore);
-        when(dataObject.toString()).thenReturn("Snapshot[id=50]");
         when(dataStore.getId()).thenReturn(60L);
         when(dataStore.getRole()).thenReturn(DataStoreRole.Image);
         when(snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Image, 60L, 50L)).thenReturn(null);
@@ -296,8 +292,8 @@ public class BaseImageStoreDriverImplTest {
         driver.createSnapshotAsyncCallback(dispatcher, context);
 
         ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(7L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
-        assertTrue(msgCaptor.getValue().contains("Snapshot[id=50]"));
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED), eq(7L), eq((Long) null), msgCaptor.capture(), msgCaptor.capture());
+        assertTrue(msgCaptor.getValue().contains("id: 50"));
         assertTrue(msgCaptor.getValue().contains("Failed to copy snapshot"));
     }
 
@@ -317,7 +313,7 @@ public class BaseImageStoreDriverImplTest {
         driver.createSnapshotAsyncCallback(dispatcher, context);
 
         verify(parentCallback).complete(any(CreateCmdResult.class));
-        verify(_alertMgr, never()).sendAlert(any(AlertManager.AlertType.class), anyLong(), any(), anyString(), anyString());
+        verify(alertMgr, never()).sendAlert(any(AlertManager.AlertType.class), anyLong(), any(), anyString(), anyString());
     }
 
     // ---------- canCopy ----------
@@ -383,7 +379,7 @@ public class BaseImageStoreDriverImplTest {
     public void deleteAsyncReturnsErrorWhenNoEndpoint() {
         DataTO dataTO = mock(DataTO.class);
         when(dataObject.getTO()).thenReturn(dataTO);
-        when(_epSelector.select(dataObject)).thenReturn(null);
+        when(epSelector.select(dataObject)).thenReturn(null);
 
         AsyncCompletionCallback<CommandResult> callback = mock(AsyncCompletionCallback.class);
 
@@ -401,7 +397,7 @@ public class BaseImageStoreDriverImplTest {
         DataTO dataTO = mock(DataTO.class);
         when(dataObject.getTO()).thenReturn(dataTO);
         EndPoint ep = mock(EndPoint.class);
-        when(_epSelector.select(dataObject)).thenReturn(ep);
+        when(epSelector.select(dataObject)).thenReturn(ep);
         Answer answer = new Answer(null, false, "delete failed on host");
         when(ep.sendMessage(any())).thenReturn(answer);
 
@@ -422,7 +418,7 @@ public class BaseImageStoreDriverImplTest {
         when(dataObject.getTO()).thenReturn(dataTO);
         when(dataObject.getDataStore()).thenReturn(dataStore);
         EndPoint ep = mock(EndPoint.class);
-        when(_defaultEpSelector.select(dataStore)).thenReturn(ep);
+        when(defaultEpSelector.select(dataStore)).thenReturn(ep);
 
         List<DatadiskTO> disks = Collections.singletonList(mock(DatadiskTO.class));
         GetDatadisksAnswer answer = new GetDatadisksAnswer(disks);
@@ -438,7 +434,7 @@ public class BaseImageStoreDriverImplTest {
         DataTO dataTO = mock(DataTO.class);
         when(dataObject.getTO()).thenReturn(dataTO);
         when(dataObject.getDataStore()).thenReturn(dataStore);
-        when(_defaultEpSelector.select(dataStore)).thenReturn(null);
+        when(defaultEpSelector.select(dataStore)).thenReturn(null);
 
         try {
             driver.getDataDiskTemplates(dataObject, "cfg-2");
@@ -454,7 +450,7 @@ public class BaseImageStoreDriverImplTest {
         when(dataObject.getTO()).thenReturn(dataTO);
         when(dataObject.getDataStore()).thenReturn(dataStore);
         EndPoint ep = mock(EndPoint.class);
-        when(_defaultEpSelector.select(dataStore)).thenReturn(ep);
+        when(defaultEpSelector.select(dataStore)).thenReturn(ep);
         Answer answer = new Answer(null, false, "disk listing failed");
         when(ep.sendMessage(any())).thenReturn(answer);
 

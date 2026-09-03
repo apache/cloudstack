@@ -535,7 +535,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                     HostPodVO stoppedHostPodVO = _podDao.findById(stoppedHost.getPodId());
                     hostDesc = AlertFormatUtils.describeHostLocation(stoppedHost, stoppedHostDcVO, stoppedHostPodVO);
                 } else {
-                    hostDesc = "host id: " + hostId;
+                    DataCenterVO vmDcVO = _dcDao.findById(vm.getDataCenterId());
+                    HostPodVO vmPodVO = vm.getPodIdToDeployIn() != null ? _podDao.findById(vm.getPodIdToDeployIn()) : null;
+                    hostDesc = String.format("host id: %s, availability zone: %s, pod: %s",
+                            hostId != null ? hostId : "unknown",
+                            vmDcVO != null ? vmDcVO.getName() : "unknown",
+                            vmPodVO != null ? vmPodVO.getName() : "unknown");
                 }
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() +
                     ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + hostDesc +

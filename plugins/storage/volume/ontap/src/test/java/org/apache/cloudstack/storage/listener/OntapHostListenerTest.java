@@ -59,24 +59,24 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class OntapHostListenerTest {
+class OntapHostListenerTest {
 
     private static final long HOST_ID = 1L;
     private static final long POOL_ID = 2L;
     private static final String LOCAL_PATH = "/mnt/ontap/vol1";
 
     @Mock
-    private AgentManager _agentMgr;
+    private AgentManager agentMgr;
     @Mock
-    private AlertManager _alertMgr;
+    private AlertManager alertMgr;
     @Mock
-    private PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao storagePoolDao;
     @Mock
-    private HostDao _hostDao;
+    private HostDao hostDao;
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
-    private StoragePoolDetailsDao _storagePoolDetailsDao;
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Mock
     private HostVO host;
@@ -88,19 +88,19 @@ public class OntapHostListenerTest {
     @BeforeEach
     void setUp() {
         listener = new OntapHostListener();
-        ReflectionTestUtils.setField(listener, "_agentMgr", _agentMgr);
-        ReflectionTestUtils.setField(listener, "_alertMgr", _alertMgr);
-        ReflectionTestUtils.setField(listener, "_storagePoolDao", _storagePoolDao);
-        ReflectionTestUtils.setField(listener, "_hostDao", _hostDao);
+        ReflectionTestUtils.setField(listener, "_agentMgr", agentMgr);
+        ReflectionTestUtils.setField(listener, "_alertMgr", alertMgr);
+        ReflectionTestUtils.setField(listener, "_storagePoolDao", storagePoolDao);
+        ReflectionTestUtils.setField(listener, "_hostDao", hostDao);
         ReflectionTestUtils.setField(listener, "storagePoolHostDao", storagePoolHostDao);
-        ReflectionTestUtils.setField(listener, "_storagePoolDetailsDao", _storagePoolDetailsDao);
+        ReflectionTestUtils.setField(listener, "_storagePoolDetailsDao", storagePoolDetailsDao);
     }
 
     private void setupValidHostAndPool() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(pool);
-        when(_storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID)).thenReturn(new HashMap<>());
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID)).thenReturn(new HashMap<>());
     }
 
     private ModifyStoragePoolAnswer mockSuccessfulAnswer(long capacityBytes, long availableBytes) {
@@ -120,41 +120,41 @@ public class OntapHostListenerTest {
     // ---------------------------------------------------------------
 
     @Test
-    public void hostConnectReturnsFalseWhenHostNotFound() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(null);
+    void hostConnectReturnsFalseWhenHostNotFound() {
+        when(hostDao.findById(HOST_ID)).thenReturn(null);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
-        verify(_storagePoolDao, never()).findById(anyLong());
+        verify(storagePoolDao, never()).findById(anyLong());
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenHypervisorIsNotKvm() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
+    void hostConnectReturnsFalseWhenHypervisorIsNotKvm() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
         when(host.getHypervisorType()).thenReturn(HypervisorType.XenServer);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
-        verify(_storagePoolDao, never()).findById(anyLong());
+        verify(storagePoolDao, never()).findById(anyLong());
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenPoolNotFound() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
+    void hostConnectReturnsFalseWhenPoolNotFound() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(null);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(null);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
-        verify(_agentMgr, never()).easySend(anyLong(), any(Command.class));
+        verify(agentMgr, never()).easySend(anyLong(), any(Command.class));
     }
 
     @Test
-    public void hostConnectPersistsNewStoragePoolHostAndUpdatesCapacityWhenNoExistingRef() {
+    void hostConnectPersistsNewStoragePoolHostAndUpdatesCapacityWhenNoExistingRef() {
         setupValidHostAndPool();
         when(storagePoolHostDao.findByPoolHost(POOL_ID, HOST_ID)).thenReturn(null);
         ModifyStoragePoolAnswer answer = mockSuccessfulAnswer(1000L, 400L);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertTrue(listener.hostConnect(HOST_ID, POOL_ID));
 
@@ -162,84 +162,84 @@ public class OntapHostListenerTest {
         verify(storagePoolHostDao, never()).update(anyLong(), any(StoragePoolHostVO.class));
         verify(pool).setCapacityBytes(1000L);
         verify(pool).setUsedBytes(600L);
-        verify(_storagePoolDao).update(anyLong(), eq(pool));
+        verify(storagePoolDao).update(anyLong(), eq(pool));
     }
 
     @Test
-    public void hostConnectUpdatesExistingStoragePoolHostRef() {
+    void hostConnectUpdatesExistingStoragePoolHostRef() {
         setupValidHostAndPool();
         StoragePoolHostVO existing = mock(StoragePoolHostVO.class);
         when(existing.getId()).thenReturn(5L);
         when(storagePoolHostDao.findByPoolHost(POOL_ID, HOST_ID)).thenReturn(existing);
         ModifyStoragePoolAnswer answer = mockSuccessfulAnswer(1000L, 400L);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertTrue(listener.hostConnect(HOST_ID, POOL_ID));
 
         verify(existing).setLocalPath(LOCAL_PATH);
-        verify(storagePoolHostDao).update(eq(5L), eq(existing));
+        verify(storagePoolHostDao).update(5L, existing);
         verify(storagePoolHostDao, never()).persist(any(StoragePoolHostVO.class));
     }
 
     @Test
-    public void hostConnectDoesNotUpdatePoolCapacityWhenCapacityBytesIsZero() {
+    void hostConnectDoesNotUpdatePoolCapacityWhenCapacityBytesIsZero() {
         setupValidHostAndPool();
         when(storagePoolHostDao.findByPoolHost(POOL_ID, HOST_ID)).thenReturn(null);
         ModifyStoragePoolAnswer answer = mockSuccessfulAnswer(0L, 0L);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertTrue(listener.hostConnect(HOST_ID, POOL_ID));
 
         verify(pool, never()).setCapacityBytes(anyLong());
-        verify(_storagePoolDao, never()).update(anyLong(), any(StoragePoolVO.class));
+        verify(storagePoolDao, never()).update(anyLong(), any(StoragePoolVO.class));
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenAnswerIsNull() {
+    void hostConnectReturnsFalseWhenAnswerIsNull() {
         setupValidHostAndPool();
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(null);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(null);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
-        verify(_alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
+        verify(alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
     }
 
     @Test
-    public void hostConnectSendsAlertContainingHostWhenAnswerResultIsFalse() {
+    void hostConnectSendsAlertContainingHostWhenAnswerResultIsFalse() {
         setupValidHostAndPool();
         when(host.toString()).thenReturn("Host {id=1, name=kvm-host-1}");
         ModifyStoragePoolAnswer answer = mock(ModifyStoragePoolAnswer.class);
         when(answer.getResult()).thenReturn(false);
         when(answer.getDetails()).thenReturn("agent could not mount volume");
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
         ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
-        verify(_alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(),
+        verify(alertMgr).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_HOST), anyLong(), any(),
                 subjectCaptor.capture(), anyString());
         assertTrue(subjectCaptor.getValue().contains("Host {id=1, name=kvm-host-1}"));
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenAnswerIsNotModifyStoragePoolAnswer() {
+    void hostConnectReturnsFalseWhenAnswerIsNotModifyStoragePoolAnswer() {
         setupValidHostAndPool();
         Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
-        verify(_alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
+        verify(alertMgr, never()).sendAlert(any(), anyLong(), any(), anyString(), anyString());
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenPoolInfoIsNull() {
+    void hostConnectReturnsFalseWhenPoolInfoIsNull() {
         setupValidHostAndPool();
         ModifyStoragePoolAnswer answer = mock(ModifyStoragePoolAnswer.class);
         when(answer.getResult()).thenReturn(true);
         when(answer.getPoolInfo()).thenReturn(null);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
 
@@ -247,9 +247,9 @@ public class OntapHostListenerTest {
     }
 
     @Test
-    public void hostConnectReturnsFalseWhenAgentThrowsException() {
+    void hostConnectReturnsFalseWhenAgentThrowsException() {
         setupValidHostAndPool();
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenThrow(new CloudRuntimeException("agent unreachable"));
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenThrow(new CloudRuntimeException("agent unreachable"));
 
         assertFalse(listener.hostConnect(HOST_ID, POOL_ID));
     }
@@ -259,61 +259,61 @@ public class OntapHostListenerTest {
     // ---------------------------------------------------------------
 
     @Test
-    public void hostDisconnectedReturnsFalseWhenHostNotFound() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(null);
+    void hostDisconnectedReturnsFalseWhenHostNotFound() {
+        when(hostDao.findById(HOST_ID)).thenReturn(null);
 
         assertFalse(listener.hostDisconnected(HOST_ID, POOL_ID));
 
-        verify(_storagePoolDao, never()).findById(anyLong());
+        verify(storagePoolDao, never()).findById(anyLong());
     }
 
     @Test
-    public void hostDisconnectedReturnsFalseWhenPoolNotFound() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(null);
+    void hostDisconnectedReturnsFalseWhenPoolNotFound() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(null);
 
         assertFalse(listener.hostDisconnected(HOST_ID, POOL_ID));
 
-        verify(_agentMgr, never()).easySend(anyLong(), any(Command.class));
+        verify(agentMgr, never()).easySend(anyLong(), any(Command.class));
     }
 
     @Test
-    public void hostDisconnectedReturnsTrueOnSuccessfulAnswer() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+    void hostDisconnectedReturnsTrueOnSuccessfulAnswer() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
         Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(true);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertTrue(listener.hostDisconnected(HOST_ID, POOL_ID));
     }
 
     @Test
-    public void hostDisconnectedReturnsFalseWhenAnswerIsNull() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(pool);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(null);
+    void hostDisconnectedReturnsFalseWhenAnswerIsNull() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(null);
 
         assertFalse(listener.hostDisconnected(HOST_ID, POOL_ID));
     }
 
     @Test
-    public void hostDisconnectedReturnsFalseWhenAnswerResultIsFalse() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+    void hostDisconnectedReturnsFalseWhenAnswerResultIsFalse() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
         Answer answer = mock(Answer.class);
         when(answer.getResult()).thenReturn(false);
         when(answer.getDetails()).thenReturn("failed to unmount");
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenReturn(answer);
 
         assertFalse(listener.hostDisconnected(HOST_ID, POOL_ID));
     }
 
     @Test
-    public void hostDisconnectedReturnsFalseWhenAgentThrowsException() {
-        when(_hostDao.findById(HOST_ID)).thenReturn(host);
-        when(_storagePoolDao.findById(POOL_ID)).thenReturn(pool);
-        when(_agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenThrow(new CloudRuntimeException("agent unreachable"));
+    void hostDisconnectedReturnsFalseWhenAgentThrowsException() {
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+        when(agentMgr.easySend(eq(HOST_ID), any(Command.class))).thenThrow(new CloudRuntimeException("agent unreachable"));
 
         assertFalse(listener.hostDisconnected(HOST_ID, POOL_ID));
     }
@@ -323,22 +323,22 @@ public class OntapHostListenerTest {
     // ---------------------------------------------------------------
 
     @Test
-    public void hostAboutToBeRemovedAlwaysReturnsFalse() {
+    void hostAboutToBeRemovedAlwaysReturnsFalse() {
         assertFalse(listener.hostAboutToBeRemoved(HOST_ID));
     }
 
     @Test
-    public void hostRemovedAlwaysReturnsFalse() {
+    void hostRemovedAlwaysReturnsFalse() {
         assertFalse(listener.hostRemoved(HOST_ID, 99L));
     }
 
     @Test
-    public void hostEnabledAlwaysReturnsFalse() {
+    void hostEnabledAlwaysReturnsFalse() {
         assertFalse(listener.hostEnabled(HOST_ID));
     }
 
     @Test
-    public void hostAddedAlwaysReturnsFalse() {
+    void hostAddedAlwaysReturnsFalse() {
         assertFalse(listener.hostAdded(HOST_ID));
     }
 }

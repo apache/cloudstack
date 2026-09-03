@@ -175,7 +175,7 @@ public class DefaultHostListenerTest {
 
         assertTrue(result);
         verify(storagePoolHostDao).persist(any(StoragePoolHostVO.class));
-        verify(primaryStoreDao).update(eq(POOL_ID), eq(poolVO));
+        verify(primaryStoreDao).update(POOL_ID, poolVO);
         verify(storageService).updateStorageCapabilities(POOL_ID, false);
     }
 
@@ -193,7 +193,7 @@ public class DefaultHostListenerTest {
 
         assertTrue(result);
         verify(storagePoolHostDao, never()).persist(any(StoragePoolHostVO.class));
-        verify(primaryStoreDao).update(eq(POOL_ID), eq(poolVO));
+        verify(primaryStoreDao).update(POOL_ID, poolVO);
         assertEquals("/local/path", existing.getLocalPath());
     }
 
