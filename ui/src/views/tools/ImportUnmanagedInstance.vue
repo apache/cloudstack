@@ -279,6 +279,7 @@
                   @select-compute-item="($event) => updateComputeOffering($event)"
                   @handle-search-filter="($event) => fetchComputeOfferings($event)" />
                 <compute-selection
+                  :key="computeSelectionKey"
                   class="row-element"
                   v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
                   :isCustomized="computeOffering.iscustomized"
@@ -287,7 +288,7 @@
                   :cpuSpeedInputDecorator="cpuSpeedKey"
                   :memoryInputDecorator="memoryKey"
                   :computeOfferingId="computeOffering.id"
-                  :preFillContent="resource"
+                  :preFillContent="computeOfferingPreFillContent"
                   :isConstrained="'serviceofferingdetails' in computeOffering"
                   :minCpu="getMinCpu()"
                   :maxCpu="getMaxCpu()"
@@ -765,6 +766,23 @@ export default {
         }
       }
       return nics
+    },
+    computeOfferingPreFillContent () {
+      return {
+        ...this.resource,
+        cpunumber: this.getCustomCpuNumberDefault(),
+        cpuspeed: this.getCPUSpeed(),
+        memory: this.getCustomMemoryDefault()
+      }
+    },
+    computeSelectionKey () {
+      const preFill = this.computeOfferingPreFillContent
+      return [
+        this.computeOffering?.id || 'offering',
+        preFill.cpunumber || 'cpu',
+        preFill.cpuspeed || 'speed',
+        preFill.memory || 'memory'
+      ].join('-')
     }
   },
   watch: {
@@ -865,14 +883,26 @@ export default {
       }
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
     },
+    clampCustomValue (value, min, max) {
+      if (value === undefined || value === null || isNaN(value)) {
+        return min
+      }
+      return Math.min(Math.max(value * 1, min), max)
+    },
+    getCustomCpuNumberDefault () {
+      return this.clampCustomValue(this.resource?.cpunumber, this.getMinCpu(), this.getMaxCpu())
+    },
+    getCustomMemoryDefault () {
+      return this.clampCustomValue(this.resource?.memory, this.getMinMemory(), this.getMaxMemory())
+    },
     getCPUSpeed () {
       if (!this.computeOffering) {
-        return 0
+        return 2000
       }
       if (this.computeOffering.cpuspeed) {
         return this.computeOffering.cpuspeed * 1
       }
-      return this.resource.cpuspeed * 1 || 0
+      return this.resource.cpuspeed * 1 || 2000
     },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {
