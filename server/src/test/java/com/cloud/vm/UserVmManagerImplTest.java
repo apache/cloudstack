@@ -226,6 +226,9 @@ public class UserVmManagerImplTest {
     private ServiceOfferingDao _serviceOfferingDao;
 
     @Mock
+    private InternalBackupService internalBackupService;
+
+    @Mock
     private DiskOfferingDao diskOfferingDao;
 
     @Mock
