@@ -81,9 +81,11 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
 import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
 import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
@@ -240,6 +242,9 @@ public class ResourceManagerImplTest {
 
     @After
     public void tearDown() throws Exception {
+        // rejectReAddOfDeletedHost tests mutate this static ConfigKey; restore its declared
+        // default so the change cannot leak into other tests sharing this JVM fork.
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "true");
         sshHelperMocked.close();
         actionEventUtilsMocked.close();
         getVncPortCommandMockedConstruction.close();
@@ -1392,5 +1397,123 @@ public class ResourceManagerImplTest {
         Mockito.verify(hostDao).findByDataCenterId(zoneId);
         Mockito.verify(hostDao).findByClusterId(clusterId, Host.Type.Routing);
         Mockito.verify(hostDao).findByPodId(podId, Host.Type.Routing);
+    }
+
+    private static final String DELETED_HOST_GUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee-LibvirtComputingResource";
+    private static final String DELETED_HOST_GUID_PREFIX = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+
+    private HostVO mockDeletedHost() {
+        HostVO deletedHost = Mockito.mock(HostVO.class);
+        when(deletedHost.getRemoved()).thenReturn(new Date());
+        when(deletedHost.getId()).thenReturn(42L);
+        when(deletedHost.getUuid()).thenReturn("some-host-uuid");
+        when(deletedHost.getName()).thenReturn("kvm-host-1");
+        return deletedHost;
+    }
+
+    /**
+     * When 'add.host.on.service.restart.kvm' is true the operator has opted in to letting a deleted
+     * host come back, so the guard must not even query the database.
+     */
+    @Test
+    public void testRejectReAddOfDeletedHostDoesNothingWhenSettingEnabled() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "true");
+
+        resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+
+        verify(hostDao, never()).findByGuidIncludingRemoved(anyString());
+        verify(hostDao, never()).findByGuidPrefixIncludingRemoved(anyString());
+    }
+
+    @Test
+    public void testRejectReAddOfDeletedHostDoesNotThrowWhenGuidIsUnknown() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(null);
+        when(hostDao.findByGuidPrefixIncludingRemoved(DELETED_HOST_GUID_PREFIX)).thenReturn(null);
+
+        resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+    }
+
+    @Test
+    public void testRejectReAddOfDeletedHostThrowsWhenFullGuidMatchesDeletedHost() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        HostVO deletedHost = mockDeletedHost();
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(deletedHost);
+
+        try {
+            resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+            Assert.fail("Expected CloudRuntimeException for an agent whose GUID belongs to a deleted host");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains(DELETED_HOST_GUID));
+            Assert.assertTrue(e.getMessage().contains(ADD_HOST_ON_SERVICE_RESTART_KVM.key()));
+        }
+
+        // A full-GUID hit short-circuits; the prefix lookup must not be issued.
+        verify(hostDao, never()).findByGuidPrefixIncludingRemoved(anyString());
+    }
+
+    @Test
+    public void testRejectReAddOfDeletedHostThrowsWhenGuidPrefixMatchesDeletedHost() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(null);
+        HostVO deletedHost = mockDeletedHost();
+        when(hostDao.findByGuidPrefixIncludingRemoved(DELETED_HOST_GUID_PREFIX)).thenReturn(deletedHost);
+
+        try {
+            resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+            Assert.fail("Expected CloudRuntimeException when only the GUID prefix matches a deleted host");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains(ADD_HOST_ON_SERVICE_RESTART_KVM.key()));
+        }
+    }
+
+    /**
+     * A row returned by the *IncludingRemoved lookups may still be a live host. Only soft-deleted
+     * rows (removed != null) may be refused, otherwise a normal agent reconnect would break.
+     */
+    @Test
+    public void testRejectReAddOfDeletedHostAllowsLiveHostWithSameGuid() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        HostVO liveHost = Mockito.mock(HostVO.class);
+        when(liveHost.getRemoved()).thenReturn(null);
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(liveHost);
+        when(hostDao.findByGuidPrefixIncludingRemoved(DELETED_HOST_GUID_PREFIX)).thenReturn(null);
+
+        resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+    }
+
+    @Test
+    public void testRejectReAddOfDeletedHostAllowsLiveHostMatchedByPrefix() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        HostVO liveHost = Mockito.mock(HostVO.class);
+        when(liveHost.getRemoved()).thenReturn(null);
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(null);
+        when(hostDao.findByGuidPrefixIncludingRemoved(DELETED_HOST_GUID_PREFIX)).thenReturn(liveHost);
+
+        resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, DELETED_HOST_GUID_PREFIX);
+    }
+
+    @Test
+    public void testRejectReAddOfDeletedHostSkipsLookupsForBlankGuidAndPrefix() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+
+        resourceManager.rejectReAddOfDeletedHost(null, null);
+        resourceManager.rejectReAddOfDeletedHost("", "  ");
+
+        verify(hostDao, never()).findByGuidIncludingRemoved(anyString());
+        verify(hostDao, never()).findByGuidPrefixIncludingRemoved(anyString());
+    }
+
+    /**
+     * A blank prefix must not be turned into a wildcard lookup that could match an unrelated host.
+     */
+    @Test
+    public void testRejectReAddOfDeletedHostSkipsPrefixLookupWhenPrefixBlank() throws Exception {
+        overrideDefaultConfigValue(ADD_HOST_ON_SERVICE_RESTART_KVM, "_defaultValue", "false");
+        when(hostDao.findByGuidIncludingRemoved(DELETED_HOST_GUID)).thenReturn(null);
+
+        resourceManager.rejectReAddOfDeletedHost(DELETED_HOST_GUID, "");
+
+        verify(hostDao, never()).findByGuidPrefixIncludingRemoved(anyString());
     }
 }
