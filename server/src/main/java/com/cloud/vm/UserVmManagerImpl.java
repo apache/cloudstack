@@ -160,6 +160,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
@@ -214,7 +215,6 @@ import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
@@ -329,6 +329,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.resourcelimit.ReservationHelper;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
@@ -2598,7 +2599,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String workers = configs.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 10);
-        capacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        capacityReleaseInterval = CapacitySkipcountingHours.value();
 
         String time = configs.get("expunge.interval");
         _expungeInterval = NumbersUtil.parseInt(time, 86400);
@@ -2612,8 +2613,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _vmIpFetchExecutor =   Executors.newScheduledThreadPool(vmipwrks, new NamedThreadFactory("UserVm-ipfetch"));
 
-        String aggregationRange = configs.get("usage.stats.job.aggregation.range");
-        int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
+        int _usageAggregationRange = UsageService.UsageStatsJobAggregationRange.value();
         int HOURLY_TIME = 60;
         final int DAILY_TIME = 60 * 24;
         if (_usageAggregationRange == DAILY_TIME) {
@@ -2628,10 +2628,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this, _configDao));
 
-        String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
-        _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
+        _instanceNameFlag = SetVmInternalNameUsingDisplayName.value();
 
-        _scaleRetry = NumbersUtil.parseInt(configs.get(Config.ScaleRetry.key()), 2);
+        _scaleRetry = NumbersUtil.parseInt(configs.get(ScaleRetry.key()), 2);
 
         _vmIpFetchThreadExecutor = Executors.newFixedThreadPool(VmIpFetchThreadPoolMax.value(), new NamedThreadFactory("vmIpFetchThread"));
         logger.info("User VM Manager is configured.");
@@ -5272,8 +5271,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Don't override if VM already has root/data disk controller detail
             if (vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER) == null) {
-                String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
-                        Config.VmwareRootDiskControllerType.getDefaultValue());
+                String vmwareRootDiskControllerTypeFromSetting = ManagementServer.VmwareRootDiskControllerType.value();
                 vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, vmwareRootDiskControllerTypeFromSetting);
             }
 
@@ -5630,7 +5628,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                String mgmt_cidr = ManagementServer.ManagementNetwork.value();
                 if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
@@ -9743,7 +9741,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
                 EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
                 VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva, AllowDifferentHostTagsOfferingsForVmScale,
-                AutoMigrateVmOnLiveScaleInsufficientCapacity, EnforceResourceLimitOnValidationVm, ResetPasswordOnRestoreFromBackup};
+                AutoMigrateVmOnLiveScaleInsufficientCapacity, EnforceResourceLimitOnValidationVm, ExpungeDelay, ExpungeInterval, ScaleRetry,
+                SetVmInternalNameUsingDisplayName, CapacitySkipcountingHours, ResetPasswordOnRestoreFromBackup};
     }
 
     @Override
@@ -9873,7 +9872,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private String getInternalName(long accountId, long vmId) {
-        String instanceSuffix = _configDao.getValue(Config.InstanceName.key());
+        String instanceSuffix = AgentManager.InstanceName.value();
         if (instanceSuffix == null) {
             instanceSuffix = "DEFAULT";
         }

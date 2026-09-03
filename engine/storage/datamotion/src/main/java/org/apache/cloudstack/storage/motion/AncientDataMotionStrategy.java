@@ -60,6 +60,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
@@ -68,7 +69,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
@@ -79,10 +79,12 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.NumbersUtil;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -340,8 +342,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcData = cacheSnapshotChain(snapshot, new ZoneScope(pool.getDataCenterId()));
             }
 
-            String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
-            int _createVolumeFromSnapshotWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreateVolumeFromSnapshotWait.getDefaultValue()));
+            int _createVolumeFromSnapshotWait = VolumeApiService.CreateVolumeFromSnapshotWait.value();
 
             EndPoint ep = null;
             if (srcData.getDataStore().getRole() == DataStoreRole.Primary) {
@@ -425,8 +426,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(Config.CopyVolumeWait.key());
-        int _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+        int _copyvolumewait = VolumeApiService.CopyVolumeWait.value();
 
         Scope destScope = getZoneScope(destData.getDataStore().getScope());
         DataStore cacheStore = cacheMgr.getCacheStorage(destScope);
@@ -623,8 +623,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(Config.MigrateWait.key());
-        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+        int waitInterval = AgentManager.MigrateWait.value();
 
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
@@ -733,8 +732,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @DB
     protected Answer createTemplateFromSnapshot(DataObject srcData, DataObject destData) {
 
-        String value = configDao.getValue(Config.CreatePrivateTemplateFromSnapshotWait.toString());
-        int _createprivatetemplatefromsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CreatePrivateTemplateFromSnapshotWait.getDefaultValue()));
+        int _createprivatetemplatefromsnapshotwait = TemplateManager.CreatePrivateTemplateFromSnapshotWait.value();
 
         boolean needCache = false;
         if (needCacheStorage(srcData, destData)) {
@@ -767,8 +765,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copySnapshot(DataObject srcData, DataObject destData) {
-        String value = configDao.getValue(Config.BackupSnapshotWait.toString());
-        int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
+        int _backupsnapshotwait = SnapshotManager.BackupSnapshotWait.value();
 
         DataObject cacheData = null;
         SnapshotInfo snapshotInfo = (SnapshotInfo)srcData;

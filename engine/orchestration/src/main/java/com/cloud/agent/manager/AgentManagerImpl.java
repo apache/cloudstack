@@ -94,7 +94,6 @@ import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -119,6 +118,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -2134,7 +2134,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort, InstanceName, XapiWait, MigrateWait,
+                SecStorageVmMTUSize, SecStorageCapacityStandby, SecStorageSessionMax, SecStorageCmdExecutionTimeMax,
+                SecStorageProxy, XenServerMaxNics };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -2170,8 +2172,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                 Map<String, String> params = new HashMap<>();
-                params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
+                params.put(MigrateWait.toString(), String.valueOf(MigrateWait.value()));
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
 

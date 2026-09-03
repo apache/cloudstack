@@ -33,6 +33,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.userdata.UserDataManager;
@@ -48,7 +50,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -82,6 +83,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -107,7 +109,7 @@ import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRou
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 @Component
-public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
+public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru, Configurable {
 
     @Inject
     private AgentManager _agentMgr;
@@ -220,10 +222,10 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, elbVm.getInstanceName());
         //FIXME: why are we setting attributes directly? Ick!! There should be accessors and
         //the constructor should set defaults.
-        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+        cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+        cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
 
         cmds.addCommand(cmd);
 
@@ -292,11 +294,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         if (_instance == null) {
             _instance = "VM";
         }
-        _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        _mgmtCidr = ManagementServer.ManagementNetwork.value();
 
-        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
-        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
-        _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmNumVcpu.key()), 1);
+        _elasticLbVmRamSize = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmMemory.key()), DEFAULT_ELB_VM_RAMSIZE);
+        _elasticLbvmCpuMHz = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmCpuMhz.key()), DEFAULT_ELB_VM_CPU_MHZ);
+        _elasticLbvmNumCpu = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmNumVcpu.key()), 1);
         List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Elastic LB VM",
                 ServiceOffering.elbVmDefaultOffUniqueName, _elasticLbvmNumCpu, _elasticLbVmRamSize, _elasticLbvmCpuMHz, 0, 0, true, null,
                 Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ElasticLoadBalancerVm, true);
@@ -307,11 +309,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             throw new ConfigurationException(msg);
         }
 
-        String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+        String enabled = ManagementServer.ElasticLoadBalancerEnabled.value();
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         logger.info("Elastic Load balancer enabled: " + _enabled);
         if (_enabled) {
-            String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+            String traffType = ManagementServer.ElasticLoadBalancerNetwork.value();
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontendTrafficType = TrafficType.Guest;
             } else if ("public".equalsIgnoreCase(traffType)) {
@@ -319,7 +321,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             } else
                 throw new ConfigurationException("ELB: Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
             logger.info("ELB: Elastic Load Balancer: will balance on " + traffType);
-            int gcIntervalMinutes = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
+            int gcIntervalMinutes = NumbersUtil.parseInt(configs.get(ElasticLoadBalancerVmGcInterval.key()), 5);
             if (gcIntervalMinutes < 5)
                 gcIntervalMinutes = 5;
             logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes");
@@ -624,5 +626,15 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
         _elbVmMapDao.expungeByLbVmList(vmIds, batchSize);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ElasticLoadBalancerManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ElasticLoadBalancerVmMemory, ElasticLoadBalancerVmCpuMhz, ElasticLoadBalancerVmNumVcpu, ElasticLoadBalancerVmGcInterval};
     }
 }
