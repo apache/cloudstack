@@ -32,8 +32,12 @@ public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Volume/Template/ISO")
     private String name;
 
-    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "The format for the Volume/Template/ISO. Possible values include QCOW2, OVA, "
-            + "and VHD.")
+    @Parameter(name = ApiConstants.FORMAT,
+            type = CommandType.STRING,
+            allowedValues = {"QCOW2", "OVA", "VHD"},
+            required = true,
+            description = "The format for the Volume/Template/ISO. Possible values include QCOW2, OVA, "
+                    + "and VHD.")
     private String format;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the zone the Volume/Template/ISO is "
