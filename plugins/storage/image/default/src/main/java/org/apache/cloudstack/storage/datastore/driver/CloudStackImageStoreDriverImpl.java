@@ -33,7 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.image.NfsImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
@@ -48,8 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
 
-    @Inject
-    ConfigurationDao _configDao;
     @Inject
     HostDao _hostDao;
     @Inject
@@ -131,7 +128,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         String hostname = ipAddress;
         String scheme = "http";
         boolean _sslCopy = SecondaryStorageVmManager.SecStorageEncryptCopy.value();
-        String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        String _ssvmUrlDomain = SecondaryStorageVmManager.SecStorageSecureCopyCert.value();
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
             logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;
