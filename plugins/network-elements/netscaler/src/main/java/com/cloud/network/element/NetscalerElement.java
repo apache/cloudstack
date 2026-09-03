@@ -946,8 +946,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         response.setPrivateInterface(lbDetails.get("privateInterface"));
         response.setDeviceName(lbDeviceVO.getDeviceName());
         if (lbDeviceVO.getCapacity() == 0) {
-            long defaultLbCapacity = NumbersUtil
-                    .parseLong(DefaultExternalLoadBalancerCapacity.value(), 50);
+            long defaultLbCapacity = DefaultExternalLoadBalancerCapacity.value();
             response.setDeviceCapacity(defaultLbCapacity);
         } else {
             response.setDeviceCapacity(lbDeviceVO.getCapacity());
