@@ -9494,7 +9494,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     resizedVolume.setMinIops(Long.parseLong(minIops));
                 }
                 if (StringUtils.isNumeric(maxIops)) {
-                    resizedVolume.setMinIops(Long.parseLong(maxIops));
+                    resizedVolume.setMaxIops(Long.parseLong(maxIops));
                 }
             }
         }
