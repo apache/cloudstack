@@ -18,6 +18,7 @@ package org.apache.cloudstack.region;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
@@ -116,7 +117,7 @@ public interface RegionService {
      * @param moveUserCmd
      * @return true if delete was successful, false otherwise
      */
-    boolean moveUser(MoveUserCmd moveUserCmd);
+    boolean moveUser(MoveUserCmd moveUserCmd) throws ResourceAllocationException;
 
     /**
      * update an existing domain

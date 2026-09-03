@@ -470,6 +470,7 @@ public class ApiConstants {
     public static final String CURRENT_PASSWORD = "currentpassword";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String PASSWORD_ENABLED = "passwordenabled";
+    public static final String RESET_PASSWORD = "resetpassword";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String PATH_READY = "pathready";

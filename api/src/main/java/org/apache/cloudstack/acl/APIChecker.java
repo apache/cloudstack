@@ -17,23 +17,30 @@
 package org.apache.cloudstack.acl;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * APICheckers is designed to verify the ownership of resources and to control the access to APIs.
  */
 public interface APIChecker extends Adapter {
+    Logger LOGGER = LogManager.getLogger(APIChecker.class);
     // Interface for checking access for a role using apiname
     // If true, apiChecker has checked the operation
     // If false, apiChecker is unable to handle the operation or not implemented
     // On exception, checkAccess failed don't allow
-    boolean checkAccess(User user, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
-    boolean checkAccess(Account account, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
+    boolean checkAccess(User user, String apiCommandName, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
+    boolean checkAccess(Account account, String apiCommandName, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
     /**
      * Verifies if the account has permission for the given list of APIs and returns only the allowed ones.
      *
@@ -43,6 +50,28 @@ public interface APIChecker extends Adapter {
      * @return the list of allowed apis for the given user
      */
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
+
+    default List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        List<String> allowedApis = new ArrayList<>();
+        for (String apiName : apiNames) {
+            try {
+                checkAccess(account, apiName, null);
+                allowedApis.add(apiName);
+            } catch (RequestLimitException e) {
+                // Non-ACL failure (e.g. rate limiting) should not be treated as simple "not allowed".
+                // Propagate as unchecked so callers are aware of the failure.
+                throw new RuntimeException("Failed to check access for API [" + apiName + "] due to request limits", e);
+            } catch (PermissionDeniedException e) {
+                LOGGER.trace("Account [" + account + "] is not allowed to access API [" + apiName + "]");
+            }
+        }
+        return allowedApis;
+    }
+
     boolean isEnabled();
     List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType);
+
+    default void refreshRoleCacheOnPermissionsChange(Role role) {
+        // Only applicable for dynamic role based checkers
+    }
 }
