@@ -56,7 +56,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
         backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin')
-        incremental_backup_enabled_cfg = Configurations.list(cls.api_client, name='nas.backup.incremental.enabled')
+        incremental_backup_enabled_cfg = Configurations.list(cls.api_client, name='nas.backup.incremental.enabled', zoneid=cls.zone.id)
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
         cls.incremental_backup_enabled = incremental_backup_enabled_cfg[0].value
@@ -66,7 +66,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         if cls.backup_provider != "nas":
             Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='nas')
         if cls.incremental_backup_enabled == "false":
-            Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value='true')
+            Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value='true', zoneid=cls.zone.id)
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
 
@@ -99,7 +99,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
             if cls.incremental_backup_enabled == "false":
-                Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value="false")
+                Configurations.update(cls.api_client, 'nas.backup.incremental.enabled', value="false", zoneid=cls.zone.id)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
