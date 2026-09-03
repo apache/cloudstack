@@ -318,6 +318,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
+    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
@@ -3330,6 +3332,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
+        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+            // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
+            // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
+            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            if (videoRam == 0) {
+                videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
+            }
+        }
         return new VideoDef(videoHw, videoRam);
     }
 
@@ -3480,6 +3490,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
+    }
+
+    protected boolean isGuestX86(VirtualMachineTO vmTO) {
+        String arch = guestCpuArch != null ? guestCpuArch : vmTO.getArch();
+        return arch == null || arch.equals("x86_64") || arch.equals("i686");
     }
 
     private boolean isGuestS390x() {
