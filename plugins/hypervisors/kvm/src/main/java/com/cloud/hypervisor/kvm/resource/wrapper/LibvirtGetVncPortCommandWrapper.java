@@ -41,6 +41,7 @@ public final class LibvirtGetVncPortCommandWrapper extends CommandWrapper<GetVnc
             final Integer vncPort = libvirtComputingResource.getVncPort(conn, command.getName());
             return new GetVncPortAnswer(command, libvirtComputingResource.getPrivateIp(), 5900 + vncPort);
         } catch (final LibvirtException e) {
+            logger.error("Failed to get vnc port for the vm: {} due to {}", command.getName(), e.getMessage());
             return new GetVncPortAnswer(command, e.toString());
         }
     }
