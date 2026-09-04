@@ -946,7 +946,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     private void updateIcmpCodeAndTypeFullUpgrade (Integer icmpCode, Integer icmpType, NetworkACLItemVO networkACLItemVo) {
-        if (networkACLItemVo.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
+        if (NetUtils.ICMP_PROTO.equalsIgnoreCase(networkACLItemVo.getProtocol())) {
             networkACLItemVo.setIcmpCode(icmpCode != null ? icmpCode : -1);
             networkACLItemVo.setIcmpType(icmpType != null ? icmpType : -1);
         } else {
