@@ -405,7 +405,7 @@ export default {
       this.fetchZoneData()
       this.fetchIpv6NetworkOfferingConfiguration()
       this.fetchRoutedNetworkConfiguration()
-      this.fetchSupportedServiceData()
+      this.fetchSupportedServiceData(true)
     },
     isAdmin () {
       return isAdmin()
@@ -455,7 +455,7 @@ export default {
         this.zoneLoading = false
       })
     },
-    fetchSupportedServiceData () {
+    fetchSupportedServiceData (isInitialLoad = false) {
       this.supportedServiceLoading = true
       getAPI('listSupportedNetworkServices', {}).then(json => {
         const networkServices = json.listsupportednetworkservicesresponse.networkservice || []
@@ -491,7 +491,11 @@ export default {
         this.supportedServiceLoading = false
 
         this.$nextTick(() => {
-          this.populateFormFromResource()
+          if (isInitialLoad) {
+            this.populateFormFromResource()
+          } else {
+            this.syncServiceSelectionsForCurrentMode()
+          }
         })
       })
     },
@@ -656,6 +660,45 @@ export default {
         this.form.nsxsupportlb = Boolean(this.serviceProviderMap.Lb)
       }
     },
+    syncServiceSelectionsForCurrentMode () {
+      const updatedServices = this.supportedServices.map(svc => {
+        const serviceCopy = { ...svc, provider: [...svc.provider] }
+        const providerName = this.selectedServiceProviderMap[serviceCopy.name]
+
+        if (providerName) {
+          const providerIndex = serviceCopy.provider.findIndex(p => p.name === providerName)
+          if (providerIndex > 0) {
+            const targetProvider = serviceCopy.provider[providerIndex]
+            serviceCopy.provider.splice(providerIndex, 1)
+            serviceCopy.provider.unshift(targetProvider)
+          }
+          serviceCopy.defaultChecked = true
+          serviceCopy.selectedProvider = providerName
+        } else {
+          serviceCopy.defaultChecked = false
+          serviceCopy.selectedProvider = null
+        }
+        return serviceCopy
+      })
+      this.supportedServices = updatedServices
+
+      const availableNames = new Set(updatedServices.map(svc => svc.name))
+      Object.keys(this.selectedServiceProviderMap).forEach(name => {
+        if (!availableNames.has(name)) {
+          delete this.selectedServiceProviderMap[name]
+        }
+      })
+
+      this.connectivityServiceChecked = Boolean(this.selectedServiceProviderMap.Connectivity)
+      this.sourceNatServiceChecked = Boolean(this.selectedServiceProviderMap.SourceNat)
+
+      this.$nextTick(() => {
+        this.servicesReady = true
+        this.$nextTick(() => {
+          this.checkVpcVirtualRouterForServices()
+        })
+      })
+    },
     async handleProviderChange (value) {
       this.provider = value
       if (this.provider === 'NSX') {
@@ -682,12 +725,7 @@ export default {
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (checked) {
-        const correctProvider = this.serviceProviderMap[service]
-        if (correctProvider && provider !== correctProvider) {
-          this.selectedServiceProviderMap[service] = correctProvider
-        } else {
-          this.selectedServiceProviderMap[service] = provider
-        }
+        this.selectedServiceProviderMap[service] = provider
       } else {
         delete this.selectedServiceProviderMap[service]
       }
