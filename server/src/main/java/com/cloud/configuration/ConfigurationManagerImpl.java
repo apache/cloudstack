@@ -5935,6 +5935,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + zone.getName());
         }
 
+        // A routed id names a bridge on every host (brdr-<id>): a public range and a guest
+        // network sharing one id would merge their L2 domains. The guest-side creation rejects
+        // ids held by public ranges; this is the same guard in the other direction.
+        if (vlanId != null && vlanId.startsWith(BroadcastDomainType.Routed.scheme() + "://")
+                && !_networkDao.listByZoneAndUriAndGuestType(zoneId, vlanId, null).isEmpty()) {
+            throw new InvalidParameterValueException(String.format(
+                    "The routed id %s is already used by a guest network in zone %s", vlanId, zone.getName()));
+        }
+
         String ipRange = null;
 
         if (ipv4) {

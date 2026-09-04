@@ -570,8 +570,11 @@ range (`_dcDao.findVnet()`), and must not collide with another network's broadca
 **Uniqueness must be zone-wide, not per physical network.** Bridge names are global on a host, so
 two networks with routed id 5828 anywhere in the zone would share `brdr-5828` and merge their L2
 domains. The existing zone-wide URI overlap check
-(`_networksDao.listByZoneAndUriAndGuestType()`) covers this; with a single `ROUTED` physical
-network per zone — the expected deployment — it is equivalent to the per-physnet check anyway.
+(`_networksDao.listByZoneAndUriAndGuestType()`) covers guest-vs-guest; with a single `ROUTED`
+physical network per zone — the expected deployment — it is equivalent to the per-physnet check
+anyway. **Guest networks and public ranges (§8.5) share the same id space** and are guarded in
+both directions: creating a guest network whose routed id a public range already carries is
+rejected, and so is creating a public range whose id a guest network holds.
 
 Either way the URI is set at creation and **stable for the network's life**: the bridge name never
 changes, which is what makes it something host policy can reference.
@@ -816,15 +819,17 @@ systemvm:
    must instead receive the host-route form (as `DirectRoutedNetworkGuru.applyDirectRoutedAddressing()`
    does for guests) plus `BroadcastDomainType.Routed` and a `routed://<id>` URI — which is also
    exactly what steers `BridgeVifDriver`'s Public branch into the brdr-bridge + `modifymacip.sh`
-   path instead of the public bridge (today that handling sits only in the Guest branch). The IPv6
-   side needs no new allocation logic: `ipv6Service.updateNicIpv6()` (`PublicNetworkGuru.java:166`)
-   already computes the address with EUI-64 from the range's subnet and the NIC's MAC (§6.3.4);
-   only the /128 + `fe80::1` reshaping applies on top, exactly as for guest NICs. Mechanism sketch:
-   the public IP range's vlan row already carries a tag that `getIp()` copies into the broadcast
-   URI, so a range created with `routed://<id>` as its "vlan" flows through with almost no new
-   plumbing (verify `updateNicIpv6()`'s range lookup by broadcast URI matches such a row); the
-   zone's public network carries one routed id (and thus one `brdr-<id>`) of its own, and systemvm
-   /32s and /128s are advertised by the host's routing daemon exactly like guest addresses.
+   path instead of the public bridge (today that handling sits only in the Guest branch). **IPv6
+   is computed directly in the guru** — `NetUtils.EUI64Address(range ip6_cidr, NIC MAC)` per
+   §6.3.4, then the /128 + `fe80::1` form. Deliberately *not* via `ipv6Service.updateNicIpv6()`:
+   auditing that path showed it is gated on the public network offering's internet protocol
+   (never set on the system public offering, so a no-op in practice) and reserves through **one
+   placeholder NIC per network** — on the shared Public network every SystemVM would receive the
+   *same* address. Neither the gate nor the reservation decides anything here: the MAC already
+   makes the address unique. Mechanism: the public IP range's vlan row carries `routed://<id>` as
+   its tag, which `getIp()` copies into the broadcast URI; the zone's public network carries one
+   routed id (and thus one `brdr-<id>`) of its own, and systemvm /32s and /128s are advertised by
+   the host's routing daemon exactly like guest addresses.
 
 Minor, noted for completeness: `setup_interface_ipv6()` writes `accept_ra 1` — harmless on an
 RA-less bridge, but the static default must not depend on it (and may be set to 0 for direct
@@ -1347,8 +1352,9 @@ Checklist to work through:
 - [ ] `systemvm/.../setup/common.sh` — `onlink` on the v4 default route for link-local gateways;
       install the v6 default route from `IP6GW` instead of relying on RA (§8.5)
 - [ ] `PublicNetworkGuru` / `createVlanIpRange` — direct routed public range for systemvm IPs,
-      dual-stack: host-route NIC form (v4 and v6), `Routed` broadcast URI; `BridgeVifDriver` Public
-      branch handles it; verify `updateNicIpv6()`'s range lookup accepts a `routed://` tag (§8.5)
+      dual-stack: host-route NIC form (v4 and v6, EUI-64 computed in the guru), `Routed` broadcast
+      URI; `BridgeVifDriver` Public branch handles it; routed ids guarded against guest/public
+      collisions in both directions (§8.5, §6.7.2)
 - [ ] `createNetwork`/`createVlanIpRange` — reject an IPv6 CIDR with a prefix longer than /64 for
       L3 networks; EUI-64 needs 64 interface-identifier bits (§6.3.4)
 - [ ] `NetworkServiceImpl.java:657` — stop rejecting DNS for this type as it does for L2 (§6.4)

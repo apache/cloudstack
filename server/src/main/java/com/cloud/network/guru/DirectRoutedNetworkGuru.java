@@ -184,6 +184,12 @@ public class DirectRoutedNetworkGuru extends DirectNetworkGuru {
         if (nic == null) {
             return;
         }
+        // The inherited allocation labels the NIC's isolation URI vlan://<tag> from the vlan
+        // row, as a Shared network needs; here there is no VLAN — the only isolation-shaped
+        // fact about this NIC is its routed://<id> broadcast domain.
+        if (nic.getBroadCastUri() != null && BroadcastDomainType.getSchemeValue(nic.getBroadCastUri()) == BroadcastDomainType.Routed) {
+            nic.setIsolationUri(nic.getBroadCastUri());
+        }
         if (nic.getIPv4Address() != null) {
             nic.setIPv4Netmask(NetUtils.IPV4_HOST_NETMASK);
             nic.setIPv4Gateway(NetUtils.getLinkLocalGateway());

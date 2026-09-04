@@ -2950,6 +2950,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             if (vlanSpecified) {
                 URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
+                // A routed id names a bridge on every host (brdr-<id>): a guest network and a
+                // public range sharing one id would merge their L2 domains. Public ranges store
+                // the routed://<id> URI as their vlan tag; reject any id one already carries.
+                // (Guest-vs-guest collisions are caught by the zone-wide URI check below.)
+                if (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed
+                        && _vlanDao.findByZoneAndVlanId(zoneId, uri.toString()) != null) {
+                    throw new InvalidParameterValueException(String.format(
+                            "The routed id %s is already used by a public IP range in zone %s", vlanId, zone.getName()));
+                }
                 // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
                 URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
                 if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isL3NetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {

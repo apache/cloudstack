@@ -1573,6 +1573,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
+        // Fail here with a clear message rather than deep in setupNetwork(), where no guru
+        // claiming the network produces an opaque error. The physical network is the network
+        // operator's opt-in: without ROUTED it carries no direct routed networks.
+        if (ntwkOff.getGuestType() == GuestType.L3
+                && (pNtwk.getIsolationMethods() == null || !pNtwk.getIsolationMethods().contains("ROUTED"))) {
+            throw new InvalidParameterValueException(String.format(
+                    "Networks of guest type %s can only be created on a physical network with isolation method ROUTED; physical network %s carries %s",
+                    GuestType.L3, pNtwk.getName(), pNtwk.getIsolationMethods()));
+        }
+
         if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIPv4, routerIPv6))) {
             throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
         }
