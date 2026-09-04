@@ -108,6 +108,12 @@
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
   <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+  <bean id="instanceBootGroupDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupDaoImpl" />
+  <bean id="instanceBootGroupMemberDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupMemberDaoImpl" />
+  <bean id="instanceBootGroupReadinessRuleDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupReadinessRuleDaoImpl" />
+  <bean id="instanceBootGroupReadinessRuleDetailsDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupReadinessRuleDetailsDaoImpl" />
+  <bean id="instanceBootGroupReadinessCheckResultDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupReadinessCheckResultDaoImpl" />
+  <bean id="instanceBootGroupDetailsDaoImpl" class="com.cloud.vm.dao.InstanceBootGroupDetailsDaoImpl" />
   <bean id="vmIsoMapDaoImpl" class="com.cloud.vm.dao.VmIsoMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
@@ -329,5 +335,6 @@
   <bean id="dnsZoneJoinDao" class="org.apache.cloudstack.dns.dao.DnsZoneJoinDaoImpl" />
   <bean id="dnsNicJoinDao" class="org.apache.cloudstack.dns.dao.NicDnsJoinDaoImpl" />
   <bean id="dnsServerDetailsDao" class="org.apache.cloudstack.dns.dao.DnsServerDetailsDaoImpl" />
+  <bean id="instanceBootGroupJoinDao" class="org.apache.cloudstack.api.query.dao.InstanceBootGroupJoinDaoImpl" />
 
 </beans>

@@ -423,4 +423,16 @@
     <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" >
         <property name="dnsProviders" value="#{dnsProvidersRegistry.registered}" />
     </bean>
+
+    <bean id="instanceBootGroupManagerImpl" class="org.apache.cloudstack.vm.bootgroup.InstanceBootGroupManagerImpl" />
+    <bean id="instanceBootGroupApiServiceImpl" class="org.apache.cloudstack.vm.bootgroup.InstanceBootGroupApiServiceImpl" />
+    <bean id="instanceBootGroupMembershipGuard" class="org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMembershipGuard" />
+
+    <bean id="vrPingChecker" class="org.apache.cloudstack.vm.bootgroup.readiness.VrPingChecker" />
+    <bean id="portCheckChecker" class="org.apache.cloudstack.vm.bootgroup.readiness.PortCheckChecker" />
+    <bean id="guestAgentLivenessChecker" class="org.apache.cloudstack.vm.bootgroup.readiness.GuestAgentLivenessChecker" />
+
+    <bean id="instanceBootGroupReadinessRuleManagerImpl" class="org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRuleManagerImpl">
+        <property name="readinessCheckers" value="#{bootGroupReadinessCheckersRegistry.registered}" />
+    </bean>
 </beans>

@@ -5701,6 +5701,170 @@ class InstanceGroup:
         apiclient.recoverVirtualMachine(cmd)
 
 
+class InstanceBootGroup:
+    """Manage Instance Boot Group lifecycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, description=None, account=None,
+               domainid=None, projectid=None, readinessattempttimeoutseconds=None,
+               readinessmaxretryattempts=None, readinessrebootonretry=None,
+               readinessinitialdelayseconds=None):
+        """Creates an instance boot group"""
+
+        cmd = createInstanceBootGroup.createInstanceBootGroupCmd()
+        cmd.name = name
+        if description is not None:
+            cmd.description = description
+        if account is not None:
+            cmd.account = account
+        if domainid is not None:
+            cmd.domainid = domainid
+        if projectid is not None:
+            cmd.projectid = projectid
+        if readinessattempttimeoutseconds is not None:
+            cmd.readinessattempttimeoutseconds = readinessattempttimeoutseconds
+        if readinessmaxretryattempts is not None:
+            cmd.readinessmaxretryattempts = readinessmaxretryattempts
+        if readinessrebootonretry is not None:
+            cmd.readinessrebootonretry = readinessrebootonretry
+        if readinessinitialdelayseconds is not None:
+            cmd.readinessinitialdelayseconds = readinessinitialdelayseconds
+        return InstanceBootGroup(apiclient.createInstanceBootGroup(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the instance boot group"""
+        cmd = updateInstanceBootGroup.updateInstanceBootGroupCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateInstanceBootGroup(cmd)
+
+    def delete(self, apiclient):
+        """Delete the instance boot group"""
+        cmd = deleteInstanceBootGroup.deleteInstanceBootGroupCmd()
+        cmd.id = self.id
+        return apiclient.deleteInstanceBootGroup(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all instance boot groups"""
+        cmd = listInstanceBootGroups.listInstanceBootGroupsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listInstanceBootGroups(cmd)
+
+    def start(self, apiclient):
+        """Starts all members of the instance boot group in boot order"""
+        cmd = startInstanceBootGroup.startInstanceBootGroupCmd()
+        cmd.id = self.id
+        return apiclient.startInstanceBootGroup(cmd)
+
+    def stop(self, apiclient, forced=None):
+        """Stops all members of the instance boot group in reverse boot order"""
+        cmd = stopInstanceBootGroup.stopInstanceBootGroupCmd()
+        cmd.id = self.id
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.stopInstanceBootGroup(cmd)
+
+    def reboot(self, apiclient, forced=None):
+        """Reboots the instance boot group (stop then start, with readiness gating)"""
+        cmd = rebootInstanceBootGroup.rebootInstanceBootGroupCmd()
+        cmd.id = self.id
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.rebootInstanceBootGroup(cmd)
+
+    def addMember(self, apiclient, order, virtualmachineid=None, instancegroupid=None):
+        """Adds a VM or instance group member to the instance boot group"""
+        cmd = addMemberToInstanceBootGroup.addMemberToInstanceBootGroupCmd()
+        cmd.id = self.id
+        cmd.order = order
+        if virtualmachineid is not None:
+            cmd.virtualmachineid = virtualmachineid
+        if instancegroupid is not None:
+            cmd.instancegroupid = instancegroupid
+        return InstanceBootGroupMember(apiclient.addMemberToInstanceBootGroup(cmd).__dict__)
+
+    @classmethod
+    def listMembers(cls, apiclient, bootgroupid, **kwargs):
+        """List members of an instance boot group"""
+        cmd = listInstanceBootGroupMembers.listInstanceBootGroupMembersCmd()
+        cmd.bootgroupid = bootgroupid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listInstanceBootGroupMembers(cmd)
+
+
+class InstanceBootGroupMember:
+    """Manage an individual instance boot group member entry"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    def update(self, apiclient, order):
+        """Updates the boot order of this member"""
+        cmd = updateInstanceBootGroupMember.updateInstanceBootGroupMemberCmd()
+        cmd.id = self.id
+        cmd.order = order
+        return apiclient.updateInstanceBootGroupMember(cmd)
+
+    def delete(self, apiclient):
+        """Removes this member from its instance boot group"""
+        cmd = removeInstanceBootGroupMember.removeInstanceBootGroupMemberCmd()
+        cmd.id = self.id
+        return apiclient.removeInstanceBootGroupMember(cmd)
+
+
+class InstanceBootGroupReadinessRule:
+    """Manage Instance Boot Group readiness rules"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, bootgroupid, ruletype, virtualmachineid=None,
+               instancegroupid=None, name=None, enabled=None, details=None):
+        """Creates a readiness rule for a boot group member"""
+        cmd = createInstanceBootGroupReadinessRule.createInstanceBootGroupReadinessRuleCmd()
+        cmd.bootgroupid = bootgroupid
+        cmd.ruletype = ruletype
+        if virtualmachineid is not None:
+            cmd.virtualmachineid = virtualmachineid
+        if instancegroupid is not None:
+            cmd.instancegroupid = instancegroupid
+        if name is not None:
+            cmd.name = name
+        if enabled is not None:
+            cmd.enabled = enabled
+        if details is not None:
+            cmd.details = details
+        return InstanceBootGroupReadinessRule(apiclient.createInstanceBootGroupReadinessRule(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the readiness rule"""
+        cmd = updateInstanceBootGroupReadinessRule.updateInstanceBootGroupReadinessRuleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateInstanceBootGroupReadinessRule(cmd)
+
+    def delete(self, apiclient):
+        """Deletes the readiness rule"""
+        cmd = deleteInstanceBootGroupReadinessRule.deleteInstanceBootGroupReadinessRuleCmd()
+        cmd.id = self.id
+        return apiclient.deleteInstanceBootGroupReadinessRule(cmd)
+
+    @classmethod
+    def list(cls, apiclient, bootgroupid, **kwargs):
+        """List readiness rules for an instance boot group"""
+        cmd = listInstanceBootGroupReadinessRules.listInstanceBootGroupReadinessRulesCmd()
+        cmd.bootgroupid = bootgroupid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listInstanceBootGroupReadinessRules(cmd)
+
+
 class ASA1000V:
     """Manage ASA 1000v lifecycle"""
 

@@ -1,0 +1,132 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.api.command.user.bootgroup;
+
+import java.util.Collection;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.InstanceBootGroupReadinessRuleResponse;
+import org.apache.cloudstack.api.response.InstanceBootGroupResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
+
+@APICommand(name = "createInstanceBootGroupReadinessRule",
+        description = "Creates a readiness rule for an Instance or Instance Group that is a member (directly, or via its instance group) of an Instance Boot Group",
+        since = "4.24.0",
+        responseObject = InstanceBootGroupReadinessRuleResponse.class,
+        entityType = {InstanceBootGroupReadinessRule.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class CreateInstanceBootGroupReadinessRuleCmd extends BaseCmd implements UserCmd {
+
+    @Inject
+    InstanceBootGroupService instanceBootGroupService;
+
+    @Parameter(name = ApiConstants.BOOT_GROUP_ID, type = CommandType.UUID, entityType = InstanceBootGroupResponse.class, required = true,
+            description = "The ID of the Instance Boot Group this rule belongs to")
+    private Long bootGroupId;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            description = "The ID of the Instance this rule applies to (exclusive with instancegroupid)")
+    private Long virtualMachineId;
+
+    @Parameter(name = ApiConstants.INSTANCE_GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class,
+            description = "The ID of the Instance Group this rule applies to (exclusive with virtualmachineid)")
+    private Long instanceGroupId;
+
+    @Parameter(name = ApiConstants.RULE_TYPE, type = CommandType.STRING, required = true,
+            description = "The readiness rule type: GuestAgentLiveness, Ping, PortCheck or MemberQuorum")
+    private String ruleType;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the readiness rule; auto-generated if not provided")
+    private String name;
+
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "Whether the rule is enabled; defaults to true")
+    private Boolean enabled;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Rule-type-specific configuration, e.g. port/protocol, script, threshold_type/threshold_value")
+    private Map details;
+
+    public Long getBootGroupId() {
+        return bootGroupId;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public Long getInstanceGroupId() {
+        return instanceGroupId;
+    }
+
+    public String getRuleType() {
+        return ruleType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isEnabled() {
+        return enabled == null || enabled;
+    }
+
+    public Map<String, String> getDetails() {
+        if (this.details == null || this.details.isEmpty()) {
+            return null;
+        }
+        Collection<String> paramsCollection = this.details.values();
+        return (Map<String, String>) (paramsCollection.toArray())[0];
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.InstanceBootGroupReadinessRule;
+    }
+
+    @Override
+    public void execute() {
+        InstanceBootGroupReadinessRule result = instanceBootGroupService.createInstanceBootGroupReadinessRule(this);
+        if (result == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create instance boot group readiness rule");
+        }
+        InstanceBootGroupReadinessRuleResponse response = instanceBootGroupService.createInstanceBootGroupReadinessRuleResponse(result);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+}
