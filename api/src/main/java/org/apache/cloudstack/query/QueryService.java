@@ -140,6 +140,12 @@ public interface QueryService {
     ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "true",
             "Determines whether VM stats should be returned when details are not explicitly specified in listVirtualMachines API request. When false, details default to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]. When true, all details are returned including 'stats'.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> BypassTemplateView = new ConfigKey<>("Advanced", Boolean.class, "template.list.bypass.view",
+            "false",
+            "If true, uses an optimized query path for listing templates and ISOs, which can improve performance on " +
+                    "deployments with large numbers of templates. Automatically falls back to the standard query when" +
+                    " filtering by tags, using the shared, featured, or community template filters, or when including" +
+                    " removed templates.", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ResponseObject.ResponseView responseView, ListUsersCmd cmd) throws PermissionDeniedException;
 

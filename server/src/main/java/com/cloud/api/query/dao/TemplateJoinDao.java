@@ -52,5 +52,20 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
+    /**
+     * Bypass-the-view Phase 1 implementation. Issues a hand-tuned SQL query
+     * directly against the underlying tables (vm_template, account,
+     * template_store_ref, image_store, template_zone_ref, data_center) instead
+     * of going through {@code template_view}. Caller must check
+     * {@link TemplateListFilter#canBypass()} first; this method does not handle
+     * tags, sharedAccountIds, domainPath, or featured/community-style domainId
+     * filters and will throw IllegalArgumentException if those are populated.
+     *
+     * Returns TemplateJoinVO objects with only {@code id} (when
+     * {@code filter.showUnique}) or {@code tempZonePair} populated, plus the
+     * total distinct count for pagination.
+     */
+    Pair<List<TemplateJoinVO>, Integer> findDistinctTempZonePairs(TemplateListFilter filter);
+
     List<TemplateJoinVO> findByDistinctIds(Long... ids);
 }
