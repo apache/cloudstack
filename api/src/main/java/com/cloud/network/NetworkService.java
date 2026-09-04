@@ -232,7 +232,7 @@ public interface NetworkService {
     /**
      * Requests an IP address for the guest NIC
      */
-    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 

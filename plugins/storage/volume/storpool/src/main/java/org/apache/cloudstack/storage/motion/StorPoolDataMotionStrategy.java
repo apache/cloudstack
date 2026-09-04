@@ -224,7 +224,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     if (answer != null && answer.getResult()) {
                         SpApiResponse resSnapshot = StorPoolUtil.volumeSnapshot(volumeName, template.getUuid(), null, "template", null, conn);
                         if (resSnapshot.getError() != null) {
-                            logger.debug(String.format("Could not snapshot volume with ID={}", snapshot.getId()));
+                            logger.debug("Could not snapshot volume with ID={}", snapshot.getId());
                             StorPoolUtil.spLog("VolumeSnapshot failed with error=%s", resSnapshot.getError().getDescr());
                             err = resSnapshot.getError().getDescr();
                         } else {
@@ -298,7 +298,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
-                if (srcVolumeInfo.getPassphraseId() != null) {
+                if (srcVolumeInfo.getPassphraseId() != null || srcVolumeInfo.getKmsKeyId() != null) {
                     throw new CloudRuntimeException(String.format("Cannot live migrate encrypted volume [%s] to StorPool", srcVolumeInfo.getVolume()));
                 }
                 DataStore destDataStore = entry.getValue();

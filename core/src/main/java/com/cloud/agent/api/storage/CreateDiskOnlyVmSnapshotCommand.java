@@ -21,6 +21,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.VMSnapshotBaseCommand;
 import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
@@ -30,12 +31,19 @@ public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
     protected VirtualMachine.State vmState;
 
-    public CreateDiskOnlyVmSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<VolumeObjectTO> volumeTOs, String guestOSType, VirtualMachine.State vmState) {
-        super(vmName, snapshot, volumeTOs, guestOSType);
+    List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths;
+
+    public CreateDiskOnlyVmSnapshotCommand(String vmName, VMSnapshotTO snapshot, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String guestOSType, VirtualMachine.State vmState) {
+        super(vmName, snapshot, null, guestOSType);
         this.vmState = vmState;
+        this.volumeTosAndNewPaths = volumeTosAndNewPaths;
     }
 
     public VirtualMachine.State getVmState() {
         return vmState;
+    }
+
+    public List<Pair<VolumeObjectTO, String>> getVolumeTosAndNewPaths() {
+        return volumeTosAndNewPaths;
     }
 }

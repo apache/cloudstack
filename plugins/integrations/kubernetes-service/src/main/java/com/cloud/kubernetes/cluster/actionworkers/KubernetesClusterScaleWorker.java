@@ -44,7 +44,6 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
@@ -61,8 +60,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import org.apache.logging.log4j.Level;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
@@ -310,18 +307,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         final long originalNodeCount = kubernetesCluster.getTotalNodeCount();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        if (vmList == null || vmList.isEmpty() || vmList.size() < originalNodeCount) {
+        if (CollectionUtils.isEmpty(vmList) || vmList.size() < originalNodeCount) {
             logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, it is in unstable state as not enough existing VM instances found!", kubernetesCluster.getName()));
-        } else {
-            for (KubernetesClusterVmMapVO vmMapVO : vmList) {
-                VMInstanceVO vmInstance = vmInstanceDao.findById(vmMapVO.getVmId());
-                if (vmInstance != null && vmInstance.getState().equals(VirtualMachine.State.Running) &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.XenServer &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.VMware &&
-                        vmInstance.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
-                    logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling Kubernetes cluster with running VMs on hypervisor %s is not supported!", kubernetesCluster.getName(), vmInstance.getHypervisorType()));
-                }
-            }
         }
     }
 

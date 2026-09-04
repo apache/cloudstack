@@ -166,6 +166,7 @@ import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
@@ -387,7 +388,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static void registerMetric(String name, Metric metric) {
+        METRIC_REGISTRY.register(name, metric);
+    }
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -410,6 +415,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
         registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
         registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
+        try {
+            JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
+        } catch (Exception e) {
+            logger.warn("Failed to start JMX reporter for METRIC_REGISTRY, metrics will not be visible via JMX", e);
+        }
         return true;
     }
     @Override
@@ -1288,14 +1298,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * can be enabled/disabled independently.</p>
      */
     class VmStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVirtualMachineStats();
+            try {
+                cleanUpVirtualMachineStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up VM stats", e);
+            }
         }
     }
 
     class VolumeStatsCleaner extends ManagedContextRunnable{
+        @Override
         protected void runInContext() {
-            cleanUpVolumeStats();
+            try {
+                cleanUpVolumeStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up Volume stats", e);
+            }
         }
     }
 

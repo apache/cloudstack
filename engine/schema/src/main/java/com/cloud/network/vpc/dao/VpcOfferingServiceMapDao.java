@@ -42,4 +42,6 @@ public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceM
 
     List<VpcOfferingServiceMapVO> listProvidersForServiceForVpcOffering(long vpcOfferingId, Service service);
 
+    List<Long> listOfferingIdsByServiceAndProvider(Service service, String provider);
+
 }

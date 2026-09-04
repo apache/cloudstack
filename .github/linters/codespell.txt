@@ -184,6 +184,8 @@ environmnet
 equivalant
 erro
 erronous
+errorprone
+everthing
 everytime
 excute
 execept

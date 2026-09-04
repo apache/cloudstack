@@ -36,6 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
+import org.apache.commons.lang3.ObjectUtils;
 
 @APICommand(name = "createVMFromBackup",
         description = "Creates and automatically starts a VM from a backup.",
@@ -70,6 +71,15 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.PRESERVE_IP, type = CommandType.BOOLEAN, description = "Use the same IP/MAC addresses as stored in the backup metadata. Works only if the original Instance is deleted and the IP/MAC address is available.")
     private Boolean preserveIp;
 
+    @Parameter(name = ApiConstants.QUICK_RESTORE, type = CommandType.BOOLEAN, entityType = BackupResponse.class, description = "Whether to use the quick restore process or not. " +
+            "Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
+    private Boolean quickRestore;
+
+    @Parameter(name = ApiConstants.RESET_PASSWORD, type = CommandType.BOOLEAN,
+            description = "For a password enabled template, whether to generate a new password for the created Instance and return it in the response. " +
+                    "If not specified, the zone setting `restore.vm.from.backup.reset.password` decides.", since = "4.22.1.0")
+    private Boolean resetPassword;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -88,6 +98,14 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
 
     public boolean getPreserveIp() {
         return (preserveIp != null) ? preserveIp : false;
+    }
+
+    public Boolean getQuickRestore() {
+        return ObjectUtils.defaultIfNull(this.quickRestore, false);
+    }
+
+    public Boolean getResetPassword() {
+        return resetPassword;
     }
 
     @Override

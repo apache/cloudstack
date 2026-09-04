@@ -56,6 +56,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.Resource;
+import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.ResourceLimitVO;
@@ -66,6 +67,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -683,6 +685,35 @@ public class ResourceLimitManagerImplTest {
     }
 
     @Test
+    public void testRecalculateResourceCountRemovedAccount() {
+        Long accountId = 10L;
+        Long domainId = 2L;
+        Resource.ResourceType type = Resource.ResourceType.secondary_storage;
+        Mockito.when(domainDao.findById(domainId)).thenReturn(Mockito.mock(DomainVO.class));
+        Account removedAccount = Mockito.mock(Account.class);
+        Mockito.when(entityManager.findByIdIncludingRemoved(Account.class, accountId)).thenReturn(removedAccount);
+        Mockito.doNothing().when(resourceLimitManager).removeResourceLimitAndCountForNonMatchingTags(Mockito.anyLong(),
+                Mockito.any(), Mockito.anyList(), Mockito.anyList());
+        Mockito.doReturn(1L).when(resourceLimitManager).recalculateAccountResourceCount(accountId, type, null);
+        Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager).recalculateAccountTaggedResourceCount(
+                Mockito.eq(accountId.longValue()), Mockito.eq(type), Mockito.anyList(), Mockito.anyList());
+
+        List<? extends ResourceCount> result = resourceLimitManager.recalculateResourceCount(accountId, domainId, type.getOrdinal(), null);
+
+        Assert.assertEquals(1, result.size());
+        Mockito.verify(accountManager).verifyCallerPrivilegeForUserOrAccountOperations(removedAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRecalculateResourceCountAccountNotFound() {
+        Long accountId = 10L;
+        Long domainId = 2L;
+        Mockito.when(domainDao.findById(domainId)).thenReturn(Mockito.mock(DomainVO.class));
+        Mockito.when(entityManager.findByIdIncludingRemoved(Account.class, accountId)).thenReturn(null);
+        resourceLimitManager.recalculateResourceCount(accountId, domainId, Resource.ResourceType.secondary_storage.getOrdinal(), null);
+    }
+
+    @Test
     public void testGetVmsWithAccountAndTagNoTag() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRunningVMsonly, "_defaultValue", "false");
         List<VirtualMachine.State> states = Arrays.asList(VirtualMachine.State.Destroyed, VirtualMachine.State.Error, VirtualMachine.State.Expunging);
@@ -952,7 +983,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         long delta = 10L;
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         resourceLimitManager.incrementVolumeResourceCount(1L, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.never()).checkResourceLimitWithTag(Mockito.any(Account.class),
                 Mockito.eq(Resource.ResourceType.volume), Mockito.anyString());
@@ -960,7 +991,7 @@ public class ResourceLimitManagerImplTest {
                 Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
 
         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             resourceLimitManager.checkVolumeResourceLimit(account, false, delta, Mockito.mock(DiskOffering.class), reservations);
@@ -974,7 +1005,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         long delta = 10L;
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         resourceLimitManager.incrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.volume), Mockito.anyString());
@@ -982,7 +1013,7 @@ public class ResourceLimitManagerImplTest {
                 Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         resourceLimitManager.incrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.times(1)).incrementResourceCountWithTag(
@@ -997,17 +1028,17 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         long delta = 10L;
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
+        resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.volume), Mockito.anyString());
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         mockDecrementResourceCountWithTag();
-        resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
+        resourceLimitManager.decrementVolumeResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCountWithTag(
                 1L, Resource.ResourceType.volume, tag);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
@@ -1020,13 +1051,13 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         long delta = 10L;
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         resourceLimitManager.incrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         resourceLimitManager.incrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.times(1))
@@ -1039,13 +1070,13 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         long delta = 10L;
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         resourceLimitManager.decrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.primary_storage), Mockito.anyString(), Mockito.anyLong());
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
-                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
+                .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class), Mockito.any());
         mockDecrementResourceCountWithTag();
         resourceLimitManager.decrementVolumePrimaryStorageResourceCount(accountId, false, delta, Mockito.mock(DiskOffering.class));
         Mockito.verify(resourceLimitManager, Mockito.times(1))
@@ -1058,9 +1089,9 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.incrementVmResourceCount(accountId, false,
-                Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class));
+                Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.user_vm), Mockito.anyString());
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
@@ -1070,7 +1101,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         int cpu = 1;
@@ -1078,7 +1109,7 @@ public class ResourceLimitManagerImplTest {
         int memory = 1024;
         Mockito.when(offering.getRamSize()).thenReturn(memory);
         resourceLimitManager.incrementVmResourceCount(accountId, false,
-                offering, Mockito.mock(VirtualMachineTemplate.class));
+                offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1)).incrementResourceCountWithTag(
                 1L, Resource.ResourceType.user_vm, tag);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
@@ -1093,9 +1124,9 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.decrementVmResourceCount(accountId, false,
-                Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class));
+                Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
                 Mockito.eq(Resource.ResourceType.user_vm), Mockito.anyString());
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
@@ -1105,7 +1136,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockDecrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         int cpu = 1;
@@ -1113,7 +1144,7 @@ public class ResourceLimitManagerImplTest {
         int memory = 1024;
         Mockito.when(offering.getRamSize()).thenReturn(memory);
         resourceLimitManager.decrementVmResourceCount(accountId, false,
-                offering, Mockito.mock(VirtualMachineTemplate.class));
+                offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCountWithTag(
                 1L, Resource.ResourceType.user_vm, tag);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
@@ -1128,7 +1159,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.incrementVmCpuResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
@@ -1136,7 +1167,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Long cpu = 2L;
@@ -1152,7 +1183,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.decrementVmCpuResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
@@ -1160,7 +1191,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockDecrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         int cpu = 1;
@@ -1177,7 +1208,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.incrementVmMemoryResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
@@ -1185,7 +1216,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         long memory = 1024L;
@@ -1201,7 +1232,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.decrementVmMemoryResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
@@ -1209,7 +1240,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockDecrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         int memory = 1024;
@@ -1226,7 +1257,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.incrementVmGpuResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).incrementResourceCountWithTag(Mockito.anyLong(),
@@ -1234,7 +1265,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockIncrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Long gpuCount = 2L;
@@ -1251,7 +1282,7 @@ public class ResourceLimitManagerImplTest {
         String tag = "tag";
         Mockito.doReturn(new ArrayList<>()).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         resourceLimitManager.decrementVmGpuResourceCount(accountId, false,
                 Mockito.mock(ServiceOffering.class), Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.never()).decrementResourceCountWithTag(Mockito.anyLong(),
@@ -1259,7 +1290,7 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
-                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class));
+                        Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
         mockDecrementResourceCountWithTag();
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         int gpuCount = 1;

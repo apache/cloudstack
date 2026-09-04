@@ -549,6 +549,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     ResourceIconManager resourceIconManager;
     @Inject
     AsyncJobDao asyncJobDao;
+    @Inject
+    NetworkModel networkModel;
+
 
     public static String getPrettyDomainPath(String path) {
         if (path == null) {
@@ -2658,6 +2661,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setDetails(details);
         }
 
+        Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
+            response.setDnsZone(dnsZoneAndSubDomain.first());
+        }
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.second())) {
+            response.setDnsSubdomain(dnsZoneAndSubDomain.second());
+        }
+
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
@@ -2962,8 +2973,21 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+        Long networkId = fwRule.getNetworkId();
+        if (networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                response.setNetworkId(network.getUuid());
+            }
+        }
+
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
@@ -3312,9 +3336,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
         response.setServices(services);
 
-        Provider serviceProvider = Provider.getProvider(result.getProviderName());
-        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
-        response.setCanEnableIndividualServices(canEnableIndividualServices);
+        Provider serviceProvider = networkModel.resolveProvider(result.getProviderName());
+        if (serviceProvider != null) {
+            boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+            response.setCanEnableIndividualServices(canEnableIndividualServices);
+        }
 
         response.setObjectName("networkserviceprovider");
         return response;
@@ -4764,6 +4790,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
+        response.setDescription(result.getDescription());
         response.setObjectName("nicsecondaryip");
         return response;
     }
@@ -4850,6 +4877,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
+                    ipRes.setDescription(ip.getDescription());
                     setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
@@ -5145,6 +5173,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setSchedule(schedule.getSchedule());
         response.setTimezone(schedule.getTimezone());
         response.setMaxBackups(schedule.getMaxBackups());
+        response.setIsolated(schedule.isIsolated());
 
         if (schedule.getQuiesceVM() != null) {
             response.setQuiesceVM(schedule.getQuiesceVM());
@@ -5416,8 +5445,21 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
 
-        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-        response.setNetworkId(network.getUuid());
+        Long networkId = fwRule.getNetworkId();
+        if (networkId != null) {
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+                response.setNetworkId(network.getUuid());
+            }
+        }
+
+        Long vpcId = fwRule.getVpcId();
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                response.setVpcId(vpc.getUuid());
+            }
+        }
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
@@ -5730,6 +5772,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         guiThemeResponse.setJsonConfiguration(guiThemeJoin.getJsonConfiguration());
         guiThemeResponse.setCss(guiThemeJoin.getCss());
+        guiThemeResponse.setLoginBaseDomain(guiThemeJoin.getLoginBaseDomain());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;

@@ -21,6 +21,16 @@ import { isZoneCreated } from '@/utils/zone'
 import { getAPI, postAPI, getBaseUrl } from '@/api'
 import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
+import { escapeHtml } from '@/utils/util'
+
+const attachedIsoCount = (record) => (record.isos && record.isos.length) || (record.isoid ? 1 : 0)
+// Server pre-computes the effective cap (cluster-scoped vm.iso.max.count clamped to the
+// hypervisor's own limit). Fall back to the hypervisor floor for older servers.
+const isoMaxCount = (record) => record.isomaxcount != null
+  ? record.isomaxcount
+  : (record.hypervisor === 'KVM' ? 2 : 1)
+const isoActionAvailable = (record) =>
+  record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm'
 
 export default {
   name: 'compute',
@@ -293,13 +303,28 @@ export default {
           }
         },
         {
+          api: 'finishBackupChain',
+          icon: 'vertical-align-middle-outlined',
+          label: 'label.backup.chain.finish',
+          dataView: true,
+          args: ['virtualmachineid'],
+          show: (record) => {
+            return ['Running', 'Stopped', 'BackupError'].includes(record.state) && record.backupofferingid && record.backupprovider === 'kboss'
+          },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'attachIso',
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.iso',
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) < isoMaxCount(record),
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
@@ -307,22 +332,11 @@ export default {
           api: 'detachIso',
           icon: 'link-outlined',
           label: 'label.action.detach.iso',
-          message: 'message.detach.iso.confirm',
           dataView: true,
-          args: (record, store) => {
-            var args = ['virtualmachineid']
-            if (record && record.hypervisor && record.hypervisor === 'VMware') {
-              args.push('forced')
-            }
-            return args
-          },
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'sharedfsvm' },
+          popup: true,
+          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) > 0,
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DetachIso.vue')))
         },
         {
           api: 'updateVMAffinityGroup',
@@ -379,7 +393,7 @@ export default {
           show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }
@@ -915,6 +929,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
         },
         {
+          name: 'schedules',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResourceSchedules.vue'))),
+          show: () => { return 'listResourceSchedule' in store.getters.apis }
+        },
+        {
           name: 'events',
           resourceType: 'AutoScaleVmGroup',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
@@ -963,9 +983,9 @@ export default {
           dataView: true,
           args: (record, store) => {
             var args = ['name']
+            args.push('maxmembers')
+            args.push('minmembers')
             if (record.state === 'DISABLED') {
-              args.push('maxmembers')
-              args.push('minmembers')
               args.push('interval')
             }
             return args

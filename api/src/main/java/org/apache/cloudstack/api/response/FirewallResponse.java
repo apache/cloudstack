@@ -51,6 +51,10 @@ public class FirewallResponse extends BaseResponse {
     @Param(description = "The Network ID of the firewall rule")
     private String networkId;
 
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "The VPC ID of the firewall rule")
+    private String vpcId;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "The public IP address for the firewall rule")
     private String publicIpAddress;
@@ -113,6 +117,10 @@ public class FirewallResponse extends BaseResponse {
 
     public void setNetworkId(String networkId) {
         this.networkId = networkId;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
     }
 
     public void setState(String state) {

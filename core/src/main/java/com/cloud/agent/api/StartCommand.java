@@ -22,13 +22,15 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
+import java.util.List;
+
 /**
  */
 public class StartCommand extends Command {
     VirtualMachineTO vm;
     String hostIp;
     boolean executeInSequence = false;
-    String secondaryStorage;
+    private List<String> secondaryStorages;
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -50,18 +52,18 @@ public class StartCommand extends Command {
         this.vm = vm;
         this.hostIp = host.getPrivateIpAddress();
         this.executeInSequence = executeInSequence;
-        this.secondaryStorage = null;
+        this.secondaryStorages = null;
     }
 
     public String getHostIp() {
         return this.hostIp;
     }
 
-    public String getSecondaryStorage() {
-        return this.secondaryStorage;
+    public List<String> getSecondaryStorages() {
+        return this.secondaryStorages;
     }
 
-    public void setSecondaryStorage(String secondary) {
-        this.secondaryStorage = secondary;
+    public void setSecondaryStorages(List<String> secondary) {
+        this.secondaryStorages = secondary;
     }
 }

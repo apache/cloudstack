@@ -33,6 +33,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
@@ -390,13 +391,24 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
             if (snapshotStrategy == null) {
+                // Check if this is ONTAP managed storage with memory snapshot request - provide specific error message
+                if (snapshotMemory && rootVolumePool.isManaged() &&
+                        DataStoreProvider.ONTAP_PLUGIN_NAME.equals(rootVolumePool.getStorageProviderName())) {
+                    String message = String.format("Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP managed storage. " +
+                            "Instance [%s] uses ONTAP storage which only supports disk-only (crash-consistent) snapshots. " +
+                            "Please use snapshotmemory=false for disk-only snapshots.", userVmVo.getUuid());
+                    logger.error(message);
+                    throw new CloudRuntimeException(message);
+                }
                 String message = String.format("No strategy was able to handle requested snapshot for Instance [%s].", userVmVo.getUuid());
                 logger.error(message);
                 throw new CloudRuntimeException(message);
             }
 
             // disallow KVM snapshots for VMs if root volume is encrypted (Qemu crash)
-            if (rootVolume.getPassphraseId() != null && userVmVo.getState() == VirtualMachine.State.Running && Boolean.TRUE.equals(snapshotMemory)) {
+            if ((rootVolume.getPassphraseId() != null || rootVolume.getKmsKeyId() != null) &&
+                    userVmVo.getState() == VirtualMachine.State.Running && Boolean.TRUE.equals(snapshotMemory)
+            ) {
                 throw new UnsupportedOperationException("Cannot create Instance memory Snapshots on KVM from encrypted root volumes");
             }
 
@@ -434,6 +446,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         if (rootVolumePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
             vmSnapshotType = VMSnapshot.Type.Disk;
+        }
+
+        // CLVM_NG: Block VM snapshots until Phase 2 implementation is complete
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.CLVM_NG) {
+            throw new InvalidParameterValueException("VM snapshots are not yet supported on CLVM_NG storage pools. " +
+                    "This feature will be available in a future release.");
         }
 
         try {
@@ -1221,7 +1239,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkCreateVMSnapshot workInfo = new VmWorkCreateVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId, quiesceVm);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1253,7 +1271,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteVMSnapshot workInfo = new VmWorkDeleteVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1285,7 +1303,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkRevertToVMSnapshot workInfo = new VmWorkRevertToVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1317,7 +1335,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteAllVMSnapshots workInfo = new VmWorkDeleteAllVMSnapshots(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, type);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1363,7 +1381,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
         workJob.setCmd("");
-        workJob.setCmdInfo("");
+        workJob.updateCmdInfoWithEncryptionIfNeeded("");
 
         workJob.setAccountId(0);
         workJob.setUserId(0);

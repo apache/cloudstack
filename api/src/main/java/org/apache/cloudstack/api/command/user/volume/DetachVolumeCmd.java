@@ -77,6 +77,10 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return virtualMachineId;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
