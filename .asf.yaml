@@ -81,6 +81,7 @@ github:
         - "pre-commit / Run pre-commit"
         - "UI Build / build"
         - "Simulator CI / build"
+        - "Simulator CI / test"
         - "License Check / build"
 
   copilot_code_review:
