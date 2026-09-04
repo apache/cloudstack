@@ -324,38 +324,33 @@ public class SystemVmTemplateRegistration {
 
     public static final Map<String, MetadataTemplateDetails> NewTemplateMap = new HashMap<>();
 
-    public static final Map<Hypervisor.HypervisorType, String> RouterTemplateConfigurationNames = new HashMap<>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
-            put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
-            put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-            put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
-            put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
-            put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
-        }
-    };
+    public static final Map<Hypervisor.HypervisorType, String> RouterTemplateConfigurationNames = Map.of(
+            Hypervisor.HypervisorType.KVM, "router.template.kvm",
+            Hypervisor.HypervisorType.VMware, "router.template.vmware",
+            Hypervisor.HypervisorType.XenServer, "router.template.xenserver",
+            Hypervisor.HypervisorType.Hyperv, "router.template.hyperv",
+            Hypervisor.HypervisorType.LXC, "router.template.lxc",
+            Hypervisor.HypervisorType.Ovm3, "router.template.ovm3"
+    );
 
-    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
-        }
-    };
+    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>();
+    static {
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
+    }
 
-    public static final Map<Hypervisor.HypervisorType, ImageFormat> hypervisorImageFormat = new HashMap<Hypervisor.HypervisorType, ImageFormat>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2);
-            put(Hypervisor.HypervisorType.XenServer, ImageFormat.VHD);
-            put(Hypervisor.HypervisorType.VMware, ImageFormat.OVA);
-            put(Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD);
-            put(Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2);
-            put(Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW);
-        }
-    };
+    public static final Map<Hypervisor.HypervisorType, ImageFormat> hypervisorImageFormat = Map.of(
+            Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2,
+            Hypervisor.HypervisorType.XenServer, ImageFormat.VHD,
+            Hypervisor.HypervisorType.VMware, ImageFormat.OVA,
+            Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD,
+            Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2,
+            Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW
+    );
 
     public boolean validateIfSeeded(TemplateDataStoreVO templDataStoreVO, String url, String path, String nfsVersion) {
         String filePath = null;
