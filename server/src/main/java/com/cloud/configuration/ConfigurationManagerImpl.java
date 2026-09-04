@@ -4646,7 +4646,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             for (Long domainId : filteredDomainIds) {
                 if (domainId == null || !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException(String.format("Unable to create disk offering by another domain-admin: %s for domain: %s", user, _entityMgr.findById(Domain.class, domainId)));
+                    Domain domain = domainId != null ? _entityMgr.findById(Domain.class, domainId) : null;
+                    throw new InvalidParameterValueException(String.format("Unable to create disk offering by another domain-admin: %s for domain: %s",
+                            user, domain != null ? domain : "id " + domainId));
                 }
             }
         } else if (account.getType() != Account.Type.ADMIN) {

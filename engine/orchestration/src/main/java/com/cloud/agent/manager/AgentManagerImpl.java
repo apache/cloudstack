@@ -1147,13 +1147,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 logger.info("The agent from host {} state determined is {}", host, determinedState);
 
                 if (determinedState == Status.Down) {
-                    final String message = String.format("Host %s is down. Starting HA on the VMs", host);
+                    final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                    final HostPodVO podVO = _podDao.findById(host.getPodId());
+                    final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
+                    final String message = String.format("Host %s is down. Starting HA on the VMs", hostDesc);
                     logger.error(message);
                     if (Status.Down.equals(host.getStatus())) {
                         logger.debug(String.format("Skipping sending alert for %s as it already in %s state",
                                 host, host.getStatus()));
                     } else if (!HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES.contains(host.getType())) {
-                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host, message);
+                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + hostDesc, message);
                     }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {

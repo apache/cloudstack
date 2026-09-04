@@ -284,19 +284,22 @@ public class ScaleIOVMSnapshotStrategyTest {
         assertEquals(StrategyPriority.CANT_HANDLE, result);
     }
 
+    /**
+        // Use two distinct Long instances with the same value (outside the Long autobox
+        // cache range) for the volume's pool id and the rootPoolId argument: the production
+        // code compares them with equals(), so value equality is what matters, not identity.
+    */
     @Test
     public void canHandleByIdsReturnsHighestWhenPoolTypeFormatAndRootPoolIdAllMatch() {
-        // Use the very same boxed Long instance for both the volume's pool id and the
-        // rootPoolId argument: the production code compares them with != (reference
-        // equality on the boxed Long), so identity must match for the happy path.
-        Long poolId = 5L;
+        Long poolId = Long.valueOf(500);
+        Long rootPoolId = Long.valueOf(500);
         VolumeObjectTO volumeTO = mock(VolumeObjectTO.class);
         when(volumeTO.getPoolId()).thenReturn(poolId);
         when(volumeTO.getFormat()).thenReturn(ImageFormat.RAW);
         when(vmSnapshotHelper.getVolumeTOList(1L)).thenReturn(Collections.singletonList(volumeTO));
         when(vmSnapshotHelper.getStoragePoolType(poolId)).thenReturn(Storage.StoragePoolType.PowerFlex);
 
-        StrategyPriority result = strategy.canHandle(1L, poolId, false);
+        StrategyPriority result = strategy.canHandle(1L, rootPoolId, false);
 
         assertEquals(StrategyPriority.HIGHEST, result);
     }
