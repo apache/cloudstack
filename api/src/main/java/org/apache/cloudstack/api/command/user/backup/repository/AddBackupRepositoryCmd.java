@@ -59,7 +59,7 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     private String provider;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options",
-            validations = {ApiArgValidator.SafeCommandOptions})
+            validations = {ApiArgValidator.SafeMountCommandOptions})
     private String mountOptions;
 
     @Parameter(name = ApiConstants.ZONE_ID,
