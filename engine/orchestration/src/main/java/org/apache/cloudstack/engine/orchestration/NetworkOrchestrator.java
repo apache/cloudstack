@@ -1234,14 +1234,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         NicVO vo = checkForRaceAndAllocateNic(requested, network, isDefaultNic, deviceId, vm);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        vo.setNetworkRate(networkRate != null && networkRate > 0 ? networkRate : null);
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
         if (vm.getType() == Type.DomainRouter) {
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vm.getId());
             setMtuDetailsInVRNic(networks, network, vo);
-            _nicDao.update(vo.getId(), vo);
             setMtuInVRNicProfile(networks, network.getTrafficType(), vmNic);
         }
+        _nicDao.update(vo.getId(), vo);
         return new Pair<>(vmNic, Integer.valueOf(deviceId));
     }
 

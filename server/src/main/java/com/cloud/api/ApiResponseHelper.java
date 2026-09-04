@@ -454,7 +454,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -4910,10 +4909,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         response.setEnabled(result.isEnabled());
 
-        NicDetailVO nicRateDetail = ApiDBUtils.findNicDetailByName(result.getId(), ApiConstants.NETWORKRATE);
-        if (nicRateDetail != null) {
-            response.setNetworkRate(nicRateDetail.getValue());
-        }
+        response.setNetworkRate(result.getNetworkRate());
 
         return response;
     }

@@ -421,7 +421,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -524,8 +523,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private NetworkDao _networkDao;
     @Inject
     private NicDao _nicDao;
-    @Inject
-    private NicDetailsDao nicDetailsDao;
     @Inject
     private RulesManager _rulesMgr;
     @Inject
@@ -1576,7 +1573,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             saveExtraDhcpOptions(guestNic.getId(), cmd.getDhcpOptionsMap());
             _networkMgr.configureExtraDhcpOptions(network, guestNic.getId(), cmd.getDhcpOptionsMap());
             cleanUp = false;
-            saveNetworkRateInDetails(guestNic.getId(), guestNic.getNetworkRate());
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
@@ -1598,15 +1594,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(vmInstance.getId());
     }
 
-    private void saveNetworkRateInDetails(long nicId, Integer rate) {
-        String networkRate = (rate == null || rate <= 0) ? ApiConstants.UNLIMITED : String.valueOf(rate);
-        nicDetailsDao.addDetail(nicId, ApiConstants.NETWORKRATE, networkRate, true);
-    }
-
     private void refreshNicNetworkRates(long vmId) {
         List<NicVO> nics = _nicDao.listByVmId(vmId);
         for (NicVO nic : nics) {
-            saveNetworkRateInDetails(nic.getId(), _networkModel.getNetworkRate(nic.getNetworkId(), vmId));
+            Integer rate = _networkModel.getNetworkRate(nic.getNetworkId(), vmId);
+            nic.setNetworkRate(rate != null && rate > 0 ? rate : null);
+            _nicDao.update(nic.getId(), nic);
         }
     }
 

@@ -139,8 +139,8 @@ public class NicResponse extends BaseResponse {
     private Integer mtu;
 
     @SerializedName(ApiConstants.NETWORKRATE)
-    @Param(description = "Network rate (in Mb/s) configured for the NIC", since = "4.24.0")
-    private String networkRate;
+    @Param(description = "Network rate (in Mb/s) configured for the NIC; absent if unlimited", since = "4.24.0")
+    private Integer networkRate;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "Public IP address ID associated with this NIC via Static NAT rule")
@@ -417,11 +417,11 @@ public class NicResponse extends BaseResponse {
         this.mtu = mtu;
     }
 
-    public String getNetworkRate() {
+    public Integer getNetworkRate() {
         return networkRate;
     }
 
-    public void setNetworkRate(String networkRate) {
+    public void setNetworkRate(Integer networkRate) {
         this.networkRate = networkRate;
     }
 
