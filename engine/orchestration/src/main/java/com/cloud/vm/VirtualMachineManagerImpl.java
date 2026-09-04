@@ -5473,7 +5473,41 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     && vm.getHypervisorType() != HypervisorType.Hyperv) {
                 logger.info("Detected out-of-band stop of a HA enabled VM {}, will schedule restart.", vm);
                 if (!_haMgr.hasPendingHaWork(vm.getId())) {
-                    _haMgr.scheduleRestart(vm, true);
+                    // The power state report already confirmed the VM is off
+                    // (e.g. OOM-killed QEMU process). We cannot use _haMgr.scheduleRestart() because it
+                    // calls advanceStop(), which submits a VM work job and blocks waiting for completion.
+                    // This code runs on the AgentManager-Handler thread, and the VM job queue does not
+                    // dispatch jobs from this context — causing an indefinite block that leaves the VM
+                    // stuck in Running. Instead we release resources, transition to Stopped, and insert
+                    // an HA work item directly into op_ha_work (Step.Scheduled) for the HA worker to pick up.
+                    final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                    releaseVmResources(profile, true);
+
+                    // Save lastHostId before transition (stateTransitTo sets hostId=null)
+                    final Long lastHostId = vm.getHostId();
+                    try {
+                        stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
+                    } catch (final NoTransitionException e) {
+                        logger.warn("Failed to transition VM {} to Stopped state: {}", vm, e.getMessage());
+                        return;
+                    }
+
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                            VM_SYNC_ALERT_SUBJECT, String.format("VM %s(%s) stopped out-of-band (OOM-killed or crashed). HA restart scheduled.",
+                                    vm.getHostName(), vm.getInstanceName()));
+
+                    // Insert HA work item directly — bypasses advanceStop/job queue entirely
+                    final VMInstanceVO refreshedVm = _vmDao.findByUuid(vm.getUuid());
+                    final Long haHostId = lastHostId != null ? lastHostId : refreshedVm.getLastHostId();
+                    if (haHostId == null || haHostId == 0L) {
+                        logger.warn("Cannot schedule HA for VM {} — no valid host_id available (would violate FK constraint).", vm);
+                    } else {
+                        final HaWorkVO work = new HaWorkVO(refreshedVm.getId(), refreshedVm.getType(),
+                                WorkType.HA, HighAvailabilityManager.Step.Scheduled, haHostId,
+                                refreshedVm.getState(), 0, refreshedVm.getUpdated(), null);
+                        _haDao.persist(work);
+                        logger.info("Scheduled VM for HA: {}", refreshedVm);
+                    }
                 } else {
                     logger.info("VM {} already has a pending HA task working on it.", vm);
                 }
