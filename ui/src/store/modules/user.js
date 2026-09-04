@@ -46,6 +46,51 @@ import {
   LATEST_CS_VERSION
 } from '@/store/mutation-types'
 
+function setLoginCookies (result) {
+  Cookies.set('account', result.account)
+  Cookies.set('domainid', result.domainid)
+  Cookies.set('role', result.type)
+  Cookies.set('timezone', result.timezone)
+  Cookies.set('timezoneoffset', result.timezoneoffset)
+  Cookies.set('userfullname', result.firstname + ' ' + result.lastname)
+  Cookies.set('userid', result.userid)
+  Cookies.set('username', result.username)
+}
+
+function processLoginResponse (commit, response) {
+  const result = response.loginresponse || {}
+  setLoginCookies(result)
+  vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+  commit('SET_TOKEN', result.sessionkey)
+  commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
+
+  const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+  commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+  const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+  commit('SET_DARK_MODE', darkMode)
+  const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
+  commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+
+  commit('SET_APIS', {})
+  commit('SET_NAME', '')
+  commit('SET_AVATAR', '')
+  commit('SET_INFO', {})
+  commit('SET_PROJECT', {})
+  commit('SET_HEADER_NOTICES', [])
+  commit('SET_FEATURES', {})
+  commit('SET_LDAP', {})
+  commit('SET_CLOUDIAN', {})
+  commit('SET_DOMAIN_STORE', {})
+  commit('SET_LOGOUT_FLAG', false)
+  commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
+  commit('SET_2FA_PROVIDER', result.providerfor2fa)
+  commit('SET_2FA_ISSUER', result.issuerfor2fa)
+  commit('SET_LOGIN_FLAG', false)
+  const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+  commit('SET_LATEST_VERSION', latestVersion)
+  notification.destroy()
+}
+
 const user = {
   state: {
     token: '',
@@ -192,45 +237,7 @@ const user = {
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
-          const result = response.loginresponse || {}
-          Cookies.set('account', result.account, { expires: 1 })
-          Cookies.set('domainid', result.domainid, { expires: 1 })
-          Cookies.set('role', result.type, { expires: 1 })
-          Cookies.set('timezone', result.timezone, { expires: 1 })
-          Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
-          Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
-          Cookies.set('userid', result.userid, { expires: 1 })
-          Cookies.set('username', result.username, { expires: 1 })
-          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
-          commit('SET_TOKEN', result.sessionkey)
-          commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
-
-          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
-          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
-          commit('SET_DARK_MODE', darkMode)
-          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
-          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
-
-          commit('SET_APIS', {})
-          commit('SET_NAME', '')
-          commit('SET_AVATAR', '')
-          commit('SET_INFO', {})
-          commit('SET_PROJECT', {})
-          commit('SET_HEADER_NOTICES', [])
-          commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
-          commit('SET_CLOUDIAN', {})
-          commit('SET_DOMAIN_STORE', {})
-          commit('SET_LOGOUT_FLAG', false)
-          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_PROVIDER', result.providerfor2fa)
-          commit('SET_2FA_ISSUER', result.issuerfor2fa)
-          commit('SET_LOGIN_FLAG', false)
-          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-          commit('SET_LATEST_VERSION', latestVersion)
-          notification.destroy()
-
+          processLoginResponse(commit, response)
           resolve()
         }).catch(error => {
           reject(error)
@@ -241,45 +248,7 @@ const user = {
     OauthLogin ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         oauthlogin(userInfo).then(response => {
-          const result = response.loginresponse || {}
-          Cookies.set('account', result.account, { expires: 1 })
-          Cookies.set('domainid', result.domainid, { expires: 1 })
-          Cookies.set('role', result.type, { expires: 1 })
-          Cookies.set('timezone', result.timezone, { expires: 1 })
-          Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
-          Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
-          Cookies.set('userid', result.userid, { expires: 1 })
-          Cookies.set('username', result.username, { expires: 1 })
-          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
-          commit('SET_TOKEN', result.sessionkey)
-          commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
-
-          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
-          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
-          commit('SET_DARK_MODE', darkMode)
-          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
-          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
-
-          commit('SET_APIS', {})
-          commit('SET_NAME', '')
-          commit('SET_AVATAR', '')
-          commit('SET_INFO', {})
-          commit('SET_PROJECT', {})
-          commit('SET_HEADER_NOTICES', [])
-          commit('SET_FEATURES', {})
-          commit('SET_LDAP', {})
-          commit('SET_CLOUDIAN', {})
-          commit('SET_DOMAIN_STORE', {})
-          commit('SET_LOGOUT_FLAG', false)
-          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_PROVIDER', result.providerfor2fa)
-          commit('SET_2FA_ISSUER', result.issuerfor2fa)
-          commit('SET_LOGIN_FLAG', false)
-          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-          commit('SET_LATEST_VERSION', latestVersion)
-          notification.destroy()
-
+          processLoginResponse(commit, response)
           resolve()
         }).catch(error => {
           reject(error)
