@@ -56,6 +56,15 @@ import com.cloud.vm.VirtualMachine;
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
+    // Flattens the backing-file chain into a single self-contained qcow2 written to the
+    // destination volume path. Used when the source backup is an incremental whose qcow2
+    // has a backing reference to its parent (chain set up by nasbackup.sh's qemu-img rebase).
+    private static final String QEMU_IMG_FLATTEN_COMMAND = "qemu-img convert -O qcow2 %s %s";
+    // Detects whether a qcow2 file references a parent in its backing-file metadata.
+    // Returns 0 (true) when a backing file is present, 1 when not. Uses --output=json
+    // so the test is robust to qemu-img version differences in human-readable output.
+    private static final String QEMU_IMG_HAS_BACKING_COMMAND =
+            "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
 
     private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -275,9 +284,26 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             return replaceBlockDeviceWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, createTargetVolume, size);
         }
 
+        // For NAS-backed incremental backups, the source qcow2 has a backing-file
+        // reference to its parent (set by nasbackup.sh's qemu-img rebase). A plain
+        // rsync would copy only the differential blocks, leaving a volume that
+        // depends on a backing file the primary storage doesn't have. Flatten the
+        // chain via qemu-img convert, which follows the backing-file links and
+        // produces a single self-contained qcow2.
+        if (hasBackingChain(backupPath)) {
+            int flattenExit = Script.runSimpleBashScriptForExitValue(
+                    String.format(QEMU_IMG_FLATTEN_COMMAND, backupPath, volumePath), timeout, false);
+            return flattenExit == 0;
+        }
+
         String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
         int exitValue = Script.executeCommandForExitValue(rsyncCmd);
         return exitValue == 0;
+    }
+
+    private boolean hasBackingChain(String qcow2Path) {
+        return Script.runSimpleBashScriptForExitValue(
+                String.format(QEMU_IMG_HAS_BACKING_COMMAND, qcow2Path)) == 0;
     }
 
     private boolean replaceBlockDeviceWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size) {
