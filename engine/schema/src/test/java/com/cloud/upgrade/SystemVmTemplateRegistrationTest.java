@@ -409,11 +409,13 @@ public class SystemVmTemplateRegistrationTest {
             SystemVmTemplateRegistration.MetadataTemplateDetails details =
                     Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
             String name = "existing";
+            Mockito.when(details.getHypervisorType()).thenReturn(hypervisorType);
             Mockito.when(details.getArch()).thenReturn(CPU.CPUArch.getDefault());
             Mockito.when(details.getName()).thenReturn(name);
+            Mockito.when(details.getUrl()).thenReturn("url");
             mockedStatic.when(() -> SystemVmTemplateRegistration.getMetadataTemplateDetails(Mockito.any(),
                     Mockito.any())).thenReturn(details);
-            when(systemVmTemplateRegistration.getRegisteredTemplate(name, arch))
+            when(systemVmTemplateRegistration.getRegisteredTemplate(name, hypervisorType, arch, "url"))
                     .thenReturn(null);
             doNothing().when(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(
                     hypervisorType, arch,
