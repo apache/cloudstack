@@ -1673,6 +1673,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!GuestType.Shared.equals(ntwkOff.getGuestType()) && !GuestType.L3.equals(ntwkOff.getGuestType())) {
                 _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
             }
+            // IPv6 addresses are calculated with EUI-64 from the subnet and the NIC's MAC, which
+            // needs 64 interface-identifier bits: a prefix longer than /64 would fail at Instance
+            // deploy (NetUtils.EUI64Address throws), so reject it at network creation instead.
+            if (GuestType.L3.equals(ntwkOff.getGuestType()) && NetUtils.getIp6CidrSize(ip6Cidr) > 64) {
+                throw new InvalidParameterValueException(String.format(
+                        "The IPv6 subnet of a %s network must be /64 or larger: addresses are derived with EUI-64 from the subnet and the NIC MAC", GuestType.L3));
+            }
 
             if (zone.getNetworkType() != NetworkType.Advanced || (ntwkOff.getGuestType() != Network.GuestType.Shared && ntwkOff.getGuestType() != Network.GuestType.L3)) {
                 throw new InvalidParameterValueException(String.format("Can only support create IPv6 network with advanced %s or %s network!", GuestType.Shared, GuestType.L3));
@@ -2343,15 +2350,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
 
                     String vlanId = vlanIdFinal;
-                    if (createVlan && vlanId == null && ntwkOff.getGuestType() == Network.GuestType.Shared && ! ntwkOff.isSpecifyVlan()) {
+                    if (createVlan && vlanId == null && (ntwkOff.getGuestType() == Network.GuestType.Shared || ntwkOff.getGuestType() == Network.GuestType.L3)
+                            && ! ntwkOff.isSpecifyVlan()) {
                         if (associatedNetwork != null) {
                             // Get vlanId from associated network
                             vlanId = associatedNetwork.getBroadcastUri().toString();
                         } else {
-                            // Allocate a vnet to shared network with specifyvlan=false
+                            // Allocate a vnet to a Shared network with specifyvlan=false, or a routed id
+                            // to an L3 (Direct Routed) network — both come from the physical network's
+                            // vnet range and are released when the network is deleted.
                             vlanId = _dcDao.allocateVnet(zoneId, physicalNetworkId, owner.getAccountId(), null, GuestNetworkGuru.UseSystemGuestVlans.valueIn(owner.getAccountId()));
                             if (vlanId == null) {
-                                throw new InvalidParameterValueException("Cannot allocate a vnet for this Shared network");
+                                throw new InvalidParameterValueException(String.format("Cannot allocate a vnet for this %s network", ntwkOff.getGuestType()));
                             }
                         }
                     }

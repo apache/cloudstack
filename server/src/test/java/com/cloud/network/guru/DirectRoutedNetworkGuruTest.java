@@ -22,7 +22,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -75,6 +82,7 @@ public class DirectRoutedNetworkGuruTest {
         lenient().when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         lenient().when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         lenient().when(offering.getGuestType()).thenReturn(GuestType.L3);
+        lenient().when(physicalNetwork.getIsolationMethods()).thenReturn(Arrays.asList("ROUTED"));
         lenient().when(plan.getDataCenterId()).thenReturn(1L);
         lenient().when(plan.getPhysicalNetworkId()).thenReturn(1L);
         lenient().when(dcDao.findById(1L)).thenReturn(dc);
@@ -82,7 +90,7 @@ public class DirectRoutedNetworkGuruTest {
     }
 
     @Test
-    public void canHandleAcceptsL3InAdvancedZone() {
+    public void canHandleAcceptsL3OnRoutedPhysicalNetwork() {
         assertTrue(guru.canHandle(offering, dc, physicalNetwork));
     }
 
@@ -101,13 +109,41 @@ public class DirectRoutedNetworkGuruTest {
     }
 
     @Test
-    public void designProducesNativeStaticNetwork() {
+    public void canHandleRejectsPhysicalNetworkWithoutRoutedIsolation() {
+        for (List<String> methods : Arrays.asList(Arrays.asList("VLAN"), Arrays.asList("VXLAN"), Collections.<String>emptyList())) {
+            when(physicalNetwork.getIsolationMethods()).thenReturn(methods);
+            assertFalse("guru must not claim a physical network with isolation methods " + methods, guru.canHandle(offering, dc, physicalNetwork));
+        }
+    }
+
+    @Test
+    public void designProducesRoutedStaticNetwork() {
         Network network = guru.design(offering, plan, null, "test", null, owner);
         assertNotNull(network);
         NetworkVO config = (NetworkVO)network;
-        assertEquals(BroadcastDomainType.Native, config.getBroadcastDomainType());
+        assertEquals(BroadcastDomainType.Routed, config.getBroadcastDomainType());
         assertEquals(Mode.Static, config.getMode());
         assertNull(config.getBroadcastUri());
+    }
+
+    @Test
+    public void designCarriesRoutedBroadcastUri() throws URISyntaxException {
+        Network userSpecified = mock(Network.class);
+        when(userSpecified.getBroadcastUri()).thenReturn(new URI("routed://5828"));
+
+        Network network = guru.design(offering, plan, userSpecified, "test", null, owner);
+        assertNotNull(network);
+        NetworkVO config = (NetworkVO)network;
+        assertEquals(BroadcastDomainType.Routed, config.getBroadcastDomainType());
+        assertEquals("routed://5828", config.getBroadcastUri().toString());
+        assertEquals(Network.State.Setup, config.getState());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void designRejectsNonRoutedBroadcastUri() throws URISyntaxException {
+        Network userSpecified = mock(Network.class);
+        when(userSpecified.getBroadcastUri()).thenReturn(new URI("vlan://5828"));
+        guru.design(offering, plan, userSpecified, "test", null, owner);
     }
 
     @Test(expected = InvalidParameterValueException.class)

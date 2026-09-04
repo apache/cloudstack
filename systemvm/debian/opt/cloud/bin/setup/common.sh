@@ -396,7 +396,26 @@ setup_common() {
       gwdev="eth0"
     fi
 
-    ip route add default via $GW dev $gwdev
+    onlink=""
+    case "$GW" in
+      169.254.*)
+        # Direct routed public interface: the address is a /32, so the shared
+        # link-local gateway lies outside it and the kernel rejects the route
+        # unless it is marked on-link. Same rule cloud-init applies for guest
+        # Instances; systemvms have no cloud-init, so it is applied here.
+        onlink="onlink"
+        ;;
+    esac
+    ip route add default via $GW dev $gwdev $onlink
+
+    # The IPv6 default route is installed statically when a gateway was passed
+    # down: on a direct routed bridge no router advertisement ever arrives, so
+    # relying on accept_ra would leave the systemvm without v6 connectivity.
+    # A link-local gateway (fe80::1) needs the dev and is on-link by definition.
+    if [ -n "$IP6GW" ]
+    then
+      ip -6 route replace default via $IP6GW dev $gwdev
+    fi
   fi
 
   # Workaround to activate vSwitch under VMware

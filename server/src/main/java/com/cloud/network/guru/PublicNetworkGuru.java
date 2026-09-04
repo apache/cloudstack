@@ -57,6 +57,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -145,7 +146,17 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setIPv4Gateway(ip.getGateway());
             nic.setIPv4Netmask(ip.getNetmask());
-            if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+            if (isRoutedRange(ip)) {
+                // Direct routed public range (SystemVMs on a ROUTED physical network): the
+                // address is a host route, not a subnet membership. Same form as a guest NIC on
+                // a direct routed network: /32 with the shared on-link gateway, and the
+                // routed://<id> broadcast domain that names the bridge on the host.
+                nic.setIPv4Netmask(NetUtils.IPV4_HOST_NETMASK);
+                nic.setIPv4Gateway(NetUtils.getLinkLocalGateway());
+                nic.setIsolationUri(BroadcastDomainType.Routed.toUri(ip.getVlanTag()));
+                nic.setBroadcastUri(BroadcastDomainType.Routed.toUri(ip.getVlanTag()));
+                nic.setBroadcastType(BroadcastDomainType.Routed);
+            } else if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
                 nic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastType(BroadcastDomainType.Vxlan);
@@ -164,6 +175,23 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setIPv4Dns2(dns.second());
 
         ipv6Service.updateNicIpv6(nic, dc, network);
+
+        // The IPv6 address itself is computed with EUI-64 from the range's subnet and the NIC's
+        // MAC (Ipv6ServiceImpl.updateNicIpv6); on a direct routed range only its form changes:
+        // a /128 with the shared link-local gateway, delivered to the systemvm via boot args.
+        if (nic.getBroadcastType() == BroadcastDomainType.Routed && nic.getIPv6Address() != null) {
+            nic.setIPv6Cidr(nic.getIPv6Address() + "/" + NetUtils.IPV6_HOST_PREFIX_LENGTH);
+            nic.setIPv6Gateway(NetUtils.getIpv6LinkLocalGateway());
+        }
+    }
+
+    /**
+     * A public IP range on a ROUTED physical network is created with routed://<id> as its "vlan";
+     * the tag flowing through the vlan row is what marks the addresses it holds as direct routed.
+     */
+    private boolean isRoutedRange(PublicIp ip) {
+        String vlanTag = ip.getVlanTag();
+        return vlanTag != null && vlanTag.startsWith(BroadcastDomainType.Routed.scheme() + "://");
     }
 
     @Override

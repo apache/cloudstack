@@ -58,6 +58,7 @@
             }" >
             <a-select-option value="VLAN"> VLAN </a-select-option>
             <a-select-option value="VXLAN"> VXLAN </a-select-option>
+            <a-select-option v-if="hypervisor === 'KVM'" value="ROUTED"> ROUTED </a-select-option>
             <a-select-option value="GRE"> GRE </a-select-option>
             <a-select-option value="STT"> STT </a-select-option>
             <a-select-option value="BCF_SEGMENT"> BCF_SEGMENT </a-select-option>

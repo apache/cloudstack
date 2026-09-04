@@ -18,10 +18,13 @@
 
 # modifybrdr.sh -- Manage per-network bridges for Direct Routed Networks
 #
-# One bridge is created per network, named brdr-<network id>
-# (Bridge-DirectRouted), using the network's numeric database id. The bridge
-# carries the shared, host-independent gateway addresses and is identical on
-# every hypervisor, so an Instance needs no reconfiguration when it migrates.
+# One bridge is created per network, named brdr-<routed id>
+# (Bridge-DirectRouted). The routed id is the value of the network's
+# routed://<id> broadcast domain -- chosen by the operator at network creation
+# or allocated by CloudStack from the ROUTED physical network's range -- and is
+# stable for the network's life. The bridge carries the shared,
+# host-independent gateway addresses and is identical on every hypervisor, so
+# an Instance needs no reconfiguration when it migrates.
 #
 # The bridge never has a physical uplink: all Instance traffic is routed by
 # the hypervisor, not bridged. Separate bridges are what keep networks
@@ -42,15 +45,15 @@
 #   deleted  - ours, removed
 #
 # Usage:
-#   add:    modifybrdr.sh -o add    -n <network id> -4 <ipv4 gateway> and/or -6 <ipv6 gateway>
+#   add:    modifybrdr.sh -o add    -n <routed id> -4 <ipv4 gateway> and/or -6 <ipv6 gateway>
 #   delete: modifybrdr.sh -o delete -b <bridge name>
 
 usage() {
-    echo "Usage: $0 -o add -n <network id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>] | -o delete -b <bridge name>"
+    echo "Usage: $0 -o add -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>] | -o delete -b <bridge name>"
 }
 
 OP=
-NETWORK_ID=
+ROUTED_ID=
 BRNAME=
 IPV4_GATEWAY=
 IPV6_GATEWAY=
@@ -60,7 +63,7 @@ while getopts 'o:n:b:4:6:' OPTION; do
     o)    oflag=1
           OP="$OPTARG"
           ;;
-    n)    NETWORK_ID="$OPTARG"
+    n)    ROUTED_ID="$OPTARG"
           ;;
     b)    BRNAME="$OPTARG"
           ;;
@@ -80,8 +83,8 @@ if [[ "$oflag" != "1" ]]; then
 fi
 
 if [[ "$OP" == "add" ]]; then
-    if [[ ! "$NETWORK_ID" =~ ^[0-9]+$ ]]; then
-        echo "Network id must be numeric: ${NETWORK_ID}"
+    if [[ ! "$ROUTED_ID" =~ ^[0-9]+$ ]]; then
+        echo "Routed id must be numeric: ${ROUTED_ID}"
         exit 2
     fi
 
@@ -91,7 +94,7 @@ if [[ "$OP" == "add" ]]; then
         exit 2
     fi
 
-    BRNAME="brdr-${NETWORK_ID}"
+    BRNAME="brdr-${ROUTED_ID}"
 
     # Linux caps interface names at 15 characters
     if [[ ${#BRNAME} -gt 15 ]]; then

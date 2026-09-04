@@ -53,25 +53,30 @@ import com.cloud.vm.VirtualMachineProfile;
  * shared, host-independent on-link gateway (169.254.0.1 / fe80::1) that every hypervisor
  * carries on the network's bridge.
  *
- * There is no isolation method and no broadcast domain: the network offering's guest type is
- * the sole selector, and networks of this type consume no VLAN/VXLAN id. Layer 2 isolation
- * between networks is provided by a dedicated, uplink-less bridge per network on each host.
+ * These networks live on a dedicated physical network whose isolation method is ROUTED — the
+ * network operator's explicit, zone-level opt-in. Each network carries a broadcast domain of
+ * type routed://&lt;id&gt;; the id is a label naming the per-network, uplink-less bridge on every
+ * host (brdr-&lt;id&gt;), never an encapsulation. It is chosen by the operator at network creation
+ * (specifyVlan offerings, via the vlan parameter) or allocated from the physical network's vnet
+ * range (otherwise), and is stable for the network's life.
  */
 public class DirectRoutedNetworkGuru extends DirectNetworkGuru {
 
     public DirectRoutedNetworkGuru() {
         super();
-        // No isolation of any kind: no VLAN, no VXLAN, no encapsulation. canHandle() does not
-        // consult the physical network's isolation methods.
-        _isolationMethods = new IsolationMethod[] {};
+        // Selection follows the standard guru contract: a network is direct routed when its
+        // offering's guest type is L3 AND its physical network carries the ROUTED isolation
+        // method. The id conveyed in routed://<id> consumes nothing on the wire.
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("ROUTED")};
     }
 
     @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.L3) {
+        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.L3
+                && isMyIsolationMethod(physnet)) {
             return true;
         }
-        logger.trace("We only take care of {} guest networks in zones of type {}", GuestType.L3, NetworkType.Advanced);
+        logger.trace("We only take care of {} guest networks in zones of type {} on physical networks with isolation method ROUTED", GuestType.L3, NetworkType.Advanced);
         return false;
     }
 
@@ -89,13 +94,26 @@ public class DirectRoutedNetworkGuru extends DirectNetworkGuru {
         }
 
         // Mode.Static: the Instance is statically configured via ConfigDrive, there is no DHCP.
-        // BroadcastDomainType.Native: no isolation id is consumed; the broadcast_uri stays empty.
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), State.Allocated,
+        // BroadcastDomainType.Routed: routed://<id> names the per-network bridge (brdr-<id>);
+        // no VLAN/VXLAN is consumed and nothing appears on the wire.
+        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Routed, offering.getId(), State.Allocated,
                 plan.getDataCenterId(), plan.getPhysicalNetworkId(), false);
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
+            }
+
+            // The routed id — operator-specified or allocated from the physical network's vnet
+            // range — arrives as the broadcast URI, stamped by the orchestrator before design.
+            // It is set once here and never changes: the bridge name derives from it.
+            if (userSpecified.getBroadcastUri() != null) {
+                if (BroadcastDomainType.getSchemeValue(userSpecified.getBroadcastUri()) != BroadcastDomainType.Routed) {
+                    throw new InvalidParameterValueException(String.format("A %s network requires a routed://<id> broadcast domain, got %s",
+                            GuestType.L3, userSpecified.getBroadcastUri()));
+                }
+                config.setBroadcastUri(userSpecified.getBroadcastUri());
+                config.setState(State.Setup);
             }
 
             if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||

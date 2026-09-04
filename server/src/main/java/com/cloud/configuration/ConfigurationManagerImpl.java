@@ -6009,6 +6009,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
                     networkVlanId = networkVlanId.split("-")[0];
                 }
+            } else if (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed) {
+                // Direct Routed (L3) networks: the routed id plays the role the VLAN tag plays
+                // for Shared networks, so IP ranges added later stay consistent with it
+                networkVlanId = BroadcastDomainType.getValue(uri);
             }
         }
         return networkVlanId;
@@ -7500,9 +7504,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (networkMode != null) {
             throw new InvalidParameterValueException(String.format("Network mode can not be specified for network offerings with guest type %s", GuestType.L3));
         }
-        if (specifyVlan) {
-            throw new InvalidParameterValueException(String.format("VLAN can not be specified for network offerings with guest type %s; these networks use no isolation id", GuestType.L3));
-        }
+        // specifyVlan is a free choice: with it the operator supplies the routed id (routed://<id>,
+        // naming the per-network bridge) at network creation via the vlan parameter; without it
+        // CloudStack allocates one from the ROUTED physical network's vnet range.
         if (!specifyIpRanges) {
             throw new InvalidParameterValueException(String.format("Network offerings with guest type %s must specify IP ranges", GuestType.L3));
         }

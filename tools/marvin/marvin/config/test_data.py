@@ -230,6 +230,22 @@ test_data = {
         "specifyVlan": "False",
         "traffictype": "GUEST",
         "availability": "Optional",
+        "tags": "l3routed",
+        "serviceProviderList": {
+            "UserData": "ConfigDrive",
+            "Dns": "ConfigDrive"
+        }
+    },
+    "l3_network_offering_specifyid": {
+        "name": "Test L3 Direct Routed - Network offering, operator-specified id",
+        "displaytext": "Test L3 Direct Routed - Network offering, operator-specified id",
+        "guestiptype": "L3",
+        "supportedservices": "UserData,Dns",
+        "specifyIpRanges": "True",
+        "specifyVlan": "True",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "tags": "l3routed",
         "serviceProviderList": {
             "UserData": "ConfigDrive",
             "Dns": "ConfigDrive"

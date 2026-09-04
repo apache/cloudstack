@@ -3,7 +3,13 @@
 **Status:** design agreed — open items are implementation and verification only
 **Branch:** `direct-routed-network`
 **Author:** Wido den Hollander
-**Last updated:** 2026-07-30
+**Last updated:** 2026-09-04
+
+> **Revision 2026-09-04.** The isolation model changed: direct routed networks now live on a
+> **dedicated physical network with isolation method `ROUTED`**, and every network carries a
+> broadcast domain of the new type **`routed://<id>`**, whose id names the network's bridge
+> (`brdr-<id>`). This reverses two earlier decisions — "no isolation method" and "no broadcast
+> domain" — recorded with rationale in §6.7 and §9.2.1 and in the decision log (§16).
 
 ---
 
@@ -26,6 +32,14 @@ entry on the guest bridge, binding the address to that guest's MAC. This reuses 
 `modifymacip.sh` hook unchanged (§9.1). A routing daemon on the host advertises those addresses to
 the fabric. **The routing daemon is out of scope for this feature** — see §10.
 
+Direct routed networks are the network operator's choice, expressed in the zone design: they live
+on a **dedicated physical network whose isolation method is `ROUTED`**. Each network carries a
+broadcast domain of the new type **`routed://<id>`** — for example `routed://5828` — and that id
+names the network's bridge on every hypervisor: `brdr-5828`. The id is not an encapsulation and
+never appears on the wire; it is the stable, operator-controlled handle that ties a network to
+host-side routing policy. The operator either picks it at network creation or lets CloudStack
+allocate one from the range configured on the physical network (§6.7, §9.2).
+
 ## 2. Motivation
 
 Compared with what CloudStack offers today:
@@ -38,7 +52,7 @@ Compared with what CloudStack offers today:
 | Guest netmask | subnet mask | subnet mask | subnet mask | **/32, /128** |
 | Shared broadcast domain | yes | yes | yes | **no** |
 | Guest-to-guest | switched | switched | switched | **routed by host** |
-| Isolation ID | VLAN/VXLAN | VLAN/VXLAN | VLAN/VXLAN | **none** |
+| Isolation ID | VLAN/VXLAN | VLAN/VXLAN | VLAN/VXLAN | **routed id — a label, no encapsulation** |
 
 What this closes:
 
@@ -50,13 +64,17 @@ What this closes:
   rule set being correct, and an administrator can turn security groups off for a network without
   weakening it. Within a single network guests still share a bridge; that residual exposure is
   intra-tenant and is documented in §12.3.
-* **No isolation id at all.** No VLAN, no VXLAN, no encapsulation, nothing to allocate or size — the
-  bridge is named from the network's own database id (§9.2.1). Guest network count is bounded by no
-  ID space, and each network still gets a real L2 boundary.
+* **No encapsulation at all.** No VLAN on the wire, no VXLAN, no tunnel. The routed id in
+  `routed://<id>` is a **label, not a fabric resource**: it exists only to name the per-network
+  bridge (`brdr-<id>`), consumes nothing on the switches, and is either chosen by the operator or
+  allocated from a range the operator configures on the `ROUTED` physical network (§6.7, §9.2.1).
+  Guest network count is bounded only by that range, and each network still gets a real L2 boundary.
 * **Per-network routing policy on the hypervisor.** Each network is a distinct, named L3 interface
-  (`brdr-42`), so the operator can apply different route-maps, redistribution filters, policy
+  (`brdr-5828`), so the operator can apply different route-maps, redistribution filters, policy
   routing or QoS per network in the host's own configuration. CloudStack does not need to know or
-  care; it is entirely a local network design decision (§9.2).
+  care; it is entirely a local network design decision (§9.2). Because the operator can pick the
+  routed id at network creation, the interface name is **plannable in advance** — host policy can
+  exist before the network does (§6.7.2).
 * **IP mobility.** Because the gateway is identical on every hypervisor, the guest's network
   configuration is entirely host-independent. A VM can start, stop, and migrate anywhere in the
   routing domain with no reconfiguration — its address follows it as an advertised route.
@@ -83,7 +101,9 @@ What this closes:
 | Term | Meaning |
 |---|---|
 | Direct routed network | The new guest network type described here |
-| `brdr-<id>` | Bridge-DirectRouted: the uplink-less per-network bridge, named from the network's database id; created by `modifybrdr.sh` |
+| `ROUTED` | The new isolation method; a physical network carrying it is where direct routed networks live (§6.7) |
+| Routed id | The number in the network's `routed://<id>` broadcast URI — operator-chosen at creation, or allocated from the `ROUTED` physical network's id range (§6.7.2) |
+| `brdr-<id>` | Bridge-DirectRouted: the uplink-less per-network bridge, named from the network's routed id; created by `modifybrdr.sh` |
 | Shared gateway | `169.254.0.1` / `fe80::1`, present on **every** `brdr-*` bridge on **every** host |
 | Host route | `ip route replace <vm-ip>/32 dev <bridge>`, installed by `modifymacip.sh` |
 | Static neighbour | `ip neigh replace <vm-ip> lladdr <mac> dev <bridge> nud permanent` |
@@ -233,11 +253,14 @@ Consequences:
 
 ### 6.3 Where do the addresses come from? **DECIDED**
 
-Users add a subnet to the network; CloudStack picks **individual** IPv4 and IPv6 addresses from the
-existing address tables:
+Users add a subnet to the network; CloudStack assigns **individual** IPv4 and IPv6 addresses out of
+it — but the two families work fundamentally differently, and both mechanisms are reused unchanged:
 
-* IPv4 → `user_ip_address` (`engine/schema/src/main/java/com/cloud/network/dao/IPAddressVO.java`)
-* IPv6 → `user_ipv6_address` (`engine/schema/src/main/java/com/cloud/network/UserIpv6AddressVO.java`)
+* IPv4 → drawn from a **pre-populated pool**: `createVlanIpRange` writes every address of the range
+  into `user_ip_address` (`engine/schema/src/main/java/com/cloud/network/dao/IPAddressVO.java`) and
+  allocation marks rows.
+* IPv6 → **computed, never pooled**: the address is calculated from the subnet and the NIC's MAC
+  (EUI-64) at allocation time and stored only on the NIC — see §6.3.4.
 * Subnet definition → `vlan` rows, as for Shared networks
 
 This is the mechanism Shared networks already use: `DirectNetworkGuru.allocateDirectIp()`
@@ -331,6 +354,54 @@ For context rather than as a commitment: route counts in the order of 100k are n
 for modern equipment. Operators running L3-to-the-host fabrics are typically already carrying host
 routes at that scale.
 
+#### 6.3.4 IPv6 is calculated from subnet + MAC, never drawn from a stored pool **DECIDED**
+
+**The IPv6 address of a NIC is computed with EUI-64 from the network's IPv6 subnet and the NIC's
+MAC address, at allocation time. CloudStack never stores IPv6 addresses that are *to be* allocated;
+it stores only what *was* allocated, on the NIC itself (`nics.ip6_address`).** This applies to
+regular Instances and to SystemVMs alike.
+
+Verified in the code — this is already how CloudStack behaves, on both paths this feature uses:
+
+* **Guest NICs** (the `DirectNetworkGuru` lineage): `IpAddressManagerImpl.allocateDirectIp()`
+  (`:2479`) calls `Ipv6AddressManagerImpl.setNicIp6Address()`
+  (`server/src/main/java/com/cloud/network/Ipv6AddressManagerImpl.java:206`), which computes
+  `NetUtils.EUI64Address(network.getIp6Cidr(), nic.getMacAddress())` and sets the result on the
+  `NicProfile`. `DirectRoutedNetworkGuru.applyDirectRoutedAddressing()` then reshapes it to `/128`
+  + `fe80::1`.
+* **Public NICs** (SystemVMs, §8.5): `PublicNetworkGuru.getIp()` calls
+  `Ipv6ServiceImpl.updateNicIpv6()` (`Ipv6ServiceImpl.java:440`), which selects the range's
+  `ip6_cidr`, narrows it to a /64 if it is larger, and computes
+  `NetUtils.EUI64Address(ipv6Network, nicMacAddress)` (`:236`); the reservation is a placeholder
+  NIC, i.e. again a NIC row, not a pool entry.
+* **`user_ipv6_address` is not an allocation pool.** No production code path inserts rows into it
+  (verified by search: only reads — taken-checks and counts — remain). §6.3's earlier draft listed
+  it as the IPv6 counterpart of `user_ip_address`; that was wrong and is corrected above. The table
+  stays untouched by this feature.
+
+Why this is the right model, stated so it survives review:
+
+* **Recomputable = host- and database-independent.** Subnet + MAC always yields the same address:
+  what SLAAC would have produced, what the guest can verify, and what migration preserves for free.
+* **Uniqueness needs no coordination.** MACs are unique per network, subnets are unique zone-wide
+  (§6.3.2), so EUI-64 addresses collide nowhere — with no counter, no lock and no pool to maintain.
+* **Nothing to pre-populate or garbage-collect.** A /64 has 2⁶⁴ addresses; a pool table for that is
+  a non-starter anyway. The IPv4 pool model stays where it belongs, on IPv4.
+* A user-requested IPv6 (`ipaddress6=` on deploy) is rejected when it is EUI-64-shaped
+  (`Ipv6AddressManagerImpl.acquireGuestIpv6Address()`, `:112`), so a manual address can never
+  collide with a computed one.
+
+Consequences:
+
+* **The IPv6 subnet must be /64 or larger.** `NetUtils.EUI64Address()` throws for prefixes longer
+  than /64 (`NetUtils.java:1731`) — the interface identifier needs 64 bits. Today an L3 network's
+  IPv6 CIDR skips the Shared-network "/64 exactly" check, which leaves a longer prefix (e.g. /80)
+  to blow up at Instance deploy instead of at network creation. **Validation to add:** reject an
+  IPv6 CIDR with a prefix longer than /64 at `createNetwork`/`createVlanIpRange` time for L3
+  networks.
+* The IPv6 usable-address accounting of §6.3.1 is moot for v6 — there is no pool whose ends could
+  be excluded; every EUI-64 result inside the subnet is valid.
+
 ### 6.4 Service/provider matrix for the offering **DECIDED**
 
 `ConfigDriveNetworkElement` advertises `UserData`, `Dhcp`, `Dns`
@@ -346,8 +417,12 @@ two of the three.
 | `SourceNat`, `StaticNat`, `PortForwarding`, `Lb`, `Firewall`, `Vpn`, `NetworkACL`, `Gateway` | — | not supported |
 
 * `specifyIpRanges` → `true` (the operator supplies the subnet)
-* `specifyVlan` → `false`; there is no isolation id of any kind to specify (§9.2.1)
-* `NetworkMode` → not applicable; reject `NATTED`/`ROUTED` for this guest type
+* `specifyVlan` → the operator's choice, exactly as for Shared offerings: `true` means the routed
+  id is given at network creation (via the existing `vlan` parameter), `false` means CloudStack
+  allocates one from the `ROUTED` physical network's id range (§6.7.2)
+* `NetworkMode` → not applicable; reject `NATTED`/`ROUTED` for this guest type. (The *isolation
+  method* `ROUTED` (§6.7) is a different axis: `NetworkMode.ROUTED` says how a VR routes, the
+  isolation method says which physical network these VR-less networks live on.)
 
 **Why DNS is recommended rather than mandatory.** There is no VR and no resolver on the host, so
 `network_data.json` `services` is the only channel by which CloudStack can tell a guest its DNS
@@ -410,27 +485,50 @@ itself holds the public address and there is no VR at all.
 Keeping the two apart is deliberate. They are not two settings of one feature, and treating them as
 such would make both harder to reason about.
 
-### 6.7 What makes a network direct routed **DECIDED**
+### 6.7 What makes a network direct routed **DECIDED — revised 2026-09-04**
 
-**The network offering, and nothing else.** There is no broadcast domain type, no isolation method,
-no id to allocate, and nothing for the user to choose — the same shape as an L2 network, where the
-offering's guest type is the whole story.
+**The offering's guest type (`L3`) on a physical network whose isolation method is `ROUTED`.**
+The network operator is in the lead: direct routed is a property of the zone's fabric — hosts that
+route, a routing daemon, an id plan for the bridges — so it is declared where fabric properties are
+declared, on a **dedicated physical network**, not inferred from an offering that any admin can
+create. Every direct routed network then carries a broadcast domain of the new type
+**`routed://<id>`** (`BroadcastDomainType.Routed`, scheme `routed`), and that id names the bridge:
+`routed://5828` → `brdr-5828` (§9.2).
 
-* **Guru selection is on guest type alone.** `canHandle()` tests the zone type, `isMyTrafficType()`
-  and `offering.getGuestType() == GuestType.L3`. It deliberately does **not** call
-  `isMyIsolationMethod()`, unlike its siblings
-  (`DirectNetworkGuru.java:147`, `VxlanGuestNetworkGuru.java:56`), because there is no isolation to
-  select — no VLAN, no VXLAN, no encapsulation of any kind. `GuestType.L3` is new, so no other guru
-  claims it and there is no ambiguity to resolve.
-* **No isolation method to register.** An earlier draft proposed `new IsolationMethod("ROUTED")`.
-  Dropped: it would force the operator to add an isolation method to the physical network for no
-  benefit, since nothing would ever be selected by it.
-* **No broadcast domain type.** An earlier draft proposed `routed://<id>` as a new
-  `BroadcastDomainType`. Also dropped — see §9.2.1 for how the bridge name is derived instead, which
-  needs no new plumbing at all.
-* **No id for the user to pick.** The bridge is named from the network's own database id, which is
-  unique by construction and requires no allocation, no range to configure, and no `specifyVlan`
-  handling.
+* **Guru selection follows the standard contract.** `canHandle()` tests the zone type,
+  `isMyTrafficType()`, `offering.getGuestType() == GuestType.L3` **and** `isMyIsolationMethod()`,
+  exactly like its siblings (`DirectNetworkGuru.java:147`, `VxlanGuestNetworkGuru.java:56`). The
+  guru registers `new IsolationMethod("ROUTED")`.
+* **A dedicated physical network.** The operator creates a guest physical network with isolation
+  method `ROUTED` (zone wizard or `createPhysicalNetwork isolationmethods=ROUTED`), gives it an id
+  range (the physical network's existing VLAN/VNI range field — here it is the routed-id pool), and
+  steers L3 offerings to it with tags, as for any other physical network. The traffic label is
+  irrelevant for these networks — the bridges have no uplink (§9.3) — but the physical network is
+  where the id range, the tags and the operational statement "this zone routes to the host" live.
+* **The isolation method is named `ROUTED`, deliberately.** It shares the word with
+  `NetworkMode.ROUTED` (4.20) but sits on a different axis: the network mode describes how a
+  Virtual Router routes an Isolated/VPC network; the isolation method marks the physical network
+  that carries these VR-less, hypervisor-routed networks. The documentation must state the
+  distinction once, plainly.
+
+**This reverses the earlier decision** ("the offering, and nothing else" — no isolation method, no
+broadcast domain, bridge named from `networks.id`). What changed the call:
+
+* **Operator opt-in became explicit.** Previously any admin creating an L3 offering implicitly
+  asserted that every host in the zone runs a routing daemon. A physical network with `ROUTED` makes
+  that a deliberate, zone-level act by the network operator, and an L3 network simply cannot be
+  designed in a zone whose operator has not made it.
+* **The id became operator property.** `networks.id` was unique but uncontrollable: bridge names
+  could only be discovered after creation, never planned. With `routed://<id>` the id is chosen by
+  the operator or drawn from a range the operator sized — host routing policy per `brdr-<id>` can be
+  written before the network exists (§6.7.2).
+* **The agent gets an explicit signal.** `BroadcastDomainType.Routed` on the `NicTO` replaces
+  inferring "this is direct routed" from the /32-plus-link-local-gateway address form (§9.1.3).
+* **No new plumbing after all.** The earlier draft rejected this model as "an allocation mechanism,
+  a range to configure, and a choice to make". Working through the code showed all three already
+  exist for Shared networks — the `vlan` parameter, the physical network's vnet range and
+  `_dcDao.allocateVnet()`, and `specifyVlan` — and are reused verbatim (§6.7.2). What remains new is
+  one enum value and one registered isolation method.
 
 Offering creation rejects `Dhcp` for this guest type (§6.4), so a direct routed offering cannot be
 built with DHCP in the first place.
@@ -451,6 +549,33 @@ One incidental note from reading that method: the **SecurityGroup parity check**
 groups cannot be toggled on a live network by swapping offerings — enabling them is a choice made
 when the network is created.
 
+#### 6.7.2 Where the routed id comes from **DECIDED — Shared-network mechanics, reused**
+
+The id lifecycle is exactly the Shared network's VLAN lifecycle, with a different URI scheme. No
+new allocation mechanism is introduced:
+
+* **`specifyVlan=true` on the offering** — the operator passes the id at network creation through
+  the existing `vlan` parameter: `createNetwork ... vlan=5828` → `broadcast_uri=routed://5828` →
+  `brdr-5828`. This is the flagship path: the operator plans the id space and can pre-provision
+  per-bridge routing policy on the hosts.
+* **`specifyVlan=false`** — CloudStack allocates a free id from the `ROUTED` physical network's
+  range at creation (`_dcDao.allocateVnet()`, the same call Shared networks without `specifyVlan`
+  use — `NetworkServiceImpl.commitNetwork()`), and releases it when the network is deleted (the
+  existing release path in `NetworkOrchestrator`).
+
+The value must be numeric — `routed://<id>` carries a number, nothing else — and the existing
+Shared-network checks apply unchanged: an operator-specified id must not fall inside the dynamic
+range (`_dcDao.findVnet()`), and must not collide with another network's broadcast URI.
+
+**Uniqueness must be zone-wide, not per physical network.** Bridge names are global on a host, so
+two networks with routed id 5828 anywhere in the zone would share `brdr-5828` and merge their L2
+domains. The existing zone-wide URI overlap check
+(`_networksDao.listByZoneAndUriAndGuestType()`) covers this; with a single `ROUTED` physical
+network per zone — the expected deployment — it is equivalent to the per-physnet check anyway.
+
+Either way the URI is set at creation and **stable for the network's life**: the bridge name never
+changes, which is what makes it something host policy can reference.
+
 ### 6.8 Hypervisor support
 
 **KVM only for v1.** The host must program routes and neighbour entries and run a routing daemon;
@@ -461,10 +586,16 @@ creation with a clear error.
 
 ### 7.1 API
 
-* `createNetworkOffering` — accept the new `guestiptype`; validate the service matrix (§6.4).
-* `createNetwork` — accept the subnet as for Shared networks; `createVlanIpRange` gateway handling
-  per §5.5; zone-wide overlap validation per §6.3.2.
-* `listNetworks` / `NetworkResponse` — expose the type. The network's CIDR is meaningful (it is the
+* `createPhysicalNetwork` / `updatePhysicalNetwork` — accept `ROUTED` as an isolation method; the
+  physical network's VLAN/VNI range field doubles as the routed-id pool (§6.7.2). UI: add `ROUTED`
+  to the isolation method choices (zone wizard and physical network form).
+* `createNetworkOffering` — accept the new `guestiptype`; validate the service matrix (§6.4);
+  `specifyVlan` is a free choice (§6.7.2).
+* `createNetwork` — accept the subnet as for Shared networks; the existing `vlan` parameter carries
+  the routed id when the offering has `specifyVlan=true` (§6.7.2); `createVlanIpRange` gateway
+  handling per §5.5; zone-wide overlap validation per §6.3.2.
+* `listNetworks` / `NetworkResponse` — expose the type and the `broadcasturi` (`routed://5828`),
+  which is how a user reads off the bridge name. The network's CIDR is meaningful (it is the
   pool) and should be shown; its gateway is not.
 * `listNics` / `NicResponse` — report the /32 and /128 plus the shared gateway. `netmask` is
   already a dotted quad, so `255.255.255.255` needs no schema change.
@@ -474,22 +605,29 @@ creation with a clear error.
 ### 7.2 Database
 
 * `network_offerings.guest_type` — new enum value (`L3`).
+* `networks.broadcast_domain_type` — new enum value (`Routed`); `broadcast_uri` holds
+  `routed://<id>`. Both columns are strings, so no schema change.
+* `physical_network_isolation_methods` — new value `ROUTED`; a plain string, no schema change.
+* `op_dc_vnet_alloc` — reused unchanged as the routed-id pool for `specifyVlan=false` (§6.7.2).
 * `nics` — all needed columns exist: `ip4_address`, `netmask`, `gateway`, `ip6_address`,
   `ip6_cidr`, `ip6_gateway` (`engine/schema/src/main/java/com/cloud/vm/NicVO.java:55-108`).
-* `user_ip_address`, `user_ipv6_address`, `vlan` — reused unchanged.
-* Upgrade: new enum value only. No data migration.
+* `user_ip_address`, `vlan` — reused unchanged. `user_ipv6_address` stays untouched: IPv6 is
+  computed from subnet + MAC and stored only on the NIC (§6.3.4).
+* Upgrade: new enum values only. No data migration.
 
 ### 7.3 New components
 
 * **Network guru — a subclass of `DirectNetworkGuru`. DECIDED.** `DirectNetworkGuru` already
   implements "operator defines a subnet, CloudStack assigns individual v4 and v6 addresses", which
   is exactly the allocation behaviour wanted, so the allocate/release lifecycle is inherited rather
-  than duplicated. The subclass overrides:
-  * `canHandle()` — accept `GuestType.L3`, and drop the `isMyIsolationMethod()` test (§6.7)
+  than duplicated. The subclass registers `IsolationMethod("ROUTED")` and overrides:
+  * `canHandle()` — accept `GuestType.L3` on a physical network with isolation method `ROUTED`
+    (`isMyIsolationMethod()`, as its siblings do — §6.7)
   * the `NicProfile` after allocation — force `255.255.255.255` / `169.254.0.1` and `/128` /
     `fe80::1` over the vlan row's values (`IpAddressManagerImpl.allocateDirectIp()` lines 2459–2461,
     §6.3)
-  * `design()` — no broadcast domain or isolation to assign (§9.2.1)
+  * `design()` — broadcast domain type `Routed`, broadcast URI `routed://<id>` from the
+    operator-specified or allocated id (§6.7.2, §9.2.1)
 
   The known cost of subclassing is inheriting `DirectNetworkGuru`'s Shared-network assumptions.
   Accepted: the alternative is duplicating the address lifecycle, which is the part most likely to
@@ -632,6 +770,68 @@ A host-side responder on the `brdr-*` bridge is entirely feasible later: the gat
 already there, the host already routes for the guest, and the data is already assembled for the ISO.
 It is deferred rather than ruled out — **a candidate for v2** (§15).
 
+### 8.5 SystemVMs: boot args, not ConfigDrive **REQUIRED CHANGES — dual-stack in v1**
+
+Console proxy and secondary storage VM are still needed in a direct routed zone, and their public
+interface is directly routed like everything else — a `/32` + `169.254.0.1` on-link gateway **and**
+a `/128` + `fe80::1`. **IPv6 for the SystemVMs must work from the start**; it is not deferred.
+
+SystemVMs do not consume ConfigDrive: their addressing is passed down from the hypervisor as boot
+arguments, parsed by `systemvm/debian/opt/cloud/bin/setup/common.sh` and applied by
+`setup_common()`. For both VM types the call is `setup_common eth0 eth1 eth2` (`init.sh:166`), so
+`eth2` is the public interface **and** the default-gateway device.
+
+Walking the chain end to end, four gaps stand between the host-route NIC form and a working
+systemvm:
+
+1. **The IPv4 default route needs `onlink`.** The values already flow — both builders pass
+   `eth2ip`, `eth2mask` and `gateway` straight from the `NicProfile`
+   (`ConsoleProxyManagerImpl.finalizeVirtualMachineProfile()`, `SecondaryStorageManagerImpl`
+   likewise), so a NIC stamped in host-route form arrives correctly. But `setup_common()` then runs
+   `ip route add default via $GW dev $gwdev` (`common.sh:399`), which the kernel rejects with
+   `Nexthop has invalid gateway` when `$GW` lies outside the /32. Append `onlink` when `$GW` falls
+   in `169.254.0.0/16` — the same trigger rule §8.1 leans on in cloud-init, applied by hand here
+   because a systemvm has no cloud-init. The `/etc/network/interfaces` stanza itself (address +
+   `netmask 255.255.255.255`, no gateway line) is fine as is, and the VMware ping-the-gateway
+   workaround right after the route works once the on-link route exists.
+2. **IPv6 boot args are never sent for CPVM/SSVM.** Only the VR's builder emits them
+   (`VirtualNetworkApplianceManagerImpl.java:1935–1946`: `eth<N>ip6`, `eth<N>ip6prelen`,
+   `ip6gateway`). The CPVM and SSVM builders emit IPv4 only and must add the same three appends for
+   NICs that carry IPv6, from values the guru already stamped — prefix length via
+   `NetUtils.getIp6CidrSize(nic.getIPv6Cidr())` (→ 128), `ip6gateway` from the default NIC. The
+   consumer side already exists: `common.sh` parses `eth0ip6`/`eth2ip6`(+`prelen`) and
+   `ip6gateway` → `IP6GW` today.
+3. **The systemvm never installs an IPv6 default route.** `IP6GW` is parsed and then consumed
+   nowhere; `setup_interface_ipv6()` (`common.sh:139`) writes only the address and prefix length
+   and leans on `accept_ra 1` — and on a direct routed bridge **no RA ever arrives** (`accept_ra=0`
+   on the bridge, §9.2, and nothing sends them). Add next to the v4 default in `setup_common()`:
+   `ip -6 route replace default via $IP6GW dev $gwdev` whenever `IP6GW` is set. `fe80::1` is
+   link-local, so `dev` is mandatory and no on-link handling exists or is needed — a link-local
+   next-hop is on-link by definition. *Note this gap predates the feature:* a classic VLAN public
+   network with IPv6 also leaves CPVM/SSVM without a v6 default unless a fabric router happens to
+   send RAs. The fix is useful independently of direct routed and should not be gated on it.
+4. **The public NIC must be stamped and plugged like a guest's.** `PublicNetworkGuru.getIp()`
+   (`PublicNetworkGuru.java:146–156`) sets gateway/netmask from the public range's vlan row and
+   hard-codes a `Vlan`/`Vxlan` broadcast URI on the NIC. For a direct routed public range the NIC
+   must instead receive the host-route form (as `DirectRoutedNetworkGuru.applyDirectRoutedAddressing()`
+   does for guests) plus `BroadcastDomainType.Routed` and a `routed://<id>` URI — which is also
+   exactly what steers `BridgeVifDriver`'s Public branch into the brdr-bridge + `modifymacip.sh`
+   path instead of the public bridge (today that handling sits only in the Guest branch). The IPv6
+   side needs no new allocation logic: `ipv6Service.updateNicIpv6()` (`PublicNetworkGuru.java:166`)
+   already computes the address with EUI-64 from the range's subnet and the NIC's MAC (§6.3.4);
+   only the /128 + `fe80::1` reshaping applies on top, exactly as for guest NICs. Mechanism sketch:
+   the public IP range's vlan row already carries a tag that `getIp()` copies into the broadcast
+   URI, so a range created with `routed://<id>` as its "vlan" flows through with almost no new
+   plumbing (verify `updateNicIpv6()`'s range lookup by broadcast URI matches such a row); the
+   zone's public network carries one routed id (and thus one `brdr-<id>`) of its own, and systemvm
+   /32s and /128s are advertised by the host's routing daemon exactly like guest addresses.
+
+Minor, noted for completeness: `setup_interface_ipv6()` writes `accept_ra 1` — harmless on an
+RA-less bridge, but the static default must not depend on it (and may be set to 0 for direct
+routed interfaces later); SSVM's apache vhost binds `$ETH2_IP` (IPv4) — pre-existing; the SSVM
+serves its HTTP endpoints on IPv4, while its own outbound traffic and reachability for
+management are dual-stack.
+
 ## 9. Hypervisor (KVM) implementation
 
 ### 9.1 The agent's entire job
@@ -680,40 +880,31 @@ story needs tightening later: `-b` is passed verbatim as the `dev` argument to e
 and the delete path's `ip neigh show dev <dev>` works on a tap too, so targeting a tap would need no
 script change at all — only a rename of `-b` to something less misleading.
 
-#### 9.1.3 Gating is per NIC, inferred **DECIDED**
+#### 9.1.3 Gating is per NIC, on the broadcast type **DECIDED — revised 2026-09-04**
 
 `vm.network.macip.static` is resolved once in `configure()` (`BridgeVifDriver.java:87`) and is
 all-or-nothing for the host. A host runs direct routed guests *and* ordinary bridged guests side by
-side, so the behaviour is decided **per NIC**, inferred from what the `NicTO` already carries — not
-from a host property, and without adding a flag.
+side, so the behaviour is decided **per NIC** — not from a host property.
 
-**What the agent can actually see.** `NicTO`/`NetworkTO` expose `broadcastType`, `type`
-(TrafficType), `networkId`, `gateway`, `netmask`, `ip6Cidr` and `securityGroupEnabled`
-(`api/src/main/java/com/cloud/agent/api/to/NicTO.java`,
-`api/src/main/java/com/cloud/agent/api/to/NetworkTO.java`). Two things it does **not** carry:
+**The selector is now explicit.** With §6.7 giving every direct routed network a
+`routed://<id>` broadcast domain, the `NicTO` carries `broadcastType == BroadcastDomainType.Routed`
+and the URI itself — populated for every NIC by `HypervisorGuruBase.toNicTO()`. That is the test:
+one decision, used twice. It picks the bridge (`brdr-<id>` from the URI's value, §9.2.1) **and**
+gates the MAC/IP hook. They are not separate decisions — if the driver has chosen a `brdr-` bridge,
+the hook applies.
 
-* **Guest type is not on the TO at all.** There is no `GuestType` field, so `GuestType.L3` cannot be
-  tested directly on the agent.
-* **Broadcast type is ambiguous.** Since §9.2.1 dropped the broadcast domain, these NICs are
-  `BroadcastDomainType.Native`, which is shared with other untagged cases.
-
-**The signature to infer from** is therefore the addressing itself, which no other CloudStack network
-type produces: an IPv4 netmask of `255.255.255.255` (and/or an IPv6 `/128`) together with a gateway
-inside `169.254.0.0/16`. Shared and Isolated networks always hand out a real subnet mask; L2 hands
-out none. This is the same key §8.1 uses to decide the ConfigDrive `on-link` rule, so the two stay
-consistent by construction.
-
-**One inference, used twice.** The same test decides both which bridge to use (`brdr-<networkId>`,
-§9.2.1) and whether to run the MAC/IP hook. They are not separate decisions — if the driver has
-chosen a `brdr-` bridge, the hook applies.
+**The earlier inferred contract is superseded.** Before the revision these NICs were
+`BroadcastDomainType.Native` — indistinguishable from other untagged cases — so the agent inferred
+"direct routed" from the address form no other network type produces: netmask `255.255.255.255`
+(and/or a `/128`) with a gateway in `169.254.0.0/16`. That inference was flagged at the time as an
+implicit contract a future change could trip over; the broadcast type closes it. The address form
+remains meaningful where it is genuinely about addressing — cloud-init's `on-link` handling (§8.1)
+keys on the link-local gateway, and `ConfigDriveBuilder` recognises the host-route shape — but the
+agent's *routing-behaviour* decisions (bridge choice, MAC/IP hook, `--directrouted` to
+`security_group.py`) all key on `BroadcastDomainType.Routed`.
 
 The agent property `vm.network.macip.static` stays as an independent host-wide opt-in for the EVPN
 use case and is unaffected.
-
-**Caveat, worth stating:** this is an implicit contract. Nothing stops a future change from handing a
-guest a /32 for some other reason and silently activating this path. If that becomes a real risk, the
-explicit alternative is a boolean on `NicTO` set by the guru — a small change, deliberately not taken
-now because it adds plumbing for a case that does not yet exist.
 
 #### 9.1.4 Silent failures are kept **DECIDED — accepted**
 
@@ -773,17 +964,18 @@ leaks if its neighbour entry has already been flushed. Reconciliation (§9.6) co
 ### 9.2 One bridge per network **DECIDED**
 
 **Each direct routed network gets its own bridge on every hypervisor that runs one of its
-Instances**, named `brdr-<id>` (Bridge-DirectRouted) — for example `brdr-42`.
+Instances**, named `brdr-<id>` (Bridge-DirectRouted) — for example `brdr-5828`.
 
-The `<id>` is simply `networks.id`, the network's numeric database id — unique by construction, with
-nothing to allocate and nothing for the user to choose (§9.2.1).
+The `<id>` is the network's **routed id** — the value of its `routed://<id>` broadcast domain,
+operator-chosen or allocated from the `ROUTED` physical network's range at creation, and stable for
+the network's life (§6.7.2, §9.2.1).
 
 The bridge is created and removed by a new script,
 `scripts/vm/network/vnet/modifybrdr.sh`, modelled on `modifyvxlan.sh`:
 
 ```
-modifybrdr.sh -o add    -n <network id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>]
-modifybrdr.sh -o delete -n <network id>
+modifybrdr.sh -o add    -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>]
+modifybrdr.sh -o delete -b <bridge name>
 ```
 
 On `add` it creates the bridge if absent (STP off, `forward_delay 0` — there is no uplink, so no
@@ -796,53 +988,54 @@ concurrent Instance starts on one network will race to create the bridge.
 Consequences:
 
 * **Networks are isolated from each other at layer 2 by the topology**, not by filtering. This is
-  the first reason for the design: a guest on `brdr-42` has no L2 path of any kind to a guest on
-  `brdr-43`, and no rule set has to be correct for that to hold (§12).
+  the first reason for the design: a guest on `brdr-5828` has no L2 path of any kind to a guest on
+  `brdr-5829`, and no rule set has to be correct for that to hold (§12).
 * **Each network becomes a named L3 interface on the hypervisor.** This is the second reason, and it
-  is an operational one: `brdr-42` is something the operator can attach local policy to. Different
+  is an operational one: `brdr-5828` is something the operator can attach local policy to. Different
   route-maps or redistribution filters per network, per-network policy routing, QoS, or later a VRF
   per bridge — all expressible in the host's own network configuration, matched on interface name,
   with no involvement from CloudStack. The routing daemon is already the operator's (§10); giving
-  each network its own interface is what makes per-network routing decisions possible at all.
-* **Bridge name is identical on every host** — it derives only from the network id — which is what
+  each network its own interface is what makes per-network routing decisions possible at all. And
+  because the operator can choose the id (§6.7.2), that policy can be written **before** the network
+  exists.
+* **Bridge name is identical on every host** — it derives only from the routed id — which is what
   keeps migration a no-op for the guest.
 * **The vif driver now needs work.** The earlier shared-bridge design could ride on
   `BridgeVifDriver`'s existing `brname = trafficLabel` fallback
   (`plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/resource/BridgeVifDriver.java:255`);
-  that no longer applies. The driver must derive `brdr-<network id>` from `NicTO.getNetworkId()` and invoke
-  `modifybrdr.sh` on plug, and on unplug when the last interface leaves — the same shape as its
-  existing `createVnetBr()` handling for VXLAN.
+  that no longer applies. The driver must take the routed id from the NIC's broadcast URI
+  (`BroadcastDomainType.getValue(nic.getBroadcastUri())`) and invoke `modifybrdr.sh` on plug, and on
+  unplug when the last interface leaves — the same shape as its existing `createVnetBr()` handling
+  for VXLAN.
 
-#### 9.2.1 How the agent learns the bridge name **DECIDED**
+#### 9.2.1 How the agent learns the bridge name **DECIDED — revised 2026-09-04**
 
-**`NicTO` already carries the network id.** `NicTO.networkId` (`api/src/main/java/com/cloud/agent/api/to/NicTO.java:35`)
-is populated for every NIC by `HypervisorGuruBase.toNicTO()`
-(`server/src/main/java/com/cloud/hypervisor/HypervisorGuruBase.java:208`,
-`to.setNetworkId(profile.getNetworkId())`).
+**`NicTO` carries the broadcast URI.** The URI (`routed://5828`) and broadcast type
+(`BroadcastDomainType.Routed`) are populated for every NIC by `HypervisorGuruBase.toNicTO()`, the
+same way VLAN and VXLAN NICs receive theirs.
 
-`BridgeVifDriver` passes the network id to `modifybrdr.sh`, which creates the bridge and **prints
-the name it chose** — the agent uses whatever comes back. On unplug the agent asks the same script
-(`-o delete -b <name>`), which answers `notmine`, `kept` or `deleted`; `notmine` sends the agent
-down its regular unplug path. **How the bridges are named is known only to the script**; no
-`brdr-` prefix appears anywhere in Java.
+`BridgeVifDriver` selects on the broadcast type (§9.1.3), extracts the routed id from the URI and
+passes it to `modifybrdr.sh`, which creates the bridge and **prints the name it chose** — the agent
+uses whatever comes back. On unplug the agent asks the same script (`-o delete -b <name>`), which
+answers `notmine`, `kept` or `deleted`; `notmine` sends the agent down its regular unplug path.
+**How the bridges are named is known only to the script**; no `brdr-` prefix appears anywhere in
+Java.
 
-That is the entire mechanism. No new `BroadcastDomainType`, no broadcast URI, no isolation method, no
-id allocation, no new field on any TO — and nothing the user has to choose. The id is unique by
-construction because it is the network's primary key.
-
-Earlier drafts proposed a `routed://<id>` broadcast domain with an operator-choosable id allocated
-from the physical network's VNET range. Dropped: it added an allocation mechanism, a range to
-configure, and a choice to make, all to convey a number the agent already has.
+**This reverses the earlier decision**, which named the bridge from `networks.id` carried in
+`NicTO.networkId`, precisely to avoid a broadcast domain, an isolation method and an id allocation.
+The reversal rationale is in §6.7; the agent-side consequence is only that the number now comes from
+the broadcast URI instead of the network-id field — the script contract (id in, name out, naming
+private to the script) is unchanged.
 
 Consequences:
 
-* The network's `broadcast_uri` stays empty and its broadcast domain type is `Native`. Nothing is
-  allocated, so nothing has to be released on network deletion.
-* `specifyVlan` is `false` and stays that way (§6.4).
-* An operator who wants `brdr-42` to be a *specific* number cannot have it. Bridge names are
-  discoverable from the network's id in the UI and API, so per-network host routing policy (§9.2) is
-  still perfectly writable — it just has to be written after the network exists rather than chosen
-  in advance.
+* The network's `broadcast_uri` is `routed://<id>` and its broadcast domain type is `Routed`, set
+  at creation and stable for the network's life. An auto-allocated id is released on network
+  deletion (§6.7.2); an operator-specified one was never in the pool.
+* `specifyVlan` on the offering selects between operator-specified and allocated ids (§6.4, §6.7.2).
+* An operator who wants `brdr-5828` to be a *specific* number **can have it** — create the network
+  from a `specifyVlan=true` offering with `vlan=5828`. Per-network host routing policy (§9.2) can
+  therefore be provisioned before the network exists.
 
 Per bridge, `modifybrdr.sh` sets:
 
@@ -865,7 +1058,7 @@ on twenty bridges is normal and correct.
 For IPv4 the sysctls are what make it correct, and `modifybrdr.sh` sets both:
 
 * `arp_ignore=1` — answer ARP only for addresses configured on the interface the request arrived on,
-  so a request reaching `brdr-42` is never answered on behalf of `brdr-43`
+  so a request reaching `brdr-5828` is never answered on behalf of `brdr-5829`
 * `arp_announce=2` — always source ARP from the address of the interface the request goes out of
 
 Each bridge is its own L2 domain, so the ARP exchange stays within the right one regardless; the
@@ -890,8 +1083,8 @@ If a bridge did have an uplink onto a shared L2 segment, two things break:
 
 ### 9.4 Layer 2 isolation comes from the bridges **DECIDED**
 
-Separate bridges per network are the isolation mechanism. A guest on `brdr-42` cannot send a frame of
-any kind — ARP, raw L2, rogue RA, anything — to a guest on `brdr-43`. There is no shared broadcast
+Separate bridges per network are the isolation mechanism. A guest on `brdr-5828` cannot send a frame of
+any kind — ARP, raw L2, rogue RA, anything — to a guest on `brdr-5829`. There is no shared broadcast
 domain, no shared FDB, and no path that filtering would have to police.
 
 This replaces the earlier shared-bridge design, in which separate networks were only administrative
@@ -1132,13 +1325,32 @@ Checklist to work through:
 - [ ] `UserVmManagerImpl` — `addNicToVm`, `updateDefaultNic`, IP change
 - [ ] `NetworkModelImpl` — capability lookups, `getNetworkTag`, `isSecurityGroupSupportedInNetwork`
 - [ ] `IpAddressManagerImpl.allocateDirectIp()` — gateway/netmask override for /32 and /128
-- [ ] `BridgeVifDriver` — infer direct-routed from the /32 + link-local gateway; gate the MAC/IP
-      hook and bridge selection on it. Script and bridge targeting reused unchanged (§9.1.3)
+- [ ] `Networks.BroadcastDomainType` — new `Routed("routed", Long.class)` value (§6.7)
+- [ ] `BridgeVifDriver` — select on `BroadcastDomainType.Routed`; gate the MAC/IP hook and bridge
+      selection on it. Script and bridge targeting reused unchanged (§9.1.3)
 - [ ] `scripts/vm/network/vnet/modifybrdr.sh` — per-network bridge lifecycle (§9.2)
-- [ ] `BridgeVifDriver` — derive `brdr-<nic.getNetworkId()>`, call `modifybrdr.sh` on plug and last unplug
-- [ ] New guru with `canHandle()` on guest type alone, no isolation method (§6.7)
-- [ ] Offering validation — require ConfigDrive `UserData`, reject `Dhcp` (§6.4)
+- [ ] `BridgeVifDriver` — take the routed id from the NIC's broadcast URI, call `modifybrdr.sh` on
+      plug and last unplug
+- [ ] Guru registers `IsolationMethod("ROUTED")`; `canHandle()` on guest type + isolation method;
+      `design()` sets `Routed` + `routed://<id>` (§6.7)
+- [ ] `NetworkOrchestrator.encodeVlanIdIntoBroadcastUri()` — `ROUTED` physical network →
+      `routed://` URI; broadcast domain type derived from the URI scheme, not hard-coded `Vlan`
+      (§6.7.2)
+- [ ] `NetworkServiceImpl.commitNetwork()` — extend the shared-without-`specifyVlan` vnet
+      auto-allocation to `GuestType.L3`; extend the matching release on deletion in
+      `NetworkOrchestrator` (§6.7.2)
+- [ ] Offering validation — require ConfigDrive `UserData`, reject `Dhcp`; allow `specifyVlan`
+      either way (§6.4)
 - [ ] `ConfigDriveBuilder.needForGeneratingNetworkData()` — must not gate on Dhcp/Dns (§8.2)
+- [ ] CPVM/SSVM boot args — emit `eth<N>ip6`/`eth<N>ip6prelen`/`ip6gateway` as the VR builder
+      already does (§8.5)
+- [ ] `systemvm/.../setup/common.sh` — `onlink` on the v4 default route for link-local gateways;
+      install the v6 default route from `IP6GW` instead of relying on RA (§8.5)
+- [ ] `PublicNetworkGuru` / `createVlanIpRange` — direct routed public range for systemvm IPs,
+      dual-stack: host-route NIC form (v4 and v6), `Routed` broadcast URI; `BridgeVifDriver` Public
+      branch handles it; verify `updateNicIpv6()`'s range lookup accepts a `routed://` tag (§8.5)
+- [ ] `createNetwork`/`createVlanIpRange` — reject an IPv6 CIDR with a prefix longer than /64 for
+      L3 networks; EUI-64 needs 64 interface-identifier bits (§6.3.4)
 - [ ] `NetworkServiceImpl.java:657` — stop rejecting DNS for this type as it does for L2 (§6.4)
 - [ ] `security_group.py` unified rules — verify on a real host that both directions match live
       traffic on classic and Direct Routed bridges, and that ARP for `169.254.0.1` / ND for
@@ -1148,11 +1360,17 @@ Checklist to work through:
 - [ ] VM snapshot / restore, VM import (`UnmanagedVMsManagerImpl`), template creation
 - [ ] Network restart — no-op without a VR?
 - [ ] IP capacity reporting and usage records — is a directly routed address a billable public IP?
-- [ ] UI: network creation wizard, network detail page, NIC display, offering creation
+- [ ] UI: `ROUTED` in the physical network isolation method options (zone wizard,
+      `phynetworks.js`); network creation wizard (the `vlan` field labelled as routed id for L3
+      offerings); network detail page, NIC display, offering creation
 
 ## 14. Upgrade and compatibility
 
-* Additive: new enum value, new offering type. No change to existing networks.
+* Additive: new enum values (`GuestType.L3`, `BroadcastDomainType.Routed`), new isolation method
+  string, new offering type. No change to existing networks, no data migration.
+* The pre-revision implementation on this branch (L3 networks with `Native` broadcast domain and an
+  empty `broadcast_uri`) was never released, so no migration from it is provided; development
+  deployments recreate their L3 networks.
 * **Agent version gating is out of scope. DECIDED.** No capability flag, no version check, and no
   management-server logic to keep Instances of this type away from agents that predate it. Operators
   are expected to upgrade their agents as part of upgrading CloudStack, as they already are. The
@@ -1176,11 +1394,31 @@ Checklist to work through:
 
 ## 16. Decision log and open questions
 
+### Revised 2026-09-04 — isolation model
+
+Three decisions from the 2026-07-30 design were reversed together; rationale in §6.7:
+
+* **Isolation method:** was "none to register"; now the guru registers `IsolationMethod("ROUTED")`
+  and direct routed networks live on a dedicated physical network carrying it. The network operator
+  opts the zone in explicitly.
+* **Broadcast domain:** was "`Native`, empty URI"; now `BroadcastDomainType.Routed` with
+  `routed://<id>`, set at creation and stable for the network's life.
+* **Bridge naming:** was `brdr-<networks.id>` (unchoosable); now `brdr-<routed id>`, with the id
+  operator-specified (`specifyVlan=true` + `vlan` parameter) or allocated from the physical
+  network's range (`specifyVlan=false`) — the Shared network's VLAN mechanics, reused (§6.7.2).
+
+The agent's inferred /32-plus-link-local-gateway gating became explicit gating on the broadcast
+type as a consequence (§9.1.3). Entries below are updated in place; superseded wording is kept in
+the relevant sections as "reverses the earlier decision" notes.
+
 ### Settled
 
 * Network type is "no DHCP", not "like L2" (§1)
-* Addresses come from `user_ip_address` / `user_ipv6_address` with an operator-supplied subnet
-  (§6.3); subnets must not overlap zone-wide (§6.3.2)
+* IPv4 addresses come from the `user_ip_address` pool with an operator-supplied subnet (§6.3);
+  subnets must not overlap zone-wide (§6.3.2)
+* **IPv6 is calculated (EUI-64) from the subnet and the NIC's MAC** — never drawn from a stored
+  pool; only the allocated result is stored, on the NIC. Already how both the guest and the public
+  path behave; requires the subnet to be /64 or larger, to be validated at creation (§6.3.4)
 * New `GuestType.L3`, chosen over overloading `Shared`/`NetworkMode` (§6.1)
 * Gateway is a static, non-configurable `169.254.0.1` / `fe80::1`; a /32 means the guest must treat
   its gateway as on-link regardless, so configurability would buy nothing (§6.2)
@@ -1190,10 +1428,12 @@ Checklist to work through:
   `4816e059383` / PR #13495, rather than new code (§9.1.1)
 * Routes and neighbour entries go on the **bridge**, not the tap — the script and hook are reused
   unchanged (§9.1.2)
-* **One bridge per network**, named `brdr-<networks.id>`, created and removed by the new
+* **One bridge per network**, named `brdr-<routed id>`, created and removed by the new
   `scripts/vm/network/vnet/modifybrdr.sh` (§9.2)
-* No broadcast domain, no isolation method, no id allocation and nothing for the user to choose —
-  the agent already has the network id on `NicTO` (§9.2.1)
+* **Isolation method `ROUTED` on a dedicated physical network** selects the guru; the network's
+  broadcast domain is `routed://<id>` and the id is operator-specified or allocated from the
+  physical network's range — reversing the earlier "no isolation method, no broadcast domain"
+  decision (§6.7, §6.7.2, §9.2.1; revision block above)
 * Per-network bridges also give the operator a named interface per network to hang local routing
   policy off — a deliberate benefit, not just a side effect (§9.2)
 * Those bridges have no physical uplink (§9.3)
@@ -1207,16 +1447,18 @@ Checklist to work through:
   enabled; leaving them off is a deliberate operator choice (§12.3)
 * The `--physdev-is-bridged` rework is **required** — L3 filtering must work — and must be strictly
   additive so existing Basic-zone and Shared-network rules are unchanged (§12.2)
-* The **offering alone** determines that a network is direct routed, on guest type — as for an L2
-  network. Changing a network's offering afterwards is not guarded (§6.7, §6.7.1)
+* A network is direct routed when its offering's guest type is `L3` **and** it lives on a
+  physical network with isolation method `ROUTED` — guru selection follows the standard
+  isolation-method contract. Changing a network's offering afterwards is not guarded (§6.7, §6.7.1)
 * The offering requires ConfigDrive `UserData`; `Dns` is optional but strongly recommended, and
   `SecurityGroup` is optional. `Dhcp` is rejected — not just unsupported but unnecessary (§6.4, §6.5)
 * `rp_filter=1` is set on each `brdr-*` bridge, bounding IPv4 source spoofing to the Instance's own
   address; IPv6 has no kernel equivalent (§9.5)
 * **No reconciliation at agent startup** — a host reboot destroys the Instances too, and an agent
   restart does not clear kernel state (§9.6)
-* The MAC/IP hook is gated **per NIC, inferred** from the /32 + link-local-gateway signature rather
-  than a host property or a new `NicTO` flag; the same test picks the bridge (§9.1.3)
+* The MAC/IP hook is gated **per NIC, on `BroadcastDomainType.Routed`** rather than a host
+  property; the same test picks the bridge. (Originally inferred from the /32 + link-local-gateway
+  address form; superseded by the explicit broadcast type — §9.1.3)
 * The same `169.254.0.1` on every `brdr-*` bridge is **correct as designed**; `arp_ignore=1` and
   `arp_announce=2` handle it (§9.2.2)
 * The guru is a **subclass of `DirectNetworkGuru`**, inheriting the address lifecycle rather than
@@ -1242,6 +1484,11 @@ Checklist to work through:
 * **Agent version gating is out of scope** — operators upgrade agents with CloudStack (§14)
 * KVM only for v1 (§6.8); **VPC never** — it is a separate use case already served by VPC's own
   BGP-routed subnets (§6.6)
+* **SystemVMs stay, configured via boot args, dual-stack from the start** — the v4 default route
+  gains `onlink` for link-local gateways, the CPVM/SSVM builders emit the IPv6 args the VR builder
+  already emits, the systemvm installs the v6 default from `ip6gateway` instead of hoping for an
+  RA, and the public NIC is stamped/plugged in the same host-route + `routed://` form as a guest
+  NIC — its IPv6 coming from the same EUI-64 computation (§8.5, §6.3.4)
 
 ### Still open
 

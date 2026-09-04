@@ -24,6 +24,7 @@ from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.base import (Account,
                              Network,
                              NetworkOffering,
+                             PhysicalNetwork,
                              ServiceOffering,
                              VirtualMachine,
                              Zone)
@@ -58,6 +59,24 @@ class TestL3Networks(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
+        # The network operator's opt-in: L3 networks live on a dedicated physical network
+        # with isolation method ROUTED. Its "vlan" range is the routed-id pool for networks
+        # whose offering does not carry specifyVlan; its tag steers L3 offerings to it.
+        cls.physical_network = PhysicalNetwork.create(
+            cls.apiclient,
+            {"name": "l3-direct-routed"},
+            zoneid=cls.zone.id,
+            isolationmethods="ROUTED"
+        )
+        cls._cleanup.append(cls.physical_network)
+        cls.physical_network.addTrafficType(cls.apiclient, "Guest")
+        cls.physical_network.update(
+            cls.apiclient,
+            vlan="5800-5899",
+            tags="l3routed",
+            state="Enabled"
+        )
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offering"]
@@ -70,6 +89,13 @@ class TestL3Networks(cloudstackTestCase):
         )
         cls._cleanup.append(cls.network_offering)
         cls.network_offering.update(cls.apiclient, state='Enabled')
+
+        cls.network_offering_specifyid = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l3_network_offering_specifyid"]
+        )
+        cls._cleanup.append(cls.network_offering_specifyid)
+        cls.network_offering_specifyid.update(cls.apiclient, state='Enabled')
 
         cls.account = Account.create(
             cls.apiclient,
@@ -113,14 +139,39 @@ class TestL3Networks(cloudstackTestCase):
     @attr(tags=["advanced", "smoke"], required_hardware="false")
     def test_01_create_l3_network(self):
         """ An L3 network is created like a Shared network: with a subnet. The subnet is an
-            allocation pool routed to the hypervisors, not a broadcast domain, and consumes
-            no isolation id. """
+            allocation pool routed to the hypervisors, not a broadcast domain. The network
+            carries a routed://<id> broadcast domain - here allocated from the ROUTED
+            physical network's range - whose id names the bridge (brdr-<id>) on the hosts. """
         network = self.create_l3_network()
         self.cleanup.append(network)
 
         self.assertEqual(network.type, "L3", "network type should be L3")
-        self.assertEqual(network.broadcastdomaintype, "Native", "an L3 network consumes no isolation id")
+        self.assertEqual(network.broadcastdomaintype, "Routed", "an L3 network has a routed broadcast domain")
+        self.assertTrue(network.broadcasturi.startswith("routed://"),
+                        "the broadcast URI must be routed://<id>, got %s" % network.broadcasturi)
+        allocated_id = int(network.broadcasturi.replace("routed://", ""))
+        self.assertTrue(5800 <= allocated_id <= 5899,
+                        "the routed id must come from the physical network's range, got %d" % allocated_id)
         self.assertIn(network.state, ["Setup", "Allocated"], "unexpected network state")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_01b_create_l3_network_with_operator_specified_id(self):
+        """ With a specifyVlan offering the operator picks the routed id at creation via the
+            vlan parameter, so bridge names (brdr-<id>) are plannable before the network
+            exists. The id must lie outside the physical network's dynamic range. """
+        services = dict(self.services["l3_network"])
+        network = Network.create(
+            self.apiclient,
+            services,
+            zoneid=self.zone.id,
+            networkofferingid=self.network_offering_specifyid.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            vlan="5928"
+        )
+        self.cleanup.append(network)
+        self.assertEqual(network.broadcasturi, "routed://5928",
+                         "the operator-specified routed id must be carried verbatim, got %s" % network.broadcasturi)
 
     @attr(tags=["advanced", "smoke"], required_hardware="false")
     def test_02_deploy_vm_in_l3_network(self):

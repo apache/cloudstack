@@ -1471,8 +1471,11 @@ public class ConfigurationManagerImplTest {
         configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), NetworkOffering.NetworkMode.ROUTED, false, true, false);
     }
 
-    @Test(expected = InvalidParameterValueException.class)
-    public void validateL3NetworkOfferingRejectsSpecifyVlan() {
+    @Test
+    public void validateL3NetworkOfferingAcceptsSpecifyVlan() {
+        // specifyVlan selects who picks the routed id: the operator (true, via the vlan
+        // parameter at network creation) or CloudStack (false, allocated from the ROUTED
+        // physical network's vnet range). Both are valid offerings.
         configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, true, true, false);
     }
 
