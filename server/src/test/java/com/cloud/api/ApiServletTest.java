@@ -461,4 +461,62 @@ public class ApiServletTest {
 
         Assert.assertEquals(false, result);
     }
+
+    @Test
+    public void shouldNotLogRequestParametersForAddObjectStoragePool() {
+        boolean result = servlet.shouldLogRequestParameters("addObjectStoragePool", new HashMap<>());
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldLogRequestParametersForCommandWithoutSensitiveParameters() {
+        boolean result = servlet.shouldLogRequestParameters("listZones", new HashMap<>());
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void shouldNotLogRequestParametersContainingUserData() {
+        Map<String, String[]> params = new HashMap<>();
+        params.put(ApiConstants.USER_DATA, new String[] {"sensitive-user-data"});
+
+        boolean result = servlet.shouldLogRequestParameters("deployVirtualMachine", params);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldReplaceQueryStringContainingUserDataWithCommandName() {
+        Map<String, String[]> params = new HashMap<>();
+        params.put(ApiConstants.USER_DATA, new String[] {"SYNTHETIC_USER_DATA"});
+        String queryString = "command=deployVirtualMachine&userdata=SYNTHETIC_USER_DATA";
+
+        String result = servlet.getCleanQueryString("deployVirtualMachine", queryString, params);
+
+        Assert.assertEquals("command=deployVirtualMachine", result);
+        Assert.assertFalse(result.contains("SYNTHETIC_USER_DATA"));
+    }
+
+    @Test
+    public void shouldReplaceSensitiveQueryStringWithCommandName() {
+        Map<String, String[]> params = new HashMap<>();
+        String queryString = "command=addObjectStoragePool&details%5B1%5D.value=SYNTHETIC_SECRET_KEY";
+
+        String result = servlet.getCleanQueryString("addObjectStoragePool", queryString, params);
+
+        Assert.assertEquals("command=addObjectStoragePool", result);
+        Assert.assertFalse(result.contains("SYNTHETIC_SECRET_KEY"));
+    }
+
+    @Test
+    public void shouldKeepOrdinaryQueryString() {
+        Map<String, String[]> params = new HashMap<>();
+        String queryString = "command=listZones&response=json";
+
+        String result = servlet.getCleanQueryString("listZones", queryString, params);
+
+        Assert.assertEquals(queryString, result);
+    }
+
 }
