@@ -28,7 +28,7 @@
       <a-tab-pane :tab="$t('label.networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.bgp.peers')" key="bgppeers" v-if="resource.ip4routing === 'Dynamic'">
+      <a-tab-pane :tab="$t('label.bgp.peers')" key="bgppeers" v-if="resource.ip4routing === 'Dynamic' || resource.ip6routing === 'Dynamic'">
         <BgpPeersTab :resource="resource" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.public.ips')" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">

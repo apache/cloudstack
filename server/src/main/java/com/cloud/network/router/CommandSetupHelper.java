@@ -1468,14 +1468,29 @@ public class CommandSetupHelper {
         } else {
             guestNetworks.add(network);
         }
+        Map<Long, NetworkOfferingVO> guestNetworkOfferings = new HashMap<>();
+        for (Network guestNetwork : guestNetworks) {
+            final NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+            guestNetworkOfferings.put(guestNetwork.getId(), offering);
+        }
         for (BgpPeer bgpPeer: bgpPeers) {
             Map<BgpPeer.Detail, String> bgpPeerDetails = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());
             for (Network guestNetwork : guestNetworks) {
-                bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
-                        guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
+                final NetworkOfferingVO offering = guestNetworkOfferings.get(guestNetwork.getId());
+                if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode())) {
+                    bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
+                            guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
+                } else if (guestNetwork.getIp6Cidr() != null && bgpPeer.getIp6Address() != null) {
+                    bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), null, bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
+                            guestNetwork.getId(), asNumberVO.getAsNumber(), null, guestNetwork.getIp6Cidr(), bgpPeerDetails));
+                }
             }
         }
 
+        if (bgpPeerTOs.isEmpty()) {
+            logger.debug("No BGP peers to configure for the guest network or VPC, skipping.");
+            return;
+        }
         final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
