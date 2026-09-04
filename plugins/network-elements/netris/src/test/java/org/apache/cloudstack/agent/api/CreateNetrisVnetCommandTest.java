@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.NetUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,7 +36,8 @@ public class CreateNetrisVnetCommandTest {
     private static final Integer VXLAN_ID = 100;
     private static final String NETRIS_TAG = "test-tag";
     private static final String IPV6_CIDR = "2001:db8::/64";
-    private static final Boolean GLOBAL_ROUTING = true;
+    private static final NetworkOffering.NetworkMode NETWORK_MODE = NetworkOffering.NetworkMode.NATTED;
+    private static final NetUtils.InternetProtocol INTERNET_PROTOCOL = NetUtils.InternetProtocol.IPv4;
 
     @Test
     public void testConstructorAndGetters() {
@@ -65,13 +68,15 @@ public class CreateNetrisVnetCommandTest {
         command.setVxlanId(VXLAN_ID);
         command.setNetrisTag(NETRIS_TAG);
         command.setIpv6Cidr(IPV6_CIDR);
-        command.setGlobalRouting(GLOBAL_ROUTING);
+        command.setInternetProtocol(NetUtils.InternetProtocol.IPv4);
+        command.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
 
         // Assert
         Assert.assertEquals(VXLAN_ID, command.getVxlanId());
         Assert.assertEquals(NETRIS_TAG, command.getNetrisTag());
         Assert.assertEquals(IPV6_CIDR, command.getIpv6Cidr());
-        Assert.assertEquals(GLOBAL_ROUTING, command.isGlobalRouting());
+        Assert.assertEquals(NETWORK_MODE, command.getNetworkMode());
+        Assert.assertEquals(INTERNET_PROTOCOL, command.getInternetProtocol());
     }
 
     @Test

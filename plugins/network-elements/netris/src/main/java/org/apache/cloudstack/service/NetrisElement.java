@@ -199,8 +199,12 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
-        capabilities.put(Network.Service.Gateway, null);
         capabilities.put(Network.Service.SourceNat, sourceNatCapabilities);
+
+        final Map<Network.Capability, String> gatewayCapabilities = new HashMap<>();
+        gatewayCapabilities.put(Network.Capability.RedundantRouter, "true");
+        capabilities.put(Network.Service.Gateway, gatewayCapabilities);
+
         return capabilities;
     }
 
@@ -360,8 +364,12 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account account = accountManager.getAccount(network.getAccountId());
         NetworkVO networkVO = networkDao.findById(network.getId());
+        if (Network.GuestType.L2.equals(networkVO.getGuestType())) {
+            logger.trace("Skipping NetrisElement.destroy() for L2 network {} - handled by guru trash()", network.getId());
+            return true;
+        }
+        Account account = accountManager.getAccount(network.getAccountId());
         DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(zone)) {
@@ -377,7 +385,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                 vpcName = vpc.getName();
             }
         }
-        netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId, networkVO.getName(), network.getId(), network.getCidr());
+        netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId, networkVO.getName(), network.getId(), network.getCidr(), false);
         return true;
     }
 
@@ -622,7 +630,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                 .setNetworkResourceName(netrisObject.getNetworkResourceName())
                 .setVpcResource(netrisObject.isVpcResource())
                 .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
-                .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
+                .setVmIp(rule.getDestinationIpAddress().addr())
                 .setPublicIp(publicIp.getAddress().addr())
                 .setPrivatePort(privatePort)
                 .setPublicPort(publicPort)

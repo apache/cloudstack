@@ -69,6 +69,7 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
@@ -134,6 +135,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     ConfigurationServer _configServer;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    VpcOfferingServiceMapDao _vpcOfferingServiceMapDao;
 
     int _userLimit;
     int _pskLength;
@@ -243,6 +246,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 validateIpAddressForVpnServiceOnNetwork(network, ipAddress);
             } else {
                 Vpc vpc = _vpcDao.findById(vpcId);
+                if (!_vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), new Network.Service[]{Network.Service.Vpn})) {
+                    throw new InvalidParameterValueException(String.format("Vpn service is not supported for VPC: %s (%s) ", vpc.getName(), vpc.getUuid()));
+                }
                 cidr = NetUtils.getCidr(vpc.getCidr());
                 validateIpAddressForVpnServiceOnVpc(vpc, ipAddress);
             }

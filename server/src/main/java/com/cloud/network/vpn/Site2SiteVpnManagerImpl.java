@@ -144,6 +144,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (vpc == null) {
             throw new InvalidParameterValueException("Invalid VPC " + vpcId + " for site to site vpn gateway creation!");
         }
+        if (!vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), new Network.Service[]{Network.Service.Vpn})) {
+            throw new InvalidParameterValueException(String.format("Vpn service is not supported for VPC: %s (%s) ", vpc.getName(), vpc.getUuid()));
+        }
         Site2SiteVpnGatewayVO gws = _vpnGatewayDao.findByVpcId(vpcId);
         if (gws != null) {
             throw new InvalidParameterValueException(String.format("The VPN gateway of VPC %s already existed!", vpc));
