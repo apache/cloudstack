@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -153,6 +154,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
                 .thenReturn(Arrays.asList(host1, host2));
 
         when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
+        when(hostDao.listByIds(List.of(1L, 2L))).thenReturn(List.of(host1, host2));
         when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
 
