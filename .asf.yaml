@@ -66,6 +66,7 @@ github:
       branches:
         includes:
           - "~DEFAULT_BRANCH"
+          - "main-test"
         excludes: []
       bypass_teams:
         - root
