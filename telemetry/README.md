@@ -1,0 +1,134 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+# CloudStack Telemetry
+
+This directory contains the server-side webservice for the Apache CloudStack telemetry feature. When enabled, CloudStack management servers periodically send an anonymized report to the Apache CloudStack project. This data helps the community understand how CloudStack is deployed and used in the field.
+
+All data collected is anonymous. No personally identifiable information, IP addresses, or workload data is transmitted.
+
+## Enabling usage reporting
+
+Usage reporting is configured through CloudStack's Global Settings. One setting is available:
+
+| Setting | Default | Description |
+|---|---|---|
+| `telemetry.interval` | `0` (disabled) | Interval in days between reports. Set to `7` to enable weekly reporting. Changing this setting requires a restart of the Management Server. |
+
+The destination is not configurable. Reports are always sent to the canonical
+Apache CloudStack endpoint:
+
+```
+https://call-home.cloudstack.org/report
+```
+
+The point of telemetry is to give the Apache CloudStack project authoritative
+project-wide statistics, so enabling it has to mean the data reaches the project
+rather than an arbitrary destination. DNS provides whatever indirection the
+receiving infrastructure needs.
+
+## The webservice
+
+The collector is a Python Flask application (`usage-report-collector.py`) that receives reports and stores them as JSON files on the local filesystem. It exposes a single endpoint:
+
+```
+POST /report/<unique_id>
+```
+
+The `unique_id` is a SHA-256 hash derived from the oldest row of the management
+server's `version` table, that is the version the database was created with and
+when. It is computed by `InstallationIdentity` in the `utils` module and is not
+stored anywhere: every Management Server sharing the database derives the same
+value, it survives restarts and upgrades, and it differs for every installation
+because the creation timestamp differs. The hash is one-way, so reports from the
+same installation can be correlated across time without identifying the operator
+or revealing when the cloud was installed.
+
+The ID is not guaranteed to be globally unique, but the chance of two
+installations deriving the same one is negligible: it would require two
+databases created with the same CloudStack version in the same second. A cloned
+or restored database derives the same ID and is therefore reported as the same
+installation, which is intended: it is the same cloud continuing under a
+different database.
+
+### Storage
+
+Reports are stored below a base directory, configurable through the `REPORT_DIR` environment variable (default: `reports` in the working directory). A directory is created per `unique_id` and each report is stored with its receive timestamp as the filename:
+
+```
+reports/
+  <unique_id>/
+    2026-08-07T09-15-04Z.json
+    2026-08-14T09-15-11Z.json
+```
+
+### Validation
+
+To keep malicious or malformed submissions out, the collector rejects reports that are not JSON objects, exceed 1MB, nest deeper than 6 levels, contain more than 4096 keys, or contain non-printable or oversized keys and string values. Only string, number and boolean values are accepted. The `unique_id` must be a valid SHA-256 hex digest. Per `unique_id`, at most one report per hour is accepted and at most 1000 reports are kept — the oldest are removed first, so a single sender can never fill up the disk.
+
+On top of these generic limits every report is validated against the exact
+schema the Management Server produces. Each report carries a `schema_version`
+and the collector knows the schema belonging to each version: all expected
+sections and counters must be present, no other keys are accepted and every
+value must have the expected type. An arbitrary well-formed JSON object is
+therefore rejected; any change to the report structure in `UsageReporter.java`
+requires incrementing the schema version and teaching the collector the new
+schema.
+
+The collector cannot verify that a report was genuinely produced by a
+CloudStack Management Server. The source is open, so anyone can derive a valid
+ID and craft a schema-conforming report. Schema validation, rate limiting and
+the per-ID storage bound limit abuse and resource usage, but the collected
+statistics remain best-effort by nature and should be interpreted as such.
+
+### Running the webservice
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+**Development:**
+
+```bash
+python usage-report-collector.py
+```
+
+**Production (gunicorn):**
+
+```bash
+gunicorn wsgi:application
+```
+
+**Production (uWSGI):**
+
+```bash
+uwsgi --wsgi-file wsgi.py --callable application
+```
+
+**Production (Apache mod_wsgi):**
+
+```apache
+WSGIScriptAlias /report /path/to/telemetry/wsgi.py
+```
+
+## Open source transparency
+
+In the spirit of open source, the Apache CloudStack project publishes both the client-side code that generates reports (see `UsageReporter.java`) and this server-side collector. You can inspect exactly what data is sent and how it is stored.
