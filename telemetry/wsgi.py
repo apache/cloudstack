@@ -20,7 +20,7 @@
 # directly, so this shim loads it via importlib.
 #
 # mod_wsgi (Apache):
-#   WSGIScriptAlias /report /path/to/reporter/wsgi.py
+#   WSGIScriptAlias /report /path/to/telemetry/wsgi.py
 #
 # gunicorn:
 #   gunicorn wsgi:application

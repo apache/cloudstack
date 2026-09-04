@@ -79,6 +79,14 @@ public class UsageReporter extends ManagerBase implements Configurable {
      */
     protected static final String TELEMETRY_URI = "https://call-home.cloudstack.org/report";
 
+    /**
+     * The version of the report schema, sent along in every report. The collector
+     * validates the received payload against the schema belonging to this version,
+     * so any change to the structure of the report requires incrementing this
+     * version and teaching the collector the new schema.
+     */
+    protected static final int SCHEMA_VERSION = 1;
+
     public static final ConfigKey<Integer> TelemetryInterval = new ConfigKey<>("Advanced", Integer.class,
             "telemetry.interval", "0",
             "The interval in days between telemetry reports sent to the CloudStack project. 0 is the default (disabled) and when enabled a value of 7 is recommended. Changing this setting requires a restart of the Management Server.",
@@ -353,18 +361,48 @@ public class UsageReporter extends ManagerBase implements Configurable {
         return datacenterMap;
     }
 
-    private Map<String, AtomicLongMap> getInstanceReport() {
+    /**
+     * Rows of removed Instances are kept in the database, so both current and
+     * lifetime statistics can be reported. They mean different things: "current"
+     * describes the Instances the cloud holds right now, in any state including
+     * Destroyed ones which have not been expunged yet, while "lifetime" also
+     * counts the removed rows and therefore describes every Instance which ever
+     * existed in this cloud.
+     */
+    private Map<String, Object> getInstanceReport() {
 
-        Map<String, AtomicLongMap> instanceMap = new HashMap<String, AtomicLongMap>();
+        Map<String, AtomicLongMap> current = new HashMap<String, AtomicLongMap>();
         AtomicLongMap<Object> hypervisor_type = AtomicLongMap.create();
         AtomicLongMap<Object> instance_state = AtomicLongMap.create();
         AtomicLongMap<Object> instance_type = AtomicLongMap.create();
         AtomicLongMap<Object> ha_enabled = AtomicLongMap.create();
         AtomicLongMap<Object> dynamically_scalable = AtomicLongMap.create();
 
+        Map<String, Object> lifetime = new HashMap<String, Object>();
+        AtomicLongMap<Object> lifetime_hypervisor_type = AtomicLongMap.create();
+        AtomicLongMap<Object> lifetime_type = AtomicLongMap.create();
+
+        long total = 0;
+        long removed = 0;
+
         SearchCriteria<VMInstanceVO> vm_sc = _vmInstance.createSearchCriteria();
-        List<VMInstanceVO> vms = _vmInstance.search(vm_sc, null);
+        List<VMInstanceVO> vms = _vmInstance.searchIncludingRemoved(vm_sc, null, null, false);
         for (VMInstanceVO vmVO : vms) {
+            total++;
+
+            if (vmVO.getHypervisorType() != null) {
+                lifetime_hypervisor_type.getAndIncrement(vmVO.getHypervisorType());
+            }
+
+            if (vmVO.getType() != null) {
+                lifetime_type.getAndIncrement(vmVO.getType());
+            }
+
+            if (vmVO.getRemoved() != null) {
+                removed++;
+                continue;
+            }
+
             if (vmVO.getHypervisorType() != null) {
                 hypervisor_type.getAndIncrement(vmVO.getHypervisorType());
             }
@@ -381,11 +419,20 @@ public class UsageReporter extends ManagerBase implements Configurable {
             dynamically_scalable.getAndIncrement(vmVO.isDynamicallyScalable());
         }
 
-        instanceMap.put("hypervisor_type", hypervisor_type);
-        instanceMap.put("state", instance_state);
-        instanceMap.put("type", instance_type);
-        instanceMap.put("ha_enabled", ha_enabled);
-        instanceMap.put("dynamically_scalable", dynamically_scalable);
+        current.put("hypervisor_type", hypervisor_type);
+        current.put("state", instance_state);
+        current.put("type", instance_type);
+        current.put("ha_enabled", ha_enabled);
+        current.put("dynamically_scalable", dynamically_scalable);
+
+        lifetime.put("total", total);
+        lifetime.put("removed", removed);
+        lifetime.put("hypervisor_type", lifetime_hypervisor_type);
+        lifetime.put("type", lifetime_type);
+
+        Map<String, Object> instanceMap = new HashMap<String, Object>();
+        instanceMap.put("current", current);
+        instanceMap.put("lifetime", lifetime);
 
         return instanceMap;
     }
@@ -450,6 +497,7 @@ public class UsageReporter extends ManagerBase implements Configurable {
 
                 Map<String, Object> reportMap = new HashMap<String, Object>();
 
+                reportMap.put("schema_version", SCHEMA_VERSION);
                 reportMap.put("hosts", getHostReport());
                 reportMap.put("clusters", getClusterReport());
                 reportMap.put("primaryStorage", getStoragePoolReport());

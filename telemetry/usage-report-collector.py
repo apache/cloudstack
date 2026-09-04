@@ -43,6 +43,69 @@ MAX_REPORTS_PER_ID = 1000
 UNIQUE_ID_RE = re.compile('[0-9a-f]{64}')
 REPORT_SUFFIX = '.json'
 
+# Leaf types used in the report schemas below
+COUNTERS = 'counters'      # object of string keys to non-negative integer counts
+STRING_MAP = 'string_map'  # object of string keys to string values
+STRING = 'string'
+NUMBER = 'number'          # non-negative integer
+
+# The exact structure a Management Server sends, per schema_version. Reports
+# which do not match the schema they declare are rejected, so an arbitrary
+# well-formed JSON object never makes it to disk. Any change to the report
+# structure in UsageReporter.java requires a new schema version here.
+REPORT_SCHEMAS = {
+    1: {
+        'schema_version': NUMBER,
+        'hosts': {
+            'type': COUNTERS,
+            'hypervisor_type': COUNTERS,
+            'version': COUNTERS,
+        },
+        'clusters': {
+            'type': COUNTERS,
+            'hypervisor_type': COUNTERS,
+        },
+        'primaryStorage': {
+            'type': COUNTERS,
+            'provider': COUNTERS,
+            'scope': COUNTERS,
+        },
+        'zones': {
+            'network_type': COUNTERS,
+            'dns_provider': COUNTERS,
+            'dhcp_provider': COUNTERS,
+            'lb_provider': COUNTERS,
+            'firewall_provider': COUNTERS,
+            'gateway_provider': COUNTERS,
+            'userdata_provider': COUNTERS,
+            'vpn_provider': COUNTERS,
+        },
+        'instances': {
+            'current': {
+                'hypervisor_type': COUNTERS,
+                'state': COUNTERS,
+                'type': COUNTERS,
+                'ha_enabled': COUNTERS,
+                'dynamically_scalable': COUNTERS,
+            },
+            'lifetime': {
+                'total': NUMBER,
+                'removed': NUMBER,
+                'hypervisor_type': COUNTERS,
+                'type': COUNTERS,
+            },
+        },
+        'diskOffering': {
+            'compute_only': COUNTERS,
+            'provisioning_type': COUNTERS,
+            'use_local_storage': COUNTERS,
+            'avg_disk_size': NUMBER,
+        },
+        'versions': STRING_MAP,
+        'current_version': STRING,
+    },
+}
+
 
 def json_response(response):
     return json.dumps(response, indent=2) + "\n", 200, {'Content-Type': 'application/json; charset=utf-8'}
@@ -89,6 +152,56 @@ def validate_report(node, depth=1, counter=None):
     return None
 
 
+def is_count(value):
+    """JSON numbers arrive as int, float or bool (a subclass of int); counters
+    are only ever non-negative integers."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def validate_schema(node, schema, path='report'):
+    """Validate a report against the expected schema, returns an error string
+    or None. Every key the schema defines must be present and no other keys
+    are accepted."""
+    if isinstance(schema, dict):
+        if not isinstance(node, dict):
+            return "%s is not an object" % path
+
+        missing = sorted(set(schema) - set(node))
+        if missing:
+            return "%s is missing key(s): %s" % (path, ", ".join(missing))
+
+        unexpected = sorted(set(node) - set(schema))
+        if unexpected:
+            return "%s contains unexpected key(s): %s" % (path, ", ".join(unexpected))
+
+        for key, sub_schema in schema.items():
+            error = validate_schema(node[key], sub_schema, "%s.%s" % (path, key))
+            if error is not None:
+                return error
+    elif schema == COUNTERS:
+        if not isinstance(node, dict):
+            return "%s is not an object of counters" % path
+
+        for key, value in node.items():
+            if not is_count(value):
+                return "%s.%s is not a non-negative integer" % (path, key)
+    elif schema == STRING_MAP:
+        if not isinstance(node, dict):
+            return "%s is not an object of strings" % path
+
+        for key, value in node.items():
+            if not isinstance(value, str):
+                return "%s.%s is not a string" % (path, key)
+    elif schema == STRING:
+        if not isinstance(node, str):
+            return "%s is not a string" % path
+    elif schema == NUMBER:
+        if not is_count(node):
+            return "%s is not a non-negative integer" % path
+
+    return None
+
+
 def generate_app(config=None):
     app = Flask(__name__)
     app.config['MAX_CONTENT_LENGTH'] = MAX_REPORT_SIZE
@@ -117,6 +230,14 @@ def generate_app(config=None):
             abort(400, "Request body is not a non-empty JSON object")
 
         error = validate_report(payload)
+        if error is not None:
+            abort(400, error)
+
+        schema = REPORT_SCHEMAS.get(payload.get('schema_version'))
+        if schema is None:
+            abort(400, "Unsupported or missing schema_version")
+
+        error = validate_schema(payload, schema)
         if error is not None:
             abort(400, error)
 

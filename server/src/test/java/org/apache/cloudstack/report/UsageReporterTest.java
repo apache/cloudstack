@@ -214,8 +214,25 @@ public class UsageReporterTest {
         Mockito.when(router.isHaEnabled()).thenReturn(true);
         Mockito.when(router.isDynamicallyScalable()).thenReturn(false);
 
-        Mockito.when(vmInstanceDao.search(Mockito.any(), Mockito.any()))
-                .thenReturn(Arrays.asList(runningUser, stoppedUser, router));
+        // Destroyed but not yet expunged: still a current Instance
+        VMInstanceVO destroyedUser = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(destroyedUser.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(destroyedUser.getState()).thenReturn(VirtualMachine.State.Destroyed);
+        Mockito.when(destroyedUser.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(destroyedUser.isHaEnabled()).thenReturn(false);
+        Mockito.when(destroyedUser.isDynamicallyScalable()).thenReturn(false);
+
+        // Removed row: only counted in the lifetime statistics
+        VMInstanceVO expungedUser = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(expungedUser.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(expungedUser.getState()).thenReturn(VirtualMachine.State.Expunging);
+        Mockito.when(expungedUser.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(expungedUser.getRemoved())
+                .thenReturn(Date.from(Instant.parse("2025-06-01T12:00:00Z")));
+
+        Mockito.when(vmInstanceDao.searchIncludingRemoved(Mockito.any(), Mockito.any(),
+                        Mockito.any(), Mockito.anyBoolean()))
+                .thenReturn(Arrays.asList(runningUser, stoppedUser, router, destroyedUser, expungedUser));
     }
 
     private void stubDiskOfferings() {
@@ -266,6 +283,7 @@ public class UsageReporterTest {
      */
     private Map<String, Object> buildReportMap() throws Exception {
         Map<String, Object> reportMap = new HashMap<String, Object>();
+        reportMap.put("schema_version", UsageReporter.SCHEMA_VERSION);
         reportMap.put("hosts", buildSection("getHostReport"));
         reportMap.put("clusters", buildSection("getClusterReport"));
         reportMap.put("primaryStorage", buildSection("getStoragePoolReport"));
@@ -349,6 +367,7 @@ public class UsageReporterTest {
     public void testTelemetryEndpointIsStaticAndHttps() {
         Assert.assertEquals("https://call-home.cloudstack.org/report", UsageReporter.TELEMETRY_URI);
         Assert.assertTrue(UsageReporter.TELEMETRY_URI.startsWith("https://"));
+        Assert.assertEquals(1, UsageReporter.SCHEMA_VERSION);
 
         ConfigKey<?>[] configKeys = usageReporter.getConfigKeys();
         Assert.assertEquals(1, configKeys.length);
@@ -416,8 +435,9 @@ public class UsageReporterTest {
         JsonObject report = reportJson();
 
         Assert.assertEquals("unexpected set of top level keys in the usage report",
-                new TreeSet<>(Arrays.asList("hosts", "clusters", "primaryStorage", "zones",
-                        "instances", "diskOffering", "versions", "current_version")),
+                new TreeSet<>(Arrays.asList("schema_version", "hosts", "clusters",
+                        "primaryStorage", "zones", "instances", "diskOffering", "versions",
+                        "current_version")),
                 new TreeSet<>(report.keySet()));
     }
 
@@ -482,19 +502,43 @@ public class UsageReporterTest {
         }
     }
 
+    /**
+     * "current" covers the non-removed rows in any state -- Destroyed Instances
+     * that have not been expunged yet included -- while "lifetime" also counts
+     * the removed rows and so describes every Instance which ever existed.
+     */
     @Test
     public void testInstancesSection() throws Exception {
         JsonObject instances = reportJson().getAsJsonObject("instances");
 
-        Assert.assertEquals(new TreeSet<>(Arrays.asList("hypervisor_type", "state", "type",
-                        "ha_enabled", "dynamically_scalable")),
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("current", "lifetime")),
                 new TreeSet<>(instances.keySet()));
 
-        assertCount(instances, "hypervisor_type", "KVM", 3);
-        assertCount(instances, "state", "Running", 2);
-        assertCount(instances, "state", "Stopped", 1);
-        assertCount(instances, "type", "User", 2);
-        assertCount(instances, "type", "DomainRouter", 1);
+        JsonObject current = instances.getAsJsonObject("current");
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("hypervisor_type", "state", "type",
+                        "ha_enabled", "dynamically_scalable")),
+                new TreeSet<>(current.keySet()));
+
+        assertCount(current, "hypervisor_type", "KVM", 4);
+        assertCount(current, "state", "Running", 2);
+        assertCount(current, "state", "Stopped", 1);
+        assertCount(current, "state", "Destroyed", 1);
+        assertCount(current, "type", "User", 3);
+        assertCount(current, "type", "DomainRouter", 1);
+
+        JsonObject lifetime = instances.getAsJsonObject("lifetime");
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("total", "removed", "hypervisor_type",
+                        "type")),
+                new TreeSet<>(lifetime.keySet()));
+
+        Assert.assertEquals(5, lifetime.get("total").getAsLong());
+        Assert.assertEquals(1, lifetime.get("removed").getAsLong());
+        assertCount(lifetime, "hypervisor_type", "KVM", 5);
+        assertCount(lifetime, "type", "User", 4);
+        assertCount(lifetime, "type", "DomainRouter", 1);
+
+        // The state of a removed row is meaningless, so lifetime has no state counter
+        Assert.assertFalse(lifetime.has("state"));
     }
 
     /**
@@ -503,12 +547,12 @@ public class UsageReporterTest {
      */
     @Test
     public void testBooleanCountersBecomeTrueFalseStringKeys() throws Exception {
-        JsonObject instances = reportJson().getAsJsonObject("instances");
+        JsonObject current = reportJson().getAsJsonObject("instances").getAsJsonObject("current");
 
-        assertCount(instances, "ha_enabled", "true", 2);
-        assertCount(instances, "ha_enabled", "false", 1);
-        assertCount(instances, "dynamically_scalable", "true", 2);
-        assertCount(instances, "dynamically_scalable", "false", 1);
+        assertCount(current, "ha_enabled", "true", 2);
+        assertCount(current, "ha_enabled", "false", 2);
+        assertCount(current, "dynamically_scalable", "true", 2);
+        assertCount(current, "dynamically_scalable", "false", 2);
     }
 
     @Test
@@ -562,7 +606,8 @@ public class UsageReporterTest {
     public void testEmptyEnvironmentStillProducesCompletePayload() throws Exception {
         Mockito.when(hostDao.search(Mockito.any(), Mockito.any())).thenReturn(Collections.emptyList());
         Mockito.when(clusterDao.search(Mockito.any(), Mockito.any())).thenReturn(Collections.emptyList());
-        Mockito.when(vmInstanceDao.search(Mockito.any(), Mockito.any())).thenReturn(Collections.emptyList());
+        Mockito.when(vmInstanceDao.searchIncludingRemoved(Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.anyBoolean())).thenReturn(Collections.emptyList());
         Mockito.when(storagePoolDao.listAll()).thenReturn(Collections.emptyList());
         Mockito.when(dataCenterDao.listAllZones()).thenReturn(Collections.emptyList());
         Mockito.when(diskOfferingDao.listAll()).thenReturn(Collections.emptyList());
@@ -570,9 +615,12 @@ public class UsageReporterTest {
 
         JsonObject report = reportJson();
 
-        Assert.assertEquals(8, report.keySet().size());
+        Assert.assertEquals(9, report.keySet().size());
         Assert.assertEquals(0, report.getAsJsonObject("hosts").getAsJsonObject("type").size());
-        Assert.assertEquals(0, report.getAsJsonObject("instances").getAsJsonObject("state").size());
+        Assert.assertEquals(0, report.getAsJsonObject("instances")
+                .getAsJsonObject("current").getAsJsonObject("state").size());
+        Assert.assertEquals(0, report.getAsJsonObject("instances")
+                .getAsJsonObject("lifetime").get("total").getAsLong());
         Assert.assertEquals(0, report.getAsJsonObject("versions").size());
         Assert.assertEquals(0, report.getAsJsonObject("diskOffering").get("avg_disk_size").getAsLong());
     }

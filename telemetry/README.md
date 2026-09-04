@@ -17,9 +17,9 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# CloudStack Usage Reporter
+# CloudStack Telemetry
 
-This directory contains the server-side webservice for the Apache CloudStack usage reporting feature. When enabled, CloudStack management servers periodically send an anonymized report to the Apache CloudStack project. This data helps the community understand how CloudStack is deployed and used in the field.
+This directory contains the server-side webservice for the Apache CloudStack telemetry feature. When enabled, CloudStack management servers periodically send an anonymized report to the Apache CloudStack project. This data helps the community understand how CloudStack is deployed and used in the field.
 
 All data collected is anonymous. No personally identifiable information, IP addresses, or workload data is transmitted.
 
@@ -60,6 +60,13 @@ because the creation timestamp differs. The hash is one-way, so reports from the
 same installation can be correlated across time without identifying the operator
 or revealing when the cloud was installed.
 
+The ID is not guaranteed to be globally unique, but the chance of two
+installations deriving the same one is negligible: it would require two
+databases created with the same CloudStack version in the same second. A cloned
+or restored database derives the same ID and is therefore reported as the same
+installation, which is intended: it is the same cloud continuing under a
+different database.
+
 ### Storage
 
 Reports are stored below a base directory, configurable through the `REPORT_DIR` environment variable (default: `reports` in the working directory). A directory is created per `unique_id` and each report is stored with its receive timestamp as the filename:
@@ -74,6 +81,21 @@ reports/
 ### Validation
 
 To keep malicious or malformed submissions out, the collector rejects reports that are not JSON objects, exceed 1MB, nest deeper than 6 levels, contain more than 4096 keys, or contain non-printable or oversized keys and string values. Only string, number and boolean values are accepted. The `unique_id` must be a valid SHA-256 hex digest. Per `unique_id`, at most one report per hour is accepted and at most 1000 reports are kept — the oldest are removed first, so a single sender can never fill up the disk.
+
+On top of these generic limits every report is validated against the exact
+schema the Management Server produces. Each report carries a `schema_version`
+and the collector knows the schema belonging to each version: all expected
+sections and counters must be present, no other keys are accepted and every
+value must have the expected type. An arbitrary well-formed JSON object is
+therefore rejected; any change to the report structure in `UsageReporter.java`
+requires incrementing the schema version and teaching the collector the new
+schema.
+
+The collector cannot verify that a report was genuinely produced by a
+CloudStack Management Server. The source is open, so anyone can derive a valid
+ID and craft a schema-conforming report. Schema validation, rate limiting and
+the per-ID storage bound limit abuse and resource usage, but the collected
+statistics remain best-effort by nature and should be interpreted as such.
 
 ### Running the webservice
 
@@ -104,7 +126,7 @@ uwsgi --wsgi-file wsgi.py --callable application
 **Production (Apache mod_wsgi):**
 
 ```apache
-WSGIScriptAlias /report /path/to/reporter/wsgi.py
+WSGIScriptAlias /report /path/to/telemetry/wsgi.py
 ```
 
 ## Open source transparency
