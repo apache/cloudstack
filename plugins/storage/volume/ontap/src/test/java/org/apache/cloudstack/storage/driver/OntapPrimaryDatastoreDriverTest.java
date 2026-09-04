@@ -1029,11 +1029,8 @@ class OntapPrimaryDatastoreDriverTest {
     @Test
     void testGrantAccess_Template_UnmapsWhenInstallPathUpdateFails() {
         PrimaryDataStore primaryDataStore = mock(PrimaryDataStore.class);
-        Map<String, String> dataStoreDetails = new HashMap<>();
-        dataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET, "stale-value");
 
         when(primaryDataStore.getId()).thenReturn(1L);
-        when(primaryDataStore.getDetails()).thenReturn(dataStoreDetails);
         when(templateInfo.getType()).thenReturn(TEMPLATE);
         when(templateInfo.getId()).thenReturn(50L);
 
@@ -1053,9 +1050,9 @@ class OntapPrimaryDatastoreDriverTest {
         when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
 
         AccessGroup existingAccessGroup = new AccessGroup();
-        Igroup existingIgroup = new Igroup();
-        existingIgroup.setName("igroup1");
-        existingIgroup.setUuid("igroup-uuid-123");
+        Igroup existingIgroup = mock(Igroup.class);
+        when(existingIgroup.getName()).thenReturn("igroup1");
+        when(existingIgroup.getUuid()).thenReturn("igroup-uuid-123");
         existingAccessGroup.setIgroup(existingIgroup);
 
         Lun templateLun = new Lun();
