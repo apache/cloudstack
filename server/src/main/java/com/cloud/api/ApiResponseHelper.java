@@ -239,6 +239,10 @@ import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -555,6 +559,20 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         StringBuilder domainPath = new StringBuilder("ROOT");
         (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
         return domainPath.toString();
+    }
+
+    public static void populateDomainTags(String domainUuid, DomainResponse domainResponse) {
+        List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(domainUuid,
+                ResourceTag.ResourceObjectType.Domain);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        Set<ResourceTagResponse> tagResponses = new HashSet<>();
+        for (ResourceTagJoinVO tag : tags) {
+            ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        domainResponse.setTags(tagResponses);
     }
 
 
@@ -1544,6 +1562,22 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     }
 
     @Override
+    public ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(final List<ApiKeyPairPermission> permissions) {
+        final ListResponse<BaseRolePermissionResponse> response = new ListResponse<>();
+        final List<BaseRolePermissionResponse> permissionResponses = new ArrayList<>();
+        for (final ApiKeyPairPermission permission : permissions) {
+            BaseRolePermissionResponse permissionResponse = new BaseRolePermissionResponse();
+            permissionResponse.setRule(permission.getRule());
+            permissionResponse.setRulePermission(permission.getPermission());
+            permissionResponse.setDescription(permission.getDescription());
+            permissionResponse.setObjectName("keypermission");
+            permissionResponses.add(permissionResponse);
+        }
+        response.setResponses(permissionResponses);
+        return response;
+    }
+
+    @Override
     public VolumeResponse createVolumeResponse(ResponseView view, Volume volume) {
         List<VolumeJoinVO> viewVrs = ApiDBUtils.newVolumeView(volume);
         List<VolumeResponse> listVrs = ViewResponseHelper.createVolumeResponse(view, viewVrs.toArray(new VolumeJoinVO[viewVrs.size()]));
@@ -1921,6 +1955,12 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     public UserVm findUserVmById(Long vmId) {
         return ApiDBUtils.findUserVmById(vmId);
 
+    }
+
+    @Override
+    public UserVm findUserVmByNicId(Long nicId) {
+        NicVO nic = ApiDBUtils.findNicById(nicId);
+        return ApiDBUtils.findUserVmById(nic.getInstanceId());
     }
 
 
@@ -3314,7 +3354,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
-
+            if (!pnet.getIsolationMethods().isEmpty()) {
+                response.setIsolationMethods(String.join(",", pnet.getIsolationMethods()));
+            }
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
@@ -3325,6 +3367,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setVmwareLabel(result.getVmwareNetworkLabel());
         response.setHypervLabel(result.getHypervNetworkLabel());
         response.setOvm3Label(result.getOvm3NetworkLabel());
+        response.setVlan(result.getVlan());
 
 
         response.setObjectName("traffictype");
@@ -5224,6 +5267,56 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setDomainName(domain.getName());
         response.setHasAnnotation(annotationDao.hasAnnotations(sshkeyPair.getUuid(), AnnotationService.EntityType.SSH_KEYPAIR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        return response;
+    }
+
+    @Override
+    public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
+        ApiKeyPairResponse response = new ApiKeyPairResponse();
+        if (keyPair == null) {
+            return response;
+        }
+        response.setId(keyPair.getUuid());
+        response.setName(keyPair.getName());
+        response.setApiKey(keyPair.getApiKey());
+        response.setSecretKey(keyPair.getSecretKey());
+        response.setDescription(keyPair.getDescription());
+        response.setStartDate(keyPair.getStartDate());
+        response.setEndDate(keyPair.getEndDate());
+        response.setCreated(keyPair.getCreated());
+
+        // populate account
+        try {
+            Account account = ApiDBUtils.findAccountById(keyPair.getAccountId());
+            if (account != null && account.getType() != Account.Type.PROJECT) {
+                response.setAccountName(account.getAccountName());
+            }
+        } catch (Exception e) {
+            logger.debug("Unable to populate account for ApiKeyPairResponse", e);
+        }
+
+        try {
+            Domain domain = ApiDBUtils.findDomainById(keyPair.getDomainId());
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+                response.setDomainPath(getPrettyDomainPath(domain.getPath()));
+            }
+        } catch (Exception e) {
+            logger.debug("Unable to populate domain for ApiKeyPairResponse", e);
+        }
+
+        // user
+        try {
+            User user = ApiDBUtils.findUserById(keyPair.getUserId());
+            if (user != null) {
+                response.setUserId(user.getUuid());
+                response.setUsername(user.getUsername());
+            }
+        } catch (Exception e) {
+            logger.debug("Unable to populate user for ApiKeyPairResponse", e);
+        }
+
         return response;
     }
 

@@ -853,7 +853,7 @@ public class ApiResponseHelperTest {
         when(usageRecord.getCpuCores()).thenReturn(null);
         when(usageRecord.getCpuSpeed()).thenReturn(2400L);
         when(usageRecord.getMemory()).thenReturn(8192L);
-        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString())).thenReturn(serviceOffering);
+        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId)).thenReturn(serviceOffering);
         when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
         when(serviceOffering.getName()).thenReturn("Small Instance");
         when(serviceOffering.getCpu()).thenReturn(4);
@@ -892,7 +892,7 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "using service offering Small Instance (service-offering-uuid)");
         assertDescriptionContains(response, "and template Ubuntu Template (template-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.UserVm, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId);
         verify(guestOSDaoMock).findById(guestOSId);
     }
 
@@ -916,8 +916,8 @@ public class ApiResponseHelperTest {
         when(usageRecord.getCpuCores()).thenReturn(null);
         when(usageRecord.getCpuSpeed()).thenReturn(null);
         when(usageRecord.getMemory()).thenReturn(null);
-        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString())).thenReturn(serviceOffering);
-        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
+        when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId)).thenReturn(serviceOffering);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId)).thenReturn(vmInstance);
         when(serviceOffering.getUuid()).thenReturn("allocated-service-offering-uuid");
         when(serviceOffering.getName()).thenReturn("Medium Instance");
         when(serviceOffering.getCpu()).thenReturn(2);
@@ -943,8 +943,8 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "Allocated VM usage for allocated-vm-host (i-2-12-VM) (allocated-vm-uuid)");
         assertDescriptionContains(response, "using service offering Medium Instance (allocated-service-offering-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.UserVm, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId.toString());
-        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, offeringId);
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId);
     }
 
     @Test
@@ -959,7 +959,7 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getType()).thenReturn("SourceNat");
         when(usageRecord.getSize()).thenReturn(1L);
-        when(entityManagerMock.findByIdIncludingRemoved(IPAddressVO.class, usageId.toString())).thenReturn(ipAddress);
+        when(entityManagerMock.findByIdIncludingRemoved(IPAddressVO.class, usageId)).thenReturn(ipAddress);
         when(ipAddress.getUuid()).thenReturn("ip-address-uuid");
         when(ipAddress.getId()).thenReturn(usageId);
 
@@ -972,7 +972,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "isSourceNat", Boolean.TRUE);
         assertResponseField(response, "isSystem", Boolean.TRUE);
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.PublicIpAddress, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(IPAddressVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(IPAddressVO.class, usageId);
     }
 
     @Test
@@ -991,8 +991,8 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getNetworkId()).thenReturn(networkId);
         when(usageRecord.getRawUsage()).thenReturn(1024D);
-        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
-        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId.toString())).thenReturn(network);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId)).thenReturn(vmInstance);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId)).thenReturn(network);
         when(vmInstance.getUuid()).thenReturn("network-vm-uuid");
         when(vmInstance.getId()).thenReturn(usageId);
         when(vmInstance.getInstanceName()).thenReturn("r-14-VM");
@@ -1013,8 +1013,8 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "Bytes sent by network guest-network (network-uuid)");
         assertDescriptionContains(response, "using router r-14-VM (network-vm-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Network, networkId);
-        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
-        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId);
     }
 
     @Test
@@ -1033,8 +1033,8 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getNetworkId()).thenReturn(networkId);
         when(usageRecord.getRawUsage()).thenReturn(2048D);
-        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString())).thenReturn(vmInstance);
-        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId.toString())).thenReturn(network);
+        when(entityManagerMock.findByIdIncludingRemoved(VMInstanceVO.class, usageId)).thenReturn(vmInstance);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkVO.class, networkId)).thenReturn(network);
         when(vmInstance.getUuid()).thenReturn("network-router-uuid");
         when(vmInstance.getId()).thenReturn(usageId);
         when(vmInstance.getInstanceName()).thenReturn("r-15-VM");
@@ -1055,8 +1055,8 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "Bytes received by network received-network (received-network-uuid)");
         assertDescriptionContains(response, "using router r-15-VM (network-router-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Network, networkId);
-        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId.toString());
-        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkVO.class, networkId);
     }
 
     @Test
@@ -1075,8 +1075,8 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getOfferingId()).thenReturn(offeringId);
         when(usageRecord.getSize()).thenReturn(4096L);
-        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, usageId.toString())).thenReturn(volume);
-        when(entityManagerMock.findByIdIncludingRemoved(DiskOfferingVO.class, offeringId.toString())).thenReturn(diskOffering);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, usageId)).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(DiskOfferingVO.class, offeringId)).thenReturn(diskOffering);
         when(volume.getUuid()).thenReturn("volume-uuid");
         when(volume.getId()).thenReturn(usageId);
         when(volume.getName()).thenReturn("data-volume");
@@ -1100,8 +1100,8 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "attached to VM volume-vm (volume-vm-uuid)");
         assertDescriptionContains(response, "with disk offering Small Disk (disk-offering-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Volume, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId.toString());
-        verify(entityManagerMock).findByIdIncludingRemoved(DiskOfferingVO.class, offeringId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId);
+        verify(entityManagerMock).findByIdIncludingRemoved(DiskOfferingVO.class, offeringId);
     }
 
     @Test
@@ -1117,7 +1117,7 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getSize()).thenReturn(8192L);
         when(usageRecord.getVirtualSize()).thenReturn(16384L);
-        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString())).thenReturn(template);
+        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId)).thenReturn(template);
         when(template.getUuid()).thenReturn("template-usage-uuid");
         when(template.getId()).thenReturn(usageId);
         when(template.getName()).thenReturn("CentOS Template");
@@ -1132,7 +1132,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "virtualSize", 16384L);
         assertDescriptionContains(response, "Template usage for CentOS Template (template-usage-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Template, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId);
     }
 
     @Test
@@ -1148,7 +1148,7 @@ public class ApiResponseHelperTest {
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getSize()).thenReturn(2048L);
         when(usageRecord.getVirtualSize()).thenReturn(4096L);
-        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString())).thenReturn(iso);
+        when(entityManagerMock.findByIdIncludingRemoved(VMTemplateVO.class, usageId)).thenReturn(iso);
         when(iso.getUuid()).thenReturn("iso-usage-uuid");
         when(iso.getId()).thenReturn(usageId);
         when(iso.getName()).thenReturn("Installer ISO");
@@ -1163,7 +1163,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "virtualSize", 2048L);
         assertDescriptionContains(response, "ISO usage for Installer ISO (iso-usage-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.ISO, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId);
     }
 
     @Test
@@ -1177,7 +1177,7 @@ public class ApiResponseHelperTest {
 
         when(usageRecord.getUsageId()).thenReturn(usageId);
         when(usageRecord.getSize()).thenReturn(1024L);
-        when(entityManagerMock.findByIdIncludingRemoved(SnapshotVO.class, usageId.toString())).thenReturn(snapshot);
+        when(entityManagerMock.findByIdIncludingRemoved(SnapshotVO.class, usageId)).thenReturn(snapshot);
         when(snapshot.getUuid()).thenReturn("snapshot-uuid");
         when(snapshot.getId()).thenReturn(usageId);
         when(snapshot.getName()).thenReturn("daily-snapshot");
@@ -1191,7 +1191,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "size", 1024L);
         assertDescriptionContains(response, "Snapshot usage for daily-snapshot (snapshot-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.Snapshot, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(SnapshotVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(SnapshotVO.class, usageId);
     }
 
     @Test
@@ -1205,7 +1205,7 @@ public class ApiResponseHelperTest {
         Long usageId = 20L;
 
         when(usageRecord.getUsageId()).thenReturn(usageId);
-        when(entityManagerMock.findByIdIncludingRemoved(SecurityGroupVO.class, usageId.toString())).thenReturn(securityGroup);
+        when(entityManagerMock.findByIdIncludingRemoved(SecurityGroupVO.class, usageId)).thenReturn(securityGroup);
         when(securityGroup.getUuid()).thenReturn("security-group-uuid");
         when(securityGroup.getId()).thenReturn(usageId);
         when(securityGroup.getName()).thenReturn("web-tier");
@@ -1222,7 +1222,7 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "Security group web-tier (security-group-uuid) usage");
         assertDescriptionContains(response, "for VM security-group-vm (security-group-vm-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.SecurityGroup, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(SecurityGroupVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(SecurityGroupVO.class, usageId);
     }
 
     @Test
@@ -1235,7 +1235,7 @@ public class ApiResponseHelperTest {
         Long usageId = 21L;
 
         when(usageRecord.getUsageId()).thenReturn(usageId);
-        when(entityManagerMock.findByIdIncludingRemoved(LoadBalancerVO.class, usageId.toString())).thenReturn(loadBalancer);
+        when(entityManagerMock.findByIdIncludingRemoved(LoadBalancerVO.class, usageId)).thenReturn(loadBalancer);
         when(loadBalancer.getUuid()).thenReturn("load-balancer-uuid");
         when(loadBalancer.getId()).thenReturn(usageId);
         when(loadBalancer.getName()).thenReturn("public-lb");
@@ -1248,7 +1248,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "usageId", "load-balancer-uuid");
         assertDescriptionContains(response, "Loadbalancer policy usage public-lb (load-balancer-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.LoadBalancer, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(LoadBalancerVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(LoadBalancerVO.class, usageId);
     }
 
     @Test
@@ -1261,7 +1261,7 @@ public class ApiResponseHelperTest {
         Long usageId = 22L;
 
         when(usageRecord.getUsageId()).thenReturn(usageId);
-        when(entityManagerMock.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId.toString())).thenReturn(portForwardingRule);
+        when(entityManagerMock.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId)).thenReturn(portForwardingRule);
         when(portForwardingRule.getUuid()).thenReturn("port-forwarding-rule-uuid");
         when(portForwardingRule.getId()).thenReturn(usageId);
 
@@ -1273,7 +1273,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "usageId", "port-forwarding-rule-uuid");
         assertDescriptionContains(response, "Port forwarding rule usage (port-forwarding-rule-uuid)");
         assertUsageResourceDetails(resourceDetails, ResourceTag.ResourceObjectType.PortForwardingRule, usageId);
-        verify(entityManagerMock).findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId);
     }
 
     @Test
@@ -1288,7 +1288,7 @@ public class ApiResponseHelperTest {
 
         when(usageRecord.getOfferingId()).thenReturn(offeringId);
         when(usageRecord.getUsageId()).thenReturn(1L);
-        when(entityManagerMock.findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId.toString())).thenReturn(networkOffering);
+        when(entityManagerMock.findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId)).thenReturn(networkOffering);
         when(networkOffering.getUuid()).thenReturn("network-offering-uuid");
         when(networkOffering.getName()).thenReturn("Default Isolated Network");
         when(vmInstance.getUuid()).thenReturn("network-offering-vm-uuid");
@@ -1305,7 +1305,7 @@ public class ApiResponseHelperTest {
         assertDescriptionContains(response, "Network offering Default Isolated Network (network-offering-uuid) usage");
         assertDescriptionContains(response, "for VM network-offering-vm (network-offering-vm-uuid)");
         assertUsageResourceDetails(resourceDetails, null, null);
-        verify(entityManagerMock).findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(NetworkOfferingVO.class, offeringId);
     }
 
     @Test
@@ -1318,7 +1318,7 @@ public class ApiResponseHelperTest {
         Long usageId = 24L;
 
         when(usageRecord.getUsageId()).thenReturn(usageId);
-        when(entityManagerMock.findByIdIncludingRemoved(VpnUserVO.class, usageId.toString())).thenReturn(vpnUser);
+        when(entityManagerMock.findByIdIncludingRemoved(VpnUserVO.class, usageId)).thenReturn(vpnUser);
         when(vpnUser.getUuid()).thenReturn("vpn-user-uuid");
         when(vpnUser.getUsername()).thenReturn("vpn-user");
 
@@ -1330,7 +1330,7 @@ public class ApiResponseHelperTest {
         assertResponseField(response, "usageId", "vpn-user-uuid");
         assertDescriptionContains(response, "VPN usage for user vpn-user (vpn-user-uuid)");
         assertUsageResourceDetails(resourceDetails, null, null);
-        verify(entityManagerMock).findByIdIncludingRemoved(VpnUserVO.class, usageId.toString());
+        verify(entityManagerMock).findByIdIncludingRemoved(VpnUserVO.class, usageId);
     }
 
     @Test
@@ -1341,7 +1341,7 @@ public class ApiResponseHelperTest {
         UsageRecordResponse response = new UsageRecordResponse();
         VMInstanceVO vmInstance = mockVmInstance("vm-disk-read-vm", "vm-disk-read-vm-uuid");
         VolumeVO volume = mockVolume(25L, "vm-disk-read-volume-uuid", "vm-disk-read-volume");
-        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "25")).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, 25L)).thenReturn(volume);
 
         // Act
         Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
@@ -1350,7 +1350,7 @@ public class ApiResponseHelperTest {
 
         // Assert
         assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O read requests", "vm-disk-read-volume-uuid", "vm-disk-read-volume", 25L);
-        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "25");
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, 25L);
     }
 
     @Test
@@ -1361,7 +1361,7 @@ public class ApiResponseHelperTest {
         UsageRecordResponse response = new UsageRecordResponse();
         VMInstanceVO vmInstance = mockVmInstance("vm-disk-write-vm", "vm-disk-write-vm-uuid");
         VolumeVO volume = mockVolume(26L, "vm-disk-write-volume-uuid", "vm-disk-write-volume");
-        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "26")).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, 26L)).thenReturn(volume);
 
         // Act
         Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
@@ -1370,7 +1370,7 @@ public class ApiResponseHelperTest {
 
         // Assert
         assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O write requests", "vm-disk-write-volume-uuid", "vm-disk-write-volume", 26L);
-        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "26");
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, 26L);
     }
 
     @Test
@@ -1381,7 +1381,7 @@ public class ApiResponseHelperTest {
         UsageRecordResponse response = new UsageRecordResponse();
         VMInstanceVO vmInstance = mockVmInstance("vm-disk-bytes-read-vm", "vm-disk-bytes-read-vm-uuid");
         VolumeVO volume = mockVolume(27L, "vm-disk-bytes-read-volume-uuid", "vm-disk-bytes-read-volume");
-        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "27")).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, 27L)).thenReturn(volume);
 
         // Act
         Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
@@ -1390,7 +1390,7 @@ public class ApiResponseHelperTest {
 
         // Assert
         assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O read bytes", "vm-disk-bytes-read-volume-uuid", "vm-disk-bytes-read-volume", 27L);
-        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "27");
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, 27L);
     }
 
     @Test
@@ -1401,7 +1401,7 @@ public class ApiResponseHelperTest {
         UsageRecordResponse response = new UsageRecordResponse();
         VMInstanceVO vmInstance = mockVmInstance("vm-disk-bytes-write-vm", "vm-disk-bytes-write-vm-uuid");
         VolumeVO volume = mockVolume(28L, "vm-disk-bytes-write-volume-uuid", "vm-disk-bytes-write-volume");
-        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, "28")).thenReturn(volume);
+        when(entityManagerMock.findByIdIncludingRemoved(VolumeVO.class, 28L)).thenReturn(volume);
 
         // Act
         Object resourceDetails = invokeUsageDetailsHelper("populateVmDiskUsageResponse",
@@ -1410,7 +1410,7 @@ public class ApiResponseHelperTest {
 
         // Assert
         assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O write bytes", "vm-disk-bytes-write-volume-uuid", "vm-disk-bytes-write-volume", 28L);
-        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, "28");
+        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, 28L);
     }
 
     private Object invokeUsageDetailsHelper(String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {
