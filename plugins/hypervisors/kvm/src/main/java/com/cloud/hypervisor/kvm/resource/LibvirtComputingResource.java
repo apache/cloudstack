@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
@@ -4265,6 +4266,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
@@ -6332,6 +6334,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] diskPathSplitted = diskPath.split(File.separator);
         diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
         return String.join(File.separator, diskPathSplitted);
+    }
+
+    public String getUefiNvramPath(String vmUuid) {
+        String nvramDirectory = uefiProperties.getProperty(LibvirtVMDef.GuestDef.GUEST_NVRAM_PATH);
+        if (StringUtils.isBlank(nvramDirectory) || StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+
+        return nvramDirectory + vmUuid + ".fd";
     }
 
     public static String generateSecretUUIDFromString(String seed) {
