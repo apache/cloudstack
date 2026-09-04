@@ -1102,7 +1102,15 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.instance.boot.group',
           listView: true,
-          args: ['name', 'description', 'domainid', 'account', 'readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds']
+          args: (record, store) => {
+            var fields = ['name', 'description']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('domainid')
+              fields.push('account')
+            }
+            fields.push('readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds')
+            return fields
+          }
         },
         {
           api: 'updateInstanceBootGroup',

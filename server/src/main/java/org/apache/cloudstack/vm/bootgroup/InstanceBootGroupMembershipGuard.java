@@ -30,6 +30,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.vm.InstanceGroupVMMapVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.InstanceBootGroupMemberDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
@@ -79,6 +80,11 @@ public class InstanceBootGroupMembershipGuard {
                     "VM %s is a VNF appliance and cannot be added to an instance group or boot group", vm));
         }
 
+        if (UserVmManager.CKS_NODE.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException(String.format(
+                    "VM %s is a CKS cluster node and cannot be added to an instance group or boot group", vm));
+        }
+
         if (CollectionUtils.isNotEmpty(autoScaleVmGroupVmMapDao.listByVm(vmId))) {
             throw new InvalidParameterValueException(String.format(
                     "VM %s is part of an AutoScale VM group and cannot be added to an instance group or boot group", vm));
@@ -93,6 +99,28 @@ public class InstanceBootGroupMembershipGuard {
             if (instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId()) != null) {
                 throw new InvalidParameterValueException(String.format(
                         "VM %s is currently in an instance group that is already a member of an instance boot group", vm));
+            }
+        }
+    }
+
+    /**
+     * Rejects destroying a VM that is a direct boot-group member, or currently in an Instance
+     * Group that is itself a boot-group member — its boot order/readiness orchestration would
+     * otherwise reference a VM that no longer exists. The VM (or its Instance Group) must be
+     * removed from the boot group first.
+     */
+    public void validateVmNotInBootGroup(UserVmVO vm) {
+        if (instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, vm.getId()) != null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Instance %s is a member of an Instance Boot Group and cannot be destroyed; " +
+                            "remove it from the boot group first", vm.getDisplayName()));
+        }
+
+        for (InstanceGroupVMMapVO mapping : instanceGroupVMMapDao.listByInstanceId(vm.getId())) {
+            if (instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, mapping.getGroupId()) != null) {
+                throw new InvalidParameterValueException(String.format(
+                        "Instance %s is in an Instance Group that is a member of an Instance Boot Group and cannot be destroyed; "
+                                + "remove it from the Instance Group or the boot group first", vm.getDisplayName()));
             }
         }
     }

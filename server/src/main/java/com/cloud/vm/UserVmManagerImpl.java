@@ -3787,6 +3787,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vm.getId());
 
+        // check if vm (directly, or via its instance group) is a member of an instance boot group
+        instanceBootGroupMembershipGuard.validateVmNotInBootGroup(vm);
+
         // check if vm belongs to any plugin resources
         checkPluginsIfVmCanBeDestroyed(vm);
     }
