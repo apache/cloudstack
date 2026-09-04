@@ -108,6 +108,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -120,10 +121,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
+import com.cloud.alert.AlertManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
@@ -404,6 +409,15 @@ public class UserVmManagerImplTest {
 
     @Mock
     DomainDao domainDaoMock;
+
+    @Mock
+    DedicatedResourceDao dedicatedResourceDao;
+
+    @Mock
+    AlertManager alertManager;
+
+    @Mock
+    PlannerHostReservationDao plannerHostReservationDao;
 
     @Mock
     DomainVO domainVoMock;
@@ -4746,5 +4760,222 @@ public class UserVmManagerImplTest {
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
         Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+    }
+
+    @Test
+    public void checkHostsDedicationAlertsIncludeResolvedAccountAndDomainNames() {
+        long srcHostId = 10L;
+        long destHostId = 20L;
+        long testServiceOfferingId = 2L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
+
+        HostVO srcHost = mock(HostVO.class);
+        when(srcHost.getId()).thenReturn(srcHostId);
+        HostVO destHost = mock(HostVO.class);
+        when(destHost.getId()).thenReturn(destHostId);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+        when(hostDao.findById(destHostId)).thenReturn(destHost);
+
+        DedicatedResourceVO srcDedication = mock(DedicatedResourceVO.class);
+        when(srcDedication.getAccountId()).thenReturn(100L);
+        when(srcDedication.getDomainId()).thenReturn(200L);
+        DedicatedResourceVO destDedication = mock(DedicatedResourceVO.class);
+        when(destDedication.getAccountId()).thenReturn(300L);
+        when(destDedication.getDomainId()).thenReturn(400L);
+        when(dedicatedResourceDao.findByHostId(srcHostId)).thenReturn(srcDedication);
+        when(dedicatedResourceDao.findByHostId(destHostId)).thenReturn(destDedication);
+
+        AccountVO srcAccount = mock(AccountVO.class);
+        when(srcAccount.toString()).thenReturn("Account {accountName=account-a}");
+        AccountVO destAccount = mock(AccountVO.class);
+        when(destAccount.toString()).thenReturn("Account {accountName=account-b}");
+        when(accountDao.findById(100L)).thenReturn(srcAccount);
+        when(accountDao.findById(300L)).thenReturn(destAccount);
+
+        DomainVO srcDomain = mock(DomainVO.class);
+        when(srcDomain.toString()).thenReturn("Domain {name=domain-a}");
+        DomainVO destDomain = mock(DomainVO.class);
+        when(destDomain.toString()).thenReturn("Domain {name=domain-b}");
+        when(domainDaoMock.findById(200L)).thenReturn(srcDomain);
+        when(domainDaoMock.findById(400L)).thenReturn(destDomain);
+
+        when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
+
+        when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
+
+        userVmManagerImpl.checkHostsDedication(vm, srcHostId, destHostId);
+
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager, times(2)).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), subjectCaptor.capture(), bodyCaptor.capture());
+        List<String> messages = bodyCaptor.getAllValues();
+        assertTrue(messages.stream().anyMatch(m -> m.contains("account-a") && m.contains("account-b")));
+        assertTrue(messages.stream().anyMatch(m -> m.contains("domain-a") && m.contains("domain-b")));
+    }
+
+    @Test
+    public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificAccount() {
+        long srcHostId = 10L;
+        long destHostId = 20L;
+        long testServiceOfferingId = 2L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
+
+        HostVO srcHost = mock(HostVO.class);
+        when(srcHost.getId()).thenReturn(srcHostId);
+        HostVO destHost = mock(HostVO.class);
+        when(destHost.getId()).thenReturn(destHostId);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+        when(hostDao.findById(destHostId)).thenReturn(destHost);
+
+        // src host is dedicated to an account; dest host is dedicated to a whole domain (no account), so
+        // destAccountId resolves to null even though destHost is explicitly dedicated.
+        DedicatedResourceVO srcDedication = mock(DedicatedResourceVO.class);
+        when(srcDedication.getAccountId()).thenReturn(100L);
+        when(srcDedication.getDomainId()).thenReturn((Long) null);
+        DedicatedResourceVO destDedication = mock(DedicatedResourceVO.class);
+        when(destDedication.getAccountId()).thenReturn((Long) null);
+        when(destDedication.getDomainId()).thenReturn(400L);
+        when(dedicatedResourceDao.findByHostId(srcHostId)).thenReturn(srcDedication);
+        when(dedicatedResourceDao.findByHostId(destHostId)).thenReturn(destDedication);
+
+        AccountVO srcAccount = mock(AccountVO.class);
+        when(srcAccount.toString()).thenReturn("Account {accountName=account-a}");
+        when(accountDao.findById(100L)).thenReturn(srcAccount);
+
+        when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
+
+        when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
+
+        userVmManagerImpl.checkHostsDedication(vm, srcHostId, destHostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager, times(1)).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("account-a"));
+        assertTrue(bodyCaptor.getValue().contains("not dedicated to a specific account"));
+    }
+
+    @Test
+    public void checkHostsDedicationAlertNotesDestinationNotDedicatedToSpecificDomain() {
+        long srcHostId = 10L;
+        long destHostId = 20L;
+        long testServiceOfferingId = 2L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getServiceOfferingId()).thenReturn(testServiceOfferingId);
+
+        HostVO srcHost = mock(HostVO.class);
+        when(srcHost.getId()).thenReturn(srcHostId);
+        HostVO destHost = mock(HostVO.class);
+        when(destHost.getId()).thenReturn(destHostId);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+        when(hostDao.findById(destHostId)).thenReturn(destHost);
+
+        // src host is dedicated to a whole domain (no account); dest host is dedicated to an account, so
+        // destDomainId resolves to null even though destHost is explicitly dedicated.
+        DedicatedResourceVO srcDedication = mock(DedicatedResourceVO.class);
+        when(srcDedication.getAccountId()).thenReturn((Long) null);
+        when(srcDedication.getDomainId()).thenReturn(200L);
+        DedicatedResourceVO destDedication = mock(DedicatedResourceVO.class);
+        when(destDedication.getAccountId()).thenReturn(300L);
+        when(destDedication.getDomainId()).thenReturn((Long) null);
+        when(dedicatedResourceDao.findByHostId(srcHostId)).thenReturn(srcDedication);
+        when(dedicatedResourceDao.findByHostId(destHostId)).thenReturn(destDedication);
+
+        DomainVO srcDomain = mock(DomainVO.class);
+        when(srcDomain.toString()).thenReturn("Domain {name=domain-a}");
+        when(domainDaoMock.findById(200L)).thenReturn(srcDomain);
+
+        when(serviceOffering.getDeploymentPlanner()).thenReturn(null);
+        when(_serviceOfferingDao.findById(vmId, testServiceOfferingId)).thenReturn(serviceOffering);
+
+        when(plannerHostReservationDao.listAllDedicatedHosts()).thenReturn(new ArrayList<>());
+
+        userVmManagerImpl.checkHostsDedication(vm, srcHostId, destHostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager, times(1)).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("domain-a"));
+        assertTrue(bodyCaptor.getValue().contains("not dedicated to a specific domain"));
+    }
+
+    private UserVmVO mockStoppedVmForFailedCreation(Long vmId) {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getPodIdToDeployIn()).thenReturn(2L);
+        when(vm.getAccountId()).thenReturn(10L);
+        when(vm.isDisplayVm()).thenReturn(true);
+        when(vm.getServiceOfferingId()).thenReturn(20L);
+        when(vm.getTemplateId()).thenReturn(30L);
+        when(vm.toString()).thenReturn("VM {id=" + vmId + ", name=i-2-3-VM}");
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(volumeDaoMock.findUsableVolumesForInstance(vmId)).thenReturn(new ArrayList<>());
+        return vm;
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationIncludesResolvedHostInAlert() {
+        Long testVmId = 3L;
+        Long hostId = 5L;
+        mockStoppedVmForFailedCreation(testVmId);
+
+        HostVO host = mock(HostVO.class);
+        when(host.toString()).thenReturn("Host {id=5, name=cs-kvm06}");
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, hostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("on host [Host {id=5, name=cs-kvm06}]"));
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationFallsBackToHostIdWhenHostNotFound() {
+        Long testVmId = 3L;
+        Long hostId = 5L;
+        mockStoppedVmForFailedCreation(testVmId);
+
+        when(hostDao.findById(hostId)).thenReturn(null);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, hostId);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertTrue(bodyCaptor.getValue().contains("on host [id: 5]"));
+    }
+
+    @Test
+    public void updateVmStateForFailedVmCreationOmitsHostSegmentWhenHostIdIsNull() {
+        Long testVmId = 3L;
+        mockStoppedVmForFailedCreation(testVmId);
+
+        ReflectionTestUtils.invokeMethod(userVmManagerImpl, "updateVmStateForFailedVmCreation", testVmId, (Long) null);
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
+                Mockito.eq(1L), Mockito.eq(2L), Mockito.anyString(), bodyCaptor.capture());
+        assertFalse(bodyCaptor.getValue().contains("on host"));
     }
 }
