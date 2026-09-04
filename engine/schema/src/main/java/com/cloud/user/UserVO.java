@@ -31,11 +31,11 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * A bean representing a user
@@ -296,7 +296,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "username"));
+        return String.format("User %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "username"));
     }
 
     @Override

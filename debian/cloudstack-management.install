@@ -22,6 +22,7 @@
 /etc/cloudstack/management/java.security.ciphers
 /etc/cloudstack/management/log4j-cloud.xml
 /etc/cloudstack/management/config.json
+/etc/cloudstack/management/error-messages.json
 /etc/cloudstack/extensions/Proxmox/proxmox.sh
 /etc/cloudstack/extensions/HyperV/hyperv.py
 /etc/cloudstack/extensions/MaaS/maas.py
