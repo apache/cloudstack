@@ -2714,6 +2714,10 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setNetworkDomain(network.getNetworkDomain());
         response.setPublicMtu(network.getPublicMtu());
         response.setPrivateMtu(network.getPrivateMtu());
+        NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
+        if (networkRateDetail != null) {
+            response.setNetworkRate(networkRateDetail.getValue());
+        }
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());
@@ -4904,6 +4908,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         response.setEnabled(result.isEnabled());
+
+        response.setNetworkRate(result.getNetworkRate());
+
         return response;
     }
 

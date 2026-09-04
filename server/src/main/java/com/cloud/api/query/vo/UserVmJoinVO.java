@@ -355,6 +355,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "is_nic_enabled")
     private boolean isNicEnabled;
 
+    @Column(name = "nic_network_rate")
+    private Integer nicNetworkRate;
+
     @Column(name = "ip_address")
     private String ipAddress;
 
@@ -1113,6 +1116,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public boolean isNicEnabled() {
         return isNicEnabled;
+    }
+
+    public Integer getNicNetworkRate() {
+        return nicNetworkRate;
     }
 
     public String getNicDnsName() {

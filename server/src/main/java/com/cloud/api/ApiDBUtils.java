@@ -343,6 +343,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -356,6 +357,7 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -502,6 +504,7 @@ public class ApiDBUtils {
     static BackupOfferingDao s_backupOfferingDao;
     static BackupRepositoryDao s_backupRepositoryDao;
     static NicDao s_nicDao;
+    static NicDetailsDao s_nicDetailsDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static ApiKeyPairDao s_apiKeyPairDao;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
@@ -768,6 +771,8 @@ public class ApiDBUtils {
     @Inject
     private NicDao nicDao;
     @Inject
+    private NicDetailsDao nicDetailsDao;
+    @Inject
     private ResourceIconDao resourceIconDao;
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
@@ -902,6 +907,7 @@ public class ApiDBUtils {
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
         s_nicDao = nicDao;
+        s_nicDetailsDao = nicDetailsDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
@@ -2248,6 +2254,10 @@ public class ApiDBUtils {
 
     public static NicVO findNicById(long nicId) {
         return s_nicDao.findById(nicId);
+    }
+
+    public static NicDetailVO findNicDetailByName(long nicId, String detailName) {
+        return s_nicDetailsDao.findDetail(nicId, detailName);
     }
 
     public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
