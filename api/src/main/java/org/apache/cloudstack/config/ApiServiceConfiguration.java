@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.config;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ApiServiceConfiguration implements Configurable {
+    protected static Logger LOGGER = LogManager.getLogger(ApiServiceConfiguration.class);
     public static final ConfigKey<String> ManagementServerAddresses = new ConfigKey<>(String.class, "host", "Advanced", "localhost", "The ip address of management server. This can also accept comma separated addresses.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
     public static final ConfigKey<String> ApiServletPath = new ConfigKey<String>("Advanced", String.class, "endpoint.url", "http://localhost:8080/client/api",
             "API end point. Can be used by CS components/services deployed remotely, for sending CS API requests", true);
@@ -29,6 +34,20 @@ public class ApiServiceConfiguration implements Configurable {
             "true", "Are the source checks on API calls enabled (true) or not (false)? See api.allowed.source.cidr.list", true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<>(String.class, "api.allowed.source.cidr.list", "Advanced",
             "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
+
+    public static void validateEndpointUrl() {
+        String csUrl = getApiServletPathValue();
+        if (StringUtils.isBlank(csUrl) || StringUtils.containsAny(csUrl, "localhost", "127.0.0.1", "[::1]")) {
+            LOGGER.error("Global setting [{}] cannot contain localhost or be blank. Current value: {}", ApiServletPath.key(), csUrl);
+            throw new InvalidParameterValueException("Unable to complete this operation. Contact your cloud admin.");
+        }
+    }
+
+    public static String getApiServletPathValue() {
+        return ApiServletPath.value();
+    }
+
     @Override
     public String getConfigComponentName() {
         return ApiServiceConfiguration.class.getSimpleName();

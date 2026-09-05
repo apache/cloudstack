@@ -29,8 +29,15 @@ public class LinstorConfigurationManager implements Configurable
             "Cache time of volume stats for Linstor volumes. 0 to disable volume stats",
             false);
 
+    public static final ConfigKey<String> ApiToken = new ConfigKey<>(String.class, "lin.auth.apitoken", "Secure", "",
+            "API token used to authenticate on the Controller", true, ConfigKey.Scope.StoragePool, null);
+
+    public static final ConfigKey<Boolean> InsecureSsl = new ConfigKey<>(Boolean.class, "lin.ssl.insecure", "Advanced", "true",
+            "Allow self-signed/untrusted TLS certificates from the Linstor controller (disables certificate and hostname verification)",
+            true, ConfigKey.Scope.StoragePool, null);
+
     public static final ConfigKey<?>[] CONFIG_KEYS = new ConfigKey<?>[] {
-            BackupSnapshots, VolumeStatsCacheTime
+            ApiToken, BackupSnapshots, InsecureSsl, VolumeStatsCacheTime
     };
 
     @Override

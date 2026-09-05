@@ -35,6 +35,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
+import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -68,6 +69,8 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -198,10 +201,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
         }
 
-        // 5. check resource limitation
-        checkResourceLimitForImportVolume(owner, volume);
-
-        // 6. get disk offering
+        // 5. get disk offering
         DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId(), pool.isLocal());
         if (diskOffering.isCustomized()) {
             volumeApiService.validateCustomDiskOfferingSizeRange(volume.getVirtualSize() / ByteScaleUtils.GiB);
@@ -210,17 +210,26 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException(String.format("Disk offering: %s storage tags are not compatible with selected storage pool: %s", diskOffering, pool));
         }
 
-        // 7. create records
-        String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
-        VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            // 6. check resource limitation
+            checkResourceLimitForImportVolume(owner, volume, diskOffering, reservations);
 
-        // 8. Update resource count
-        updateResourceLimitForVolumeImport(volumeVO);
+            // 7. create records
+            String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
+            VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
 
-        // 9. Publish event
-        publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
+            // 8. Update resource count
+            updateResourceLimitForVolumeImport(volumeVO);
 
-        return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+            // 9. Publish event
+            publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
+
+            return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath) {
@@ -394,7 +403,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -452,15 +461,14 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 
-    protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume) {
+    protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume, DiskOfferingVO diskOffering, List<Reserver> reservations) {
         Long volumeSize = volume.getVirtualSize();
         try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume);
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.primary_storage, volumeSize);
+            resourceLimitService.checkVolumeResourceLimit(owner, true, volumeSize, diskOffering, reservations);
         } catch (ResourceAllocationException e) {
             logger.error("VM resource allocation error for account: {}", owner, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
@@ -512,5 +520,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         volume.setState(Volume.State.Destroy);
         volume.setRemoved(new Date());
         volumeDao.update(volume.getId(), volume);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeImportUnmanageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                AllowImportVolumeWithBackingFile
+        };
     }
 }

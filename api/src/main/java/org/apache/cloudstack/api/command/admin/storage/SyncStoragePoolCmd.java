@@ -67,7 +67,7 @@ public class SyncStoragePoolCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to synchronise storage pool with management server";
+        return "Attempting to synchronise storage pool with ID:" + getResourceUuid(ApiConstants.ID) + " with management server";
     }
 
     @Override

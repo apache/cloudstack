@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'systemvm',
@@ -26,7 +27,7 @@ export default {
   permission: ['listSystemVms'],
   searchFilters: ['name', 'zoneid', 'podid', 'hostid', 'systemvmtype', 'storageid', 'arch'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'version', 'hostname', 'arch', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'arch', 'version', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'arch', 'version', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate', 'storageip'],
   resourceType: 'SystemVm',
   filters: () => {
     const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
@@ -145,7 +146,7 @@ export default {
           options: ['ping', 'traceroute', 'arping']
         }
       },
-      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${result.diagnostics.stdout}<br/><strong>Error</strong>: ${result.diagnostics.stderr}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
+      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${escapeHtml(result.diagnostics.stdout)}<br/><strong>Error</strong>: ${escapeHtml(result.diagnostics.stderr)}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
     },
     {
       api: 'getDiagnosticsData',

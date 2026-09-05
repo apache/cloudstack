@@ -21,33 +21,26 @@ import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
-import com.linbit.linstor.api.model.AutoSelectFilter;
 import com.linbit.linstor.api.model.LayerType;
-import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
-import com.linbit.linstor.api.model.ResourceGroup;
-import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.Snapshot;
 import com.linbit.linstor.api.model.SnapshotRestore;
-import com.linbit.linstor.api.model.VolumeDefinition;
+import com.linbit.linstor.api.model.SnapshotRollback;
 import com.linbit.linstor.api.model.VolumeDefinitionModify;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,6 +56,8 @@ import com.cloud.api.storage.LinstorBackupSnapshotCommand;
 import com.cloud.api.storage.LinstorRevertBackupSnapshotCommand;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
@@ -74,12 +69,14 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -113,10 +110,9 @@ import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 
@@ -133,8 +129,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     ConfigurationDao _configDao;
     @Inject
     private HostDao _hostDao;
+    @Inject private VMTemplateDao _vmTemplateDao;
 
-    private long volumeStatsLastUpdate = 0L;
+    private final Map<String, Long> volumeStatsLastUpdate = new HashMap<>();
     private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
 
     public LinstorPrimaryDataStoreDriverImpl()
@@ -157,6 +154,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         // CAN_CREATE_VOLUME_FROM_SNAPSHOT see note from CAN_CREATE_VOLUME_FROM_VOLUME
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString(),
+            Boolean.toString(system_snapshot));
 
         return mapCapabilities;
     }
@@ -218,9 +217,15 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return LinstorUtil.RSC_PREFIX + snapshotUuid;
     }
 
+    private DevelopersApi getLinstorAPI(StoragePool pool) {
+        return LinstorUtil.getLinstorAPI(pool.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(pool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(pool.getId())));
+    }
+
     private void deleteResourceDefinition(StoragePoolVO storagePoolVO, String rscDefName)
     {
-        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
+        DevelopersApi linstorApi = getLinstorAPI(storagePoolVO);
 
         try
         {
@@ -234,6 +239,20 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 throw new CloudRuntimeException("Linstor: Unable to delete resource definition: " + rscDefName);
             }
             logger.info("Linstor: Deleted resource {}", rscDefName);
+
+            // LINSTOR can return success on the delete API call while the resource lingers in
+            // DELETING state (peer issues, lost quorum, satellite down). Verify the resource is
+            // actually gone — if not, log a WARN so operators see it. We deliberately do NOT
+            // throw here: the volume is already considered gone on the CloudStack side, and
+            // throwing would leave the CS DB and LINSTOR in different states.
+            if (!LinstorUtil.waitForResourceDefinitionDeleted(linstorApi, rscDefName,
+                    LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS))
+            {
+                logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                        "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list) " +
+                        "and clear manually if the resource has no live peers.",
+                        rscDefName, LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+            }
         } catch (ApiException apiEx)
         {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -244,7 +263,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private void deleteSnapshot(@Nonnull DataStore dataStore, @Nonnull String rscDefName, @Nonnull String snapshotName)
     {
         StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
-        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        DevelopersApi linstorApi = getLinstorAPI(storagePool);
 
         try
         {
@@ -330,273 +349,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
-    private void logLinstorAnswer(@Nonnull ApiCallRc answer) {
-        if (answer.isError()) {
-            logger.error(answer.getMessage());
-        } else if (answer.isWarning()) {
-            logger.warn(answer.getMessage());
-        } else if (answer.isInfo()) {
-            logger.info(answer.getMessage());
-        }
-    }
-
-    private void logLinstorAnswers(@Nonnull ApiCallRcList answers) {
-        answers.forEach(this::logLinstorAnswer);
-    }
-
-    private void checkLinstorAnswersThrow(@Nonnull ApiCallRcList answers) {
-        logLinstorAnswers(answers);
-        if (answers.hasError())
-        {
-            String errMsg = answers.stream()
-                .filter(ApiCallRc::isError)
-                .findFirst()
-                .map(ApiCallRc::getMessage).orElse("Unknown linstor error");
-            throw new CloudRuntimeException(errMsg);
-        }
-    }
-
     private String checkLinstorAnswers(@Nonnull ApiCallRcList answers) {
-        logLinstorAnswers(answers);
+        LinstorUtil.logLinstorAnswers(answers);
         return answers.stream().filter(ApiCallRc::isError).findFirst().map(ApiCallRc::getMessage).orElse(null);
-    }
-
-    private void applyQoSSettings(StoragePoolVO storagePool, DevelopersApi api, String rscName, Long maxIops)
-        throws ApiException
-    {
-        Long currentQosIops = null;
-        List<VolumeDefinition> vlmDfns = api.volumeDefinitionList(rscName, null, null);
-        if (!vlmDfns.isEmpty())
-        {
-            Properties props = vlmDfns.get(0).getProps();
-            long iops = Long.parseLong(props.getOrDefault("sys/fs/blkio_throttle_write_iops", "0"));
-            currentQosIops = iops > 0 ? iops : null;
-        }
-
-        if (!Objects.equals(maxIops, currentQosIops))
-        {
-            VolumeDefinitionModify vdm = new VolumeDefinitionModify();
-            if (maxIops != null)
-            {
-                Properties props = new Properties();
-                props.put("sys/fs/blkio_throttle_read_iops", "" + maxIops);
-                props.put("sys/fs/blkio_throttle_write_iops", "" + maxIops);
-                vdm.overrideProps(props);
-                logger.info("Apply qos setting: " + maxIops + " to " + rscName);
-            }
-            else
-            {
-                logger.info("Remove QoS setting for " + rscName);
-                vdm.deleteProps(Arrays.asList("sys/fs/blkio_throttle_read_iops", "sys/fs/blkio_throttle_write_iops"));
-            }
-            ApiCallRcList answers = api.volumeDefinitionModify(rscName, 0, vdm);
-            checkLinstorAnswersThrow(answers);
-
-            Long capacityIops = storagePool.getCapacityIops();
-            if (capacityIops != null)
-            {
-                long vcIops = currentQosIops != null ? currentQosIops * -1 : 0;
-                long vMaxIops = maxIops != null ? maxIops : 0;
-                long newIops = vcIops + vMaxIops;
-                capacityIops -= newIops;
-                logger.info(String.format("Current storagepool %s iops capacity:  %d", storagePool, capacityIops));
-                storagePool.setCapacityIops(Math.max(0, capacityIops));
-                _storagePoolDao.update(storagePool.getId(), storagePool);
-            }
-        }
-    }
-
-    private String getRscGrp(StoragePool storagePool) {
-        return storagePool.getUserInfo() != null && !storagePool.getUserInfo().isEmpty() ?
-            storagePool.getUserInfo() : "DfltRscGrp";
-    }
-
-    /**
-     * Returns the layerlist of the resourceGroup with encryption(LUKS) added above STORAGE.
-     * If the resourceGroup layer list already contains LUKS this layer list will be returned.
-     * @param api Linstor developers API
-     * @param resourceGroup Resource group to get the encryption layer list
-     * @return layer list with LUKS added
-     */
-    public List<LayerType> getEncryptedLayerList(DevelopersApi api, String resourceGroup) {
-        try {
-            List<ResourceGroup> rscGrps = api.resourceGroupList(
-                    Collections.singletonList(resourceGroup), Collections.emptyList(), null, null);
-
-            if (CollectionUtils.isEmpty(rscGrps)) {
-                throw new CloudRuntimeException(
-                        String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
-            }
-
-            final ResourceGroup rscGrp = rscGrps.get(0);
-            List<LayerType> layers = Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE);
-            List<String> curLayerStack = rscGrp.getSelectFilter() != null ?
-                    rscGrp.getSelectFilter().getLayerStack() : Collections.emptyList();
-            if (CollectionUtils.isNotEmpty(curLayerStack)) {
-                layers = curLayerStack.stream().map(LayerType::valueOf).collect(Collectors.toList());
-                if (!layers.contains(LayerType.LUKS)) {
-                    layers.add(layers.size() - 1, LayerType.LUKS); // lowest layer is STORAGE
-                }
-            }
-            return layers;
-        } catch (ApiException e) {
-            throw new CloudRuntimeException(
-                    String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
-        }
-    }
-
-    /**
-     * Spawns a new Linstor resource with the given arguments.
-     * @param api
-     * @param newRscName
-     * @param sizeInBytes
-     * @param isTemplate
-     * @param rscGrpName
-     * @param volName
-     * @param vmName
-     * @throws ApiException
-     */
-    private void spawnResource(
-            DevelopersApi api, String newRscName, long sizeInBytes, boolean isTemplate, String rscGrpName,
-            String volName, String vmName, @Nullable Long passPhraseId, @Nullable byte[] passPhrase) throws ApiException
-    {
-        ResourceGroupSpawn rscGrpSpawn = new ResourceGroupSpawn();
-        rscGrpSpawn.setResourceDefinitionName(newRscName);
-        rscGrpSpawn.addVolumeSizesItem(sizeInBytes / 1024);
-        if (passPhraseId != null) {
-            AutoSelectFilter asf = new AutoSelectFilter();
-            List<LayerType> luksLayers = getEncryptedLayerList(api, rscGrpName);
-            asf.setLayerStack(luksLayers.stream().map(LayerType::toString).collect(Collectors.toList()));
-            rscGrpSpawn.setSelectFilter(asf);
-            if (passPhrase != null) {
-                String utf8Passphrase = new String(passPhrase, StandardCharsets.UTF_8);
-                rscGrpSpawn.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
-            }
-        }
-
-        if (isTemplate) {
-            Properties props = new Properties();
-            props.put(LinstorUtil.getTemplateForAuxPropKey(rscGrpName), "true");
-            rscGrpSpawn.setResourceDefinitionProps(props);
-        }
-
-        logger.info("Linstor: Spawn resource " + newRscName);
-        ApiCallRcList answers = api.resourceGroupSpawn(rscGrpName, rscGrpSpawn);
-        checkLinstorAnswersThrow(answers);
-
-        answers = LinstorUtil.applyAuxProps(api, newRscName, volName, vmName);
-        checkLinstorAnswersThrow(answers);
-    }
-
-    /**
-     * Condition if a template resource can be shared with the given resource group.
-     * @param tgtRscGrp
-     * @param tgtLayerStack
-     * @param rg
-     * @return True if the template resource can be shared, else false.
-     */
-    private boolean canShareTemplateForResourceGroup(
-            ResourceGroup tgtRscGrp, List<String> tgtLayerStack, ResourceGroup rg) {
-        List<String> rgLayerStack = rg.getSelectFilter() != null ?
-                rg.getSelectFilter().getLayerStack() : null;
-        return Objects.equals(tgtLayerStack, rgLayerStack) &&
-                Objects.equals(tgtRscGrp.getSelectFilter().getStoragePoolList(),
-                        rg.getSelectFilter().getStoragePoolList());
-    }
-
-    /**
-     * Searches for a shareable template for this rscGrpName and sets the aux template property.
-     * @param api
-     * @param rscName
-     * @param rscGrpName
-     * @param existingRDs
-     * @return
-     * @throws ApiException
-     */
-    private boolean foundShareableTemplate(
-            DevelopersApi api, String rscName, String rscGrpName,
-            List<Pair<ResourceDefinition, ResourceGroup>> existingRDs) throws ApiException {
-        if (!existingRDs.isEmpty()) {
-            ResourceGroup tgtRscGrp = api.resourceGroupList(
-                    Collections.singletonList(rscGrpName), null, null, null).get(0);
-            List<String> tgtLayerStack = tgtRscGrp.getSelectFilter() != null ?
-                    tgtRscGrp.getSelectFilter().getLayerStack() : null;
-
-            // check if there is already a template copy, that we could reuse
-            // this means if select filters are similar enough to allow cloning from
-            for (Pair<ResourceDefinition, ResourceGroup> rdPair : existingRDs) {
-                ResourceGroup rg = rdPair.second();
-                if (canShareTemplateForResourceGroup(tgtRscGrp, tgtLayerStack, rg)) {
-                    LinstorUtil.setAuxTemplateForProperty(api, rscName, rscGrpName);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Creates a new Linstor resource.
-     * @param rscName
-     * @param sizeInBytes
-     * @param volName
-     * @param vmName
-     * @param api
-     * @param rscGrp
-     * @param poolId
-     * @param isTemplate indicates if the resource is a template
-     * @return true if a new resource was created, false if it already existed or was reused.
-     */
-    private boolean createResourceBase(
-        String rscName, long sizeInBytes, String volName, String vmName,
-        @Nullable Long passPhraseId, @Nullable byte[] passPhrase, DevelopersApi api,
-        String rscGrp, long poolId, boolean isTemplate)
-    {
-        try
-        {
-            logger.debug("createRscBase: {} :: {} :: {}", rscName, rscGrp, isTemplate);
-            List<Pair<ResourceDefinition, ResourceGroup>> existingRDs = LinstorUtil.getRDAndRGListStartingWith(api, rscName);
-
-            String fullRscName = String.format("%s-%d", rscName, poolId);
-            boolean alreadyCreated = existingRDs.stream()
-                    .anyMatch(p -> p.first().getName().equalsIgnoreCase(fullRscName)) ||
-                    existingRDs.stream().anyMatch(p -> p.first().getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrp)));
-            if (!alreadyCreated) {
-                boolean createNewRsc = !foundShareableTemplate(api, rscName, rscGrp, existingRDs);
-                if (createNewRsc) {
-                    String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
-                    spawnResource(api, newRscName, sizeInBytes, isTemplate, rscGrp,
-                            volName, vmName, passPhraseId, passPhrase);
-                }
-                return createNewRsc;
-            }
-            return false;
-        } catch (ApiException apiEx)
-        {
-            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
-        }
-    }
-
-    private String createResource(VolumeInfo vol, StoragePoolVO storagePoolVO) {
-        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
-        final String rscGrp = getRscGrp(storagePoolVO);
-
-        final String rscName = LinstorUtil.RSC_PREFIX + vol.getUuid();
-        createResourceBase(
-            rscName, vol.getSize(), vol.getName(), vol.getAttachedVmName(), vol.getPassphraseId(), vol.getPassphrase(),
-                linstorApi, rscGrp, storagePoolVO.getId(), false);
-
-        try
-        {
-            applyQoSSettings(storagePoolVO, linstorApi, rscName, vol.getMaxIops());
-
-            return LinstorUtil.getDevicePath(linstorApi, rscName);
-        } catch (ApiException apiEx)
-        {
-            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
-        }
     }
 
     private void resizeResource(DevelopersApi api, String resourceName, long sizeByte) throws ApiException {
@@ -670,19 +425,27 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             storagePoolVO.getId(), csCloneId, null);
 
         if (tmplPoolRef != null) {
-            final String templateRscName = LinstorUtil.RSC_PREFIX + tmplPoolRef.getLocalDownloadPath();
+            final String templateRscName;
+            if (tmplPoolRef.getLocalDownloadPath() == null) {
+                VMTemplateVO vmTemplateVO = _vmTemplateDao.findById(tmplPoolRef.getTemplateId());
+                templateRscName = LinstorUtil.RSC_PREFIX + vmTemplateVO.getUuid();
+            } else {
+                templateRscName = LinstorUtil.RSC_PREFIX + tmplPoolRef.getLocalDownloadPath();
+            }
             final String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
-            final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
+
+            final DevelopersApi linstorApi = getLinstorAPI(storagePoolVO);
 
             try {
                 ResourceDefinition templateRD = LinstorUtil.findResourceDefinition(
-                        linstorApi, templateRscName, getRscGrp(storagePoolVO));
+                        linstorApi, templateRscName, LinstorUtil.getRscGrp(storagePoolVO));
                 final String cloneRes = templateRD != null ? templateRD.getName() : templateRscName;
                 logger.info("Clone resource definition {} to {}", cloneRes, rscName);
                 ResourceDefinitionCloneRequest cloneRequest = new ResourceDefinitionCloneRequest();
                 cloneRequest.setName(rscName);
-                if (volumeInfo.getPassphraseId() != null) {
-                    List<LayerType> encryptionLayer = getEncryptedLayerList(linstorApi, getRscGrp(storagePoolVO));
+                if (volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null) {
+                    List<LayerType> encryptionLayer = LinstorUtil.getEncryptedLayerList(
+                            linstorApi, LinstorUtil.getRscGrp(storagePoolVO));
                     cloneRequest.setLayerList(encryptionLayer);
                     if (volumeInfo.getPassphrase() != null) {
                         String utf8Passphrase = new String(volumeInfo.getPassphrase(), StandardCharsets.UTF_8);
@@ -692,7 +455,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
                     cloneRes, cloneRequest);
 
-                checkLinstorAnswersThrow(cloneStarted.getMessages());
+                LinstorUtil.checkLinstorAnswersThrow(cloneStarted.getMessages());
 
                 if (!CloneWaiter.waitFor(linstorApi, cloneStarted)) {
                     throw new CloudRuntimeException("Clone for resource " + rscName + " failed.");
@@ -704,11 +467,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     resizeResource(linstorApi, rscName, volumeInfo.getSize());
                 }
 
-                updateRscGrpIfNecessary(linstorApi, rscName, getRscGrp(storagePoolVO));
+                updateRscGrpIfNecessary(linstorApi, rscName, LinstorUtil.getRscGrp(storagePoolVO));
 
                 deleteTemplateForProps(linstorApi, rscName);
                 LinstorUtil.applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
-                applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
+                LinstorUtil.applyQoSSettings(
+                        _storagePoolDao, storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
 
                 return LinstorUtil.getDevicePath(linstorApi, rscName);
             } catch (ApiException apiEx) {
@@ -732,8 +496,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     private String createResourceFromSnapshot(long csSnapshotId, String rscName, StoragePoolVO storagePoolVO) {
-        final String rscGrp = getRscGrp(storagePoolVO);
-        final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
+        final String rscGrp = LinstorUtil.getRscGrp(storagePoolVO);
+        final DevelopersApi linstorApi = getLinstorAPI(storagePoolVO);
 
         SnapshotVO snapshotVO = _snapshotDao.findById(csSnapshotId);
         String snapName = LinstorUtil.RSC_PREFIX + snapshotVO.getUuid();
@@ -745,22 +509,22 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             logger.debug("Create new resource definition: " + rscName);
             ResourceDefinitionCreate rdCreate = createResourceDefinitionCreate(rscName, rscGrp);
             ApiCallRcList answers = linstorApi.resourceDefinitionCreate(rdCreate);
-            checkLinstorAnswersThrow(answers);
+            LinstorUtil.checkLinstorAnswersThrow(answers);
 
             SnapshotRestore snapshotRestore = new SnapshotRestore();
             snapshotRestore.toResource(rscName);
 
             logger.debug("Create new volume definition for snapshot: " + cloneRes + ":" + snapName);
             answers = linstorApi.resourceSnapshotsRestoreVolumeDefinition(cloneRes, snapName, snapshotRestore);
-            checkLinstorAnswersThrow(answers);
+            LinstorUtil.checkLinstorAnswersThrow(answers);
 
             // restore snapshot to new resource
             logger.info("Restore resource from snapshot: " + cloneRes + ":" + snapName);
             answers = linstorApi.resourceSnapshotRestore(cloneRes, snapName, snapshotRestore);
-            checkLinstorAnswersThrow(answers);
+            LinstorUtil.checkLinstorAnswersThrow(answers);
 
             LinstorUtil.applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
-            applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeVO.getMaxIops());
+            LinstorUtil.applyQoSSettings(_storagePoolDao, storagePoolVO, linstorApi, rscName, volumeVO.getMaxIops());
 
             return LinstorUtil.getDevicePath(linstorApi, rscName);
         } catch (ApiException apiEx) {
@@ -778,7 +542,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         } else if (csTemplateId > 0) {
             return cloneResource(csTemplateId, volumeInfo, storagePoolVO);
         } else {
-            return createResource(volumeInfo, storagePoolVO);
+            return LinstorUtil.createResource(volumeInfo, storagePoolVO, _storagePoolDao);
         }
     }
 
@@ -858,6 +622,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     devPath = createVolume(volumeInfo, storagePool);
                     volume.setFolder("/dev/");
                     volume.setPoolId(storagePool.getId());
+                    volume.setPoolType(storagePool.getPoolType());
                     volume.setUuid(vol.getUuid());
                     volume.setPath(vol.getUuid());
 
@@ -911,9 +676,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             _backupsnapshotwait,
             VirtualMachineManager.ExecuteInSequence.value());
 
-        Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, rscName);
+        final StoragePool pool = (StoragePool) volumeInfo.getDataStore();
+        Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, pool, rscName);
         if (optEP.isEmpty()) {
-            optEP = getLinstorEP(linstorApi, rscName);
+            optEP = getLinstorEP(linstorApi, pool, rscName);
         }
 
         if (optEP.isPresent()) {
@@ -929,14 +695,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     private String doRevertSnapshot(final SnapshotInfo snapshot, final VolumeInfo volumeInfo) {
         final StoragePool pool = (StoragePool) volumeInfo.getDataStore();
-        final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getPath();
         String resultMsg;
         try {
             if (snapshot.getDataStore().getRole() == DataStoreRole.Primary) {
                 final String snapName = LinstorUtil.RSC_PREFIX + snapshot.getUuid();
 
-                ApiCallRcList answers = linstorApi.resourceSnapshotRollback(rscName, snapName);
+                ApiCallRcList answers = linstorApi.resourceSnapshotRollback(rscName, snapName, new SnapshotRollback());
                 resultMsg = checkLinstorAnswers(answers);
             } else if (snapshot.getDataStore().getRole() == DataStoreRole.Image) {
                 resultMsg = revertSnapshotFromImageStore(snapshot, volumeInfo, linstorApi, rscName);
@@ -977,6 +743,13 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private static boolean canCopySnapshotToVolumeCond(DataObject srcData, DataObject dstData) {
+        return srcData.getType() == DataObjectType.SNAPSHOT && dstData.getType() == DataObjectType.VOLUME
+            && srcData.getDataStore().getRole() == DataStoreRole.Primary
+            && dstData.getDataStore().getRole() == DataStoreRole.Primary
+            && srcData.getDataStore().getId() == dstData.getDataStore().getId();
+    }
+
     private static boolean canCopySnapshotCond(DataObject srcData, DataObject dstData) {
         return srcData.getType() == DataObjectType.SNAPSHOT && dstData.getType() == DataObjectType.SNAPSHOT
             && (dstData.getDataStore().getRole() == DataStoreRole.Image
@@ -1004,7 +777,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     {
         logger.debug("LinstorPrimaryDataStoreDriverImpl.canCopy: " + srcData.getType() + " -> " + dstData.getType());
 
-        if (canCopySnapshotCond(srcData, dstData)) {
+        if (canCopySnapshotToVolumeCond(srcData, dstData)) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(srcData.getDataStore().getId());
+            return storagePool.getStorageProviderName().equals(LinstorUtil.PROVIDER_NAME);
+        } else if (canCopySnapshotCond(srcData, dstData)) {
             SnapshotInfo sinfo = (SnapshotInfo) srcData;
             VolumeInfo volume = sinfo.getBaseVolume();
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
@@ -1023,6 +799,18 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return false;
     }
 
+    private CopyCommandResult copySnapshotToVolume(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotInfo.getDataStore().getId());
+        String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
+        createResourceFromSnapshot(snapshotInfo.getId(), rscName, storagePoolVO);
+
+        VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
+        volumeTO.setPath(volumeInfo.getUuid());
+        volumeTO.setSize(volumeInfo.getSize());
+
+        return new CopyCommandResult(null, new CopyCmdAnswer(volumeTO));
+    }
+
     @Override
     public void copyAsync(DataObject srcData, DataObject dstData, AsyncCompletionCallback<CopyCommandResult> callback)
     {
@@ -1030,7 +818,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             + srcData.getType() + " -> " + dstData.getType());
 
         final CopyCommandResult res;
-        if (canCopySnapshotCond(srcData, dstData)) {
+        if (canCopySnapshotToVolumeCond(srcData, dstData)) {
+            res = copySnapshotToVolume((SnapshotInfo) srcData, (VolumeInfo) dstData);
+        } else if (canCopySnapshotCond(srcData, dstData)) {
             String errMsg = null;
             Answer answer = copySnapshot(srcData, dstData);
             if (answer != null && !answer.getResult()) {
@@ -1053,11 +843,27 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             Answer answer = copyVolume(srcData, dstData);
             res = new CopyCommandResult(null, answer);
         } else {
-            Answer answer = new Answer(null, false, "noimpl");
-            res = new CopyCommandResult(null, answer);
-            res.setResult("Not implemented yet");
+            throw new CloudRuntimeException("Not implemented for Linstor primary storage.");
         }
         callback.complete(res);
+    }
+
+    private Host getEnabledClusterHost(StoragePool storagePool, List<String> linstorNodeNames) {
+        List<HostVO> csHosts;
+        if (storagePool.getClusterId() != null) {
+            csHosts = _hostDao.findByClusterId(storagePool.getClusterId());
+        } else {
+            csHosts = _hostDao.findByDataCenterId(storagePool.getDataCenterId());
+        }
+        Collections.shuffle(csHosts); // so we do not always pick the same host for operations
+        for (HostVO host : csHosts) {
+            if (host.getResourceState() == ResourceState.Enabled &&
+                    host.getStatus() == Status.Up &&
+                    linstorNodeNames.contains(host.getName())) {
+                return host;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1068,47 +874,37 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
      * @return Optional RemoteHostEndPoint if one could get found.
      * @throws ApiException
      */
-    private Optional<RemoteHostEndPoint> getLinstorEP(DevelopersApi api, String rscName) throws ApiException {
+    private Optional<RemoteHostEndPoint> getLinstorEP(DevelopersApi api, StoragePool storagePool, String rscName)
+            throws ApiException {
         List<String> linstorNodeNames = LinstorUtil.getLinstorNodeNames(api);
-        Collections.shuffle(linstorNodeNames);  // do not always pick the first linstor node
-
-        Host host = null;
-        for (String nodeName : linstorNodeNames) {
-            host = _hostDao.findByName(nodeName);
-            if (host != null && host.getResourceState() == ResourceState.Enabled) {
-                logger.info(String.format("Linstor: Make resource %s available on node %s ...", rscName, nodeName));
-                ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, nodeName, new ResourceMakeAvailable());
-                if (!answers.hasError()) {
-                    break; // found working host
-                } else {
-                    logger.error(
-                        String.format("Linstor: Unable to make resource %s on node %s available: %s",
-                            rscName,
-                            nodeName,
-                            LinstorUtil.getBestErrorMessage(answers)));
-                }
+        Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+        if (host != null) {
+            logger.info("Linstor: Make resource {} available on node {} ...", rscName, host.getName());
+            ApiCallRcList answers = api.resourceMakeAvailableOnNode(
+                    rscName, host.getName(), new ResourceMakeAvailable());
+            if (answers.hasError()) {
+                logger.error("Linstor: Unable to make resource {} on node {} available: {}",
+                        rscName, host.getName(), LinstorUtil.getBestErrorMessage(answers));
+                return Optional.empty();
+            } else {
+                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
         }
 
-        if (host == null)
-        {
-            logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
-            return Optional.empty();
-        }
-        else
-        {
-            return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
-        }
+        logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
+        return Optional.empty();
     }
 
-    private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, String rscName) throws ApiException {
+    private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
+            throws ApiException {
         List<com.linbit.linstor.api.model.StoragePool> linSPs = LinstorUtil.getDiskfulStoragePools(api, rscName);
         if (linSPs != null) {
-            for (com.linbit.linstor.api.model.StoragePool sp : linSPs) {
-                Host host = _hostDao.findByName(sp.getNodeName());
-                if (host != null && host.getResourceState() == ResourceState.Enabled) {
-                    return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
-                }
+            List<String> linstorNodeNames = linSPs.stream()
+                    .map(com.linbit.linstor.api.model.StoragePool::getNodeName)
+                    .collect(Collectors.toList());
+            Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+            if (host != null) {
+                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
         }
         logger.error("Linstor: No diskfull host found.");
@@ -1121,7 +917,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             String rscName,
             String snapshotName,
             String restoredName) throws ApiException {
-        final String rscGrp = getRscGrp(storagePoolVO);
+        final String rscGrp = LinstorUtil.getRscGrp(storagePoolVO);
         // try to delete -rst resource, could happen if the copy failed and noone deleted it.
         deleteResourceDefinition(storagePoolVO, restoredName);
         ResourceDefinitionCreate rdc = createResourceDefinitionCreate(restoredName, rscGrp);
@@ -1164,9 +960,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private Answer copyTemplate(DataObject srcData, DataObject dstData) {
         TemplateInfo tInfo = (TemplateInfo) dstData;
         final StoragePoolVO pool = _storagePoolDao.findById(dstData.getDataStore().getId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final DevelopersApi api = getLinstorAPI(pool);
         final String rscName = LinstorUtil.RSC_PREFIX + dstData.getUuid();
-        boolean newCreated = createResourceBase(
+        boolean newCreated = LinstorUtil.createResourceBase(
             LinstorUtil.RSC_PREFIX + dstData.getUuid(),
             tInfo.getSize(),
             tInfo.getName(),
@@ -1174,9 +970,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             null,
             null,
             api,
-            getRscGrp(pool),
+            LinstorUtil.getRscGrp(pool),
             pool.getId(),
-            true);
+            true,
+            false);
 
         Answer answer;
         if (newCreated) {
@@ -1189,12 +986,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     VirtualMachineManager.ExecuteInSequence.value());
 
             try {
-                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, rscName);
+                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
                 if (optEP.isPresent()) {
                     answer = optEP.get().sendMessage(cmd);
                 } else {
-                    answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
                     deleteResourceDefinition(pool, rscName);
+                    throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
                 }
             } catch (ApiException exc) {
                 logger.error("copy template failed: ", exc);
@@ -1211,7 +1008,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private Answer copyVolume(DataObject srcData, DataObject dstData) {
         VolumeInfo srcVolInfo = (VolumeInfo) srcData;
         final StoragePoolVO pool = _storagePoolDao.findById(srcVolInfo.getDataStore().getId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final DevelopersApi api = getLinstorAPI(pool);
         final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getPath();
 
         VolumeObjectTO to = (VolumeObjectTO) srcVolInfo.getTO();
@@ -1231,12 +1028,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         Answer answer;
 
         try {
-            Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, rscName);
+            Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             }
             else {
-                answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } catch (ApiException exc) {
             logger.error("copy volume failed: ", exc);
@@ -1269,14 +1066,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         try {
             String devName = restoreResourceFromSnapshot(api, pool, rscName, snapshotName, restoreName);
 
-            Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, restoreName);
+            Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, pool, restoreName);
             if (optEPAny.isPresent()) {
                 // patch the src device path to the temporary linstor resource
                 snapshotObject.setPath(devName);
                 origCmd.setSrcTO(snapshotObject.getTO());
                 answer = optEPAny.get().sendMessage(origCmd);
-            } else{
-                answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+            } else {
+                throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
             }
         } finally {
             // delete the temporary resource, noop if already gone
@@ -1316,7 +1113,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         SnapshotObject snapshotObject = (SnapshotObject)srcData;
         Boolean snapshotFullBackup = snapshotObject.getFullBackup();
         final StoragePoolVO pool = _storagePoolDao.findById(srcData.getDataStore().getId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final DevelopersApi api = getLinstorAPI(pool);
         boolean fullSnapshot = true;
         if (snapshotFullBackup != null) {
             fullSnapshot = snapshotFullBackup;
@@ -1338,12 +1135,22 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(api, rscName);
+            // For encrypted volumes Linstor adds a LUKS layer (DRBD -> LUKS -> STORAGE). The storage
+            // layer snapshot device (getSnapshotPath) therefore only exposes the raw LUKS ciphertext,
+            // while restore writes onto the decrypted DRBD device (/dev/drbd/by-res/.../0). Backing up
+            // the ciphertext and writing it back to the decrypted layer corrupts the volume (and the
+            // shrink to the net volume size would even truncate the ciphertext). So for encrypted
+            // volumes we never read the storage snapshot directly: restore the snapshot into a temporary
+            // resource and back up its decrypted DRBD device instead, symmetric to the restore path.
+            final boolean encrypted = snapshotObject.getBaseVolume().getPassphraseId() != null;
+            Optional<RemoteHostEndPoint> optEP = encrypted ?
+                Optional.empty() : getDiskfullEP(api, pool, rscName);
             Answer answer;
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             } else {
-                logger.debug("No diskfull endpoint found to copy image, creating diskless endpoint");
+                logger.debug("No diskfull endpoint used to copy image (encrypted={}), using temporary resource",
+                    encrypted);
                 answer = copyFromTemporaryResource(api, pool, rscName, snapshotName, snapshotObject, cmd);
             }
             return answer;
@@ -1397,7 +1204,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     {
         final VolumeObject vol = (VolumeObject) data;
         final StoragePoolVO pool = _storagePoolDao.findById(data.getDataStore().getId());
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final DevelopersApi api = getLinstorAPI(pool);
         final ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
 
         final String rscName = LinstorUtil.RSC_PREFIX + vol.getPath();
@@ -1410,7 +1217,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         {
             resizeResource(api, rscName, resizeParameter.newSize);
 
-            applyQoSSettings(pool, api, rscName, resizeParameter.newMaxIops);
+            LinstorUtil.applyQoSSettings(_storagePoolDao, pool, api, rscName, resizeParameter.newMaxIops);
             {
                 final VolumeVO volume = _volumeDao.findById(vol.getId());
                 volume.setMinIops(resizeParameter.newMinIops);
@@ -1471,7 +1278,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         long storagePoolId = volumeVO.getPoolId();
         final StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        final DevelopersApi api = getLinstorAPI(storagePool);
         final String rscName = LinstorUtil.RSC_PREFIX + volumeVO.getPath();
 
         Snapshot snapshot = new Snapshot();
@@ -1515,7 +1322,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
         logger.debug(String.format("Requesting storage stats: %s", storagePool));
-        return LinstorUtil.getStorageStats(storagePool.getHostAddress(), getRscGrp(storagePool));
+        return LinstorUtil.getStorageStats(storagePool.getHostAddress(), LinstorUtil.getRscGrp(storagePool),
+                LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
     }
 
     @Override
@@ -1525,11 +1334,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     /**
      * Updates the cache map containing current allocated size data.
-     * @param api Linstor Developers api object
+     * @param linstorAddr Linstor cluster api address
      */
-    private void fillVolumeStatsCache(DevelopersApi api) {
+    private void fillVolumeStatsCache(String linstorAddr, String apiToken, boolean insecureSsl) {
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(linstorAddr, apiToken, insecureSsl);
         try {
-            logger.trace("Start volume stats cache update");
+            logger.trace("Start volume stats cache update for " + linstorAddr);
             List<ResourceWithVolumes> resources = api.viewResources(
                     Collections.emptyList(),
                     Collections.emptyList(),
@@ -1556,14 +1366,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 }
             }
 
-            volumeStats.clear();
+            volumeStats.keySet().removeIf(key -> key.startsWith(linstorAddr));
             for (Map.Entry<String, Long> entry : allocSizeMap.entrySet()) {
                 Long reserved = resSizeMap.getOrDefault(entry.getKey(), 0L);
                 Pair<Long, Long> volStat = new Pair<>(entry.getValue(), reserved);
-                volumeStats.put(entry.getKey(), volStat);
+                volumeStats.put(linstorAddr + "/" + entry.getKey(), volStat);
             }
-            volumeStatsLastUpdate = System.currentTimeMillis();
-            logger.trace("Done volume stats cache update: {}", volumeStats.size());
+            volumeStatsLastUpdate.put(linstorAddr, System.currentTimeMillis());
+            logger.debug(String.format("Done volume stats cache update for %s: %d", linstorAddr, volumeStats.size()));
         } catch (ApiException e) {
             logger.error("Unable to fetch Linstor resources: {}", e.getBestMessage());
         }
@@ -1571,14 +1381,21 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
-        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        String linstorAddr = storagePool.getHostAddress();
         synchronized (volumeStats) {
-            long invalidateCacheTime = volumeStatsLastUpdate +
+            long invalidateCacheTime = volumeStatsLastUpdate.getOrDefault(storagePool.getHostAddress(), 0L) +
                     LinstorConfigurationManager.VolumeStatsCacheTime.value() * 1000;
             if (invalidateCacheTime < System.currentTimeMillis()) {
-                fillVolumeStatsCache(api);
+                fillVolumeStatsCache(storagePool.getHostAddress(),
+                        LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                        Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
             }
-            return volumeStats.get(LinstorUtil.RSC_PREFIX + volumeId);
+            String volumeKey = linstorAddr + "/" + LinstorUtil.RSC_PREFIX + volumeId;
+            Pair<Long, Long> sizePair = volumeStats.get(volumeKey);
+            if (sizePair == null) {
+                logger.warn(String.format("Volumestats for %s not found in cache", volumeKey));
+            }
+            return sizePair;
         }
     }
 

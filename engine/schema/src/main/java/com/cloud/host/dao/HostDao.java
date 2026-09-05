@@ -32,12 +32,17 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * Data Access Object for server
  *
  */
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
+
+    ConfigKey<Long> guestOsRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "guest.os.rule.execution.timeout", "3000", "The maximum runtime, in milliseconds, " +
+            "to execute a guest OS rule; if it is reached, a timeout will happen.", true);
+
     long countBy(long clusterId, ResourceState... states);
 
     Integer countAllByType(final Host.Type type);
@@ -116,6 +121,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType);
 
+    List<HostVO> findRoutingByClusterId(Long clusterId);
+
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
@@ -133,6 +140,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllHosts(long zoneId);
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listAllRoutingHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
 
@@ -177,14 +186,24 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listHostsByMsAndDc(long msId, long dcId);
 
+    List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates);
+
     List<HostVO> listHostsByMs(long msId);
 
+    List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates);
+
     /**
-     * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
-     * @param msId the id of the {@see ManagementServer}
-     * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
+     * Count Hosts by given Management Server, Host and Hypervisor Types,
+     * and exclude Hosts with given Resource States.
+     *
+     * @param msId                   Management Server Id
+     * @param excludedResourceStates Resource States to be excluded
+     * @param hostTypes              Host Types
+     * @param hypervisorTypes        Hypervisor Types
+     * @return Hosts count
      */
-    int countByMs(long msId);
+    int countHostsByMsResourceStateTypeAndHypervisorType(long msId, List<ResourceState> excludedResourceStates,
+                                                         List<Type> hostTypes, List<HypervisorType> hypervisorTypes);
 
     /**
      * Retrieves the host ids/agents this {@see ManagementServer} has responsibility over.
@@ -208,7 +227,9 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
 
-    List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
+    List<HostVO> findHostsWithTagRuleThatMatchComputeOfferingTags(String computeOfferingTags);
+
+    List<HostVO> findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(String templateGuestOSName);
 
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 

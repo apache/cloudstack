@@ -1331,11 +1331,11 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         vm = list_vm_response[0]
         if vm is None:
-            self.fail("Failed to list VM details after Vm Snapshot")
+            self.fail("Failed to list Instance details after Instance Snapshot")
         self.assertEqual(
             vm.state,
             "Running",
-            "Check the state of vm is Running"
+            "Check the state of Instance is Running"
         )
 
         self.check_for_vGPU_resource(
@@ -1831,7 +1831,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_17_create_k1_vm_snapshot_wo_memory(self):
-        """Test to create VM snapshots
+        """Test to create Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1849,7 +1849,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_18_revert_k1_vm_snapshot_wo_memory(self):
-        """Test to revert VM snapshots
+        """Test to revert Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1869,7 +1869,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_19_delete_k1_vm_snapshot_wo_memory(self):
-        """Test to delete vm snapshots
+        """Test to delete Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1889,7 +1889,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_20_create_k2_vm_snapshot_with_memory(self):
-        """Test to create VM snapshots
+        """Test to create Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1905,7 +1905,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_21_revert_k2_vm_snapshot_with_memory(self):
-        """Test to revert VM snapshots
+        """Test to revert Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1925,7 +1925,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_22_delete_k2_vm_snapshot_with_memory(self):
-        """Test to delete vm snapshots
+        """Test to delete Instance Snapshots
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1945,7 +1945,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_23_vm_snapshot_without_memory_from_k1_vgpu_nonvgpu_vgpu(self):
-        """Test to verify VM snapshot from vGPU to non vgpu to vGPU snap
+        """Test to verify Instance Snapshot from vGPU to non vgpu to vGPU snap
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -1974,7 +1974,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_24_vm_snapshot_without_memory_from_nonvgpu_k1vgpu_nonvgpu(self):
-        """Test to verify VM snapshot from non vGPU snap to vGPU snap to non vGPU snap
+        """Test to verify Instance Snapshot from non vGPU snap to vGPU snap to non vGPU snap
         """
 
         if self.__class__.vmlifecycletest == 0:
@@ -2003,7 +2003,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_25_vm_snapshot_without_memory_from_k2vgpu_k1vgpu_k2vgpu(self):
-        """Test to verify VM snapshot from K2 vGPU snap to K1 vGPU snap to K2 vGPU snap
+        """Test to verify Instance Snapshot from K2 vGPU snap to K1 vGPU snap to K2 vGPU snap
         """
 
         if self.__class__.vmlifecycletest == 0:

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class NtpTest {
@@ -42,6 +43,7 @@ public class NtpTest {
             + "</data>\n"
             + "</array>\n");
 
+    @Ignore
     public void testGetNtp() throws Ovm3ResourceException {
         con.setResult(results.getNil());
         results.basicBooleanTest(nTp.getDetails());

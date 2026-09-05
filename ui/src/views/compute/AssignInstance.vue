@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 
@@ -107,6 +107,7 @@ export default {
       this.fetchNetworks()
     },
     fetchNetworks () {
+      this.selectedNetwork = null
       this.loading = true
       var params = {
         domainId: this.selectedDomain,
@@ -120,7 +121,7 @@ export default {
         params.account = this.selectedAccount
         params.ignoreproject = true
       }
-      api('listNetworks', params).then(response => {
+      getAPI('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network || []
       }).catch(error => {
         this.$notifyError(error)
@@ -154,7 +155,7 @@ export default {
       }
 
       this.loading = true
-      api('assignVirtualMachine', {
+      postAPI('assignVirtualMachine', {
         response: 'json',
         virtualmachineid: this.resource.id,
         domainid: this.selectedDomain,

@@ -32,6 +32,7 @@ from marvin.codes import FAILED, INVALID_INPUT, PASS,\
     RESOURCE_PRIMARY_STORAGE
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
+import math
 import time
 import re
 from marvin.cloudstackAPI import updateTemplate,registerTemplate
@@ -276,6 +277,14 @@ class TestDeployVmRootSize(cloudstackTestCase):
             self.assertNotEqual(res[2], INVALID_INPUT, "Invalid list VM "
                                                         "response")
             rootvolume = list_volume_response[0]
+            list_volume_pool_response = list_storage_pools(
+                self.apiclient,
+                id=rootvolume.storageid
+            )
+            rootvolume_pool = list_volume_pool_response[0]
+            if rootvolume_pool.type.lower() == "powerflex":
+                newrootsize = (int(math.ceil(newrootsize / 8) * 8))
+
             success = False
             if rootvolume is not None and rootvolume.size  == (newrootsize << 30):
                 success = True

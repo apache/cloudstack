@@ -18,12 +18,13 @@
 package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface WebhookDeliveryDao extends GenericDao<WebhookDeliveryVO, Long> {
-    int deleteByDeleteApiParams(Long id, Long webhookId, Long managementServerId, Date startDate, Date endDate);
+    int deleteByDeleteApiParams(Long id, List<Long> webhookId, Long managementServerId, Date startDate, Date endDate, boolean isRootAdmin);
     void removeOlderDeliveries(long webhookId, long limit);
 }

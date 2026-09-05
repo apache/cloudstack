@@ -40,14 +40,16 @@ public class LdapDeleteConfigurationCmd extends BaseCmd {
     @Inject
     private LdapManager _ldapManager;
 
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = false, entityType = LdapConfigurationResponse.class, description = "ID of the LDAP configuration")
+    private Long id;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Hostname")
     private String hostname;
 
-    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = false, description = "port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Linked Domain")
     private Long domainId;
 
     public LdapDeleteConfigurationCmd() {
@@ -69,6 +71,10 @@ public class LdapDeleteConfigurationCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     @Override

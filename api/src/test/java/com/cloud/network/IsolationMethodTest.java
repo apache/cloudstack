@@ -25,7 +25,7 @@ import static org.junit.Assert.assertFalse;
 public class IsolationMethodTest {
     @After
     public void cleanTheRegistry() {
-        PhysicalNetwork.IsolationMethod.registeredIsolationMethods.removeAll(PhysicalNetwork.IsolationMethod.registeredIsolationMethods);
+        PhysicalNetwork.IsolationMethod.registeredIsolationMethods.clear();
     }
 
     @Test

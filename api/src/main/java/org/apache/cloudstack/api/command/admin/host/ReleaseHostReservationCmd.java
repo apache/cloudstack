@@ -40,7 +40,7 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the host ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The host ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing reservation for host: " + getId();
+        return "Releasing reservation from host with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -86,7 +86,7 @@ export default {
       this.$emit('handle-deploy', e)
     },
     handleMenu (e) {
-      this.$emit('handle-deploy-menu', e.key - 1)
+      this.$emit('handle-deploy-menu', e.key - 1, e)
     }
   }
 }
@@ -94,37 +94,36 @@ export default {
 
 <style lang="less" scoped>
 
-.button-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-start;
-}
-
-.equal-size-button {
-  flex-grow: 1; /* Make each button grow equally */
-  min-width: 120px; /* Set a minimum width so that the buttons don't shrink too much */
-}
-
-@media (max-width: 600px) {
   .button-container {
-    flex-direction: column;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
   }
 
-}
+  .equal-size-button {
+    flex-grow: 1; /* Make each button grow equally */
+    min-width: 120px; /* Set a minimum width so that the buttons don't shrink too much */
+  }
 
-.btn-stay-on-page {
-  &.ant-dropdown-menu-dark {
-    .ant-dropdown-menu-item:hover {
-      background: transparent !important;
+  @media (max-width: 600px) {
+    .button-container {
+      flex-direction: column;
     }
   }
-}
 </style>
 
 <style lang="less">
 
-.ant-btn-group > .ant-btn:first-child:not(:last-child) {
-  flex-grow: 1; /* Make each button grow equally */
-}
+  .btn-stay-on-page {
+    &.ant-dropdown-menu-dark {
+      .ant-dropdown-menu-item:hover {
+        background: transparent !important;
+      }
+    }
+  }
+
+  .ant-btn-group > .ant-btn:first-child:not(:last-child) {
+    flex-grow: 1; /* Make each button grow equally */
+  }
 </style>

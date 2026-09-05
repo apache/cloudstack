@@ -27,6 +27,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -42,7 +43,10 @@ public class StaticRouteVO implements StaticRoute {
     String uuid;
 
     @Column(name = "vpc_gateway_id", updatable = false)
-    long vpcGatewayId;
+    Long vpcGatewayId;
+
+    @Column(name = "next_hop")
+    private String nextHop;
 
     @Column(name = "cidr")
     private String cidr;
@@ -67,6 +71,9 @@ public class StaticRouteVO implements StaticRoute {
         uuid = UUID.randomUUID().toString();
     }
 
+    @Transient
+    boolean forVpn = false;
+
     /**
      * @param vpcGatewayId
      * @param cidr
@@ -74,7 +81,7 @@ public class StaticRouteVO implements StaticRoute {
      * @param accountId TODO
      * @param domainId TODO
      */
-    public StaticRouteVO(long vpcGatewayId, String cidr, Long vpcId, long accountId, long domainId) {
+    public StaticRouteVO(Long vpcGatewayId, String cidr, Long vpcId, long accountId, long domainId, String nextHop) {
         super();
         this.vpcGatewayId = vpcGatewayId;
         this.cidr = cidr;
@@ -82,12 +89,30 @@ public class StaticRouteVO implements StaticRoute {
         this.vpcId = vpcId;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.nextHop = nextHop;
         uuid = UUID.randomUUID().toString();
     }
 
+    public StaticRouteVO(String cidr, Long vpcId, long accountId, long domainId, String nextHop, State state, boolean forVpn) {
+        super();
+        this.cidr = cidr;
+        this.state = state;
+        this.vpcId = vpcId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.nextHop = nextHop;
+        uuid = UUID.randomUUID().toString();
+        this.forVpn = forVpn;
+    }
+
     @Override
-    public long getVpcGatewayId() {
+    public Long getVpcGatewayId() {
         return vpcGatewayId;
+    }
+
+    @Override
+    public String getNextHop() {
+        return nextHop;
     }
 
     @Override
@@ -144,5 +169,9 @@ public class StaticRouteVO implements StaticRoute {
     @Override
     public String getName() {
         return null;
+    }
+
+    public boolean isForVpn() {
+        return forVpn;
     }
 }

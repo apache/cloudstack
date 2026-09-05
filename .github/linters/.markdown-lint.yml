@@ -18,9 +18,6 @@
 # MD001/heading-increment Heading levels should only increment by one level at a time
 MD001: false
 
-# MD003/heading-style Heading style
-MD003: false
-
 # MD004/ul-style Unordered list style
 MD004: false
 
@@ -86,3 +83,6 @@ MD046: false
 
 # MD052/reference-links-images Reference links and images should use a label that is defined
 MD052: false
+
+# MD059/descriptive-link-text Link text should be descriptive
+MD059: false

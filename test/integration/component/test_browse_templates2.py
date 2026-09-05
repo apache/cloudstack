@@ -154,7 +154,7 @@ class TestBrowseUploadTemplate(cloudstackTestCase):
         self.assertEqual(
             hasattr(ssvm_response, 'linklocalip'),
             True,
-            "Check whether SSVM has link local IP field"
+            "Check whether SSVM has Control IP field"
         )
 
         self.assertEqual(

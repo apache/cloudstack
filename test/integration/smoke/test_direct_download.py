@@ -251,7 +251,10 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
             self.apiclient,
             id=poolId
         )
-        return local_pool[0].tags
+        if local_pool[0].tags:
+            return local_pool[0].tags
+        else:
+            return ""
 
     def updateStoragePoolTags(self, poolId, tags):
         StoragePool.update(

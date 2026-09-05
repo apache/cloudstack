@@ -1,9 +1,28 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Linstor storage plugin
-==================================
+
 This directory contains the basic VM, Volume life cycle tests for Linstor storage pool (in KVM hypervisor).
 
-# Running tests
-===============
+## Running tests
+
 To run the basic volume tests, first update the below test data of the CloudStack environment
 
 ```
@@ -29,3 +48,21 @@ nosetests --with-marvin --marvin-config=<marvin-cfg-file> <cloudstack-dir>/test/
 ```
 
 You can also run these tests out of the box with PyDev or PyCharm or whatever.
+
+## Encrypted snapshot tests
+
+`test_linstor_encrypted_snapshots.py` covers the encrypted-volume snapshot round trip
+(create encrypted root disk -> snapshot -> revert / create-volume-from-snapshot) and that the
+backed-up qcow2 on secondary storage is itself LUKS encrypted.
+
+Extra prerequisites:
+
+* At least one KVM host with volume-encryption support (`host.encryptionsupported == true`, i.e.
+  cryptsetup/qemu LUKS available). Tests self-skip if none is found.
+* The Linstor resource group used (`acs-basic`) must be able to add a LUKS layer to its volumes.
+* `lin.backup.snapshots` must be enabled (default) so snapshots are backed up to secondary storage;
+  the test sets it. With it disabled the qcow2 path is not exercised.
+
+```
+nosetests --with-marvin --marvin-config=<marvin-cfg-file> <cloudstack-dir>/test/integration/plugins/linstor/test_linstor_encrypted_snapshots.py --zone=<zone> --hypervisor=kvm
+```

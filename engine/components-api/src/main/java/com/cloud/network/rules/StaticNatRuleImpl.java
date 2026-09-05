@@ -80,8 +80,13 @@ public class StaticNatRuleImpl implements StaticNatRule {
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return null;
     }
 
     @Override

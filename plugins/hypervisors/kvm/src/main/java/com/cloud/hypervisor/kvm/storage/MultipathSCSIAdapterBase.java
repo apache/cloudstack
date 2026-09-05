@@ -228,21 +228,21 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) START", volumePath, pool.getUuid());
         AddressInfo address = this.parseAndValidatePath(volumePath);
         if (address.getAddress() == null) {
-            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) returning FALSE, volume path has no address field", volumePath, pool.getUuid());
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
 
         if (result.getExitCode() != 0) {
-            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+            LOGGER.warn("Disconnect failed for path {} with return code {}", address.getAddress().toLowerCase(), result.getExitCode());
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("multipath flush output: " + result.getResult());
-            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+            LOGGER.debug("multipath flush output: {}", result.getResult());
+            LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) COMPLETE [rc={}]", volumePath, pool.getUuid(), result.getResult());
         }
 
         return (result.getExitCode() == 0);
@@ -250,7 +250,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]: {}", volumeToDisconnect);
         return false;
     }
 
@@ -421,24 +421,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         throw new UnsupportedOperationException("Unimplemented method 'createPhysicalDisk'");
-    }
-
-    boolean isTemplateExtractable(String templatePath) {
-        ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
-        String type = result.getResult();
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
     }
 
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {

@@ -179,6 +179,11 @@ write_files:
           mkdir -p /opt/provider
           cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
         fi
+        if [ -e "${BINARIES_DIR}/snapshot-crds.yaml" ]; then
+          mkdir -p /opt/csi
+          cp "${BINARIES_DIR}/snapshot-crds.yaml" /opt/csi/snapshot-crds.yaml
+          cp "${BINARIES_DIR}/manifest.yaml" /opt/csi/manifest.yaml
+        fi
 
         PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
         echo $PAUSE_IMAGE
@@ -326,16 +331,29 @@ write_files:
         if [[ ${EXTERNAL_CNI_PLUGIN} == false ]]; then
           /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
         fi
-        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+        if [ -f "${K8S_CONFIG_SCRIPTS_COPY_DIR}/headlamp.yaml" ]; then
+          echo "Installing Headlamp dashboard from ISO"
+          /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/headlamp.yaml
+        elif [ -f "${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml" ]; then
+          echo "Installing Kubernetes Dashboard from ISO"
+          /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+          /opt/bin/kubectl create rolebinding admin-binding --role=admin --user=admin || true
+          /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
+          /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
+        else
+          echo "Warning: No dashboard YAML found in ISO (neither headlamp.yaml nor dashboard.yaml)"
+        fi
         rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
       else
+        ### Online installation - use Headlamp by default ###
         /opt/bin/kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(/opt/bin/kubectl version | base64 | tr -d '\n')"
-        /opt/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+        /opt/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/headlamp/v0.40.1/kubernetes-headlamp.yaml
+        /opt/bin/kubectl create serviceaccount headlamp-admin -n kube-system || true
+        /opt/bin/kubectl create clusterrolebinding headlamp-admin --clusterrole=cluster-admin --serviceaccount=kube-system:headlamp-admin || true
       fi
 
       /opt/bin/kubectl create rolebinding admin-binding --role=admin --user=admin || true
       /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
-      /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success

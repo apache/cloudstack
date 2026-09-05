@@ -63,7 +63,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplTestBase {
+public class AccountManagerImplVolumeDeleteEventTest extends AccountManagentImplTestBase {
 
     private static final Long ACCOUNT_ID = 1l;
     private static final String VOLUME_UUID = "vol-111111";

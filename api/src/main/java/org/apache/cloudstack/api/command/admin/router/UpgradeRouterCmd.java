@@ -45,7 +45,7 @@ public class UpgradeRouterCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = ServiceOfferingResponse.class,
                required = true,
-               description = "the service offering ID to apply to the domain router")
+               description = "The service offering ID to apply to the domain router")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

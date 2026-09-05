@@ -28,6 +28,13 @@ public class BackupAnswer extends Answer {
     private Long size;
     private Long virtualSize;
     private Map<String, String> volumes;
+    Boolean needsCleanup;
+    // Set by the NAS backup provider after a checkpoint/bitmap was created during this backup.
+    // The provider persists it in backup_details under NASBackupChainKeys.BITMAP_NAME.
+    private String bitmapCreated;
+    // Set when an incremental was requested but the agent had to fall back to a full
+    // (e.g. VM was stopped). Provider should record this backup as type=full.
+    private Boolean incrementalFallback;
 
     public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -56,4 +63,32 @@ public class BackupAnswer extends Answer {
     public void setVolumes(Map<String, String> volumes) {
         this.volumes = volumes;
     }
+
+    public Boolean getNeedsCleanup() {
+        if (needsCleanup == null) {
+            return false;
+        }
+        return needsCleanup;
+    }
+
+    public void setNeedsCleanup(Boolean needsCleanup) {
+        this.needsCleanup = needsCleanup;
+    }
+
+    public String getBitmapCreated() {
+        return bitmapCreated;
+    }
+
+    public void setBitmapCreated(String bitmapCreated) {
+        this.bitmapCreated = bitmapCreated;
+    }
+
+    public Boolean getIncrementalFallback() {
+        return incrementalFallback != null && incrementalFallback;
+    }
+
+    public void setIncrementalFallback(Boolean incrementalFallback) {
+        this.incrementalFallback = incrementalFallback;
+    }
+
 }

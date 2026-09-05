@@ -66,7 +66,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -112,7 +112,7 @@ export default {
     callListVms (accountId, domainId) {
       return new Promise((resolve) => {
         this.volumes = []
-        api('listVirtualMachines', {
+        getAPI('listVirtualMachines', {
           accountId: accountId,
           domainId: domainId,
           details: 'min',
@@ -172,7 +172,7 @@ export default {
     },
     addNodesToKubernetesCluster (params) {
       return new Promise((resolve, reject) => {
-        api('addNodesToKubernetesCluster', params).then(json => {
+        postAPI('addNodesToKubernetesCluster', params).then(json => {
           const jobId = json.addnodestokubernetesclusterresponse.jobid
           return resolve(jobId)
         }).catch(error => {

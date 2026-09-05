@@ -69,7 +69,7 @@ public class DeleteProjectRoleCmd extends BaseCmd {
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Cannot find project role with provided id");
         }
-        CallContext.current().setEventDetails("Deleting Project Role with id: " + role.getId());
+        CallContext.current().setEventDetails("Deleting Project Role with ID: " + role.getUuid());
         boolean result = projRoleService.deleteProjectRole(role, getProjectId());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

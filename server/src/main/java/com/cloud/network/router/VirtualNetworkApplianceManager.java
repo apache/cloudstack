@@ -64,6 +64,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<>(String.class, RouterTemplateOvm3CK, "Advanced", "SystemVM Template (Ovm3)",
             "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<String> VirtualRouterUserData = new ConfigKey<>(String.class, "virtual.router.userdata",
+            ConfigKey.CATEGORY_ADVANCED, "",
+            "UUID for user data of VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
+            true, ConfigKey.Scope.Zone, null, "User Data for VRs",
+            null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_VIRTUAL_ROUTER);
+
     ConfigKey<Boolean> SetServiceMonitor = new ConfigKey<>(Boolean.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
 

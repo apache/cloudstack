@@ -40,6 +40,10 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
+      name: 'settings',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+    },
+    {
       name: 'management.server.peers',
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ManagementServerPeerTab.vue')))
     },
@@ -75,6 +79,7 @@ export default {
       message: 'message.cancel.maintenance',
       dataView: true,
       popup: true,
+      args: ['rebalance'],
       show: (record, store) => { return ['PreparingForMaintenance', 'Maintenance'].includes(record.state) },
       mapping: {
         managementserverid: {
@@ -109,7 +114,6 @@ export default {
       icon: 'close-circle-outlined',
       label: 'label.cancel.shutdown',
       message: 'message.cancel.shutdown',
-      docHelp: 'installguide/configuration.html#adding-a-zone',
       dataView: true,
       popup: true,
       show: (record, store) => { return ['PreparingForShutDown', 'ReadyToShutDown', 'ShuttingDown'].includes(record.state) },

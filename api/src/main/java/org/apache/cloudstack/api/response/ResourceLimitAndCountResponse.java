@@ -48,6 +48,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setMemoryAvailable(String memoryAvailable);
 
+    public void setGpuLimit(String gpuLimit);
+
+    public void setGpuTotal(Long gpuTotal);
+
+    public void setGpuAvailable(String gpuAvailable);
+
     public void setPrimaryStorageLimit(String primaryStorageLimit);
 
     public void setPrimaryStorageTotal(Long primaryStorageTotal);

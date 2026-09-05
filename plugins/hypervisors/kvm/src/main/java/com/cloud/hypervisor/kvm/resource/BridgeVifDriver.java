@@ -48,8 +48,13 @@ public class BridgeVifDriver extends VifDriverBase {
     private final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
+    private String _macIpScriptPath;
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
+
+    private static boolean isVxlanOrNetris(String protocol) {
+        return protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme()) || protocol.equals(Networks.BroadcastDomainType.Netris.scheme());
+    }
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -72,9 +77,19 @@ public class BridgeVifDriver extends VifDriverBase {
         if (_modifyVlanPath == null) {
             throw new ConfigurationException("Unable to find modifyvlan.sh");
         }
-        _modifyVxlanPath = Script.findScript(networkScriptsDir, "modifyvxlan.sh");
+        String vxlanMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_VXLAN_MODE);
+        String vxlanScript = "evpn".equalsIgnoreCase(vxlanMode) ? "modifyvxlan-evpn.sh" : "modifyvxlan.sh";
+        _modifyVxlanPath = Script.findScript(networkScriptsDir, vxlanScript);
         if (_modifyVxlanPath == null) {
-            throw new ConfigurationException("Unable to find modifyvxlan.sh");
+            throw new ConfigurationException("Unable to find " + vxlanScript);
+        }
+
+        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC))) {
+            _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+            if (_macIpScriptPath == null) {
+                throw new ConfigurationException("Unable to find modifymacip.sh");
+            }
+            logger.info("VM network MAC/IP static script configured: {}", _macIpScriptPath);
         }
 
         libvirtVersion = (Long) params.get("libvirtVersion");
@@ -177,11 +192,33 @@ public class BridgeVifDriver extends VifDriverBase {
 
     protected boolean isBroadcastTypeVlanOrVxlan(final NicTO nic) {
         return nic != null && (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
-                || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan);
+                || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Netris);
     }
 
     protected boolean isValidProtocolAndVnetId(final String vNetId, final String protocol) {
         return vNetId != null && protocol != null && !vNetId.equalsIgnoreCase("untagged");
+    }
+
+    protected String createStorageVnetBridgeIfNeeded(NicTO nic, String trafficLabel,
+                 String storageBrName) throws InternalErrorException {
+        if (nic.getBroadcastUri() == null) {
+            return storageBrName;
+        }
+
+        boolean isStorageBroadcast = Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) ||
+                Networks.BroadcastDomainType.Storage.equals(Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()));
+        if (!isStorageBroadcast) {
+            return storageBrName;
+        }
+
+        String vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+        String protocol = Networks.BroadcastDomainType.Vlan.scheme();
+        if (!isValidProtocolAndVnetId(vNetId, protocol))  {
+            return storageBrName;
+        }
+        logger.debug(String.format("creating a vNet dev and bridge for %s traffic per traffic label %s",
+                Networks.TrafficType.Storage.name(), trafficLabel));
+        return createVnetBr(vNetId, storageBrName, protocol);
     }
 
     @Override
@@ -207,7 +244,7 @@ public class BridgeVifDriver extends VifDriverBase {
         String trafficLabel = nic.getName();
         Integer networkRateKBps = 0;
         if (libvirtVersion > ((10 * 1000 + 10))) {
-            networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+            networkRateKBps = getNetworkRateKbps(nic);
         }
 
         if (nic.getType() == Networks.TrafficType.Guest) {
@@ -217,7 +254,7 @@ public class BridgeVifDriver extends VifDriverBase {
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     } else {
-                        String brName = createVnetBr(vNetId, _bridges.get("private"), protocol);
+                        String brName = createVnetBr(vNetId, _bridges.get("guest"), protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
@@ -250,17 +287,22 @@ public class BridgeVifDriver extends VifDriverBase {
             intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         } else if (nic.getType() == Networks.TrafficType.Storage) {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
+            storageBrName = createStorageVnetBridgeIfNeeded(nic, trafficLabel, storageBrName);
             intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         }
         if (nic.getPxeDisable()) {
             intf.setPxeDisable(true);
         }
+        intf.setLinkStateUp(nic.isEnabled());
+
+        executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
 
         return intf;
     }
 
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
+        executeMacIpScript(iface.getBrName(), iface.getMacAddress());
         deleteVnetBr(iface.getBrName(), deleteBr);
     }
 
@@ -282,9 +324,9 @@ public class BridgeVifDriver extends VifDriverBase {
         return "brvx-" + vnetId;
     }
 
-    private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
+    protected String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+        if (nic == null || isVxlanOrNetris(protocol)) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {
@@ -292,7 +334,7 @@ public class BridgeVifDriver extends VifDriverBase {
             }
         }
         String brName = "";
-        if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+        if (isVxlanOrNetris(protocol)) {
             brName = generateVxnetBrName(nic, vNetId);
         } else {
             brName = generateVnetBrName(nic, vNetId);
@@ -304,7 +346,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private void createVnet(String vnetId, String pif, String brName, String protocol) throws InternalErrorException {
         synchronized (_vnetBridgeMonitor) {
             String script = _modifyVlanPath;
-            if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+            if (isVxlanOrNetris(protocol)) {
                 script = _modifyVxlanPath;
             }
             final Script command = new Script(script, _timeout, logger);
@@ -377,6 +419,60 @@ public class BridgeVifDriver extends VifDriverBase {
             if (result != null) {
                 logger.debug("Delete bridge " + brName + " failed: " + result);
             }
+        }
+    }
+
+    private void executeMacIpScript(String brName, String mac) {
+        if (_macIpScriptPath == null || mac == null || brName == null) {
+            return;
+        }
+        try {
+            final Script command = new Script(_macIpScriptPath, _timeout, logger);
+            command.add("-o", "delete");
+            command.add("-b", brName);
+            command.add("-m", mac);
+            final String result = command.execute();
+            if (result != null) {
+                logger.warn("MAC/IP script returned error for delete on {}: {}", mac, result);
+            }
+        } catch (Exception e) {
+            // Managing host neighbour/route entries is best-effort and must never break VM lifecycle operations
+            logger.warn("Failed to run MAC/IP script for delete on {} ({})", mac, brName, e);
+        }
+    }
+
+    private void executeMacIpScript(String brName, String mac, String ipv4, String ipv6, List<String> secondaryIps) {
+        if (_macIpScriptPath == null || mac == null || brName == null) {
+            return;
+        }
+        try {
+            final Script command = new Script(_macIpScriptPath, _timeout, logger);
+            command.add("-o", "add");
+            command.add("-b", brName);
+            command.add("-m", mac);
+            if (ipv4 != null && !ipv4.isEmpty()) {
+                command.add("-4", ipv4);
+            }
+            command.add("-6", NetUtils.ipv6LinkLocal(mac).toString());
+            if (ipv6 != null && !ipv6.isEmpty()) {
+                command.add("-6", ipv6);
+            }
+            if (secondaryIps != null) {
+                for (String secIp : secondaryIps) {
+                    if (NetUtils.isValidIp6(secIp)) {
+                        command.add("-6", secIp);
+                    } else {
+                        command.add("-4", secIp);
+                    }
+                }
+            }
+            final String result = command.execute();
+            if (result != null) {
+                logger.warn("MAC/IP script returned error for add on {}: {}", mac, result);
+            }
+        } catch (Exception e) {
+            // Managing host neighbour/route entries is best-effort and must never break VM lifecycle operations
+            logger.warn("Failed to run MAC/IP script for add on {} ({})", mac, brName, e);
         }
     }
 

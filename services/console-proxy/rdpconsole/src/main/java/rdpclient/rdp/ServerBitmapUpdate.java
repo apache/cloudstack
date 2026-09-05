@@ -142,7 +142,6 @@ public class ServerBitmapUpdate extends BaseElement {
             // flag is not.
 
             // Note: Even when compression header is enabled, server sends nothing.
-            // rectangle.compressedBitmapHeader = buf.readBytes(8);
         }
 
         // (variable): A variable-length array of bytes describing a bitmap image.

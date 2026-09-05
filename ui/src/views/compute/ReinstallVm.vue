@@ -1,17 +1,17 @@
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The ASF licenses this file
+// regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License. You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 
@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import OsBasedImageSelection from '@views/compute/wizard/OsBasedImageSelection'
@@ -270,7 +270,7 @@ export default {
         params.rootdisksize = this.overrideRootDiskSize
       }
       params.expunge = this.expungeDisk
-      api('restoreVirtualMachine', params).then(response => {
+      postAPI('restoreVirtualMachine', params).then(response => {
         this.$pollJob({
           jobId: response.restorevmresponse.jobid,
           successMessage: this.$t('label.reinstall.vm') + ' ' + this.$t('label.success'),
@@ -308,7 +308,7 @@ export default {
         featured: true,
         showicon: true
       }
-      api('listOsCategories', params).then((response) => {
+      getAPI('listOsCategories', params).then((response) => {
         this.options.guestOsCategories = response?.listoscategoriesresponse?.oscategory || []
         if (this.showUserCategoryForModernImageSelection) {
           const userCategory = {
@@ -361,12 +361,13 @@ export default {
       if (this.isModernImageSelection && this.selectedGuestOsCategoryId && !['-1', '0'].includes(this.selectedGuestOsCategoryId)) {
         args.oscategoryid = this.selectedGuestOsCategoryId
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = this.resource.zoneid
       args.templatefilter = templateFilter
+      args.isready = true
       if (this.resource.arch) {
         args.arch = this.resource.arch
       }
@@ -374,7 +375,7 @@ export default {
       args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        getAPI('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           reject(reason)
@@ -382,7 +383,7 @@ export default {
       })
     },
     fetchDiskOfferings (params) {
-      api('listDiskOfferings', { zoneid: this.resource.zoneid, listall: true, ...params }).then((response) => {
+      getAPI('listDiskOfferings', { zoneid: this.resource.zoneid, listall: true, ...params }).then((response) => {
         this.options.diskOfferings = response?.listdiskofferingsresponse?.diskoffering || []
         this.count.diskOfferings = response?.listdiskofferingsresponse?.count || 0
       })

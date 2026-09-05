@@ -97,7 +97,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import CreateNetworkPermission from '@/views/network/CreateNetworkPermission'
 import TooltipButton from '@/components/widgets/TooltipButton'
 export default {
@@ -165,7 +165,7 @@ export default {
         networkid: this.resource.id
       }
       this.fetchLoading = true
-      api('listNetworkPermissions', params).then(json => {
+      getAPI('listNetworkPermissions', params).then(json => {
         this.total = json.listnetworkpermissionsresponse.count || 0
         this.networkpermissions = json.listnetworkpermissionsresponse.networkpermission || []
       }).finally(() => {
@@ -181,7 +181,7 @@ export default {
       } else {
         params.accountids = accountId
       }
-      api('removeNetworkPermissions', params).then(json => {
+      postAPI('removeNetworkPermissions', params).then(json => {
         this.$notification.success({
           message: this.$t('message.success.remove.network.permissions')
         })
@@ -190,7 +190,7 @@ export default {
       })
     },
     resetNetworkPermission () {
-      api('resetNetworkPermissions', {
+      postAPI('resetNetworkPermissions', {
         networkid: this.resource.id
       }).then(json => {
         this.$notification.success({

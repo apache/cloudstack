@@ -33,16 +33,4 @@ do
   CP=${CP}:$file
 done
 
-#CMDLINE=$(cat /proc/cmdline)
-#for i in $CMDLINE
-#  do
-#     KEY=$(echo $i | cut -d= -f1)
-#     VALUE=$(echo $i | cut -d= -f2)
-#     case $KEY in
-#       mgmt_host)
-#          MGMT_HOST=$VALUE
-#          ;;
-#     esac
-#  done
-
 java -mx700m -cp $CP:./conf com.cloud.consoleproxy.ConsoleProxy $@

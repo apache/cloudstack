@@ -28,9 +28,11 @@ import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
 import network from '@/config/section/network'
 import image from '@/config/section/image'
+import kms from '@/config/section/kms'
 import project from '@/config/section/project'
 import event from '@/config/section/event'
 import user from '@/config/section/user'
+import keyPair from '@/config/section/keypair'
 import account from '@/config/section/account'
 import domain from '@/config/section/domain'
 import role from '@/config/section/role'
@@ -38,6 +40,8 @@ import infra from '@/config/section/infra'
 import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
+import extension from '@/config/section/extension'
+import customaction from '@/config/section/extension/customaction'
 import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
@@ -79,6 +83,7 @@ function generateRouterMap (section) {
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
+          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
@@ -90,7 +95,7 @@ function generateRouterMap (section) {
         hideChildrenInMenu: true,
         children: [
           {
-            path: '/' + child.name + '/:id',
+            path: '/' + child.name + '/:id(.*)',
             hidden: child.hidden,
             meta: {
               title: child.title,
@@ -145,7 +150,7 @@ function generateRouterMap (section) {
     map.meta.tabs = section.tabs
 
     map.children = [{
-      path: '/' + section.name + '/:id',
+      path: '/' + section.name + '/:id(.*)',
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
@@ -176,6 +181,10 @@ function generateRouterMap (section) {
 
   if (section.columns) {
     map.meta.columns = section.columns
+  }
+
+  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
+    map.meta.advisories = section.advisories
   }
 
   if (section.actions) {
@@ -211,9 +220,11 @@ export function asyncRouterMap () {
       generateRouterMap(storage),
       generateRouterMap(network),
       generateRouterMap(image),
+      generateRouterMap(kms),
       generateRouterMap(event),
       generateRouterMap(project),
       generateRouterMap(user),
+      generateRouterMap(keyPair),
       generateRouterMap(role),
       generateRouterMap(account),
       generateRouterMap(domain),
@@ -221,6 +232,8 @@ export function asyncRouterMap () {
       generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
+      generateRouterMap(extension),
+      generateRouterMap(customaction),
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
@@ -309,6 +322,11 @@ export const constantRouterMap = [
         path: 'resetPassword',
         name: 'resetPassword',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
+      },
+      {
+        path: 'forceChangePassword',
+        name: 'forceChangePassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/iam/ForceChangePassword')
       }
     ]
   },

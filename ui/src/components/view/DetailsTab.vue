@@ -64,7 +64,8 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
-              <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.uuid }}</router-link>
+              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GiB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -74,26 +75,34 @@
           </div>
           <div v-else-if="['template', 'iso'].includes($route.meta.name) && item === 'size'">
             <div>
-              {{ parseFloat(dataResource.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.size) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'physicalsize'">
             <div>
-              {{ parseFloat(dataResource.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.physicalsize) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'virtualsize'">
             <div>
-              {{ parseFloat(dataResource.virtualsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.virtualsize) }} GiB
+            </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'snapshot' && item === 'chainsize'">
+            <div>
+              {{ sizeInGiB(dataResource.chainsize) }} GiB
             </div>
           </div>
           <div v-else-if="['name', 'type'].includes(item)">
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate'].includes(item)">
+          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate', 'startdate', 'enddate'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <code-highlight v-else-if="['activationRule'].includes(item)" language="javascript">
+            {{ dataResource[item] }}
+          </code-highlight>
           <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
@@ -135,7 +144,25 @@
           <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
               <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
           </div>
+          <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
+            {{ dataResource[item].join(', ') }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'secretkey' && dataResource[item]">
+        <div>
+          <strong>{{ $t('label.secretkey') }}</strong>
+          <tooltip-button
+            tooltipPlacement="right"
+            :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+            icon="CopyOutlined"
+            type="dashed"
+            size="small"
+            @onClick="$message.success($t('label.copied.clipboard'))"
+            :copyResource="dataResource[item]" />
+          <br/>
+          <div>{{ dataResource[item].substring(0, 20) }}...</div>
         </div>
       </a-list-item>
       <a-list-item v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
@@ -152,7 +179,14 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+      <a-list-item v-else-if="(item === 'zoneid' && $route.path.includes('/snapshotpolicy'))">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="['startdate', 'enddate'].includes(item) && dataResource[item]">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>
@@ -173,6 +207,47 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction', 'hsmprofile'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
+        <div>
+          <strong>{{ $t('label.configuration.details') }}</strong>
+          <br/>
+          <div>
+            <object-list-table :data-map="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'parameters' && ['customaction'].includes($route.meta.name) && Array.isArray(dataResource[item]) && dataResource[item].length > 0">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>
+            <object-list-table :showHeader="true" :data-array="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'provider' && $route.path.includes('/dnsserver')">
+        <div>
+          <strong>{{ $t('label.provider') }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <div v-else-if="item === 'backupofferingdetails'">
+        <a-list-item
+          v-for="(value, key) in dataResource[item]"
+          :key="key">
+          <div>
+            <strong>{{ $t('label.' + String(key).toLowerCase()) }}</strong>
+            <br/>
+            <div>
+              {{ value }}
+            </div>
+          </div>
+        </a-list-item>
+      </div>
+      <external-configuration-details
+        v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
+        :resource="dataResource" />
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -184,14 +259,23 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
+import ObjectListTable from '@/components/view/ObjectListTable'
+import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import { genericCompare } from '@/utils/sort'
+import CodeHighlight from 'vue-code-highlight/src/CodeHighlight.vue'
+import 'vue-code-highlight/themes/prism-okaidia.css'
 
 export default {
   name: 'DetailsTab',
   components: {
     DedicateData,
     HostInfo,
-    VmwareData
+    VmwareData,
+    ObjectListTable,
+    ExternalConfigurationDetails,
+    TooltipButton,
+    CodeHighlight
   },
   props: {
     resource: {
@@ -229,13 +313,14 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey', 'backupofferingdetails']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
-      }
-      if (this.$route.meta.name === 'vm') {
+      } else if (this.$route.meta.name === 'vm') {
         items.push('leaseexpirydate')
+      } else if (['cluster', 'host', 'computeoffering'].includes(this.$route.meta.name)) {
+        items.push('externaldetails')
       }
       return items
     },
@@ -443,6 +528,12 @@ export default {
       }
 
       return `label.${source}`
+    },
+    sizeInGiB (sizeInBytes) {
+      if (!sizeInBytes || sizeInBytes === 0) {
+        return '0.00'
+      }
+      return parseFloat(sizeInBytes / (1024.0 * 1024.0 * 1024.0)).toFixed(2)
     }
   }
 }

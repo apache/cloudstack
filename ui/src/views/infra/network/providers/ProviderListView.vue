@@ -25,7 +25,7 @@
       :loading="loading"
       :columns="listCols"
       :dataSource="dataSource"
-      :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid"
+      :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid || record.physicalnetworkid"
       :pagination="false"
       :scroll="scrollable">
       <template #bodyCell="{ column, text, record }">
@@ -86,6 +86,12 @@
               @onClick="onDelete(record)"/>
           </a-tooltip>
         </template>
+        <template v-if="column.key === 'details'">
+          <span v-if="text && typeof text === 'object'">
+            <a-tag v-for="(val, key) in text" :key="key" style="margin-bottom: 2px;">{{ key }}: {{ val }}</a-tag>
+          </span>
+          <span v-else>{{ text }}</span>
+        </template>
         <template v-if="column.key === 'lbdevicestate'">
           <status :text="text ? text : ''" displayText />
         </template>
@@ -117,7 +123,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -343,7 +349,7 @@ export default {
     executeDeleteRecord (apiName, args) {
       return new Promise((resolve, reject) => {
         let jobId = null
-        api(apiName, args).then(json => {
+        postAPI(apiName, args).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {
               for (const res in json[obj]) {
@@ -364,7 +370,7 @@ export default {
     },
     configureOvsElement (args) {
       return new Promise((resolve, reject) => {
-        api('configureOvsElement', args).then(json => {
+        postAPI('configureOvsElement', args).then(json => {
           const jobId = json.configureovselementresponse.jobid
           resolve(jobId)
         }).catch(error => {

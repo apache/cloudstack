@@ -91,7 +91,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -134,7 +134,7 @@ export default {
     },
     listObjectStores () {
       this.loading = true
-      api('listObjectStoragePools').then(json => {
+      getAPI('listObjectStoragePools').then(json => {
         this.objectstores = json.listobjectstoragepoolsresponse.objectstore || []
         if (this.objectstores.length > 0) {
           this.form.objectstore = this.objectstores[0].id
@@ -163,7 +163,7 @@ export default {
           policy: values.policy
         }
         this.loading = true
-        api('createBucket', data).then(response => {
+        postAPI('createBucket', data).then(response => {
           this.$pollJob({
             jobId: response.createbucketresponse.jobid,
             title: this.$t('label.create.bucket'),

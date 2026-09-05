@@ -139,7 +139,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -216,7 +216,7 @@ export default {
     fetchZone () {
       return new Promise((resolve, reject) => {
         this.loading = true
-        api('listZones', { id: this.resource.zoneid }).then(json => {
+        getAPI('listZones', { id: this.resource.zoneid }).then(json => {
           this.zone = json.listzonesresponse.zone[0] || {}
           resolve(this.zone)
         }).catch(error => {
@@ -229,7 +229,7 @@ export default {
     },
     fetchPods () {
       this.loading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.resource.zoneid
       }).then(response => {
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
@@ -263,7 +263,7 @@ export default {
 
         this.loading = true
 
-        api('createVlanIpRange', params)
+        postAPI('createVlanIpRange', params)
           .then(() => {
             this.$notification.success({
               message: this.$t('message.success.add.iprange')

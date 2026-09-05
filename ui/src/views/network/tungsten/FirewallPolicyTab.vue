@@ -118,7 +118,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -193,7 +193,7 @@ export default {
       this.fetchLoading = true
       this.dataSource = []
       this.totalCount = 0
-      api('listTungstenFabricFirewallPolicy', {
+      getAPI('listTungstenFabricFirewallPolicy', {
         zoneid: this.zoneId,
         applicationpolicysetuuid: this.resource.uuid,
         page: this.page,
@@ -221,7 +221,7 @@ export default {
         params.name = values.name
         params.sequence = values.sequence
 
-        api('createTungstenFabricFirewallPolicy', params).then(json => {
+        postAPI('createTungstenFabricFirewallPolicy', params).then(json => {
           this.$pollJob({
             jobId: json.createtungstenfabricfirewallpolicyresponse.jobid,
             title: this.$t('label.add.tungsten.firewall.policy'),
@@ -263,7 +263,7 @@ export default {
       params.zoneid = this.zoneId
       params.firewallpolicyuuid = uuid
 
-      api('deleteTungstenFabricFirewallPolicy', params).then(json => {
+      postAPI('deleteTungstenFabricFirewallPolicy', params).then(json => {
         this.$pollJob({
           jobId: json.deletetungstenfabricfirewallpolicyresponse.jobid,
           title: this.$t('label.delete.tungsten.firewall.policy'),

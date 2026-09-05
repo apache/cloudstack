@@ -82,9 +82,7 @@ public class Vnc33Hello extends OneTimeSwitch {
      * Example.
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         InputStream is = new ByteArrayInputStream("RFB 003.007\ntest".getBytes(RfbConstants.US_ASCII_CHARSET));
         ByteArrayOutputStream initOS = new ByteArrayOutputStream();

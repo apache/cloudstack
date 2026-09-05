@@ -41,32 +41,32 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "list storage pools belonging to the specific cluster")
+               description = "List storage pools belonging to the specific cluster")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the IP address for the storage pool")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "The IP address for the storage pool")
     private String ipAddress;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the storage pool")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the storage pool")
     private String storagePoolName;
 
-    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "the storage pool path")
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "The storage pool path")
     private String path;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID for the storage pool")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the storage pool")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the storage pool")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "The ID of the storage pool")
     private Long id;
 
-    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the scope of the storage pool")
+    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "The scope of the storage pool")
     private String scope;
 
 
-    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "the status of the storage pool")
+    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "The status of the storage pool")
     private String status;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "host ID of the storage pools")

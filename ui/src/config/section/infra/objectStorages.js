@@ -29,7 +29,7 @@ export default {
     return fields
   },
   details: () => {
-    var fields = ['name', 'id', 'url', 'providername']
+    var fields = ['name', 'id', 'url', 'providername', 'storagetotal', 'storageallocated', 'storageused']
     return fields
   },
   resourceType: 'ObjectStorage',
@@ -59,7 +59,7 @@ export default {
       api: 'updateObjectStoragePool',
       icon: 'edit-outlined',
       label: 'label.action.update.object.storage',
-      args: ['name', 'url'],
+      args: ['name', 'url', 'size'],
       dataView: true
     },
     {

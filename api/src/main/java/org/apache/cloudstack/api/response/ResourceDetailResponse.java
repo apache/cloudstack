@@ -34,15 +34,15 @@ public class ResourceDetailResponse extends BaseResponse {
     private String resourceType;
 
     @SerializedName(ApiConstants.KEY)
-    @Param(description = "key of the resource detail")
+    @Param(description = "Key of the resource detail")
     private String name;
 
     @SerializedName(ApiConstants.VALUE)
-    @Param(description = "value of the resource detail")
+    @Param(description = "Value of the resource detail")
     private String value;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "if detail is returned to the regular user", since = "4.3")
+    @Param(description = "If detail is returned to the regular user", since = "4.3")
     private boolean forDisplay;
 
     public String getResourceId() {

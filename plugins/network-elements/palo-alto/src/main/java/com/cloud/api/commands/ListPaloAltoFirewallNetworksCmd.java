@@ -42,7 +42,7 @@ import com.cloud.network.Network;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device",
+@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "Lists Network that are using Palo Alto firewall device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
 
@@ -57,7 +57,7 @@ public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = PaloAltoFirewallResponse.class,
                required = true,
-               description = "palo alto balancer device ID")
+               description = "Palo alto balancer device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////

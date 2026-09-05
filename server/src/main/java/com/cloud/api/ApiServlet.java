@@ -22,8 +22,11 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -34,6 +37,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.APICommand;
+import com.cloud.api.auth.DefaultForgotPasswordAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -43,13 +48,14 @@ import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -64,12 +70,12 @@ import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
@@ -78,6 +84,37 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    public static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
+    private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
+            "login",
+            "oauthlogin",
+            "createaccount",
+            "createuser",
+            "updateuser",
+            "forgotpassword",
+            "resetpassword",
+            "importrole",
+            "updaterolepermission",
+            "updateprojectrolepermission",
+            "createstoragepool",
+            "addhost",
+            "updatehostpassword",
+            "addcluster",
+            "addvmwaredc",
+            "configureoutofbandmanagement",
+            "uploadcustomcertificate",
+            "addciscovnmcresource",
+            "addnetscalerloadbalancer",
+            "createtungstenfabricprovider",
+            "addnsxcontroller",
+            "configtungstenfabricservice",
+            "createnetworkacl",
+            "updatenetworkaclitem",
+            "quotavalidateactivationrule",
+            "quotatariffupdate",
+            "listandswitchsamlaccount",
+            "uploadresourceicon"
+    ));
 
     @Inject
     ApiServerService apiServer;
@@ -164,7 +201,6 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.warn(message);
             }
         });
-
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -177,7 +213,7 @@ public class ApiServlet extends HttpServlet {
                     "UnknownHostException when trying to lookup remote IP-Address", null,
                     HttpUtils.RESPONSE_TYPE_XML);
             HttpUtils.writeHttpResponse(resp, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
+                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONContentType.value());
             return;
         }
 
@@ -193,11 +229,24 @@ public class ApiServlet extends HttpServlet {
 
         utf8Fixup(req, params);
 
+        final Object[] commandObj = params.get(ApiConstants.COMMAND);
+        final String command = commandObj == null ? null : (String) commandObj[0];
+
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         String cleanQueryString = StringUtils.cleanString(req.getQueryString());
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
+            if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
+                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                    String cleanParamsString = getCleanParamsString(reqParams);
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
+                        reqStr += "\n" + cleanParamsString;
+                    }
+                } else {
+                    reqStr += " " + command;
+                }
+            }
             LOGGER.debug("===START=== " + reqStr);
         }
 
@@ -213,8 +262,6 @@ public class ApiServlet extends HttpServlet {
                 responseType = (String)responseTypeParam[0];
             }
 
-            final Object[] commandObj = params.get(ApiConstants.COMMAND);
-            final String command = commandObj == null ? null : (String) commandObj[0];
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (LOGGER.isTraceEnabled()) {
@@ -226,7 +273,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
-
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
                     auditTrailSb.append("command=");
@@ -262,7 +308,9 @@ public class ApiServlet extends HttpServlet {
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
-                        LOGGER.debug("Authentication failure: " + e.getMessage());
+                        if (!DefaultForgotPasswordAPIAuthenticatorCmd.APINAME.equalsIgnoreCase(command) || StringUtils.isNotBlank(username)) {
+                            LOGGER.debug("Authentication failure: {}", e.getMessage());
+                        }
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
@@ -291,11 +339,11 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                     }
-                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
+                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONContentType.value());
                     return;
                 }
             } else {
-                LOGGER.trace("no command available");
+                LOGGER.trace("No command available.");
             }
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
@@ -305,7 +353,7 @@ public class ApiServlet extends HttpServlet {
             // if a API key exists
 
             if (isNew && LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("new session: %s", session));
+                LOGGER.trace(String.format("New session: %s.", session));
             }
 
             if (!isNew && (command.equalsIgnoreCase(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME) || (!skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)))) {
@@ -315,6 +363,19 @@ public class ApiServlet extends HttpServlet {
                     LOGGER.debug("Verification of two factor authentication failed");
                     return;
                 }
+            }
+
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && isStateChangingCommandNotUsingPOST(command, req.getMethod(), params)) {
+                String errorText = String.format("State changing command %s needs to be sent using POST request", command);
+                if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
+                    errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
+                }
+                auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + errorText);
+                final String serializedResponse =
+                        apiServer.getSerializedApiError(new ServerApiException(ApiErrorCode.BAD_REQUEST, errorText), params,
+                                responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONContentType.value());
+                return;
             }
 
             Long userId = null;
@@ -330,12 +391,14 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
 
-                if (! requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
+                if (!requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
                     return;
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
+            setGuiThemeParameterIfApiCallIsUnauthenticated(userId, command, req, params);
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("verifying request for user %s from %s with %d parameters",
                         userId, remoteAddress.getHostAddress(), params.size()));
@@ -349,7 +412,7 @@ public class ApiServlet extends HttpServlet {
                 setProjectContext(params);
                 setClientAddressForConsoleEndpointAccess(command, params, req);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
-                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONContentType.value());
             } else {
                 if (session != null) {
                     invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
@@ -359,13 +422,12 @@ public class ApiServlet extends HttpServlet {
                 final String serializedResponse =
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
             resp.setHeader("X-Description", se.getDescription());
-            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONContentType.value());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (final Exception ex) {
             LOGGER.error("unknown exception writing api response", ex);
@@ -396,6 +458,19 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private void setGuiThemeParameterIfApiCallIsUnauthenticated(Long userId, String command, HttpServletRequest req, Map<String, Object[]> params) {
+        String listGuiThemesApiName = ListGuiThemesCmd.class.getAnnotation(APICommand.class).name();
+
+        if (userId != null || !listGuiThemesApiName.equalsIgnoreCase(command)) {
+            return;
+        }
+
+        String serverName = req.getServerName();
+        LOGGER.info("Unauthenticated call to {} API, thus, the `commonName` parameter will be inferred as {}.", listGuiThemesApiName, serverName);
+        params.put(ApiConstants.COMMON_NAME, new String[]{serverName});
+    }
+
+
     private boolean checkIfAuthenticatorIsOf2FA(String command) {
         boolean verify2FA = false;
         APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
@@ -405,6 +480,34 @@ public class ApiServlet extends HttpServlet {
             verify2FA = false;
         }
         return verify2FA;
+    }
+
+    protected boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (BaseCmd.HTTPMethod.POST.toString().equalsIgnoreCase(method)) {
+            return false;
+        }
+        if (command == null || method == null) {
+            return true;
+        }
+        String commandHttpMethod = null;
+        try {
+            Class<?> cmdClass = apiServer.getCmdClass(command);
+            if (cmdClass != null) {
+                APICommand at = cmdClass.getAnnotation(APICommand.class);
+                if (at != null && org.apache.commons.lang3.StringUtils.isNotBlank(at.httpMethod())) {
+                    commandHttpMethod = at.httpMethod();
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            LOGGER.trace("Command class not found for {}; falling back to pattern match", command, e);
+        }
+        if (BaseCmd.HTTPMethod.GET.toString().equalsIgnoreCase(commandHttpMethod) ||
+                GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") ||
+                !params.containsKey("name") ||
+                !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
@@ -452,7 +555,7 @@ public class ApiServlet extends HttpServlet {
             if (apiAuthenticator != null) {
                 String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                 session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
-                HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONContentType.value());
                 verify2FA = true;
             } else {
                 LOGGER.error("Cannot find API authenticator while verifying 2FA");
@@ -484,7 +587,7 @@ public class ApiServlet extends HttpServlet {
             invalidateHttpSession(session, String.format("Unable to process the API request for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
             auditTrailSb.append(" " + ApiErrorCode.UNAUTHORIZED2FA + " " + errorMsg);
             final String serializedResponse = apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), "Unable to process the API request due to :" + errorMsg, params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONContentType.value());
             verify2FA = false;
         }
 
@@ -513,7 +616,7 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.info("missing command, ignoring request...");
                 auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                 final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONContentType.value());
                 return true;
             }
             final User user = entityMgr.findById(User.class, userId);
@@ -524,7 +627,7 @@ public class ApiServlet extends HttpServlet {
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
             final String serializedResponse =
                     apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             return false;
         }
         return true;
@@ -539,7 +642,7 @@ public class ApiServlet extends HttpServlet {
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
             final String serializedResponse =
                     apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONContentType.value());
             return true;
         }
         return false;
@@ -549,6 +652,9 @@ public class ApiServlet extends HttpServlet {
         try {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(msg);
+            }
+            if (session == null) {
+                return;
             }
             session.invalidate();
         } catch (final IllegalStateException ise) {
@@ -592,38 +698,34 @@ public class ApiServlet extends HttpServlet {
         }
         return false;
     }
-    boolean doUseForwardHeaders() {
+    static boolean doUseForwardHeaders() {
         return Boolean.TRUE.equals(ApiServer.useForwardHeader.value());
     }
 
-    String[] proxyNets() {
+    static String[] proxyNets() {
         return ApiServer.proxyForwardList.value().split(",");
     }
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    public InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
-        String ip = null;
-        InetAddress pretender = InetAddress.getByName(request.getRemoteAddr());
-        if(doUseForwardHeaders()) {
-            if (NetUtils.isIpInCidrList(pretender, proxyNets())) {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+        final String remote = request.getRemoteAddr();
+        if (doUseForwardHeaders()) {
+            final InetAddress remoteAddr = InetAddress.getByName(remote);
+            if (NetUtils.isIpInCidrList(remoteAddr, proxyNets())) {
                 for (String header : getClientAddressHeaders()) {
                     header = header.trim();
-                    ip = getCorrectIPAddress(request.getHeader(header));
+                    final String ip = getCorrectIPAddress(request.getHeader(header));
                     if (StringUtils.isNotBlank(ip)) {
-                        LOGGER.debug(String.format("found ip %s in header %s ", ip, header));
-                        break;
+                        LOGGER.debug("found ip {} in header {}", ip, header);
+                        return InetAddress.getByName(ip);
                     }
-                } // no address found in header so ip is blank and use remote addr
-            } // else not an allowed proxy address, ip is blank and use remote addr
+                }
+            }
         }
-        if (StringUtils.isBlank(ip)) {
-            LOGGER.trace(String.format("no ip found in headers, returning remote address %s.", pretender.getHostAddress()));
-            return pretender;
-        }
-
-        return InetAddress.getByName(ip);
+        LOGGER.trace("no ip found in headers, returning remote address {}.", remote);
+        return InetAddress.getByName(remote);
     }
 
-    private String[] getClientAddressHeaders() {
+    private static String[] getClientAddressHeaders() {
         return ApiServer.listOfForwardHeaders.value().split(",");
     }
 
@@ -643,5 +745,46 @@ public class ApiServlet extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private String getCleanParamsString(Map<String, String[]> reqParams) {
+        if (MapUtils.isEmpty(reqParams)) {
+            return "";
+        }
+
+        StringBuilder cleanParamsString = new StringBuilder();
+        for (Map.Entry<String, String[]> reqParam : reqParams.entrySet()) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(reqParam.getKey())) {
+                continue;
+            }
+
+            cleanParamsString.append(reqParam.getKey());
+            cleanParamsString.append("=");
+
+            if (reqParam.getKey().toLowerCase().contains("password")
+                    || reqParam.getKey().toLowerCase().contains("privatekey")
+                    || reqParam.getKey().toLowerCase().contains("accesskey")
+                    || reqParam.getKey().toLowerCase().contains("secretkey")) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            if (reqParam.getValue() == null || reqParam.getValue().length == 0) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            for (String param : reqParam.getValue()) {
+                if (org.apache.commons.lang3.StringUtils.isBlank(param)) {
+                    continue;
+                }
+                String cleanParamString = StringUtils.cleanString(param.trim());
+                cleanParamsString.append(cleanParamString);
+                cleanParamsString.append(" ");
+            }
+            cleanParamsString.append("\n");
+        }
+
+        return cleanParamsString.toString();
     }
 }

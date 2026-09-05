@@ -24,6 +24,6 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 
 import com.cloud.network.IpAddress;
 
-@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = {IpAddress.class})
 public class ListPublicIpAddressesCmdByAdmin extends ListPublicIpAddressesCmd implements AdminCmd {}

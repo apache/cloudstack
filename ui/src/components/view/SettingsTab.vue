@@ -25,13 +25,15 @@
         @search="handleSearch" />
       <ConfigurationTable
         :columns="columns"
-        :config="items" />
+        :config="items"
+        :resource="resource"
+        @refresh-config="handleConfigRefresh" />
     </a-col>
   </div>
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ConfigurationTable from '@/views/setting/ConfigurationTable.vue'
 
@@ -104,6 +106,9 @@ export default {
       case 'imagestore':
         this.scopeKey = 'imagestoreuuid'
         break
+      case 'managementserver':
+        this.scopeKey = 'managementserverid'
+        break
       default:
         this.scopeKey = ''
     }
@@ -125,7 +130,7 @@ export default {
       if (this.filter) {
         params.keyword = this.filter
       }
-      api('listConfigurations', params).then(response => {
+      getAPI('listConfigurations', params).then(response => {
         this.items = response.listconfigurationsresponse.configuration
       }).catch(error => {
         console.error(error)
@@ -139,6 +144,13 @@ export default {
     handleSearch (value) {
       this.filter = value
       this.fetchData()
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.items.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.items.splice(index, 1, updatedRecord)
+      }
     }
   }
 }

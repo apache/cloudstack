@@ -40,6 +40,8 @@ public abstract class VifDriverBase implements VifDriver {
     protected Map<String, String> _pifs;
     protected Map<String, String> _bridges;
 
+    protected static final int bitsPerMbpsToKbps = 125;
+
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
         _libvirtComputingResource = (LibvirtComputingResource)params.get("libvirt.computing.resource");
@@ -77,5 +79,12 @@ public abstract class VifDriverBase implements VifDriver {
 
     public boolean isExistingBridge(String bridgeName) {
         return false;
+    }
+
+    protected static int getNetworkRateKbps(NicTO nic) {
+        if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
+            return nic.getNetworkRateMbps().intValue() * bitsPerMbpsToKbps;
+        }
+        return 0;
     }
 }

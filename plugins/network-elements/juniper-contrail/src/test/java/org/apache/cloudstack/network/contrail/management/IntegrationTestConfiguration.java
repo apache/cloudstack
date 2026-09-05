@@ -296,7 +296,7 @@ import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmCloneSettingDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.UserVmDetailsDaoImpl;
+import com.cloud.vm.dao.VMInstanceDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
@@ -331,7 +331,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
     SnapshotDaoImpl.class, SnapshotPolicyDaoImpl.class, StaticRouteDaoImpl.class, StatsCollector.class, StoragePoolDetailsDaoImpl.class, StoragePoolHostDaoImpl.class,
     StoragePoolJoinDaoImpl.class, SyncQueueItemDaoImpl.class, TemplateDataStoreDaoImpl.class, TemplateJoinDaoImpl.class, UploadDaoImpl.class, UsageEventDaoImpl.class,
     UserAccountJoinDaoImpl.class, UserDaoImpl.class, UserIpv6AddressDaoImpl.class, UserStatisticsDaoImpl.class, UserStatsLogDaoImpl.class,
-    UserVmCloneSettingDaoImpl.class, UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, UserVmJoinDaoImpl.class, UserVmManagerImpl.class, VMInstanceDaoImpl.class, VMSnapshotDaoImpl.class,
+    UserVmCloneSettingDaoImpl.class, UserVmDaoImpl.class, VMInstanceDetailsDaoImpl.class, UserVmJoinDaoImpl.class, UserVmManagerImpl.class, VMInstanceDaoImpl.class, VMSnapshotDaoImpl.class,
     VMTemplateDaoImpl.class, VMTemplateDetailsDaoImpl.class, VMTemplateZoneDaoImpl.class, VirtualMachineManagerImpl.class, VirtualRouterProviderDaoImpl.class,
     VlanDaoImpl.class, VmDiskStatisticsDaoImpl.class, VmRulesetLogDaoImpl.class, VolumeDaoImpl.class, VolumeJoinDaoImpl.class, VpcDaoImpl.class,
     VpcGatewayDaoImpl.class, VpcManagerImpl.class, VpcOfferingDaoImpl.class, VpcOfferingServiceMapDaoImpl.class, VpcServiceMapDaoImpl.class,

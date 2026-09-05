@@ -42,7 +42,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project to be modified")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project id: " + getId());
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         Project project = _projectService.activateProject(getId());
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);
@@ -98,6 +98,6 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Activating project: " + id;
+        return "Activating project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

@@ -19,20 +19,30 @@ package com.cloud.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +50,30 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.UnmanageInstanceAnswer;
+import com.cloud.agent.api.UnmanageInstanceCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
+import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -53,6 +83,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -65,15 +96,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
@@ -94,6 +130,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.NetworkService;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
@@ -130,8 +167,9 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -152,6 +190,9 @@ public class VirtualMachineManagerImplTest {
     private PrimaryDataStoreDao storagePoolDaoMock;
     @Mock
     private VMInstanceVO vmInstanceMock;
+    @Mock
+    private VmWorkJobDao _workJobDao;
+
     private long vmInstanceVoMockId = 1L;
 
     @Mock
@@ -166,6 +207,9 @@ public class VirtualMachineManagerImplTest {
     private long hostMockId = 1L;
     private long clusterMockId = 2L;
     private long zoneMockId = 3L;
+    private final String vmMockUuid = UUID.randomUUID().toString();
+    private final String hostUuid = UUID.randomUUID().toString();
+
     @Mock
     private HostVO hostMock;
     @Mock
@@ -177,6 +221,7 @@ public class VirtualMachineManagerImplTest {
     private StoragePoolVO storagePoolVoMock;
     private long storagePoolVoMockId = 11L;
     private long storagePoolVoMockClusterId = 234L;
+    private String vmName = "vm1";
 
     @Mock
     private VolumeVO volumeVoMock;
@@ -216,6 +261,8 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private EntityManager _entityMgr;
     @Mock
+    private ResourceManager _resourceMgr;
+    @Mock
     private DeploymentPlanningManager _dpMgr;
     @Mock
     private HypervisorGuruManager _hvGuruMgr;
@@ -224,11 +271,29 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private ClusterDetailsDao _clusterDetailsDao;
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     private ItWorkDao _workDao;
     @Mock
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
+    @Mock
+    ExtensionsManager extensionsManager;
+    @Mock
+    ExtensionDetailsDao extensionDetailsDao;
+    @Mock
+    NicDao _nicsDao;
+    @Mock
+    NetworkService networkService;
+    @Mock
+    NetworkModel networkModel;
+    @Mock
+    VolumeDataFactory volumeDataFactoryMock;
+    @Mock
+    StorageManager storageManager;
+    @Mock
+    private HighAvailabilityManager _haMgr;
+    @Mock
+    VirtualMachineGuru guru;
 
     private ConfigDepotImpl configDepotImpl;
     private boolean updatedConfigKeyDepot = false;
@@ -238,6 +303,7 @@ public class VirtualMachineManagerImplTest {
         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
 
+        when(vmInstanceMock.getName()).thenReturn(vmName);
         when(vmInstanceMock.getId()).thenReturn(vmInstanceVoMockId);
         when(vmInstanceMock.getServiceOfferingId()).thenReturn(2L);
         when(hostMock.getId()).thenReturn(hostMockId);
@@ -270,6 +336,19 @@ public class VirtualMachineManagerImplTest {
         if (updatedConfigKeyDepot) {
             ReflectionTestUtils.setField(VirtualMachineManager.VmMetadataManufacturer, "s_depot", configDepotImpl);
         }
+    }
+
+    private ClvmPoolManager injectMockedClvmPoolManager() {
+        ClvmPoolManager clvmPoolManagerMock = mock(ClvmPoolManager.class);
+        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmPoolManager", clvmPoolManagerMock);
+        return clvmPoolManagerMock;
+    }
+
+    private Method getUpdateClvmLockHostForVmVolumesMethod() throws NoSuchMethodException {
+        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
+            "updateClvmLockHostForVmVolumes", long.class, long.class);
+        method.setAccessible(true);
+        return method;
     }
 
     @Test
@@ -330,9 +409,9 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        Assert.assertTrue(actual);
+        Assert.assertTrue(actual.first());
     }
 
     @Test
@@ -345,9 +424,10 @@ public class VirtualMachineManagerImplTest {
         when(vm.getHostId()).thenReturn(1L);
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(answer);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertEquals("fail", actual.second());
     }
 
     @Test
@@ -357,11 +437,13 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineProfile profile = mock(VirtualMachineProfile.class);
         when(profile.getVirtualMachine()).thenReturn(vm);
         when(vm.getHostId()).thenReturn(1L);
+        when(vm.getInstanceName()).thenReturn("test-vm");
         when(agentManagerMock.send(anyLong(), (Command)any())).thenReturn(null);
 
-        boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
+        Pair<Boolean, String> actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        assertFalse(actual);
+        assertFalse(actual.first());
+        Assert.assertNotNull(actual.second());
     }
 
     @Test
@@ -458,8 +540,8 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, Mockito.mock(StoragePoolVO.class));
 
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getId();
+        verify(storagePoolVoMock).isManaged();
+        verify(storagePoolVoMock, Mockito.times(0)).getId();
     }
 
     @Test
@@ -469,8 +551,8 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, Mockito.mock(StoragePoolVO.class));
 
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getId();
+        verify(storagePoolVoMock).isManaged();
+        verify(storagePoolVoMock, Mockito.times(0)).getId();
     }
 
     @Test
@@ -485,8 +567,8 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, storagePoolVoMock);
 
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(2)).getId();
+        verify(storagePoolVoMock).isManaged();
+        verify(storagePoolVoMock, Mockito.times(2)).getId();
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -510,7 +592,7 @@ public class VirtualMachineManagerImplTest {
 
         Assert.assertTrue(volumeToPoolObjectMap.isEmpty());
 
-        Mockito.verify(userDefinedVolumeToStoragePoolMap, times(0)).keySet();
+        verify(userDefinedVolumeToStoragePoolMap, times(0)).keySet();
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -539,7 +621,7 @@ public class VirtualMachineManagerImplTest {
         assertFalse(volumeToPoolObjectMap.isEmpty());
         assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
-        Mockito.verify(userDefinedVolumeToStoragePoolMap, times(1)).keySet();
+        verify(userDefinedVolumeToStoragePoolMap, times(1)).keySet();
     }
 
     @Test
@@ -566,8 +648,8 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
 
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolHostDaoMock, Mockito.times(0)).findByPoolHost(anyLong(), anyLong());
+        verify(storagePoolVoMock).isManaged();
+        verify(storagePoolHostDaoMock, Mockito.times(0)).findByPoolHost(anyLong(), anyLong());
     }
 
     @Test
@@ -577,8 +659,8 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
 
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolHostDaoMock, Mockito.times(1)).findByPoolHost(storagePoolVoMockId, hostMockId);
+        verify(storagePoolVoMock).isManaged();
+        verify(storagePoolHostDaoMock, Mockito.times(1)).findByPoolHost(storagePoolVoMockId, hostMockId);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -677,11 +759,11 @@ public class VirtualMachineManagerImplTest {
 
         Assert.assertTrue(poolList.isEmpty());
 
-        Mockito.verify(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+        verify(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
                 any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
-        Mockito.verify(storagePoolAllocatorMock2).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+        verify(storagePoolAllocatorMock2).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
                 any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
-        Mockito.verify(storagePoolAllocatorMock3).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+        verify(storagePoolAllocatorMock3).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
                 any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
     }
 
@@ -739,8 +821,8 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
 
         Assert.assertTrue(volumeToPoolObjectMap.isEmpty());
-        Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
-        Mockito.verify(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
+        verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
+        verify(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
     }
 
     @Test
@@ -758,9 +840,9 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
 
         Assert.assertTrue(volumeToPoolObjectMap.isEmpty());
-        Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
-        Mockito.verify(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
-        Mockito.verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
+        verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
+        verify(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
+        verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
     }
 
     @Test
@@ -779,9 +861,9 @@ public class VirtualMachineManagerImplTest {
         assertFalse(volumeToPoolObjectMap.isEmpty());
         assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
-        Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
-        Mockito.verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
-        Mockito.verify(virtualMachineManagerImpl, Mockito.times(0)).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock,
+        verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
+        verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
+        verify(virtualMachineManagerImpl, Mockito.times(0)).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock,
                 storagePoolVoMock);
     }
 
@@ -1098,7 +1180,7 @@ public class VirtualMachineManagerImplTest {
         when(cluster.getId()).thenReturn(1L);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
-        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(vmInstanceDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
         when(cluster_detail_cpu.getValue()).thenReturn("1.0");
         when(cluster_detail_ram.getValue()).thenReturn("1.0");
         doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
@@ -1194,7 +1276,7 @@ public class VirtualMachineManagerImplTest {
         when(cluster.getId()).thenReturn(1L);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
-        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(vmInstanceDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
         when(cluster_detail_cpu.getValue()).thenReturn("1.0");
         when(cluster_detail_ram.getValue()).thenReturn("1.0");
         doReturn(true).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
@@ -1318,7 +1400,7 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(volumeDaoMock, Mockito.never()).findByInstance(Mockito.anyLong());
+        verify(volumeDaoMock, never()).findByInstance(Mockito.anyLong());
     }
 
     @Test
@@ -1328,7 +1410,7 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(agentManagerMock, Mockito.never()).send(Mockito.anyLong(), (Command) any());
+        verify(agentManagerMock, never()).send(Mockito.anyLong(), (Command) any());
     }
 
     @Test (expected = CloudRuntimeException.class)
@@ -1336,12 +1418,12 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
-        Mockito.doThrow(new AgentUnavailableException(0)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        doThrow(new AgentUnavailableException(0)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
         Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+        verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
     }
 
     @Test (expected = CloudRuntimeException.class)
@@ -1349,12 +1431,12 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
         Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
 
-        Mockito.doThrow(new OperationTimedoutException(null, 0, 0, 0, false)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        doThrow(new OperationTimedoutException(null, 0, 0, 0, false)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
         Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+        verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
     }
 
     @Test
@@ -1367,7 +1449,7 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+        verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
     }
 
     @Test
@@ -1379,6 +1461,692 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
 
-        Mockito.verify(snapshotManagerMock, Mockito.never()).endSnapshotChainForVolume(Mockito.anyLong(),any());
+        verify(snapshotManagerMock, never()).endSnapshotChainForVolume(Mockito.anyLong(),any());
     }
+
+    @Test
+    public void updateStartCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+        Host host = mock(Host.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        StartCommand command = mock(StartCommand.class);
+
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+
+        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
+
+        verify(command, never()).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateStartCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
+        Host host = mock(Host.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        StartCommand command = mock(StartCommand.class);
+        NicTO nic = mock(NicTO.class);
+
+        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+        when(vmTO.getNics()).thenReturn(new NicTO[]{nic});
+        when(nic.isDefaultNic()).thenReturn(true);
+        when(networkService.getNicVlanValueForExternalVm(nic)).thenReturn("segmentName");
+        when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+
+        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
+
+        verify(command).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateStopCommandForExternalHypervisorType_nonExternalHypervisor_noAction() {
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        StopCommand stopCommand = mock(StopCommand.class);
+
+        virtualMachineManagerImpl.updateStopCommandForExternalHypervisorType(HypervisorType.KVM, vmProfile, stopCommand);
+
+        verify(stopCommand, never()).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateStopCommandForExternalHypervisorType_externalHypervisor_setsExternalDetails() {
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        StopCommand stopCommand = mock(StopCommand.class);
+        HostVO host = mock(HostVO.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(vmProfile.getHostId()).thenReturn(1L);
+        when(hostDaoMock.findById(1L)).thenReturn(host);
+        when(stopCommand.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+        when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+        doReturn(mock(VirtualMachineTO.class)).when(virtualMachineManagerImpl).toVmTO(any());
+        virtualMachineManagerImpl.updateStopCommandForExternalHypervisorType(HypervisorType.External, vmProfile, stopCommand);
+        verify(stopCommand).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateRebootCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+        Host host = mock(Host.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        RebootCommand rebootCmd = mock(RebootCommand.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
+        verify(rebootCmd, never()).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateRebootCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
+        Host host = mock(Host.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        RebootCommand rebootCmd = mock(RebootCommand.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+        when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
+        verify(rebootCmd).setExternalDetails(any());
+    }
+
+    @Test
+    public void updateExternalVmDetailsFromPrepareAnswer_nullDetails_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        virtualMachineManagerImpl.updateExternalVmDetailsFromPrepareAnswer(vmTO, userVmVO, null);
+        verify(vmTO, never()).setDetails(any());
+        verify(userVmVO, never()).setDetails(any());
+        verify(userVmDaoMock, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updateExternalVmDetailsFromPrepareAnswer_sameDetails_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        Map<String, String> details = new HashMap<>();
+        when(vmTO.getDetails()).thenReturn(details);
+        virtualMachineManagerImpl.updateExternalVmDetailsFromPrepareAnswer(vmTO, userVmVO, details);
+        verify(vmTO, never()).setDetails(any());
+        verify(userVmVO, never()).setDetails(any());
+        verify(userVmDaoMock, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updateExternalVmDataFromPrepareAnswer_vncPasswordUpdated_updatesPassword() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(updatedTO.getVncPassword()).thenReturn("newPassword");
+        when(vmTO.getVncPassword()).thenReturn("oldPassword");
+        when(userVmDaoMock.findById(anyLong())).thenReturn(userVmVO);
+        virtualMachineManagerImpl.updateExternalVmDataFromPrepareAnswer(vmTO, updatedTO);
+        verify(userVmVO).setVncPassword("newPassword");
+        verify(vmTO).setVncPassword("newPassword");
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_nullNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        when(vmTO.getNics()).thenReturn(null);
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_updatesNicsSuccessfully() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        NicTO nicTO = mock(NicTO.class);
+        NicTO updatedNicTO = mock(NicTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(nicTO.getMac()).thenReturn("mac-a");
+        when(updatedNicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(updatedNicTO.getMac()).thenReturn("mac-b");
+        when(_nicsDao.findByUuid("nic-uuid")).thenReturn(mock(NicVO.class));
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao).findByUuid("nic-uuid");
+        verify(_nicsDao).update(anyLong(), any(NicVO.class));
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_noMatchingNicUuid_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        NicTO nicTO = mock(NicTO.class);
+        NicTO updatedNicTO = mock(NicTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(updatedNicTO.getNicUuid()).thenReturn("different-uuid");
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_nullUpdatedNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+        when(updatedTO.getNics()).thenReturn(null);
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_nullVmNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(null);
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_emptyNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{});
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
+        Host host = mock(Host.class);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(vmProfile.getTemplate()).thenReturn(template);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
+        verify(agentManagerMock, never()).send(anyLong(), any(Command.class));
+    }
+
+    @Test
+    public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException {
+        Host host = mock(Host.class);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(vmProfile.getTemplate()).thenReturn(template);
+        NicTO[] nics = new NicTO[]{mock(NicTO.class)};
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(vmTO.getNics()).thenReturn(nics);
+        doReturn(vmTO).when(virtualMachineManagerImpl).toVmTO(vmProfile);
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+        when(template.getExtensionId()).thenReturn(1L);
+        when(extensionDetailsDao.findDetail(eq(1L), eq(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM))).thenReturn(detailsVO);
+        when(detailsVO.getValue()).thenReturn("true");
+        PrepareExternalProvisioningAnswer answer = mock(PrepareExternalProvisioningAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(answer.getVirtualMachineTO()).thenReturn(vmTO);
+        when(agentManagerMock.send(anyLong(), any(Command.class))).thenReturn(answer);
+        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
+        verify(agentManagerMock).send(anyLong(), any(Command.class));
+    }
+
+    @Test
+    public void testPrepVMSpecForUnmanageInstance() {
+        // Arrange
+        final Long accountId = 1L;
+        final Long offeringId = 1L;
+        final Long templateId = 1L;
+
+        // Mock vm
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmInstanceVoMockId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getServiceOfferingId()).thenReturn(offeringId);
+        when(vm.getTemplateId()).thenReturn(templateId);
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceDaoMock.findById(vmInstanceVoMockId)).thenReturn(vm);
+
+        // Mock owner
+        AccountVO owner = Mockito.mock(AccountVO.class);
+        when(_entityMgr.findById(Account.class, accountId)).thenReturn(owner);
+
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOfferingDaoMock.findById(vmInstanceVoMockId, offeringId)).thenReturn(offering);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(template);
+
+        when(hostMock.getClusterId()).thenReturn(clusterMockId);
+
+        // Mock cpuOvercommitRatio and ramOvercommitRatio
+        ClusterDetailsVO cpuOvercommitRatio = Mockito.mock(ClusterDetailsVO.class);
+        when(cpuOvercommitRatio.getValue()).thenReturn("1.0");
+        when(_clusterDetailsDao.findDetail(clusterMockId, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cpuOvercommitRatio);
+        ClusterDetailsVO ramOvercommitRatio = Mockito.mock(ClusterDetailsVO.class);
+        when(ramOvercommitRatio.getValue()).thenReturn("1.0");
+        when(_clusterDetailsDao.findDetail(clusterMockId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(ramOvercommitRatio);
+
+        // Mock NICs
+        List<NicVO> nics = new ArrayList<>();
+        NicVO nic1 = Mockito.mock(NicVO.class);
+        when(nic1.getDeviceId()).thenReturn(1);
+        nics.add(nic1);
+        NicVO nic2 = Mockito.mock(NicVO.class);
+        when(nic2.getDeviceId()).thenReturn(0);
+        nics.add(nic2);
+        when(_nicsDao.listByVmId(vmInstanceVoMockId)).thenReturn(nics);
+
+        Network networkMock = Mockito.mock(Network.class);
+        when(networkModel.getNetwork(anyLong())).thenReturn(networkMock);
+
+        when(volumeVoMock.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(volumeVoMock.getDeviceId()).thenReturn(0L);
+        when(volumeVoMock.getPath()).thenReturn("/");
+        when(volumeVoMock.getDiskOfferingId()).thenReturn(1L);
+        when(volumeDaoMock.findUsableVolumesForInstance(vmInstanceVoMockId)).thenReturn(List.of(volumeVoMock));
+
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        DataTO dataTO = mock(DataTO.class);
+        when(volumeInfo.getTO()).thenReturn(dataTO);
+        when(volumeDataFactoryMock.getVolume(anyLong())).thenReturn(volumeInfo);
+        when(storageManager.getDiskWithThrottling(any(), any(), anyLong(), anyString(), anyLong(), anyLong())).thenReturn(Mockito.mock(DiskTO.class));
+
+        Map<String, String> details = new HashMap<>();
+        details.put(VirtualMachineProfile.Param.BootType.getName(), "BIOS");
+        details.put(VirtualMachineProfile.Param.BootMode.getName(), "LEGACY");
+        details.put(VirtualMachineProfile.Param.UefiFlag.getName(), "Yes");
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(details);
+
+        com.cloud.hypervisor.HypervisorGuru guru = Mockito.mock(com.cloud.hypervisor.HypervisorGuru.class);
+        when(_hvGuruMgr.getGuru(HypervisorType.KVM)).thenReturn(guru);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        when(guru.implement(any(VirtualMachineProfile.class))).thenAnswer((Answer<VirtualMachineTO>) invocation -> {
+            VirtualMachineProfile profile = invocation.getArgument(0);
+            assertEquals("BIOS", profile.getParameter(VirtualMachineProfile.Param.BootType));
+            return vmTO;
+        });
+
+        // Act
+        VirtualMachineTO result = virtualMachineManagerImpl.prepVmSpecForUnmanageCmd(vmInstanceVoMockId, hostMockId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(vmTO, result);
+        verify(_clusterDetailsDao, times(2)).findDetail(eq(clusterMockId), anyString());
+        verify(vmInstanceDetailsDao).listDetailsKeyPairs(anyLong(), anyList());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForRunningVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+        when(agentManagerMock.send(anyLong(), any(Command.class))).thenReturn(successAnswer);
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
+        ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
+        verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
+        assertEquals(hostMockId, hostIdCaptor.getValue().longValue());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForStoppedVmSuccess() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        vmTO.setName(vmName);
+        doReturn(vmTO).when(virtualMachineManagerImpl).prepVmSpecForUnmanageCmd(vmInstanceVoMockId, 1L);
+        UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+        when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(successAnswer);
+        when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, hostMockId));
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
+        ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
+        verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
+        assertEquals(1L, hostIdCaptor.getValue().longValue());
+        UnmanageInstanceCommand sentCommand = commandCaptor.getValue();
+        assertNotNull(sentCommand.getVm());
+        assertEquals(vmTO, sentCommand.getVm());
+        assertEquals(vmName, sentCommand.getInstanceName());
+        verify(virtualMachineManagerImpl).prepVmSpecForUnmanageCmd(vmInstanceVoMockId, 1L);
+    }
+
+
+    @Test
+    public void testPersistDomainForKvmForStoppedVmNoHost() {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        vmTO.setName(vmName);
+        when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, null));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("No available host to persist domain XML for Instance: " + vmName, exception.getMessage());
+    }
+
+    @Test
+    public void testPersistDomainForKvmForRunningVmAgentFailure() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        UnmanageInstanceAnswer failureAnswer = new UnmanageInstanceAnswer(null, false, "failure");
+        when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(failureAnswer);
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test
+    public void testPersistDomainForKvmAgentUnavailable() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        doThrow(new AgentUnavailableException("Agent down", hostMockId)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test(expected = ConcurrentOperationException.class)
+    public void testUnmanagePendingHaWork() {
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId)).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(vmInstanceVoMockId)).thenReturn(true);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test
+    public void testPersistDomainForKvmOperationTimedOut() throws AgentUnavailableException, OperationTimedoutException {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        doThrow(new OperationTimedoutException(null, hostMockId, 123L, 60, false)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUnmanageVmRemoved() {
+        when(vmInstanceMock.getRemoved()).thenReturn(new Date());
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test(expected = ConcurrentOperationException.class)
+    public void testUnmanagePendingWorkJobs() {
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        List<VmWorkJobVO> pendingJobs = new ArrayList<>();
+        VmWorkJobVO vmWorkJobVO = mock(VmWorkJobVO.class);
+        pendingJobs.add(vmWorkJobVO);
+        when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId)).thenReturn(pendingJobs);
+        virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+    }
+
+    @Test
+    public void testUnmanageHostNotFoundAfterTransaction() {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(null);
+            Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+            assertNull(result.second());
+        }
+    }
+
+    @Test
+    public void testUnmanageSuccessNonKvm() {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(hostMock.getUuid()).thenReturn(hostUuid);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(hostMock);
+            try (MockedStatic<ActionEventUtils> actionUtil = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionUtil.when(() -> ActionEventUtils.onActionEvent(
+                        anyLong(), anyLong(), anyLong(),
+                        anyString(), anyString(),
+                        anyLong(), anyString()
+                )).thenReturn(1L);
+
+                Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+                assertNotNull(result);
+                assertTrue(result.first());
+                assertEquals(hostUuid, result.second());
+
+                verify(virtualMachineManagerImpl, never()).persistDomainForKVM(any(VMInstanceVO.class), anyLong());
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMSnapshots(vmInstanceMock);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMVolumes(vmInstanceMock);
+                verify(guru, times(1)).finalizeUnmanage(vmInstanceMock);
+            }
+        }
+    }
+
+    @Test
+    public void testUnmanageSuccessKvm() throws Exception {
+        when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
+        when(hostMock.getUuid()).thenReturn(hostUuid);
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
+        when(_workJobDao.listPendingWorkJobs(any(), anyLong())).thenReturn(Collections.emptyList());
+        when(_haMgr.hasPendingHaWork(anyLong())).thenReturn(false);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMSnapshots(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+        doNothing().when(virtualMachineManagerImpl).unmanageVMVolumes(vmInstanceMock);
+        doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findHostById(hostMockId)).thenReturn(hostMock);
+            try (MockedStatic<ActionEventUtils> actionUtil = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionUtil.when(() -> ActionEventUtils.onActionEvent(
+                        anyLong(), anyLong(), anyLong(),
+                        anyString(), anyString(),
+                        anyLong(), anyString()
+                )).thenReturn(1L);
+                UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
+                when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(successAnswer);
+                Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+                assertNotNull(result);
+                assertTrue(result.first());
+                assertEquals(hostUuid, result.second());
+                verify(virtualMachineManagerImpl, times(1)).persistDomainForKVM(vmInstanceMock, null);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMSnapshots(vmInstanceMock);
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMNics(any(VirtualMachineProfile.class), any(VMInstanceVO.class));
+                verify(virtualMachineManagerImpl, times(1)).unmanageVMVolumes(vmInstanceMock);
+                verify(guru, times(1)).finalizeUnmanage(vmInstanceMock);
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithClvmVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO clvmVolume1 = mock(VolumeVO.class);
+        VolumeVO clvmVolume2 = mock(VolumeVO.class);
+
+        when(clvmVolume1.getId()).thenReturn(1L);
+        when(clvmVolume1.getPoolId()).thenReturn(poolId);
+        when(clvmVolume2.getId()).thenReturn(2L);
+        when(clvmVolume2.getPoolId()).thenReturn(poolId);
+
+        StoragePoolVO clvmPool = mock(StoragePoolVO.class);
+        when(clvmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(clvmVolume1, clvmVolume2));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(clvmPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNonClvmVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO nfsVolume = mock(VolumeVO.class);
+        when(nfsVolume.getPoolId()).thenReturn(poolId);
+
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(nfsVolume));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(nfsPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithMixedVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long clvmPoolId = 10L;
+        long nfsPoolId = 20L;
+
+        VolumeVO clvmVolume = mock(VolumeVO.class);
+        VolumeVO nfsVolume = mock(VolumeVO.class);
+
+        when(clvmVolume.getId()).thenReturn(1L);
+        when(clvmVolume.getPoolId()).thenReturn(clvmPoolId);
+        when(nfsVolume.getPoolId()).thenReturn(nfsPoolId);
+
+        StoragePoolVO clvmPool = mock(StoragePoolVO.class);
+        when(clvmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(clvmVolume, nfsVolume));
+        when(storagePoolDaoMock.findById(clvmPoolId)).thenReturn(clvmPool);
+        when(storagePoolDaoMock.findById(nfsPoolId)).thenReturn(nfsPool);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(2L, destHostId);
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNoVolumes() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Collections.emptyList());
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNullPoolId() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+
+        VolumeVO volumeWithoutPool = mock(VolumeVO.class);
+        when(volumeWithoutPool.getPoolId()).thenReturn(null);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volumeWithoutPool));
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(storagePoolDaoMock, never()).findById(anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_WithNullPool() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long poolId = 10L;
+
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volume.getPoolId()).thenReturn(poolId);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume));
+        when(storagePoolDaoMock.findById(poolId)).thenReturn(null);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+    }
+
+    @Test
+    public void testUpdateClvmLockHostForVmVolumes_MultipleClvmPools() throws Exception {
+        long vmId = 100L;
+        long destHostId = 2L;
+        long pool1Id = 10L;
+        long pool2Id = 20L;
+
+        VolumeVO volume1 = mock(VolumeVO.class);
+        VolumeVO volume2 = mock(VolumeVO.class);
+        VolumeVO volume3 = mock(VolumeVO.class);
+
+        when(volume1.getId()).thenReturn(1L);
+        when(volume1.getPoolId()).thenReturn(pool1Id);
+        when(volume2.getId()).thenReturn(2L);
+        when(volume2.getPoolId()).thenReturn(pool2Id);
+        when(volume3.getId()).thenReturn(3L);
+        when(volume3.getPoolId()).thenReturn(pool1Id);
+
+        StoragePoolVO clvmPool1 = mock(StoragePoolVO.class);
+        when(clvmPool1.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        StoragePoolVO clvmPool2 = mock(StoragePoolVO.class);
+        when(clvmPool2.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume1, volume2, volume3));
+        when(storagePoolDaoMock.findById(pool1Id)).thenReturn(clvmPool1);
+        when(storagePoolDaoMock.findById(pool2Id)).thenReturn(clvmPool2);
+
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
+
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
+        method.invoke(virtualMachineManagerImpl, vmId, destHostId);
+
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+    }
+
 }

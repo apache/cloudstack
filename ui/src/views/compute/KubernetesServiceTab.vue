@@ -66,32 +66,62 @@
           </a-timeline>
         </a-card>
         <a-card :title="$t('label.kubernetes.dashboard')">
+          <p><strong>Note:</strong> CloudStack Kubernetes clusters use <strong>Headlamp</strong> dashboard (deployed in <code>kube-system</code> namespace). For backward compatibility with older clusters using Kubernetes Dashboard, please check your cluster configuration.</p>
           <a-timeline>
             <a-timeline-item>
               <p>
-                {{ $t('label.run.proxy.locally') }}<br><br>
-                <code><b>kubectl --kubeconfig /custom/path/kube.conf proxy</b></code>
+                <strong>Access Headlamp Dashboard (new clusters)</strong><br><br>
+                <strong>Step 1:</strong> Run port-forward command:<br>
+                <code><b>kubectl --kubeconfig /custom/path/kube.conf port-forward -n kube-system service/headlamp 8080:80</b></code><br><br>
+                <strong>Step 2:</strong> Open in your browser:<br>
+                <a href="http://localhost:8080"><code>http://localhost:8080</code></a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                {{ $t('label.open.url') }}<br><br>
+                <strong>Access Kubernetes Dashboard (legacy clusters)</strong><br><br>
+                <strong>Step 1:</strong> {{ $t('label.run.proxy.locally') }}<br>
+                <code><b>kubectl --kubeconfig /custom/path/kube.conf proxy</b></code><br><br>
+                <strong>Step 2:</strong> {{ $t('label.open.url') }}<br>
                 <a href="http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"><code>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</code></a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
+              <p>
+                <strong>Create Access Token for Headlamp (new clusters)</strong>
+              </p>
               <p v-html="$t('label.kubernetes.dashboard.create.token')"></p>
               <p v-html="$t('label.kubernetes.dashboard.create.token.desc')"></p>
-              <a-textarea :value="'kubectl --kubeconfig /custom/path/kube.conf apply -f - <<EOF\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRoleBinding\nmetadata:\n  name: kubernetes-dashboard-admin-user\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: ClusterRole\n  name: cluster-admin\nsubjects:\n- kind: ServiceAccount\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: v1\nkind: Secret\ntype: kubernetes.io/service-account-token\nmetadata:\n  name: kubernetes-dashboard-token\n  namespace: kubernetes-dashboard\n  annotations:\n    kubernetes.io/service-account.name: kubernetes-dashboard-admin-user\nEOF'" :rows="10" readonly />
+              <a-textarea :value="'kubectl --kubeconfig /custom/path/kube.conf apply -f - <<EOF\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: headlamp-admin\n  namespace: kube-system\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRoleBinding\nmetadata:\n  name: headlamp-admin\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: ClusterRole\n  name: cluster-admin\nsubjects:\n- kind: ServiceAccount\n  name: headlamp-admin\n  namespace: kube-system\n---\napiVersion: v1\nkind: Secret\ntype: kubernetes.io/service-account-token\nmetadata:\n  name: headlamp-admin-token\n  namespace: kube-system\n  annotations:\n    kubernetes.io/service-account.name: headlamp-admin\nEOF'" :rows="12" readonly />
+              <br><br>
+              <p>{{ $t('label.token.for.dashboard.login') }}:</p>
+              <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret headlamp-admin-token -n kube-system</b></code>
             </a-timeline-item>
             <a-timeline-item>
               <p>
-                {{ $t('label.token.for.dashboard.login') }}<br><br>
-                <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kubernetes-dashboard | grep kubernetes-dashboard-token | awk '{print $1}') -n kubernetes-dashboard</b></code>
+                <strong>Create Access Token for Kubernetes Dashboard (legacy clusters)</strong>
+              </p>
+              <p v-html="$t('label.kubernetes.dashboard.create.token.desc')"></p>
+              <a-textarea :value="'kubectl --kubeconfig /custom/path/kube.conf apply -f - <<EOF\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRoleBinding\nmetadata:\n  name: kubernetes-dashboard-admin-user\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: ClusterRole\n  name: cluster-admin\nsubjects:\n- kind: ServiceAccount\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: v1\nkind: Secret\ntype: kubernetes.io/service-account-token\nmetadata:\n  name: kubernetes-dashboard-token\n  namespace: kubernetes-dashboard\n  annotations:\n    kubernetes.io/service-account.name: kubernetes-dashboard-admin-user\nEOF'" :rows="12" readonly />
+              <br><br>
+              <p>{{ $t('label.token.for.dashboard.login') }}:</p>
+              <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret kubernetes-dashboard-token -n kubernetes-dashboard</b></code>
+            </a-timeline-item>
+            <a-timeline-item>
+              <p>
+                <strong>Important Notes:</strong><br>
+                • <strong>Port-forwarding is recommended for Headlamp</strong> - simpler and more reliable than kubectl proxy<br>
+                • Token is only needed if accessing Headlamp via NodePort or LoadBalancer with external access<br>
+                • For Kubernetes 1.24+, service account tokens are no longer auto-generated - use the Secret resource shown above or <code>kubectl create token</code> command<br>
+                • <strong>Cluster-admin role grants full control</strong> - use with caution and only for trusted administrators<br>
+                • Keep the port-forward command running while using the dashboard (press Ctrl+C to stop)
               </p>
             </a-timeline-item>
           </a-timeline>
-          <p>{{ $t('label.more.access.dashboard.ui') }}, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
+          <p>{{ $t('label.more.access.dashboard.ui') }}:
+            <a href="https://headlamp.dev/docs/latest/">Headlamp Documentation</a> |
+            <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">Kubernetes Dashboard (Legacy)</a>
+          </p>
         </a-card>
         <a-card :title="$t('label.access.kubernetes.nodes')">
           <p v-html="$t('label.kubernetes.access.details')"></p>
@@ -174,7 +204,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -343,7 +373,7 @@ export default {
     },
     fetchComments () {
       this.clusterConfigLoading = true
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -359,7 +389,7 @@ export default {
       if (!this.isObjectEmpty(this.resource)) {
         var params = {}
         params.id = this.resource.id
-        api('getKubernetesClusterConfig', params).then(json => {
+        getAPI('getKubernetesClusterConfig', params).then(json => {
           const config = json.getkubernetesclusterconfigresponse.clusterconfig
           if (!this.isObjectEmpty(config) &&
             this.isValidValueForKey(config, 'configdata') &&
@@ -387,7 +417,7 @@ export default {
         this.resource.kubernetesversionid !== '') {
         var params = {}
         params.id = this.resource.kubernetesversionid
-        api('listKubernetesSupportedVersions', params).then(json => {
+        getAPI('listKubernetesSupportedVersions', params).then(json => {
           const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
           if (this.arrayHasItems(versionObjs)) {
             this.kubernetesVersion = versionObjs[0]
@@ -416,7 +446,7 @@ export default {
     fetchNetwork () {
       this.networkLoading = true
       return new Promise((resolve, reject) => {
-        api('listNetworks', {
+        getAPI('listNetworks', {
           listAll: true,
           id: this.resource.networkid
         }).then(json => {
@@ -449,7 +479,7 @@ export default {
           params.associatednetworkid = this.resource.networkid
         }
       }
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         let ips = json.listpublicipaddressesresponse.publicipaddress
         if (this.arrayHasItems(ips)) {
           ips = ips.filter(x => x.issourcenat)
@@ -465,7 +495,7 @@ export default {
       const params = {}
       params.name = 'cloud.kubernetes.etcd.node.start.port'
       var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const configResponse = json.listconfigurationsresponse.configuration
         this.etcdSshPort = configResponse[0]?.value
       })
@@ -489,7 +519,7 @@ export default {
         id: this.resource.id,
         nodeids: node.id
       }
-      api('scaleKubernetesCluster', params).then(json => {
+      postAPI('scaleKubernetesCluster', params).then(json => {
         const jobId = json.scalekubernetesclusterresponse.jobid
         console.log(jobId)
         this.$store.dispatch('AddAsyncJob', {

@@ -103,7 +103,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("Either %s or %s must be passed or %s must be true for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT);
+            String expected = String.format("Either %s or %s must be passed or %s must be true for migrating the Instance.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
@@ -161,7 +161,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = "Unable to find the specified host to migrate the VM.";
+            String expected = "Unable to find the specified host to migrate the Instance.";
             Assert.assertEquals(expected , e.getMessage());
         }
     }
@@ -187,7 +187,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(ServerApiException.class, e.getClass());
-            String expected = "Failed to migrate vm";
+            String expected = "Failed to migrate Instance";
             Assert.assertEquals(expected , e.getMessage());
         }
     }
@@ -205,7 +205,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(ServerApiException.class, e.getClass());
-            String expected = "Failed to migrate vm";
+            String expected = "Failed to migrate Instance";
             Assert.assertEquals(expected , e.getMessage());
         }
     }

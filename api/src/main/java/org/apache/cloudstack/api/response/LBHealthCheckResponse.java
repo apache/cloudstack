@@ -30,27 +30,27 @@ import com.cloud.serializer.Param;
 @EntityReference(value = HealthCheckPolicy.class)
 public class LBHealthCheckResponse extends BaseResponse {
     @SerializedName("lbruleid")
-    @Param(description = "the LB rule ID")
+    @Param(description = "The LB rule ID")
     private String lbRuleId;
 
     @SerializedName("account")
-    @Param(description = "the account of the HealthCheck policy")
+    @Param(description = "The Account of the HealthCheck policy")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the HealthCheck policy")
+    @Param(description = "The domain ID of the HealthCheck policy")
     private String domainId;
 
     @SerializedName("domain")
-    @Param(description = "the domain of the HealthCheck policy")
+    @Param(description = "The domain of the HealthCheck policy")
     private String domainName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the id of the zone the HealthCheck policy belongs to")
+    @Param(description = "The ID of the zone the HealthCheck policy belongs to")
     private String zoneId;
 
     @SerializedName("healthcheckpolicy")
-    @Param(description = "the list of healthcheckpolicies", responseObject = LBHealthCheckPolicyResponse.class)
+    @Param(description = "The list of healthcheckpolicies", responseObject = LBHealthCheckPolicyResponse.class)
     private List<LBHealthCheckPolicyResponse> healthCheckPolicies;
 
     public void setlbRuleId(String lbRuleId) {

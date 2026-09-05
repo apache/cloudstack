@@ -87,7 +87,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -180,7 +180,7 @@ export default {
       params.id = this.resource.id
       params.isrecursive = true
       var apiName = 'list' + this.offeringType + 's'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const offerings = json[apiName.toLowerCase() + 'response'][this.offeringType.toLowerCase()]
         this.formOffering = offerings[0]
       }).finally(() => {
@@ -195,7 +195,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -207,7 +207,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         this.zones = this.zones.concat(listZones)
       }).finally(() => {
@@ -290,7 +290,7 @@ export default {
         params.zoneid = zoneId
 
         this.loading = true
-        api('update' + this.offeringType, params).then(json => {
+        postAPI('update' + this.offeringType, params).then(json => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.action.update.offering.access'),

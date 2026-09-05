@@ -37,7 +37,9 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -72,6 +74,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -83,7 +86,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
-public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao { //FIXME: , ExternalIdDao {
+public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao, Configurable {
 
     private static final String LIST_HOST_IDS_BY_HOST_TAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
                                                              + "FROM (SELECT host_id, tag, is_tag_a_rule FROM host_tags GROUP BY host_id,tag,is_tag_a_rule) AS filtered "
@@ -643,16 +646,22 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("lastPinged", lastPingSecondsAfter);
         sc.setParameters("status", Status.Disconnected, Status.Down, Status.Alert);
 
-        StringBuilder sb = new StringBuilder();
-        List<HostVO> hosts = lockRows(sc, null, true); // exclusive lock
-        for (HostVO host : hosts) {
-            host.setManagementServerId(null);
-            update(host.getId(), host);
-            sb.append(host.getId());
-            sb.append(" ");
+        // SELECT before bulk UPDATE to preserve per-host-ID trace logging — the bulk UPDATE
+        // cannot return which rows it matched since the WHERE column is being set to NULL
+        if (logger.isTraceEnabled()) {
+            List<HostVO> hosts = listBy(sc);
+            StringBuilder sb = new StringBuilder();
+            for (HostVO host : hosts) {
+                sb.append(host.getId());
+                sb.append(" ");
+            }
+            logger.trace("Following hosts will be reset: {}", sb);
         }
 
-        logger.trace("Following hosts got reset: {}", sb);
+        HostVO host = createForUpdate();
+        host.setManagementServerId(null);
+        UpdateBuilder ub = getUpdateBuilder(host);
+        update(ub, sc, null);
     }
 
     /*
@@ -1333,6 +1342,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findRoutingByClusterId(Long clusterId) {
+        SearchCriteria<HostVO> sc = ClusterSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("type", Type.Routing);
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId) {
         SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
         DetailVO tagEntity = hostCapabilitySearch.entity();
@@ -1411,7 +1428,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
-        List<HostVO> list = listBy(sc, new Filter(1));
+        List<HostVO> list = listBy(sc, new Filter(1, true));
         return list.isEmpty() ? null : list.get(0);
     }
 
@@ -1444,6 +1461,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         if (hypervisorType != null) {
             sc.setParameters("hypervisorType", hypervisorType.toString());
         }
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listAllRoutingHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        sc.setParameters("type", Type.Routing);
+
         return listBy(sc);
     }
 
@@ -1519,11 +1546,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
     }
 
-    public List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags) {
+    @Override
+    public List<HostVO> findHostsWithTagRuleThatMatchComputeOfferingTags(String computeOfferingTags) {
         List<HostTagVO> hostTagVOList = _hostTagsDao.findHostRuleTags();
         List<HostVO> result = new ArrayList<>();
         for (HostTagVO rule: hostTagVOList) {
-            if (TagAsRuleHelper.interpretTagAsRule(rule.getTag(), computeOfferingTags, HostTagsDao.hostTagRuleExecutionTimeout.value())) {
+            if (GenericRuleHelper.interpretTagAsRule(rule.getTag(), computeOfferingTags, HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                    HostTagsDao.hostTagRuleExecutionTimeout.key())) {
                 result.add(findById(rule.getHostId()));
             }
         }
@@ -1531,9 +1560,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return result;
     }
 
+    @Override
+    public List<HostVO> findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(String templateGuestOSName) {
+        List<DetailVO> hostIdsWithGuestOsRule = _detailsDao.findByName(Host.GUEST_OS_RULE);
+        List<HostVO> hostsWithIncompatibleRules = new ArrayList<>();
+        for (DetailVO guestOsRule : hostIdsWithGuestOsRule) {
+            if (!GenericRuleHelper.interpretGuestOsRule(guestOsRule.getValue(), templateGuestOSName, HostDao.guestOsRuleExecutionTimeout.value(),
+                    HostDao.guestOsRuleExecutionTimeout.key())) {
+                logger.trace("The guest OS rule [{}] of the host with ID [{}] is incompatible with the OS of the VM.",
+                        guestOsRule.getHostId(), guestOsRule.getValue());
+                hostsWithIncompatibleRules.add(findById(guestOsRule.getHostId()));
+            }
+        }
+        logger.trace("The hosts with the following IDs [{}] are incompatible with the VM considering their guest OS rule.",
+                hostsWithIncompatibleRules);
+        return hostsWithIncompatibleRules;
+    }
+
     public List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags) {
         Set<Long> result = new HashSet<>();
-        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOferringTags(computeOfferingTags);
+        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOfferingTags(computeOfferingTags);
         for (HostVO host: hosts) {
             result.add(host.getClusterId());
         }
@@ -1601,6 +1647,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
     public List<HostVO> listHostsByMs(long msId) {
         SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
         sc.setParameters("managementServerId", msId);
@@ -1608,10 +1665,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public int countByMs(long msId) {
-        SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
-        sc.setParameters("managementServerId", msId);
-        return getCount(sc);
+    public List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
+    public int countHostsByMsResourceStateTypeAndHypervisorType(long msId,
+                                                                List<ResourceState> excludedResourceStates,
+                                                                List<Type> hostTypes,
+                                                                List<HypervisorType> hypervisorTypes) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hostTypes)) {
+            sc.and(sc.entity().getType(), Op.IN, hostTypes.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
+            sc.and(sc.entity().getHypervisorType(), Op.IN, hypervisorTypes.toArray());
+        }
+        return getCount(sc.create());
     }
 
     @Override
@@ -1949,5 +2028,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {guestOsRuleExecutionTimeout};
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return HostDaoImpl.class.getSimpleName();
     }
 }

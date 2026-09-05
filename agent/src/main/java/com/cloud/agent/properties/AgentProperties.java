@@ -117,11 +117,25 @@ public class AgentProperties{
 
     /**
      * Local storage path.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images/</code>
      */
     public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
+
+    /**
+     * Enables TLS on the KVM image server transfer endpoint.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", true);
+
+    /**
+     * The IP address that the KVM image server listens on.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_LISTEN_ADDRESS = new Property<>("image.server.listen.address", null, String.class);
 
     /**
      * Directory where Qemu sockets are placed.<br>
@@ -134,7 +148,7 @@ public class AgentProperties{
 
     /**
      * MANDATORY: The UUID for the local storage pool.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
@@ -154,6 +168,15 @@ public class AgentProperties{
      * Default value: <code>7200</code>
      */
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
+
+    /**
+     * The timeout (in seconds) for QCOW2 delta merge operations, mainly used for classic volume snapshots, disk-only VM snapshots on file-based storage, and the KBOSS plugin.
+     * If a value of 0 or less is informed, the default will be used.<br>
+     * This configuration is only considered if libvirt.events.enabled is also true. <br>
+     * Data type: Integer.<br>
+     * Default value: <code>259200</code>
+     */
+    public static final Property<Integer> QCOW2_DELTA_MERGE_TIMEOUT = new Property<>("qcow2.delta.merge.timeout", 60 * 60 * 72);
 
     /**
      * This parameter sets the VM migration speed (in mbps). The default value is -1,<br>
@@ -214,6 +237,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.script", "libvirt-vm-xml-transformer.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM XML transformer shell script.<br>
+     * The shell script is used to execute the Libvirt VM XML transformer script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-xml-transformer.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.shell_script", "libvirt-vm-xml-transformer.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_xml_transformer.script properties to define the Libvirt VM XML transformer method.<br>
      * Libvirt XML transformer hook does XML-to-XML transformation.<br>
      * The provider can use this to add/remove/modify some sort of attributes in Libvirt XML domain specification.<br>
@@ -232,6 +264,15 @@ public class AgentProperties{
      * Default value: <code>libvirt-vm-state-change.groovy</code>
      */
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.script", "libvirt-vm-state-change.groovy");
+
+    /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on start shell script.<br>
+     * The shell script is used to execute the Libvirt VM on start script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.shell_script", "libvirt-vm-state-change.sh");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_start.script properties to define the Libvirt VM on start method.<br>
@@ -253,6 +294,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.script", "libvirt-vm-state-change.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on stop shell script.<br>
+     * The shell script is used to execute the Libvirt VM on stop script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.shell_script", "libvirt-vm-state-change.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_stop.script properties to define the Libvirt VM on stop method.<br>
      * The hook is called right after libvirt successfully stopped the VM.<br>
      * For more information see the agent.properties file.<br>
@@ -268,6 +318,15 @@ public class AgentProperties{
      * Default value: <code>native</code>
      */
     public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
+
+    /**
+     * Sets the VXLAN networking mode used by the BridgeVifDriver.<br>
+     * Possible values: multicast | evpn <br>
+     * When set to <code>evpn</code>, the driver will use modifyvxlan-evpn.sh instead of modifyvxlan.sh.<br>
+     * Data type: String.<br>
+     * Default value: <code>multicast</code>
+     */
+    public static final Property<String> NETWORK_VXLAN_MODE = new Property<>("network.vxlan.mode", "multicast");
 
     /**
      * Sets the driver used to plug and unplug NICs from the bridges.<br>
@@ -390,8 +449,9 @@ public class AgentProperties{
     public static final Property<String> GUEST_CPU_ARCH = new Property<>("guest.cpu.arch", null, String.class);
 
     /**
-     * This param will require CPU features on the CPU section.<br>
-     * The features listed in this property must be separated by a blank space (see example below).<br>
+     * Specifies required CPU features for end-user and system VMs.<br>
+     * These features must be present on the host CPU for VM deployment.<br>
+     * Multiple features should be separated by whitespace (see example below).<br>
      * Possible values: vmx vme <br>
      * Data type: String.<br>
      * Default value: <code>null</code>
@@ -557,10 +617,10 @@ public class AgentProperties{
     /**
      * This parameter specifies if the host must be rebooted when something goes wrong with the heartbeat.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>true</code>
+     * Default value: <code>false</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
@@ -759,6 +819,44 @@ public class AgentProperties{
     public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
 
     /**
+     * Set env TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_TMPDIR = new Property<>("convert.instance.env.tmpdir", null, String.class);
+
+    /**
+     * Set env VIRT_V2V_TMPDIR var for virt-v2v Instance Conversion from VMware to KVM
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> CONVERT_ENV_VIRTV2V_TMPDIR = new Property<>("convert.instance.env.virtv2v.tmpdir", null, String.class);
+
+    /**
+     * Path to the VDDK library directory on the KVM conversion host, used when converting VMs from VMware to KVM via VDDK.
+     * This directory is passed to virt-v2v as <code>-io vddk-libdir=&lt;path&gt;</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_LIB_DIR = new Property<>("vddk.lib.dir", null, String.class);
+
+    /**
+     * Ordered list of VDDK transports for virt-v2v, passed as <code>-io vddk-transports=&lt;value&gt;</code>.
+     * Example: <code>nbd:nbdssl</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_TRANSPORTS = new Property<>("vddk.transports", null, String.class);
+
+    /**
+     * vCenter TLS certificate thumbprint used by virt-v2v VDDK mode, passed as <code>-io vddk-thumbprint=&lt;value&gt;</code>.
+     * If unset, the KVM host computes it at runtime from the vCenter endpoint.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_THUMBPRINT = new Property<>("vddk.thumbprint", null, String.class);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
@@ -828,12 +926,52 @@ public class AgentProperties{
      * */
     public static final Property<Integer> REVERT_SNAPSHOT_TIMEOUT = new Property<>("revert.snapshot.timeout", 10800);
 
+    /**
+     *  If set to true, creates VMs as full clones of their templates on KVM hypervisor. Creates as linked clones otherwise. <br>
+     * Data type: Boolean. <br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
+
+    /**
+     * Time, in seconds, to wait before retrying to rebase during the incremental snapshot process.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
+
+    /**
+     * When set to <code>true</code>, executes <code>modifymacip.sh</code> (resolved via the
+     * network scripts directory) on VM NIC plug (VM start) and unplug (VM stop) to manage static
+     * ARP/NDP entries and host routes for VM interfaces.<br>
+     * The script is invoked with:<br>
+     * &nbsp;&nbsp;add:    <code>-o add -b &lt;bridge&gt; -m &lt;mac&gt; [-4 &lt;ipv4&gt;] [-6 &lt;ipv6&gt;]</code><br>
+     * &nbsp;&nbsp;delete: <code>-o delete -b &lt;bridge&gt; -m &lt;mac&gt;</code><br>
+     * A bundled reference implementation is available at
+     * <code>scripts/vm/network/vnet/modifymacip.sh</code>.<br>
+     * Set to <code>false</code> or leave unset to disable this feature.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VM_NETWORK_MACIP_STATIC = new Property<>("vm.network.macip.static", false, Boolean.class);
+
+
+    /**
+     * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at
+     * the same time.
+     */
+    public static final Property<Integer> BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.validation.max.concurrent.operations.per.host", null, Integer.class);
+
+    /**
+     * Maximum number of backup compression jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many compressions as possible will be
+     * done at the same time.
+     */
+    public static final Property<Integer> BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.compression.max.concurrent.operations.per.host", null, Integer.class);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;
         private Class<T> typeClass;
 
-        Property(String name, T value) {
+        public Property(String name, T value) {
             init(name, value);
         }
 

@@ -45,7 +45,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, required = true, description = "the ID of the private gateway")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, required = true, description = "The ID of the private gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting private gateway id=" + id);
+        return "Deleting private gateway with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Network ACL Id: " + id);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _vpcService.deleteVpcPrivateGateway(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

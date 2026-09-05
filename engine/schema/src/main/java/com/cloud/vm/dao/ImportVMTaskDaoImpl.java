@@ -1,0 +1,74 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.vm.dao;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.ImportVMTaskVO;
+import org.apache.cloudstack.vm.ImportVmTask;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
+
+@Component
+public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> implements ImportVMTaskDao {
+
+    private SearchBuilder<ImportVMTaskVO> AllFieldsSearch;
+
+    public ImportVMTaskDaoImpl() {
+    }
+
+    @PostConstruct
+    void init() {
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("zoneId", AllFieldsSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("vcenter", AllFieldsSearch.entity().getVcenter(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("convertHostId", AllFieldsSearch.entity().getConvertHostId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+    }
+
+
+    @Override
+    public Pair<List<ImportVMTaskVO>, Integer> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId,
+                                                                 ImportVmTask.TaskState state, Long startIndex, Long pageSizeVal) {
+        SearchCriteria<ImportVMTaskVO> sc = AllFieldsSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (StringUtils.isNotBlank(vcenter)) {
+            sc.setParameters("vcenter", vcenter);
+        }
+        if (convertHostId != null) {
+            sc.setParameters("convertHostId", convertHostId);
+        }
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+        Filter filter = new Filter(ImportVMTaskVO.class, "created", false, startIndex, pageSizeVal);
+        return searchAndCount(sc, filter);
+    }
+}

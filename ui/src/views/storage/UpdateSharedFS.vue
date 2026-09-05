@@ -44,7 +44,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -116,7 +116,7 @@ export default {
         console.log(data)
         console.log(this.form)
         this.loading = true
-        api('updateSharedFileSystem', data).then(response => {
+        postAPI('updateSharedFileSystem', data).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.update.sharedfs'),

@@ -18,35 +18,48 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import org.apache.logging.log4j.Logger;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import org.mockito.Mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.net.NetUtils;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.NfsTO;
+import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
+import org.apache.cloudstack.storage.to.BackupDeltaTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.times;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.net.NetUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NfsSecondaryStorageResourceTest {
@@ -73,6 +86,15 @@ public class NfsSecondaryStorageResourceTest {
     @Mock
     private Logger loggerMock;
 
+    @Mock
+    private DeleteCommand deleteCommandMock;
+
+    @Mock
+    private BackupDeltaTO backupDeltaTOMock;
+
+    @Mock
+    private NfsTO nfsMock;
+
     @Test
     public void testSwiftWriteMetadataFile() throws Exception {
         String metaFileName = "test_metadata_file";
@@ -84,7 +106,7 @@ public class NfsSecondaryStorageResourceTest {
 
             File metaFile = resource.swiftWriteMetadataFile(metaFileName, uniqueName, filename, size, virtualSize);
 
-            Assert.assertTrue(metaFile.exists());
+            assertTrue(metaFile.exists());
             Assert.assertEquals(metaFileName, metaFile.getName());
 
             String expectedContent = "uniquename=" + uniqueName + "\n" +
@@ -111,12 +133,12 @@ public class NfsSecondaryStorageResourceTest {
 
         spyResource.cleanupStagingNfs(mockTemplate);
 
-        Mockito.verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
+        verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
 
     }
 
     private void performGetSnapshotFilepathForDeleteTest(String expected, String path, String name) {
-        Assert.assertEquals("Incorrect resultant snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
+        Assert.assertEquals("Incorrect resultant Snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
     }
 
     @Test
@@ -161,8 +183,8 @@ public class NfsSecondaryStorageResourceTest {
     }
 
     private void prepareForValidatePostUploadRequestSignatureTests(MockedStatic<EncryptionUtil> encryptionUtilMock) {
-        Mockito.doReturn(PROTOCOL).when(resource).getUploadProtocol();
-        Mockito.doReturn(PSK).when(resource).getPostUploadPSK();
+        doReturn(PROTOCOL).when(resource).getUploadProtocol();
+        doReturn(PSK).when(resource).getPostUploadPSK();
         encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(Mockito.anyString(), Mockito.anyString())).thenReturn(COMPUTED_SIGNATURE);
         String fullUrl = String.format("%s://%s/upload/%s", PROTOCOL, HOSTNAME, UUID);
         String data = String.format("%s%s%s", METADATA, fullUrl, TIMEOUT);
@@ -173,7 +195,7 @@ public class NfsSecondaryStorageResourceTest {
     public void validatePostUploadRequestSignatureTestThrowExceptionWhenProtocolDiffers() {
         try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
             prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
-            Mockito.doReturn(NetUtils.HTTPS_PROTO).when(resource).getUploadProtocol();
+            doReturn(NetUtils.HTTPS_PROTO).when(resource).getUploadProtocol();
 
             resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
         }
@@ -226,7 +248,7 @@ public class NfsSecondaryStorageResourceTest {
 
     @Test
     public void getUploadProtocolTestReturnHttpsWhenUseHttpsToUploadIsTrue() {
-        Mockito.doReturn(true).when(resource).useHttpsToUpload();
+        doReturn(true).when(resource).useHttpsToUpload();
 
         String result = resource.getUploadProtocol();
 
@@ -235,10 +257,154 @@ public class NfsSecondaryStorageResourceTest {
 
     @Test
     public void getUploadProtocolTestReturnHttpWhenUseHttpsToUploadIsFalse() {
-        Mockito.doReturn(false).when(resource).useHttpsToUpload();
+        doReturn(false).when(resource).useHttpsToUpload();
 
         String result = resource.getUploadProtocol();
 
         Assert.assertEquals(NetUtils.HTTP_PROTO, result);
+    }
+
+    @Test
+    public void configureStorageNetworkSetsStorageNetworkWhenParamsContainValues() {
+        Map<String, Object> params = new HashMap<>();
+       String ip = "192.168.1.10";
+       String netmask = "255.255.255.0";
+       String gateway = "192.168.1.1";
+       params.put("storageip", ip);
+       params.put("storagenetmask", netmask);
+       params.put("storagegateway", gateway);
+       resource.configureStorageNetwork(params);
+       Assert.assertEquals(ip, ReflectionTestUtils.getField(resource, "_storageIp"));
+       Assert.assertEquals(netmask, ReflectionTestUtils.getField(resource, "_storageNetmask"));
+       Assert.assertEquals(gateway, ReflectionTestUtils.getField(resource, "_storageGateway"));
+    }
+
+    @Test
+    public void configureStorageNetworkUsesManagementNetworkWhenStorageIpIsNullAndInSystemVM() {
+        Map<String, Object> params = new HashMap<>();
+        resource._inSystemVM = true;
+        String ip = "10.0.0.10";
+        String netmask = "255.255.255.0";
+        String gateway = "10.0.0.1";
+        ReflectionTestUtils.setField(resource, "_eth1ip", ip);
+        ReflectionTestUtils.setField(resource, "_eth1mask", netmask);
+        ReflectionTestUtils.setField(resource, "_localgw", gateway);
+        resource.configureStorageNetwork(params);
+        Assert.assertEquals(ip, ReflectionTestUtils.getField(resource, "_storageIp"));
+        Assert.assertEquals(netmask, ReflectionTestUtils.getField(resource, "_storageNetmask"));
+        Assert.assertEquals(gateway, ReflectionTestUtils.getField(resource, "_storageGateway"));
+    }
+
+    @Test
+    public void configureStorageNetworkDoesNotSetStorageNetworkWhenNotInSystemVMAndStorageIpIsNull() {
+        Map<String, Object> params = new HashMap<>();
+        resource._inSystemVM = false;
+        resource.configureStorageNetwork(params);
+        assertNull(ReflectionTestUtils.getField(resource, "_storageIp"));
+        assertNull(ReflectionTestUtils.getField(resource, "_storageNetmask"));
+        assertNull(ReflectionTestUtils.getField(resource, "_storageGateway"));
+    }
+
+
+    @Test
+    public void deleteBackupTestSuccess() {
+        doReturn(backupDeltaTOMock).when(deleteCommandMock).getData();
+        doReturn(nfsMock).when(backupDeltaTOMock).getDataStore();
+        doReturn("asd").when(nfsMock).getUrl();
+
+        doReturn("fds").when(resource).getRootDir(any(), any());
+        doReturn("path/to/delta").when(backupDeltaTOMock).getPath();
+        doReturn(null).when(resource).deleteLocalFile(any());
+        doReturn(null).when(resource).deleteScreenshot(any(), any(), any());
+
+        Answer answer = resource.deleteBackup(deleteCommandMock);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void deleteBackupTestDeleteDeltaFails() {
+        doReturn(backupDeltaTOMock).when(deleteCommandMock).getData();
+        doReturn(nfsMock).when(backupDeltaTOMock).getDataStore();
+        doReturn("asd").when(nfsMock).getUrl();
+
+        doReturn("fds").when(resource).getRootDir(any(), any());
+        doReturn("path/to/delta").when(backupDeltaTOMock).getPath();
+        doReturn("error").when(resource).deleteLocalFile(any());
+
+        Answer answer = resource.deleteBackup(deleteCommandMock);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void deleteBackupTestScreenshotFailure() {
+        doReturn(backupDeltaTOMock).when(deleteCommandMock).getData();
+        doReturn(nfsMock).when(backupDeltaTOMock).getDataStore();
+        doReturn("asd").when(nfsMock).getUrl();
+
+        doReturn("fds").when(resource).getRootDir(any(), any());
+        doReturn("path/to/delta").when(backupDeltaTOMock).getPath();
+        doReturn(null).when(resource).deleteLocalFile(any());
+
+        BackupDeleteAnswer failureAnswer = new BackupDeleteAnswer(deleteCommandMock, false, "fail");
+        doReturn(failureAnswer).when(resource).deleteScreenshot(any(), any(), any());
+
+        Answer answer = resource.deleteBackup(deleteCommandMock);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void deleteBackupTestDirectoryDeletionFails() {
+        doReturn(backupDeltaTOMock).when(deleteCommandMock).getData();
+        doReturn(nfsMock).when(backupDeltaTOMock).getDataStore();
+        doReturn("asd").when(nfsMock).getUrl();
+
+        doReturn("fds").when(resource).getRootDir(any(), any());
+        doReturn("path/to/delta").when(backupDeltaTOMock).getPath();
+        doReturn(null).when(resource).deleteLocalFile(any());
+        doReturn(null).when(resource).deleteScreenshot(any(), any(), any());
+        doReturn(false).when(resource).deleteEmptyDirectory(any());
+
+        Answer answer = resource.deleteBackup(deleteCommandMock);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void deleteScreenshotTestNullPath() {
+        BackupDeleteAnswer answer = resource.deleteScreenshot(deleteCommandMock, null, "/root/");
+
+        assertNull(answer);
+    }
+
+    @Test
+    public void deleteScreenshotTestSuccess() {
+        doReturn(null).when(resource).deleteLocalFile(any());
+
+        BackupDeleteAnswer answer = resource.deleteScreenshot(deleteCommandMock, "path/to/file", "/root/");
+
+        assertNull(answer);
+    }
+
+    @Test
+    public void deleteScreenshotTestFailure() {
+        doReturn("error").when(resource).deleteLocalFile(any());
+        doReturn(backupDeltaTOMock).when(deleteCommandMock).getData();
+
+        BackupDeleteAnswer answer = resource.deleteScreenshot(deleteCommandMock, "path/to/file", "/root/");
+
+        assertNotNull(answer);
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void deleteScreenshotTestPathStartsWithSeparator() {
+        doReturn(null).when(resource).deleteLocalFile(any());
+
+        resource.deleteScreenshot(deleteCommandMock, File.separator + "path/to/file", "/root/");
+
+        verify(resource).deleteLocalFile("/root/" + "path/to/file");
     }
 }

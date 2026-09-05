@@ -43,7 +43,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the ID of the Physical network")
+               description = "The ID of the Physical network")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Physical Network Id: " + id);
+        CallContext.current().setEventDetails("Physical Network Id: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.deletePhysicalNetwork(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -77,7 +77,7 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Physical network: " + getId();
+        return "Deleting Physical network with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -229,7 +229,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -371,7 +371,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            Long accountId= accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            Long accountId= accountManager.finalizeAccountId(accountName, domainId, projectId, false);
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
         // search via dataCenterIpv4GuestSubnetDao
@@ -390,11 +390,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -430,7 +430,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = cmd.getId();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
 
         // update domain_id and account_id to null via dataCenterIpv4GuestSubnetDao, to release the dedication
@@ -607,10 +607,20 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     protected Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
-        validateNetworkCidrSize(ownerAccountId, cidrSize);
+        validateNetworkCidrSize(cidrSize);
         List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(ownerDomainId, ownerAccountId, zoneId);
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
-            Ipv4GuestSubnetNetworkMap result = getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
+            Ipv4GuestSubnetNetworkMap result = getIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
+            if (result != null) {
+                return result;
+            }
+        }
+        Boolean isAutoAllocationEnabled = RoutedIPv4NetworkCidrAutoAllocationEnabled.valueIn(ownerAccountId);
+        if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
+            throw new InvalidParameterValueException("CIDR auto-allocation is disabled for this account");
+        }
+        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
+            Ipv4GuestSubnetNetworkMap result = createIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
             if (result != null) {
                 return result;
             }
@@ -618,17 +628,25 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return null;
     }
 
-    protected Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, DataCenterIpv4GuestSubnetVO subnet) {
-        Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), cidrSize);
-        if (map != null) {
-            return map;
-        }
+    protected Ipv4GuestSubnetNetworkMap getIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, DataCenterIpv4GuestSubnetVO subnet) {
+        return ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), cidrSize);
+    }
+
+    protected Ipv4GuestSubnetNetworkMap createIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, DataCenterIpv4GuestSubnetVO subnet) {
         try {
             return createIpv4SubnetFromParentSubnet(subnet, cidrSize);
         } catch (Exception ex) {
             logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
         }
         return null;
+    }
+
+    protected Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, DataCenterIpv4GuestSubnetVO subnet) {
+        Ipv4GuestSubnetNetworkMap map = getIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
+        if (map != null) {
+            return map;
+        }
+        return createIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
     }
 
     protected void getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(String networkCidr, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
@@ -693,13 +711,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
     }
 
-    private void validateNetworkCidrSize(long accountId, Integer networkCidrSize) {
+    private void validateNetworkCidrSize(Integer networkCidrSize) {
         if (networkCidrSize == null) {
-            throw new CloudRuntimeException("network/vpc CidrSize is null");
-        }
-        Boolean isAutoAllocationEnabled = RoutedIPv4NetworkCidrAutoAllocationEnabled.valueIn(accountId);
-        if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
-            throw new CloudRuntimeException("CIDR auto-allocation is disabled for this account");
+            throw new InvalidParameterValueException("network/vpc CidrSize is null");
         }
     }
 
@@ -755,7 +769,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         // Allocate a subnet automatically
         String networkCidr = getFreeNetworkCidr(subnetsInFreeIpRanges, networkCidrSize);
         if (networkCidr == null) {
-            throw new CloudRuntimeException("Failed to automatically allocate a subnet with specified cidrsize");
+            throw new InvalidParameterValueException("Failed to automatically allocate a subnet with specified cidrsize");
         }
         return networkCidr;
     }
@@ -912,7 +926,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 if (!firewallDao.setStateToAdd(newRule)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
-                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
 
                 return newRule;
             }
@@ -975,15 +989,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public boolean isVirtualRouterGateway(Network network) {
         return isRoutedNetwork(network)
-                && (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter))
-                || networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter);
+                && (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter)
+                || networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter));
     }
 
     @Override
     public boolean isVirtualRouterGateway(NetworkOffering networkOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
-                || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter);
+                && (networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
+                || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter));
     }
 
     @Override
@@ -1021,9 +1035,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering) {
+    public boolean isValidGateway(VpcOffering vpcOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
-                && vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null;
+                && (vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null
+                || vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.Netris.getName(), vpcOffering.getId()) != null);
     }
 
     @Override
@@ -1079,7 +1094,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -1264,11 +1279,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
             Account account = accountManager.getAccount(accountId);
@@ -1312,7 +1327,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = releaseDedicatedBgpPeerCmd.getId();
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
 
         // update domain_id and account_id to null via bgpPeerDao, to release the dedication
@@ -1335,7 +1350,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
-            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            accountId = accountManager.finalizeAccountId(accountName, domainId, projectId, false);
         }
         if (isDedicated != null) {
             SearchCriteria sc1 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);

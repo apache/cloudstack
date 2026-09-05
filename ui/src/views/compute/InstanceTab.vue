@@ -28,10 +28,15 @@
       <a-tab-pane :tab="$t('label.metrics')" key="stats">
         <StatsTab :resource="resource"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
-        <usb-outlined />
-        <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
-        <barcode-outlined /> {{ vm.isoid }}
+      <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="attachedIsos.length > 0">
+        <div v-for="iso in attachedIsos" :key="iso.id" style="margin-bottom: 12px;">
+          <usb-outlined />
+          <router-link :to="{ path: '/iso/' + iso.id }">{{ iso.displaytext || iso.name }}</router-link>
+          <a-tag style="margin-left: 8px;">{{ slotLabel(iso.deviceseq) }}</a-tag>
+          <a-tag v-if="iso.bootable" color="blue" style="margin-left: 4px;">{{ $t('label.bootable') }}</a-tag>
+          <br/>
+          <barcode-outlined /> {{ iso.id }}
+        </div>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
         <a-button
@@ -39,10 +44,19 @@
           style="width: 100%; margin-bottom: 10px"
           @click="showAddVolModal"
           :loading="loading"
-          :disabled="!('createVolume' in $store.getters.apis) || this.vm.state === 'Error'">
+          :disabled="!('createVolume' in $store.getters.apis) || this.vm.state === 'Error' || resource.hypervisor === 'External'">
           <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.gpu')" key="gpu" v-if="dataResource.gpucardname">
+        <GPUTab
+          apiName="listGpuDevices"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
+          resourceType="VirtualMachine"
+          :columns="['gpucardname', 'vgpuprofilename', 'state'].concat($store.getters.userInfo.roletype === 'Admin' ? ['id', 'hostname'] : [])"
+          :routerlinks="(record) => { return { displayname: '/gpudevice/' + record.id } }"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
@@ -60,8 +74,10 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['created', 'status', 'type', 'size', 'virtualsize']"
-          :routerlinks="(record) => { return { created: '/backup/' + record.id } }"
+          :columns="dataResource.backupprovider === 'kboss'
+            ? ['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'type', 'intervaltype', 'created']
+            : ['name', 'status', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
+          :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0 || $store.getters.showSecurityGroups">
@@ -78,9 +94,14 @@
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
-        <InstanceSchedules
-          :virtualmachine="vm"
+      <a-tab-pane
+        :tab="$t('label.schedules')"
+        key="schedules"
+        v-if="'listResourceSchedule' in $store.getters.apis && !dataResource.autoscalevmgroupid"
+      >
+        <ResourceSchedules
+          :resource="vm"
+          resourceType="VirtualMachine"
           :loading="loading"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
@@ -127,7 +148,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -136,13 +157,14 @@ import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTab from '@/views/network/NicsTab'
-import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
+import ResourceSchedules from '@/views/compute/ResourceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import GPUTab from '@/components/view/GPUTab.vue'
 
 export default {
   name: 'InstanceTab',
@@ -154,7 +176,8 @@ export default {
     DetailSettings,
     CreateVolume,
     NicsTab,
-    InstanceSchedules,
+    GPUTab,
+    ResourceSchedules,
     ListResourceTable,
     SecurityGroupSelection,
     TooltipButton,
@@ -215,7 +238,28 @@ export default {
   mounted () {
     this.setCurrentTab()
   },
+  computed: {
+    attachedIsos () {
+      if (this.vm.isos && this.vm.isos.length > 0) {
+        return [...this.vm.isos].sort((a, b) => (a.deviceseq || 0) - (b.deviceseq || 0))
+      }
+      if (this.vm.isoid) {
+        return [{
+          id: this.vm.isoid,
+          name: this.vm.isoname,
+          displaytext: this.vm.isodisplaytext,
+          deviceseq: 3
+        }]
+      }
+      return []
+    }
+  },
   methods: {
+    slotLabel (deviceseq) {
+      // 3 -> hdc, 4 -> hdd, ... matches LibvirtVMDef.getDevLabel for the IDE bus on KVM.
+      if (typeof deviceseq !== 'number') return ''
+      return 'hd' + String.fromCharCode('a'.charCodeAt(0) + deviceseq - 1)
+    },
     setCurrentTab () {
       this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
     },
@@ -238,14 +282,14 @@ export default {
       if (!this.vm || !this.vm.id) {
         return
       }
-      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       })
     },
     listDiskOfferings () {
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listAll: 'true',
         zoneid: this.vm.zoneid
       }).then(response => {
@@ -276,7 +320,7 @@ export default {
       this.securitygroupids = securitygroupids || []
     },
     updateSecurityGroups () {
-      api('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
+      postAPI('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.closeModals()

@@ -181,11 +181,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             logger.debug("We are returning the default host to execute commands because the target hypervisor of the source data is not XenServer.");
             return defaultHostToExecuteCommands;
         }
-        // only now can we decide, now we now we're only deciding for ourselves
         if (cmd instanceof StorageSubSystemCommand) {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("XenServer StrorageSubSystemCommand re always executed in sequence (command of type %s to host %l).", cmd.getClass(), hostId));
-            }
+            logger.trace("XenServer StrorageSubSystemCommand is always executed in sequence (command of type {} to host {}).", cmd.getClass(), hostId);
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);
         }
@@ -199,7 +196,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         boolean isSourceObjectSnapshotTypeAndDestinationObjectTemplateType = srcData.getObjectType() == DataObjectType.SNAPSHOT
                 && destData.getObjectType() == DataObjectType.TEMPLATE;
         if (!isSourceObjectSnapshotTypeAndDestinationObjectTemplateType) {
-            logger.debug("We are returning the default host to execute commands because the source and destination objects are not snapshot and template respectively.");
+            logger.debug("We are returning the default host to execute commands because the source and destination objects are not Snapshot and Template respectively.");
             return defaultHostToExecuteCommands;
         }
         HostVO defaultHostToExecuteCommand = hostDao.findById(hostId);
@@ -223,7 +220,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             return defaultHostToExecuteCommands;
         }
         logger.debug(String.format("We are changing the hostId to executed command from %d to %d.", hostId, hostCandidateToExecutedCommand.getId()));
-        return new Pair<Boolean, Long>(Boolean.TRUE, new Long(hostCandidateToExecutedCommand.getId()));
+        return new Pair<>(Boolean.TRUE, hostCandidateToExecutedCommand.getId());
     }
 
     @Override

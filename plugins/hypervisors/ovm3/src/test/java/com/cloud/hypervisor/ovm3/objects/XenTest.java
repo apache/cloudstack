@@ -17,8 +17,7 @@
 
 package com.cloud.hypervisor.ovm3.objects;
 
-import java.util.UUID;
-
+import com.cloud.utils.UuidUtils;
 import org.junit.Test;
 
 public class XenTest {
@@ -697,7 +696,7 @@ public class XenTest {
         domU.setVmCpus(1);
         domU.setVmMemory(512);
         domU.setVmDomainType("default");
-        domU.setVmUuid(UUID.nameUUIDFromBytes(VMNAME.getBytes()).toString());
+        domU.setVmUuid(UuidUtils.nameUUIDFromBytes(VMNAME.getBytes()).toString());
         domU.setVmName(VMNAME);
         domU.addRootDisk(VMROOTDISK);
         domU.setPrimaryPoolUuid(REPOID);

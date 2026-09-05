@@ -215,4 +215,8 @@ public interface NetworkGuru extends Adapter {
     default boolean isSlaacV6Only() {
         return true;
     }
+
+    default boolean update(Network network, String prevNetworkName) {
+        return true;
+    }
 }

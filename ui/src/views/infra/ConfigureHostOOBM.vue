@@ -91,7 +91,7 @@
 <script>
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'ConfigureHostOOBM',
@@ -145,7 +145,7 @@ export default {
           driver: values.driver
         }
 
-        api('configureOutOfBandManagement', {}, 'POST', params).then(_ => {
+        postAPI('configureOutOfBandManagement', params).then(_ => {
           this.$message.success(this.$t('message.oobm.configured'))
           this.$emit('refresh-data')
           this.onCloseAction()

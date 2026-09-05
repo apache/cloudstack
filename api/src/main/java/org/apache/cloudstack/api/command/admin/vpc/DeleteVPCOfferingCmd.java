@@ -38,7 +38,7 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "the ID of the VPC offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "The ID of the VPC offering")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting VPC offering id=" + getId();
+        return "Deleting VPC offering with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -19,11 +19,27 @@
   <div
     :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
-    <span v-if="uploadPercentage > 0">
+    <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
+    <div v-else-if="ssvmCertUntrusted" class="ssvm-cert-warning">
+      <a-alert
+        type="warning"
+        show-icon
+        :message="$t('message.ssvm.cert.untrusted')"
+        :description="$t('message.ssvm.cert.trust.instructions')" />
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          {{ $t('label.ssvm.open.cert.page') }}
+        </a-button>
+        <a-button type="primary" :loading="loading" @click="retryUpload">
+          {{ $t('label.retry.upload') }}
+        </a-button>
+      </div>
+    </div>
     <a-spin :spinning="loading" v-else>
       <a-form
         :ref="formRef"
@@ -194,7 +210,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item ref="format" name="format">
+            <a-form-item ref="format" name="format" v-if="!hyperExternalShow">
               <template #label>
                 <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
               </template>
@@ -212,10 +228,38 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
+            <a-form-item ref="extensionid" name="extensionid" v-if="hyperExternalShow">
+              <template #label>
+                <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
+              </template>
+              <a-select
+                v-model:value="form.extensionid"
+                :placeholder="apiParams.extensionid.description"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="extension in extensionsList" :key="extension.id" :label="extension.name || extension.description">
+                  {{ extension.name || extension.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12">
-          <a-col :md="24" :lg="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
+        <a-form-item name="externaldetails" ref="externaldetails" v-if="hyperExternalShow">
+          <template #label>
+            <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          </template>
+          <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+          <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+            <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
+          </a-card>
+        </a-form-item>
+        <a-row :gutter="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
+          <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
                 <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
@@ -377,7 +421,7 @@
               name="userdataid"
               ref="userdataid">
               <template #label>
-                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+                <tooltip-label :title="$t('label.user.data')" :tooltip="linkUserDataParams.userdataid.description"/>
               </template>
               <a-select
                 showSearch
@@ -397,7 +441,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch
@@ -473,12 +517,14 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -495,13 +541,16 @@ export default {
   },
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   data () {
     return {
       uploadPercentage: 0,
       uploading: false,
       fileList: [],
+      ssvmCertUntrusted: false,
+      ssvmOrigin: '',
       zones: {},
       defaultZone: '',
       hyperVisor: {},
@@ -518,6 +567,7 @@ export default {
       userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
+      hyperExternalShow: false,
       hyperCustomShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
@@ -536,7 +586,8 @@ export default {
       domainid: null,
       account: null,
       customHypervisorName: 'Custom',
-      architectureTypes: {}
+      architectureTypes: {},
+      externalDetailsEnabled: false
     }
   },
   beforeCreate () {
@@ -580,7 +631,8 @@ export default {
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
-        groupenabled: [{ type: 'array' }]
+        groupenabled: [{ type: 'array' }],
+        extensionid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
     fetchData () {
@@ -599,6 +651,7 @@ export default {
           this.fetchXenServerProvider()
         }
       }
+      this.fetchExtensionsList()
     },
     handleFormChange (e) {
       this.currentForm = e.target.value
@@ -615,12 +668,24 @@ export default {
       this.form.file = file
       return false
     },
+    async retryUpload () {
+      this.loading = true
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
+      this.loading = false
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
+        return
+      }
+      this.ssvmCertUntrusted = false
+      this.handleUpload()
+    },
     handleUpload () {
       const { fileList } = this
       const formData = new FormData()
       fileList.forEach(file => {
         formData.append('files[]', file)
       })
+      this.uploading = true
       this.uploadPercentage = 0
       axios.post(this.uploadParams.postURL,
         formData,
@@ -643,19 +708,20 @@ export default {
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(e => {
-        this.$notification.error({
-          message: this.$t('message.upload.failed'),
-          description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
-          duration: 0
-        })
+        this.$notifyError(e)
+      }).finally(() => {
+        this.uploading = false
       })
     },
     fetchCustomHypervisorName () {
+      if (!('listConfigurations' in store.getters.apis)) {
+        return
+      }
       const params = {
         name: 'hypervisor.custom.display.name'
       }
       this.loading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
@@ -663,6 +729,21 @@ export default {
             store.dispatch('SetCustomHypervisorName', this.customHypervisorName)
           }
         }
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchExtensionsList () {
+      if (!this.isAdminRole) {
+        return
+      }
+      this.loading = true
+      getAPI('listExtensions', {
+        type: 'Orchestrator'
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extension || []
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -684,7 +765,7 @@ export default {
       this.zones.loading = true
       this.zones.opts = []
 
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZonesResponse = json.listzonesresponse.zone
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
@@ -703,7 +784,7 @@ export default {
       this.hyperVisor.loading = true
       let listhyperVisors = this.hyperVisor.opts || []
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
@@ -712,6 +793,9 @@ export default {
           listhyperVisors.push({
             name: 'Simulator'
           })
+        }
+        if (!this.isAdminRole) {
+          listhyperVisors = listhyperVisors.filter(hv => hv.name !== 'External')
         }
         this.hyperVisor.opts = listhyperVisors
       }).finally(() => {
@@ -722,7 +806,7 @@ export default {
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
@@ -738,7 +822,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const listUserdata = json.listuserdataresponse.userdata
         this.userdata.opts = listUserdata
       }).finally(() => {
@@ -751,7 +835,7 @@ export default {
 
       this.form.xenserverToolsVersion61plus = true
 
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value !== 'xenserver61') {
           this.form.xenserverToolsVersion61plus = false
         }
@@ -920,6 +1004,10 @@ export default {
             description: 'BareMetal'
           })
           break
+        case 'External':
+          this.hyperExternalShow = true
+          this.selectedFormat = 'External'
+          break
         case 'Ovm':
           format.push({
             id: 'RAW',
@@ -997,6 +1085,7 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.hyperExternalShow = false
       this.hyperCustomShow = false
       this.deployasis = false
       this.allowDirectDownload = false
@@ -1010,8 +1099,18 @@ export default {
       this.fetchRootDisk(hyperVisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
+      this.templateTypes.opts = this.$fetchTemplateTypes(hyperVisor)
+      if (this.form.templatetype && !this.templateTypes.opts.find(opt => opt.id === this.form.templatetype)) {
+        this.form.templatetype = undefined
+      }
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -1048,6 +1147,10 @@ export default {
               const name = input[index]
               params[name] = true
             }
+          } else if (key === 'externaldetails') {
+            Object.entries(input).forEach(([k, v]) => {
+              params['externaldetails[0].' + k] = v
+            })
           } else {
             const formattedDetailData = {}
             switch (key) {
@@ -1077,9 +1180,12 @@ export default {
         if (!('requireshvm' in params)) { // handled as default true by API
           params.requireshvm = false
         }
+        if (this.selectedFormat === 'External') {
+          params.format = 'External'
+        }
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerTemplate', params).then(json => {
+          postAPI('registerTemplate', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
@@ -1103,12 +1209,18 @@ export default {
               duration: 0
             })
           }
-          api('getUploadParamsForTemplate', params).then(json => {
+          getAPI('getUploadParamsForTemplate', params).then(async json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
-            this.handleUpload()
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
             }
+            this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
+            const trusted = await probeSsvmCert(this.ssvmOrigin)
+            if (!trusted) {
+              this.ssvmCertUntrusted = true
+              return
+            }
+            this.handleUpload()
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
@@ -1145,7 +1257,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
@@ -1164,7 +1276,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         this.domains = json.listdomainsresponse.domain
       }).finally(() => {
         this.domainLoading = false
@@ -1180,7 +1292,7 @@ export default {
       }
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account || []

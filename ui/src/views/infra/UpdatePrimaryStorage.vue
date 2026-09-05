@@ -115,7 +115,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -179,7 +179,7 @@ export default {
     fetchStorageAccessGroupsData () {
       const params = {}
       this.storageAccessGroupsLoading = true
-      api('listStorageAccessGroups', params).then(json => {
+      getAPI('listStorageAccessGroups', params).then(json => {
         const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
         for (const sag of sags) {
           if (!this.storageAccessGroups.includes(sag.name)) {
@@ -218,7 +218,7 @@ export default {
       this.$emit('close-action')
     },
     updateStoragePool (args, values) {
-      api('updateStoragePool', args).then(json => {
+      postAPI('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
 
         if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
@@ -228,7 +228,7 @@ export default {
         }
 
         if (args.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== args.storageaccessgroups) {
-          api('configureStorageAccess', {
+          postAPI('configureStorageAccess', {
             storageid: args.id,
             storageaccessgroups: args.storageaccessgroups
           }).then(response => {

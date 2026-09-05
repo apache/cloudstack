@@ -175,9 +175,6 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
 
             _volumeDao.update(volume.getId(), volume);
 
-            // create new volume details for the volume
-            //updateVolumeDetails(volume, esvolume);
-
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
 
@@ -368,7 +365,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            logger.info("taking elastistor volume snapshot");
+            logger.info("Taking elastistor volume Snapshot");
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
 
             String volumeid = snapshotTO.getVolume().getUuid();

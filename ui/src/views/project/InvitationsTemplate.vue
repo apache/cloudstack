@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -186,7 +186,7 @@ export default {
       this.dataSource = []
       this.itemCount = 0
 
-      api('listProjectInvitations', params).then(json => {
+      getAPI('listProjectInvitations', params).then(json => {
         const listProjectInvitations = json.listprojectinvitationsresponse.projectinvitation
         const itemCount = json.listprojectinvitationsresponse.count
 
@@ -247,7 +247,7 @@ export default {
       params.domainid = record.domainid
       params.accept = state
 
-      api('updateProjectInvitation', params).then(json => {
+      postAPI('updateProjectInvitation', params).then(json => {
         this.$pollJob({
           jobId: json.updateprojectinvitationresponse.jobid,
           title,
