@@ -3276,7 +3276,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * allocated from the physical network's vnet range at creation, the same way a Shared network
      * without specifyVlan gets its VLAN — and released the same way on deletion.
      */
-    private boolean isL3NetworkWithoutSpecifyVlan(NetworkOffering offering) {
+    @Override
+    public boolean isL3NetworkWithoutSpecifyVlan(NetworkOffering offering) {
         if (offering == null || offering.getTrafficType() != TrafficType.Guest || offering.getGuestType() != GuestType.L3) {
             return false;
         }

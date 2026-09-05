@@ -5868,7 +5868,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()));
+        final NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(networkOffering);
+        boolean isL3NetworkWithoutSpecifyVlan = _networkMgr.isL3NetworkWithoutSpecifyVlan(networkOffering);
         if (ipv4) {
             final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
 
@@ -5926,8 +5928,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // Check if the vlan is being used
-        if (isSharedNetworkWithoutSpecifyVlan) {
+        // Check if the vlan is being used. An auto-allocated id (Shared VLAN or L3 routed id,
+        // offering without specifyVlan) always lies inside the physical network's vnet range —
+        // findVnet matches any id in the range, taken or free — so the in-range check below
+        // would reject every such network; both cases are exempt.
+        if (isSharedNetworkWithoutSpecifyVlan || isL3NetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
         if (!bypassVlanOverlapCheck && !forExternalProvider && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
