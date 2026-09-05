@@ -1731,7 +1731,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!_accountMgr.isRootAdmin(caller.getId())) {
                 throw new InvalidParameterValueException("Only ROOT admin is allowed to create Private VLAN network");
             }
-            if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated) {
+            if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L3) {
                 throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
             }
             if (ipv6) {

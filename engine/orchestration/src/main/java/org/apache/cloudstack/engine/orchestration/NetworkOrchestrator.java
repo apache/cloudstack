@@ -3192,7 +3192,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
                             }
 
-                            if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
+                            // The PVLAN overlap check only understands vlan:// and vxlan:// URIs. A
+                            // routed:// URI is a bridge label on a ROUTED physical network, where no
+                            // PVLAN network can exist; its overlap checks (zone-wide URI, public
+                            // ranges, vnet range) have already run above.
+                            final boolean isRoutedUri = uri != null && BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed;
+                            if (!isRoutedUri && _networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
                                 throw new InvalidParameterValueException(String.format(
                                         "Network with vlan %s already exists or overlaps with other network pvlans in zone %s",
                                         vlanIdFinal, zone));
