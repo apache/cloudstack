@@ -63,7 +63,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     Map<String, ModuleDefinition> modules;
     Map<String, ApplicationContext> contexts = new HashMap<String, ApplicationContext>();
 
-    Map<String, Set<Resource>> configResourcesMap = new HashMap<String, Set<Resource>>();
+    Map<String, Set<Resource>> inheritedConfigResourcesMap = new HashMap<String, Set<Resource>>();
 
     ApplicationContext rootContext = null;
     Set<String> excludes = new HashSet<String>();
@@ -339,13 +339,14 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return Collections.emptySet();
         }
 
-        if (configResourcesMap.containsKey(def.getName())) {
-            return configResourcesMap.get(def.getName());
+        final Set<Resource> cachedResources = inheritedConfigResourcesMap.get(def.getName());
+        if (cachedResources != null) {
+            return cachedResources;
         }
 
         final Set<Resource> inheritableResources = new LinkedHashSet<>(def.getInheritableContextLocations());
         inheritableResources.addAll(collectInheritedResources(modules.get(def.getParentName())));
-        configResourcesMap.put(def.getName(), inheritableResources);
+        inheritedConfigResourcesMap.put(def.getName(), inheritableResources);
         return inheritableResources;
     }
 
