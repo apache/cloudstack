@@ -703,57 +703,56 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     protected void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
         AsyncJobVO job = _jobDao.findById(item.getContentId());
-        if (job != null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Schedule queued job-" + job.getId());
-            }
-
-            job.setSyncSource(item);
-
-            //
-            // TODO: a temporary solution to work-around DB deadlock situation
-            //
-            // to live with DB deadlocks, we will give a chance for job to be rescheduled
-            // in case of exceptions (most-likely DB deadlock exceptions)
-            try {
-                job.setExecutingMsid(getMsid());
-                _jobDao.update(job.getId(), job);
-            } catch (Exception e) {
-                logger.warn("Unexpected exception while dispatching job-" + item.getContentId(), e);
-
-                try {
-                    _queueMgr.returnItem(item.getId());
-                } catch (Throwable thr) {
-                    logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", thr);
-                }
-                return;
-            }
-
-            try {
-                scheduleExecution(job);
-            } catch (RejectedExecutionException e) {
-                logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
-
-                try {
-                    _queueMgr.returnItem(item.getId());
-                } catch (Exception e2) {
-                    logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", e2);
-                }
-
-                try {
-                    job.setExecutingMsid(null);
-                    _jobDao.update(job.getId(), job);
-                } catch (Exception e3) {
-                    logger.warn("Unexpected exception while update job-" + item.getContentId() + " msid for bookkeeping");
-                }
-            }
-
-        } else {
+        if (job == null) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Unable to find related job for queue item: " + item.toString());
             }
-
             _queueMgr.purgeItem(item.getId());
+            return;
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Schedule queued job-" + job.getId());
+        }
+        job.setSyncSource(item);
+
+        //
+        // TODO: a temporary solution to work-around DB deadlock situation
+        //
+        // to live with DB deadlocks, we will give a chance for job to be rescheduled
+        // in case of exceptions (most-likely DB deadlock exceptions)
+        try {
+            job.setExecutingMsid(getMsid());
+            _jobDao.update(job.getId(), job);
+        } catch (Exception e) {
+            logger.warn("Unexpected exception while dispatching job-" + item.getContentId(), e);
+            returnItemToQueue(item);
+            return;
+        }
+
+        try {
+            scheduleExecution(job);
+        } catch (RejectedExecutionException e) {
+            logger.warn("Execution for job-" + job.getId() + " is rejected, return it to the queue for next turn");
+            returnItemToQueue(item);
+            clearExecutingMsid(job, item);
+        }
+    }
+
+    private void returnItemToQueue(SyncQueueItemVO item) {
+        try {
+            _queueMgr.returnItem(item.getId());
+        } catch (Throwable thr) {
+            logger.error("Unexpected exception while returning job-" + item.getContentId() + " to queue", thr);
+        }
+    }
+
+    private void clearExecutingMsid(AsyncJobVO job, SyncQueueItemVO item) {
+        try {
+            job.setExecutingMsid(null);
+            _jobDao.update(job.getId(), job);
+        } catch (Exception e) {
+            logger.warn("Unexpected exception while update job-" + item.getContentId() + " msid for bookkeeping");
         }
     }
 
