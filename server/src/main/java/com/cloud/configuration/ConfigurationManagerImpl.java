@@ -5560,6 +5560,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         }
 
+        // On an L3 (Direct Routed) network an overlap is an address conflict, not a policy
+        // preference: all subnets share one host routing table and are advertised into one
+        // fabric, so the check must be zone-wide. The IPv6 vlan check above already is; for
+        // IPv4 the user_ip_address unique key is per network, hence this explicit check.
+        // Shared networks keep their historical behaviour: the same IPv4 range in two VLANs
+        // is legitimate there.
+        if (ipv4 && network.getGuestType() == GuestType.L3) {
+            checkOverlapPublicIpRange(zoneId, startIP, endIP);
+        }
+
         long reservedIpAddressesAmount = 0L;
         if (forVirtualNetwork && vlanOwner != null) {
             reservedIpAddressesAmount = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
@@ -5858,7 +5868,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()));
+        final NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(networkOffering);
+        boolean isL3NetworkWithoutSpecifyVlan = _networkMgr.isL3NetworkWithoutSpecifyVlan(networkOffering);
         if (ipv4) {
             final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
 
@@ -5916,13 +5928,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // Check if the vlan is being used
-        if (isSharedNetworkWithoutSpecifyVlan) {
+        // Check if the vlan is being used. An auto-allocated id (Shared VLAN or L3 routed id,
+        // offering without specifyVlan) always lies inside the physical network's vnet range —
+        // findVnet matches any id in the range, taken or free — so the in-range check below
+        // would reject every such network; both cases are exempt.
+        if (isSharedNetworkWithoutSpecifyVlan || isL3NetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
         if (!bypassVlanOverlapCheck && !forExternalProvider && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
+        }
+
+        // A routed id names a bridge on every host (brdr-<id>): a public range and a guest
+        // network sharing one id would merge their L2 domains. The guest-side creation rejects
+        // ids held by public ranges; this is the same guard in the other direction.
+        if (vlanId != null && vlanId.startsWith(BroadcastDomainType.Routed.scheme() + "://")
+                && !_networkDao.listByZoneAndUriAndGuestType(zoneId, vlanId, null).isEmpty()) {
+            throw new InvalidParameterValueException(String.format(
+                    "The routed id %s is already used by a guest network in zone %s", vlanId, zone.getName()));
         }
 
         String ipRange = null;
@@ -5999,6 +6023,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
                     networkVlanId = networkVlanId.split("-")[0];
                 }
+            } else if (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed) {
+                // Direct Routed (L3) networks: the routed id plays the role the VLAN tag plays
+                // for Shared networks, so IP ranges added later stay consistent with it
+                networkVlanId = BroadcastDomainType.getValue(uri);
             }
         }
         return networkVlanId;
@@ -7214,7 +7242,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (guestType == null) {
-            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
+            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; supported values are " + Arrays.toString(Network.GuestType.values()));
         }
 
         if (internetProtocol != null) {
@@ -7271,9 +7299,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (service == Service.SecurityGroup) {
-                // allow security group service for Shared networks only
-                if (guestType != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Security group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                // allow security group service for Shared and L3 (Direct Routed) networks only
+                if (guestType != GuestType.Shared && guestType != GuestType.L3) {
+                    throw new InvalidParameterValueException(String.format("Security group service is supported for network offerings with guest ip type %s or %s", GuestType.Shared, GuestType.L3));
                 }
                 final Set<Network.Provider> sgProviders = new HashSet<>();
                 sgProviders.add(Provider.SecurityGroupProvider);
@@ -7368,6 +7396,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // validate providers combination here
         _networkModel.canProviderSupportServices(providerCombinationToVerify);
+
+        if (guestType == GuestType.L3) {
+            validateL3NetworkOffering(serviceProviderMap, networkMode, specifyVlan, specifyIpRanges, forVpc);
+        }
 
         // validate the LB service capabilities specified in the network
         // offering
@@ -7469,6 +7501,49 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    /**
+     * Validates a network offering for the L3 (Direct Routed) guest type. There is no Virtual
+     * Router and no DHCP on these networks: the Instance learns its /32 (and /128) address,
+     * on-link gateway and routes exclusively from ConfigDrive. UserData via ConfigDrive is
+     * therefore mandatory. Dns is optional (a template may carry its own resolvers) but must be
+     * provided by ConfigDrive when present. SecurityGroup is the only other permitted service.
+     */
+    protected void validateL3NetworkOffering(final Map<Network.Service, Set<Network.Provider>> serviceProviderMap, final NetworkOffering.NetworkMode networkMode,
+            final boolean specifyVlan, final boolean specifyIpRanges, final Boolean forVpc) {
+        if (Boolean.TRUE.equals(forVpc)) {
+            throw new InvalidParameterValueException(String.format("VPC is not supported for network offerings with guest type %s", GuestType.L3));
+        }
+        if (networkMode != null) {
+            throw new InvalidParameterValueException(String.format("Network mode can not be specified for network offerings with guest type %s", GuestType.L3));
+        }
+        // specifyVlan is a free choice: with it the operator supplies the routed id (routed://<id>,
+        // naming the per-network bridge) at network creation via the vlan parameter; without it
+        // CloudStack allocates one from the ROUTED physical network's vnet range.
+        if (!specifyIpRanges) {
+            throw new InvalidParameterValueException(String.format("Network offerings with guest type %s must specify IP ranges", GuestType.L3));
+        }
+        if (serviceProviderMap.containsKey(Service.Dhcp)) {
+            throw new InvalidParameterValueException(String.format("DHCP is not supported (and not needed) for network offerings with guest type %s; addressing is delivered via ConfigDrive", GuestType.L3));
+        }
+        final Set<Service> allowedL3Services = new HashSet<>(Arrays.asList(Service.UserData, Service.Dns, Service.SecurityGroup));
+        for (final Service service : serviceProviderMap.keySet()) {
+            if (!allowedL3Services.contains(service)) {
+                throw new InvalidParameterValueException(String.format("Service %s is not supported for network offerings with guest type %s; supported services are %s",
+                        service.getName(), GuestType.L3, StringUtils.join(allowedL3Services.stream().map(Service::getName).toArray(), ", ")));
+            }
+        }
+        final Set<Provider> configDriveOnly = Collections.singleton(Provider.ConfigDrive);
+        final Set<Provider> userDataProviders = serviceProviderMap.get(Service.UserData);
+        if (!configDriveOnly.equals(userDataProviders)) {
+            throw new InvalidParameterValueException(String.format("UserData with provider %s is mandatory for network offerings with guest type %s; it is the only channel that carries the Instance's network configuration",
+                    Provider.ConfigDrive.getName(), GuestType.L3));
+        }
+        final Set<Provider> dnsProviders = serviceProviderMap.get(Service.Dns);
+        if (dnsProviders != null && !configDriveOnly.equals(dnsProviders)) {
+            throw new InvalidParameterValueException(String.format("DNS on network offerings with guest type %s must use provider %s", GuestType.L3, Provider.ConfigDrive.getName()));
+        }
     }
 
     public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {

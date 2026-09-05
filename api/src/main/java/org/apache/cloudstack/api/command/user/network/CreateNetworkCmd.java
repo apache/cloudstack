@@ -340,10 +340,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             }
         }
         if (physicalNetworkId != null) {
-            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2)) {
+            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2) || (offering.getGuestType() == GuestType.L3)) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " or " + GuestType.L2 + " only.");
+                throw new InvalidParameterValueException(String.format("Physical network ID can be specified for networks of guest IP type %s, %s or %s only.", GuestType.Shared, GuestType.L2, GuestType.L3));
             }
         } else {
             if (zoneId == null) {

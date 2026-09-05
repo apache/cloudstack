@@ -28,6 +28,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.resource.CommandWrapper;
@@ -59,8 +60,16 @@ public final class LibvirtSecurityGroupRulesCommandWrapper extends CommandWrappe
             return new SecurityGroupRuleAnswer(command, false, e.toString());
         }
 
+        // The rules are programmed for the Instance's first NIC (vif/brname above); its network
+        // type decides which dispatch form the script must use.
+        boolean directRouted = false;
+        final VirtualMachineTO vmTO = command.getVmTO();
+        if (vmTO != null && vmTO.getNics() != null && vmTO.getNics().length > 0) {
+            directRouted = BridgeVifDriver.isDirectRoutedNic(vmTO.getNics()[0]);
+        }
+
         final boolean result = libvirtComputingResource.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getGuestIp6(), command.getSignature(),
-                Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString());
+                Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString(), directRouted);
 
         if (!result) {
             logger.warn("Failed to program network rules for vm " + command.getVmName());

@@ -868,6 +868,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     protected NetworkServiceImpl() {
     }
 
+    /**
+     * True when the NIC belongs to a Direct Routed (L3) network, where secondary IPs need a host
+     * route and neighbour entry on the hypervisor whether or not security groups are in use.
+     */
+    protected boolean isDirectRoutedNic(long nicId) {
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic == null) {
+            return false;
+        }
+        Network network = _networksDao.findById(nic.getNetworkId());
+        return network != null && GuestType.L3.equals(network.getGuestType());
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_CONFIGURE, eventDescription = "Configuring secondary IP " + "rules", async = true)
     public boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled) {
@@ -877,9 +890,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             secondaryIp = secIp.getIp6Address();
         }
 
-        if (isZoneSgEnabled) {
+        // A Direct Routed network needs the agent told regardless of the zone's security group
+        // setting: the host route and neighbour entry are what make the address reachable.
+        if (isZoneSgEnabled || isDirectRoutedNic(secIp.getNicId())) {
             success = _securityGroupService.securityGroupRulesForVmSecIp(secIp.getNicId(), secondaryIp, true);
-            logger.info("Associated IP address to NIC : " + secIp.getIp4Address());
+            logger.info("Associated IP address to NIC : " + secondaryIp);
         } else {
             success = true;
         }
@@ -1558,6 +1573,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
+        // Fail here with a clear message rather than deep in setupNetwork(), where no guru
+        // claiming the network produces an opaque error. The physical network is the network
+        // operator's opt-in: without ROUTED it carries no direct routed networks.
+        if (ntwkOff.getGuestType() == GuestType.L3
+                && (pNtwk.getIsolationMethods() == null || !pNtwk.getIsolationMethods().contains("ROUTED"))) {
+            throw new InvalidParameterValueException(String.format(
+                    "Networks of guest type %s can only be created on a physical network with isolation method ROUTED; physical network %s carries %s",
+                    GuestType.L3, pNtwk.getName(), pNtwk.getIsolationMethods()));
+        }
+
         if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIPv4, routerIPv6))) {
             throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
         }
@@ -1605,8 +1630,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        // Start and end IP address are mandatory for shared networks.
-        if (ntwkOff.getGuestType() == GuestType.Shared && vpcId == null) {
+        // Start and end IP address are mandatory for shared and L3 (Direct Routed) networks.
+        if ((ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.L3) && vpcId == null) {
             if (!AllowEmptyStartEndIpAddress.valueIn(owner.getAccountId()) &&
                 (startIP == null && endIP == null) &&
                 (startIPv6 == null && endIPv6 == null)) {
@@ -1655,12 +1680,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 endIPv6 = startIPv6;
             }
             _networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
-            if (!GuestType.Shared.equals(ntwkOff.getGuestType())) {
+            if (!GuestType.Shared.equals(ntwkOff.getGuestType()) && !GuestType.L3.equals(ntwkOff.getGuestType())) {
                 _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
             }
+            // IPv6 addresses are calculated with EUI-64 from the subnet and the NIC's MAC, which
+            // needs 64 interface-identifier bits: a prefix longer than /64 would fail at Instance
+            // deploy (NetUtils.EUI64Address throws), so reject it at network creation instead.
+            if (GuestType.L3.equals(ntwkOff.getGuestType()) && NetUtils.getIp6CidrSize(ip6Cidr) > 64) {
+                throw new InvalidParameterValueException(String.format(
+                        "The IPv6 subnet of a %s network must be /64 or larger: addresses are derived with EUI-64 from the subnet and the NIC MAC", GuestType.L3));
+            }
 
-            if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared) {
-                throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
+            if (zone.getNetworkType() != NetworkType.Advanced || (ntwkOff.getGuestType() != Network.GuestType.Shared && ntwkOff.getGuestType() != Network.GuestType.L3)) {
+                throw new InvalidParameterValueException(String.format("Can only support create IPv6 network with advanced %s or %s network!", GuestType.Shared, GuestType.L3));
             }
 
             if(StringUtils.isAllBlank(ip6Dns1, ip6Dns2, zone.getIp6Dns1(), zone.getIp6Dns2())) {
@@ -1699,7 +1731,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!_accountMgr.isRootAdmin(caller.getId())) {
                 throw new InvalidParameterValueException("Only ROOT admin is allowed to create Private VLAN network");
             }
-            if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated) {
+            if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L3) {
                 throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
             }
             if (ipv6) {
@@ -1722,7 +1754,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // Ignore vlanId if it is passed but specifyvlan=false in network offering
-        if (ntwkOff.getGuestType() == GuestType.Shared && ! ntwkOff.isSpecifyVlan() && vlanId != null) {
+        if ((ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.L3) && ! ntwkOff.isSpecifyVlan() && vlanId != null) {
             throw new InvalidParameterValueException("Cannot specify vlanId when create a network from network offering with specifyvlan=false");
         }
 
@@ -1778,9 +1810,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        // Vlan is created in 1 cases - works in Advance zone only:
-        // 1) GuestType is Shared
+        // Vlan is created in these cases - works in Advance zone only:
+        // 1) GuestType is Shared or L3 (Direct Routed)
+        // 2) GuestType is Isolated without SourceNat
         boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
+                || (ntwkOff.getGuestType() == Network.GuestType.L3)
                 || (ntwkOff.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
 
         if (!createVlan) {
@@ -1797,9 +1831,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
 
 
-        if (GuestType.Shared == ntwkOff.getGuestType()) {
+        if (GuestType.Shared == ntwkOff.getGuestType() || GuestType.L3 == ntwkOff.getGuestType()) {
             if (!ntwkOff.isSpecifyIpRanges()) {
-                throw new CloudRuntimeException("The 'specifyipranges' parameter should be true for Shared Networks");
+                throw new CloudRuntimeException(String.format("The 'specifyipranges' parameter should be true for %s Networks", ntwkOff.getGuestType()));
             }
             if (ipv4 && Objects.isNull(startIP)) {
                 throw new CloudRuntimeException("IPv4 address range needs to be provided");
@@ -2018,7 +2052,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private ACLType getAclType(Account caller, NetworkOffering ntwkOff, ACLType aclType) {
-        if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
+        if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2 || ntwkOff.getGuestType() == GuestType.L3) {
             aclType = ACLType.Account;
         } else if (ntwkOff.getGuestType() == GuestType.Shared) {
             if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -2326,15 +2360,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
 
                     String vlanId = vlanIdFinal;
-                    if (createVlan && vlanId == null && ntwkOff.getGuestType() == Network.GuestType.Shared && ! ntwkOff.isSpecifyVlan()) {
+                    if (createVlan && vlanId == null && (ntwkOff.getGuestType() == Network.GuestType.Shared || ntwkOff.getGuestType() == Network.GuestType.L3)
+                            && ! ntwkOff.isSpecifyVlan()) {
                         if (associatedNetwork != null) {
                             // Get vlanId from associated network
                             vlanId = associatedNetwork.getBroadcastUri().toString();
                         } else {
-                            // Allocate a vnet to shared network with specifyvlan=false
+                            // Allocate a vnet to a Shared network with specifyvlan=false, or a routed id
+                            // to an L3 (Direct Routed) network — both come from the physical network's
+                            // vnet range and are released when the network is deleted.
                             vlanId = _dcDao.allocateVnet(zoneId, physicalNetworkId, owner.getAccountId(), null, GuestNetworkGuru.UseSystemGuestVlans.valueIn(owner.getAccountId()));
                             if (vlanId == null) {
-                                throw new InvalidParameterValueException("Cannot allocate a vnet for this Shared network");
+                                throw new InvalidParameterValueException(String.format("Cannot allocate a vnet for this %s network", ntwkOff.getGuestType()));
                             }
                         }
                     }

@@ -81,6 +81,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String DefaultL2NetworkOfferingVlan = "DefaultL2NetworkOfferingVlan";
     public final static String DefaultL2NetworkOfferingConfigDrive = "DefaultL2NetworkOfferingConfigDrive";
     public final static String DefaultL2NetworkOfferingConfigDriveVlan = "DefaultL2NetworkOfferingConfigDriveVlan";
+    public final static String DefaultL3NetworkOffering = "DefaultL3NetworkOffering";
 
     /**
      * @return name for the network offering.

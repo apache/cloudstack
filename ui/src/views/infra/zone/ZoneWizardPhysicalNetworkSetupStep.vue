@@ -56,8 +56,9 @@
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="VLAN"> VLAN </a-select-option>
-            <a-select-option value="VXLAN"> VXLAN </a-select-option>
+            <a-select-option value="VLAN" :title="$t('message.isolationmethod.vlan.description')"> VLAN </a-select-option>
+            <a-select-option value="VXLAN" :title="$t('message.isolationmethod.vxlan.description')"> VXLAN </a-select-option>
+            <a-select-option v-if="hypervisor === 'KVM'" value="ROUTED" :title="$t('message.isolationmethod.routed.description')"> ROUTED </a-select-option>
             <a-select-option value="GRE"> GRE </a-select-option>
             <a-select-option value="STT"> STT </a-select-option>
             <a-select-option value="BCF_SEGMENT"> BCF_SEGMENT </a-select-option>

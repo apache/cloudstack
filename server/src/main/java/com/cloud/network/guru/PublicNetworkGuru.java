@@ -18,6 +18,8 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
@@ -57,11 +59,13 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.googlecode.ipv6.IPv6Address;
 
 public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
@@ -145,7 +149,18 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setIPv4Gateway(ip.getGateway());
             nic.setIPv4Netmask(ip.getNetmask());
-            if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+            if (isRoutedRange(ip)) {
+                // Direct routed public range (SystemVMs on a ROUTED physical network): the
+                // address is a host route, not a subnet membership. Same form as a guest NIC on
+                // a direct routed network: /32 with the shared on-link gateway, and the
+                // routed://<id> broadcast domain that names the bridge on the host.
+                nic.setIPv4Netmask(NetUtils.IPV4_HOST_NETMASK);
+                nic.setIPv4Gateway(NetUtils.getLinkLocalGateway());
+                nic.setIsolationUri(BroadcastDomainType.Routed.toUri(ip.getVlanTag()));
+                nic.setBroadcastUri(BroadcastDomainType.Routed.toUri(ip.getVlanTag()));
+                nic.setBroadcastType(BroadcastDomainType.Routed);
+                setRoutedRangeIpv6(nic, dc, ip, network);
+            } else if (network.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
                 nic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(ip.getVlanTag()));
                 nic.setBroadcastType(BroadcastDomainType.Vxlan);
@@ -164,6 +179,41 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setIPv4Dns2(dns.second());
 
         ipv6Service.updateNicIpv6(nic, dc, network);
+    }
+
+    /**
+     * A public IP range on a ROUTED physical network is created with routed://<id> as its "vlan";
+     * the tag flowing through the vlan row is what marks the addresses it holds as direct routed.
+     */
+    private boolean isRoutedRange(PublicIp ip) {
+        String vlanTag = ip.getVlanTag();
+        return vlanTag != null && vlanTag.startsWith(BroadcastDomainType.Routed.scheme() + "://");
+    }
+
+    /**
+     * IPv6 on a direct routed public range is computed with EUI-64 from the range's subnet and
+     * the NIC's MAC — the same stateless model guest NICs use (no pool, no reservation, only the
+     * result on the NIC) — and takes host-route form: a /128 with the shared link-local gateway.
+     *
+     * Deliberately not {@code ipv6Service.updateNicIpv6()}: that path is gated on the public
+     * network offering's internet protocol, and its per-network placeholder reservation would
+     * hand every SystemVM on the shared Public network the same address. Neither the gate nor
+     * the reservation has anything to decide here — the MAC makes the address unique.
+     */
+    private void setRoutedRangeIpv6(NicProfile nic, DataCenter dc, PublicIp ip, Network network) {
+        String ip6Cidr = ip.vlan() != null ? ip.vlan().getIp6Cidr() : null;
+        if (StringUtils.isBlank(ip6Cidr) || nic.getIPv6Address() != null) {
+            return;
+        }
+        IPv6Address ipv6Address = NetUtils.EUI64Address(ip6Cidr, nic.getMacAddress());
+        logger.info("Calculated IPv6 address {} using EUI-64 for direct routed public NIC {}", ipv6Address, nic);
+        nic.setIPv6Address(ipv6Address.toString());
+        nic.setIPv6Cidr(ipv6Address + "/" + NetUtils.IPV6_HOST_PREFIX_LENGTH);
+        nic.setIPv6Gateway(NetUtils.getIpv6LinkLocalGateway());
+        nic.setFormat(AddressFormat.DualStack);
+        Pair<String, String> ip6Dns = networkModel.getNetworkIp6Dns(network, dc);
+        nic.setIPv6Dns1(ip6Dns.first());
+        nic.setIPv6Dns2(ip6Dns.second());
     }
 
     @Override

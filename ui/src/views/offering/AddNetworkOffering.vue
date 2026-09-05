@@ -63,6 +63,9 @@
             <a-radio-button value="l2" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               {{ $t('label.l2') }}
             </a-radio-button>
+            <a-radio-button value="l3" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
+              {{ $t('label.l3') }}
+            </a-radio-button>
             <a-radio-button value="shared" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               {{ $t('label.shared') }}
             </a-radio-button>
@@ -93,7 +96,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
+        <a-row :gutter="12" v-if="form.provider !== 'NSX' && form.provider !== 'Netris' && guestType !== 'l3'">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
               <template #label>
@@ -206,6 +209,20 @@
         <a-form-item name="userdatal2" ref="userdatal2" :label="$t('label.user.data')" v-if="guestType === 'l2'">
           <a-switch v-model:checked="form.userdatal2" />
         </a-form-item>
+        <span v-if="guestType === 'l3'">
+          <a-alert type="info">
+            <template #message>
+              <span v-html="$t('message.offering.l3')" />
+            </template>
+          </a-alert>
+          <br/>
+          <a-form-item name="dnsl3" ref="dnsl3" :label="$t('label.dns')">
+            <a-switch v-model:checked="form.dnsl3" />
+          </a-form-item>
+          <a-form-item name="securitygroupl3" ref="securitygroupl3" :label="$t('label.security.groups')">
+            <a-switch v-model:checked="form.securitygroupl3" />
+          </a-form-item>
+        </span>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
             <a-form-item name="promiscuousmode" ref="promiscuousmode" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
@@ -292,7 +309,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="guestType !== 'l2'">
+        <a-form-item v-if="guestType !== 'l2' && guestType !== 'l3'">
           <template #label>
             <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           </template>
@@ -802,7 +819,7 @@ export default {
       this.guestType = val
       this.networkmode = ''
       this.form.networkmode = ''
-      if (val === 'l2') {
+      if (val === 'l2' || val === 'l3') {
         this.form.forvpc = false
         this.form.lbtype = 'publicLb'
         this.isVirtualRouterForAtLeastOneService = false
@@ -820,6 +837,11 @@ export default {
         this.firewallServiceChecked = false
         this.firewallServiceProvider = ''
         this.selectedServiceProviderMap = {}
+      }
+      if (val === 'l3') {
+        // UserData via ConfigDrive is mandatory on L3 offerings; DNS is strongly recommended
+        this.form.dnsl3 = true
+        this.form.securitygroupl3 = false
       }
       this.fetchSupportedServiceData()
     },
@@ -1137,7 +1159,7 @@ export default {
 
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
-        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess', 'dnsl3', 'securitygroupl3']
         keys.forEach(function (key, keyIndex) {
           if (!ignoredKeys.includes(key) &&
             values[key] != null && values[key] !== undefined &&
@@ -1161,6 +1183,28 @@ export default {
           } else { // Isolated Network with Non-persistent network
             delete params.ispersistent
           }
+        } else if (values.guestiptype === 'l3') {
+          // UserData via ConfigDrive is mandatory: it is the only channel that carries the
+          // Instance's network configuration. DNS and SecurityGroup are the only options.
+          params.specifyipranges = true
+          delete params.ispersistent
+          delete params.conservemode
+          const l3Services = ['UserData']
+          params['serviceProviderList[0].service'] = 'UserData'
+          params['serviceProviderList[0].provider'] = 'ConfigDrive'
+          var l3ServiceIndex = 1
+          if (values.dnsl3 === true) {
+            params['serviceProviderList[' + l3ServiceIndex + '].service'] = 'Dns'
+            params['serviceProviderList[' + l3ServiceIndex + '].provider'] = 'ConfigDrive'
+            l3Services.push('Dns')
+            l3ServiceIndex++
+          }
+          if (values.securitygroupl3 === true) {
+            params['serviceProviderList[' + l3ServiceIndex + '].service'] = 'SecurityGroup'
+            params['serviceProviderList[' + l3ServiceIndex + '].provider'] = 'SecurityGroupProvider'
+            l3Services.push('SecurityGroup')
+          }
+          params.supportedservices = l3Services.join(',')
         } else if (values.guestiptype === 'l2') {
           if (values.specifyvlan === true) {
             params.specifyvlan = true

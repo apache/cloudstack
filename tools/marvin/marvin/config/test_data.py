@@ -221,6 +221,44 @@ test_data = {
         "endip": "172.16.15.41",
         "acltype": "Account"
     },
+    "l3_network_offering": {
+        "name": "Test L3 Direct Routed - Network offering",
+        "displaytext": "Test L3 Direct Routed - Network offering",
+        "guestiptype": "L3",
+        "supportedservices": "UserData,Dns",
+        "specifyIpRanges": "True",
+        "specifyVlan": "False",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "tags": "l3routed",
+        "serviceProviderList": {
+            "UserData": "ConfigDrive",
+            "Dns": "ConfigDrive"
+        }
+    },
+    "l3_network_offering_specifyid": {
+        "name": "Test L3 Direct Routed - Network offering, operator-specified id",
+        "displaytext": "Test L3 Direct Routed - Network offering, operator-specified id",
+        "guestiptype": "L3",
+        "supportedservices": "UserData,Dns",
+        "specifyIpRanges": "True",
+        "specifyVlan": "True",
+        "traffictype": "GUEST",
+        "availability": "Optional",
+        "tags": "l3routed",
+        "serviceProviderList": {
+            "UserData": "ConfigDrive",
+            "Dns": "ConfigDrive"
+        }
+    },
+    "l3_network": {
+        "name": "Test L3 Direct Routed Network",
+        "displaytext": "Test L3 Direct Routed Network",
+        "gateway": "203.0.113.1",
+        "netmask": "255.255.255.0",
+        "startip": "203.0.113.10",
+        "endip": "203.0.113.50"
+    },
     "l2-network_offering": {
         "name": "Test L2 - Network offering",
         "displaytext": "Test L2 - Network offering",
