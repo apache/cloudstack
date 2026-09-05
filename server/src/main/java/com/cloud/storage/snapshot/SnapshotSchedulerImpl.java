@@ -324,7 +324,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
      * skipped and rescheduled to its next regular run instead. Kept as a single decision point so the caller only
      * needs one {@code continue}.
      */
-    private boolean shouldSkipSchedule(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume) {
+    protected boolean shouldSkipSchedule(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume) {
         if (!canSnapshotBeScheduled(snapshotToBeExecuted, volume)) {
             return true;
         }
@@ -339,7 +339,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
      * Builds and dispatches the CreateSnapshotCmd async job for a scheduled snapshot, returning the "scheduled"
      * action event id so the caller can complete it if dispatch subsequently fails.
      */
-    private Long dispatchSnapshotCreateJob(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume, final SnapshotScheduleVO tmpSnapshotScheduleVO) throws Exception {
+    protected Long dispatchSnapshotCreateJob(final SnapshotScheduleVO snapshotToBeExecuted, final VolumeVO volume, final SnapshotScheduleVO tmpSnapshotScheduleVO) throws Exception {
         final long snapshotScheId = snapshotToBeExecuted.getId();
         final long policyId = snapshotToBeExecuted.getPolicyId();
         final long volumeId = snapshotToBeExecuted.getVolumeId();

@@ -16,15 +16,18 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import com.cloud.api.ApiDispatcher;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -34,6 +37,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -53,7 +58,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -107,6 +114,20 @@ public class SnapshotSchedulerImplTest {
     @Mock
     private SnapshotVO snapshotVoMock;
 
+    @Mock
+    private ApiDispatcher apiDispatcherMock;
+
+    @Mock
+    private AsyncJobManager asyncJobManagerMock;
+
+    @Mock
+    private TaggedResourceService taggedResourceServiceMock;
+
+    @Mock
+    private AsyncJobDispatcher asyncJobDispatcherMock;
+
+    @Mock
+    private SnapshotDao snapshotDaoMock;
 
     @Test
     public void scheduleNextSnapshotJobTestParameterIsNullReturnNull() {
@@ -343,7 +364,7 @@ public class SnapshotSchedulerImplTest {
     // --- getScopedConfigValue (#13454) ---
 
     @Test
-    public void getScopedConfigValueTestFallsBackToGlobalDefaultWhenNoDepotConfigured() {
+    public void getScopedConfigValueTestFallsBackToGlobalDefaultWhenNoScopeOverrideConfigured() {
         doReturn(1L).when(volumeVoMock).getAccountId();
         doReturn(1L).when(volumeVoMock).getDataCenterId();
         doReturn(1L).when(accountVoMock).getDomainId();
@@ -428,6 +449,119 @@ public class SnapshotSchedulerImplTest {
 
             verifyFailureThresholdEventsRaised(actionEventUtilsMocked);
         }
+    }
+
+    @Test
+    public void recordSnapshotAttemptOutcomeTestSucceededLogsInfoEventAndReturns() {
+        doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
+            snapshotSchedulerImplSpy.recordSnapshotAttemptOutcome(snapshotScheduleVoMock, true, null);
+
+            actionEventUtilsMocked.verify(() -> ActionEventUtils.onCreatedActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(EventVO.LEVEL_INFO), Mockito.eq(EventTypes.EVENT_SNAPSHOT_CREATE),
+                    Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString()));
+        }
+
+        verify(accountDaoMock, never()).findById(Mockito.anyLong());
+        verify(eventDaoMock, never()).listLatestEventsByResource(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+    }
+
+    // --- dispatchSnapshotCreateJob (#13454) ---
+
+    @Test
+    public void dispatchSnapshotCreateJobTestBuildsAsyncJobAndReturnsScheduledEventId() throws Exception {
+        doReturn(1L).when(snapshotScheduleVoMock).getId();
+        doReturn(1L).when(snapshotScheduleVoMock).getPolicyId();
+        doReturn(2L).when(snapshotScheduleVoMock).getVolumeId();
+        doReturn(new Date()).when(snapshotScheduleVoMock).getScheduledTimestamp();
+
+        doReturn(1L).when(volumeVoMock).getAccountId();
+        doReturn("volume-uuid").when(volumeVoMock).getUuid();
+
+        doReturn(Collections.emptyList()).when(taggedResourceServiceMock).listByResourceTypeAndId(Mockito.any(), Mockito.anyLong());
+        doReturn(7L).when(asyncJobManagerMock).submitAsyncJob(Mockito.any(AsyncJobVO.class));
+        doReturn("SnapshotDispatcher").when(asyncJobDispatcherMock).getName();
+        snapshotSchedulerImplSpy.setAsyncJobDispatcher(asyncJobDispatcherMock);
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+             MockedStatic<com.cloud.utils.component.ComponentContext> componentContextMocked = Mockito.mockStatic(com.cloud.utils.component.ComponentContext.class)) {
+            actionEventUtilsMocked.when(() -> ActionEventUtils.onScheduledActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())
+            ).thenReturn(42L);
+
+            Long eventId = snapshotSchedulerImplSpy.dispatchSnapshotCreateJob(snapshotScheduleVoMock, volumeVoMock, snapshotScheduleVoMock);
+
+            Assert.assertEquals(Long.valueOf(42L), eventId);
+        }
+
+        verify(snapshotScheduleVoMock).setAsyncJobId(7L);
+        verify(snapshotScheduleDaoMock).update(1L, snapshotScheduleVoMock);
+    }
+
+    // --- shouldSkipSchedule / scheduleSnapshots (#13454, #6827) ---
+
+    @Test
+    public void shouldSkipScheduleTestCannotBeScheduledReturnsTrueWithoutCheckingUnchangedVolume() {
+        doReturn(false).when(snapshotSchedulerImplSpy).canSnapshotBeScheduled(Mockito.any(), Mockito.any());
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipSchedule(snapshotScheduleVoMock, volumeVoMock);
+
+        Assert.assertTrue(result);
+        verify(snapshotSchedulerImplSpy, never()).shouldSkipUnchangedVolumeSnapshot(Mockito.any());
+    }
+
+    @Test
+    public void shouldSkipScheduleTestUnchangedVolumeReschedulesAndReturnsTrue() {
+        doReturn(true).when(snapshotSchedulerImplSpy).canSnapshotBeScheduled(Mockito.any(), Mockito.any());
+        doReturn(true).when(snapshotSchedulerImplSpy).shouldSkipUnchangedVolumeSnapshot(Mockito.any());
+        doNothing().when(snapshotSchedulerImplSpy).skipAndRescheduleSnapshot(Mockito.any(), Mockito.any());
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipSchedule(snapshotScheduleVoMock, volumeVoMock);
+
+        Assert.assertTrue(result);
+        verify(snapshotSchedulerImplSpy).skipAndRescheduleSnapshot(snapshotScheduleVoMock, volumeVoMock);
+    }
+
+    @Test
+    public void shouldSkipScheduleTestCanBeScheduledAndNotUnchangedReturnsFalse() {
+        doReturn(true).when(snapshotSchedulerImplSpy).canSnapshotBeScheduled(Mockito.any(), Mockito.any());
+        doReturn(false).when(snapshotSchedulerImplSpy).shouldSkipUnchangedVolumeSnapshot(Mockito.any());
+
+        boolean result = snapshotSchedulerImplSpy.shouldSkipSchedule(snapshotScheduleVoMock, volumeVoMock);
+
+        Assert.assertFalse(result);
+        verify(snapshotSchedulerImplSpy, never()).skipAndRescheduleSnapshot(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void scheduleSnapshotsTestSkippedScheduleIsNeverLockedOrDispatched() throws Exception {
+        ReflectionTestUtils.setField(snapshotSchedulerImplSpy, "_currentTimestamp", new Date());
+        doReturn(List.of(snapshotScheduleVoMock)).when(snapshotScheduleDaoMock).getSchedulesToExecute(Mockito.any(Date.class));
+        doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        doReturn(true).when(snapshotSchedulerImplSpy).shouldSkipSchedule(Mockito.any(), Mockito.any());
+
+        snapshotSchedulerImplSpy.scheduleSnapshots();
+
+        verify(snapshotScheduleDaoMock, never()).acquireInLockTable(Mockito.anyLong());
+        verify(snapshotSchedulerImplSpy, never()).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void scheduleSnapshotsTestDispatchFailureIsHandledAndLockIsReleased() throws Exception {
+        ReflectionTestUtils.setField(snapshotSchedulerImplSpy, "_currentTimestamp", new Date());
+        doReturn(1L).when(snapshotScheduleVoMock).getId();
+        doReturn(List.of(snapshotScheduleVoMock)).when(snapshotScheduleDaoMock).getSchedulesToExecute(Mockito.any(Date.class));
+        doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        doReturn(false).when(snapshotSchedulerImplSpy).shouldSkipSchedule(Mockito.any(), Mockito.any());
+        doReturn(snapshotScheduleVoMock).when(snapshotScheduleDaoMock).acquireInLockTable(1L);
+        doThrow(new RuntimeException("dispatch boom")).when(snapshotSchedulerImplSpy).dispatchSnapshotCreateJob(Mockito.any(), Mockito.any(), Mockito.any());
+        doNothing().when(snapshotSchedulerImplSpy).handleFailedSnapshotDispatch(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        snapshotSchedulerImplSpy.scheduleSnapshots();
+
+        verify(snapshotSchedulerImplSpy).handleFailedSnapshotDispatch(Mockito.eq(snapshotScheduleVoMock), Mockito.eq(volumeVoMock), Mockito.eq(snapshotScheduleVoMock), Mockito.isNull(), Mockito.any(Exception.class));
+        verify(snapshotScheduleDaoMock).releaseFromLockTable(1L);
     }
 
     // --- shouldSkipUnchangedVolumeSnapshot (#6827) ---
@@ -537,5 +671,40 @@ public class SnapshotSchedulerImplTest {
         verify(snapshotScheduleVoMock).setScheduledTimestamp(Mockito.any());
         verify(snapshotScheduleDaoMock).update(1L, snapshotScheduleVoMock);
         verify(snapshotScheduleDaoMock).releaseFromLockTable(1L);
+    }
+
+    @Test
+    public void skipAndRescheduleSnapshotTestCouldNotAcquireLockDoesNothing() {
+        doReturn(1L).when(snapshotScheduleVoMock).getId();
+        doReturn(null).when(snapshotScheduleDaoMock).acquireInLockTable(1L);
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class)) {
+            snapshotSchedulerImplSpy.skipAndRescheduleSnapshot(snapshotScheduleVoMock, volumeVoMock);
+
+            actionEventUtilsMocked.verifyNoInteractions();
+        }
+
+        verify(snapshotScheduleDaoMock, never()).update(Mockito.anyLong(), Mockito.any());
+        verify(snapshotScheduleDaoMock, never()).releaseFromLockTable(Mockito.anyLong());
+    }
+
+    // --- findLastSnapshot ---
+
+    @Test
+    public void findLastSnapshotTestReturnsMostRecentSnapshot() {
+        doReturn(List.of(snapshotVoMock)).when(snapshotDaoMock).listByVolumeId(Mockito.any(), Mockito.eq(1L));
+
+        SnapshotVO result = snapshotSchedulerImplSpy.findLastSnapshot(1L);
+
+        Assert.assertSame(snapshotVoMock, result);
+    }
+
+    @Test
+    public void findLastSnapshotTestNoSnapshotsReturnsNull() {
+        doReturn(Collections.emptyList()).when(snapshotDaoMock).listByVolumeId(Mockito.any(), Mockito.eq(1L));
+
+        SnapshotVO result = snapshotSchedulerImplSpy.findLastSnapshot(1L);
+
+        Assert.assertNull(result);
     }
 }
