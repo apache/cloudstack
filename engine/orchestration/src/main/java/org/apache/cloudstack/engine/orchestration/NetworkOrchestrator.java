@@ -557,6 +557,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         sgProviders.add(Provider.SecurityGroupProvider);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
 
+        // Direct Routed (L3) networks have no Virtual Router and no DHCP: Instances learn their
+        // addressing from ConfigDrive, which also carries UserData and the DNS configuration.
+        final Map<Network.Service, Set<Network.Provider>> defaultL3NetworkOfferingProviders = new HashMap<>();
+        final Set<Provider> configDriveProvider = new HashSet<>();
+        configDriveProvider.add(Provider.ConfigDrive);
+        defaultL3NetworkOfferingProviders.put(Service.UserData, configDriveProvider);
+        defaultL3NetworkOfferingProviders.put(Service.Dns, configDriveProvider);
+        final Set<Provider> l3SecurityGroupProvider = new HashSet<>();
+        l3SecurityGroupProvider.add(Provider.SecurityGroupProvider);
+        defaultL3NetworkOfferingProviders.put(Service.SecurityGroup, l3SecurityGroupProvider);
+
         tungstenProvider.add(Provider.Tungsten);
         final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<>();
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Connectivity, tungstenProvider);
@@ -618,6 +629,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false,
                             null, true, false, false, false, false, null, null, null, true, null, null, false);
+                }
+
+                //#3b - Direct Routed (L3) network offering: ConfigDrive for UserData and DNS,
+                // Security Groups for Instance isolation. Created on upgrade and fresh install
+                // alike, since this block runs on every management server start. The routed id
+                // is allocated from the ROUTED physical network's range (no specifyVlan).
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL3NetworkOffering) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL3NetworkOffering,
+                            "Offering for Direct Routed (L3) networks - public IPs routed directly to Instances, configuration via ConfigDrive (UserData and DNS), Security Groups enabled, no Virtual Router and no DHCP",
+                            TrafficType.Guest, null, false, Availability.Optional, null, defaultL3NetworkOfferingProviders, true, Network.GuestType.L3, false, null, true,
+                            null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
                 }
 
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE) == null) {
