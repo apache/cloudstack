@@ -92,6 +92,17 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item
+            v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan && isAdmin()"
+            name="routedid"
+            ref="routedid">
+            <template #label>
+              <tooltip-label :title="$t('label.routedid')" :tooltip="$t('message.routedid.description')"/>
+            </template>
+            <a-input
+              v-model:value="form.routedid"
+              :placeholder="$t('message.routedid.description')"/>
+          </a-form-item>
           <a-row :gutter="12">
             <a-col :md="12" :lg="12">
               <a-form-item name="gateway" ref="gateway">
@@ -223,7 +234,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
-import { isAdminOrDomainAdmin } from '@/role'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -275,6 +286,7 @@ export default {
     this.fetchData()
   },
   methods: {
+    isAdmin,
     isAdminOrDomainAdmin,
     initForm () {
       this.formRef = ref()
@@ -282,7 +294,10 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
-        networkofferingid: [{ required: true, message: this.$t('message.error.select') }]
+        networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        // Only rendered (and thus validated) for offerings with specifyVlan, where the API
+        // requires the operator to pick the routed id.
+        routedid: [{ required: true, message: this.$t('message.error.routedid') }]
       })
     },
     fetchData () {
@@ -355,6 +370,12 @@ export default {
           if (values[key]) {
             params[key] = values[key]
           }
+        }
+        // The operator-chosen routed id travels in the API's vlan parameter, like the VLAN
+        // tag of a Shared network. Only valid with a specifyVlan network offering; otherwise
+        // CloudStack allocates the id from the ROUTED physical network's range.
+        if (this.selectedNetworkOffering.specifyvlan && values.routedid) {
+          params.vlan = values.routedid
         }
         if (this.owner.account) {
           params.account = this.owner.account
