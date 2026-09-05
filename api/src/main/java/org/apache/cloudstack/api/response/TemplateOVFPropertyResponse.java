@@ -66,19 +66,6 @@ public class TemplateOVFPropertyResponse extends BaseResponse {
     @Param(description = "The ovf property category")
     private String category;
 
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof TemplateOVFPropertyResponse)) {
-            return false;
-        }
-        return key != null && key.equals(((TemplateOVFPropertyResponse)other).key);
-    }
-
-    @Override
-    public int hashCode() {
-        return key.hashCode();
-    }
-
     public String getKey() {
         return key;
     }
