@@ -142,7 +142,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
 
-    private final static Integer CONFIGDRIVEDISKSEQ = 4;
+    public final static Integer CONFIGDRIVEDISKSEQ = 4;
 
     private boolean canHandle(TrafficType trafficType) {
         return trafficType.equals(TrafficType.Guest);
