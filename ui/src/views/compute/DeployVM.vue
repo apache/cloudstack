@@ -2340,6 +2340,15 @@ export default {
         })
     },
     fetchServiceOfferingCategories () {
+      if (!('listServiceOfferingCategories' in this.$store.getters.apis)) {
+        this.options.serviceOfferingCategories = [
+          {
+            id: '-1',
+            name: this.$t('label.all')
+          }
+        ]
+        return Promise.resolve()
+      }
       this.loading.serviceOfferingCategories = true
       return new Promise((resolve, reject) => {
         getAPI('listServiceOfferingCategories').then(json => {

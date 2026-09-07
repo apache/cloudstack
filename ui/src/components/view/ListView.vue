@@ -1056,8 +1056,8 @@
       <template v-if="column.key === 'vgpuActions'">
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
       </template>
-      <template v-if="column.key === 'category' && $route.path.split('/')[1] === 'computeoffering'">
-        <span v-if="record.categoryid">
+      <template v-if="column.key === 'category'">
+        <span v-if="('listServiceOfferingCategories' in $store.getters.apis) && record.categoryid">
           <router-link :to="{ path: '/serviceofferingcategory/' + record.categoryid }">{{ text }}</router-link>
         </span>
         <span v-else>{{ text }}</span>
