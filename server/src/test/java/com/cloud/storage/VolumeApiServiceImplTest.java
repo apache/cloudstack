@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -2895,5 +2896,99 @@ public class VolumeApiServiceImplTest {
                     "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
+    }
+
+    /**
+     * createVolumeOnStoragePool must reject the request when the target pool has crossed its
+     * storage capacity disable threshold, instead of silently creating the volume there.
+     */
+    @Test
+    public void testCreateVolumeOnStoragePool_DisableThresholdCrossed_ShouldThrow()
+            throws ExecutionException, InterruptedException {
+        long volumeId = 400L;
+        long storageId = 401L;
+        long diskOfferingId = 402L;
+        long dataCenterId = 1L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getDataCenterId()).thenReturn(dataCenterId);
+        when(volume.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(volume.getUuid()).thenReturn("volume-uuid");
+        when(volumeDaoMock.findById(volumeId)).thenReturn(volume);
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.KVM);
+
+        PrimaryDataStore storagePool = Mockito.mock(PrimaryDataStore.class);
+        when(storagePool.getStatus()).thenReturn(StoragePoolStatus.Up);
+        when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
+        when(storagePool.getName()).thenReturn("pool-crossing-threshold");
+        when(dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary)).thenReturn(storagePool);
+
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(_diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+
+        Mockito.doReturn(true).when(volumeApiServiceImpl).doesStoragePoolSupportDiskOffering(storagePool, diskOffering);
+
+        // Simulate the pool having crossed its storage.capacity/allocated disable threshold.
+        when(storageMgr.storagePoolHasEnoughSpace(anyList(), eq(storagePool))).thenReturn(false);
+
+        try {
+            invokePrivateMethod("createVolumeOnStoragePool", new Class[]{Long.class, Long.class}, volumeId, storageId);
+            Assert.fail("Expected an InvalidParameterValueException because the pool has crossed its disable threshold");
+        } catch (RuntimeException e) {
+            // invokePrivateMethod wraps the reflectively-thrown exception as:
+            // RuntimeException -> InvocationTargetException -> actual exception
+            Throwable cause = e.getCause();
+            if (cause instanceof InvocationTargetException) {
+                cause = cause.getCause();
+            }
+            Assert.assertTrue("Expected InvalidParameterValueException, was: " + cause,
+                    cause instanceof InvalidParameterValueException);
+            Assert.assertTrue("Exception message must reference the disable threshold, was: " + cause.getMessage(),
+                    cause.getMessage() != null && cause.getMessage().contains("disable threshold"));
+        }
+
+        Mockito.verify(volumeServiceMock, Mockito.never()).createVolumeAsync(any(), any());
+    }
+
+    /**
+     * createVolumeOnStoragePool must proceed with volume creation when the target pool has
+     * enough space and has not crossed its disable threshold.
+     */
+    @Test
+    public void testCreateVolumeOnStoragePool_EnoughSpace_ShouldCreateVolume()
+            throws ExecutionException, InterruptedException {
+        long volumeId = 410L;
+        long storageId = 411L;
+        long diskOfferingId = 412L;
+        long dataCenterId = 1L;
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getDataCenterId()).thenReturn(dataCenterId);
+        when(volume.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(volumeDaoMock.findById(volumeId)).thenReturn(volume);
+        when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.KVM);
+
+        PrimaryDataStore storagePool = Mockito.mock(PrimaryDataStore.class);
+        when(storagePool.getStatus()).thenReturn(StoragePoolStatus.Up);
+        when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
+        when(dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary)).thenReturn(storagePool);
+
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(_diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+
+        Mockito.doReturn(true).when(volumeApiServiceImpl).doesStoragePoolSupportDiskOffering(storagePool, diskOffering);
+        when(storageMgr.storagePoolHasEnoughSpace(anyList(), eq(storagePool))).thenReturn(true);
+
+        when(volumeDataFactoryMock.getVolume(volumeId, storagePool)).thenReturn(volumeInfoMock);
+        when(volumeInfoMock.getId()).thenReturn(volumeId);
+        when(volumeServiceMock.createVolumeAsync(volumeInfoMock, storagePool)).thenReturn(asyncCallFutureVolumeapiResultMock);
+
+        VolumeVO result = invokePrivateMethod("createVolumeOnStoragePool",
+                new Class[]{Long.class, Long.class}, volumeId, storageId);
+
+        Assert.assertEquals(volume, result);
+        Mockito.verify(volumeServiceMock).createVolumeAsync(volumeInfoMock, storagePool);
     }
 }

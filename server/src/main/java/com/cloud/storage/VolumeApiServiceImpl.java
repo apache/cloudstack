@@ -1127,6 +1127,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        Pair<Volume, DiskProfile> volumeDiskProfilePair = new Pair<>(volume, diskProfile);
+        if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(volumeDiskProfilePair), storagePool)) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s on storage pool %s as the pool does not have enough space " +
+                    "or has crossed the disable threshold.", volume.getUuid(), storagePool.getName()));
+        }
+
         DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
