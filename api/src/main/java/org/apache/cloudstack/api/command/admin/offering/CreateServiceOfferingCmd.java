@@ -294,7 +294,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             entityType = ServiceOfferingCategoryResponse.class,
             required = false,
             description = "the ID of the service offering category to associate with this offering",
-            since = "4.23.0")
+            since = "24.0")
     private Long categoryId;
 
     /////////////////////////////////////////////////////
