@@ -27,6 +27,7 @@ import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
@@ -42,7 +43,9 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -71,6 +74,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     VolumeDao _volumeDao;
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
 
 
     @Override
@@ -86,7 +91,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
      * Get next free DeviceId for a KVM Guest
      */
 
-    protected Long getNextAvailableDeviceId(List<VolumeVO> vmVolumes) {
+    protected Long getNextAvailableDeviceId(long vmId, List<VolumeVO> vmVolumes) {
 
         int maxDataVolumesSupported;
         int maxDeviceId;
@@ -103,6 +108,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             devIds.add(String.valueOf(i));
         }
         devIds.remove("3");
+        if (_vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            devIds.remove(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.toString());
+        }
         for (VolumeVO vmVolume : vmVolumes) {
             devIds.remove(vmVolume.getDeviceId().toString().trim());
         }
@@ -371,7 +379,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                } else if (VMVolToRestore.getType() == Volume.Type.DATADISK) {
                    List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
                    _volumeDao.update(volume.getId(), volume);
-                   _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vm.getId(), vmVolumes));
                }
                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vm.getId(), volume.isDisplay());
@@ -389,7 +397,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
         if (restoredVolume != null) {
             try {
-                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vm.getId(), vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, restoredVolume.getAccountId(), restoredVolume.getDataCenterId(), restoredVolume.getId(), restoredVolume.getName(),
