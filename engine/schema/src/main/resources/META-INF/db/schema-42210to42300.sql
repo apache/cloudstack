@@ -29,9 +29,10 @@ CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
  CONSTRAINT `uc_service_offering_category__name` UNIQUE (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());
+INSERT IGNORE INTO `cloud`.`service_offering_category` (id, name, uuid) VALUES (1, 'Default', UUID());
 
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `category_id` bigint unsigned NOT NULL DEFAULT 1;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'category_id', 'bigint unsigned NOT NULL DEFAULT 1');
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__category_id');
 ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__category_id` FOREIGN KEY (`category_id`) REFERENCES `cloud`.`service_offering_category` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'domain_id', 'bigint unsigned DEFAULT NULL COMMENT "NULL for global provider, domain ID for domain-specific" AFTER `redirect_uri`');

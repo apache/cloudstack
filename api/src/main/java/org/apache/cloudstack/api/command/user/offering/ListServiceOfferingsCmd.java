@@ -129,7 +129,7 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             type = CommandType.UUID,
             entityType = ServiceOfferingCategoryResponse.class,
             description = "the ID of the service offering category",
-            since = "4.23.0")
+            since = "24.0")
     private Long categoryId;
 
     /////////////////////////////////////////////////////

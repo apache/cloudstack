@@ -1042,8 +1042,10 @@ export default {
         rootdisksize: null,
         disksize: null
       },
+      selectedServiceOfferingCategoryId: '-1',
       options: {
         guestOsCategories: [],
+        serviceOfferingCategories: [],
         volumes: {},
         snapshots: {},
         templates: {},
@@ -1070,6 +1072,7 @@ export default {
       loading: {
         deploy: false,
         guestOsCategories: false,
+        serviceOfferingCategories: false,
         volumes: false,
         snapshots: false,
         templates: false,

@@ -3976,6 +3976,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final Long diskOfferingId = getOrDefault(cmd.getDiskOfferingId(), sourceOffering.getDiskOfferingId());
 
+        // validate the overridden category id, otherwise inherit the source offering's category
+        final Long cmdCategoryId = cmd.getCategoryId();
+        if (cmdCategoryId != null && _serviceOfferingCategoryDao.findById(cmdCategoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid service offering category id");
+        }
+        final Long categoryId = getOrDefault(cmdCategoryId, sourceOffering.getCategoryId());
+
         return createServiceOffering(userId, systemUse, vmType,
                 name, cpuNumber, memory, cpuSpeed, displayText, provisioningType, localStorageRequired,
                 offerHa, limitCpuUse, isVolatile, tags, domainIds, zoneIds, hostTag, networkRate,
@@ -3987,7 +3994,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskParams.iopsWriteRate, diskParams.iopsWriteRateMax, diskParams.iopsWriteRateMaxLength,
                 diskParams.hypervisorSnapshotReserve, diskParams.cacheMode, customParams.storagePolicy, dynamicScalingEnabled,
                 diskOfferingId, diskOfferingStrictness, isCustomized, encryptRoot,
-                vgpuProfileId, finalGpuCount, gpuDisplay, purgeResources, leaseParams.leaseDuration, leaseParams.leaseExpiryAction, sourceOffering.getCategoryId());
+                vgpuProfileId, finalGpuCount, gpuDisplay, purgeResources, leaseParams.leaseDuration, leaseParams.leaseExpiryAction, categoryId);
     }
 
     private ServiceOfferingVO getAndValidateSourceOffering(Long sourceOfferingId) {

@@ -1057,7 +1057,10 @@
         <slot name="actionButtons" :record="record" :actions="actions"></slot>
       </template>
       <template v-if="column.key === 'category' && $route.path.split('/')[1] === 'computeoffering'">
-        <router-link :to="{ path: '/serviceofferingcategory/' + record.categoryid }">{{ text }}</router-link>
+        <span v-if="record.categoryid">
+          <router-link :to="{ path: '/serviceofferingcategory/' + record.categoryid }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
       </template>
     </template>
     <template #footer>

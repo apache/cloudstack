@@ -30,6 +30,8 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOfferingCategoryVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -94,6 +96,9 @@ public class ConfigurationManagerCloneIntegrationTest {
 
     @Mock
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
+    @Mock
+    private ServiceOfferingCategoryDao serviceOfferingCategoryDao;
 
     @Mock
     private DiskOfferingDao diskOfferingDao;
@@ -166,6 +171,9 @@ public class ConfigurationManagerCloneIntegrationTest {
             anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong(),
             anyInt(), anyString(), any(), anyLong(), anyBoolean(), anyBoolean());
 
+
+        Mockito.lenient().when(serviceOfferingCategoryDao.findById(anyLong()))
+                .thenReturn(mock(ServiceOfferingCategoryVO.class));
 
         // User/Account DAO stubs used by createDiskOffering
         Mockito.lenient().when(userDao.findById(anyLong())).thenReturn(userVO);
@@ -340,6 +348,7 @@ public class ConfigurationManagerCloneIntegrationTest {
         Assert.assertEquals("Cloned offering should override RAM", Integer.valueOf(4096), result.getRamSize());
         Assert.assertEquals("Cloned offering should override HA", Boolean.FALSE, result.isOfferHA());
     }
+
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCloneDiskOfferingFailsWhenSourceNotFound() {

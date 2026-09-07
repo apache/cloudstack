@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteServiceOfferingCategory",
         description = "Deletes a service offering category.",
         responseObject = SuccessResponse.class,
-        since = "4.23.0",
+        since = "24.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class DeleteServiceOfferingCategoryCmd extends BaseCmd {

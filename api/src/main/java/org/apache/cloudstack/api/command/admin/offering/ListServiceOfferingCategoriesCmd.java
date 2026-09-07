@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 @APICommand(name = "listServiceOfferingCategories",
         description = "Lists service offering categories.",
         responseObject = ServiceOfferingCategoryResponse.class,
-        since = "4.23.0",
+        since = "24.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class ListServiceOfferingCategoriesCmd extends BaseListCmd {
