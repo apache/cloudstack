@@ -33,35 +33,33 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
 
-    public static final long HeartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
-    public static final long HeartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
-    public static final long HeartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
-    public static final long HeartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
-    public static final long HeartBeatCheckerTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_CHECKER_TIMEOUT);
+    long HeartBeatUpdateTimeoutInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
+    long HeartBeatUpdateFreqInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
+    long HeartBeatCheckerTimeoutInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_CHECKER_TIMEOUT);
 
-    public default KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+    default KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         return createPhysicalDisk(volumeUuid, format, provisioningType, size, passphrase);
     }
 
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
+    KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
+    KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    public boolean connectPhysicalDisk(String volumeUuid, Map<String, String> details);
+    boolean connectPhysicalDisk(String volumeUuid, Map<String, String> details);
 
-    public KVMPhysicalDisk getPhysicalDisk(String volumeUuid);
+    KVMPhysicalDisk getPhysicalDisk(String volumeUuid);
 
-    public boolean disconnectPhysicalDisk(String volumeUuid);
+    boolean disconnectPhysicalDisk(String volumeUuid);
 
-    public boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format);
+    boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format);
 
-    public List<KVMPhysicalDisk> listPhysicalDisks();
+    List<KVMPhysicalDisk> listPhysicalDisks();
 
-    public String getUuid();
+    String getUuid();
 
-    public long getCapacity();
+    long getCapacity();
 
-    public long getUsed();
+    long getUsed();
 
     default Long getCapacityIops() {
         return null;
@@ -71,51 +69,51 @@ public interface KVMStoragePool {
         return null;
     }
 
-    public long getAvailable();
+    long getAvailable();
 
-    public boolean refresh();
+    boolean refresh();
 
-    public boolean isExternalSnapshot();
+    boolean isExternalSnapshot();
 
-    public String getLocalPath();
+    String getLocalPath();
 
-    public String getSourceHost();
+    String getSourceHost();
 
-    public String getSourceDir();
+    String getSourceDir();
 
-    public int getSourcePort();
+    int getSourcePort();
 
-    public String getAuthUserName();
+    String getAuthUserName();
 
-    public String getAuthSecret();
+    String getAuthSecret();
 
-    public StoragePoolType getType();
+    StoragePoolType getType();
 
-    public boolean delete();
+    boolean delete();
 
     PhysicalDiskFormat getDefaultFormat();
 
-    public boolean createFolder(String path);
+    boolean createFolder(String path);
 
-    public boolean supportsConfigDriveIso();
+    boolean supportsConfigDriveIso();
 
-    public Map<String, String> getDetails();
+    Map<String, String> getDetails();
 
     default String getLocalPathFor(String relativePath) {
         return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
     }
 
-    public boolean isPoolSupportHA();
+    boolean isPoolSupportHA();
 
-    public String getHearthBeatPath();
+    String getHearthBeatPath();
 
-    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation);
+    String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation);
 
-    public String getStorageNodeId();
+    String getStorageNodeId();
 
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host);
+    Boolean hasHeartBeat(HAStoragePool pool, HostTO host);
 
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration);
+    Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration);
 
     default LibvirtVMDef.DiskDef.BlockIOSize getSupportedLogicalBlockSize() {
         return null;

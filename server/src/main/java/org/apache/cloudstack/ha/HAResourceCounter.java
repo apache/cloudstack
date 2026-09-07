@@ -36,6 +36,10 @@ public final class HAResourceCounter {
         return activityCheckCounter.get();
     }
 
+    public long getActivityCheckFailureCounter() {
+        return activityCheckFailureCounter.get();
+    }
+
     public long getRecoveryCounter() {
         return recoveryOperationCounter.get();
     }
@@ -66,7 +70,7 @@ public final class HAResourceCounter {
         firstHealthCheckFailureTimestamp = null;
     }
 
-    public boolean hasActivityThresholdExceeded(final double failureRatio) {
+    public boolean hasActivityFailureThresholdExceeded(final double failureRatio) {
         return activityCheckFailureCounter.get() > (activityCheckCounter.get() * failureRatio);
     }
 

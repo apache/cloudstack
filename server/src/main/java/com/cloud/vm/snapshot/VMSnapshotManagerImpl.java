@@ -764,6 +764,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                             "In order to revert to a Snapshot without memory you need to first stop the Instance.");
         }
 
+        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk) {
+            throw new InvalidParameterValueException(
+                    "Reverting to the Instance Snapshot is not allowed for running Instances as this would result in an Instance state change. " +
+                            "For running Instances only Snapshots with memory can be reverted. " +
+                            "In order to revert to a Snapshot without memory you need to first stop the Instance.");
+        }
+
         if (userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory) {
             throw new InvalidParameterValueException(
                     "Reverting to the Instance Snapshot is not allowed for stopped Instances when the Snapshot contains memory as this would result in an Instance state change. " +
@@ -1213,7 +1220,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkCreateVMSnapshot workInfo = new VmWorkCreateVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId, quiesceVm);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1245,7 +1252,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteVMSnapshot workInfo = new VmWorkDeleteVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1277,7 +1284,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkRevertToVMSnapshot workInfo = new VmWorkRevertToVMSnapshot(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, vmSnapshotId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1309,7 +1316,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         // save work context info (there are some duplications)
         VmWorkDeleteAllVMSnapshots workInfo = new VmWorkDeleteAllVMSnapshots(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VMSnapshotManagerImpl.VM_WORK_JOB_HANDLER, type);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -1355,7 +1362,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
         workJob.setCmd("");
-        workJob.setCmdInfo("");
+        workJob.updateCmdInfoWithEncryptionIfNeeded("");
 
         workJob.setAccountId(0);
         workJob.setUserId(0);

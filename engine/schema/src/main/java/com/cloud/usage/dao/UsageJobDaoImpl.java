@@ -61,9 +61,6 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
     public void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            txn.start();
-
-            UsageJobVO job = lockRow(jobId, Boolean.TRUE);
             UsageJobVO jobForUpdate = createForUpdate();
             jobForUpdate.setStartMillis(startMillis);
             jobForUpdate.setEndMillis(endMillis);
@@ -71,11 +68,8 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
             jobForUpdate.setStartDate(new Date(startMillis));
             jobForUpdate.setEndDate(new Date(endMillis));
             jobForUpdate.setSuccess(success);
-            update(job.getId(), jobForUpdate);
-
-            txn.commit();
+            update(jobId, jobForUpdate);
         } catch (Exception ex) {
-            txn.rollback();
             logger.error("error updating job success date", ex);
             throw new CloudRuntimeException(ex.getMessage());
         } finally {

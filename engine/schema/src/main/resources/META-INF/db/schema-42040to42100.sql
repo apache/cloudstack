@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.20.1.0 to 4.21.0.0
+-- Schema upgrade from 4.20.4.0 to 4.21.0.0
 --;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'INT(8) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Maximum number of backups to be retained''');

@@ -40,6 +40,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -49,9 +50,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.commons.lang3.StringUtils;
 
 public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -64,6 +68,8 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
     private StorageManager _storageMgr;
     @Inject
     PrimaryDataStoreHelper dataStoreHelper;
+    @Inject
+    private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     private StoragePoolAutomation storagePoolAutomation;
     @Inject
@@ -122,7 +128,15 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
             }
         }
 
-        if (!url.contains("://")) {
+        // The linstor client accepts the "linstor://" (HTTP, default port 3370) and "linstor+ssl://"
+        // (HTTPS, default port 3371) scheme aliases, but java.net.URL only understands http/https.
+        // Normalize the aliases so the URL parses and is stored in a scheme the client connects with.
+        final String lowerUrl = url.toLowerCase();
+        if (lowerUrl.startsWith("linstor+ssl://")) {
+            url = "https://" + url.substring("linstor+ssl://".length());
+        } else if (lowerUrl.startsWith("linstor://")) {
+            url = "http://" + url.substring("linstor://".length());
+        } else if (!url.contains("://")) {
             url = "http://" + url;
         }
 
@@ -146,7 +160,18 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
             throw new IllegalArgumentException("Linstor controller URL is not valid: " + e);
         }
 
-        long capacityBytes = LinstorUtil.getCapacityBytes(url, resourceGroup);
+        // The per-pool token config does not exist yet at creation time, so the token (when the
+        // controller requires one) may be supplied directly in the add-pool details. Pull it out of
+        // the details map so it is not persisted in clear text by the generic details handling, use it
+        // for the initial capacity probe, and store it (encrypted) as the per-pool config once the pool
+        // exists (below). When no token is given we fall back to the management server's auth.json (or
+        // an unauthenticated controller). The self-signed/insecure TLS flag is read the same way.
+        final String apiToken = details != null ? details.remove(LinstorConfigurationManager.ApiToken.key()) : null;
+        final String insecureSslDetail = details != null ? details.get(LinstorConfigurationManager.InsecureSsl.key()) : null;
+        final boolean insecureSsl = insecureSslDetail != null
+                ? Boolean.parseBoolean(insecureSslDetail)
+                : Boolean.parseBoolean(LinstorConfigurationManager.InsecureSsl.defaultValue());
+        long capacityBytes = LinstorUtil.getCapacityBytes(url, resourceGroup, apiToken, insecureSsl);
         if (capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
         }
@@ -173,7 +198,16 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
         parameters.setDetails(details);
         parameters.setUserInfo(resourceGroup);
 
-        return dataStoreHelper.createPrimaryDataStore(parameters);
+        DataStore dataStore = dataStoreHelper.createPrimaryDataStore(parameters);
+
+        if (dataStore != null && StringUtils.isNotEmpty(apiToken)) {
+            // lin.auth.apitoken is a "Secure" config, so its value must be stored encrypted for
+            // ConfigKey.valueIn() to be able to decrypt it on read.
+            storagePoolDetailsDao.addDetail(dataStore.getId(),
+                    LinstorConfigurationManager.ApiToken.key(), DBEncryptionUtil.encrypt(apiToken), false);
+        }
+
+        return dataStore;
     }
 
     protected boolean createStoragePool(Host host, StoragePool pool) {

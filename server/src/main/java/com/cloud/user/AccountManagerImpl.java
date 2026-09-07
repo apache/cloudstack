@@ -42,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
@@ -175,9 +176,9 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -1341,19 +1342,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         final String accountNameFinal = accountName;
         final Long domainIdFinal = domainId;
-        final String accountUUIDFinal = accountUUID;
+        final String resolvedAccountUUID = accountUUID != null ? accountUUID : UUID.randomUUID().toString();
+
+        // Check role escalation before the transaction — this is a read-only check
+        // that iterates all API commands and doesn't need a write transaction open.
+        AccountVO requestedAccount = new AccountVO(accountNameFinal, domainIdFinal, networkDomain, accountType, roleId, resolvedAccountUUID);
+        checkRoleEscalation(getCurrentCallingAccount(), requestedAccount);
+
         Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Long, Account> doInTransaction(TransactionStatus status) {
-                // create account
-                String accountUUID = accountUUIDFinal;
-                if (accountUUID == null) {
-                    accountUUID = UUID.randomUUID().toString();
-                }
-                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, resolvedAccountUUID);
                 long accountId = account.getId();
-
-                checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
@@ -1434,35 +1434,34 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getUuid(),
                     requested.getRoleId()));
         }
-        List<APIChecker> apiCheckers = getEnabledApiCheckers();
-        for (String command : apiNameList) {
-            try {
-                checkApiAccess(apiCheckers, requested, command);
-            } catch (PermissionDeniedException pde) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format(
-                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
-                            command,
-                            requested.getAccountName(),
-                            requested.getUuid()
-                        )
-                    );
-                }
-                continue;
+
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+
+        List<String> allApis = new ArrayList<>(apiNameList);
+        List<String> requestedAllowed = allApis;
+        List<String> callerAllowed = new ArrayList<>();
+        try {
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
             }
-            // so requested can, now make sure caller can as well
-            try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("permission to \"%s\" is requested",
-                            command));
-                }
-                checkApiAccess(apiCheckers, caller, command);
-            } catch (PermissionDeniedException pde) {
-                String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
-                        caller, _domainMgr.getDomain(caller.getDomainId()));
-                logger.warn(msg);
-                throw new PermissionDeniedException(msg,pde);
+            callerAllowed = requestedAllowed;
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
             }
+        } catch (PermissionDeniedException e) {
+            String msg = String.format("User of account: %s cannot assign this role on the requested account: %s", caller.getAccountName(), requested.getAccountName());
+            String logMsg = String.format("%s: %s", msg, e.getMessage());
+            logger.error(logMsg, e);
+            throw new PermissionDeniedException(msg);
+        }
+
+        if (callerAllowed.size() < requestedAllowed.size()) {
+            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
+            escalatedApis.removeAll(callerAllowed);
+            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
+                    caller, _domainMgr.getDomain(caller.getDomainId()), CollectionUtils.isNotEmpty(escalatedApis) ? escalatedApis.size() : "None");
+            logger.warn(msg);
+            throw new PermissionDeniedException(msg);
         }
     }
 
@@ -1476,6 +1475,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkApiAccess(Account caller, String command) {
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         checkApiAccess(apiCheckers, caller, command);
+    }
+
+    protected List<APIAclChecker> getApiACLCheckers() {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
+            }
+        }
+        return aclCheckers;
     }
 
     @NotNull
@@ -1585,6 +1597,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!Account.Type.PROJECT.equals(userAccount.getType())) {
             checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
             checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
+    }
+
+    @Override
+    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+        for (final APIAclChecker aclChecker : aclCheckers) {
+            aclChecker.refreshRoleCacheOnPermissionsChange(role);
         }
     }
 
@@ -2588,7 +2608,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
         }
 
-        if (projectId != null) {
+        if (projectId != null && projectId != -1L) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
@@ -3677,6 +3697,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
         if (Boolean.TRUE.equals(cmd.getEnable())) {
+            if (cmd.getUserId() != null) {
+                throw new InvalidParameterValueException("User ID should not be provided when enabling 2FA for the current user");
+            }
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
@@ -3725,6 +3748,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
+            verifyCallerPrivilegeForUserOrAccountOperations(userVO);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();

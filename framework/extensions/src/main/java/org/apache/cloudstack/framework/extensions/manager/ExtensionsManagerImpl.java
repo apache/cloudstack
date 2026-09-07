@@ -1663,14 +1663,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     public List<String> getExtensionReservedResourceDetails(long extensionId) {
         ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(extensionId,
                 ApiConstants.RESERVED_RESOURCE_DETAILS);
-        if (detailsVO == null || !StringUtils.isNotBlank(detailsVO.getValue())) {
-            return Collections.emptyList();
-        }
         List<String> reservedDetails = new ArrayList<>();
-        String[] parts = detailsVO.getValue().split(",");
-        for (String part : parts) {
-            if (StringUtils.isNotBlank(part)) {
-                reservedDetails.add(part.trim());
+        if (detailsVO != null && StringUtils.isNotBlank(detailsVO.getValue())) {
+            String[] parts = detailsVO.getValue().split(",");
+            for (String part : parts) {
+                String trimmedPart = part.trim();
+                if (StringUtils.isNotBlank(trimmedPart)) {
+                    reservedDetails.add(trimmedPart);
+                }
             }
         }
         addInbuiltExtensionReservedResourceDetails(extensionId, reservedDetails);
