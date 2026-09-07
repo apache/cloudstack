@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.24.0.0-SNAPSHOT</version>
+    <version>24.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -591,12 +591,12 @@
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjtools</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjweaver</artifactId>
-                <version>1.8.13</version>
+                <version>${cs.aspectjrt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
