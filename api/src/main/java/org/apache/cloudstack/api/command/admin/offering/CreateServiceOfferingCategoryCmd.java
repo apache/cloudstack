@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 @APICommand(name = "createServiceOfferingCategory",
         description = "Creates a service offering category.",
         responseObject = ServiceOfferingCategoryResponse.class,
-        since = "4.23.0",
+        since = "24.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class CreateServiceOfferingCategoryCmd extends BaseCmd {
