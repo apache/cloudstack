@@ -965,7 +965,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         Network network = _networksDao.findById(networkId);
 
-        if (network != null && network.getGuestType() != GuestType.Shared) {
+        if (network == null) {
+            return false;
+        }
+
+        if (network.getGuestType() != GuestType.Shared) {
             return false;
         }
 
