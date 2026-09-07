@@ -17,8 +17,11 @@
 
 package org.apache.cloudstack.api.command.user.backup.repository;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -28,8 +31,6 @@ import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupRepositoryService;
 import org.apache.cloudstack.context.CallContext;
-
-import javax.inject.Inject;
 
 @APICommand(name = "updateBackupRepository",
         description = "Update a backup repository",
@@ -53,7 +54,8 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, description = "address of the backup repository")
     private String address;
 
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
+    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options",
+            validations = {ApiArgValidator.SafeCommandOptions})
     private String mountOptions;
 
     @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups in this repository can be used to create Instances on all Zones")

@@ -18,6 +18,7 @@ package org.apache.cloudstack.region;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -128,7 +129,7 @@ public interface RegionManager {
      * @param moveUserCmd
      * @return
      */
-    boolean moveUser(MoveUserCmd moveUserCmd);
+    boolean moveUser(MoveUserCmd moveUserCmd) throws ResourceAllocationException;
 
     /**
      * update an existing domain

@@ -2024,7 +2024,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
                                     // expunge volume from secondary if volume is on image store
                                     VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
                                     if (volOnSecondary != null) {
@@ -3252,7 +3252,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long futureIops = currentIops + requestedIops;
         boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
         String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        logger.debug("Pool [{}] {} enough IOPS to allocate volumes [{}].", pool, hasCapacity, requestedVolumes);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s]", pool, hasCapacity, requestedVolumes));
+        if (!hasEnoughIops) {
+            stringBuilder.append(String.format(" - Insufficient un-allocated IOPS for storage allocation: " +
+                    "capacityIops : %d, usedIops : %d, requestedIops : %d", pool.getCapacityIops(), currentIops, requestedIops));
+        }
+        logger.debug(stringBuilder.toString());
         return hasEnoughIops;
     }
 
@@ -4387,7 +4393,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
-                ObjectStorageCapacityThreshold
+                ObjectStorageCapacityThreshold,
+                COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES,
+                AgentMaxDataMigrationWaitTime
         };
     }
 

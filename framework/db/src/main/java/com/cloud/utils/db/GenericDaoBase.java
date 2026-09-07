@@ -929,7 +929,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected T findOneIncludingRemovedBy(final SearchCriteria<T> sc) {
         Filter filter = new Filter(1, true);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
-        assert results.size() <= 1 : "Didn't the limiting worked?";
+        assert results.size() <= 1 : "Didn't the limiting work?";
         return results.size() == 0 ? null : results.get(0);
     }
 
@@ -947,6 +947,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         filter.setLimit(1L);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    @DB()
+    protected T findLastOneBy(SearchCriteria<T> sc) {
+        sc = checkAndSetRemovedIsNull(sc);
+        Filter filter = new Filter(_entityBeanType, "id", Boolean.FALSE, 0L, 1L);
+        List<T> results = searchIncludingRemoved(sc, filter, null, false);
+        assert results.size() <= 1 : "Didn't the limiting work?";
+        return results.size() == 0 ? null : results.get(0);
     }
 
     @DB()
@@ -2072,8 +2081,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
         if(attr == null) {
-            logger.warn(String.format("Failed to find attribute in the entity %s to map column %s.%s (%s)",
-                    ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName));
+            logger.warn("Failed to find attribute in the entity {} to map column {}.{}",
+                    ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName);
         } else {
             setField(entity, attr.field, rs, index);
         }

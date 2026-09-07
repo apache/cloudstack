@@ -83,6 +83,11 @@ public class BackupOfferingVO implements BackupOffering {
         this.created = new Date();
     }
 
+    public BackupOfferingVO(final long zoneId, final String provider, final String name, final String description, final boolean userDrivenBackupAllowed) {
+        this(zoneId, null, provider, name, description, userDrivenBackupAllowed);
+        this.externalId = this.uuid;
+    }
+
     public String getUuid() {
         return uuid;
     }

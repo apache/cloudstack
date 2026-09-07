@@ -19,18 +19,14 @@ package org.apache.cloudstack.ldap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
-import java.util.Map;
-import java.util.UUID;
 
-import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.LDAPRemoveCmd;
@@ -48,6 +44,7 @@ import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
@@ -60,9 +57,13 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManager, LdapValidator {
@@ -86,6 +87,9 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
     @Inject
     LdapTrustMapDao _ldapTrustMapDao;
+
+    @Inject
+    private AccountManager accountManager;
 
     @Inject
     private MessageBus messageBus;
@@ -234,7 +238,14 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 domainUuid = domain.getUuid();
             }
         }
-        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid, configuration.getUuid());
+        LdapConfigurationResponse response = new LdapConfigurationResponse();
+        response.setId(configuration.getUuid());
+        response.setDomainId(domainUuid);
+        if (accountManager.isRootAdmin(CallContext.current().getCallingAccountId())) {
+            response.setHostname(configuration.getHostname());
+            response.setPort(configuration.getPort());
+        }
+        return response;
     }
 
     @Override

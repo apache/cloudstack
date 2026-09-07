@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.commons.collections.CollectionUtils;
@@ -170,7 +171,12 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                         if (mappedAccount == null || mappedAccount.getRemoved() != null) {
                             throw new CloudRuntimeException("Mapped account for users does not exist. Please contact your administrator.");
                         }
-                        _accountManager.moveUser(userAccount.getId(), userAccount.getDomainId(), mappedAccount);
+                        try {
+                            _accountManager.moveUser(userAccount.getId(), userAccount.getDomainId(), mappedAccount);
+                        } catch (ResourceAllocationException e) {
+                            throw new CloudRuntimeException(String.format("Failed to move User [%s] to mapped Account [%s] due to insufficient Project limits.",
+                                    userAccount.getUsername(), mappedAccount.getAccountName()), e);
+                        }
                     }
                     // else { the user hasn't changed in ldap, the ldap group stayed the same, hurray, pass, fun thou self a lot of fun }
                 }

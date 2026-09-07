@@ -216,6 +216,8 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 
+    private Map<String, String> sourceDetailsMap;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -430,9 +432,8 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
-            return null;
+            return sourceDetailsMap;
         }
-
         Collection paramsCollection = details.values();
         Object objlist[] = paramsCollection.toArray();
         Map<String, String> params = (Map<String, String>) (objlist[0]);

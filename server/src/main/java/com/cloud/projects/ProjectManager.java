@@ -19,6 +19,7 @@ package com.cloud.projects;
 import java.util.List;
 
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ProjectManager extends ProjectService {
@@ -46,6 +47,8 @@ public interface ProjectManager extends ProjectService {
     boolean deleteProject(Account caller, long callerUserId, ProjectVO project);
 
     long getInvitationTimeout();
+
+    boolean cleanupProjectsForUser(Project project, User user);
 
     public static final String MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT = "Message.CreateTungstenProject.Event";
     public static final String MESSAGE_DELETE_TUNGSTEN_PROJECT_EVENT = "Message.DeleteTungstenProject.Event";

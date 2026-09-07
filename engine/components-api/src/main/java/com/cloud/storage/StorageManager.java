@@ -277,6 +277,8 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> AgentMaxDataMigrationWaitTime = new ConfigKey<>("Advanced", Integer.class, "agent.max.data.migration.wait.time", "3600",
+            "The maximum time (in seconds) that the secondary storage data migration command sent to the KVM Agent will be executed before a timeout occurs.", true, ConfigKey.Scope.Cluster);
 
     /**
      * should we execute in sequence not involving any storages?

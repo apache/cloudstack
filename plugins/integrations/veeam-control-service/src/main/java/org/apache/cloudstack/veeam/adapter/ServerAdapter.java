@@ -1610,7 +1610,7 @@ public class ServerAdapter extends ManagerBase {
         context.setEventDetails("Volume Id: " + volumeVO.getUuid() + " VmId: " + vmVo.getUuid());
         context.setEventResourceType(ApiCommandResourceType.Volume);
         context.setEventResourceId(volumeVO.getId());
-        Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, true);
+        Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), deviceId, true, false);
         processInstanceRestoreConfigIfNeeded(vmVo, volume);
         VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
         return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize);
@@ -1696,7 +1696,7 @@ public class ServerAdapter extends ManagerBase {
         context.setEventDetails("Volume Id: " + vo.getUuid());
         context.setEventResourceType(ApiCommandResourceType.Volume);
         context.setEventResourceId(vo.getId());
-        volumeApiService.destroyVolume(vo.getId(), CallContext.current().getCallingAccount(), true, false);
+        volumeApiService.destroyVolume(vo.getId(), CallContext.current().getCallingAccount(), true, false, null);
     }
 
     @ApiAccess(command = UpdateVolumeCmd.class)

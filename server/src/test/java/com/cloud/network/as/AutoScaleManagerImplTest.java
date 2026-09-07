@@ -439,7 +439,10 @@ public class AutoScaleManagerImplTest {
         ret.setApiKey("apikey");
         when(ApiDBUtils.searchForLatestUserKeyPair(Mockito.any())).thenReturn(ret);
 
-        userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
+        HashMap<String, String> mapValues = new HashMap<>();
+        mapValues.put("key1", "value1");
+        mapValues.put("key2", "value2");
+        userDataDetails.put("0", mapValues);
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
         Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
 
@@ -1516,13 +1519,14 @@ public class AutoScaleManagerImplTest {
             when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId + 1);
 
             when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true))).thenReturn(true);
-            Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
+            Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null,
+                    new HashMap<>(), null, false);
 
             autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
 
             Mockito.verify(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
             Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true));
-            Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
+            Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null, false);
         }
     }
 

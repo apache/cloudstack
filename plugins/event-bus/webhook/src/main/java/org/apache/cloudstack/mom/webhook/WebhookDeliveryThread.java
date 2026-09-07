@@ -19,7 +19,6 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
@@ -40,11 +39,11 @@ import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -65,6 +64,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.cloud.exception.InvalidParameterValueException;
+
 public class WebhookDeliveryThread implements Runnable {
     protected static Logger LOGGER = LogManager.getLogger(WebhookDeliveryThread.class);
 
@@ -72,6 +73,7 @@ public class WebhookDeliveryThread implements Runnable {
     private static final String HEADER_X_CS_EVENT = "X-CS-Event";
     private static final String HEADER_X_CS_SIGNATURE = "X-CS-Signature";
     private static final String PREFIX_HEADER_USER_AGENT = "CS-Hookshot/";
+    private static final int MAX_REDIRECT_HOPS = 5;
     private final Webhook webhook;
     private final Event event;
     private CloseableHttpClient httpClient;
@@ -81,6 +83,11 @@ public class WebhookDeliveryThread implements Runnable {
     private Date startTime;
     private int deliveryTries = 3;
     private int deliveryTimeout = 10;
+    private String destinationBlocklist;
+    private boolean blockLocalAddresses = true;
+    private boolean allowRedirects;
+    private boolean allowHttp;
+    private URI payloadUri;
 
     AsyncCompletionCallback<WebhookDeliveryResult> callback;
 
@@ -101,19 +108,20 @@ public class WebhookDeliveryThread implements Runnable {
         if (webhook.isSslVerification()) {
             httpClient = HttpClients.custom()
                     .setSSLContext(SSLContext.getDefault())
+                    .disableRedirectHandling()
                     .build();
             return;
         }
         httpClient = HttpClients
                 .custom()
+                .disableRedirectHandling()
                 .setSSLContext(new SSLContextBuilder().loadTrustMaterial(null,
                         TrustAllStrategy.INSTANCE).build())
                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                 .build();
     }
 
-    protected HttpPost getBasicHttpPostRequest() throws URISyntaxException {
-        final URI uri = new URI(webhook.getPayloadUrl());
+    protected HttpPost getBasicHttpPostRequest(final URI uri) {
         HttpPost request = new HttpPost();
         RequestConfig.Builder requestConfig = RequestConfig.custom();
         requestConfig.setConnectTimeout(deliveryTimeout * 1000);
@@ -147,11 +155,17 @@ public class WebhookDeliveryThread implements Runnable {
         this.headers = StringUtils.join(headers, "\n");
     }
 
-    public WebhookDeliveryThread(Webhook webhook, Event event,
+    public WebhookDeliveryThread(Webhook webhook, Event event, URI uri,
                                  AsyncCompletionCallback<WebhookDeliveryResult> callback) {
         this.webhook = webhook;
         this.event = event;
+        this.payloadUri = uri;
         this.callback = callback;
+    }
+
+    public WebhookDeliveryThread(Webhook webhook, Event event,
+                                 AsyncCompletionCallback<WebhookDeliveryResult> callback) {
+        this(webhook, event, null, callback);
     }
 
     public void setDeliveryTries(int deliveryTries) {
@@ -162,13 +176,29 @@ public class WebhookDeliveryThread implements Runnable {
         this.deliveryTimeout = deliveryTimeout;
     }
 
+    public void setDestinationBlocklist(String destinationBlocklist) {
+        this.destinationBlocklist = destinationBlocklist;
+    }
+
+    public void setBlockLocalAddresses(boolean blockLocalAddresses) {
+        this.blockLocalAddresses = blockLocalAddresses;
+    }
+
+    public void setAllowRedirects(boolean allowRedirects) {
+        this.allowRedirects = allowRedirects;
+    }
+
+    public void setAllowHttp(boolean allowHttp) {
+        this.allowHttp = allowHttp;
+    }
+
     @Override
     public void run() {
-        LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         if (event == null) {
             LOGGER.warn("Invalid event received for delivering to {}", webhook);
             return;
         }
+        LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         payload = event.getDescription();
         LOGGER.trace("Payload: {}", payload);
         int attempt = 0;
@@ -179,6 +209,10 @@ public class WebhookDeliveryThread implements Runnable {
             response = String.format("Failed to initiate delivery due to : %s", e.getMessage());
             callback.complete(new WebhookDeliveryResult(headers, payload, success, response, new Date()));
             return;
+        }
+        if (payloadUri == null) {
+            payloadUri = WebhookUrlValidator.validateWebhookDestinationUrl(webhook.getPayloadUrl(), allowHttp,
+                    destinationBlocklist, blockLocalAddresses);
         }
         while (attempt < deliveryTries) {
             attempt++;
@@ -192,7 +226,7 @@ public class WebhookDeliveryThread implements Runnable {
 
     protected void updateResponseFromRequest(HttpEntity entity) {
         try {
-            this.response =  EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            this.response = EntityUtils.toString(entity, StandardCharsets.UTF_8);
         } catch (IOException e) {
             LOGGER.error("Failed to parse response for event: {} for {}",
                     event.getEventType(), webhook);
@@ -203,28 +237,64 @@ public class WebhookDeliveryThread implements Runnable {
     protected boolean delivery(int attempt) {
         startTime = new Date();
         try {
-            HttpPost request = getBasicHttpPostRequest();
-            StringEntity input = new StringEntity(payload,
-                    isValidJson(payload) ? ContentType.APPLICATION_JSON : ContentType.TEXT_PLAIN);
-            request.setEntity(input);
-            updateRequestHeaders(request);
-            LOGGER.trace("Delivering event: {} for {} with timeout: {}, " +
-                            "attempt #{}", event.getEventType(), webhook,
-                    deliveryTimeout, attempt);
-            final CloseableHttpResponse response = httpClient.execute(request);
-            updateResponseFromRequest(response.getEntity());
-            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                LOGGER.trace("Successfully delivered event: {} for {}",
-                        event.getEventType(), webhook);
-                return true;
+            int redirectsFollowed = 0;
+            URI currentUri = payloadUri;
+            while (true) {
+                HttpPost request = getBasicHttpPostRequest(currentUri);
+                StringEntity input = new StringEntity(payload,
+                        isValidJson(payload) ? ContentType.APPLICATION_JSON : ContentType.TEXT_PLAIN);
+                request.setEntity(input);
+                updateRequestHeaders(request);
+                LOGGER.trace("Delivering event: {} for {} with timeout: {}, attempt #{}, uri={}",
+                        event.getEventType(), webhook, deliveryTimeout, attempt, currentUri);
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    updateResponseFromRequest(response.getEntity());
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    if (statusCode == HttpStatus.SC_OK) {
+                        LOGGER.trace("Successfully delivered event: {} for {}",
+                                event.getEventType(), webhook);
+                        return true;
+                    }
+                    if (!isRedirectStatus(statusCode)) {
+                        return false;
+                    }
+                    if (!allowRedirects) {
+                        this.response = String.format(
+                                "Delivery failed due to redirect status code %s while redirects are disabled",
+                                statusCode);
+                        return false;
+                    }
+                    Header locationHeader = response.getFirstHeader(HttpHeaders.LOCATION);
+                    if (locationHeader == null || StringUtils.isBlank(locationHeader.getValue())) {
+                        this.response = "Delivery failed due to redirect response without location header";
+                        return false;
+                    }
+                    redirectsFollowed++;
+                    if (redirectsFollowed > MAX_REDIRECT_HOPS) {
+                        this.response = String.format(
+                                "Delivery failed due to too many redirect hops (>%s)",
+                                MAX_REDIRECT_HOPS);
+                        return false;
+                    }
+                    currentUri = WebhookUrlValidator.validateWebhookDestinationURI(
+                            currentUri.resolve(locationHeader.getValue()),
+                            allowHttp,destinationBlocklist, blockLocalAddresses);
+                }
             }
-        } catch (URISyntaxException | IOException | DecoderException | NoSuchAlgorithmException |
-                 InvalidKeyException e) {
+        } catch (IOException | DecoderException | NoSuchAlgorithmException | InvalidKeyException e) {
             LOGGER.warn("Failed to deliver {}, in attempt #{} due to: {}",
+                    webhook, attempt, e.getMessage());
+            response = String.format("Failed due to : %s", e.getMessage());
+        } catch (InvalidParameterValueException e) {
+            LOGGER.warn("Failed to deliver {}, in attempt #{} due to security policy: {}",
                     webhook, attempt, e.getMessage());
             response = String.format("Failed due to : %s", e.getMessage());
         }
         return false;
+    }
+
+    protected boolean isRedirectStatus(final int statusCode) {
+        return statusCode >= 300 && statusCode < 400;
     }
 
     public static String generateHMACSignature(String data,  String key)

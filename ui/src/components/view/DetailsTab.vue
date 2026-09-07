@@ -65,7 +65,7 @@
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
               <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.uuid }}</router-link>
-              <span v-else>{{ volume.type }} - {{ volume.uuid }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GiB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -232,6 +232,19 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
+      <div v-else-if="item === 'backupofferingdetails'">
+        <a-list-item
+          v-for="(value, key) in dataResource[item]"
+          :key="key">
+          <div>
+            <strong>{{ $t('label.' + String(key).toLowerCase()) }}</strong>
+            <br/>
+            <div>
+              {{ value }}
+            </div>
+          </div>
+        </a-list-item>
+      </div>
       <external-configuration-details
         v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
         :resource="dataResource" />
@@ -300,7 +313,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters', 'secretkey', 'backupofferingdetails']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')

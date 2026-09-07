@@ -102,6 +102,10 @@ public class ProjectInvitationVO implements ProjectInvitation {
         return forAccountId;
     }
 
+    public void setForAccountId(Long forAccountId) {
+        this.forAccountId = forAccountId;
+    }
+
     @Override
     public String getToken() {
         return token;

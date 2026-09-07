@@ -31,4 +31,4 @@ For more details, see https://cloudstack.apache.org/security.html.
 What the project treats as in scope and out of scope, the security
 properties it provides and disclaims, the adversary model, and how
 findings are triaged are documented in the project-wide threat model:
-[draft-THREAT-MODEL.md](draft-THREAT-MODEL.md).
+[THREAT_MODEL.md](THREAT_MODEL.md).

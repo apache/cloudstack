@@ -116,6 +116,9 @@ public class QuotaSummaryCmd extends BaseListCmd {
     }
 
     public Long getProjectId() {
+        if (projectId == null || projectId == -1L) {
+            return null;
+        }
         return projectId;
     }
 
@@ -129,9 +132,10 @@ public class QuotaSummaryCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-        if (ObjectUtils.allNull(accountId, accountName, projectId)) {
+        Long convertedProjectId = getProjectId();
+        if (ObjectUtils.allNull(accountId, accountName, convertedProjectId)) {
             return -1;
         }
-        return _accountService.finalizeAccountId(accountId, accountName, domainId, projectId);
+        return _accountService.finalizeAccountId(accountId, accountName, domainId, convertedProjectId);
     }
 }

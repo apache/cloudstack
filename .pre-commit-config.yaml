@@ -26,26 +26,26 @@ repos:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/thlorenz/doctoc.git
-    rev: v2.2.0
+    rev: v2.3.0
     hooks:
       - id: doctoc
         name: Add TOC for Markdown files
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
   - repo: https://github.com/oxipng/oxipng
-    rev: v9.1.5
+    rev: v10.1.0
     hooks:
       - id: oxipng
         name: run oxipng
         description: optimize PNG images with lossless compression
         args: ['-o', '4', '--strip', 'safe', '--alpha']
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.27.2
+    rev: v8.30.0
     hooks:
       - id: gitleaks
         name: run gitleaks
         description: detect hardcoded secrets
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
+    rev: v1.5.6
     hooks:
       - id: chmod
         name: set file permissions
@@ -172,12 +172,12 @@ repos:
         name: run codespell
         description: Check spelling with codespell
   - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 7.3.0
     hooks:
     - id: flake8
       args: [--config, .github/linters/.flake8]
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.48.0
     hooks:
       - id: markdownlint
         name: run markdownlint
@@ -186,7 +186,7 @@ repos:
         types: [markdown]
         files: \.md$
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
         name: run yamllint

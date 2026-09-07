@@ -231,6 +231,69 @@ public class StorageStrategyTest {
     }
 
     @Test
+    public void testConnect_succeedsWhenAggregateSpaceBelowPoolCapacity() {
+        // Regression: connect() must validate connectivity/SVM/aggregate-state ONLY.
+        // Capacity is validated per-volume in createStorageVolume(name, size). Previously
+        // connect() compared aggregate free space against the whole storage pool size
+        // (storage.getSize()), which incorrectly failed data-path operations (volume/LUN
+        // create, grant/revoke access, delete) once the pool FlexVolume already existed.
+        Svm svm = new Svm();
+        svm.setName("svm1");
+        svm.setState(OntapStorageConstants.RUNNING);
+        svm.setNfsEnabled(true);
+
+        Aggregate aggregate = new Aggregate();
+        aggregate.setName("aggr1");
+        aggregate.setUuid("aggr-uuid-1");
+        svm.setAggregates(List.of(aggregate));
+
+        OntapResponse<Svm> svmResponse = new OntapResponse<>();
+        svmResponse.setRecords(List.of(svm));
+
+        when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+
+        // Aggregate is ONLINE but has far less free space than the configured pool size (5GB).
+        Aggregate aggregateDetail = mock(Aggregate.class);
+        when(aggregateDetail.getName()).thenReturn("aggr1");
+        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
+        when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
+
+        // Execute & Verify - connect() should succeed regardless of available space.
+        boolean result = storageStrategy.connect();
+        assertTrue(result, "connect() should succeed for an online aggregate even when its free space is below the pool capacity");
+    }
+
+    @Test
+    public void testConnect_noOnlineAggregates() {
+        // Setup - aggregate assigned to the SVM exists but is not ONLINE
+        Svm svm = new Svm();
+        svm.setName("svm1");
+        svm.setState(OntapStorageConstants.RUNNING);
+        svm.setNfsEnabled(true);
+
+        Aggregate aggregate = new Aggregate();
+        aggregate.setName("aggr1");
+        aggregate.setUuid("aggr-uuid-1");
+        svm.setAggregates(List.of(aggregate));
+
+        OntapResponse<Svm> svmResponse = new OntapResponse<>();
+        svmResponse.setRecords(List.of(svm));
+
+        when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+
+        Aggregate aggregateDetail = mock(Aggregate.class);
+        when(aggregateDetail.getName()).thenReturn("aggr1");
+        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
+        when(aggregateDetail.getState()).thenReturn(null); // not online
+        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
+
+        // Execute & Verify
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("No suitable aggregates found"));
+    }
+
+    @Test
     public void testConnect_svmNotFound() {
         // Setup
         OntapResponse<Svm> svmResponse = new OntapResponse<>();
@@ -340,6 +403,20 @@ public class StorageStrategyTest {
         // Execute & Verify
         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
         assertTrue(ex.getMessage().contains("No SVM found"));
+    }
+
+    @Test
+    public void testConnect_invalidCredentials() {
+        // Setup - ONTAP rejects the supplied username/password with HTTP 401 Unauthorized.
+        when(svmFeignClient.getSvmResponse(anyMap(), anyString()))
+                .thenThrow(mock(FeignException.Unauthorized.class));
+
+        // Execute & Verify - connect() must surface a clear "invalid credentials" error.
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.connect());
+        assertTrue(ex.getMessage().contains("Authentication failed: Invalid credentials"),
+                "Expected an authentication failure message but got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("Please verify the username and password"),
+                "Expected the message to prompt verifying username/password but got: " + ex.getMessage());
     }
 
     // ========== createStorageVolume() Tests ==========

@@ -34,4 +34,6 @@ public interface DnsZoneDao extends GenericDao<DnsZoneVO, Long> {
                                                String keyword, Filter filter);
 
     List<Long> findDnsZoneIdsByServerId(long dnsServerId);
+
+    List<DnsZoneVO> listByDnsServerId(long dnsServerId);
 }

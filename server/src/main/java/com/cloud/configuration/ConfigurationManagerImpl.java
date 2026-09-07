@@ -6175,7 +6175,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long domainId = domainMap != null ? domainMap.getDomainId() : null;
 
         final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
-        if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+        if (forSystemVms != null && !isRangeForSystemVM.equals(forSystemVms)) {
             if (VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
                 throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
             }
@@ -7266,8 +7266,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (service == Service.SecurityGroup) {
                     forVpc = false;
                 } else if (service == Service.NetworkACL) {
-                    forVpc = true;
-                } else if (service == Service.Firewall) {
                     forVpc = true;
                 }
             }
@@ -8488,8 +8486,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Map<String, String> getSourceOfferingDetails(Long sourceOfferingId) {
         List<NetworkOfferingDetailsVO> sourceDetailsVOs = networkOfferingDetailsDao.listDetails(sourceOfferingId);
         Map<String, String> sourceDetailsMap = new HashMap<>();
+        Set<String> ignoredSourceDetails = new HashSet<>(Arrays.asList(Detail.internetProtocol.name(), Detail.domainid.name(), Detail.zoneid.name()));
         for (NetworkOfferingDetailsVO detailVO : sourceDetailsVOs) {
-            sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            if (!ignoredSourceDetails.contains(detailVO.getName())) {
+                sourceDetailsMap.put(detailVO.getName(), detailVO.getValue());
+            }
         }
         return sourceDetailsMap;
     }
@@ -8637,7 +8638,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             if (cmd.getDetails() == null || cmd.getDetails().isEmpty()) {
                 if (!sourceDetailsMap.isEmpty()) {
-                    setField(cmd, "details", sourceDetailsMap);
+                    setField(cmd, "sourceDetailsMap", sourceDetailsMap);
                 }
             }
 

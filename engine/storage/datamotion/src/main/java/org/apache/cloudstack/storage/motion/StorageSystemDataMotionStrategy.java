@@ -37,6 +37,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -211,6 +212,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     ResourceManager resourceManager;
     @Inject
     private ClvmPoolManager clvmPoolManager;
+
+    @Inject
+    private InternalBackupService internalBackupService;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -2527,6 +2531,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     _snapshotDao.updateVolumeIds(srcVolumeInfo.getId(), destVolumeInfo.getId());
                     _snapshotDataStoreDao.updateVolumeIds(srcVolumeInfo.getId(), destVolumeInfo.getId());
                 }
+                internalBackupService.updateVolumeId(srcVolumeInfo.getId(), destVolumeInfo.getId());
             }
             else {
                 try {
