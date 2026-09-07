@@ -4843,7 +4843,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         long reservedIpAddressesAmount = 0L;
-        if (forVirtualNetwork && vlanOwner != null) {
+        if (ipv4 && forVirtualNetwork && vlanOwner != null) {
             reservedIpAddressesAmount = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
         }
 
