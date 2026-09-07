@@ -1120,10 +1120,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             if (vo == null) {
-                if (requested != null && requested.getRequestedIPv4() != null) {
-                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire requested Guest IP address " + requested.getRequestedIPv4() + " for network " + network, DataCenter.class, dcVo.getId());
-                } else if (requested != null) {
-                    requested.setIPv4Address(null);
+                if (requested != null) {
+                    if (requested.getRequestedIPv4() != null) {
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire requested Guest IP address " + requested.getRequestedIPv4() + " for network " + network, DataCenter.class, dcVo.getId());
+                    } else {
+                        requested.setIPv4Address(null);
+                    }
                 }
                 retryIpAllocation = true;
             }
