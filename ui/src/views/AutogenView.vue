@@ -1202,6 +1202,10 @@ export default {
         delete params.listall
       }
 
+      if (!['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering'].includes(this.routeName)) {
+        delete params.state
+      }
+
       callAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -1265,6 +1269,16 @@ export default {
               col.title = this.$t('label.annotation.admins.only')
             }
           })
+        }
+
+        if (this.apiName === 'listBackups') {
+          const kbossFields = ['compressionstatus', 'validationstatus']
+          const hasKbossData = this.items.some(backup => kbossFields.some(field => backup[field]))
+          if (!hasKbossData) {
+            this.columns = this.columns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.allColumns = this.allColumns.filter(col => !kbossFields.includes(col.dataIndex))
+            this.selectedColumns = this.selectedColumns.filter(key => !kbossFields.includes(key))
+          }
         }
 
         for (let idx = 0; idx < this.items.length; idx++) {

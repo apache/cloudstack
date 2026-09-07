@@ -48,17 +48,9 @@ public class InternalBackupStoragePoolDaoImpl extends GenericDaoBase<InternalBac
     }
 
     @Override
-    public List<InternalBackupStoragePoolVO> listByVolumeId(long volumeId) {
+    public InternalBackupStoragePoolVO findOneByVolumeId(long volumeId) {
         SearchCriteria<InternalBackupStoragePoolVO> sc = backupSearch.create();
         sc.setParameters(VOLUME_ID, volumeId);
-        return listBy(sc);
-    }
-
-    @Override
-    public InternalBackupStoragePoolVO findOneByVolumeIdAndBackupId(long volumeId, long backupId) {
-        SearchCriteria<InternalBackupStoragePoolVO> sc = backupSearch.create();
-        sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(BACKUP_ID, backupId);
         return findOneBy(sc);
     }
 
@@ -73,14 +65,6 @@ public class InternalBackupStoragePoolDaoImpl extends GenericDaoBase<InternalBac
     public void expungeByVolumeId(long volumeId) {
         SearchCriteria<InternalBackupStoragePoolVO> sc = backupSearch.create();
         sc.setParameters(VOLUME_ID, volumeId);
-        expunge(sc);
-    }
-
-    @Override
-    public void expungeByVolumeIdAndBackupId(long volumeId, long backupId) {
-        SearchCriteria<InternalBackupStoragePoolVO> sc = backupSearch.create();
-        sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(BACKUP_ID, backupId);
         expunge(sc);
     }
 }

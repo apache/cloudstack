@@ -2496,17 +2496,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
+        Account caller = CallContext.current().getCallingAccount();
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         return kubernetesCluster;
     }
 
     private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+        Account caller = CallContext.current().getCallingAccount();
         List<Long> validNodeIds = new ArrayList<>(nodeIds);
         for (Long id : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(id);
             if (Objects.isNull(node)) {
                 logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
                 validNodeIds.remove(id);
-            } else if (!removeNodes) {
+                continue;
+            }
+            accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, node);
+            if (!removeNodes) {
                 VMTemplateVO template = templateDao.findById(node.getTemplateId());
                 if (Objects.isNull(template)) {
                     logger.error((String.format("Failed to find template with ID: %s", id)));

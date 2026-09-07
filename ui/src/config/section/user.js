@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { i18n } from '@/locales'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'accountuser',
@@ -156,7 +157,7 @@ export default {
       api: 'lockUser',
       icon: 'LockOutlined',
       label: 'label.action.lock.user',
-      message: (record) => ['message.lock.user', { user: record.username }],
+      message: (record) => ['message.lock.user', { user: escapeHtml(record.username) }],
       successMessage: (record) => ['message.lock.user.success', { user: record.username }],
       dataView: true,
       popup: true,

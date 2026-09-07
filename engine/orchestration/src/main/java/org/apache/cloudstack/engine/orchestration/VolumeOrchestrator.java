@@ -2025,6 +2025,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 volume = volFactory.getVolume(newVol.getId(), destPool);
 
+                // CLVM: pin templateless volume creation to the deploy host
+                StoragePoolVO poolVO = _storagePoolDao.findById(destPool.getId());
+                if (poolVO != null && ClvmPoolManager.isClvmPoolType(poolVO.getPoolType())) {
+                    Long hostId = vm.getVirtualMachine().getHostId();
+                    if (hostId != null) {
+                        volume.setDestinationHostId(hostId);
+                        clvmPoolManager.setClvmLockHostId(volume.getId(), hostId);
+                        logger.info("CLVM pool detected during volume creation without a template. Setting lock host {} for volume {} "
+                                + "to route creation to correct host", hostId, volume.getUuid());
+                    }
+                }
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
                 final VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);

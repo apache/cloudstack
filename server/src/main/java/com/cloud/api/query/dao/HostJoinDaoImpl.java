@@ -141,7 +141,14 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setVirtualMachineId(vm.getUuid());
             }
         }
-        hostResponse.setLastPinged(new Date(host.getLastPinged()));
+        hostResponse.setLastPinged(new Date(host.getLastPinged() << 10));
+        Long mshostId = host.getManagementServerId();
+        if (mshostId != null) {
+            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
+            if (managementServer != null) {
+                hostResponse.setManagementServerId(managementServer.getUuid());
+            }
+        }
 
         setManagementServerResponse(hostResponse, host, details);
 

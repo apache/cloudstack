@@ -166,19 +166,12 @@ export default {
         const params = this.buildRequestParams()
         this.loading = true
         postAPI('registerUserKeys', params).then(response => {
-          this.$pollJob({
-            jobId: response.registeruserkeysresponse.jobid,
-            successMessage: this.$t('message.success.register.user.keypair', { user: this.resource.username }),
-            successMethod: () => {
-              this.fetchData()
-            },
-            errorMessage: this.$t('message.register.keypair.failed'),
-            errorMethod: () => {
-              this.fetchData()
-            },
-            loadingMessage: this.$t('label.registering.keypair', { user: this.resource.username }),
-            catchMessage: this.$t('error.fetching.async.job.result')
+          this.$notification.success({
+            message: this.$t('label.action.create.api.key'),
+            description: this.$t('message.success.register.user.keypair', { user: this.resource.username })
           })
+          this.fetchData()
+          this.closeModal()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -187,7 +180,6 @@ export default {
           })
         }).finally(() => {
           this.loading = false
-          this.closeModal()
         })
       })
     },

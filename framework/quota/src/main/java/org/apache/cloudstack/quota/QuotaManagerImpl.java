@@ -54,6 +54,7 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
@@ -364,6 +365,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         if (Boolean.FALSE.equals(QuotaConfig.QuotaAccountEnabled.valueIn(accountVO.getAccountId()))) {
             logger.debug("Considering usage record [{}] as calculated and skipping it because account [{}] has the quota plugin disabled.",
                     usageRecord.toString(usageAggregationTimeZone), accountVO.reflectionToString());
+            return false;
+        }
+        if (usageRecord.getUsageType() == UsageTypes.VOLUME && usageRecord.getVmInstanceId() != null) {
+            logger.debug("Considering usage record [{}] as calculated and skipping it because it represents the period " +
+                    "a volume has remained attached to an instance, which Quota does not handle.", usageRecord.toString(usageAggregationTimeZone));
             return false;
         }
         return true;

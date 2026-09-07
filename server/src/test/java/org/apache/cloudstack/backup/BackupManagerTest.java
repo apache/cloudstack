@@ -725,7 +725,7 @@ public class BackupManagerTest {
         when(backup.getId()).thenReturn(backupId);
         when(backup.getSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("testbackupprovider");
-        when(backupProvider.takeBackup(vmInstanceVOMock, null, false, scheduleId)).thenReturn(new Pair<>(true, backup));
+        when(backupProvider.takeBackup(vmInstanceVOMock, null, false)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
@@ -955,7 +955,6 @@ public class BackupManagerTest {
         Mockito.when(backupSchedules.get(0).getId()).thenReturn(2L);
         Mockito.when(backupSchedules.get(1).getId()).thenReturn(3L);
         Mockito.when(backupScheduleDao.remove(Mockito.anyLong())).thenReturn(true);
-        Mockito.doNothing().when(backupManager).finalizeBackupScheduleIfNeeded(Mockito.any());
 
         boolean success = backupManager.deleteAllVmBackupSchedules(vmId);
         assertTrue(success);
@@ -971,7 +970,6 @@ public class BackupManagerTest {
         Mockito.when(backupSchedules.get(1).getId()).thenReturn(3L);
         Mockito.when(backupScheduleDao.remove(2L)).thenReturn(true);
         Mockito.when(backupScheduleDao.remove(3L)).thenReturn(false);
-        Mockito.doNothing().when(backupManager).finalizeBackupScheduleIfNeeded(Mockito.any());
 
         boolean success = backupManager.deleteAllVmBackupSchedules(vmId);
         assertFalse(success);
@@ -1017,7 +1015,6 @@ public class BackupManagerTest {
         Mockito.doNothing().when(backupManager).checkCallerAccessToBackupScheduleVm(vmId);
         when(backupScheduleVOMock.getId()).thenReturn(id);
         when(backupScheduleDao.remove(id)).thenReturn(true);
-        Mockito.doNothing().when(backupManager).finalizeBackupScheduleIfNeeded(Mockito.any());
 
         boolean success = backupManager.deleteBackupSchedule(deleteBackupScheduleCmdMock);
         assertTrue(success);
@@ -1332,7 +1329,6 @@ public class BackupManagerTest {
         when(schedule.getId()).thenReturn(scheduleId);
         when(backupScheduleDao.listByVM(vmId)).thenReturn(List.of(schedule));
         when(backupScheduleDao.remove(scheduleId)).thenReturn(true);
-        doNothing().when(backupManager).finalizeBackupScheduleIfNeeded(any());
 
         boolean result = backupManager.deleteBackupSchedule(cmd);
         assertTrue(result);
@@ -2877,46 +2873,5 @@ public class BackupManagerTest {
         verify(backupManager).validateBackupForZone(zoneId);
         verify(backupOfferingDao).persist(any());
         verify(backupOfferingDetailsDao, never()).saveDetails(any());
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void endScheduleBackupChainIfNeededTestInvalidVirtualMachineThrowCloudRuntimeException() {
-        Mockito.doReturn(1L).when(backupScheduleVOMock).getVmId();
-
-        backupManager.finalizeBackupScheduleIfNeeded(backupScheduleVOMock);
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void endScheduleBackupChainIfNeededTestInvalidBackupOfferingThrowCloudRuntimeException() {
-        Mockito.doReturn(1L).when(backupScheduleVOMock).getVmId();
-        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(1L);
-
-        backupManager.finalizeBackupScheduleIfNeeded(backupScheduleVOMock);
-    }
-
-    @Test
-    public void endScheduleBackupChainIfNeededTestBackupProviderSuccessDoesNotThrowException() {
-        Mockito.doReturn(1L).when(backupScheduleVOMock).getVmId();
-        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(1L);
-        Mockito.doReturn(2L).when(vmInstanceVOMock).getBackupOfferingId();
-        Mockito.doReturn(backupOfferingVOMock).when(backupOfferingDao).findById(2L);
-        Mockito.doReturn(BackupManagerImpl.KBOSS_BACKUP_PROVIDER).when(backupOfferingVOMock).getProvider();
-        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider(BackupManagerImpl.KBOSS_BACKUP_PROVIDER);
-        Mockito.doReturn(true).when(backupProvider).removeVMBackupSchedule(vmInstanceVOMock, backupScheduleVOMock);
-
-        backupManager.finalizeBackupScheduleIfNeeded(backupScheduleVOMock);
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void endScheduleBackupChainIfNeededTestBackupProviderFailThrowCloudRuntimeException() {
-        Mockito.doReturn(1L).when(backupScheduleVOMock).getVmId();
-        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(1L);
-        Mockito.doReturn(2L).when(vmInstanceVOMock).getBackupOfferingId();
-        Mockito.doReturn(backupOfferingVOMock).when(backupOfferingDao).findById(2L);
-        Mockito.doReturn(BackupManagerImpl.KBOSS_BACKUP_PROVIDER).when(backupOfferingVOMock).getProvider();
-        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider(BackupManagerImpl.KBOSS_BACKUP_PROVIDER);
-        Mockito.doReturn(false).when(backupProvider).removeVMBackupSchedule(vmInstanceVOMock, backupScheduleVOMock);
-
-        backupManager.finalizeBackupScheduleIfNeeded(backupScheduleVOMock);
     }
 }

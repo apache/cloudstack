@@ -32,11 +32,16 @@ export default {
       permission: ['listServiceOfferings'],
       searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory', 'categoryid'],
       params: () => {
-        var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          return { isrecursive: 'true' }
         }
-        return params
+        return { state: 'Active' }
+      },
+      filters: () => {
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          return ['active', 'inactive']
+        }
+        return []
       },
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'category', 'domain', 'zone', 'order'],

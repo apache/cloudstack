@@ -99,7 +99,6 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -912,7 +911,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (path == null) {
                     path = srcData.getPath();
                     if (path == null) {
-                        new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                       throw new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
                     }
                 }
             }
@@ -2907,11 +2906,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
             pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
-            if (CollectionUtils.isNotEmpty(vol.getDeltasToRemove()) && poolTypesToDeleteChainInfo.contains(pool.getType()) && vol.getFormat() == ImageFormat.QCOW2 && cmd.isDeleteChain()) {
-                for (String deltaPath : vol.getDeltasToRemove()) {
-                    logger.debug("Deleting leftover backup delta at [{}].", deltaPath);
-                    pool.deletePhysicalDisk(deltaPath, vol.getFormat());
-                }
+            if (vol.getChainInfo() != null && poolTypesToDeleteChainInfo.contains(pool.getType()) && vol.getFormat() == ImageFormat.QCOW2 && cmd.isDeleteChain()) {
+                logger.debug("Deleting leftover backup delta at [{}].", vol.getChainInfo());
+                pool.deletePhysicalDisk(vol.getChainInfo(), vol.getFormat());
             }
             return new Answer(null);
         } catch (final CloudRuntimeException e) {
@@ -3023,7 +3020,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (path == null) {
                 path = details != null ? details.get(DiskTO.IQN) : null;
                 if (path == null) {
-                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                   logger.warn("The 'path' or 'iqn' field must be specified.");
                 }
             }
         }

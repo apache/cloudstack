@@ -19,6 +19,51 @@
 package com.cloud.template;
 
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -67,8 +112,11 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uservm.UserVm;
@@ -83,6 +131,7 @@ import com.cloud.vm.dao.VmIsoMapDao;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
@@ -120,50 +169,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.test.utils.SpringUtils;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TemplateManagerImplTest extends TestCase {
@@ -248,6 +253,12 @@ public class TemplateManagerImplTest extends TestCase {
     @Mock
     UserVmJoinDao _userVmJoinDao;
 
+    @Mock
+    private UserDataDao userDataDaoMock;
+
+    @Mock
+    private UserDataVO userDataMock;
+
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
         public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
@@ -290,6 +301,7 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyTemplateId(1L);
     }
 
+    @Ignore
     public void testVerifyTemplateIdOfNonSystemTemplate() {
         templateManager.verifyTemplateId(1L);
     }
@@ -552,6 +564,8 @@ public class TemplateManagerImplTest extends TestCase {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(vmTemplateDao.findById(anyLong())).thenReturn(template);
 
+        when(userDataDaoMock.findById(anyLong())).thenReturn(userDataMock);
+
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
 
         Assert.assertEquals(template, resultTemplate);
@@ -653,6 +667,57 @@ public class TemplateManagerImplTest extends TestCase {
 
         templateManager.getImageStore(null, 1L, volumeVO);
         Mockito.verify(dataStoreManager, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());
+    }
+
+    private HypervisorTemplateAdapter mockHypervisorTemplateAdapter() {
+        HypervisorTemplateAdapter adapter = Mockito.mock(HypervisorTemplateAdapter.class);
+        when(adapter.getName()).thenReturn(TemplateAdapter.TemplateAdapterType.Hypervisor.getName());
+        templateManager.setTemplateAdapters(new ArrayList<>(List.of(adapter)));
+        return adapter;
+    }
+
+    @Test
+    public void testRegisterTemplateValidatesUrlBeforeProbingSize() {
+        RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
+        when(cmd.getTemplateTag()).thenReturn(null);
+        when(cmd.isRoutingType()).thenReturn(null);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/template.qcow2");
+        when(cmd.getFormat()).thenReturn("QCOW2");
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerTemplate(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
+    }
+
+    @Test
+    public void testRegisterIsoValidatesUrlBeforeProbingSize() throws Exception {
+        RegisterIsoCmd cmd = Mockito.mock(RegisterIsoCmd.class);
+        when(cmd.getUrl()).thenReturn("http://10.0.0.5/image.iso");
+        when(cmd.isDirectDownload()).thenReturn(false);
+        when(cmd.getEntityOwnerId()).thenReturn(1L);
+        when(_accountMgr.getAccount(1L)).thenReturn(Mockito.mock(Account.class));
+
+        mockHypervisorTemplateAdapter();
+
+        try (MockedStatic<UriUtils> uriUtilsMock = Mockito.mockStatic(UriUtils.class)) {
+            uriUtilsMock.when(() -> UriUtils.validateUrl(any(), any(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+                    .thenThrow(new IllegalArgumentException("Illegal host specified in URL."));
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> templateManager.registerIso(cmd));
+
+            uriUtilsMock.verify(() -> UriUtils.getRemoteSize(any(), any()), Mockito.never());
+        }
     }
 
     @Test
