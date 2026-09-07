@@ -1135,7 +1135,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     "or has crossed the disable threshold.", volume.getUuid(), storagePool.getName()));
         }
 
-        DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        DataStore dataStore = (DataStore) storagePool;
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
         VolumeApiResult createVolumeResult = createVolumeFuture.get();
