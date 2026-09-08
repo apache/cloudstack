@@ -2339,33 +2339,36 @@ public class KVMStorageProcessor implements StorageProcessor {
      * barriers properly (>2.6.32) this won't be any different then pulling the power
      * cord out of a running machine.
      */
-    private Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+    protected Long takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
         Long snapshotSize = null;
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage image = null;
         try {
-            Rados r = radosConnect(primaryPool);
+            r = radosConnect(primaryPool);
 
-            final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-            final Rbd rbd = new Rbd(io);
-            final RbdImage image = rbd.open(disk.getName());
+            io = r.ioCtxCreate(primaryPool.getSourceDir());
+            rbd = new Rbd(io);
+            image = rbd.open(disk.getName());
 
             logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
             image.snapCreate(snapshotName);
 
-            image.snapCreate(snapshotName);
             long rbdSnapshotSize = getRbdSnapshotSize(primaryPool.getSourceDir(), disk.getName(), snapshotName, primaryPool.getSourceHost(), primaryPool.getAuthUserName(), primaryPool.getAuthSecret());
             if (rbdSnapshotSize > 0) {
                 snapshotSize = rbdSnapshotSize;
             }
-
-            rbd.close(image);
-            r.ioCtxDestroy(io);
         } catch (final Exception e) {
             logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
+        } finally {
+            closeRbdImage(rbd, image, disk.getName());
+            destroyRadosIoCtx(r, io, disk.getName());
         }
         return snapshotSize;
     }
 
-    private long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
+    protected long getRbdSnapshotSize(String poolPath, String diskName, String snapshotName, String rbdMonitor, String authUser, String authSecret) {
         logger.debug("Get RBD snapshot size for {}/{}@{}", poolPath, diskName, snapshotName);
         //cmd: rbd du <pool>/<disk-name>@<snapshot-name> --format json --mon-host <monitor-host> --id <user> --key <key> 2>/dev/null
         String snapshotDetailsInJson = Script.runSimpleBashScript(String.format("rbd du %s/%s@%s --format json --mon-host %s --id %s --key %s 2>/dev/null", poolPath, diskName, snapshotName, rbdMonitor, authUser, authSecret));
@@ -2652,7 +2655,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return ((availablePoolSize * 1d) / (diskSize * 1d)) < MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT;
     }
 
-    private Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
+    protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
         Rados r = new Rados(primaryPool.getAuthUserName());
         r.confSet(CEPH_MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
         r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
@@ -2660,6 +2663,50 @@ public class KVMStorageProcessor implements StorageProcessor {
         r.connect();
         logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
         return r;
+    }
+
+    /**
+     * Closes an RBD image if it was opened; never throws. An image left open keeps this client's RBD
+     * exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and keeps
+     * the image busy so it cannot be removed.
+     */
+    protected void closeRbdImage(Rbd rbd, RbdImage image, String imageName) {
+        if (image == null) {
+            return;
+        }
+        try {
+            rbd.close(image);
+        } catch (final Exception e) {
+            logger.warn("Failed to close RBD image [{}]. The error was: {}", imageName, e.getMessage(), e);
+        }
+    }
+
+    /** Destroys a RADOS IO context if it was created; never throws. */
+    protected void destroyRadosIoCtx(Rados r, IoCTX io, String contextDescription) {
+        if (io == null) {
+            return;
+        }
+        try {
+            r.ioCtxDestroy(io);
+        } catch (final Exception e) {
+            logger.warn("Failed to destroy the RADOS IO context used for [{}]. The error was: {}", contextDescription, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Unprotects an RBD snapshot if it was protected; never throws. A snapshot left protected cannot
+     * be deleted, and neither can its volume.
+     */
+    protected void unprotectRbdSnapshot(RbdImage image, String snapshotName, boolean snapProtected) {
+        if (!snapProtected) {
+            return;
+        }
+        try {
+            image.snapUnprotect(snapshotName);
+        } catch (final Exception e) {
+            logger.error("Failed to unprotect RBD snapshot [{}]; it and its volume cannot be deleted until this is resolved manually. The error was: {}",
+                    snapshotName, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -2811,17 +2858,24 @@ public class KVMStorageProcessor implements StorageProcessor {
         disk.setSize(size > volume.getVirtualSize() ? size : volume.getVirtualSize());
         disk.setVirtualSize(size > volume.getVirtualSize() ? size : disk.getSize());
 
+        Rados r = null;
+        IoCTX io = null;
+        Rbd rbd = null;
+        RbdImage srcImage = null;
+        RbdImage diskImage = null;
+        boolean snapProtected = false;
+
         try {
 
-            Rados r = new Rados(srcPool.getAuthUserName());
+            r = new Rados(srcPool.getAuthUserName());
             r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
             r.confSet("key", srcPool.getAuthSecret());
             r.confSet("client_mount_timeout", "30");
             r.connect();
 
-            IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            RbdImage srcImage = rbd.open(volume.getName());
+            io = r.ioCtxCreate(srcPool.getSourceDir());
+            rbd = new Rbd(io);
+            srcImage = rbd.open(volume.getName());
 
             List<RbdSnapInfo> snaps = srcImage.snapList();
             boolean snapFound = false;
@@ -2837,23 +2891,26 @@ public class KVMStorageProcessor implements StorageProcessor {
                 return null;
             }
             srcImage.snapProtect(snapshotName);
+            snapProtected = true;
 
             logger.debug(String.format("Try to clone snapshot %s on RBD", snapshotName));
             rbd.clone(volume.getName(), snapshotName, io, disk.getName(), LibvirtStorageAdaptor.RBD_FEATURES, 0);
-            RbdImage diskImage = rbd.open(disk.getName());
+            diskImage = rbd.open(disk.getName());
             if (disk.getVirtualSize() > volume.getVirtualSize()) {
                 diskImage.resize(disk.getVirtualSize());
             }
 
             diskImage.flatten();
-            rbd.close(diskImage);
-
-            srcImage.snapUnprotect(snapshotName);
-            rbd.close(srcImage);
-            r.ioCtxDestroy(io);
         } catch (RadosException | RbdException e) {
             logger.error(String.format("Failed due to %s", e.getMessage()), e);
             disk = null;
+        } finally {
+            // Every handle has to be released on all paths, including the "snapshot not found" return and
+            // any failure of clone/resize/flatten.
+            closeRbdImage(rbd, diskImage, newUuid);
+            unprotectRbdSnapshot(srcImage, snapshotName, snapProtected);
+            closeRbdImage(rbd, srcImage, volume.getName());
+            destroyRadosIoCtx(r, io, snapshotName);
         }
 
         return disk;
