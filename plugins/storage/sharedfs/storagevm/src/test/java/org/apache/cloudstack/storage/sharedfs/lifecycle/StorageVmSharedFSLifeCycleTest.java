@@ -53,6 +53,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -301,6 +302,23 @@ public class StorageVmSharedFSLifeCycleTest {
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
         when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
+
+        lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeploySharedFSTemplateNotFoundWithMultipleHypervisors() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+        SharedFS sharedFS = mock(SharedFS.class);
+        when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
+        when(sharedFS.getName()).thenReturn(s_name);
+        when(sharedFS.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+        when(sharedFS.getFsType()).thenReturn(SharedFS.FileSystemType.valueOf(s_fsFormat));
+        when(sharedFS.getAccountId()).thenReturn(s_ownerId);
+
+        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(new ArrayList<>(List.of(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.VMware)));
 
         lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
     }
