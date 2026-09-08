@@ -174,20 +174,17 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 
     @Override
     public ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException("createServiceOfferingCategory is not implemented in this mock");
     }
 
     @Override
     public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
-        // TODO Auto-generated method stub
-        return false;
+        throw new UnsupportedOperationException("deleteServiceOfferingCategory is not implemented in this mock");
     }
 
     @Override
     public ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException("updateServiceOfferingCategory is not implemented in this mock");
     }
 
     /* (non-Javadoc)

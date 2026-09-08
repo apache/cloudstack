@@ -22,7 +22,7 @@
 CREATE TABLE IF NOT EXISTS `cloud`.`service_offering_category` (
  `id` bigint unsigned NOT NULL auto_increment,
  `name` varchar(255) NOT NULL,
- `uuid` varchar(40),
+ `uuid` varchar(40) NOT NULL,
  `sort_key` int NOT NULL DEFAULT 0,
  PRIMARY KEY  (`id`),
  CONSTRAINT `uc_service_offering_category__uuid` UNIQUE (`uuid`),
