@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
@@ -542,5 +543,9 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+    }
+
+    @Override
+    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
     }
 }

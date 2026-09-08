@@ -1147,7 +1147,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         _accountMgr.checkAccess(callerAccount, domain);
         if (accountId != null) {
-            Account account = _entityMgr.findById(Account.class, accountId);
+            Account account = _entityMgr.findByIdIncludingRemoved(Account.class, accountId);
             if (account == null) {
                 throw new InvalidParameterValueException("Unable to find account " + accountId);
             }

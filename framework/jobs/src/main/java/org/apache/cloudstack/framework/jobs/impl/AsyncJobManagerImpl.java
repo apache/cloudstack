@@ -31,17 +31,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.SnapshotVO;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotService;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -72,15 +65,17 @@ import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -114,11 +109,12 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.logging.log4j.ThreadContext;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotService;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
-    private static final Pattern PASSWORD_FIELD_PATTERN = Pattern.compile("\\\"password\\\":\\\"([^\\\"]*)\\\"+");
 
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
@@ -368,7 +364,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         if (resultObject != null) {
-            job.setResult(resultObject);
+            job.updateResultWithEncryptionIfNeeded(resultObject);
         }
 
         if (logger.isDebugEnabled()) {
@@ -389,9 +385,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setResultCode(resultCode);
 
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 } else {
-                    job.setResult(null);
+                    job.updateResultWithEncryptionIfNeeded(null);
                 }
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
@@ -460,7 +456,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 job.setProcessStatus(processStatus);
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 }
                 job.setLastUpdated(DateUtil.currentGMTTime());
                 _jobDao.update(jobId, job);
@@ -558,27 +554,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    public String obfuscatePassword(String result, boolean hidePassword) {
-        if (!hidePassword || StringUtils.isBlank(result)) {
+    public String  obfuscatePassword(String result, boolean hidePassword) {
+        if (!hidePassword) {
             return result;
         }
-
-        Matcher matcher = PASSWORD_FIELD_PATTERN.matcher(result);
-        StringBuilder obfuscatedResult = new StringBuilder();
-        while (matcher.find()) {
-            String password = matcher.group(1);
-            String replacement = "\"password\":\"" + obfuscatePasswordValue(password) + "\"";
-            matcher.appendReplacement(obfuscatedResult, Matcher.quoteReplacement(replacement));
-        }
-        matcher.appendTail(obfuscatedResult);
-        return obfuscatedResult.toString();
-    }
-
-    private String obfuscatePasswordValue(String password) {
-        if (StringUtils.isEmpty(password)) {
-            return password;
-        }
-        return password.charAt(0) + "*****";
+        return StringUtils.obfuscatePasswordInJsonLikeString(result);
     }
 
     private void scheduleExecution(final AsyncJobVO job) {
@@ -1167,7 +1147,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.setResult("job cancelled because of management server restart or shutdown");
+                        job.updateResultWithEncryptionIfNeeded("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
                         job.setLastUpdated(currentGMTTime);
