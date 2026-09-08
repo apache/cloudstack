@@ -39,3 +39,13 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+
+4.22.0.0 > 4.23.0.0:
+  * KVM/Ceph: RBD volumes can now be encrypted at rest using native librbd
+    LUKS2 (<encryption format='luks2' engine='librbd'>), for both data disks
+    and root disks. Encryption is transparent to the guest and reuses the
+    existing CloudStack volume-encryption passphrase handling, so no
+    additional key store is required. Note: attaching an encrypted RBD volume
+    to a running Instance requires libvirt >= 10.1.0; booting an Instance from
+    an encrypted RBD root disk works on older libvirt.

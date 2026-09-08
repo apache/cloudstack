@@ -54,6 +54,7 @@ public class QemuObject {
      */
     public enum EncryptFormat {
         LUKS("luks"),
+        LUKS2("luks2"),
         AES("aes");
 
         private final String format;
