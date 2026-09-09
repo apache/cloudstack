@@ -130,10 +130,13 @@ public class WeightedHostScorerTest {
         Mockito.when(hostLoadTracker.getLoad(quiet.getId())).thenReturn(new HostLoad(0.10, 0.10, 10));
         Mockito.when(hostLoadTracker.getLoad(busy.getId())).thenReturn(new HostLoad(0.99, 0.10, 10));
 
-        List<Host> result = scorer.applyUtilisationThresholds(null, new ArrayList<>(List.of(busy, quiet)));
+        List<Host> healthy = new ArrayList<>();
+        List<Host> tooBusy = new ArrayList<>();
+        scorer.partitionByUtilisation(null, new ArrayList<>(List.of(quiet, busy)), healthy, tooBusy);
 
-        assertSame("host over the CPU threshold must fall behind", quiet, result.get(0));
-        assertSame(busy, result.get(1));
+        assertEquals(1, healthy.size());
+        assertSame(quiet, healthy.get(0));
+        assertSame("host over the CPU threshold must be held back", busy, tooBusy.get(0));
     }
 
     @Test
@@ -142,9 +145,12 @@ public class WeightedHostScorerTest {
         Host b = host("b");
         Mockito.when(hostLoadTracker.getLoad(Mockito.anyLong())).thenReturn(new HostLoad(0.99, 0.99, 10));
 
-        List<Host> result = scorer.applyUtilisationThresholds(null, new ArrayList<>(List.of(a, b)));
+        List<Host> healthy = new ArrayList<>();
+        List<Host> tooBusy = new ArrayList<>();
+        scorer.partitionByUtilisation(null, new ArrayList<>(List.of(a, b)), healthy, tooBusy);
 
-        assertEquals("deployment must still be possible when the whole cluster is busy", 2, result.size());
+        assertEquals("both hosts are over threshold", 2, tooBusy.size());
+        assertTrue(healthy.isEmpty());
     }
 
     @Test
