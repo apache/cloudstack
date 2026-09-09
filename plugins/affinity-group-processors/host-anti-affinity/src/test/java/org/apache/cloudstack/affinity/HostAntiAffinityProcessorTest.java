@@ -34,6 +34,7 @@ import org.mockito.Spy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -49,6 +50,7 @@ public class HostAntiAffinityProcessorTest {
     private static final long GROUP_VM_ID = 1L;
     private static final long HOST_ID = 10L;
     private static final long LAST_HOST_ID = 11L;
+    private static final long PLANNED_HOST_ID = 12L;
     private static final int CAPACITY_RELEASE_INTERVAL = 3600;
 
     @Mock
@@ -153,6 +155,49 @@ public class HostAntiAffinityProcessorTest {
         processor.processAffinityGroup(vmGroupMapping, avoid, vm);
 
         assertFalse(avoids(HOST_ID));
+    }
+
+    @Test
+    public void testPlannedHostWinsOverStaleDatabaseHost() {
+        VMInstanceVO plannedVm = org.mockito.Mockito.mock(VMInstanceVO.class);
+        when(plannedVm.getId()).thenReturn(GROUP_VM_ID);
+        when(plannedVm.getHostId()).thenReturn(PLANNED_HOST_ID);
+
+        // the database still shows the pre-migration host
+        when(_vmInstanceDao.findById(GROUP_VM_ID)).thenReturn(groupVM);
+        when(groupVM.isRemoved()).thenReturn(false);
+        when(groupVM.getHostId()).thenReturn(HOST_ID);
+
+        processor.processAffinityGroup(vmGroupMapping, avoid, vm, Arrays.asList(plannedVm));
+
+        assertTrue(avoids(PLANNED_HOST_ID));
+        assertFalse(avoids(HOST_ID));
+    }
+
+    @Test
+    public void testPlannedVmWithoutHostFallsBackToDatabase() {
+        VMInstanceVO plannedVm = org.mockito.Mockito.mock(VMInstanceVO.class);
+        when(plannedVm.getId()).thenReturn(GROUP_VM_ID);
+        when(plannedVm.getHostId()).thenReturn(null);
+
+        when(_vmInstanceDao.findById(GROUP_VM_ID)).thenReturn(groupVM);
+        when(groupVM.isRemoved()).thenReturn(false);
+        when(groupVM.getHostId()).thenReturn(HOST_ID);
+
+        processor.processAffinityGroup(vmGroupMapping, avoid, vm, Arrays.asList(plannedVm));
+
+        assertTrue(avoids(HOST_ID));
+    }
+
+    @Test
+    public void testEmptyVmListBehavesAsBefore() {
+        when(_vmInstanceDao.findById(GROUP_VM_ID)).thenReturn(groupVM);
+        when(groupVM.isRemoved()).thenReturn(false);
+        when(groupVM.getHostId()).thenReturn(HOST_ID);
+
+        processor.processAffinityGroup(vmGroupMapping, avoid, vm, Collections.emptyList());
+
+        assertTrue(avoids(HOST_ID));
     }
 
     @Test
