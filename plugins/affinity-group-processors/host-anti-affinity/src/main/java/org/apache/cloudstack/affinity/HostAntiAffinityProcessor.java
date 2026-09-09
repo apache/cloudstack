@@ -17,6 +17,8 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,7 +84,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                     _affinityGroupDao.listByIds(affinityGroupIds, true);
                 }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-                    processAffinityGroup(vmGroupMapping, avoid, vm);
+                    processAffinityGroup(vmGroupMapping, avoid, vm, vmList);
                 }
             }
         });
@@ -90,6 +92,18 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     }
 
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, ExcludeList avoid, VirtualMachine vm) {
+        processAffinityGroup(vmGroupMapping, avoid, vm, Collections.emptyList());
+    }
+
+    /**
+     * Applies anti-affinity for one group.
+     *
+     * @param vmList
+     *         placements to honour in preference to what the database says. DRS builds a plan of
+     *         several migrations in memory and only persists it later, so during plan generation
+     *         the database still shows the old host for every VM the plan has already moved.
+     */
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, ExcludeList avoid, VirtualMachine vm, List<VirtualMachine> vmList) {
         if (vmGroupMapping != null) {
             AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
@@ -100,7 +114,16 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
             List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
             groupVMIds.remove(vm.getId());
 
+            Map<Long, VirtualMachine> plannedVms = getVmIdVmMap(vmList);
+
             for (Long groupVMId : groupVMIds) {
+                VirtualMachine plannedVm = plannedVms.get(groupVMId);
+                if (plannedVm != null && plannedVm.getHostId() != null) {
+                    avoid.addHost(plannedVm.getHostId());
+                    logger.debug("Added host {} to avoid set, since VM {} is placed on the host by the plan being built",
+                            plannedVm.getHostId(), plannedVm);
+                    continue;
+                }
                 VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
                 if (groupVM == null || groupVM.isRemoved()) {
                     continue;
@@ -108,6 +131,14 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                 avoidHostOfVmInAffinityGroup(avoid, groupVM);
             }
         }
+    }
+
+    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
+        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
+        for (VirtualMachine vm : vmList) {
+            vmIdVmMap.put(vm.getId(), vm);
+        }
+        return vmIdVmMap;
     }
 
     protected void avoidHostOfVmInAffinityGroup(ExcludeList avoid, VMInstanceVO groupVM) {
