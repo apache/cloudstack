@@ -108,6 +108,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -271,6 +272,8 @@ public class VirtualMachineManagerImplTest {
     private ClusterDao clusterDao;
     @Mock
     private ClusterDetailsDao _clusterDetailsDao;
+    @Mock
+    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
