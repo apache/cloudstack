@@ -39,6 +39,7 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostScoringWeights;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -109,6 +110,8 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
                     + "concurrent deployments to the same host, because they all read the same figures before any "
                     + "of them is accounted for. 1 restores strict ordering.",
             true, ConfigKey.Scope.Cluster);
+
+    private static final Pair<Long, Long> NO_VMS = new Pair<>(0L, 0L);
 
     @Inject
     private CapacityDao capacityDao;
@@ -187,20 +190,21 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     protected Map<Long, Double> score(long zoneId, Long podId, Long clusterId, List<? extends Host> hosts) {
         List<CapacityVO> capacities = capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId,
                 List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
-        Map<Long, Long> vmCounts = vmInstanceDao.countVmsByHost(zoneId, podId, clusterId, null);
-        Map<Long, Long> recentStarts = vmInstanceDao.countVmsByHost(zoneId, podId, clusterId,
+        Map<Long, Pair<Long, Long>> vmCounts = vmInstanceDao.countVmsByHost(zoneId, podId, clusterId,
                 new Date(System.currentTimeMillis() - RecentStartWindow.value() * 1000L));
 
         Map<Long, Double[]> allocated = allocatedFractions(capacities);
 
+        Weights weights = new Weights(clusterId);
         Map<Long, Double> scores = new HashMap<>();
         for (Host host : hosts) {
             Double[] alloc = allocated.get(host.getId());
             if (alloc == null) {
                 continue;
             }
-            scores.put(host.getId(), scoreHost(clusterId, alloc[0], alloc[1], hostLoadTracker.getLoad(host.getId()),
-                    vmCounts.getOrDefault(host.getId(), 0L), recentStarts.getOrDefault(host.getId(), 0L)));
+            Pair<Long, Long> counts = vmCounts.getOrDefault(host.getId(), NO_VMS);
+            scores.put(host.getId(), scoreHost(weights, alloc[0], alloc[1], hostLoadTracker.getLoad(host.getId()),
+                    counts.first(), counts.second()));
         }
         return scores;
     }
@@ -263,39 +267,38 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
      * are directly comparable, and the dominant resource term is added on top of the weighted mean
      * so that being nearly out of any one resource is penalised even when the average looks fine.
      */
-    protected double scoreHost(Long clusterId, double cpuAllocated, double memoryAllocated, HostLoad load,
+    protected double scoreHostIn(Long clusterId, double cpuAllocated, double memoryAllocated, HostLoad load,
             long vmCount, long recentStarts) {
-        double cpuUsedWeight = load.isUsable() ? valueIn(HostScoringWeights.CpuUsedWeight, clusterId) : 0;
-        double memoryUsedWeight = load.isUsable() ? valueIn(HostScoringWeights.MemoryUsedWeight, clusterId) : 0;
-        double vmScale = Math.max(1, valueIn(ExpectedVmsPerHost, clusterId));
+        return scoreHost(new Weights(clusterId), cpuAllocated, memoryAllocated, load, vmCount, recentStarts);
+    }
 
-        double cpuAllocatedWeight = valueIn(HostScoringWeights.CpuAllocatedWeight, clusterId);
-        double memoryAllocatedWeight = valueIn(HostScoringWeights.MemoryAllocatedWeight, clusterId);
-        double vmCountWeight = valueIn(VmCountWeight, clusterId);
-        double recentStartWeight = valueIn(RecentStartWeight, clusterId);
+    protected double scoreHost(Weights weights, double cpuAllocated, double memoryAllocated, HostLoad load,
+            long vmCount, long recentStarts) {
+        // a host with no usable load figures is ranked on allocation alone, and is placed behind
+        // every measured host by the caller rather than being assumed idle
+        double cpuUsedWeight = load.isUsable() ? weights.cpuUsed : 0;
+        double memoryUsedWeight = load.isUsable() ? weights.memoryUsed : 0;
 
-        double vmCountTerm = clamp(vmCount / vmScale);
-        double recentStartTerm = clamp(recentStarts / vmScale);
+        double vmCountTerm = clamp(vmCount / weights.vmScale);
+        double recentStartTerm = clamp(recentStarts / weights.vmScale);
 
-        double weightSum = cpuAllocatedWeight + cpuUsedWeight + memoryAllocatedWeight + memoryUsedWeight
-                + vmCountWeight + recentStartWeight;
-        if (weightSum <= 0) {
-            return 0;
+        double weightSum = weights.cpuAllocated + cpuUsedWeight + weights.memoryAllocated + memoryUsedWeight
+                + weights.vmCount + weights.recentStart;
+
+        double mean = 0;
+        if (weightSum > 0) {
+            mean = (weights.cpuAllocated * cpuAllocated
+                    + cpuUsedWeight * load.getCpuUtilisation()
+                    + weights.memoryAllocated * memoryAllocated
+                    + memoryUsedWeight * load.getMemoryUtilisation()
+                    + weights.vmCount * vmCountTerm
+                    + weights.recentStart * recentStartTerm) / weightSum;
         }
 
-        double weighted = cpuAllocatedWeight * cpuAllocated
-                + cpuUsedWeight * load.getCpuUtilisation()
-                + memoryAllocatedWeight * memoryAllocated
-                + memoryUsedWeight * load.getMemoryUtilisation()
-                + vmCountWeight * vmCountTerm
-                + recentStartWeight * recentStartTerm;
-
-        double mean = weighted / weightSum;
-        double dominantWeight = valueIn(DominantResourceWeight, clusterId);
-        if (dominantWeight <= 0) {
+        if (weights.dominant <= 0) {
             return mean;
         }
-        return (mean + dominantWeight * dominantResource(cpuAllocated, memoryAllocated, load)) / (1 + dominantWeight);
+        return (mean + weights.dominant * dominantResource(cpuAllocated, memoryAllocated, load)) / (1 + weights.dominant);
     }
 
     /**
@@ -336,6 +339,44 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
         int spread = Math.min((int) valueIn(SelectionSpread, clusterId), ranked.size());
         if (spread > 1) {
             Collections.shuffle(ranked.subList(0, spread), random);
+        }
+    }
+
+    /**
+     * The weights for one ranking, read once rather than per host.
+     *
+     * A negative weight would invert the ranking and make the most loaded host the best, so they
+     * are floored at zero and the bad value is reported.
+     */
+    protected final class Weights {
+        private final double cpuAllocated;
+        private final double cpuUsed;
+        private final double memoryAllocated;
+        private final double memoryUsed;
+        private final double vmCount;
+        private final double recentStart;
+        private final double dominant;
+        private final double vmScale;
+
+        protected Weights(Long clusterId) {
+            cpuAllocated = nonNegative(HostScoringWeights.CpuAllocatedWeight, clusterId);
+            cpuUsed = nonNegative(HostScoringWeights.CpuUsedWeight, clusterId);
+            memoryAllocated = nonNegative(HostScoringWeights.MemoryAllocatedWeight, clusterId);
+            memoryUsed = nonNegative(HostScoringWeights.MemoryUsedWeight, clusterId);
+            vmCount = nonNegative(VmCountWeight, clusterId);
+            recentStart = nonNegative(RecentStartWeight, clusterId);
+            dominant = nonNegative(DominantResourceWeight, clusterId);
+            vmScale = Math.max(1, valueIn(ExpectedVmsPerHost, clusterId));
+        }
+
+        private double nonNegative(ConfigKey<Double> key, Long clusterId) {
+            double value = valueIn(key, clusterId);
+            if (value < 0) {
+                logger.warn("{} is set to {}, which would rank the most loaded host first. Treating it as 0.",
+                        key.key(), value);
+                return 0;
+            }
+            return value;
         }
     }
 
