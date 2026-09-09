@@ -401,8 +401,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<Ternary<VirtualMachine, Host, Host>> migrationPlan = new ArrayList<>();
         Map<Long, ExcludeList> vmToExcludesMap = null;
         Set<Long> staleAffinityVmIds = new HashSet<>();
-        while (iteration < maxIterations && algorithm.needsDrs(cluster, new ArrayList<>(hostCpuMap.values()),
-                new ArrayList<>(hostMemoryMap.values()))) {
+        while (iteration < maxIterations && algorithm.needsDrs(cluster, hostCpuMap, hostMemoryMap)) {
 
             logger.debug("Starting DRS iteration {} for cluster {}", iteration + 1, cluster);
             // Affinity only changes for VMs that share a group with the one just moved, so after
