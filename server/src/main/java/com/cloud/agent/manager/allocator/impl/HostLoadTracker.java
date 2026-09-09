@@ -28,6 +28,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
+import com.cloud.host.HostLoad;
+import com.cloud.host.HostLoadService;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -63,7 +65,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  *
  * Memory is taken as used over total and is sound everywhere.
  */
-public class HostLoadTracker extends ManagerBase implements Configurable {
+public class HostLoadTracker extends ManagerBase implements HostLoadService, Configurable {
 
     public static final ConfigKey<Integer> HostLoadSampleInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Integer.class, "host.load.sample.interval", "60",
@@ -175,6 +177,7 @@ public class HostLoadTracker extends ManagerBase implements Configurable {
                 : current.fold(cpu, memory, now, halfLife, stats));
     }
 
+    @Override
     public HostLoad getLoad(long hostId) {
         return getLoad(hostId, System.currentTimeMillis());
     }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.manager.allocator.impl;
+package com.cloud.host;
 
 /**
  * Smoothed view of what a host is actually doing, as opposed to what has been allocated on it.

@@ -17,6 +17,8 @@
 package com.cloud.agent.manager.allocator.impl;
 
 import org.junit.Before;
+import com.cloud.host.HostLoad;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;

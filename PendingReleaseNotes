@@ -72,3 +72,21 @@ example.ver.1 > example.ver.2:
     utilisation comes from a moving average configured with host.load.sample.interval and
     host.load.half.life. Until a management server has collected samples, ranking falls back to
     allocation figures alone.
+
+  * New DRS algorithm 'weighted' for drs.algorithm, alongside 'balanced' and 'condensed'. The
+    default is unchanged; the new one is opt-in per cluster.
+
+    The existing algorithms balance a single metric chosen by drs.metric, so choosing one leaves
+    the other unwatched: a cluster can be even on memory while its CPU load varies several fold and
+    nothing moves. Allocation is also a poor stand-in for load under overprovisioning, where a
+    saturated host can still report a small percentage allocated.
+
+    'weighted' blends CPU and memory allocated with CPU and memory in use, and balances the result.
+    Imbalance keeps its existing meaning - standard deviation over the mean - so drs.imbalance
+    still means what it did. Tuned with the drs.weighted.* settings, all cluster scoped. Where no
+    utilisation samples are available it falls back to allocation figures.
+
+  * DRS plan generation is considerably faster on large clusters. Working out where a VM could go
+    is now done once for each group of VMs that would get the same answer rather than once per VM,
+    and affinity is re-evaluated only for VMs affected by the migration just planned rather than
+    for every VM on every iteration.
