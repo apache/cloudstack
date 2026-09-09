@@ -129,6 +129,18 @@ public class DomainResponse extends BaseResponseWithTagInformation implements Re
     @Param(description = "the total backup storage space (in GiB) available to the domain", since = "4.21.0")
     private String backupStorageAvailable;
 
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_LIMIT)
+    @Param(description = "The number of Instance snapshots that can be stored by this domain")
+    private String instanceSnapshotLimit;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_TOTAL)
+    @Param(description = "The number of Instance snapshots stored by this domain")
+    private Long instanceSnapshotTotal;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_AVAILABLE)
+    @Param(description = "The number of Instance snapshots available for this domain")
+    private String instanceSnapshotAvailable;
+
     @SerializedName("templatelimit") @Param(description = "The total number of Templates which can be created by this domain")
     private String templateLimit;
 
@@ -398,6 +410,21 @@ public class DomainResponse extends BaseResponseWithTagInformation implements Re
     @Override
     public void setBackupStorageAvailable(String backupStorageAvailable) {
         this.backupStorageAvailable = backupStorageAvailable;
+    }
+
+    @Override
+    public void setInstanceSnapshotLimit(String instanceSnapshotLimit) {
+        this.instanceSnapshotLimit = instanceSnapshotLimit;
+    }
+
+    @Override
+    public void setInstanceSnapshotTotal(Long instanceSnapshotTotal) {
+        this.instanceSnapshotTotal = instanceSnapshotTotal;
+    }
+
+    @Override
+    public void setInstanceSnapshotAvailable(String instanceSnapshotAvailable) {
+        this.instanceSnapshotAvailable = instanceSnapshotAvailable;
     }
 
     @Override

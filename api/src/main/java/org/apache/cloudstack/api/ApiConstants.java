@@ -528,6 +528,47 @@ public class ApiConstants {
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
+
+    public static final String RESOURCE_TYPE_DESCRIPTION = "Accepted values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 and 17.\n"
+            + "0 - Instance. Number of Instances a user can create.\n"
+            + "1 - IP. Number of public IP addresses an account can own.\n"
+            + "2 - Volume. Number of disk volumes an account can own.\n"
+            + "3 - Snapshot. Number of Snapshots an account can own.\n"
+            + "4 - Template. Number of Templates an account can register/create.\n"
+            + "5 - Project. Number of projects an account can own.\n"
+            + "6 - Network. Number of networks an account can own.\n"
+            + "7 - VPC. Number of VPC an account can own.\n"
+            + "8 - CPU. Number of CPU an account can allocate for their resources.\n"
+            + "9 - Memory. Amount of RAM an account can allocate for their resources.\n"
+            + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use.\n"
+            + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. \n"
+            + "12 - Backup. Number of backups an account can own.\n"
+            + "13 - BackupStorage. Total backup storage space (in GiB) a user can use.\n"
+            + "14 - Bucket. Number of buckets an account can own\n"
+            + "15 - ObjectStorage. Total object storage space (in GiB) a user can use.\n"
+            + "16 - GPU. Number of GPUs an account can allocate for their resources.\n"
+            + "17 - InstanceSnapshot. Number of instance snapshots an account can own";
+
+    public static final String RESOURCE_TYPE_NAME_DESCRIPTION = "Type of resource (wins over resourceType if both are provided). Values are:\n"
+            + "user_vm - Instance. Number of Instances a user can create.\n"
+            + "public_ip - IP. Number of public IP addresses an account can own.\n"
+            + "volume - Volume. Number of disk volumes an account can own.\n"
+            + "snapshot - Snapshot. Number of Snapshots an account can own.\n"
+            + "template - Template. Number of Templates an account can register/create.\n"
+            + "project - Project. Number of projects an account can own.\n"
+            + "network - Network. Number of networks an account can own.\n"
+            + "vpc - VPC. Number of VPC an account can own.\n"
+            + "cpu - CPU. Number of CPU an account can allocate for their resources.\n"
+            + "memory - Memory. Amount of RAM an account can allocate for their resources.\n"
+            + "primary_storage - PrimaryStorage. Total primary storage space (in GiB) a user can use.\n"
+            + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use\n"
+            + "backup - Backup. Number of backups an account can own.\n"
+            + "backup_storage - BackupStorage. Total backup storage space (in GiB) a user can use\n"
+            + "bucket - Bucket. Number of buckets an account can own.\n"
+            + "object_storage - ObjectStorage. Total object storage space (in GiB) a user can use.\n"
+            + "gpu - GPU. Number of GPUs an account can allocate for their resources.\n"
+            + "instance_snapshot - InstanceSnapshot. Number of instance snapshots an account can own";
+
     public static final String RESPONSE = "response";
     public static final String RETRIEVE_ONLY_RESOURCE_COUNT = "retrieveonlyresourcecount";
     public static final String REVERTABLE = "revertable";
@@ -915,7 +956,10 @@ public class ApiConstants {
     public static final String MIGRATE_TO = "migrateto";
     public static final String AUTO_MIGRATE = "automigrate";
     public static final String GUID = "guid";
-    public static final String VM_SNAPSHOT_ENABELD = "vmsnapshotenabled";
+    public static final String VM_SNAPSHOT_ENABLED = "vmsnapshotenabled";
+    public static final String INSTANCE_SNAPSHOT_LIMIT = "instancesnapshotlimit";
+    public static final String INSTANCE_SNAPSHOT_TOTAL = "instancesnapshottotal";
+    public static final String INSTANCE_SNAPSHOT_AVAILABLE = "instancesnapshotavailable";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
