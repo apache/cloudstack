@@ -703,4 +703,79 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         Assert.assertFalse(args.stream().anyMatch(arg -> arg.contains("EOF")));
         Assert.assertTrue(args.get(args.size() - 1).endsWith(".xml"));
     }
+
+    private String[] captureMountCommand(String backupRepoType, String mountOptions) throws Exception {
+        Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("mountBackupDirectory",
+                String.class, String.class, String.class, Integer.class);
+        method.setAccessible(true);
+
+        final String[][] captured = new String[1][];
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            // Mockito expands varargs, so the command comes back as individual arguments.
+                            captured[0] = Arrays.stream(invocation.getArguments()).map(String::valueOf).toArray(String[]::new);
+                            return "";
+                        });
+                method.invoke(wrapper, "10.0.0.1:/export/backup", backupRepoType, mountOptions, 30);
+            }
+        }
+        return captured[0];
+    }
+
+    private String getMountOptions(String[] mountCmd) {
+        List<String> args = Arrays.asList(mountCmd);
+        int index = args.indexOf("-o");
+        return index < 0 ? null : args.get(index + 1);
+    }
+
+    @Test
+    public void testMountTrimsTrailingWhitespaceFromMountOptions() throws Exception {
+        // A repository saved with "vers=4.1 " reaches mount as a single argument and libmount splits
+        // it on commas only, so the blank would stay glued to the option and be rejected.
+        Assert.assertEquals("vers=4.1", getMountOptions(captureMountCommand("nfs", "vers=4.1 ")));
+    }
+
+    @Test
+    public void testMountTrimsWhitespaceAroundEveryOption() throws Exception {
+        Assert.assertEquals("vers=4.1,soft", getMountOptions(captureMountCommand("nfs", " vers=4.1 , soft ")));
+    }
+
+    @Test
+    public void testMountDropsEmptyMountOptions() throws Exception {
+        Assert.assertEquals("vers=4.1,soft", getMountOptions(captureMountCommand("nfs", "vers=4.1,,soft")));
+    }
+
+    @Test
+    public void testMountDoesNotStripWhitespaceInsideAnOption() throws Exception {
+        // Only the blanks around the delimiters are removed. Whether an option is well formed is
+        // decided when the repository is saved, so the agent passes the text itself through as is
+        // rather than silently rewriting a stored value.
+        Assert.assertEquals("username=some user,nobrl",
+                getMountOptions(captureMountCommand("cifs", "username=some user")));
+    }
+
+    @Test
+    public void testMountAppendsNobrlAfterTrimmingCifsOptions() throws Exception {
+        // nobrl is appended to the list, so the blank has to go first, otherwise it ends up in the
+        // middle of the list where libmount cannot ignore it either.
+        Assert.assertEquals("vers=3.0,nobrl", getMountOptions(captureMountCommand("cifs", "vers=3.0 ")));
+    }
+
+    @Test
+    public void testMountOmitsMountOptionsThatAreOnlyWhitespace() throws Exception {
+        Assert.assertNull(getMountOptions(captureMountCommand("nfs", "   ")));
+    }
+
+    @Test
+    public void testMountFallsBackToNobrlWhenCifsOptionsAreOnlyWhitespace() throws Exception {
+        Assert.assertEquals("nobrl", getMountOptions(captureMountCommand("cifs", "   ")));
+    }
 }
