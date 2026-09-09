@@ -19,22 +19,41 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
-
 import com.cloud.agent.api.to.DataTO;
-
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.List;
 
 public class DeleteDiskOnlyVmSnapshotCommand extends Command {
 
-    List<DataTO> snapshots;
+    private final List<DataTO> snapshots;
+    private final String nvramSnapshotPath;
+    private final PrimaryDataStoreTO primaryDataStore;
 
     public DeleteDiskOnlyVmSnapshotCommand(List<DataTO> snapshots) {
+        this(snapshots, null);
+    }
+
+    public DeleteDiskOnlyVmSnapshotCommand(List<DataTO> snapshots, String nvramSnapshotPath) {
+        this(snapshots, nvramSnapshotPath, null);
+    }
+
+    public DeleteDiskOnlyVmSnapshotCommand(List<DataTO> snapshots, String nvramSnapshotPath, PrimaryDataStoreTO primaryDataStore) {
         this.snapshots = snapshots;
+        this.nvramSnapshotPath = nvramSnapshotPath;
+        this.primaryDataStore = primaryDataStore;
     }
 
     public List<DataTO> getSnapshots() {
         return snapshots;
+    }
+
+    public String getNvramSnapshotPath() {
+        return nvramSnapshotPath;
+    }
+
+    public PrimaryDataStoreTO getPrimaryDataStore() {
+        return primaryDataStore;
     }
 
     @Override

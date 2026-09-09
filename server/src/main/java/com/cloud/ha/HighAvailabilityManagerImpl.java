@@ -17,6 +17,7 @@
 package com.cloud.ha;
 
 import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone;
+import static com.cloud.event.Event.State;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +33,14 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.Event;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -452,9 +459,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
 
         Long hostId = VirtualMachine.State.Migrating.equals(vm.getState()) ? vm.getLastHostId() : vm.getHostId();
-        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated(), reasonType);
+        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
-        logger.info("Scheduled migration work of VM {} from host {} with HAWork {}", vm, _hostDao.findById(vm.getHostId()), work);
+
+        HostVO host = _hostDao.findById(hostId);
+        logger.info(String.format("Scheduled migration work of VM %s from host %s with HAWork %s", vm, host, work));
+        String hostName = Optional.ofNullable(host).map(HostVO::getName).orElse("N/A");
+        String msg = String.format("Scheduled migration work of VM %s from host %s (%s) with HAWork %s (attempt %s of %s)",
+                vm.getHostName(), hostId, hostName, work.getId(), work.getTimesTried() + 1, _maxRetries);
+        createEvent(vm.getId(), ApiCommandResourceType.VirtualMachine, EventTypes.EVENT_VM_MIGRATE, msg,
+                State.Scheduled, EventVO.LEVEL_INFO);
         wakeupWorkers();
         return true;
     }
@@ -862,18 +876,77 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         return true;
     }
 
+    /**
+     * Creates an event for {@link ApiCommandResourceType} operations.
+     * This is a fail-safe helper method for logging purposes - exceptions are caught and logged.
+     *
+     * @param resourceId   the resource ID
+     * @param resourceType the event resource type ({@link ApiCommandResourceType})
+     * @param type         the event type ({@link EventTypes})
+     * @param description  the event description
+     * @param state        the event state ({@link Event.State})
+     * @param level        the event level (e.g., {@link EventVO#LEVEL_INFO} or {@link EventVO#LEVEL_ERROR})
+     */
+    private void createEvent(Long resourceId, ApiCommandResourceType resourceType, String type, String description,
+                             State state, String level) {
+        try {
+            String resourceTypeStr = resourceType.toString();
+            Long userId = User.UID_SYSTEM;
+            Long accountId = Account.ACCOUNT_ID_SYSTEM;
+            if (ApiCommandResourceType.VirtualMachine.equals(resourceType) && resourceId != null) {
+                VMInstanceVO vm = _instanceDao.findById(resourceId);
+                if (vm != null) {
+                    accountId = vm.getAccountId();
+                }
+            }
+            long startEventId = state == State.Scheduled ? 0L
+                    : Optional.ofNullable(ActionEventUtils.getLastEvent(type, State.Scheduled, resourceId,
+                            resourceTypeStr))
+                    .map(EventVO::getId).orElse(0L);
+
+            switch (state) {
+                case Started:
+                    ActionEventUtils.onStartedActionEvent(userId, accountId, type, description, resourceId,
+                            resourceTypeStr, true, startEventId);
+                    break;
+                case Scheduled:
+                    ActionEventUtils.onScheduledActionEvent(userId, accountId, type, description, resourceId,
+                            resourceTypeStr, true, startEventId);
+                    break;
+                case Completed:
+                    ActionEventUtils.onCompletedActionEvent(userId, accountId, level, type, true,
+                            description, resourceId, resourceTypeStr, startEventId);
+                    break;
+                default:
+                    throw new CloudRuntimeException("Unsupported event state: " + state);
+            }
+        } catch (Exception e) {
+            logger.error(String.format("Failed to create event for VM: %s, command: %s, state: %s, level: %s",
+                    resourceId, type, state, level), e);
+        }
+    }
+
     public Long migrate(final HaWorkVO work) {
         logger.debug("MIGRATE with HA WORK");
         long vmId = work.getInstanceId();
         long srcHostId = work.getHostId();
         HostVO srcHost = _hostDao.findById(srcHostId);
+        ApiCommandResourceType resourceType = ApiCommandResourceType.VirtualMachine;
+        String eventType = EventTypes.EVENT_VM_MIGRATE;
+        int attemptNumber = work.getTimesTried() + 1;
 
         VMInstanceVO vm = _instanceDao.findById(vmId);
         if (vm == null) {
-            logger.info("Unable to find vm: {}, skipping migrate.", vmId);
+            String msg = String.format("Unable to find vm %s, skipping migration. HA Work %s (attempt %s of %s)",
+                    vmId, work.getId(), attemptNumber, _maxRetries);
+            logger.info(msg);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             return null;
         }
         if (checkAndCancelWorkIfNeeded(work)) {
+            String msg = String.format("Cancelled migration for vm %s as it is not needed anymore. HA Work %s (attempt %s of %s)",
+                    vm.getHostName(), work.getId(), attemptNumber, _maxRetries);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             return null;
         }
         logger.info("Migration attempt: for {} from {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
@@ -883,23 +956,41 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return null;
         }
         if (VirtualMachine.State.Running.equals(vm.getState()) && srcHostId != vm.getHostId()) {
-            logger.info("VM {} is running on a different host {}, skipping migration", vm, vm.getHostId());
+            String vmHostName = Optional.ofNullable(_hostDao.findById(vm.getHostId())).map(HostVO::getName)
+                    .orElse("N/A");
+            String msg = String.format("VM %s is running on a different host (%s), skipping migration. HA Work %s (attempt %s of %s)",
+                    vm.getHostName(), vmHostName, work.getId(), attemptNumber, _maxRetries);
+            logger.info(msg);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             return null;
         }
-
+        logger.info(String.format("Migration attempt: for VM %s from host %s. Starting attempt: %d/%d times.",
+                vm, srcHost, attemptNumber, _maxRetries));
         try {
+            String vmHostName = Optional.ofNullable(_hostDao.findById(vm.getHostId())).map(HostVO::getName)
+                    .orElse("N/A");
+            String msg = String.format("Starting migration from host %s. HA Work %s (attempt %s of %s)",
+                    vmHostName, work.getId(), attemptNumber, _maxRetries);
+            createEvent(vmId, resourceType, eventType, msg, State.Started, EventVO.LEVEL_INFO);
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
-
             // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
             _itMgr.migrateAway(vm.getUuid(), srcHostId);
+            msg = String.format("Completed migration. HA Work %s (attempt %s of %s)", work.getId(), attemptNumber, _maxRetries);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_INFO);
             return null;
         } catch (InsufficientServerCapacityException e) {
-            logger.warn("Migration attempt: Insufficient capacity for migrating a VM {} from source host {}. Exception: {}", vm, srcHost, e.getMessage());
+            String msg = String.format("Migration attempt: Insufficient capacity for migrating a VM %s from source host %s. HA Work %s (attempt %s of %s)",
+                    vm.getHostName(), srcHost, work.getId(), attemptNumber, _maxRetries);
+            logger.warn(msg);
             _resourceMgr.migrateAwayFailed(srcHostId, vmId);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         } catch (Exception e) {
-            logger.warn("Migration attempt: Unexpected exception occurred when attempting migration of {} {}", vm, e.getMessage());
+            String msg = String.format("Migration attempt: Unexpected exception occurred when attempting migration of vm %s. HA Work %s (attempt %s of %s)",
+                    vm.getHostName(), work.getId(), attemptNumber, _maxRetries);
+            logger.warn(msg);
+            createEvent(vmId, resourceType, eventType, msg, State.Completed, EventVO.LEVEL_ERROR);
             throw e;
         }
     }
@@ -1083,10 +1174,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         final VMInstanceVO vm = _instanceDao.findById(work.getInstanceId());
         try {
             if (vm != null && !VmHaEnabled.valueIn(vm.getDataCenterId())) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("VM high availability manager is disabled, rescheduling the HA work {} for the VM {} ({}) " +
+                logger.debug("VM high availability manager is disabled, rescheduling the HA work {}, for the VM {} (id: {})" +
                             "to retry later in case VM high availability manager is enabled on retry attempt", work, vm.getName(), vm.getId());
-                }
                 long nextTime = getRescheduleTime(wt);
                 rescheduleWork(work, nextTime);
                 return;

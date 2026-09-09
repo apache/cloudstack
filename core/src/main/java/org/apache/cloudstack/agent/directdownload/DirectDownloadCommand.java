@@ -53,7 +53,6 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
              final Integer soTimeout, final Integer connectionRequestTimeout, final boolean followRedirects) {
         this.url = url;
         this.templateId = templateId;
-        this.destData = destData;
         this.destPool = destPool;
         this.checksum = checksum;
         this.headers = headers;
