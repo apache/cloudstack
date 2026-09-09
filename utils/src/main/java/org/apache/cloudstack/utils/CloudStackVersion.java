@@ -39,22 +39,23 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
-    private final static Pattern NUMBER_VERSION_FORMAT = Pattern.compile("(\\d+\\.){2}(\\d+\\.)?\\d+");
-    private final static Pattern FULL_VERSION_FORMAT = Pattern.compile("(\\d+\\.){2}(\\d+\\.)?\\d+(-[a-zA-Z]+)?(-\\d+)?(-SNAPSHOT)?");
+    private final static Pattern NUMBER_VERSION_FORMAT = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?");
+    private final static Pattern FULL_VERSION_FORMAT = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?(?:-[a-zA-Z]+)?(?:-\\d+)?(?:-SNAPSHOT)?");
+    private final static int NEW_VERSIONING_CUTOVER_MAJOR_VERSION = 24;
 
     private final int majorRelease;
     private final int minorRelease;
-    private final int patchRelease;
+    private final Integer patchRelease;
     private final Integer securityRelease;
 
-    private CloudStackVersion(final int majorRelease, final int minorRelease, final int patchRelease, final Integer securityRelease) {
+    private CloudStackVersion(final int majorRelease, final int minorRelease, final Integer patchRelease, final Integer securityRelease) {
 
         super();
 
         checkArgument(majorRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a majorRelease greater than 0.");
         checkArgument(minorRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a minorRelease greater than 0.");
-        checkArgument(patchRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a patchRelease greater than 0.");
-        checkArgument((securityRelease != null && securityRelease >= 0) || (securityRelease == null),
+        checkArgument(patchRelease == null || patchRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a patchRelease greater than 0.");
+        checkArgument(securityRelease == null || securityRelease >= 0,
                 CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a null securityRelease or a non-null value greater than 0.");
 
         this.majorRelease = majorRelease;
@@ -69,10 +70,12 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      * Parses a <code>String</code> representation of a version that conforms one of the following
      * formats into a <code>CloudStackVersion</code> instance:
      * <ul>
-     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;</code></li>
-     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;.&lt;security&gt;</code></li>
-     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;.&lt;security&gt;-&lt;any string&gt;</code></li>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;</code> (legacy, deprecated since 24.0.0, allowed only below major version 24)</li>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;.&lt;security&gt;</code> (legacy, deprecated since 24.0.0, allowed only below major version 24)</li>
+     *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;security release&gt;</code> (for versions &gt;= 24.0.0)</li>
      * </ul>
+     *
+     * Legacy patch-based formats remain supported for backward compatibility.
      *
      * If the string contains a suffix that begins with a "-" character, then the "-" and all characters following it
      * will be dropped.
@@ -91,7 +94,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
         checkArgument(StringUtils.isNotBlank(trimmedValue), CloudStackVersion.class.getName() + ".parse(String) requires a non-blank value");
         checkArgument(NUMBER_VERSION_FORMAT.matcher(trimmedValue).matches(), CloudStackVersion.class.getName() + ".parse(String) passed " +
-                value + ", but requires a value in the format of int.int.int(.int)(-<legacy patch>)");
+                value + ", but requires a value in the format of int.int.int(.int)(-<suffix>)");
 
         final String[] components = trimmedValue.split("\\.");
 
@@ -100,8 +103,26 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
         final int majorRelease = Integer.valueOf(components[0]);
         final int minorRelease = Integer.valueOf(components[1]);
-        final int patchRelease = Integer.valueOf(components[2]);
-        final Integer securityRelease = components.length == 3 ? null : Integer.valueOf(components[3]);
+        final int thirdComponent = Integer.valueOf(components[2]);
+
+        final int patchRelease;
+        final Integer securityRelease;
+
+        if (components.length == 4) {
+            checkArgument(isLegacyVersioning(majorRelease), CloudStackVersion.class.getName() + ".parse(String) passed " + value +
+                    ", but major versions at or above 24 do not support legacy int.int.int.int format");
+            // Deprecated legacy format: major.minor.patch.security
+            patchRelease = thirdComponent;
+            securityRelease = Integer.valueOf(components[3]);
+        } else if (isNewVersioning(majorRelease)) {
+            // New format: major.minor.securityRelease (patch dropped)
+            patchRelease = 0;
+            securityRelease = thirdComponent;
+        } else {
+            // Deprecated legacy format: major.minor.patch
+            patchRelease = thirdComponent;
+            securityRelease = null;
+        }
 
         return new CloudStackVersion(majorRelease, minorRelease, patchRelease, securityRelease);
 
@@ -207,6 +228,14 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
     }
 
+    private static boolean isLegacyVersioning(final int majorRelease) {
+        return majorRelease < NEW_VERSIONING_CUTOVER_MAJOR_VERSION;
+    }
+
+    private static boolean isNewVersioning(final int majorRelease) {
+        return majorRelease >= NEW_VERSIONING_CUTOVER_MAJOR_VERSION;
+    }
+
     /**
      *
      * @return The components of this version as an {@link ImmutableList} in order of major release, minor release,
@@ -244,6 +273,10 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
         return securityRelease;
     }
 
+    public boolean usesNewVersioning() {
+        return isNewVersioning(majorRelease);
+    }
+
     @Override
     public boolean equals(final Object thatObject) {
 
@@ -270,6 +303,11 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
     @Override
     public String toString() {
+        // Canonicalize cutover-and-later versions to major.minor.securityRelease.
+        if (securityRelease != null && patchRelease == 0 && isNewVersioning(majorRelease)) {
+            return Joiner.on(".").join(ImmutableList.of(majorRelease, minorRelease, securityRelease));
+        }
+
         return Joiner.on(".").join(asList());
     }
 
