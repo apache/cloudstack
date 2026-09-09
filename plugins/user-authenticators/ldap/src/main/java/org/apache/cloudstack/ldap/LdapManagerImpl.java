@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapImportUsersCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListUsersCmd;
+import org.apache.cloudstack.api.command.LdapTestConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
 import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
@@ -173,27 +174,44 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         // hostname:port is unique for domain binding
         LdapConfigurationVO configuration = _ldapConfigurationDao.find(hostname, port, domainId);
         if (configuration == null) {
-            LdapContext context = null;
-            try {
-                final String providerUrl = "ldap://" + hostname + ":" + port;
-                context = _ldapContextFactory.createBindContext(providerUrl,domainId);
-                configuration = new LdapConfigurationVO(hostname, port, domainId);
-                _ldapConfigurationDao.persist(configuration);
-                logger.info("Added a new LDAP server with URL: {}{}", providerUrl, domainId == null ? "" : " for domain " + domainId);
-                return createLdapConfigurationResponse(configuration);
-            } catch (NamingException | IOException e) {
-                logger.debug("NamingException while doing an LDAP bind", e);
-                throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
-            } catch (RuntimeException e) {
-                if (e.getMessage().contains("Invalid truststore")) {
-                    throw new InvalidParameterValueException("Invalid truststore or truststore password");
-                }
-                throw e;
-            } finally {
-                closeContext(context);
-            }
+            testBind(hostname, port, domainId);
+            configuration = new LdapConfigurationVO(hostname, port, domainId);
+            _ldapConfigurationDao.persist(configuration);
+            logger.info("Added a new LDAP server with URL: ldap://{}:{}{}", hostname, port, domainId == null ? "" : " for domain " + domainId);
+            return createLdapConfigurationResponse(configuration);
         } else {
             throw new InvalidParameterValueException("Duplicate configuration");
+        }
+    }
+
+    @Override
+    public void testConnection(LdapTestConfigurationCmd cmd) throws InvalidParameterValueException {
+        int port = cmd.getPort();
+        if (port <= 0) {
+            port = 389;
+        }
+        testBind(cmd.getHostname(), port, cmd.getDomainId());
+    }
+
+    /**
+     * Binds to the given LDAP server without persisting a configuration, so both adding a new
+     * configuration and {@link #testConnection} can share the same connectivity check.
+     */
+    private void testBind(final String hostname, final int port, final Long domainId) throws InvalidParameterValueException {
+        LdapContext context = null;
+        try {
+            final String providerUrl = "ldap://" + hostname + ":" + port;
+            context = _ldapContextFactory.createBindContext(providerUrl, domainId);
+        } catch (NamingException | IOException e) {
+            logger.debug("NamingException while doing an LDAP bind", e);
+            throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Invalid truststore")) {
+                throw new InvalidParameterValueException("Invalid truststore or truststore password");
+            }
+            throw e;
+        } finally {
+            closeContext(context);
         }
     }
 
@@ -300,6 +318,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         cmdList.add(LdapUserSearchCmd.class);
         cmdList.add(LdapListUsersCmd.class);
         cmdList.add(LdapAddConfigurationCmd.class);
+        cmdList.add(LdapTestConfigurationCmd.class);
         cmdList.add(LdapDeleteConfigurationCmd.class);
         cmdList.add(LdapListConfigurationCmd.class);
         cmdList.add(LdapCreateAccountCmd.class);
