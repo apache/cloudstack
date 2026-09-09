@@ -59,16 +59,20 @@ public class HostLoadTrackerTest {
         tracker.record(HOST_ID, stats(cpuPercent, usedMemoryFraction), now);
     }
 
+    private HostLoad load() {
+        return tracker.getLoad(HOST_ID, now);
+    }
+
     @Test
     public void testUnknownHostIsNotUsable() {
-        assertFalse(tracker.getLoad(999L).isUsable());
+        assertFalse(tracker.getLoad(999L, now).isUsable());
     }
 
     @Test
     public void testFirstSampleIsTakenAsIs() {
         sample(40, 0.6, 0);
 
-        HostLoad load = tracker.getLoad(HOST_ID);
+        HostLoad load = load();
         assertTrue(load.isUsable());
         assertEquals(0.40, load.getCpuUtilisation(), 1e-6);
         assertEquals(0.60, load.getMemoryUtilisation(), 1e-6);
@@ -80,7 +84,7 @@ public class HostLoadTrackerTest {
         sample(100, 0.1, 60 * 1000L);
 
         // one sample a fifth of a half life in should move the average part of the way, not all of it
-        double cpu = tracker.getLoad(HOST_ID).getCpuUtilisation();
+        double cpu = load().getCpuUtilisation();
         assertTrue("a single spike must not take over the average: " + cpu, cpu < 0.30);
         assertTrue("but it must move it: " + cpu, cpu > 0.10);
     }
@@ -92,7 +96,7 @@ public class HostLoadTrackerTest {
             sample(90, 0.9, 60 * 1000L);
         }
 
-        HostLoad load = tracker.getLoad(HOST_ID);
+        HostLoad load = load();
         assertEquals(0.90, load.getCpuUtilisation(), 0.01);
         assertEquals(0.90, load.getMemoryUtilisation(), 0.01);
     }
@@ -102,7 +106,7 @@ public class HostLoadTrackerTest {
         sample(0, 0, 0);
         sample(100, 1.0, HALF_LIFE_MS);
 
-        assertEquals(0.5, tracker.getLoad(HOST_ID).getCpuUtilisation(), 0.01);
+        assertEquals(0.5, load().getCpuUtilisation(), 0.01);
     }
 
     @Test
@@ -111,13 +115,13 @@ public class HostLoadTrackerTest {
         sample(100, 1.0, 4 * HALF_LIFE_MS);
 
         // four half lives of catching up in one sample, so almost all the way there
-        assertTrue(tracker.getLoad(HOST_ID).getCpuUtilisation() > 0.9);
+        assertTrue(load().getCpuUtilisation() > 0.9);
     }
 
     @Test
     public void testNullStatsAreIgnored() {
         tracker.record(HOST_ID, null, now);
-        assertFalse(tracker.getLoad(HOST_ID).isUsable());
+        assertFalse(load().isUsable());
     }
 
     @Test
@@ -127,14 +131,51 @@ public class HostLoadTrackerTest {
 
         tracker.record(HOST_ID, broken, now);
 
-        assertFalse(tracker.getLoad(HOST_ID).isUsable());
+        assertFalse(load().isUsable());
+    }
+
+    @Test
+    public void testUnchangedReadingIsNotFoldedAgain() {
+        // StatsCollector keeps the previous entry when a poll fails, so the same object comes back
+        HostStats reading = stats(10, 0.1);
+        tracker.record(HOST_ID, reading, now);
+        // stay inside the staleness window so this tests folding, not expiry
+        for (int i = 0; i < 5; i++) {
+            now += 60 * 1000L;
+            tracker.record(HOST_ID, reading, now);
+        }
+
+        assertEquals("re-reading one measurement must not count as six", 1, load().getSamples());
+    }
+
+    @Test
+    public void testAHostThatStopsReportingBecomesUnusable() {
+        HostStats reading = stats(10, 0.1);
+        tracker.record(HOST_ID, reading, now);
+        assertTrue(load().isUsable());
+
+        // the agent stops updating; StatsCollector keeps handing back the same stale entry
+        for (int i = 0; i < 20; i++) {
+            now += 60 * 1000L;
+            tracker.record(HOST_ID, reading, now);
+        }
+
+        assertFalse("a host that stopped reporting must not keep vouching for itself", load().isUsable());
+    }
+
+    @Test
+    public void testFreshReadingsKeepAHostUsable() {
+        for (int i = 0; i < 20; i++) {
+            sample(10 + i, 0.1, 60 * 1000L);
+        }
+        assertTrue(load().isUsable());
     }
 
     @Test
     public void testOutOfRangeValuesAreClamped() {
         sample(250, 2.0, 0);
 
-        HostLoad load = tracker.getLoad(HOST_ID);
+        HostLoad load = load();
         assertEquals(1.0, load.getCpuUtilisation(), 1e-6);
         assertEquals(1.0, load.getMemoryUtilisation(), 1e-6);
     }
