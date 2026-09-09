@@ -18,6 +18,7 @@ package com.cloud.agent.manager.allocator.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +35,12 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostScoringWeights;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -110,6 +114,9 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     private CapacityDao capacityDao;
 
     @Inject
+    private ClusterDetailsDao clusterDetailsDao;
+
+    @Inject
     private VMInstanceDao vmInstanceDao;
 
     @Inject
@@ -128,19 +135,53 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
 
         Map<Long, Double> scores = score(zoneId, podId, clusterId, hosts);
 
-        List<Host> scored = hosts.stream().filter(h -> scores.containsKey(h.getId())).collect(Collectors.toList());
-        List<Host> unscored = hosts.stream().filter(h -> !scores.containsKey(h.getId())).collect(Collectors.toList());
-        scored.sort((a, b) -> Double.compare(scores.get(a.getId()), scores.get(b.getId())));
+        List<Host> unscored = new ArrayList<>();
+        List<Host> measured = new ArrayList<>();
+        List<Host> unmeasured = new ArrayList<>();
+        for (Host host : hosts) {
+            if (!scores.containsKey(host.getId())) {
+                unscored.add(host);
+            } else if (hostLoadTracker.getLoad(host.getId()).isUsable()) {
+                measured.add(host);
+            } else {
+                unmeasured.add(host);
+            }
+        }
 
-        List<Host> admitted = applyUtilisationThresholds(clusterId, scored);
-        applySelectionSpread(clusterId, admitted);
+        Comparator<Host> byScore = Comparator.comparingDouble(h -> scores.get(h.getId()));
+        measured.sort(byScore);
+        unmeasured.sort(byScore);
 
-        logger.debug("Weighted host ranking: {}", () -> admitted.stream()
+        List<Host> healthy = new ArrayList<>();
+        List<Host> tooBusy = new ArrayList<>();
+        partitionByUtilisation(clusterId, measured, healthy, tooBusy);
+
+        List<Host> result = new ArrayList<>();
+        if (healthy.isEmpty() && unmeasured.isEmpty()) {
+            logger.warn("Every candidate host is above its utilisation threshold, so the thresholds are being "
+                    + "ignored for this deployment. The cluster is short of capacity.");
+            result.addAll(tooBusy);
+            applySelectionSpread(clusterId, result);
+        } else {
+            result.addAll(healthy);
+            // spread only over hosts known to be healthy, before anything else is appended,
+            // otherwise a busy or unmeasured host can be shuffled into the lead
+            applySelectionSpread(clusterId, result);
+            // a host we cannot measure is not assumed to be idle: it ranks behind every host we can
+            result.addAll(unmeasured);
+            result.addAll(tooBusy);
+        }
+
+        if (!tooBusy.isEmpty()) {
+            logger.debug("Holding back {} host(s) above their utilisation threshold: {}", tooBusy.size(), tooBusy);
+        }
+        logger.debug("Weighted host ranking: {}", () -> result.stream()
+                .filter(h -> scores.containsKey(h.getId()))
                 .map(h -> String.format("%s=%.4f", h.getName(), scores.get(h.getId())))
                 .collect(Collectors.joining(", ")));
 
-        admitted.addAll(unscored);
-        return admitted;
+        result.addAll(unscored);
+        return result;
     }
 
     protected Map<Long, Double> score(long zoneId, Long podId, Long clusterId, List<? extends Host> hosts) {
@@ -165,25 +206,56 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     }
 
     /**
-     * Allocated CPU and memory as a fraction of what the host advertises after overprovisioning,
-     * which is the same basis the existing allocators use.
+     * Allocated CPU and memory as a fraction of what a host can hand out.
+     *
+     * op_host_capacity stores totals raw; overprovisioning is applied when they are read, so the
+     * cluster's ratio has to be applied here too. Without it the fraction reaches 1 at the host's
+     * physical size and every host on an overcommitted cluster clamps to 1, which is where this
+     * algorithm is most needed.
+     *
+     * Only hosts with both a CPU and a memory row are returned. A host missing one would otherwise
+     * score as if that resource were untouched, making it the most attractive host in the cluster.
      */
     protected Map<Long, Double[]> allocatedFractions(List<CapacityVO> capacities) {
         Map<Long, Double[]> fractions = new HashMap<>();
+        Map<Long, Integer> seen = new HashMap<>();
         for (CapacityVO capacity : capacities) {
             long total = capacity.getTotalCapacity();
             if (total <= 0) {
                 continue;
             }
-            double used = (double) (capacity.getUsedCapacity() + capacity.getReservedCapacity()) / total;
+            boolean isCpu = capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU;
+            float overcommit = overcommitRatio(capacity.getClusterId(), isCpu);
+            double allocatable = total * overcommit;
+            double used = (double) (capacity.getUsedCapacity() + capacity.getReservedCapacity()) / allocatable;
+
             Double[] entry = fractions.computeIfAbsent(capacity.getHostOrPoolId(), id -> new Double[] {0.0, 0.0});
-            if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
-                entry[0] = clamp(used);
-            } else {
-                entry[1] = clamp(used);
-            }
+            entry[isCpu ? 0 : 1] = clamp(used);
+            seen.merge(capacity.getHostOrPoolId(), isCpu ? 1 : 2, Integer::sum);
         }
+        fractions.keySet().removeIf(hostId -> seen.getOrDefault(hostId, 0) != 3);
         return fractions;
+    }
+
+    /**
+     * The cluster's overprovisioning factor, defaulting to none if it cannot be read.
+     */
+    protected float overcommitRatio(Long clusterId, boolean forCpu) {
+        if (clusterId == null) {
+            return 1f;
+        }
+        String key = forCpu ? VmDetailConstants.CPU_OVER_COMMIT_RATIO : VmDetailConstants.MEMORY_OVER_COMMIT_RATIO;
+        ClusterDetailsVO detail = clusterDetailsDao.findDetail(clusterId, key);
+        if (detail == null || detail.getValue() == null) {
+            return 1f;
+        }
+        try {
+            float ratio = Float.parseFloat(detail.getValue());
+            return ratio > 0 ? ratio : 1f;
+        } catch (NumberFormatException e) {
+            logger.warn("Cluster {} has an unreadable {} of [{}], treating it as 1.", clusterId, key, detail.getValue());
+            return 1f;
+        }
     }
 
     /**
@@ -238,35 +310,21 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     }
 
     /**
-     * Holds back hosts that are measurably too busy, unless that would leave nothing to deploy on,
-     * in which case ranking alone decides and the caller's capacity checks still apply.
+     * Splits measurably busy hosts out from the rest. Only hosts with load samples can be held
+     * back; a host that cannot be measured is dealt with by the caller.
      */
-    protected List<Host> applyUtilisationThresholds(Long clusterId, List<Host> ranked) {
+    protected void partitionByUtilisation(Long clusterId, List<Host> measured, List<Host> healthy, List<Host> tooBusy) {
         double cpuThreshold = valueIn(CpuUtilisationThreshold, clusterId);
         double memoryThreshold = valueIn(MemoryUtilisationThreshold, clusterId);
 
-        List<Host> admitted = new ArrayList<>();
-        List<Host> heldBack = new ArrayList<>();
-        for (Host host : ranked) {
+        for (Host host : measured) {
             HostLoad load = hostLoadTracker.getLoad(host.getId());
-            if (load.isUsable()
-                    && (load.getCpuUtilisation() > cpuThreshold || load.getMemoryUtilisation() > memoryThreshold)) {
-                heldBack.add(host);
+            if (load.getCpuUtilisation() > cpuThreshold || load.getMemoryUtilisation() > memoryThreshold) {
+                tooBusy.add(host);
             } else {
-                admitted.add(host);
+                healthy.add(host);
             }
         }
-
-        if (admitted.isEmpty()) {
-            logger.warn("Every candidate host is above its utilisation threshold, so the thresholds are being "
-                    + "ignored for this deployment. The cluster is short of capacity.");
-            return heldBack;
-        }
-        if (!heldBack.isEmpty()) {
-            logger.debug("Holding back {} host(s) above their utilisation threshold: {}", heldBack.size(), heldBack);
-            admitted.addAll(heldBack);
-        }
-        return admitted;
     }
 
     /**
