@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,7 +77,7 @@ public class LibvirtStorageAdaptorTest {
         closeable.close();
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testCreateStoragePoolWithNFSMountOpts() throws Exception {
         LibvirtStoragePoolDef.PoolType type = LibvirtStoragePoolDef.PoolType.NETFS;
         String name = "Primary1";
@@ -97,11 +98,40 @@ public class LibvirtStorageAdaptorTest {
         Mockito.when(conn.storagePoolLookupByUUIDString(uuid)).thenReturn(sp);
         Mockito.when(sp.isActive()).thenReturn(1);
         Mockito.when(sp.getXMLDesc(0)).thenReturn(poolXml);
-        Mockito.when(Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(-1);
+        // pool is mounted, so it is reused (matching mount options)
+        Mockito.when(Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
 
         Map<String, String> details = new HashMap<>();
         details.put("nfsmountopts", "vers=4.1, nconnect=4");
-        KVMStoragePool pool = libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details, true);
+        try {
+            libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details, true);
+        } catch (Exception ignored) {
+            // building the returned KVMStoragePool needs libvirt internals not mocked here
+        }
+        Mockito.verify(sp, Mockito.never()).destroy();
+        Mockito.verify(sp, Mockito.never()).undefine();
+    }
+
+    @Test
+    public void testCreateStoragePoolRemountsActiveButUnmountedNfsPool() throws Exception {
+        String uuid = String.valueOf(UUID.randomUUID());
+        String dir = "/export/primary";
+
+        Connect conn = Mockito.mock(Connect.class);
+        StoragePool sp = Mockito.mock(StoragePool.class);
+        Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
+        Mockito.when(conn.storagePoolLookupByUUIDString(uuid)).thenReturn(sp);
+        Mockito.when(sp.isActive()).thenReturn(1);
+        // libvirt reports the pool active, but the mountpoint check fails: it is not actually mounted
+        Mockito.when(Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(-1);
+
+        Map<String, String> details = new HashMap<>();
+        // the recreate path is not fully mockable here; we only assert the recovery decision
+        Assert.assertThrows(Exception.class, () ->
+                libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details, true));
+
+        Mockito.verify(sp).destroy();
+        Mockito.verify(sp).undefine();
     }
 
     @Test

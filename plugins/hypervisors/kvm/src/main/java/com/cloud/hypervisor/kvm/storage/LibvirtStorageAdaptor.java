@@ -277,10 +277,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private void checkNetfsStoragePoolMounted(String uuid) {
+    private boolean isStoragePoolMounted(String uuid) {
         String targetPath = _mountPoint + File.separator + uuid;
-        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
-        if (mountpointResult != 0) {
+        return Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath) == 0;
+    }
+
+    private void checkNetfsStoragePoolMounted(String uuid) {
+        if (!isStoragePoolMounted(uuid)) {
+            String targetPath = _mountPoint + File.separator + uuid;
             String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
@@ -748,6 +752,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp.undefine();
                 sp = null;
                 logger.info("Found existing defined storage pool " + name + ". It wasn't running, so we undefined it.");
+            }
+            if (sp != null && type == StoragePoolType.NetworkFilesystem && !isStoragePoolMounted(name)) {
+                sp.destroy();
+                sp.undefine();
+                sp = null;
+                logger.info("Found existing defined storage pool " + name + " but it is not mounted, so we undefined it to recreate and remount.");
             }
             if (sp != null) {
                 logger.info("Found existing defined storage pool " + name + ", using it.");
