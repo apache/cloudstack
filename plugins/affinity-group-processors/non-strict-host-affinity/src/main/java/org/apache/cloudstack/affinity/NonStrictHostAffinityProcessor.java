@@ -17,6 +17,8 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,13 +69,24 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             if (vmGroupMapping != null) {
-                processAffinityGroup(vmGroupMapping, plan, vm);
+                processAffinityGroup(vmGroupMapping, plan, vm, vmList);
             }
         }
 
     }
 
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
+        processAffinityGroup(vmGroupMapping, plan, vm, Collections.emptyList());
+    }
+
+    /**
+     * Adjusts host priorities for one group.
+     *
+     * @param vmList
+     *         placements to honour in preference to what the database says, for callers such as DRS
+     *         that build a plan in memory before persisting it.
+     */
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm, List<VirtualMachine> vmList) {
         AffinityGroupVO group = affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
         if (logger.isDebugEnabled()) {
@@ -83,12 +96,29 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
         List<Long> groupVMIds = affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());
 
+        Map<Long, VirtualMachine> plannedVms = getVmIdVmMap(vmList);
+
         for (Long groupVMId : groupVMIds) {
+            VirtualMachine plannedVm = plannedVms.get(groupVMId);
+            if (plannedVm != null && plannedVm.getHostId() != null) {
+                Integer priority = adjustHostPriority(plan, plannedVm.getHostId());
+                logger.debug("Updated host {} priority to {}, since VM {} is placed on the host by the plan being built",
+                        plannedVm.getHostId(), priority, plannedVm);
+                continue;
+            }
             VMInstanceVO groupVM = vmInstanceDao.findById(groupVMId);
             if (groupVM != null && !groupVM.isRemoved()) {
                 processVmInAffinityGroup(plan, groupVM);
             }
         }
+    }
+
+    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
+        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
+        for (VirtualMachine vm : vmList) {
+            vmIdVmMap.put(vm.getId(), vm);
+        }
+        return vmIdVmMap;
     }
 
     protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
