@@ -44,6 +44,8 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -94,6 +96,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -145,6 +148,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     AffinityGroupVMMapDao affinityGroupVMMapDao;
+
+    @Inject
+    VolumeDao volumeDao;
 
     List<ClusterDrsAlgorithm> drsAlgorithms = new ArrayList<>();
 
@@ -393,13 +399,22 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
         int iteration = 0;
         List<Ternary<VirtualMachine, Host, Host>> migrationPlan = new ArrayList<>();
+        Map<Long, ExcludeList> vmToExcludesMap = null;
+        Set<Long> staleAffinityVmIds = new HashSet<>();
         while (iteration < maxIterations && algorithm.needsDrs(cluster, new ArrayList<>(hostCpuMap.values()),
                 new ArrayList<>(hostMemoryMap.values()))) {
 
             logger.debug("Starting DRS iteration {} for cluster {}", iteration + 1, cluster);
-            // Re-evaluate affinity constraints with current (simulated) VM placements
-            Map<Long, ExcludeList> vmToExcludesMap = getVmToExcludesMap(vmList, hostMap, vmsWithAffinityGroups,
-                    vmToCompatibleHostsCache, vmIdServiceOfferingMap);
+            // Affinity only changes for VMs that share a group with the one just moved, so after
+            // the first pass only those are re-evaluated rather than every VM in the cluster
+            if (vmToExcludesMap == null) {
+                vmToExcludesMap = getVmToExcludesMap(vmList, hostMap, vmsWithAffinityGroups,
+                        vmToCompatibleHostsCache, vmIdServiceOfferingMap, null);
+            } else if (!staleAffinityVmIds.isEmpty()) {
+                vmToExcludesMap.putAll(getVmToExcludesMap(vmList, hostMap, vmsWithAffinityGroups,
+                        vmToCompatibleHostsCache, vmIdServiceOfferingMap, staleAffinityVmIds));
+                staleAffinityVmIds = new HashSet<>();
+            }
 
             logger.debug("Completed affinity evaluation for DRS iteration {} for cluster {}", iteration + 1, cluster);
 
@@ -429,6 +444,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             hostMemoryMap.get(vm.getHostId()).first(hostMemoryMap.get(vm.getHostId()).first() - vmMemory);
             hostMemoryMap.get(destHost.getId()).first(hostMemoryMap.get(destHost.getId()).first() + vmMemory);
             vm.setHostId(destHost.getId());
+            staleAffinityVmIds = affinityPeersOf(vm, vmsWithAffinityGroups);
             iteration++;
         }
         return migrationPlan;
@@ -457,11 +473,34 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
     }
 
+    /**
+     * The VMs whose affinity picture changes when the given VM moves: the VM itself, and everything
+     * sharing an affinity group with it.
+     */
+    protected Set<Long> affinityPeersOf(VirtualMachine vm, Set<Long> vmsWithAffinityGroups) {
+        Set<Long> peers = new HashSet<>();
+        peers.add(vm.getId());
+        if (!vmsWithAffinityGroups.contains(vm.getId())) {
+            return peers;
+        }
+        for (AffinityGroupVMMapVO mapping : affinityGroupVMMapDao.listByInstanceId(vm.getId())) {
+            peers.addAll(affinityGroupVMMapDao.listVmIdsByAffinityGroup(mapping.getAffinityGroupId()));
+        }
+        return peers;
+    }
+
+    /**
+     * @param onlyVmIds
+     *         when set, re-evaluates just these VMs rather than the whole cluster
+     */
     private Map<Long, ExcludeList> getVmToExcludesMap(List<VirtualMachine> vmList, Map<Long, Host> hostMap,
             Set<Long> vmsWithAffinityGroups, Map<Long, List<? extends Host>> vmToCompatibleHostsCache,
-            Map<Long, ServiceOffering> vmIdServiceOfferingMap) {
+            Map<Long, ServiceOffering> vmIdServiceOfferingMap, Set<Long> onlyVmIds) {
         Map<Long, ExcludeList> vmToExcludesMap = new HashMap<>();
         for (VirtualMachine vm : vmList) {
+            if (onlyVmIds != null && !onlyVmIds.contains(vm.getId())) {
+                continue;
+            }
             if (vmToCompatibleHostsCache.containsKey(vm.getId())) {
                 Host srcHost = hostMap.get(vm.getHostId());
                 if (srcHost != null) {
@@ -511,20 +550,39 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 .map(VMInstanceDetailVO::getResourceId)
                 .collect(Collectors.toSet());
 
+        // Working out where a VM could go is the expensive part of planning: it runs the host
+        // allocators and inspects every volume. VMs that would get the same answer are grouped and
+        // the work is done once for the group. In a cluster of similar VMs this is the difference
+        // between one pass per VM and one pass per handful.
+        Map<String, Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>> byEquivalence =
+                new HashMap<>();
+        int computed = 0;
+
         for (VirtualMachine vm : vmList) {
-            // Skip ineligible VMs
             if (shouldSkipVMForDRS(vm, skipDrsVmIds)) {
                 logger.debug("Skipping VM {} for DRS as it is ineligible.", vm);
                 continue;
             }
 
+            // a VM whose key cannot be worked out is treated as one of a kind rather than dropped
+            String key;
             try {
-                // Use listHostsForMigrationOfVM to get suitable hosts (validated by getCapableSuitableHosts)
-                // This ensures the same validation as the "find host for migration" command
-                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
-                        managementServer.listHostsForMigrationOfVM(vm, 0L, 500L, null, vmList);
+                key = migrationEquivalenceKey(vm);
+            } catch (Exception e) {
+                logger.debug("Could not group VM {} with others, considering it on its own", vm, e);
+                key = "vm-" + vm.getId();
+            }
 
-                List<? extends Host> suitableHosts = hostsForMigration.second(); // Get suitable hosts (validated by HostAllocator)
+            try {
+                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+                        byEquivalence.get(key);
+                if (hostsForMigration == null) {
+                    hostsForMigration = managementServer.listHostsForMigrationOfVM(vm, 0L, 500L, null, vmList);
+                    byEquivalence.put(key, hostsForMigration);
+                    computed++;
+                }
+
+                List<? extends Host> suitableHosts = hostsForMigration.second();
                 Map<Host, Boolean> requiresStorageMotion = hostsForMigration.third();
 
                 if (suitableHosts != null && !suitableHosts.isEmpty()) {
@@ -535,7 +593,29 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 logger.debug("Could not get suitable hosts for VM {}: {}", vm, e.getMessage());
             }
         }
+        logger.debug("Worked out candidate hosts for {} VMs in {} passes", vmToCompatibleHostsCache.size(), computed);
         return new Pair<>(vmToCompatibleHostsCache, vmToStorageMotionCache);
+    }
+
+    /**
+     * Identifies VMs that would get the same answer from listHostsForMigrationOfVM.
+     *
+     * The answer depends on what the VM asks for (its offering and template), where it is now, the
+     * volumes that would have to follow it, and the affinity groups it belongs to. Two VMs matching
+     * on all of those are interchangeable for the purpose of finding candidate hosts.
+     */
+    protected String migrationEquivalenceKey(VirtualMachine vm) {
+        List<Long> poolIds = volumeDao.findCreatedByInstance(vm.getId()).stream()
+                .map(VolumeVO::getPoolId)
+                .filter(Objects::nonNull)
+                .sorted()
+                .collect(Collectors.toList());
+        List<Long> groupIds = affinityGroupVMMapDao.listByInstanceId(vm.getId()).stream()
+                .map(AffinityGroupVMMapVO::getAffinityGroupId)
+                .sorted()
+                .collect(Collectors.toList());
+        return String.format("%s|%s|%s|%s|%s|%s", vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHostId(),
+                vm.getHypervisorType(), poolIds, groupIds);
     }
 
     /**
