@@ -82,6 +82,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
@@ -5745,6 +5746,7 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(valueExpected, result);
     }
 
+    @Ignore
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
         Assert.assertEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());

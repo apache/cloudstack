@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade cleanup from 4.22.1.0 to 4.23.0.0
 --;
+
+-- Delete stale project association entries for users that were removed
+DELETE FROM `cloud`.`project_account` WHERE `user_id` IN (SELECT `id` FROM `cloud`.`user` WHERE `removed` IS NOT NULL);
+DELETE FROM `cloud`.`project_invitations` WHERE `user_id` IN (SELECT `id` FROM `cloud`.`user` WHERE `removed` IS NOT NULL);

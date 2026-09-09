@@ -20,9 +20,11 @@ import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 import static org.apache.cloudstack.gpu.GpuService.GpuDetachOnStop;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,16 +42,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.gpu.dao.VgpuProfileDao;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.gpu.GpuCardVO;
-import com.cloud.gpu.VgpuProfileVO;
-import com.cloud.gpu.dao.GpuCardDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -152,10 +145,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.gpu.GpuCardVO;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.GpuCardDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VGPUTypesDao;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.ha.HighAvailabilityManagerImpl;
@@ -176,17 +173,21 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
@@ -194,7 +195,9 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -719,6 +722,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String hypervisorType =
                 cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
+        checkForDuplicateHost(url);
         return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType,
                 hostTags, storageAccessGroups, cmd.getFullUrlParams(), false, cmd.getExternalDetails());
     }
@@ -3216,6 +3220,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return null;
     }
 
+    protected void validateExistingHostLocationImmutable(final HostVO host, final boolean newHost,
+            final long dcId, final Long podId, final Long clusterId, final StartupCommand startup) {
+        if (newHost || host == null || host.getType() != Host.Type.Routing) {
+            return;
+        }
+        final long existingDcId = host.getDataCenterId();
+        final Long existingPodId = host.getPodId();
+        final Long existingClusterId = host.getClusterId();
+        if (existingPodId == null || existingClusterId == null) {
+            return;
+        }
+        if (existingDcId == dcId && Objects.equals(existingPodId, podId) && Objects.equals(existingClusterId, clusterId)) {
+            return;
+        }
+        final String identity = Objects.toString(host.getUuid(), host.getGuid());
+        final String ip = startup != null ? startup.getPrivateIpAddress() : "unknown";
+        throw new InvalidParameterValueException(
+                String.format("Host %s (ip: %s) is already registered in [zone: %s, pod: %s, cluster: %s] and cannot " +
+                                "be re-added or reconnected with [zone: %s, pod: %s, cluster: %s]. Zone, pod and " +
+                                "cluster of an existing host are immutable.",
+                        identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
+    }
+
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
                                   List<String> storageAccessGroups, final ResourceStateAdapter.Event stateEvent) {
         boolean newHost = false;
@@ -3290,6 +3317,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
+
+        validateExistingHostLocationImmutable(host, newHost, dcId, podId, clusterId, startup);
 
         host.setDataCenterId(dc.getId());
         host.setPodId(podId);
@@ -3537,6 +3566,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    void checkForDuplicateHost(final String url) {
+        String hostIpOrName = null;
+        String ipAddress = null;
+        try {
+            hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
+            if (StringUtils.isBlank(hostIpOrName)) {
+                return;
+            }
+            InetAddress ip = InetAddress.getByName(hostIpOrName);
+            ipAddress = ip.getHostAddress();
+        } catch (final URISyntaxException | UnknownHostException ignore) {
+            // unparseable URL or unknown host - discoverer will reject it shortly anyway
+            return;
+        }
+
+        if (StringUtils.isNotBlank(ipAddress)) {
+            final HostVO existingByIp = _hostDao.findByIp(ipAddress);
+            // findByIp matches hosts of any type; only a Routing host is a duplicate for addHost
+            if (existingByIp != null && Host.Type.Routing.equals(existingByIp.getType())) {
+                throw new InvalidParameterValueException(String.format(
+                        "A host with IP address '%s' (%s) already exists (id: %s). Remove it before adding again.",
+                        ipAddress, hostIpOrName, existingByIp.getUuid()));
+            }
+        }
     }
 
     private Host createHostAndAgentDeferred(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, List<String> storageAccessGroups, final boolean forRebalance) {
