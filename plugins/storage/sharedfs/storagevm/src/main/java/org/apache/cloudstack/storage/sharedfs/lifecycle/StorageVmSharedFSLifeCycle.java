@@ -180,7 +180,10 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         for (final Iterator<Hypervisor.HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final Hypervisor.HypervisorType hypervisor = iter.next();
             VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor, preferredArchitecture);
-            if (template == null && !iter.hasNext()) {
+            if (template == null) {
+                if (iter.hasNext()) {
+                    continue;
+                }
                 throw new CloudRuntimeException(String.format("Unable to find the systemvm template for %s or it was not downloaded in %s.", hypervisor.toString(), zone.toString()));
             }
 

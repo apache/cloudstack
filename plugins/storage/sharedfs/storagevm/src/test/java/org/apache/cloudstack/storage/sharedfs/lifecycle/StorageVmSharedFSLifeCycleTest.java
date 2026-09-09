@@ -53,6 +53,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -271,6 +272,46 @@ public class StorageVmSharedFSLifeCycleTest {
          Pair<Long, Long> result = lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
          Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
          Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(s_vmId));
+    }
+
+    @Test
+    public void testDeploySharedFSContinuesWhenTemplateIsMissingForNonLastHypervisor() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+        SharedFS sharedFS = prepareDeploySharedFS();
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(new ArrayList<>(List.of(Hypervisor.HypervisorType.External, Hypervisor.HypervisorType.KVM)) {
+            @Override
+            public Hypervisor.HypervisorType set(int index, Hypervisor.HypervisorType element) {
+                // Keep the test order stable while exercising the production shuffle call.
+                return get(index);
+            }
+        });
+        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.External, ResourceManager.SystemVmPreferredArchitecture.defaultValue())).thenReturn(null);
+
+        Account owner = mock(Account.class);
+        when(owner.getId()).thenReturn(s_ownerId);
+        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
+
+        UserVm vm = mock(UserVm.class);
+        when(vm.getId()).thenReturn(s_vmId);
+        when(userVmService.createAdvancedVirtualMachine(
+                any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
+                anyString(), anyLong(), anyLong(), any(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
+                isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
+                anyMap(), isNull(), isNull(), isNull(), isNull(),
+                anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);
+
+        VolumeVO rootVol = mock(VolumeVO.class);
+        when(rootVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVol.getName()).thenReturn("ROOT-1");
+        VolumeVO dataVol = mock(VolumeVO.class);
+        when(dataVol.getId()).thenReturn(s_volumeId);
+        when(dataVol.getName()).thenReturn("DATA-1");
+        when(dataVol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeDao.findByInstance(s_vmId)).thenReturn(List.of(rootVol, dataVol));
+
+        Pair<Long, Long> result = lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
+
+        Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
+        Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(s_vmId));
     }
 
     @Test(expected = CloudRuntimeException.class)
