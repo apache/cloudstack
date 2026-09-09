@@ -59,7 +59,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected AffinityGroupDao _affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
-    private int _vmCapacityReleaseInterval;
+    protected int _vmCapacityReleaseInterval;
     @Inject
     protected ConfigurationDao _configDao;
 
@@ -102,22 +102,24 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
 
             for (Long groupVMId : groupVMIds) {
                 VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-                if (groupVM != null && !groupVM.isRemoved()) {
-                    if (groupVM.getHostId() != null) {
-                        avoid.addHost(groupVM.getHostId());
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Added host {} to avoid set, since VM {} is present on the host", groupVM.getHostId(), groupVM);
-                        }
-                    }
-                } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
-                    long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
-                    if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                        avoid.addHost(groupVM.getLastHostId());
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Added host {} to avoid set, since VM {} is present on the host, in Stopped state but has reserved capacity", groupVM.getLastHostId(), groupVM);
-                        }
-                    }
+                if (groupVM == null || groupVM.isRemoved()) {
+                    continue;
                 }
+                avoidHostOfVmInAffinityGroup(avoid, groupVM);
+            }
+        }
+    }
+
+    protected void avoidHostOfVmInAffinityGroup(ExcludeList avoid, VMInstanceVO groupVM) {
+        if (groupVM.getHostId() != null) {
+            avoid.addHost(groupVM.getHostId());
+            logger.debug("Added host {} to avoid set, since VM {} is present on the host", groupVM.getHostId(), groupVM);
+        } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
+            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
+            if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
+                avoid.addHost(groupVM.getLastHostId());
+                logger.debug("Added host {} to avoid set, since VM {} is in {} state on the host but still has reserved capacity",
+                        groupVM.getLastHostId(), groupVM, groupVM.getState());
             }
         }
     }
