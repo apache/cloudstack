@@ -39,7 +39,6 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     int DEFAULT_PROXY_VM_RAMSIZE = 1024;            // 1G
     int DEFAULT_PROXY_VM_CPUMHZ = 500;                // 500 MHz
 
-    int DEFAULT_PROXY_CMD_PORT = 8001;
     int DEFAULT_PROXY_VNC_PORT = 0;
     int DEFAULT_PROXY_URL_PORT = 80;
     int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;        // 5 minutes
@@ -54,7 +53,8 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
         "If true, noVNC console will be default console for virtual machines", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
-        "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
+        "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server" +
+                " when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
     ConfigKey<Boolean> NoVncConsoleShowDot = new ConfigKey<>(Boolean.class, "novnc.console.show.dot", ConfigKey.CATEGORY_ADVANCED, "true",
             "If true, in noVNC console a dot cursor will be shown when the remote server provides no local cursor, or provides a fully-transparent (invisible) cursor.",
@@ -87,12 +87,13 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Integer> ConsoleProxyLaunchMax = new ConfigKey<>(Integer.class, "consoleproxy.launch.max", "Console Proxy", "10",
             "maximum number of console proxy instances per zone can be launched", false, ConfigKey.Scope.Zone, null);
 
-    String consoleProxyManagementStates = Arrays.stream(com.cloud.consoleproxy.ConsoleProxyManagementState.values()).map(Enum::name).collect(Collectors.joining(","));
-    ConfigKey<String> ConsoleProxyServiceManagementState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
+    String consoleProxyServiceManagementStates = Arrays.stream(com.cloud.consoleproxy.ConsoleProxyManagementState.values()).map(Enum::name).collect(Collectors.joining(","));
 
-    ConfigKey<String> ConsoleProxyManagementLastState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "last console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
+    ConfigKey<String> ConsoleProxyServiceManagementState = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
+            "console proxy service management state", true, ConfigKey.Kind.Select, consoleProxyServiceManagementStates);
+
+    ConfigKey<String> ConsoleProxyServiceManagementLastState = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
+            "last console proxy service management state", true, ConfigKey.Kind.Select, consoleProxyServiceManagementStates);
 
     ConfigKey<String> ConsoleProxyVmUserData = new ConfigKey<>(String.class, "console.proxy.vm.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
