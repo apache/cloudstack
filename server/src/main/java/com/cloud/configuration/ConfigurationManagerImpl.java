@@ -3639,6 +3639,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         continue;
                     }
                 }
+                if (VmDetailConstants.CPU_OVER_COMMIT_RATIO.equalsIgnoreCase(detailEntry.getKey())
+                        || VmDetailConstants.MEMORY_OVER_COMMIT_RATIO.equalsIgnoreCase(detailEntry.getKey())) {
+                    validateOverCommitRatioInServiceOfferingDetail(detailEntry.getKey(), detailEntry.getValue());
+                }
                 if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
                     // Add in disk offering details
                     continue;
@@ -3736,6 +3740,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return cmdExpiryAction;
+    }
+
+    /**
+     * A service offering may set its own overcommit ratio to override its cluster's, most usefully
+     * a ratio of 1 to keep infrastructure VMs off an overcommitted cluster's overcommit.
+     */
+    protected void validateOverCommitRatioInServiceOfferingDetail(String key, String value) {
+        float ratio;
+        try {
+            ratio = Float.parseFloat(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            throw new InvalidParameterValueException(String.format("Service offering detail %s must be a number, got [%s].", key, value));
+        }
+        if (ratio <= 0) {
+            throw new InvalidParameterValueException(String.format("Service offering detail %s must be greater than zero, got [%s].", key, value));
+        }
     }
 
     @Override
