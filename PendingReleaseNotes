@@ -53,3 +53,18 @@ example.ver.1 > example.ver.2:
     the guest while the NVRAM sidecar is copied, so that the captured firmware
     state is consistent with the disk snapshot. Non-UEFI VMs are unaffected and
     continue to snapshot live.
+
+4.22.0.1 > 4.23.0.0:
+  * A service offering may now set its own overcommit ratio, overriding its cluster's, using the
+    cpuOvercommitRatio and memoryOvercommitRatio service offering details. Absent, the cluster's
+    ratio applies as before, so nothing changes for existing offerings.
+
+    An offering with a memory ratio of 1 on an overcommitted cluster is charged its full request
+    and keeps all of it: free page reporting and balloon auto-deflate are turned off for its VMs,
+    so the guest does not lend unused memory back to the host. The balloon device itself stays, so
+    memory statistics are unaffected. This is intended for infrastructure VMs that should not
+    participate in the overcommit that other workloads rely on.
+
+    Also fixes a latent accounting bug: capacity was charged raw when a VM started and stopped, but
+    recalculated with the VM's overcommit ratio applied. These agreed only while every VM shared
+    its cluster's ratio.

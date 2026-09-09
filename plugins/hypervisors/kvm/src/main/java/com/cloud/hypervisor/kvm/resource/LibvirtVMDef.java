@@ -453,6 +453,11 @@ public class LibvirtVMDef {
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
         private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
+        private boolean memoryReclaim = true;
+
+        public void setMemoryReclaim(boolean memoryReclaim) {
+            this.memoryReclaim = memoryReclaim;
+        }
 
         public void setMaxMemory(long mem) {
             this.maxMemory = mem;
@@ -498,6 +503,9 @@ public class LibvirtVMDef {
                 memBalloonDef.defVirtioMemBalloon(String.valueOf(memoryBalloonStatsPeriod));
             } else {
                 memBalloonDef.defNoneMemBalloon();
+            }
+            if (!this.memoryReclaim) {
+                memBalloonDef.disableMemoryReclaim();
             }
             response.append(String.format("<devices>%n%s%n</devices>%n", memBalloonDef.toString()));
 
@@ -1501,6 +1509,7 @@ public class LibvirtVMDef {
     public static class MemBalloonDef {
         private MemBalloonModel memBalloonModel;
         private String memBalloonStatsPeriod;
+        private boolean reclaimEnabled = true;
 
         public enum MemBalloonModel {
             NONE("none"), VIRTIO("virtio");
@@ -1533,13 +1542,23 @@ public class LibvirtVMDef {
             return memBalloonStatsPeriod;
         }
 
+        /**
+         * Turns off returning the guest's unused pages to the host. The balloon device stays, so
+         * memory statistics keep working; only the reclaim is given up. Used for VMs that must
+         * genuinely hold the memory they were given rather than lend it back.
+         */
+        public void disableMemoryReclaim() {
+            reclaimEnabled = false;
+        }
+
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
             memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
             /* Version integer format: major * 1,000,000 + minor * 1,000 + release.
              * Require: libvirt 6.9.0, qemu 5.1.0 */
-            if (memBalloonModel != MemBalloonModel.NONE && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
+            if (reclaimEnabled && memBalloonModel != MemBalloonModel.NONE
+                    && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
                 memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
             }
             memBalloonBuilder.append(">\n");
