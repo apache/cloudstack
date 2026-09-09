@@ -1023,8 +1023,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 BackupFrameworkEnabled,
                 BackupProviderPlugin,
                 BackupSyncPollingInterval,
-                BackupEnableAttachDetachVolumes,
-                NASBackupParallelExecution
+                BackupEnableAttachDetachVolumes
         };
     }
 

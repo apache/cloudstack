@@ -49,6 +49,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +75,35 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private BackupOfferingDao backupOfferingDao;
 
     @Inject
+    public static final ConfigKey<Boolean> NASBackupParallelExecution = new ConfigKey<>("Advanced", Boolean.class,
+            "backup.nas.parallel.execution.enabled",
+            "true",
+            "Let NAS take-backup commands run concurrently on a KVM host instead of queueing behind every earlier command on that host "
+            + "and holding up every later one. Concurrency is bounded per host by backup.nas.parallel.max.per.host. "
+            + "Disable to restore strictly sequential execution.",
+            true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Integer> NASBackupParallelMaxPerHost = new ConfigKey<>("Advanced", Integer.class,
+            "backup.nas.parallel.max.per.host",
+            "2",
+            "Maximum number of NAS take-backup commands in flight on one KVM host when parallel execution is enabled; further backups "
+            + "for that host wait on the management server. Keep it below the agent's worker thread count (default 5) so start, stop, "
+            + "reboot and migrate commands are never queued behind backups.",
+            true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Integer> NASBackupParallelQueueTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "backup.nas.parallel.queue.timeout",
+            "7200",
+            "Seconds a NAS take-backup may wait for a free per-host slot before it fails.",
+            true, ConfigKey.Scope.Zone);
+
+    /** In-flight take-backup commands per host, so backups never occupy every agent worker thread. */
+    private final ConcurrentHashMap<Long, HostBackupSlots> hostBackupSlots = new ConcurrentHashMap<>();
+
+    private static final class HostBackupSlots {
+        private int inFlight;
+    }
+
     private HostDao hostDao;
 
     @Inject
@@ -154,12 +184,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
-        BackupVO backupVO = createBackupObject(vm, backupPath);
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
-        command.setExecuteInSequence(!BackupManager.NASBackupParallelExecution.valueIn(vm.getDataCenterId()));
+        final long zoneId = vm.getDataCenterId();
+        final boolean parallel = applyExecutionPolicy(command, zoneId);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -168,13 +198,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             command.setVolumePaths(volumePaths);
         }
 
+        // Concurrent backups are bounded per host: wait here, on the management server, for one of the
+        // host's slots so the agent's worker threads are never all taken by long-running backups.
+        boolean slotHeld = false;
+        if (parallel) {
+            acquireHostBackupSlot(host.getId(), NASBackupParallelMaxPerHost.valueIn(zoneId), NASBackupParallelQueueTimeout.valueIn(zoneId));
+            slotHeld = true;
+        }
+        BackupVO backupVO = null;
         BackupAnswer answer = null;
         try {
+            backupVO = createBackupObject(vm, backupPath);
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+        } finally {
+            if (slotHeld) {
+                releaseHostBackupSlot(host.getId());
+            }
         }
 
         if (answer != null && answer.getResult()) {
@@ -188,6 +231,70 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupDao.remove(backupVO.getId());
         }
         return Objects.nonNull(answer) && answer.getResult();
+    }
+
+    /**
+     * Applies the zone's execution policy to the command and returns true when the command will run
+     * concurrently with other commands on the host (and so must be gated per host).
+     */
+    protected boolean applyExecutionPolicy(final TakeBackupCommand command, final long zoneId) {
+        final boolean parallel = Boolean.TRUE.equals(NASBackupParallelExecution.valueIn(zoneId));
+        command.setExecuteInSequence(!parallel);
+        return parallel;
+    }
+
+    /**
+     * Waits for one of the host's backup slots. The caller holds it for the whole agent round-trip and
+     * releases it in a finally block. The wait happens on the management server (the async job thread),
+     * never on the agent's worker threads. Fails with CloudRuntimeException once the timeout is reached.
+     */
+    protected void acquireHostBackupSlot(final long hostId, final Integer maxPerHost, final Integer timeoutSeconds) {
+        final int max = Math.max(1, maxPerHost == null ? 1 : maxPerHost);
+        final int timeout = Math.max(0, timeoutSeconds == null ? 0 : timeoutSeconds);
+        final HostBackupSlots slots = hostBackupSlots.computeIfAbsent(hostId, id -> new HostBackupSlots());
+        final long deadline = System.currentTimeMillis() + timeout * 1000L;
+        synchronized (slots) {
+            while (slots.inFlight >= max) {
+                final long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    throw new CloudRuntimeException(String.format(
+                            "Timed out after %d seconds waiting for a NAS backup slot on host %d (%d of %d in flight); "
+                            + "raise %s or %s, or retry when the host's backups finish",
+                            timeout, hostId, slots.inFlight, max, NASBackupParallelMaxPerHost.key(), NASBackupParallelQueueTimeout.key()));
+                }
+                try {
+                    slots.wait(remaining);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new CloudRuntimeException("Interrupted while waiting for a NAS backup slot on host " + hostId);
+                }
+            }
+            slots.inFlight++;
+            LOG.debug("Host {} now has {} of {} NAS backups in flight", hostId, slots.inFlight, max);
+        }
+    }
+
+    protected void releaseHostBackupSlot(final long hostId) {
+        final HostBackupSlots slots = hostBackupSlots.get(hostId);
+        if (slots == null) {
+            return;
+        }
+        synchronized (slots) {
+            if (slots.inFlight > 0) {
+                slots.inFlight--;
+            }
+            slots.notifyAll();
+        }
+    }
+
+    protected int getInFlightBackups(final long hostId) {
+        final HostBackupSlots slots = hostBackupSlots.get(hostId);
+        if (slots == null) {
+            return 0;
+        }
+        synchronized (slots) {
+            return slots.inFlight;
+        }
     }
 
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
@@ -451,6 +558,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
+                NASBackupParallelExecution,
+                NASBackupParallelMaxPerHost,
+                NASBackupParallelQueueTimeout
         };
     }
 
