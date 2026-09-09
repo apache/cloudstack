@@ -24,6 +24,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to  an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmdByAdmin extends AttachVolumeCmd implements AdminCmd {}

@@ -26,11 +26,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class VolumeMetricsResponse extends VolumeResponse {
     @SerializedName(ApiConstants.SIZEGB)
-    @Param(description = "disk size in GiB")
+    @Param(description = "Disk size in GiB")
     private String diskSizeGB;
 
     @SerializedName(ApiConstants.DISK_IO_PSTOTAL)
-    @Param(description = "the total disk iops")
+    @Param(description = "The total disk iops")
     private Long diskIopsTotal;
 
     public void setStorageType(final String storageType, final String volumeType) {

@@ -54,5 +54,4 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean hasActiveVMSnapshotTasks(Long vmId);
 
     RestoreVMSnapshotCommand createRestoreCommand(UserVmVO userVm, List<VMSnapshotVO> vmSnapshotVOs);
-
 }

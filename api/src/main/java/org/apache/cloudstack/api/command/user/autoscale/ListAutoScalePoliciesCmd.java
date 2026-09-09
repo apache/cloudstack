@@ -40,21 +40,21 @@ public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResources
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the autoscale policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "The ID of the autoscale policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale policy", since = "4.18.0")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the autoscale policy", since = "4.18.0")
     private String name;
 
-    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "the ID of the condition of the policy")
+    @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "The ID of the condition of the policy")
     private Long conditionId;
 
     @Parameter(name = ApiConstants.ACTION,
                type = CommandType.STRING,
-               description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+               description = "The action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
-    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
+    @Parameter(name = ApiConstants.VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "The ID of the autoscale Instance group")
     private Long vmGroupId;
 
     // ///////////////////////////////////////////////////

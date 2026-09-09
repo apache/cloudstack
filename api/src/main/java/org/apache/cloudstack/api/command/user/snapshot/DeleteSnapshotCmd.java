@@ -35,7 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSnapshot", description = "Deletes a snapshot of a disk volume.", responseObject = SuccessResponse.class, entityType = {Snapshot.class},
+@APICommand(name = "deleteSnapshot", description = "Deletes a Snapshot of a disk volume.", responseObject = SuccessResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
@@ -45,7 +45,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotResponse.class,
-            required=true, description="The ID of the snapshot")
+            required=true, description = "The ID of the Snapshot")
     private Long id;
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             description="The ID of the zone for the snapshot", since = "4.19.0")
@@ -85,7 +85,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
+        return  "Deleting Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
     }
 
     @Override
@@ -106,7 +106,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Snapshot");
         }
     }
 }

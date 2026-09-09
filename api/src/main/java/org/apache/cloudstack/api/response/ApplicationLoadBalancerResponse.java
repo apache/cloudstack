@@ -29,51 +29,51 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ApplicationLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the Load Balancer ID")
+    @Param(description = "The Load Balancer ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the Load Balancer")
+    @Param(description = "The name of the Load Balancer")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the Load Balancer")
+    @Param(description = "The description of the Load Balancer")
     private String description;
 
     @SerializedName(ApiConstants.ALGORITHM)
-    @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
+    @Param(description = "The Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "Load Balancer network id")
+    @Param(description = "Load Balancer Network id")
     private String networkId;
 
     @SerializedName(ApiConstants.SOURCE_IP)
-    @Param(description = "Load Balancer source ip")
+    @Param(description = "Load Balancer source IP")
     private String sourceIp;
 
     @SerializedName(ApiConstants.SOURCE_IP_NETWORK_ID)
-    @Param(description = "Load Balancer source ip network id")
+    @Param(description = "Load Balancer source IP Network id")
     private String sourceIpNetworkId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the Load Balancer")
+    @Param(description = "The Account of the Load Balancer")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the Load Balancer")
+    @Param(description = "The project id of the Load Balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the Load Balancer")
+    @Param(description = "The project name of the Load Balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the Load Balancer")
+    @Param(description = "The domain ID of the Load Balancer")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain of the Load Balancer")
+    @Param(description = "The domain of the Load Balancer")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -81,19 +81,19 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
     private String domainPath;
 
     @SerializedName("loadbalancerrule")
-    @Param(description = "the list of rules associated with the Load Balancer", responseObject = ApplicationLoadBalancerRuleResponse.class)
+    @Param(description = "The list of rules associated with the Load Balancer", responseObject = ApplicationLoadBalancerRuleResponse.class)
     private List<ApplicationLoadBalancerRuleResponse> lbRules;
 
     @SerializedName("loadbalancerinstance")
-    @Param(description = "the list of instances associated with the Load Balancer", responseObject = ApplicationLoadBalancerInstanceResponse.class)
+    @Param(description = "The list of Instances associated with the Load Balancer", responseObject = ApplicationLoadBalancerInstanceResponse.class)
     private List<ApplicationLoadBalancerInstanceResponse> lbInstances;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with the Load Balancer", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with the Load Balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is rule for display to the regular User", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     @Override

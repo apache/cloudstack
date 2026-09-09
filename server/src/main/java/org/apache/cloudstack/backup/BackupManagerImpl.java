@@ -239,7 +239,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Filter searchFilter = new Filter(BackupOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
         sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
         if (Account.Type.NORMAL == caller.getType()) {
@@ -782,7 +783,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {
-            throw new CloudRuntimeException("The selected VM has backups, cannot restore and attach volume to the VM.");
+            throw new CloudRuntimeException("The selected VM is attached to a backup offering and, thus, it is not possible to restore and attach volumes from backups to the instance.");
         }
 
         if (backup.getZoneId() != vm.getDataCenterId()) {
@@ -825,7 +826,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backup.getBackedUpVolumes(),
                             backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
             throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
         }
@@ -971,10 +972,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid backup provider name provided");
         }
-        if (!backupProvidersMap.containsKey(name)) {
-            throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
-        }
-        return backupProvidersMap.get(name);
+       if (!backupProvidersMap.containsKey(name)) {
+           throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
+       }
+       return backupProvidersMap.get(name);
     }
 
     @Override

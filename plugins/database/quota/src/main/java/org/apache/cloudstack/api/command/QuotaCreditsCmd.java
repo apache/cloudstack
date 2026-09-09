@@ -33,7 +33,7 @@ import org.apache.cloudstack.quota.QuotaService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an Account", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsCmd extends BaseCmd {
 
     @Inject
@@ -54,7 +54,7 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Value of the credits to be added+, subtracted-")
     private Double value;
 
-    @Parameter(name = "min_balance", type = CommandType.DOUBLE, required = false, description = "Minimum balance threshold of the account")
+    @Parameter(name = "min_balance", type = CommandType.DOUBLE, required = false, description = "Minimum balance threshold of the Account")
     private Double minBalance;
 
     @Parameter(name = "quota_enforce", type = CommandType.BOOLEAN, required = false, description = "Account for which quota enforce is set to false will not be locked when there is no credit balance")
@@ -112,7 +112,7 @@ public class QuotaCreditsCmd extends BaseCmd {
             accountId = account.getAccountId();
         }
         if (accountId == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The account does not exists or has been removed/disabled");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The Account does not exists or has been removed/disabled");
         }
         if (getValue() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");

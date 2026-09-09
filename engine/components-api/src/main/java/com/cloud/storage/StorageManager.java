@@ -182,7 +182,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",
             "Storage",
-            "false",
+            Boolean.TRUE.toString(),
             "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
             true,
             ConfigKey.Scope.Cluster,
@@ -219,6 +219,11 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> StoragePoolHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
             "storage.pool.host.connect.workers", "1",
             "Number of worker threads to be used to connect hosts to a primary storage", true);
+
+    ConfigKey<Boolean> COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES = new ConfigKey<>(Boolean.class, "copy.templates.from.other.secondary.storages",
+            "Storage", "true", "When enabled, this feature allows templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
+            "while adding a new Secondary Storage. If the copy operation fails, the system falls back to downloading the template from the source URL.",
+            true, ConfigKey.Scope.Zone, null);
 
     /**
      * should we execute in sequence not involving any storages?
@@ -293,6 +298,8 @@ public interface StorageManager extends StorageService {
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
+
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
 
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 

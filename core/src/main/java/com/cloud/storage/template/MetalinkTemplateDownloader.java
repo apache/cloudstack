@@ -108,7 +108,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            logger.error("Error downloading template from: " + _downloadUrl + " due to: " + e.getMessage());
+            logger.error("Error downloading Template from: " + _downloadUrl + " due to: " + e.getMessage());
             return false;
         }
         return true;
@@ -133,6 +133,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         int i = 0;
         while (!downloaded && i < metalinkUrls.size()) {
             String url = metalinkUrls.get(i);
+            try {
+                UriUtils.validateMetalinkInnerUrl(url);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation: %s - %s", url, e.getMessage()));
+                i++;
+                continue;
+            }
             request = createRequest(url);
             downloaded = downloadTemplate();
             i++;

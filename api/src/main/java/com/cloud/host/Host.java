@@ -59,6 +59,9 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String HOST_SSH_PORT = "host.ssh.port";
+
+    int DEFAULT_SSH_PORT = 22;
 
     /**
      * @return name of the machine.

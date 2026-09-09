@@ -25,43 +25,43 @@ import com.cloud.serializer.Param;
 
 public class IpForwardingRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the port forwarding rule")
+    @Param(description = "The ID of the port forwarding rule")
     private String id;
 
     @SerializedName(ApiConstants.PROTOCOL)
-    @Param(description = "the protocol of the port forwarding rule")
+    @Param(description = "The protocol of the port forwarding rule")
     private String protocol;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "the VM ID for the port forwarding rule")
+    @Param(description = "The Instance ID for the port forwarding rule")
     private String virtualMachineId;
 
     @SerializedName("virtualmachinename")
-    @Param(description = "the VM name for the port forwarding rule")
+    @Param(description = "The Instance name for the port forwarding rule")
     private String virtualMachineName;
 
     @SerializedName("virtualmachinedisplayname")
-    @Param(description = "the VM display name for the port forwarding rule")
+    @Param(description = "The Instance display name for the port forwarding rule")
     private String virtualMachineDisplayName;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "the public ip address id for the port forwarding rule")
+    @Param(description = "The public IP address id for the port forwarding rule")
     private Long publicIpAddressId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the public ip address for the port forwarding rule")
+    @Param(description = "The public IP address for the port forwarding rule")
     private String publicIpAddress;
 
     @SerializedName(ApiConstants.START_PORT)
-    @Param(description = "the start port of the rule")
+    @Param(description = "The start port of the rule")
     private Integer startPort;
 
     @SerializedName(ApiConstants.END_PORT)
-    @Param(description = "the end port of the rule")
+    @Param(description = "The end port of the rule")
     private Integer endPort;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the ip forwarding rule")
+    @Param(description = "State of the IP forwarding rule")
     private String state;
 
     public String getId() {

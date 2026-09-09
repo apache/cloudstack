@@ -161,14 +161,14 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
             }
             txn.commit();
         } catch (SQLException ex) {
-            throw new CloudRuntimeException("Unable to persist ip address range ", ex);
+            throw new CloudRuntimeException("Unable to persist IP address range ", ex);
         }
     }
 
     @Override
     public void releaseIpAddress(String ipAddress, long dcId, Long nicId) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
+            logger.debug("Releasing IP address: " + ipAddress + " data center " + dcId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("ip", ipAddress);
@@ -186,7 +186,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     @Override
     public void releaseIpAddress(long nicId, String reservationId) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip address for reservationId=" + reservationId + ", nic=" + nicId);
+            logger.debug("Releasing IP address for reservationId=" + reservationId + ", nic=" + nicId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("nic", nicId);
@@ -202,7 +202,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     @Override
     public void releasePodIpAddress(long id) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip address for ID=" + id);
+            logger.debug("Releasing IP address for ID=" + id);
         }
 
         DataCenterIpAddressVO vo = this.findById(id);
@@ -215,7 +215,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     @Override
     public void releaseIpAddress(long nicId) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip address for nic=" + nicId);
+            logger.debug("Releasing IP address for nic=" + nicId);
         }
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("nic", nicId);

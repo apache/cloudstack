@@ -91,6 +91,12 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
+      </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
           mode="multiple"
@@ -167,6 +173,19 @@ export default {
       }
     }
   },
+  computed: {
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
+    combinedExtraConfig () {
+      if (!this.extraConfigEnabled || !this.resource.details) return ''
+      const configs = Object.keys(this.resource.details)
+        .filter(key => key.startsWith('extraconfig-'))
+        .map(key => this.resource.details[key] || '')
+        .filter(val => val.trim())
+      return configs.join('\n\n')
+    }
+  },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
@@ -185,7 +204,8 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({})
     },
@@ -341,6 +361,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 

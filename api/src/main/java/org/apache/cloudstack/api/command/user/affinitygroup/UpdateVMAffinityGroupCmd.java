@@ -46,7 +46,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "updateVMAffinityGroup",
-            description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
+            description = "Updates the affinity/anti-affinity group associations of  an Instance. The Instance has to be stopped and restarted for the "
                 + "new properties to take effect.",
             responseObject = UserVmResponse.class,
         responseView = ResponseView.Restricted,
@@ -61,7 +61,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the Instance")
     private Long id;
 
     @ACL
@@ -69,8 +69,8 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
-               description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
-                   + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
+               description = "Comma separated list of affinity groups id that are going to be applied to the Instance. "
+                   + "Should be passed only when Instance is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
@@ -78,8 +78,8 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
                entityType = AffinityGroupResponse.class,
-               description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
-                   + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
+               description = "Comma separated list of affinity groups names that are going to be applied to the Instance."
+                   + " Should be passed only when Instance is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
     private List<String> affinityGroupNameList;
 
     /////////////////////////////////////////////////////
@@ -152,7 +152,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VM's affinity groups");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Instance's affinity groups");
         }
     }
 
@@ -163,7 +163,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating VM affinity group";
+        return "Updating Instance affinity group";
     }
 
     @Override

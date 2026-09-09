@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -116,6 +117,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private AgentManager agentMgr;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -229,8 +233,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
         Pattern saveTimePattern = Pattern.compile(nstRegex);
 
+        if (host == null) {
+            LOG.warn("Unable to take backup, host is null");
+            return null;
+        }
+
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
                 LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
@@ -249,9 +258,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return null;
     }
     private boolean executeRestoreCommand(HostVO host, String username, String password, String command) {
+        if (host == null) {
+            LOG.warn("Unable to restore backup, host is null");
+            return false;
+        }
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {

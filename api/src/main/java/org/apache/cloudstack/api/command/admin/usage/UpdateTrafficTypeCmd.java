@@ -39,7 +39,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "traffic type id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "Traffic type ID")
     private Long id;
 
     @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,

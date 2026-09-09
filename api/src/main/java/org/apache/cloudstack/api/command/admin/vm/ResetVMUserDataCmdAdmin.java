@@ -23,8 +23,8 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
-@APICommand(name = "resetUserDataForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the UserData for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseObject.ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "resetUserDataForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the UserData for Instance. " +
+        "The Instance must be in a \"Stopped\" state. [async]", responseView = ResponseObject.ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 
 public class ResetVMUserDataCmdAdmin extends ResetVMUserDataCmd implements AdminCmd {

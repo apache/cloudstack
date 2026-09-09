@@ -28,23 +28,23 @@ import com.cloud.serializer.Param;
 public class NicExtraDhcpOptionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the extra dhcp option")
+    @Param(description = "The ID of the extra DHCP option")
     private String id;
 
     @SerializedName(ApiConstants.NIC_ID)
-    @Param(description = "the ID of the nic")
+    @Param(description = "The ID of the NIC")
     private String nicId;
 
     @SerializedName(ApiConstants.EXTRA_DHCP_OPTION_NAME)
-    @Param(description = "the name of the extra DHCP option")
+    @Param(description = "The name of the extra DHCP option")
     private String codeName;
 
     @SerializedName(ApiConstants.EXTRA_DHCP_OPTION_CODE)
-    @Param(description = "the extra DHCP option code")
+    @Param(description = "The extra DHCP option code")
     private int code;
 
     @SerializedName(ApiConstants.EXTRA_DHCP_OPTION_VALUE)
-    @Param(description = "the extra DHCP option value")
+    @Param(description = "The extra DHCP option value")
     private String value;
 
     public NicExtraDhcpOptionResponse() {

@@ -26,6 +26,7 @@ public class ApiConstants {
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
@@ -1096,6 +1097,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";

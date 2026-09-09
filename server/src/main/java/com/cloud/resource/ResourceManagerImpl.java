@@ -19,9 +19,11 @@ package com.cloud.resource;
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -154,6 +157,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -271,6 +275,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmManager userVmManager;
+    @Inject
+    ManagementService managementService;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -643,6 +649,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
+        checkForDuplicateHost(url);
         return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false);
     }
 
@@ -773,7 +780,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
-
         }
 
         try {
@@ -868,7 +874,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
-
                 }
                 logger.info("server resources successfully discovered by " + discoverer.getName());
                 return hosts;
@@ -1023,8 +1028,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected void destroyLocalStoragePoolVolumes(long poolId) {
-        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
-        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+        List<VolumeVO> rootDisks = volumeDao.findNonDestroyedVolumesByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK);
 
         List<VolumeVO> volumes = new ArrayList<>();
         addVolumesToList(volumes, rootDisks);
@@ -1274,6 +1279,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL, eventDescription = "cancel maintenance for host", async = true)
     public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
@@ -1297,6 +1304,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_RECONNECT, eventDescription = "reconnecting host", async = true)
     public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
         Long hostId = cmd.getId();
 
@@ -1410,7 +1419,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
                     }
                 } else {
-                    logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
+                    logger.info("Maintenance: scheduling migration of {} from {}", vm, host);
                     _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
@@ -1459,7 +1468,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     private void migrateAwayVmWithVolumes(HostVO host, VMInstanceVO vm) {
         final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
-        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
         plan.setMigrationPlan(true);
         DeployDestination dest = getDeployDestination(vm, profile, plan, host);
@@ -1500,6 +1509,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE, eventDescription = "prepare maintenance for host", async = true)
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
@@ -1930,6 +1941,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.getIsTagARule()));
+
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
     }
@@ -2249,15 +2263,49 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HostVO getNewHost(StartupCommand[] startupCommands) {
         StartupCommand startupCommand = startupCommands[0];
 
-        HostVO host = findHostByGuid(startupCommand.getGuid());
+        String fullGuid = startupCommand.getGuid();
+        logger.debug(String.format("Trying to find Host by guid %s", fullGuid));
+        HostVO host = findHostByGuid(fullGuid);
 
         if (host != null) {
+            logger.debug(String.format("Found Host by guid %s: %s", fullGuid, host));
             return host;
         }
 
-        host = findHostByGuid(startupCommand.getGuidWithoutResource());
+        String guidPrefix = startupCommand.getGuidWithoutResource();
+        logger.debug(String.format("Trying to find Host by guid prefix %s", guidPrefix));
+        host = findHostByGuidPrefix(guidPrefix);
 
-        return host; // even when host == null!
+        if (host != null) {
+            logger.debug(String.format("Found Host by guid prefix %s: %s", guidPrefix, host));
+            return host;
+        }
+
+        logger.debug(String.format("Could not find Host by guid %s", fullGuid));
+        return null;
+    }
+
+    protected void validateExistingHostLocationImmutable(final HostVO host, final boolean newHost,
+            final long dcId, final Long podId, final Long clusterId, final StartupCommand startup) {
+        if (newHost || host == null || host.getType() != Host.Type.Routing) {
+            return;
+        }
+        final long existingDcId = host.getDataCenterId();
+        final Long existingPodId = host.getPodId();
+        final Long existingClusterId = host.getClusterId();
+        if (existingPodId == null || existingClusterId == null) {
+            return;
+        }
+        if (existingDcId == dcId && Objects.equals(existingPodId, podId) && Objects.equals(existingClusterId, clusterId)) {
+            return;
+        }
+        final String identity = Objects.toString(host.getUuid(), host.getGuid());
+        final String ip = startup != null ? startup.getPrivateIpAddress() : "unknown";
+        throw new InvalidParameterValueException(
+                String.format("Host %s (ip: %s) is already registered in [zone: %s, pod: %s, cluster: %s] and cannot " +
+                                "be re-added or reconnected with [zone: %s, pod: %s, cluster: %s]. Zone, pod and " +
+                                "cluster of an existing host are immutable.",
+                        identity, ip, existingDcId, existingPodId, existingClusterId, dcId, podId, clusterId));
     }
 
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
@@ -2334,6 +2382,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
+
+        validateExistingHostLocationImmutable(host, newHost, dcId, podId, clusterId, startup);
 
         host.setDataCenterId(dc.getId());
         host.setPodId(podId);
@@ -2562,6 +2612,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    void checkForDuplicateHost(final String url) {
+        String hostIpOrName = null;
+        String ipAddress = null;
+        try {
+            hostIpOrName = new URI(UriUtils.encodeURIComponent(url)).getHost();
+            if (StringUtils.isBlank(hostIpOrName)) {
+                return;
+            }
+            InetAddress ip = InetAddress.getByName(hostIpOrName);
+            ipAddress = ip.getHostAddress();
+        } catch (final URISyntaxException | UnknownHostException ignore) {
+            // unparseable URL or unknown host - discoverer will reject it shortly anyway
+            return;
+        }
+
+        if (StringUtils.isNotBlank(ipAddress)) {
+            final HostVO existingByIp = _hostDao.findByIp(ipAddress);
+            // findByIp matches hosts of any type; only a Routing host is a duplicate for addHost
+            if (existingByIp != null && Host.Type.Routing.equals(existingByIp.getType())) {
+                throw new InvalidParameterValueException(String.format(
+                        "A host with IP address '%s' (%s) already exists (id: %s). Remove it before adding again.",
+                        ipAddress, hostIpOrName, existingByIp.getUuid()));
+            }
+        }
     }
 
     private Host createHostAndAgentDeferred(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
@@ -2846,7 +2922,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         }
                     }
                 } else {
-                    throw new UnableDeleteHostException("Unable to delete the host as there are vms in " + vms.get(0).getState() +
+                    throw new UnableDeleteHostException("Unable to delete the host as there are Instances in " + vms.get(0).getState() +
                             " state using this host and isForced=false specified");
                 }
             }
@@ -2908,8 +2984,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
             return;
         }
-        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
-        if (sshToAgent) {
+        if (KvmSshToAgentEnabled.value()) {
             Ternary<String, String, String> credentials = getHostCredentials(host);
             connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {
@@ -2938,7 +3013,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
+                host.getPrivateIpAddress(), _agentMgr.getHostSshPort(host), username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
@@ -3285,6 +3360,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByGuid(final String guid) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getGuid(), Op.EQ, guid);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        return sc.find();
+    }
+
+    @Override
+    public HostVO findHostByGuidPrefix(String guid) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getGuid(), Op.LIKE, guid + "%");
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 
@@ -3292,6 +3376,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByName(final String name) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getName(), Op.EQ, name);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 

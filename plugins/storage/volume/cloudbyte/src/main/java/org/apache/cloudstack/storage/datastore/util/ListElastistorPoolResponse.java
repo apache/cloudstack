@@ -27,31 +27,31 @@ import com.google.gson.annotations.SerializedName;
 
 public class ListElastistorPoolResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the storage pool")
+    @Param(description = "The ID of the storage pool")
     private String id;
 
     @SerializedName("name")
-    @Param(description = "the name of the storage pool")
+    @Param(description = "The name of the storage pool")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the storage pool")
+    @Param(description = "The state of the storage pool")
     private String state;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "the current available space of the pool")
+    @Param(description = "The current available space of the pool")
     private Long currentAvailableSpace;
 
     @SerializedName(ApiConstants.MAX_IOPS)
-    @Param(description = "available iops of the pool")
+    @Param(description = "Available IOPS of the pool")
     private Long availIOPS;
 
     @SerializedName("controllerid")
-    @Param(description = "controller of the pool")
+    @Param(description = "Controller of the pool")
     private String controllerid;
 
     @SerializedName("gateway")
-    @Param(description = "default gateway of the pool")
+    @Param(description = "Default gateway of the pool")
     private String gateway;
 
     @Override

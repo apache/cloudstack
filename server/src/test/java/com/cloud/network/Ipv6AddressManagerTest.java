@@ -246,8 +246,10 @@ public class Ipv6AddressManagerTest {
 
         Mockito.when(network.getIp6Cidr()).thenReturn("2001:db8:100::/64");
         Mockito.when(network.getIp6Gateway()).thenReturn("2001:db8:100::1");
+        Mockito.when(network.getId()).thenReturn(1L);
 
         Mockito.when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>("2001:db8::53:1", "2001:db8::53:2"));
+        Mockito.when(networkModel.isMACUnique("1e:00:b1:00:0a:f6", 1L)).thenReturn(true);
 
         String expected = "2001:db8:100:0:1c00:b1ff:fe00:af6";
 

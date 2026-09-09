@@ -34,6 +34,8 @@ import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -85,6 +87,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -101,6 +104,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.commons.lang3.StringUtils;
 
 @Component
@@ -140,6 +145,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private VpcOfferingDetailsDao vpcOfferingDetailsDao;
     @Inject
     private ProjectDao _projectDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private VolumeDao volumeDao;
+    @Inject
+    private VpcDao vpcDao;
     @Inject
     private ProjectManager _projectMgr;
     @Inject
@@ -543,7 +556,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<Long> vpcOfferingsDetailsToRemove = new ArrayList<>();
         List<VpcOfferingJoinVO> vpcOfferingsForThisDomain = vpcOfferingJoinDao.findByDomainId(domainId);
         for (VpcOfferingJoinVO vpcOffering : vpcOfferingsForThisDomain) {
-            if (domainIdString.equals(vpcOffering.getDomainId())) {
+            int vpcCount = vpcDao.getVpcCountByOfferingId(vpcOffering.getId());
+            if (vpcCount == 0) {
                 vpcOfferingDao.remove(vpcOffering.getId());
             } else {
                 vpcOfferingsDetailsToRemove.add(vpcOffering.getId());
@@ -558,7 +572,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<Long> networkOfferingsDetailsToRemove = new ArrayList<>();
         List<NetworkOfferingJoinVO> networkOfferingsForThisDomain = networkOfferingJoinDao.findByDomainId(domainId, false);
         for (NetworkOfferingJoinVO networkOffering : networkOfferingsForThisDomain) {
-            if (domainIdString.equals(networkOffering.getDomainId())) {
+            int networkCount = networkDao.getNetworkCountByNetworkOffId(networkOffering.getId());
+            if (networkCount == 0) {
                 networkOfferingDao.remove(networkOffering.getId());
             } else {
                 networkOfferingsDetailsToRemove.add(networkOffering.getId());
@@ -573,7 +588,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<Long> serviceOfferingsDetailsToRemove = new ArrayList<>();
         List<ServiceOfferingJoinVO> serviceOfferingsForThisDomain = serviceOfferingJoinDao.findByDomainId(domainId);
         for (ServiceOfferingJoinVO serviceOffering : serviceOfferingsForThisDomain) {
-            if (domainIdString.equals(serviceOffering.getDomainId())) {
+            int vmCount = vmInstanceDao.getVmCountByOfferingId(serviceOffering.getId());
+            if (vmCount == 0) {
                 serviceOfferingDao.remove(serviceOffering.getId());
             } else {
                 serviceOfferingsDetailsToRemove.add(serviceOffering.getId());
@@ -588,7 +604,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<Long> diskOfferingsDetailsToRemove = new ArrayList<>();
         List<DiskOfferingJoinVO> diskOfferingsForThisDomain = diskOfferingJoinDao.findByDomainId(domainId);
         for (DiskOfferingJoinVO diskOffering : diskOfferingsForThisDomain) {
-            if (domainIdString.equals(diskOffering.getDomainId())) {
+            int volumeCount = volumeDao.getVolumeCountByOfferingId(diskOffering.getId());
+            if (volumeCount == 0) {
                 diskOfferingDao.remove(diskOffering.getId());
             } else {
                 diskOfferingsDetailsToRemove.add(diskOffering.getId());

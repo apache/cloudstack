@@ -50,16 +50,16 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = InternalLoadBalancerElementResponse.class,
-               description = "list internal load balancer elements by id")
+               description = "List internal load balancer elements by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.NSP_ID,
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
-               description = "list internal load balancer elements by network service provider id")
+               description = "List internal load balancer elements by network service provider ID")
     private Long nspId;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list internal load balancer elements by enabled state")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "List internal load balancer elements by enabled state")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////

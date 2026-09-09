@@ -53,13 +53,13 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
             for (VM vm : vms) {
                 if (isAttach) {
                     if (!citrixResourceBase.createAndAttachConfigDriveIsoForVM(conn, vm, vmData, label)) {
-                        logger.debug("Failed to attach config drive iso to VM " + vmName);
+                        logger.debug("Failed to attach config drive ISO to Instance " + vmName);
                     }
                 } else {
                     // delete the config drive iso attached to VM
                     Set<VDI> vdis = VDI.getByNameLabel(conn, vmName+".iso");
                     if (vdis != null && !vdis.isEmpty()) {
-                        logger.debug("Deleting config drive for the VM " + vmName);
+                        logger.debug("Deleting config drive for the Instance " + vmName);
                         VDI vdi = vdis.iterator().next();
                         // Find the VM's CD-ROM VBD
                         Set<VBD> vbds = vdi.getVBDs(conn);
@@ -77,13 +77,13 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
                         vdi.destroy(conn);
                     }
 
-                    logger.debug("Successfully dettached config drive iso from the VM " + vmName);
+                    logger.debug("Successfully detached config drive ISO from the Instance " + vmName);
                 }
             }
         }catch (Types.XenAPIException ex) {
-            logger.debug("Failed to attach config drive iso to VM " + vmName + " " + ex.getMessage() );
+            logger.debug("Failed to attach config drive ISO to Instance " + vmName + " " + ex.getMessage() );
         }catch (XmlRpcException ex) {
-            logger.debug("Failed to attach config drive iso to VM " + vmName + " "+ex.getMessage());
+            logger.debug("Failed to attach config drive ISO to Instance " + vmName + " "+ex.getMessage());
         }
 
         return new Answer(command, true, "success");

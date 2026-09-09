@@ -64,12 +64,14 @@ import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -105,10 +107,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.logging.log4j.ThreadContext;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotService;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
@@ -153,11 +158,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject
     private SnapshotDao _snapshotDao;
     @Inject
+    private VMSnapshotDao _vmSnapshotDao;
+    @Inject
     private SnapshotService snapshotSrv;
     @Inject
     private SnapshotDataFactory snapshotFactory;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject
+    private VMSnapshotService _vmSnapshotService;
 
     @Inject
     private VolumeDataFactory volFactory;
@@ -317,7 +326,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         if (resultObject != null) {
-            job.setResult(resultObject);
+            job.updateResultWithEncryptionIfNeeded(resultObject);
         }
 
         if (logger.isDebugEnabled()) {
@@ -338,9 +347,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 job.setResultCode(resultCode);
 
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 } else {
-                    job.setResult(null);
+                    job.updateResultWithEncryptionIfNeeded(null);
                 }
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
@@ -409,7 +418,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 job.setProcessStatus(processStatus);
                 if (resultObject != null) {
-                    job.setResult(resultObject);
+                    job.updateResultWithEncryptionIfNeeded(resultObject);
                 }
                 job.setLastUpdated(DateUtil.currentGMTTime());
                 _jobDao.update(jobId, job);
@@ -507,23 +516,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return job;
     }
 
-    public String obfuscatePassword(String result, boolean hidePassword) {
-        if (hidePassword) {
-            String pattern = "\"password\":";
-            if (result != null) {
-                if (result.contains(pattern)) {
-                    String[] resp = result.split(pattern);
-                    String psswd = resp[1].toString().split(",")[0];
-                    if (psswd.endsWith("}")) {
-                        psswd = psswd.substring(0, psswd.length() - 1);
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "}," + resp[1].split(",", 2)[1];
-                    } else {
-                        result = resp[0] + pattern + psswd.replace(psswd.substring(2, psswd.length() - 1), "*****") + "," + resp[1].split(",", 2)[1];
-                    }
-                }
-            }
+    public String  obfuscatePassword(String result, boolean hidePassword) {
+        if (!hidePassword) {
+            return result;
         }
-        return result;
+        return StringUtils.obfuscatePasswordInJsonLikeString(result);
     }
 
     private void scheduleExecution(final AsyncJobVO job) {
@@ -1112,7 +1109,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
-                        job.setResult("job cancelled because of management server restart or shutdown");
+                        job.updateResultWithEncryptionIfNeeded("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
                         final Date currentGMTTime = DateUtil.currentGMTTime();
                         job.setLastUpdated(currentGMTTime);
@@ -1149,6 +1146,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     return cleanupVirtualMachine(job.getInstanceId());
                 case Network:
                     return cleanupNetwork(job.getInstanceId());
+                case Snapshot:
+                    return cleanupSnapshot(job.getInstanceId());
+                case VmSnapshot:
+                    return cleanupVmSnapshot(job.getInstanceId());
             }
         } catch (Exception e) {
             logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
@@ -1187,7 +1188,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
-    private boolean cleanupNetwork(final long networkId) throws Exception {
+    private boolean cleanupNetwork(final long networkId) {
         NetworkVO networkVO = networkDao.findById(networkId);
         if (networkVO == null) {
             logger.warn("Network not found. Skip Cleanup. NetworkId: " + networkId);
@@ -1203,6 +1204,46 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
         logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + networkId);
+        return true;
+    }
+
+    private boolean cleanupSnapshot(final long snapshotId) {
+        SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
+        if (snapshotVO == null) {
+            logger.warn("Snapshot not found. Skip Cleanup. SnapshotId: " + snapshotId);
+            return true;
+        }
+        if (Snapshot.State.Allocated.equals(snapshotVO.getState())) {
+            _snapshotDao.remove(snapshotId);
+        }
+        if (Snapshot.State.Creating.equals(snapshotVO.getState())) {
+            try {
+                snapshotFactory.updateOperationFailed(snapshotId);
+            } catch (NoTransitionException e) {
+                snapshotVO.setState(Snapshot.State.Error);
+                _snapshotDao.update(snapshotVO.getId(), snapshotVO);
+            }
+        }
+        return true;
+    }
+
+    private boolean cleanupVmSnapshot(final long vmSnapshotId) {
+        VMSnapshotVO vmSnapshotVO = _vmSnapshotDao.findById(vmSnapshotId);
+        if (vmSnapshotVO == null) {
+            logger.warn("VM Snapshot not found. Skip Cleanup. VMSnapshotId: " + vmSnapshotId);
+            return true;
+        }
+        if (VMSnapshot.State.Allocated.equals(vmSnapshotVO.getState())) {
+            _vmSnapshotDao.remove(vmSnapshotId);
+        }
+        if (VMSnapshot.State.Creating.equals(vmSnapshotVO.getState())) {
+            try {
+                _vmSnapshotService.updateOperationFailed(vmSnapshotVO);
+            } catch (NoTransitionException e) {
+                vmSnapshotVO.setState(VMSnapshot.State.Error);
+                _vmSnapshotDao.update(vmSnapshotVO.getId(), vmSnapshotVO);
+            }
+        }
         return true;
     }
 

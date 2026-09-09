@@ -26,11 +26,11 @@ import com.cloud.serializer.Param;
 
 public class StorageProviderResponse extends BaseResponse {
     @SerializedName("name")
-    @Param(description = "the name of the storage provider")
+    @Param(description = "The name of the storage provider")
     private String name;
 
     @SerializedName("type")
-    @Param(description = "the type of the storage provider: primary or image provider")
+    @Param(description = "The type of the storage provider: primary or image provider")
     private String type;
 
     /**

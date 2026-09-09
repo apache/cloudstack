@@ -65,7 +65,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootType {
+        public enum BootType {
             UEFI("UEFI"), BIOS("BIOS");
 
             String _type;
@@ -80,7 +80,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum BootMode {
+        public enum BootMode {
             LEGACY("LEGACY"), SECURE("SECURE");
 
             String _mode;
@@ -684,6 +684,15 @@ public class LibvirtVMDef {
 
             DiskBus(String bus) {
                 _bus = bus;
+            }
+
+            public static DiskBus fromValue(String bus) {
+                for (DiskBus b : DiskBus.values()) {
+                    if (b.toString().equalsIgnoreCase(bus)) {
+                        return b;
+                    }
+                }
+                return null;
             }
 
             @Override

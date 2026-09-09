@@ -19,11 +19,27 @@
   <div
     class="form-layout"
     @keyup.ctrl.enter="handleSubmit">
-    <span v-if="uploadPercentage > 0">
+    <span v-if="uploading">
       <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
+    <div v-else-if="ssvmCertUntrusted" class="ssvm-cert-warning">
+      <a-alert
+        type="warning"
+        show-icon
+        :message="$t('message.ssvm.cert.untrusted')"
+        :description="$t('message.ssvm.cert.trust.instructions')" />
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :href="ssvmOrigin" target="_blank" rel="noopener noreferrer">
+          {{ $t('label.ssvm.open.cert.page') }}
+        </a-button>
+        <a-button type="primary" :loading="loading" @click="retryUpload">
+          {{ $t('label.retry.upload') }}
+        </a-button>
+      </div>
+    </div>
     <a-spin :spinning="loading" v-else>
       <a-form
         :ref="formRef"
@@ -85,7 +101,7 @@
           <template #label>
             <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
           </template>
-          <a-switch v-model:checked="form.directdownload"/>
+          <a-switch v-model:checked="form.directdownload" @change="handleDirectDownloadChange"/>
         </a-form-item>
 
         <a-form-item ref="checksum" name="checksum">
@@ -110,7 +126,7 @@
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+            <a-select-option :value="opt.id" v-for="opt in zoneList" :key="opt.id" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
@@ -311,6 +327,7 @@ import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
+import { probeSsvmCert } from '@/utils/ssvmProbe'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -343,9 +360,12 @@ export default {
       userdatapolicy: null,
       userdatapolicylist: {},
       loading: false,
+      uploading: false,
       allowed: false,
       uploadParams: null,
       uploadPercentage: 0,
+      ssvmCertUntrusted: false,
+      ssvmOrigin: '',
       currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
       domains: [],
       accounts: [],
@@ -361,16 +381,17 @@ export default {
   },
   created () {
     this.initForm()
-    this.zones = []
-    if (this.$store.getters.userInfo.roletype === 'Admin' && this.currentForm === 'Create') {
-      this.zones = [
-        {
-          id: '-1',
-          name: this.$t('label.all.zone')
-        }
-      ]
-    }
+    this.initZones()
     this.fetchData()
+  },
+  computed: {
+    zoneList () {
+      let filteredZones = this.zones
+      if (!this.form.directdownload) {
+        filteredZones = this.zones.filter(zone => zone.type !== 'Edge')
+      }
+      return filteredZones
+    }
   },
   methods: {
     initForm () {
@@ -389,6 +410,17 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
+    },
+    initZones () {
+      this.zones = []
+      if (this.$store.getters.userInfo.roletype === 'Admin' && this.currentForm === 'Create') {
+        this.zones = [
+          {
+            id: '-1',
+            name: this.$t('label.all.zone')
+          }
+        ]
+      }
     },
     fetchData () {
       this.fetchZoneData()
@@ -412,11 +444,10 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false
-        this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
+        this.form.zoneid = this.zoneList?.[0]?.id || ''
       })
     },
     fetchOsType () {
@@ -467,10 +498,27 @@ export default {
       this.fileList = newFileList
       this.form.file = undefined
     },
+    handleDirectDownloadChange () {
+      if (this.form.zoneid && this.zoneList.find(entry => entry.id === this.form.zoneid)) {
+        return
+      }
+      this.form.zoneid = this.zoneList?.[0]?.id || ''
+    },
     beforeUpload (file) {
       this.fileList = [file]
       this.form.file = file
       return false
+    },
+    async retryUpload () {
+      this.loading = true
+      const reachable = await probeSsvmCert(this.ssvmOrigin)
+      this.loading = false
+      if (!reachable) {
+        this.$message.warning(this.$t('message.ssvm.unreachable.retry'))
+        return
+      }
+      this.ssvmCertUntrusted = false
+      this.handleUpload()
     },
     handleUpload () {
       const { fileList } = this
@@ -485,6 +533,7 @@ export default {
       fileList.forEach(file => {
         formData.append('files[]', file)
       })
+      this.uploading = true
       this.uploadPercentage = 0
       axios.post(this.uploadParams.postURL,
         formData,
@@ -512,6 +561,8 @@ export default {
           description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
           duration: 0
         })
+      }).finally(() => {
+        this.uploading = false
       })
     },
     handleSubmit (e) {
@@ -531,7 +582,7 @@ export default {
           }
           switch (key) {
             case 'zoneid':
-              var zone = this.zones.filter(zone => zone.id === input)
+              var zone = this.zoneList.filter(zone => zone.id === input)
               params[key] = zone[0].id
               break
             case 'ostypeid':
@@ -566,18 +617,18 @@ export default {
           }
           params.format = 'ISO'
           this.loading = true
-          api('getUploadParamsForIso', params).then(json => {
+          api('getUploadParamsForIso', params).then(async json => {
             this.uploadParams = (json.postuploadisoresponse && json.postuploadisoresponse.getuploadparams) ? json.postuploadisoresponse.getuploadparams : ''
-            const response = this.handleUpload()
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.postuploadisoresponse.iso[0].id)
             }
-            if (response === 'upload successful') {
-              this.$notification.success({
-                message: this.$t('message.success.upload'),
-                description: this.$t('message.success.upload.iso.description')
-              })
+            this.ssvmOrigin = new URL(this.uploadParams.postURL).origin
+            const trusted = await probeSsvmCert(this.ssvmOrigin)
+            if (!trusted) {
+              this.ssvmCertUntrusted = true
+              return
             }
+            this.handleUpload()
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {

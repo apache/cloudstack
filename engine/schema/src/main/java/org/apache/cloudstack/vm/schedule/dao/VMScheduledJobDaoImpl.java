@@ -39,6 +39,8 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
 
     private final SearchBuilder<VMScheduledJobVO> expungeJobForScheduleSearch;
 
+    private final SearchBuilder<VMScheduledJobVO> scheduleAndTimestampSearch;
+
     static final String SCHEDULED_TIMESTAMP = "scheduled_timestamp";
 
     static final String VM_SCHEDULE_ID = "vm_schedule_id";
@@ -58,6 +60,11 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
         expungeJobForScheduleSearch.and(VM_SCHEDULE_ID, expungeJobForScheduleSearch.entity().getVmScheduleId(), SearchCriteria.Op.IN);
         expungeJobForScheduleSearch.and(SCHEDULED_TIMESTAMP, expungeJobForScheduleSearch.entity().getScheduledTime(), SearchCriteria.Op.GTEQ);
         expungeJobForScheduleSearch.done();
+
+        scheduleAndTimestampSearch = createSearchBuilder();
+        scheduleAndTimestampSearch.and(VM_SCHEDULE_ID, scheduleAndTimestampSearch.entity().getVmScheduleId(), SearchCriteria.Op.EQ);
+        scheduleAndTimestampSearch.and(SCHEDULED_TIMESTAMP, scheduleAndTimestampSearch.entity().getScheduledTime(), SearchCriteria.Op.EQ);
+        scheduleAndTimestampSearch.done();
     }
 
     /**
@@ -91,5 +98,13 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
         SearchCriteria<VMScheduledJobVO> sc = expungeJobsBeforeSearch.create();
         sc.setParameters(SCHEDULED_TIMESTAMP, date);
         return expunge(sc);
+    }
+
+    @Override
+    public VMScheduledJobVO findByScheduleAndTimestamp(long scheduleId, Date scheduledTimestamp) {
+        SearchCriteria<VMScheduledJobVO> sc = scheduleAndTimestampSearch.create();
+        sc.setParameters(VM_SCHEDULE_ID, scheduleId);
+        sc.setParameters(SCHEDULED_TIMESTAMP, scheduledTimestamp);
+        return findOneBy(sc);
     }
 }

@@ -18,6 +18,7 @@
 package com.cloud.resource;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
@@ -45,6 +46,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.After;
 import org.junit.Assert;
@@ -61,6 +63,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,6 +155,12 @@ public class ResourceManagerImplTest {
     private MockedConstruction<GetVncPortCommand> getVncPortCommandMockedConstruction;
     private AutoCloseable closeable;
 
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
     @Before
     public void setup() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
@@ -194,12 +203,12 @@ public class ResourceManagerImplTest {
                 eq("service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "true");
 
         rootDisks = Arrays.asList(rootDisk1, rootDisk2);
         dataDisks = Collections.singletonList(dataDisk);
-        when(volumeDao.findByPoolId(poolId)).thenReturn(rootDisks);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(rootDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
     @After
@@ -208,6 +217,27 @@ public class ResourceManagerImplTest {
         actionEventUtilsMocked.close();
         getVncPortCommandMockedConstruction.close();
         closeable.close();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckForDuplicateHostThrowsWhenIpAlreadyExists() {
+        when(hostDao.findByIp("10.0.0.10")).thenReturn(host);
+        resourceManager.checkForDuplicateHost("http://10.0.0.10");
+    }
+
+    @Test
+    public void testCheckForDuplicateHostAllowsUniqueHost() {
+        when(hostDao.findByIp("10.0.0.30")).thenReturn(null);
+        resourceManager.checkForDuplicateHost("http://10.0.0.30");
+        verify(hostDao, times(1)).findByIp("10.0.0.30");
+    }
+
+    @Test
+    public void testCheckForDuplicateHostIgnoresNonRoutingHost() {
+        when(host.getType()).thenReturn(Host.Type.SecondaryStorage);
+        when(hostDao.findByIp("10.0.0.20")).thenReturn(host);
+        resourceManager.checkForDuplicateHost("nfs://10.0.0.20/export/secondary");
+        verify(hostDao, times(1)).findByIp("10.0.0.20");
     }
 
     @Test
@@ -327,6 +357,74 @@ public class ResourceManagerImplTest {
         resourceManager.getHostCredentials(host);
     }
 
+    private HostVO mockExistingRoutingHost(long dcId, Long podId, Long clusterId) {
+        HostVO existing = Mockito.mock(HostVO.class);
+        when(existing.getType()).thenReturn(Host.Type.Routing);
+        when(existing.getDataCenterId()).thenReturn(dcId);
+        when(existing.getPodId()).thenReturn(podId);
+        when(existing.getClusterId()).thenReturn(clusterId);
+        when(existing.getUuid()).thenReturn("host-uuid");
+        return existing;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateExistingHostLocationImmutableRejectsZoneChange() {
+        HostVO existing = mockExistingRoutingHost(1L, 10L, 100L);
+        StartupCommand startup = Mockito.mock(StartupCommand.class);
+        when(startup.getPrivateIpAddress()).thenReturn("10.10.10.10");
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 2L, 10L, 100L, startup);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateExistingHostLocationImmutableRejectsPodChange() {
+        HostVO existing = mockExistingRoutingHost(1L, 10L, 100L);
+        StartupCommand startup = Mockito.mock(StartupCommand.class);
+        when(startup.getPrivateIpAddress()).thenReturn("10.10.10.10");
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 1L, 11L, 100L, startup);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateExistingHostLocationImmutableRejectsClusterChange() {
+        HostVO existing = mockExistingRoutingHost(1L, 10L, 100L);
+        StartupCommand startup = Mockito.mock(StartupCommand.class);
+        when(startup.getPrivateIpAddress()).thenReturn("10.10.10.10");
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 1L, 10L, 101L, startup);
+    }
+
+    @Test
+    public void testValidateExistingHostLocationImmutableAllowsSameTupleReconnect() {
+        HostVO existing = mockExistingRoutingHost(1L, 10L, 100L);
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 1L, 10L, 100L, null);
+    }
+
+    @Test
+    public void testValidateExistingHostLocationImmutableAllowsNewHost() {
+        HostVO existing = mockExistingRoutingHost(2L, 20L, 200L);
+        resourceManager.validateExistingHostLocationImmutable(existing, true, 1L, 10L, 100L, null);
+    }
+
+    @Test
+    public void testValidateExistingHostLocationImmutableSkipsNonRoutingHost() {
+        HostVO existing = Mockito.mock(HostVO.class);
+        when(existing.getType()).thenReturn(Host.Type.SecondaryStorageVM);
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 1L, 10L, 100L, null);
+    }
+
+    @Test
+    public void testValidateExistingHostLocationImmutableSkipsPartialLocationRow() {
+        HostVO existing = Mockito.mock(HostVO.class);
+        when(existing.getType()).thenReturn(Host.Type.Routing);
+        when(existing.getDataCenterId()).thenReturn(1L);
+        when(existing.getPodId()).thenReturn(null);
+        when(existing.getClusterId()).thenReturn(null);
+        resourceManager.validateExistingHostLocationImmutable(existing, false, 2L, 10L, 100L, null);
+    }
+
+    @Test
+    public void testValidateExistingHostLocationImmutableSkipsNullExistingHost() {
+        resourceManager.validateExistingHostLocationImmutable(null, false, 2L, 10L, 100L, null);
+    }
+
     @Test
     public void testGetHostCredentials() {
         Ternary<String, String, String> credentials = resourceManager.getHostCredentials(host);
@@ -352,12 +450,14 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testConnectAndRestartAgentOnHost() {
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test
     public void testHandleAgentSSHEnabledNotConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Disconnected);
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
         verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
@@ -372,9 +472,9 @@ public class ResourceManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testHandleAgentSSHDisabledNotConnectedAgent() {
+    public void testHandleAgentSSHDisabledNotConnectedAgent() throws NoSuchFieldException, IllegalAccessException {
         when(host.getStatus()).thenReturn(Status.Disconnected);
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "false");
         resourceManager.handleAgentIfNotConnected(host, false);
     }
 
@@ -564,22 +664,22 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyRootDisks() {
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(rootDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyDataDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(dataDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesNoDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
     }

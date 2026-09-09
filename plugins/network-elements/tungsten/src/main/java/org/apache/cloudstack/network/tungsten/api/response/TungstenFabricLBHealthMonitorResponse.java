@@ -25,47 +25,47 @@ import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorV
 
 public class TungstenFabricLBHealthMonitorResponse extends BaseResponse {
     @SerializedName("lbruleid")
-    @Param(description = "the LB rule ID")
+    @Param(description = "The LB rule ID")
     private String lbRuleId;
 
     @SerializedName("id")
-    @Param(description = "the health monitor ID")
+    @Param(description = "The health monitor ID")
     private long id;
 
     @SerializedName("uuid")
-    @Param(description = "the health monitor UUID")
+    @Param(description = "The health monitor UUID")
     private String uuid;
 
     @SerializedName("type")
-    @Param(description = "the health monitor type")
+    @Param(description = "The health monitor type")
     private String type;
 
     @SerializedName("retry")
-    @Param(description = "the health monitor retry")
+    @Param(description = "The health monitor retry")
     private int retry;
 
     @SerializedName("timeout")
-    @Param(description = "the health monitor timeout")
+    @Param(description = "The health monitor timeout")
     private int timeout;
 
     @SerializedName("interval")
-    @Param(description = "the health monitor interval")
+    @Param(description = "The health monitor interval")
     private int interval;
 
     @SerializedName("httpmethod")
-    @Param(description = "the health monitor http method")
+    @Param(description = "The health monitor HTTP method")
     private String httpMethod;
 
     @SerializedName("expectedcode")
-    @Param(description = "the health monitor expected code")
+    @Param(description = "The health monitor expected code")
     private String expectedCode;
 
     @SerializedName("urlpath")
-    @Param(description = "the health monitor url path")
+    @Param(description = "The health monitor URL path")
     private String urlPath;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Tungsten-Fabric provider zone id")
+    @Param(description = "Tungsten-Fabric provider zone ID")
     private long zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)

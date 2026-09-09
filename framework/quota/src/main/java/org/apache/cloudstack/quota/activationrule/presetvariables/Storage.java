@@ -19,8 +19,6 @@ package org.apache.cloudstack.quota.activationrule.presetvariables;
 
 import java.util.List;
 
-import com.cloud.storage.ScopeType;
-
 public class Storage extends GenericPresetVariable {
     @PresetVariableDefinition(description = "List of string representing the tags of the storage where the volume is (i.e.: [\"a\", \"b\"]).")
     private List<String> tags;
@@ -29,7 +27,7 @@ public class Storage extends GenericPresetVariable {
     private Boolean isTagARule;
 
     @PresetVariableDefinition(description = "Scope of the storage where the volume is. Values can be: ZONE, CLUSTER or HOST. Applicable only for primary storages.")
-    private ScopeType scope;
+    private String scope;
 
     public List<String> getTags() {
         return tags;
@@ -37,7 +35,6 @@ public class Storage extends GenericPresetVariable {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
-        fieldNamesToIncludeInToString.add("tags");
     }
 
     public Boolean getIsTagARule() {
@@ -46,16 +43,14 @@ public class Storage extends GenericPresetVariable {
 
     public void setIsTagARule(Boolean isTagARule) {
         this.isTagARule = isTagARule;
-        fieldNamesToIncludeInToString.add("isTagARule");
     }
 
-    public ScopeType getScope() {
+    public String getScope() {
         return scope;
     }
 
-    public void setScope(ScopeType scope) {
+    public void setScope(String scope) {
         this.scope = scope;
-        fieldNamesToIncludeInToString.add("scope");
     }
 
 }

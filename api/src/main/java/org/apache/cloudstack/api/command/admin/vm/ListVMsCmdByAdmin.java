@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "listVirtualMachines", description = "List the Instances owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmdByAdmin extends ListVMsCmd implements AdminCmd {
 
@@ -39,19 +39,19 @@ public class ListVMsCmdByAdmin extends ListVMsCmd implements AdminCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="the host ID")
+            description = "The host ID")
     private Long hostId;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class,
-            description="the pod ID")
+            description = "The pod ID")
     private Long podId;
 
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            description="the storage ID where vm's volumes belong to")
+            description = "The storage ID where Instance's volumes belong to")
     private Long storageId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class,
-            description = "the cluster ID", since = "4.16.0")
+            description = "The cluster ID", since = "4.16.0")
     private Long clusterId;
 
 

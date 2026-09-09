@@ -179,9 +179,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                                     "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                logger.warn("Failed to program default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.warn("Failed to program default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             } else {
-                                logger.info("Programmed default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.info("Programmed default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             }
                         }
                     }

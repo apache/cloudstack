@@ -27,11 +27,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class RouterHealthCheckResultsListResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROUTER_ID)
-    @Param(description = "the id of the router")
+    @Param(description = "The ID of the router")
     private String routerId;
 
     @SerializedName(ApiConstants.ROUTER_HEALTH_CHECKS)
-    @Param(description = "the id of the router")
+    @Param(description = "The ID of the router")
     private List<RouterHealthCheckResultResponse> healthChecks;
 
     public String getRouterId() {

@@ -37,7 +37,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "deleteTemplate",
             responseObject = SuccessResponse.class,
-            description = "Deletes a template from the system. All virtual machines using the deleted template will not be affected.",
+            description = "Deletes a Template from the system. All Instances using the deleted Template will not be affected.",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTemplateCmd extends BaseAsyncCmd {
 
@@ -45,13 +45,13 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the Template")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone of the template")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone of the Template")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force delete a template.", since = "4.9+")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force delete a Template.", since = "4.9+")
     private Boolean forced;
 
     @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, required = false, description = "Necessary if the template's type is system.", since = "4.20.0", authorized = {RoleType.Admin})
@@ -98,7 +98,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting template " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
+        return "Deleting Template " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
     }
 
     @Override
@@ -119,7 +119,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Template");
         }
     }
 }

@@ -36,13 +36,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.NetworkService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -53,6 +58,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
@@ -64,6 +70,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -79,6 +87,9 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -90,15 +101,34 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
@@ -135,31 +165,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.mockito.MockedStatic;
-
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -368,6 +373,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     NetworkService networkServiceMock;
+
+    @Mock
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
@@ -608,7 +616,6 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.nullable(Account.class), Mockito.nullable(Account.class), Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(Long.class));
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
-        Mockito.doNothing().when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -942,7 +949,6 @@ public class UserVmManagerImplTest {
 
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
 
-        when(cmd.getUserData()).thenReturn("testUserdata");
         when(cmd.getUserdataId()).thenReturn(1L);
 
         try {
@@ -1079,7 +1085,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -1091,7 +1097,7 @@ public class UserVmManagerImplTest {
 
         UserVm result = userVmManagerImpl.createVirtualMachine(deployVMCmd);
         assertEquals(userVmVoMock, result);
-        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null);
+        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null, Collections.emptyMap());
         Mockito.verify(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any());
@@ -1335,7 +1341,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -1614,23 +1620,11 @@ public class UserVmManagerImplTest {
         Mockito.when(vol5.isDisplay()).thenReturn(true);
 
         List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
-        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
-        try {
-            userVmManagerImpl.checkVolumesLimits(account, volumes);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
-                            vol1.getSize() + vol5.getSize());
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
-                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            userVmManagerImpl.checkVolumesLimits(account, volumes, reservations);
+            Assert.assertEquals(8, reservations.size());
         } catch (ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
@@ -1921,26 +1915,26 @@ public class UserVmManagerImplTest {
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(true).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVolumeResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsFalseCallsVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(false).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).checkVolumesLimits(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -2985,7 +2979,7 @@ public class UserVmManagerImplTest {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
         Mockito.doThrow(ResourceAllocationException.class).when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Assert.assertThrows(ResourceAllocationException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }
@@ -3119,5 +3113,97 @@ public class UserVmManagerImplTest {
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
         }
+    }
+
+    private ServiceOfferingVO getMockedServiceOffering(boolean custom, boolean customSpeed) {
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getUuid()).thenReturn("offering-uuid");
+        when(serviceOffering.isDynamic()).thenReturn(custom);
+        when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(customSpeed);
+        if (custom) {
+            when(serviceOffering.getCpu()).thenReturn(null);
+            when(serviceOffering.getRamSize()).thenReturn(null);
+        }
+        if (customSpeed) {
+            when(serviceOffering.getSpeed()).thenReturn(null);
+        } else {
+            when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(false);
+            when(serviceOffering.getSpeed()).thenReturn(1000);
+        }
+        return serviceOffering;
+    }
+
+    @Test
+    public void customOfferingNeedsCustomizationThrowsException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.validateCustomParameters(serviceOffering, Collections.emptyMap()));
+        assertEquals("Need to specify custom parameter values cpu, cpu speed and memory when using custom offering", ex.getMessage());
+    }
+
+    @Test
+    public void cpuSpeedCustomizationNotAllowedThrowsException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters));
+        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+    }
+
+    @Test
+    public void cpuSpeedCustomizationAllowedDoesNotThrowException() {
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
+
+        when(serviceOfferingDetailsDao.listDetailsKeyPairs(anyLong())).thenReturn(
+                Map.of(ApiConstants.MIN_CPU_NUMBER, "1",
+                        ApiConstants.MAX_CPU_NUMBER, "4",
+                        ApiConstants.MIN_MEMORY, "256",
+                        ApiConstants.MAX_MEMORY, "8192"));
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+        customParameters.put(VmDetailConstants.MEMORY, "256");
+
+        userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters);
+    }
+
+    @Test
+    public void verifyVmLimits_fixedOffering_throwsException() {
+        when(userVmVoMock.getId()).thenReturn(1L);
+        when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(false, false);
+        when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
+        assertEquals("CPU number, Memory and CPU speed cannot be updated for a non-dynamic offering", ex.getMessage());
+    }
+
+    @Test
+    public void verifyVmLimits_constrainedOffering_throwsException() {
+        when(userVmVoMock.getId()).thenReturn(1L);
+        when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+        ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+        when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+
+        Map<String, String> customParameters = new HashMap<>();
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+
+        InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
+        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
     }
 }

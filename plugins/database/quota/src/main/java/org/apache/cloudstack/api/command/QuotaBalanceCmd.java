@@ -56,7 +56,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     private Date startDate;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified Account")
     private Long accountId;
 
     @Inject

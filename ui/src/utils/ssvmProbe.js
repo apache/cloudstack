@@ -15,21 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
-@RunWith(MockitoJUnitRunner.class)
-public class ComputeOfferingTest {
-
-    @Test
-    public void setCustomizedTestAddFieldCustomizedToCollection() {
-        ComputeOffering variable = new ComputeOffering();
-        variable.setCustomized(true);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("customized"));
-    }
-
+const SSVM_PROBE_TIMEOUT_MS = 5000
+export async function probeSsvmCert (origin) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), SSVM_PROBE_TIMEOUT_MS)
+  try {
+    await fetch(origin, { method: 'HEAD', mode: 'no-cors', signal: controller.signal })
+    return true
+  } catch (e) {
+    return false
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }

@@ -492,7 +492,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     @Override
     public synchronized boolean stop() {
-        if (s_connection.isOpen()) {
+        if (s_connection != null && s_connection.isOpen()) {
             for (String subscriberId : s_subscribers.keySet()) {
                 Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);
                 Channel channel = subscriberDetails.second();

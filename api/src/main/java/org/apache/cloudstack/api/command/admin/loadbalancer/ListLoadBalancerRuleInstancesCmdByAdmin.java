@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
 
-@APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "listLoadBalancerRuleInstances", description = "List all Instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
 public class ListLoadBalancerRuleInstancesCmdByAdmin extends ListLoadBalancerRuleInstancesCmd implements AdminCmd {}

@@ -34,7 +34,7 @@ import javax.inject.Inject;
 /**
  * Created by frank on 10/27/14.
  */
-@APICommand(name = "deleteBaremetalRct", description = "deletes baremetal rack configuration text", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteBaremetalRct", description = "Deletes baremetal rack configuration text", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class DeleteBaremetalRctCmd extends BaseAsyncCmd {
 

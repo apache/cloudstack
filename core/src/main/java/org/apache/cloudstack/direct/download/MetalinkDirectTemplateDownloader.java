@@ -19,12 +19,14 @@
 package org.apache.cloudstack.direct.download;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -37,6 +39,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
     private Map<String, String> headers;
     private Integer connectTimeout;
     private Integer soTimeout;
+    private List<String> allowedCidrs = Collections.emptyList();
 
     protected DirectTemplateDownloader createDownloaderForMetalinks(String url, Long templateId,
                 String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout,
@@ -49,36 +52,49 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             return new HttpDirectTemplateDownloader(url, templateId, destPoolPath, checksum, headers,
                     connectTimeout, soTimeout, temporaryDownloadPath, this.isFollowRedirects());
         } else if (url.toLowerCase().startsWith("nfs:")) {
-            return new NfsDirectTemplateDownloader(url);
+            return new NfsDirectTemplateDownloader(url, destPoolPath, templateId, checksum, temporaryDownloadPath);
         } else {
-            logger.error(String.format("Cannot find a suitable downloader to handle the metalink URL %s", url));
+            logger.error(String.format("Cannot find a suitable downloader to handle the metalink URL %s."
+                    + " Only http and https schemes are permitted inside metalink files.", url));
             return null;
         }
     }
 
     protected MetalinkDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout, boolean followRedirects) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, null, followRedirects);
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null, followRedirects, java.util.Collections.emptyList());
     }
 
     public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum,
                 Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath,
                 boolean followRedirects) {
+        this(url, destPoolPath, templateId, checksum, headers, connectTimeout, soTimeout, downloadPath, followRedirects,
+                java.util.Collections.emptyList());
+    }
+
+    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum,
+                Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath,
+                boolean followRedirects, List<String> allowedCidrs) {
         super(url, destPoolPath, templateId, checksum, downloadPath, followRedirects);
         this.headers = headers;
         this.connectTimeout = connectTimeout;
         this.soTimeout = soTimeout;
+        this.allowedCidrs = allowedCidrs != null ? allowedCidrs : java.util.Collections.emptyList();
         downloader = createDownloaderForMetalinks(url, templateId, destPoolPath, checksum, headers,
                 connectTimeout, soTimeout, null, downloadPath);
         metalinkUrls = downloader.getMetalinkUrls(url);
         metalinkChecksums = downloader.getMetalinkChecksums(url);
         if (CollectionUtils.isEmpty(metalinkUrls)) {
-            logger.error(String.format("No urls found on metalink file: %s. Not possible to download template %s ", url, templateId));
+            logger.error(String.format("No URLs found on metalink file: %s. Not possible to download Template %s ", url, templateId));
         } else {
             setUrl(metalinkUrls.get(0));
-            logger.info("Metalink downloader created, metalink url: " + url + " parsed - " +
+            logger.info("Metalink downloader created, metalink URL: " + url + " parsed - " +
                     metalinkUrls.size() + " urls and " +
                     (CollectionUtils.isNotEmpty(metalinkChecksums) ? metalinkChecksums.size() : "0") + " checksums found");
         }
+    }
+
+    public List<String> getAllowedCidrs() {
+        return allowedCidrs;
     }
 
     @Override
@@ -93,11 +109,18 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             if (!isRedownload()) {
                 setUrl(metalinkUrls.get(i));
             }
-            logger.info("Trying to download template from url: " + getUrl());
-            DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(getUrl(), getTemplateId(), getDestPoolPath(),
-                    getChecksum(), headers, connectTimeout, soTimeout, null, temporaryDownloadPath);
             try {
-                setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
+                UriUtils.validateMetalinkInnerUrl(getUrl(), allowedCidrs);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation: %s - %s", getUrl(), e.getMessage()));
+                i++;
+                continue;
+            }
+            logger.info("Trying to download Template from URL: " + getUrl());
+            try {
+                DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(getUrl(), getTemplateId(), getDestPoolPath(),
+                        getChecksum(), headers, connectTimeout, soTimeout, null, temporaryDownloadPath);
+                setDownloadedFilePath(downloadDir + File.separator + getTemporaryFileName());
                 File f = new File(getDownloadedFilePath());
                 if (f.exists()) {
                     f.delete();
@@ -106,10 +129,10 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
                 Pair<Boolean, String> downloadResult = urlDownloader.downloadTemplate();
                 downloaded = downloadResult.first();
                 if (downloaded) {
-                    logger.info("Successfully downloaded template from url: " + getUrl());
+                    logger.info("Successfully downloaded Template from URL: " + getUrl());
                 }
             } catch (Exception e) {
-                logger.error(String.format("Error downloading template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
+                logger.error(String.format("Error downloading Template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
             }
             i++;
         }
@@ -139,8 +162,20 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             if (url.endsWith(".torrent")) {
                 continue;
             }
-            DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(url, null, null, null, headers, connectTimeout, soTimeout, null, null);
-            if (!urlDownloader.checkUrl(url)) {
+            try {
+                UriUtils.validateMetalinkInnerUrl(url, allowedCidrs);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation in checkUrl: %s - %s", url, e.getMessage()));
+                continue;
+            }
+            DirectTemplateDownloader urlDownloader;
+            try {
+                urlDownloader = createDownloaderForMetalinks(url, null, null, null, headers, connectTimeout, soTimeout, null, null);
+            } catch (Exception e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed validation in checkUrl: %s - %s", url, e.getMessage()));
+                continue;
+            }
+            if (urlDownloader == null || !urlDownloader.checkUrl(url)) {
                 return false;
             }
         }
@@ -152,6 +187,12 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         List<String> urls = downloader.getMetalinkUrls(metalinkUrl);
         for (String url : urls) {
             if (url.endsWith("torrent")) {
+                continue;
+            }
+            try {
+                UriUtils.validateMetalinkInnerUrl(url, allowedCidrs);
+            } catch (IllegalArgumentException e) {
+                logger.warn(String.format("Skipping metalink inner URL that failed SSRF validation in getRemoteFileSize: %s - %s ", url, e.getMessage()));
                 continue;
             }
             if (downloader.checkUrl(url)) {

@@ -23,7 +23,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Upload;
 import com.cloud.utils.StringUtils;
 
@@ -72,7 +74,14 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         }
 
         if (format != null) {
-            objectNameInUrl = objectNameInUrl + "." + format.getFileExtension();
+            if (dataObject.getTO() != null
+                    && DataObjectType.VOLUME.equals(dataObject.getTO().getObjectType())
+                    && HypervisorType.KVM.equals(dataObject.getTO().getHypervisorType())) {
+                // Fix: The format of KVM volumes on image store is qcow2
+                objectNameInUrl = objectNameInUrl + "." + ImageFormat.QCOW2.getFileExtension();
+            } else {
+                objectNameInUrl = objectNameInUrl + "." + format.getFileExtension();
+            }
         } else if (installPath.lastIndexOf(".") != -1) {
             objectNameInUrl = objectNameInUrl + "." + installPath.substring(installPath.lastIndexOf(".") + 1);
         }

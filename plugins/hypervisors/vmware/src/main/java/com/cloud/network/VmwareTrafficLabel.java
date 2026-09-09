@@ -87,7 +87,7 @@ public class VmwareTrafficLabel implements TrafficLabel {
             }
         }
         if (tokens.length > MAX_FIELDS_VMWARE_LABEL) {
-            throw new InvalidParameterValueException("Found extraneous fields in vmware traffic label : " + networkLabel);
+            throw new InvalidParameterValueException("Found extraneous fields in VMWare traffic label : " + networkLabel);
         }
     }
 

@@ -45,17 +45,17 @@ public class DedicateClusterCmd extends BaseAsyncCmd {
     @Inject
     DedicatedService dedicatedService;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "The ID of the Cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                required = true,
-               description = "the ID of the containing domain")
+               description = "The ID of the containing domain")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account which needs dedication. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account which needs dedication. Must be used with domainId.")
     private String accountName;
 
     /////////////////////////////////////////////////////

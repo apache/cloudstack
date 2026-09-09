@@ -37,7 +37,8 @@ public final class LibvirtUpdateHostPasswordCommandWrapper extends CommandWrappe
         final String newPassword = command.getNewPassword();
 
         final Script script = libvirtUtilitiesHelper.buildScript(libvirtComputingResource.getUpdateHostPasswdPath());
-        script.add(username, newPassword);
+        script.add(username);
+        script.addSensitive(newPassword);
         final String result = script.execute();
 
         if (result != null) {

@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'accountuser',
@@ -69,6 +70,10 @@ export default {
       label: 'label.action.change.password',
       dataView: true,
       popup: true,
+      show: (record, store) => {
+        return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.userInfo.id === record.id) &&
+          ['native'].includes(record.usersource) && record.state === 'enabled'
+      },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ChangeUserPassword.vue')))
     },
     {
@@ -107,7 +112,7 @@ export default {
       api: 'lockUser',
       icon: 'LockOutlined',
       label: 'label.action.lock.user',
-      message: (record) => ['message.lock.user', { user: record.username }],
+      message: (record) => ['message.lock.user', { user: escapeHtml(record.username) }],
       successMessage: (record) => ['message.lock.user.success', { user: record.username }],
       dataView: true,
       popup: true,

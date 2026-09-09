@@ -84,12 +84,11 @@ public class BackupUsageParser {
             DecimalFormat dFormat = new DecimalFormat("#.######");
             String usageDisplay = dFormat.format(usage);
 
-            final Double rawUsage = (double) usageBackup.getSize();
             final String description = String.format("Backup usage VM ID: %d, backup offering: %d", vmId, offeringId);
 
             final UsageVO usageRecord =
                     new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay + " Hrs",
-                            UsageTypes.BACKUP, new Double(usage), vmId, null, offeringId, null, vmId,
+                            UsageTypes.BACKUP, (double) usage, vmId, null, offeringId, null, vmId,
                             usageBackup.getSize(), usageBackup.getProtectedSize(), startDate, endDate);
             s_usageDao.persist(usageRecord);
         }

@@ -20,7 +20,12 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -31,10 +36,15 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 import junit.framework.TestCase;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtDomainXMLParserTest extends TestCase {
@@ -385,5 +395,85 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         Assert.assertEquals("CPU socket count is parsed", 1, libvirtDomainXMLParser.getCpuModeDef().getSockets());
         Assert.assertEquals("CPU cores count is parsed", 4, libvirtDomainXMLParser.getCpuModeDef().getCoresPerSocket());
         Assert.assertEquals("CPU threads count is parsed", 2, libvirtDomainXMLParser.getCpuModeDef().getThreadsPerCore());
+    }
+
+    private LibvirtDomainXMLParser parseElementFromXML(String xml) {
+        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        DocumentBuilder builder;
+        try {
+            builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
+            InputSource is = new InputSource();
+            is.setCharacterStream(new StringReader(xml));
+            Document doc = builder.parse(is);
+            Element element = doc.getDocumentElement();
+            parser.extractBootDef(element);
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            Assert.fail("Failed to parse XML: " + e.getMessage());
+        }
+        return parser;
+    }
+
+    @Test
+    public void extractBootDefParsesUEFISecureBootCorrectly() {
+        String xml = "<domain type='kvm'>" +
+                     "<os>" +
+                     "<loader type='pflash' secure='yes'>/path/to/uefi/loader</loader>" +
+                     "</os>" +
+                     "</domain>";
+
+        LibvirtDomainXMLParser parser = parseElementFromXML(xml);
+
+        assertEquals(LibvirtVMDef.GuestDef.BootType.UEFI, parser.getBootType());
+        assertEquals(LibvirtVMDef.GuestDef.BootMode.SECURE, parser.getBootMode());
+    }
+
+    @Test
+    public void extractBootDefParsesUEFILegacyBootCorrectly() {
+        String xml = "<domain type='kvm'>" +
+                     "<os>" +
+                     "<loader type='pflash' secure='no'>/path/to/uefi/loader</loader>" +
+                     "</os>" +
+                     "</domain>";
+
+        LibvirtDomainXMLParser parser = parseElementFromXML(xml);
+
+        assertEquals(LibvirtVMDef.GuestDef.BootType.UEFI, parser.getBootType());
+        assertEquals(LibvirtVMDef.GuestDef.BootMode.LEGACY, parser.getBootMode());
+    }
+
+    @Test
+    public void extractBootDefDefaultsToBIOSLegacyWhenNoLoaderPresent() {
+        String xml = "<domain type='kvm'>" +
+                     "<os>" +
+                     "<type arch='x86_64'>hvm</type>" +
+                     "</os>" +
+                     "</domain>";
+
+        LibvirtDomainXMLParser parser = parseElementFromXML(xml);
+
+        assertEquals(LibvirtVMDef.GuestDef.BootType.BIOS, parser.getBootType());
+        assertEquals(LibvirtVMDef.GuestDef.BootMode.LEGACY, parser.getBootMode());
+    }
+
+    @Test
+    public void extractBootDefHandlesEmptyOSSection() {
+        String xml = "<domain type='kvm'>" +
+                     "<os></os>" +
+                     "</domain>";
+
+        LibvirtDomainXMLParser parser = parseElementFromXML(xml);
+
+        assertEquals(LibvirtVMDef.GuestDef.BootType.BIOS, parser.getBootType());
+        assertEquals(LibvirtVMDef.GuestDef.BootMode.LEGACY, parser.getBootMode());
+    }
+
+    @Test
+    public void extractBootDefHandlesMissingOSSection() {
+        String xml = "<domain type='kvm'></domain>";
+
+        LibvirtDomainXMLParser parser = parseElementFromXML(xml);
+
+        assertEquals(LibvirtVMDef.GuestDef.BootType.BIOS, parser.getBootType());
+        assertEquals(LibvirtVMDef.GuestDef.BootMode.LEGACY, parser.getBootMode());
     }
 }

@@ -448,8 +448,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        storagePoolAutmation.cancelMaintain(store);
         dataStoreHelper.cancelMaintain(store);
+        storagePoolAutmation.cancelMaintain(store);
         return true;
     }
 
@@ -500,7 +500,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         DataStore dataStore = dataStoreHelper.attachHost(store, scope, existingInfo);
-        if(existingInfo.getCapacityBytes() == 0){
+        if (existingInfo.getCapacityBytes() == 0) {
             try {
                 storageMgr.connectHostToSharedPool(hostDao.findById(scope.getScopeId()), dataStore.getId());
             } catch (StorageUnavailableException ex) {

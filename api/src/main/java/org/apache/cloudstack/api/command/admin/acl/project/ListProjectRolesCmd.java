@@ -72,7 +72,7 @@ public class ListProjectRolesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<ProjectRole> projectRoles;
+        List<ProjectRole> projectRoles = new ArrayList<>();
         if (getProjectId() != null && getProjectRoleId() != null) {
             projectRoles = Collections.singletonList(projRoleService.findProjectRole(getProjectRoleId(), getProjectId()));
         } else if (StringUtils.isNotBlank(getRoleName())) {

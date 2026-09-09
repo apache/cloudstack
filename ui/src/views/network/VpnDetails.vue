@@ -16,71 +16,93 @@
 // under the License.
 
 <template>
-  <div v-if="remoteAccessVpn">
-    <div>
-      <p>{{ $t('message.enabled.vpn') }} <strong>{{ remoteAccessVpn.publicip }}</strong></p>
-      <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
-      <a-divider/>
-      <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
-      <a-button
-        style="margin-left: 10px"
-        type="primary"
-        danger
-        @click="disableVpn = true"
-        :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
-        {{ $t('label.disable.vpn') }}
-      </a-button>
+  <div class="vpn-details">
+    <div v-if="remoteAccessVpn">
+      <div>
+        <p>{{ $t('message.enabled.vpn') }} <strong>{{ remoteAccessVpn.publicip }}</strong></p>
+        <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
+        <p>{{ $t('message.enabled.vpn.ip.range') }} <strong>{{ remoteAccessVpn.iprange }}</strong></p>
+        <a-divider/>
+        <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
+        <a-button
+          style="margin-left: 10px"
+          type="primary"
+          danger
+          @click="disableVpn = true"
+          :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
+          {{ $t('label.disable.vpn') }}
+        </a-button>
+      </div>
+
+      <a-modal
+        :visible="disableVpn"
+        :footer="null"
+        :title="$t('label.disable.vpn')"
+        :closable="true"
+        :maskClosable="false"
+        @cancel="disableVpn = false">
+        <div v-ctrl-enter="handleDisableVpn">
+          <p>{{ $t('message.disable.vpn') }}</p>
+
+          <a-divider />
+
+          <div class="actions">
+            <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
+          </div>
+        </div>
+      </a-modal>
+
     </div>
+    <div v-else>
+      <a-button :disabled="!('createRemoteAccessVpn' in $store.getters.apis)" type="primary" @click="enableVpn = true">
+        {{ $t('label.enable.vpn') }}
+      </a-button>
 
-    <a-modal
-      :visible="disableVpn"
-      :footer="null"
-      :title="$t('label.disable.vpn')"
-      :closable="true"
-      :maskClosable="false"
-      @cancel="disableVpn = false">
-      <div v-ctrl-enter="handleDisableVpn">
-        <p>{{ $t('message.disable.vpn') }}</p>
+      <a-modal
+        :visible="enableVpn"
+        :footer="null"
+        :title="$t('label.enable.vpn')"
+        :maskClosable="false"
+        :closable="true"
+        @cancel="enableVpn = false">
+        <div v-ctrl-enter="handleCreateVpn">
+          <p>{{ $t('message.enable.vpn') }}</p>
+          <a-form-item>
+            <a-checkbox v-model:checked="specifyIpRange">
+              {{ $t('label.remote.access.vpn.specify.iprange') }}
+            </a-checkbox>
+          </a-form-item>
+          <a-form-item
+            v-if="specifyIpRange"
+            name="iprange"
+            :colon="false"
+            ref="iprange">
+            <template #label>
+              <tooltip-label :title="$t('label.ip.range')" :tooltip="$t('message.remote.access.vpn.iprange.description')"/>
+            </template>
+            <a-input
+              v-model:value="vpnIpRange"
+              :placeholder="'10.1.2.1-10.1.2.8'"
+            />
+          </a-form-item>
 
-        <a-divider />
+          <a-divider />
 
-        <div class="actions">
-          <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
+          <div class="actions">
+            <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+          </div>
         </div>
-      </div>
-    </a-modal>
+      </a-modal>
 
-  </div>
-  <div v-else>
-    <a-button :disabled="!('createRemoteAccessVpn' in $store.getters.apis)" type="primary" @click="enableVpn = true">
-      {{ $t('label.enable.vpn') }}
-    </a-button>
-
-    <a-modal
-      :visible="enableVpn"
-      :footer="null"
-      :title="$t('label.enable.vpn')"
-      :maskClosable="false"
-      :closable="true"
-      @cancel="enableVpn = false">
-      <div v-ctrl-enter="handleCreateVpn">
-        <p>{{ $t('message.enable.vpn') }}</p>
-
-        <a-divider />
-
-        <div class="actions">
-          <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
-        </div>
-      </div>
-    </a-modal>
-
+    </div>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   props: {
@@ -89,12 +111,17 @@ export default {
       required: true
     }
   },
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       remoteAccessVpn: null,
       enableVpn: false,
       disableVpn: false,
-      isSubmitted: false
+      isSubmitted: false,
+      specifyIpRange: false,
+      vpnIpRange: ''
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
@@ -130,11 +157,15 @@ export default {
       this.isSubmitted = true
       this.parentToggleLoading()
       this.enableVpn = false
-      api('createRemoteAccessVpn', {
+      const params = {
         publicipid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account
-      }).then(response => {
+      }
+      if (this.specifyIpRange && this.vpnIpRange?.trim()) {
+        params.iprange = this.vpnIpRange.trim()
+      }
+      api('createRemoteAccessVpn', params).then(response => {
         this.$pollJob({
           jobId: response.createremoteaccessvpnresponse.jobid,
           successMethod: result => {
@@ -226,5 +257,8 @@ export default {
         margin-right: 20px;
       }
     }
+  }
+  .vpn-details {
+    padding: 8px 0;
   }
 </style>

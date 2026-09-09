@@ -52,7 +52,7 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = NetscalerLoadBalancerResponse.class,
                required = true,
-               description = "netscaler load balancer device ID")
+               description = "Netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////

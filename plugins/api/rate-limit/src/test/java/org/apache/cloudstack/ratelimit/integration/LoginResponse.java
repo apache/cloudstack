@@ -29,39 +29,39 @@ import com.cloud.serializer.Param;
 public class LoginResponse extends BaseResponse {
 
     @SerializedName("timeout")
-    @Param(description = "session timeout period")
+    @Param(description = "Session timeout period")
     private String timeout;
 
     @SerializedName("sessionkey")
-    @Param(description = "login session key")
+    @Param(description = "Login session key")
     private String sessionkey;
 
     @SerializedName("username")
-    @Param(description = "login username")
+    @Param(description = "Login username")
     private String username;
 
     @SerializedName("userid")
-    @Param(description = "login user internal uuid")
+    @Param(description = "Login user internal UUID")
     private String userid;
 
     @SerializedName("firstname")
-    @Param(description = "login user firstname")
+    @Param(description = "Login user firstname")
     private String firstname;
 
     @SerializedName("lastname")
-    @Param(description = "login user lastname")
+    @Param(description = "Login user lastname")
     private String lastname;
 
     @SerializedName("account")
-    @Param(description = "login user account type")
+    @Param(description = "Login user account type")
     private String account;
 
     @SerializedName("domainid")
-    @Param(description = "login user domain id")
+    @Param(description = "Login user domain ID")
     private String domainid;
 
     @SerializedName("type")
-    @Param(description = "login user type")
+    @Param(description = "Login user type")
     private int type;
 
     public String getTimeout() {

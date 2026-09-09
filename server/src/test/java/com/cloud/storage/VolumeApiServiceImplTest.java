@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -83,6 +83,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -91,7 +92,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -545,7 +545,9 @@ public class VolumeApiServiceImplTest {
     @Test
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
+        }
     }
 
     // Negative test - attach data volume, to the vm on non-kvm hypervisor
@@ -564,7 +566,9 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
+        }
     }
 
     // volume not Ready
@@ -649,9 +653,7 @@ public class VolumeApiServiceImplTest {
      * The resource limit check for primary storage should not be skipped for Volume in 'Uploaded' state.
      */
     @Test
-    public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
-        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(resourceLimitServiceMock)
-        .checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
+    public void testAttachVolumeToVMPerformsResourceReservation() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         AccountVO acc = Mockito.mock(AccountVO.class);
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
@@ -672,10 +674,10 @@ public class VolumeApiServiceImplTest {
         DataCenterVO zoneWithDisabledLocalStorage = Mockito.mock(DataCenterVO.class);
         when(_dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
-        try {
+        doReturn(volumeVoMock).when(volumeApiServiceImpl).getVolumeAttachJobResult(Mockito.any(), Mockito.any(), Mockito.any());
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false);
-        } catch (InvalidParameterValueException e) {
-            Assert.assertEquals(e.getMessage(), ("primary storage resource limit check failed"));
+            Assert.assertEquals(1, mockCheckedReservation.constructed().size());
         }
     }
 
@@ -2198,5 +2200,35 @@ public class VolumeApiServiceImplTest {
         } catch (NoTransitionException e) {
             Assert.fail();
         }
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreEmptyReturnsZero() {
+        List<String> tags = new ArrayList<>();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestVolumeIsReadyReturnsZero() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Ready).when(volumeInfoMock).getState();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(0L, (long) result);
+    }
+
+    @Test
+    public void getRequiredPrimaryStorageSizeForVolumeAttachTestTagsAreNotEmptyAndVolumeIsUploadedReturnsVolumeSize() {
+        List<String> tags = List.of("tag1", "tag2");
+        Mockito.doReturn(Volume.State.Uploaded).when(volumeInfoMock).getState();
+        Mockito.doReturn(2L).when(volumeInfoMock).getSize();
+
+        Long result = volumeApiServiceImpl.getRequiredPrimaryStorageSizeForVolumeAttach(tags, volumeInfoMock);
+
+        Assert.assertEquals(2L, (long) result);
     }
 }

@@ -178,7 +178,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         }
 
         try {
-            objectInDataStoreMgr.update(objInStrore, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            objectInDataStoreMgr.update(objInStrore, ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (NoTransitionException e) {
             try {
                 objectInDataStoreMgr.update(objInStrore, ObjectInDataStoreStateMachine.Event.OperationFailed);
@@ -267,7 +267,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
         }
 
         try {
-            objectInDataStoreMgr.update(destObj, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            objectInDataStoreMgr.update(destObj, ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (NoTransitionException e) {
             logger.debug("Failed to update copying state: ", e);
             try {
@@ -341,7 +341,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
 
         } else {
             try {
-                objectInDataStoreMgr.update(destObj, Event.OperationSuccessed);
+                objectInDataStoreMgr.update(destObj, Event.OperationSucceeded);
             } catch (NoTransitionException e) {
                 logger.debug("delete failed", e);
             } catch (ConcurrentOperationException e) {
@@ -365,7 +365,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             event = ObjectInDataStoreStateMachine.Event.CreateRequested;
             objectInDataStoreMgr.update(objInStore, event);
 
-            objectInDataStoreMgr.update(objInStore, ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            objectInDataStoreMgr.update(objInStore, ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (NoTransitionException e) {
             logger.debug("Failed to update state", e);
             throw new CloudRuntimeException("Failed to update state", e);

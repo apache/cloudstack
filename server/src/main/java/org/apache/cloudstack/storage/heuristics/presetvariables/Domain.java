@@ -25,6 +25,5 @@ public class Domain extends GenericHeuristicPresetVariable {
 
     public void setId(String id) {
         this.id = id;
-        fieldNamesToIncludeInToString.add("id");
     }
 }

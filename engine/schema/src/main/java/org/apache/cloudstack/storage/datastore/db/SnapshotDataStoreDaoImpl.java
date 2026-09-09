@@ -78,6 +78,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             " order by created %s " +
             " limit 1";
 
+    private static final String GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT = "SELECT SUM(s.physical_size) " +
+            "FROM cloud.snapshot_store_ref s " +
+            "LEFT JOIN cloud.snapshots ON s.snapshot_id = snapshots.id " +
+            "WHERE snapshots.account_id = ? " +
+            "AND snapshots.removed IS NULL " +
+            "AND s.state = 'Ready' " +
+            "AND s.store_role = 'Primary' " +
+            "AND NOT EXISTS (SELECT 1 FROM cloud.snapshot_store_ref i WHERE i.snapshot_id = s.snapshot_id AND i.store_role = 'Image')";
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
@@ -117,7 +126,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         stateSearch = createSearchBuilder();
         stateSearch.and(STATE, stateSearch.entity().getState(), SearchCriteria.Op.IN);
         stateSearch.done();
-
 
         idStateNeqSearch = createSearchBuilder();
         idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
@@ -340,6 +348,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> findBySnapshotIdWithNonDestroyedState(long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = idStateNeqSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STATE, State.Destroyed);
@@ -570,5 +585,24 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = sb.create();
         sc.setParameters("snapshotIds", snapshotIds.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId) {
+        long snapshotsPhysicalSize = 0;
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT)) {
+                preparedStatement.setLong(1, accountId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        snapshotsPhysicalSize = resultSet.getLong(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to get the snapshots physical size for the account [{}] due to [{}].", accountId, e.getMessage(), e);
+        }
+        return snapshotsPhysicalSize;
     }
 }

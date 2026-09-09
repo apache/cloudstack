@@ -16,10 +16,13 @@
 # under the License.
 """ P1 tests for Scaling up Vm
 """
+
+import math
+
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (VirtualMachine, Volume, DiskOffering, ServiceOffering, Template)
-from marvin.lib.common import (get_zone, get_domain)
+from marvin.lib.common import (get_zone, get_domain, list_storage_pools)
 from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
@@ -78,8 +81,13 @@ class TestRestoreVM(cloudstackTestCase):
         self._cleanup.append(virtual_machine)
 
         old_root_vol = Volume.list(self.apiclient, virtualmachineid=virtual_machine.id)[0]
+        old_root_vol_pool_res = list_storage_pools(self.apiclient, id=old_root_vol.storageid)
+        old_root_vol_pool = old_root_vol_pool_res[0]
+        expected_old_root_vol_size = self.template_t1.size
+        if old_root_vol_pool.type.lower() == "powerflex":
+            expected_old_root_vol_size = (int(math.ceil((expected_old_root_vol_size / (1024 ** 3)) / 8) * 8)) * (1024 ** 3)
         self.assertEqual(old_root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(old_root_vol.size, self.template_t1.size, "Size of volume and template should match")
+        self.assertEqual(old_root_vol.size, expected_old_root_vol_size, "Size of volume and template should match")
 
         virtual_machine.restore(self.apiclient, self.template_t2.id, expunge=True)
 
@@ -88,8 +96,13 @@ class TestRestoreVM(cloudstackTestCase):
         self.assertEqual(restored_vm.templateid, self.template_t2.id, "VM's template after restore is incorrect")
 
         root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
+        root_vol_pool_res = list_storage_pools(self.apiclient, id=root_vol.storageid)
+        root_vol_pool = root_vol_pool_res[0]
+        expected_root_vol_size = self.template_t2.size
+        if root_vol_pool.type.lower() == "powerflex":
+            expected_root_vol_size = (int(math.ceil((expected_root_vol_size / (1024 ** 3)) / 8) * 8)) * (1024 ** 3)
         self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(root_vol.size, self.template_t2.size, "Size of volume and template should match")
+        self.assertEqual(root_vol.size, expected_root_vol_size, "Size of volume and template should match")
 
         old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)
         self.assertEqual(old_root_vol, None, "Old volume should be deleted")
@@ -105,8 +118,13 @@ class TestRestoreVM(cloudstackTestCase):
         self._cleanup.append(virtual_machine)
 
         old_root_vol = Volume.list(self.apiclient, virtualmachineid=virtual_machine.id)[0]
+        old_root_vol_pool_res = list_storage_pools(self.apiclient, id=old_root_vol.storageid)
+        old_root_vol_pool = old_root_vol_pool_res[0]
+        expected_old_root_vol_size = self.template_t1.size
+        if old_root_vol_pool.type.lower() == "powerflex":
+            expected_old_root_vol_size = (int(math.ceil((expected_old_root_vol_size / (1024 ** 3)) / 8) * 8)) * (1024 ** 3)
         self.assertEqual(old_root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(old_root_vol.size, self.template_t1.size, "Size of volume and template should match")
+        self.assertEqual(old_root_vol.size, expected_old_root_vol_size, "Size of volume and template should match")
 
         virtual_machine.restore(self.apiclient, self.template_t2.id, self.disk_offering.id, expunge=True)
 
@@ -115,9 +133,14 @@ class TestRestoreVM(cloudstackTestCase):
         self.assertEqual(restored_vm.templateid, self.template_t2.id, "VM's template after restore is incorrect")
 
         root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
+        root_vol_pool_res = list_storage_pools(self.apiclient, id=root_vol.storageid)
+        root_vol_pool = root_vol_pool_res[0]
+        expected_root_vol_size = self.disk_offering.disksize
+        if root_vol_pool.type.lower() == "powerflex":
+            expected_root_vol_size = (int(math.ceil(expected_root_vol_size / 8) * 8))
         self.assertEqual(root_vol.diskofferingid, self.disk_offering.id, "Disk offering id should match")
         self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(root_vol.size, self.disk_offering.disksize * 1024 * 1024 * 1024,
+        self.assertEqual(root_vol.size, expected_root_vol_size * 1024 * 1024 * 1024,
                          "Size of volume and disk offering should match")
 
         old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)
@@ -134,8 +157,13 @@ class TestRestoreVM(cloudstackTestCase):
         self._cleanup.append(virtual_machine)
 
         old_root_vol = Volume.list(self.apiclient, virtualmachineid=virtual_machine.id)[0]
+        old_root_vol_pool_res = list_storage_pools(self.apiclient, id=old_root_vol.storageid)
+        old_root_vol_pool = old_root_vol_pool_res[0]
+        expected_old_root_vol_size = self.template_t1.size
+        if old_root_vol_pool.type.lower() == "powerflex":
+            expected_old_root_vol_size = (int(math.ceil((expected_old_root_vol_size / (1024 ** 3)) / 8) * 8)) * (1024 ** 3)
         self.assertEqual(old_root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(old_root_vol.size, self.template_t1.size, "Size of volume and template should match")
+        self.assertEqual(old_root_vol.size, expected_old_root_vol_size, "Size of volume and template should match")
 
         virtual_machine.restore(self.apiclient, self.template_t2.id, self.disk_offering.id, rootdisksize=16)
 

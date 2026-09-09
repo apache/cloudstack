@@ -33,87 +33,87 @@ import com.google.gson.annotations.SerializedName;
 public class VMSnapshotResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the vm snapshot")
+    @Param(description = "The ID of the Instance Snapshot")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the vm snapshot")
+    @Param(description = "The name of the Instance Snapshot")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the vm snapshot")
+    @Param(description = "The state of the Instance Snapshot")
     private VMSnapshot.State state;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the vm snapshot")
+    @Param(description = "The description of the Instance Snapshot")
     private String description;
 
     @SerializedName(ApiConstants.DISPLAY_NAME)
-    @Param(description = "the display name of the vm snapshot")
+    @Param(description = "The display name of the Instance Snapshot")
     private String displayName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the vm snapshot")
+    @Param(description = "The Zone ID of the Instance Snapshot")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the vm snapshot", since = "4.15.1")
+    @Param(description = "The Zone name of the Instance Snapshot", since = "4.15.1")
     private String zoneName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "the vm ID of the vm snapshot")
+    @Param(description = "The Instance ID of the Instance Snapshot")
     private String virtualMachineId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-    @Param(description = "the vm name of the vm snapshot", since = "4.15.1")
+    @Param(description = "The Instance name of the Instance Snapshot", since = "4.15.1")
     private String virtualMachineName;
 
     @SerializedName("parent")
-    @Param(description = "the parent ID of the vm snapshot")
+    @Param(description = "The parent ID of the Instance Snapshot")
     private String parent;
 
     @SerializedName("parentName")
-    @Param(description = "the parent displayName of the vm snapshot")
+    @Param(description = "The parent displayName of the Instance Snapshot")
     private String parentName;
 
     @SerializedName("current")
-    @Param(description = "indicates if this is current snapshot")
+    @Param(description = "Indicates if this is current Snapshot")
     private Boolean current;
 
     @SerializedName("type")
-    @Param(description = "VM Snapshot type")
+    @Param(description = "Instance Snapshot type")
     private String type;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the create date of the vm snapshot")
+    @Param(description = "The create date of the Instance Snapshot")
     private Date created;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the disk volume")
+    @Param(description = "The Account associated with the disk volume")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vpn")
+    @Param(description = "The project ID of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vpn")
+    @Param(description = "The project name of the VPN")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the disk volume")
+    @Param(description = "The ID of the domain associated with the disk volume")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the disk volume")
+    @Param(description = "The domain associated with the disk volume")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the disk volume belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the disk volume belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the type of hypervisor on which snapshot is stored")
+    @Param(description = "The type of hypervisor on which Snapshot is stored")
     private String hypervisor;
 
     public VMSnapshotResponse() {

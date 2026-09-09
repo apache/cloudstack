@@ -25,8 +25,8 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 @Deprecated(since = "4.18")
-@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="(This API is deprecated, use scaleVirtualMachine API)" +
-        "Changes the service offering for a virtual machine. The virtual machine must be in a \"Stopped\" state for " +
+@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description = "(This API is deprecated, use scaleVirtualMachine API)" +
+        "Changes the service offering for an Instance. The Instance must be in a \"Stopped\" state for " +
         "this command to take effect.",
         responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)

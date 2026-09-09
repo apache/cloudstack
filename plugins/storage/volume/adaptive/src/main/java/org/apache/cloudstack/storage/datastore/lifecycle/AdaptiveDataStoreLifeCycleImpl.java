@@ -217,13 +217,14 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
             // validate the provided details are correct/valid for the provider
             api.validate();
 
-            // if we have user-provided capacity bytes, validate they do not exceed the manaaged storage capacity bytes
+            // User-provided capacityBytes always wins; validate against storage stats only when
+            // the provider could actually report them. If the provider cannot (empty pod with no
+            // footprint, no quota set, transient probe failure), fall through and use what the
+            // user supplied rather than failing the whole registration.
             ProviderVolumeStorageStats stats = api.getManagedStorageStats();
-            if (capacityBytes != null && capacityBytes != 0 && stats != null) {
-                if (stats.getCapacityInBytes() > 0) {
-                    if (stats.getCapacityInBytes() < capacityBytes) {
-                        throw new InvalidParameterValueException("Capacity bytes provided exceeds the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
-                    }
+            if (capacityBytes != null && capacityBytes > 0) {
+                if (stats != null && stats.getCapacityInBytes() > 0 && stats.getCapacityInBytes() < capacityBytes) {
+                    throw new InvalidParameterValueException("Provided capacity bytes exceed the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
                 }
                 parameters.setCapacityBytes(capacityBytes);
             }

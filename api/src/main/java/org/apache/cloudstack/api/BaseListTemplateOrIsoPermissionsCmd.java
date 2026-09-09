@@ -33,7 +33,7 @@ public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd implem
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplatePermissionsResponse.class, required = true, description = "the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplatePermissionsResponse.class, required = true, description = "The Template ID")
     private Long id;
 
     /////////////////////////////////////////////////////

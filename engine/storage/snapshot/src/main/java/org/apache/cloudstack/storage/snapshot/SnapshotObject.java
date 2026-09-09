@@ -172,10 +172,15 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public long getPhysicalSize() {
         long physicalSize = 0;
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
-        if (snapshotStore != null) {
-            physicalSize = snapshotStore.getPhysicalSize();
+        for (DataStoreRole role : List.of(DataStoreRole.Image, DataStoreRole.Primary)) {
+            logger.trace("Retrieving snapshot [{}] size from {} storage.", snapshot.getUuid(), role);
+            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, store.getId(), snapshot.getId());
+            if (snapshotStore != null) {
+                return snapshotStore.getPhysicalSize();
+            }
+            logger.trace("Snapshot [{}] size not found on {} storage.", snapshot.getUuid(), role);
         }
+        logger.warn("Snapshot [{}] reference not found in any storage. There may be an inconsistency on the database.", snapshot.getUuid());
         return physicalSize;
     }
 
@@ -353,13 +358,16 @@ public class SnapshotObject implements SnapshotInfo {
             if (answer instanceof CreateObjectAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CreateObjectAnswer)answer).getData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
+                if (snapshotTO.getPhysicalSize() != null && snapshotTO.getPhysicalSize() > 0L) {
+                    snapshotStore.setPhysicalSize(snapshotTO.getPhysicalSize());
+                }
                 snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
                 if (snapshotTO.getPhysicalSize() != null) {
                     // For S3 delta snapshot, physical size is currently not set
-                snapshotStore.setPhysicalSize(snapshotTO.getPhysicalSize());
+                    snapshotStore.setPhysicalSize(snapshotTO.getPhysicalSize());
                 }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);

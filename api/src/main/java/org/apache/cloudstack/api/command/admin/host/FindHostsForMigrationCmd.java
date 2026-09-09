@@ -33,7 +33,7 @@ import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
-@APICommand(name = "findHostsForMigration", description = "Find hosts suitable for migrating a virtual machine.", responseObject = HostForMigrationResponse.class,
+@APICommand(name = "findHostsForMigration", description = "Find hosts suitable for migrating an Instance.", responseObject = HostForMigrationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class FindHostsForMigrationCmd extends BaseListCmd {
 
@@ -46,7 +46,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
                required = true,
-               description = "find hosts to which this VM can be migrated and flag the hosts with enough " + "CPU/RAM to host the VM")
+               description = "Find hosts to which this Instance can be migrated and flag the hosts with enough " + "CPU/RAM to host the Instance")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

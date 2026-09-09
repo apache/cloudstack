@@ -206,13 +206,19 @@ export default {
     closeVolumeStoragePoolSelector () {
       this.selectedVolumeForStoragePoolSelection = {}
     },
-    handleVolumeStoragePoolSelection (volumeId, storagePool) {
+    handleVolumeStoragePoolSelection (volumeId, storagePool, applyToAll) {
       for (const volume of this.volumes) {
-        if (volume.id === volumeId) {
+        if (applyToAll) {
           volume.selectedstorageid = storagePool.id
           volume.selectedstoragename = storagePool.name
           volume.selectedstorageclusterid = storagePool.clusterid
-          break
+        } else {
+          if (volume.id === volumeId) {
+            volume.selectedstorageid = storagePool.id
+            volume.selectedstoragename = storagePool.name
+            volume.selectedstorageclusterid = storagePool.clusterid
+            break
+          }
         }
       }
       this.updateVolumeToStoragePoolSelection()

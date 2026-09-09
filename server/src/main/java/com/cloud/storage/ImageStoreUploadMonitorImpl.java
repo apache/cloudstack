@@ -26,6 +26,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -37,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
@@ -117,6 +122,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private TemplateJoinDao templateJoinDao;
     @Inject
     private DeployAsIsHelper deployAsIsHelper;
+    @Inject
+    private ReservationDao reservationDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private AccountManager _accountMgr;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -205,6 +216,36 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
         public UploadStatusCheck() {
         }
 
+        private Answer sendUploadStatusCommandForVolume(EndPoint ep, UploadStatusCommand cmd, VolumeVO volume) {
+            Answer answer = null;
+            try {
+                answer = ep.sendMessage(cmd);
+            } catch (CloudRuntimeException e) {
+                logger.warn("Unable to get upload status for volume {}. Error details: {}", volume, e.getMessage());
+                answer = new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN, e.getMessage());
+            }
+            if (answer == null || !(answer instanceof UploadStatusAnswer)) {
+                logger.warn("No or invalid answer corresponding to UploadStatusCommand for volume {}", volume);
+                return null;
+            }
+            return answer;
+        }
+
+        private Answer sendUploadStatusCommandForTemplate(EndPoint ep, UploadStatusCommand cmd, VMTemplateVO template) {
+            Answer answer = null;
+            try {
+                answer = ep.sendMessage(cmd);
+            } catch (CloudRuntimeException e) {
+                logger.warn("Unable to get upload status for template {}. Error details: {}", template, e.getMessage());
+                answer = new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN, e.getMessage());
+            }
+            if (answer == null || !(answer instanceof UploadStatusAnswer)) {
+                logger.warn("No or invalid answer corresponding to UploadStatusCommand for template {}", template);
+                return null;
+            }
+            return answer;
+        }
+
         @Override
         protected void runInContext() {
             // 1. Select all entries with download_state = Not_Downloaded or Download_In_Progress
@@ -231,18 +272,17 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     UploadStatusCommand cmd = new UploadStatusCommand(volume.getUuid(), EntityType.Volume);
                     if (host != null && host.getManagementServerId() != null) {
                         if (_nodeId == host.getManagementServerId().longValue()) {
-                            Answer answer = null;
-                            try {
-                                answer = ep.sendMessage(cmd);
-                            } catch (CloudRuntimeException e) {
-                                logger.warn("Unable to get upload status for volume {}. Error details: {}", volume, e.getMessage());
-                                answer = new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN, e.getMessage());
-                            }
-                            if (answer == null || !(answer instanceof UploadStatusAnswer)) {
-                                logger.warn("No or invalid answer corresponding to UploadStatusCommand for volume {}", volume);
+                            Answer answer = sendUploadStatusCommandForVolume(ep, cmd, volume);
+                            if (answer == null) {
                                 continue;
                             }
-                            handleVolumeStatusResponse((UploadStatusAnswer)answer, volume, volumeDataStore);
+                            if (!handleVolumeStatusResponse((UploadStatusAnswer)answer, volume, volumeDataStore)) {
+                                cmd = new UploadStatusCommand(volume.getUuid(), EntityType.Volume, true);
+                                answer = sendUploadStatusCommandForVolume(ep, cmd, volume);
+                                if (answer == null) {
+                                    logger.warn("Unable to abort upload for volume {}", volume);
+                                }
+                            }
                         }
                     } else {
                         String error = "Volume " + volume.getUuid() + " failed to upload as SSVM is either destroyed or SSVM agent not in 'Up' state";
@@ -275,18 +315,17 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     UploadStatusCommand cmd = new UploadStatusCommand(template.getUuid(), EntityType.Template);
                     if (host != null && host.getManagementServerId() != null) {
                         if (_nodeId == host.getManagementServerId().longValue()) {
-                            Answer answer = null;
-                            try {
-                                answer = ep.sendMessage(cmd);
-                            } catch (CloudRuntimeException e) {
-                                logger.warn("Unable to get upload status for template {}. Error details: {}", template, e.getMessage());
-                                answer = new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN, e.getMessage());
-                            }
-                            if (answer == null || !(answer instanceof UploadStatusAnswer)) {
-                                logger.warn("No or invalid answer corresponding to UploadStatusCommand for template {}", template);
+                            Answer answer = sendUploadStatusCommandForTemplate(ep, cmd, template);
+                            if (answer == null) {
                                 continue;
                             }
-                            handleTemplateStatusResponse((UploadStatusAnswer)answer, template, templateDataStore);
+                            if (!handleTemplateStatusResponse((UploadStatusAnswer) answer, template, templateDataStore)) {
+                                cmd = new UploadStatusCommand(template.getUuid(), EntityType.Template, true);
+                                answer = sendUploadStatusCommandForTemplate(ep, cmd, template);
+                                if (answer == null) {
+                                    logger.warn("Unable to abort upload for template {}", template);
+                                }
+                            }
                         }
                     } else {
                         String error = String.format(
@@ -303,7 +342,41 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
             }
         }
 
-        private void handleVolumeStatusResponse(final UploadStatusAnswer answer, final VolumeVO volume, final VolumeDataStoreVO volumeDataStore) {
+        private Boolean checkAndUpdateSecondaryStorageResourceLimit(Long accountId, Long lastSize, Long currentSize) {
+            if (lastSize >= currentSize) {
+                return true;
+            }
+            Long usage = currentSize - lastSize;
+            try (CheckedReservation secStorageReservation = new CheckedReservation(_accountMgr.getAccount(accountId), Resource.ResourceType.secondary_storage, null, null, usage, reservationDao, _resourceLimitMgr)) {
+                _resourceLimitMgr.incrementResourceCount(accountId, Resource.ResourceType.secondary_storage, usage);
+                return true;
+            } catch (Exception e) {
+                _resourceLimitMgr.decrementResourceCount(accountId, Resource.ResourceType.secondary_storage, lastSize);
+                return false;
+            }
+        }
+
+        private Boolean checkAndUpdateVolumeResourceLimit(VolumeVO volume, VolumeDataStoreVO volumeDataStore, UploadStatusAnswer answer) {
+            boolean success = true;
+            Long currentSize = answer.getVirtualSize() != 0 ? answer.getVirtualSize() : answer.getPhysicalSize();
+            Long lastSize = volume.getSize() != null ? volume.getSize() : 0L;
+            if (!checkAndUpdateSecondaryStorageResourceLimit(volume.getAccountId(), lastSize, currentSize)) {
+                volumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                volumeDataStore.setState(State.Failed);
+                volumeDataStore.setErrorString("Storage Limit Reached");
+                Account owner = accountDao.findById(volume.getAccountId());
+                String msg = String.format("Upload of volume [%s] failed because its owner [%s] does not have enough secondary storage space available.", volume.getUuid(), owner.getUuid());
+                logger.error(msg);
+                success = false;
+            }
+            VolumeVO volumeUpdate = _volumeDao.findById(volume.getId());
+            volumeUpdate.setSize(currentSize);
+            _volumeDao.update(volumeUpdate.getId(), volumeUpdate);
+            return success;
+        }
+
+        private boolean handleVolumeStatusResponse(final UploadStatusAnswer answer, final VolumeVO volume, final VolumeDataStoreVO volumeDataStore) {
+            final boolean[] needAbort = new boolean[]{false};
             final StateMachine2<Volume.State, Event, Volume> stateMachine = Volume.State.getStateMachine();
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
@@ -315,6 +388,11 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     try {
                         switch (answer.getStatus()) {
                         case COMPLETED:
+                            if (!checkAndUpdateVolumeResourceLimit(tmpVolume, tmpVolumeDataStore, answer)) {
+                                stateMachine.transitTo(tmpVolume, Event.OperationFailed, null, _volumeDao);
+                                sendAlert = true;
+                                break;
+                            }
                             tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                             tmpVolumeDataStore.setState(State.Ready);
                             tmpVolumeDataStore.setInstallPath(answer.getInstallPath());
@@ -326,7 +404,6 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             volumeUpdate.setSize(answer.getVirtualSize());
                             _volumeDao.update(tmpVolume.getId(), volumeUpdate);
                             stateMachine.transitTo(tmpVolume, Event.OperationSucceeded, null, _volumeDao);
-                            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
 
                             // publish usage events
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, tmpVolume.getAccountId(),
@@ -339,6 +416,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             }
                             break;
                         case IN_PROGRESS:
+                            if (!checkAndUpdateVolumeResourceLimit(tmpVolume, tmpVolumeDataStore, answer)) {
+                                stateMachine.transitTo(tmpVolume, Event.OperationFailed, null, _volumeDao);
+                                sendAlert = true;
+                                needAbort[0] = true;
+                                break;
+                            }
                             if (tmpVolume.getState() == Volume.State.NotUploaded) {
                                 tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
                                 tmpVolumeDataStore.setDownloadPercent(answer.getDownloadPercent());
@@ -387,10 +470,29 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     }
                 }
             });
+            return !needAbort[0];
         }
 
-        private void handleTemplateStatusResponse(final UploadStatusAnswer answer, final VMTemplateVO template, final TemplateDataStoreVO templateDataStore) {
+        private Boolean checkAndUpdateTemplateResourceLimit(VMTemplateVO template, TemplateDataStoreVO templateDataStore, UploadStatusAnswer answer) {
+            boolean success = true;
+            Long currentSize = answer.getVirtualSize() != 0 ? answer.getVirtualSize() : answer.getPhysicalSize();
+            Long lastSize = template.getSize() != null ? template.getSize() : 0L;
+            if (!checkAndUpdateSecondaryStorageResourceLimit(template.getAccountId(), lastSize, currentSize)) {
+                templateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                templateDataStore.setErrorString("Storage Limit Reached");
+                templateDataStore.setState(State.Failed);
+                Account owner = accountDao.findById(template.getAccountId());
+                String msg = String.format("Upload of template [%s] failed because its owner [%s] does not have enough secondary storage space available.", template.getUuid(), owner.getUuid());
+                logger.error(msg);
+                success = false;
+            }
+            templateDataStore.setSize(currentSize);
+            return success;
+        }
+
+        private boolean handleTemplateStatusResponse(final UploadStatusAnswer answer, final VMTemplateVO template, final TemplateDataStoreVO templateDataStore) {
             final StateMachine2<VirtualMachineTemplate.State, VirtualMachineTemplate.Event, VirtualMachineTemplate> stateMachine = VirtualMachineTemplate.State.getStateMachine();
+            final boolean[] needAbort = new boolean[]{false};
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -401,6 +503,11 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     try {
                         switch (answer.getStatus()) {
                         case COMPLETED:
+                            if (!checkAndUpdateTemplateResourceLimit(tmpTemplate, tmpTemplateDataStore, answer)) {
+                                stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
+                                sendAlert = true;
+                                break;
+                            }
                             tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                             tmpTemplateDataStore.setState(State.Ready);
                             tmpTemplateDataStore.setInstallPath(answer.getInstallPath());
@@ -437,7 +544,6 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                 }
                             }
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
-                            _resourceLimitMgr.incrementResourceCount(template.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
                             //publish usage event
                             String etype = EventTypes.EVENT_TEMPLATE_CREATE;
                             if (tmpTemplate.getFormat() == Storage.ImageFormat.ISO) {
@@ -453,6 +559,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             }
                             break;
                         case IN_PROGRESS:
+                            if (!checkAndUpdateTemplateResourceLimit(tmpTemplate, tmpTemplateDataStore, answer)) {
+                                stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
+                                sendAlert = true;
+                                needAbort[0] = true;
+                                break;
+                            }
                             if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) {
                                 tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
                                 stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.UploadRequested, null, _templateDao);
@@ -502,6 +614,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     }
                 }
             });
+            return !needAbort[0];
         }
 
     }

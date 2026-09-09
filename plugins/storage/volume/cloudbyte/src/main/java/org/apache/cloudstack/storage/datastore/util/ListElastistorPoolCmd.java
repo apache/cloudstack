@@ -40,7 +40,7 @@ public class ListElastistorPoolCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "the ID of the Pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "The ID of the Pool")
     private Long                id;
 
     // ///////////////////////////////////////////////////

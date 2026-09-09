@@ -31,17 +31,17 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkACLList", description = "Updates network ACL list", responseObject = SuccessResponse.class, since = "4.4", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateNetworkACLList", description = "Updates Network ACL list", responseObject = SuccessResponse.class, since = "4.4", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "The ID of the network ACL")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the list to the end User or not", since = "4.4", authorized = {
             RoleType.Admin})
     private Boolean display;
 

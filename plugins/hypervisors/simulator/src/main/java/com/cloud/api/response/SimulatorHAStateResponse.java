@@ -24,19 +24,19 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.ha.HAConfig;
 
 public class SimulatorHAStateResponse extends BaseResponse {
-    @SerializedName(ApiConstants.HA_STATE) @Param(description="the ha state")
+    @SerializedName(ApiConstants.HA_STATE) @Param(description = "The HA state")
     private String haState;
 
-    @SerializedName("prevhastate") @Param(description="the previous ha state")
+    @SerializedName("prevhastate") @Param(description = "The previous HA state")
     private String previousHaState;
 
-    @SerializedName("event") @Param(description="the event that caused state transition")
+    @SerializedName("event") @Param(description = "The event that caused state transition")
     private String haEvent;
 
-    @SerializedName("activitycounter") @Param(description="the activity counter")
+    @SerializedName("activitycounter") @Param(description = "The activity counter")
     private Long activityCounter;
 
-    @SerializedName("recoverycounter") @Param(description="the recovery counter")
+    @SerializedName("recoverycounter") @Param(description = "The recovery counter")
     private Long recoveryCounter;
 
     public void setHaState(final HAConfig.HAState haState) {

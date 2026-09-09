@@ -40,31 +40,31 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNTS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "a comma delimited list of accounts within caller's domain. If specified, \"op\" parameter has to be passed in.")
+               description = "A comma delimited list of Accounts within caller's domain. If specified, \"op\" parameter has to be passed in.")
     private List<String> accountNames;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The Template ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true for featured template/iso, false otherwise")
+    @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True for featured Template/ISO, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public template/iso, false for private templates/isos")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True for public Template/ISO, false for private Templates/ISOs")
     private Boolean isPublic;
 
     @Parameter(name = ApiConstants.IS_EXTRACTABLE,
                type = CommandType.BOOLEAN,
-               description = "true if the template/iso is extractable, false other wise. Can be set only by root admin")
+               description = "True if the Template/ISO is extractable, false otherwise. Can be set only by root admin")
     private Boolean isExtractable;
 
-    @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
+    @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "Permission operator (add, remove, reset)")
     private String operation;
 
     @Parameter(name = ApiConstants.PROJECT_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = ProjectResponse.class,
-               description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
+               description = "A comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
 
     // ///////////////////////////////////////////////////
@@ -121,7 +121,7 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update template/iso permissions");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Template/ISO permissions");
         }
     }
 }

@@ -38,7 +38,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "migrateNetwork", description = "moves a network to another physical network",
+@APICommand(name = "migrateNetwork", description = "Moves a network to another physical network",
             responseObject = NetworkResponse.class,
             responseView = ResponseView.Restricted,
             entityType = {Network.class},
@@ -53,13 +53,13 @@ public class MigrateNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The ID of the network")
     protected Long id;
 
-    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, required = true, description = "network offering ID")
+    @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, required = true, description = "Network offering ID")
     private Long networkOfferingId;
 
-    @Parameter(name = ApiConstants.RESUME, type = CommandType.BOOLEAN, description = "true if previous network migration cmd failed")
+    @Parameter(name = ApiConstants.RESUME, type = CommandType.BOOLEAN, description = "True if previous network migration cmd failed")
     private Boolean resume;
 
     /////////////////////////////////////////////////////

@@ -16,24 +16,29 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BridgeVifDriverTest {
 
-    private BridgeVifDriver driver;
+    private static final String BRIDGE_NAME = "cloudbr1";
 
-    @Before
-    public void setUp() throws Exception {
-        driver = new BridgeVifDriver();
-    }
+    @Spy
+    @InjectMocks
+    private BridgeVifDriver driver = new BridgeVifDriver();
 
     @Test
     public void isBroadcastTypeVlanOrVxlan() {
@@ -57,5 +62,42 @@ public class BridgeVifDriverTest {
         Assert.assertFalse(driver.isValidProtocolAndVnetId("untagged", "vxlan"));
         Assert.assertTrue(driver.isValidProtocolAndVnetId("123", "vlan"));
         Assert.assertTrue(driver.isValidProtocolAndVnetId("456", "vxlan"));
+    }
+
+    @Test
+    public void createStorageVnetBridgeIfNeededReturnsStorageBrNameWhenBroadcastTypeIsNotStorageButValidValues() throws InternalErrorException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Storage);
+        int vlan = 123;
+        String newBridge = "br-" + vlan;
+        nic.setBroadcastUri(Networks.BroadcastDomainType.Storage.toUri(vlan));
+        Mockito.doReturn(newBridge).when(driver).createVnetBr(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
+        Assert.assertEquals(newBridge, result);
+    }
+
+    @Test
+    public void createStorageVnetBridgeIfNeededReturnsStorageBrNameWhenBroadcastTypeIsNotStorage() throws InternalErrorException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
+        Assert.assertEquals(BRIDGE_NAME, result);
+    }
+
+    @Test
+    public void createStorageVnetBridgeIfNeededReturnsStorageBrNameWhenBroadcastUriIsNull() throws InternalErrorException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Storage);
+        String result = driver.createStorageVnetBridgeIfNeeded(nic,  "trafficLabel", BRIDGE_NAME);
+        Assert.assertEquals(BRIDGE_NAME, result);
+    }
+
+    @Test
+    public void createStorageVnetBridgeIfNeededCreatesVnetBridgeWhenUntaggedVlan() throws InternalErrorException, URISyntaxException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Storage);
+        nic.setBroadcastUri(new URI(Networks.BroadcastDomainType.Storage.scheme() + "://untagged"));
+        String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
+        Assert.assertEquals(BRIDGE_NAME, result);
     }
 }

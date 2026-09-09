@@ -54,7 +54,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = VirtualRouterProviderResponse.class,
                required = true,
-               description = "the ID of the virtual router provider")
+               description = "The ID of the virtual router provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enabled/Disabled the service provider")

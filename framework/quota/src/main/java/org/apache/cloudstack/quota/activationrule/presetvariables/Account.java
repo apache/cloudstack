@@ -28,7 +28,6 @@ public class Account extends GenericPresetVariable {
 
     public void setRole(Role role) {
         this.role = role;
-        fieldNamesToIncludeInToString.add("role");
     }
 
 }

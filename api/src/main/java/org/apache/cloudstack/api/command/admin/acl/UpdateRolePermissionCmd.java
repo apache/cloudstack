@@ -53,7 +53,7 @@ public class UpdateRolePermissionCmd extends BaseCmd {
     private Long roleId;
 
     @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = RolePermissionResponse.class,
-            description = "The parent role permission uuid, use 0 to move this rule at the top of the list")
+            description = "The parent role permission UUID, use 0 to move this rule at the top of the list")
     private List<Long> rulePermissionOrder;
 
     @Parameter(name = ApiConstants.RULE_ID, type = CommandType.UUID, entityType = RolePermissionResponse.class,

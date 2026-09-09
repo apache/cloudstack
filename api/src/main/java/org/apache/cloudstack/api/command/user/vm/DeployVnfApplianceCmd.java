@@ -43,7 +43,7 @@ import java.util.List;
 public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.VNF_CONFIGURE_MANAGEMENT, type = CommandType.BOOLEAN, required = false,
-            description = "True by default, security group or network rules (source nat and firewall rules) will be configured for VNF management interfaces. False otherwise. " +
+            description = "False by default, security group or network rules (source nat and firewall rules) will be configured for VNF management interfaces. True otherwise. " +
                     "Network rules are configured if management network is an isolated network or shared network with security groups.")
     private Boolean vnfConfigureManagement;
 

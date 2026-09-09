@@ -38,7 +38,7 @@ public class ListHypervisorsCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone id for listing hypervisors.")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The zone id for listing hypervisors.")
     private Long zoneId;
 
     // ///////////////////////////////////////////////////

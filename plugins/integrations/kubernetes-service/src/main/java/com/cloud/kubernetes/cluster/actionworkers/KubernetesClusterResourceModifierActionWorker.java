@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -250,7 +251,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
-                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType()) || !h.getArch().equals(clusterTemplate.getArch())) {
                     continue;
                 }
                 hostDao.loadHostTags(h);
@@ -517,7 +518,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         FirewallRule rule = null;
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
         for (FirewallRuleVO firewallRule : firewallRules) {
-            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+            if (Objects.equals(firewallRule.getSourcePortStart(), CLUSTER_NODES_DEFAULT_START_SSH_PORT)) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
                 logger.debug("The SSH firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId());

@@ -15,20 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+package org.apache.cloudstack.resourcelimit;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+/**
+ * Interface implemented by <code>CheckedReservation</code>.
+ * </br></br>
+ * This is defined in <code>cloud-api</code> to allow methods declared in modules that do not depend on <code>cloud-server</code>
+ * to receive <code>CheckedReservations</code> as parameters.
+ */
+public interface Reserver extends AutoCloseable {
 
-@RunWith(MockitoJUnitRunner.class)
-public class HostTest {
+    void close();
 
-    @Test
-    public void setTagsTestAddFieldTagsToCollection() {
-        Host variable = new Host();
-        variable.setTags(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("tags"));
-    }
 }

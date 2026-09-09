@@ -1510,10 +1510,10 @@ export default {
         }
         path += '/' + this.prefillContent.primaryStorageVmfsDatastore
         if (protocol === 'vmfs') {
-          url = this.vmfsURL('dummy', path)
+          url = this.vmfsURL(server, path)
         }
         if (protocol === 'datastorecluster') {
-          url = this.datastoreclusterURL('dummy', path)
+          url = this.datastoreclusterURL(server, path)
         }
       } else if (protocol === 'iscsi') {
         let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
@@ -1580,6 +1580,11 @@ export default {
         params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
+        if (this.prefillContent.copyTemplatesFromOtherSecondaryStorages !== undefined) {
+          params['details[0].key'] = 'copytemplatesfromothersecondarystorages'
+          params['details[0].value'] =
+            this.prefillContent.copyTemplatesFromOtherSecondaryStorages
+        }
       } else if (this.prefillContent.secondaryStorageProvider === 'SMB') {
         const nfsServer = this.prefillContent.secondaryStorageServer
         const path = this.prefillContent.secondaryStoragePath
@@ -2147,7 +2152,11 @@ export default {
           resolve(result)
         }).catch(error => {
           message = error.response.headers['x-description']
-          reject(message)
+          if (message.includes('is already in the database')) {
+            resolve()
+          } else {
+            reject(message)
+          }
         })
       })
     },
@@ -2159,11 +2168,7 @@ export default {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
-          if (message.includes('is already in the database')) {
-            resolve()
-          } else {
-            reject(message)
-          }
+          reject(message)
         })
       })
     },

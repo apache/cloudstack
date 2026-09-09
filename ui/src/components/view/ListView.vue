@@ -94,7 +94,7 @@
             <router-link :to="{ path: $route.path + '/' + record.id, query: { displaynetwork: false } }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
-            <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + encodeURIComponent(record.id) }" v-if="record.id">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
             <span v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid">
               &nbsp;
@@ -306,7 +306,7 @@
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'storage'">
-        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template v-for="(value, name) in thresholdMapping" :key="name">
@@ -365,7 +365,14 @@
         <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
       </template>
       <template v-if="column.key === 'domain'">
-        <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
+        <span v-if="record.domainid && $store.getters.userInfo.roletype !== 'User'">
+          <template v-for="(id, idx) in record.domainid.split(',')" :key="id">
+            <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
+              {{ record.domain.split(',')[idx] || id }}
+            </router-link>
+            <span v-if="idx < record.domainid.split(',').length - 1">, </span>
+          </template>
+        </span>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'domainpath'">

@@ -54,7 +54,7 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
             required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP,

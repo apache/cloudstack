@@ -28,35 +28,35 @@ import java.util.List;
 public class QuotaStatementResponse  extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "account id")
+    @Param(description = "Account ID")
     private Long accountId;
 
     @SerializedName("account")
-    @Param(description = "account name")
+    @Param(description = "Account name")
     private String accountName;
 
     @SerializedName("domain")
-    @Param(description = "domain id")
+    @Param(description = "Domain ID")
     private Long domainId;
 
     @SerializedName("quotausage")
-    @Param(description = "list of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
+    @Param(description = "List of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
     private List<QuotaStatementItemResponse> lineItem;
 
     @SerializedName("totalquota")
-    @Param(description = "total quota used during this period")
+    @Param(description = "Total quota used during this period")
     private BigDecimal totalQuota;
 
     @SerializedName("startdate")
-    @Param(description = "start date")
+    @Param(description = "Start date")
     private Date startDate = null;
 
     @SerializedName("enddate")
-    @Param(description = "end date")
+    @Param(description = "End date")
     private Date endDate = null;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     public QuotaStatementResponse() {

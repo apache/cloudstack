@@ -43,6 +43,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterDrsMetric;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getClusterImbalance;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getMetricValue;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.junit.Assert.assertEquals;
@@ -122,6 +125,48 @@ public class CondensedTest {
     }
 
     /**
+     * Helper method to prepare metrics data for getMetrics calls with optimized signature.
+     * Calculates pre-imbalance and builds baseMetricsArray and hostIdToIndexMap.
+     *
+     * @return a Ternary containing preImbalance, baseMetricsArray, and hostIdToIndexMap
+     */
+    private Ternary<Double, double[], Map<Long, Integer>> prepareMetricsData() throws ConfigurationException {
+        // Calculate pre-imbalance
+        Double preImbalance = getClusterImbalance(clusterId, new ArrayList<>(hostCpuFreeMap.values()),
+                new ArrayList<>(hostMemoryFreeMap.values()), null);
+
+        // Build baseMetricsArray and hostIdToIndexMap
+        String metricType = getClusterDrsMetric(clusterId);
+        Map<Long, Ternary<Long, Long, Long>> baseMetricsMap = "cpu".equals(metricType) ? hostCpuFreeMap : hostMemoryFreeMap;
+        double[] baseMetricsArray = new double[baseMetricsMap.size()];
+        Map<Long, Integer> hostIdToIndexMap = new HashMap<>();
+
+        int index = 0;
+        for (Map.Entry<Long, Ternary<Long, Long, Long>> entry : baseMetricsMap.entrySet()) {
+            Long hostId = entry.getKey();
+            Ternary<Long, Long, Long> metrics = entry.getValue();
+            long used = metrics.first();
+            long actualTotal = metrics.third() - metrics.second();
+            long free = actualTotal - metrics.first();
+            Double metricValue = getMetricValue(clusterId, used, free, actualTotal, null);
+            if (metricValue != null) {
+                baseMetricsArray[index] = metricValue;
+                hostIdToIndexMap.put(hostId, index);
+                index++;
+            }
+        }
+
+        // Trim array if some values were null
+        if (index < baseMetricsArray.length) {
+            double[] trimmed = new double[index];
+            System.arraycopy(baseMetricsArray, 0, trimmed, 0, index);
+            baseMetricsArray = trimmed;
+        }
+
+        return new Ternary<>(preImbalance, baseMetricsArray, hostIdToIndexMap);
+    }
+
+    /**
      * <p>needsDrs tests
      * <p>Scenarios to test for needsDrs
      * <p>1. cluster with cpu metric
@@ -185,8 +230,14 @@ public class CondensedTest {
     @Test
     public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException, ConfigurationException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
+
+        Ternary<Double, double[], Map<Long, Integer>> metricsData = prepareMetricsData();
+        Double preImbalance = metricsData.first();
+        double[] baseMetricsArray = metricsData.second();
+        Map<Long, Integer> hostIdToIndexMap = metricsData.third();
+
         Ternary<Double, Double, Double> result = condensed.getMetrics(cluster, vm3, serviceOffering, destHost,
-                hostCpuFreeMap, hostMemoryFreeMap, false);
+                hostCpuFreeMap, hostMemoryFreeMap, false, preImbalance, baseMetricsArray, hostIdToIndexMap);
         assertEquals(0.0, result.first(), 0.0);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);
@@ -199,8 +250,14 @@ public class CondensedTest {
     @Test
     public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException, ConfigurationException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
+
+        Ternary<Double, double[], Map<Long, Integer>> metricsData = prepareMetricsData();
+        Double preImbalance = metricsData.first();
+        double[] baseMetricsArray = metricsData.second();
+        Map<Long, Integer> hostIdToIndexMap = metricsData.third();
+
         Ternary<Double, Double, Double> result = condensed.getMetrics(cluster, vm3, serviceOffering, destHost,
-                hostCpuFreeMap, hostMemoryFreeMap, false);
+                hostCpuFreeMap, hostMemoryFreeMap, false, preImbalance, baseMetricsArray, hostIdToIndexMap);
         assertEquals(-0.4, result.first(), 0.01);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);

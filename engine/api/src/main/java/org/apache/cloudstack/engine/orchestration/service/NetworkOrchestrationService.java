@@ -80,7 +80,7 @@ public interface NetworkOrchestrationService {
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-        "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
+        "Lock wait timeout (seconds) while implementing Network", true, Scope.Global, null);
 
     ConfigKey<String> DeniedRoutes = new ConfigKey<String>(String.class, "denied.routes", "Network", "",
             "Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway", true, ConfigKey.Scope.Zone, null);
@@ -92,13 +92,13 @@ public interface NetworkOrchestrationService {
         "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
-            "Whether to allow or deny promiscuous mode on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.address.changes", "true",
-            "Whether to allow or deny mac address changes on nics for applicable network elements such as for vswitch/dvswitch porgroups.", true);
+            "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);
 
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
-            "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
+            "Whether to allow or deny forged transmits on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MacLearning = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.learning", "false",
             "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);
@@ -111,6 +111,9 @@ public interface NetworkOrchestrationService {
 
     static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -302,7 +305,7 @@ public interface NetworkOrchestrationService {
 
     void removeDhcpServiceInSubnet(Nic nic);
 
-    boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
+    boolean isResourceCountUpdateNeeded(NetworkOffering networkOffering);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 

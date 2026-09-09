@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "archiveSnapshot", description = "Archives (moves) a snapshot on primary storage to secondary storage",
+@APICommand(name = "archiveSnapshot", description = "Archives (moves) a Snapshot on primary storage to secondary storage",
         responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveSnapshotCmd extends BaseAsyncCmd {
@@ -44,7 +44,7 @@ public class ArchiveSnapshotCmd extends BaseAsyncCmd {
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotResponse.class,
-            required=true, description="The ID of the snapshot")
+            required=true, description = "The ID of the Snapshot")
     private Long id;
 
     @Override
@@ -54,7 +54,7 @@ public class ArchiveSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Archiving snapshot " + id + " to secondary storage";
+        return "Archiving Snapshot " + id + " to secondary storage";
     }
 
     @Override
@@ -65,7 +65,7 @@ public class ArchiveSnapshotCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to archive snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to archive Snapshot");
         }
     }
 

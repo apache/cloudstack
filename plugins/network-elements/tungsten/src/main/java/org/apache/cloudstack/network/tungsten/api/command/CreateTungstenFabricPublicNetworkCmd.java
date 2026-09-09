@@ -42,7 +42,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricPublicNetworkCmd.APINAME, description = "create Tungsten-Fabric public network",
+@APICommand(name = CreateTungstenFabricPublicNetworkCmd.APINAME, description = "Create Tungsten-Fabric public network",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricPublicNetworkCmd extends BaseCmd {
 
@@ -57,7 +57,7 @@ public class CreateTungstenFabricPublicNetworkCmd extends BaseCmd {
     TungstenService tungstenService;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
-        , description = "the ID of zone")
+        , description = "The ID of zone")
     private Long zoneId;
 
     public Long getZoneId() {

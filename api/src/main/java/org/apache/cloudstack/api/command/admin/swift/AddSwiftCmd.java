@@ -40,13 +40,13 @@ public class AddSwiftCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL for swift")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The URL for swift")
     private String url;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account for swift")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account for swift")
     private String account;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "the username for swift")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username for swift")
     private String username;
 
     @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = " key for the user for swift")

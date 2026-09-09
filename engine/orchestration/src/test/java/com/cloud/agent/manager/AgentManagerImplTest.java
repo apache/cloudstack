@@ -22,9 +22,11 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -102,5 +104,37 @@ public class AgentManagerImplTest {
         int result = mgr.getTimeout(commands, timeout);
 
         Assert.assertEquals(50, result);
+    }
+
+    @Test
+    public void testGetHostSshPortWithHostNull() {
+        int hostSshPort = mgr.getHostSshPort(null);
+        Assert.assertEquals(22, hostSshPort);
+    }
+
+    @Test
+    public void testGetHostSshPortWithNonKVMHost() {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        int hostSshPort = mgr.getHostSshPort(host);
+        Assert.assertEquals(22, hostSshPort);
+    }
+
+    @Test
+    public void testGetHostSshPortWithKVMHostDefaultPort() {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(host.getClusterId()).thenReturn(1L);
+        int hostSshPort = mgr.getHostSshPort(host);
+        Assert.assertEquals(22, hostSshPort);
+    }
+
+    @Test
+    public void testGetHostSshPortWithKVMHostCustomPort() {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(host.getDetail(Host.HOST_SSH_PORT)).thenReturn(String.valueOf(3922));
+        int hostSshPort = mgr.getHostSshPort(host);
+        Assert.assertEquals(3922, hostSshPort);
     }
 }

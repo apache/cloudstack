@@ -27,23 +27,23 @@ import com.google.gson.annotations.SerializedName;
 
 public class RouterHealthCheckResultResponse extends BaseResponse {
     @SerializedName(ApiConstants.ROUTER_CHECK_NAME)
-    @Param(description = "the name of the health check on the router")
+    @Param(description = "The name of the health check on the router")
     private String checkName;
 
     @SerializedName(ApiConstants.ROUTER_CHECK_TYPE)
-    @Param(description = "the type of the health check - basic or advanced")
+    @Param(description = "The type of the health check - basic or advanced")
     private String checkType;
 
     @SerializedName(ApiConstants.RESULT)
-    @Param(description = "result of the health check")
+    @Param(description = "Result of the health check")
     private boolean result;
 
     @SerializedName(ApiConstants.LAST_UPDATED)
-    @Param(description = "the date this VPC was created")
+    @Param(description = "The date this VPC was created")
     private Date lastUpdated;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "detailed response generated on running health check")
+    @Param(description = "Detailed response generated on running health check")
     private String details;
 
     public String getCheckName() {

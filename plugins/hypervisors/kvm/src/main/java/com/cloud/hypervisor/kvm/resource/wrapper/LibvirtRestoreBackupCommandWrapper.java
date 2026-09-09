@@ -19,6 +19,20 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+
+import org.apache.cloudstack.backup.BackupAnswer;
+import org.apache.cloudstack.backup.RestoreBackupCommand;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -27,27 +41,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.backup.BackupAnswer;
-import org.apache.cloudstack.backup.RestoreBackupCommand;
-import org.apache.commons.lang3.RandomStringUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
-    private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
-    private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
-    private static final String ATTACH_DISK_COMMAND = " virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --cache none";
-    private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
-    private static final String RSYNC_COMMAND = "rsync -az %s %s";
 
     @Override
     public Answer execute(RestoreBackupCommand command, LibvirtComputingResource serverResource) {
@@ -59,20 +57,21 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         Boolean vmExists = command.isVmExists();
         String diskType = command.getDiskType();
         List<String> volumePaths = command.getVolumePaths();
-        String restoreVolumeUuid = command.getRestoreVolumeUUID();
+        List<String> backupFiles = command.getBackupFiles();
 
         String newVolumeId = null;
         try {
             if (Objects.isNull(vmExists)) {
                 String volumePath = volumePaths.get(0);
+                String backupFile = backupFiles.get(0);
                 int lastIndex = volumePath.lastIndexOf("/");
                 newVolumeId = volumePath.substring(lastIndex + 1);
-                restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, restoreVolumeUuid,
+                restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, backupFile,
                         new Pair<>(vmName, command.getVmState()), mountOptions);
             } else if (Boolean.TRUE.equals(vmExists)) {
-                restoreVolumesOfExistingVM(volumePaths, backupPath, backupRepoType, backupRepoAddress, mountOptions);
+                restoreVolumesOfExistingVM(volumePaths, backupPath, backupFiles, backupRepoType, backupRepoAddress, mountOptions);
             } else {
-                restoreVolumesOfDestroyedVMs(volumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
+                restoreVolumesOfDestroyedVMs(volumePaths, vmName, backupPath, backupFiles, backupRepoType, backupRepoAddress, mountOptions);
             }
         } catch (CloudRuntimeException e) {
             String errorMessage = "Failed to restore backup for VM: " + vmName + ".";
@@ -86,17 +85,18 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return new BackupAnswer(command, true, newVolumeId);
     }
 
-    private void restoreVolumesOfExistingVM(List<String> volumePaths, String backupPath,
+    private void restoreVolumesOfExistingVM(List<String> volumePaths, String backupPath, List<String> backupFiles,
                                              String backupRepoType, String backupRepoAddress, String mountOptions) {
         String diskType = "root";
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
         try {
             for (int idx = 0; idx < volumePaths.size(); idx++) {
                 String volumePath = volumePaths.get(idx);
-                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, null);
+                String backupFile = backupFiles.get(idx);
+                String bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
                 diskType = "datadisk";
-                if (!replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first())) {
-                    throw new CloudRuntimeException(String.format("Unable to restore backup for volume [%s].", bkpPathAndVolUuid.second()));
+                if (!replaceVolumeWithBackup(volumePath, bkpPath)) {
+                    throw new CloudRuntimeException(String.format("Unable to restore backup from volume [%s].", volumePath));
                 }
             }
         } finally {
@@ -106,17 +106,18 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     }
 
-    private void restoreVolumesOfDestroyedVMs(List<String> volumePaths, String vmName, String backupPath,
+    private void restoreVolumesOfDestroyedVMs(List<String> volumePaths, String vmName, String backupPath, List<String> backupFiles,
                                               String backupRepoType, String backupRepoAddress, String mountOptions) {
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
         String diskType = "root";
         try {
-            for (int i = 0; i < volumePaths.size(); i++) {
-                String volumePath = volumePaths.get(i);
-                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, null);
+            for (int idx = 0; idx < volumePaths.size(); idx++) {
+                String volumePath = volumePaths.get(idx);
+                String backupFile = backupFiles.get(idx);
+                String bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
                 diskType = "datadisk";
-                if (!replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first())) {
-                    throw new CloudRuntimeException(String.format("Unable to restore backup for volume [%s].", bkpPathAndVolUuid.second()));
+                if (!replaceVolumeWithBackup(volumePath, bkpPath)) {
+                    throw new CloudRuntimeException(String.format("Unable to restore backup from volume [%s].", volumePath));
                 }
             }
         } finally {
@@ -126,13 +127,13 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolume(String backupPath, String backupRepoType, String backupRepoAddress, String volumePath,
-                               String diskType, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState, String mountOptions) {
+                               String diskType, String backupFile, Pair<String, VirtualMachine.State> vmNameAndState, String mountOptions) {
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
-        Pair<String, String> bkpPathAndVolUuid;
+        String bkpPath;
         try {
-            bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, volumeUUID);
-            if (!replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first())) {
-                throw new CloudRuntimeException(String.format("Unable to restore backup for volume [%s].", bkpPathAndVolUuid.second()));
+            bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
+            if (!replaceVolumeWithBackup(volumePath, bkpPath)) {
+                throw new CloudRuntimeException(String.format("Unable to restore backup from volume [%s].", volumePath));
             }
             if (VirtualMachine.State.Running.equals(vmNameAndState.second())) {
                 if (!attachVolumeToVm(vmNameAndState.first(), volumePath)) {
@@ -153,18 +154,26 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIX , randomChars);
         try {
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
-            String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);
+            String mountPath = Script.getExecutableAbsolutePath("mount");
+            List<String> mountCmd = new ArrayList<>();
+            mountCmd.add("sudo");
+            mountCmd.add(mountPath);
+            mountCmd.add("-t");
+            mountCmd.add(backupRepoType);
+            mountCmd.add(backupRepoAddress);
+            mountCmd.add(mountDirectory);
             if ("cifs".equals(backupRepoType)) {
-                if (Objects.isNull(mountOptions) || mountOptions.trim().isEmpty()) {
+                if (StringUtils.isBlank(mountOptions)) {
                     mountOptions = "nobrl";
                 } else {
                     mountOptions += ",nobrl";
                 }
             }
-            if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
-                mount += " -o " + mountOptions;
+            if (StringUtils.isNotBlank(mountOptions)) {
+                mountCmd.add("-o");
+                mountCmd.add(mountOptions);
             }
-            Script.runSimpleBashScript(mount);
+            Script.executeCommand(mountCmd.toArray(new String[0]));
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to mount %s to %s", backupRepoType, backupRepoAddress), e);
         }
@@ -173,8 +182,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private void unmountBackupDirectory(String backupDirectory) {
         try {
-            String umountCmd = String.format(UMOUNT_COMMAND, backupDirectory);
-            Script.runSimpleBashScript(umountCmd);
+            String umountPath = Script.getExecutableAbsolutePath("umount");
+            String[] umountCmd = new String[] { "sudo", umountPath, backupDirectory };
+            Script.executeCommand(umountCmd);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to unmount backup directory: %s", backupDirectory), e);
         }
@@ -188,28 +198,34 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    private Pair<String, String> getBackupPath(String mountDirectory, String volumePath, String backupPath, String diskType, String volumeUuid) {
+    private String getBackupPath(String mountDirectory, String backupPath, String backupFile, String diskType) {
         String bkpPath = String.format(FILE_PATH_PLACEHOLDER, mountDirectory, backupPath);
-        int lastIndex = volumePath.lastIndexOf(File.separator);
-        String volUuid = Objects.isNull(volumeUuid) ? volumePath.substring(lastIndex + 1) : volumeUuid;
-        String backupFileName = String.format("%s.%s.qcow2", diskType.toLowerCase(Locale.ROOT), volUuid);
+        String backupFileName = String.format("%s.%s.qcow2", diskType.toLowerCase(Locale.ROOT), backupFile);
         bkpPath = String.format(FILE_PATH_PLACEHOLDER, bkpPath, backupFileName);
-        return new Pair<>(bkpPath, volUuid);
+        return bkpPath;
     }
 
     private boolean replaceVolumeWithBackup(String volumePath, String backupPath) {
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format(RSYNC_COMMAND, backupPath, volumePath));
+        String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
+        int exitValue = Script.executeCommandForExitValue(rsyncCmd);
         return exitValue == 0;
     }
 
     private boolean attachVolumeToVm(String vmName, String volumePath) {
         String deviceToAttachDiskTo = getDeviceToAttachDisk(vmName);
-        int exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_DISK_COMMAND, vmName, volumePath, deviceToAttachDiskTo));
+        String[] attachCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "attach-disk", vmName, volumePath, deviceToAttachDiskTo,
+                "--driver", "qemu", "--subdriver", "qcow2", "--cache", "none" };
+        int exitValue = Script.executeCommandForExitValue(attachCmd);
         return exitValue == 0;
     }
 
     private String getDeviceToAttachDisk(String vmName) {
-        String currentDevice = Script.runSimpleBashScript(String.format(CURRRENT_DEVICE, vmName));
+        String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName };
+        String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "3" };
+        String[] headCmd = new String[] { Script.getExecutableAbsolutePath("head"), "-n", "1" };
+        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "'{print $1}'" };
+        Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, tailCmd, headCmd, awkCmd), 0);
+        String currentDevice = result.second();
         char lastChar = currentDevice.charAt(currentDevice.length() - 1);
         char incrementedChar = (char) (lastChar + 1);
         return currentDevice.substring(0, currentDevice.length() - 1) + incrementedChar;

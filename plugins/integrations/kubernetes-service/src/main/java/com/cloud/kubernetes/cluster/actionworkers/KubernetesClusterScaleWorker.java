@@ -124,10 +124,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         // Remove existing SSH firewall rules
         FirewallRule firewallRule = removeSshFirewallRule(publicIp);
+        int existingFirewallRuleSourcePortEnd;
         if (firewallRule == null) {
-            throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
+            logger.warn("SSH firewall rule not found for Kubernetes cluster: {}. It may have been manually deleted or modified.", kubernetesCluster.getName());
+            existingFirewallRuleSourcePortEnd = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
+        } else {
+            existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
         }
-        int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
+
         try {
             removePortForwardingRules(publicIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, existingFirewallRuleSourcePortEnd);
         } catch (ResourceUnavailableException e) {
@@ -284,7 +288,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     private void scaleKubernetesClusterOffering() throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
+        if (!scalingStates.contains(kubernetesCluster.getState())) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         if (KubernetesCluster.State.Created.equals(originalState)) {
@@ -475,6 +480,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             scaleKubernetesClusterOffering();
         } else if (clusterSizeScalingNeeded) {
             scaleKubernetesClusterSize();
+        } else {
+            return true;
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;

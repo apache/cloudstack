@@ -54,7 +54,7 @@ public class DisableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID, type = BaseCmd.CommandType.UUID, required = true, entityType = HostResponse.class,
-            validations = {ApiArgValidator.PositiveNumber}, description = "the ID of the host")
+            validations = {ApiArgValidator.PositiveNumber}, description = "The ID of the host")
     private Long hostId;
 
     /////////////////////////////////////////////////////

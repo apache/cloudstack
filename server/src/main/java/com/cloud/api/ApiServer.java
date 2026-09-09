@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -114,6 +115,7 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -244,6 +246,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
+    private static final Set<String> sensitiveFields = new HashSet<>(Arrays.asList(
+        "password", "secretkey", "apikey", "token",
+        "sessionkey", "accesskey", "signature",
+        "authorization", "credential", "secret"
+    ));
+
     private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
@@ -265,11 +273,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "Do URL encoding for the api response, false by default"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> JSONcontentType = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
+    static final ConfigKey<String> JSONContentType = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
-            , "Http response content type for .js files (default is text/javascript)"
+            , "Http response content type for JSON"
             , false
             , ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
@@ -277,13 +285,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "enable.secure.session.cookie"
             , "false"
             , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
-            , false
-            , ConfigKey.Scope.Global);
-    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
-            , String.class
-            , "json.content.type"
-            , "application/json; charset=UTF-8"
-            , "Http response content type for JSON"
             , false
             , ConfigKey.Scope.Global);
 
@@ -367,7 +368,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         Account jobOwner = accountMgr.getAccount(userJobOwner.getAccountId());
 
         // Get the event type from the cmdInfo json string
-        String info = job.getCmdInfo();
+        String info = StringUtils.obfuscatePasswordInJsonLikeString(job.getCmdInfo());
         String cmdEventType = "unknown";
         Map<String, Object> cmdInfoObj = new HashMap<>();
         if (info != null) {
@@ -407,7 +408,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("instanceType", instanceType);
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
-        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(job.getResult()));
+        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(StringUtils.obfuscatePasswordInJsonLikeString(job.getResult())));
         eventDescription.put("cmdInfo", cmdInfoObj);
         eventDescription.put("status", "" + job.getStatus());
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
@@ -610,10 +611,23 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 logger.error("invalid request, no command sent");
                 if (logger.isTraceEnabled()) {
                     logger.trace("dumping request parameters");
-                    for (final  Object key : params.keySet()) {
-                        final String keyStr = (String)key;
-                        final String[] value = (String[])params.get(key);
-                        logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
+
+                    for (final Object key : params.keySet()) {
+                        final String keyStr = (String) key;
+                        final String[] value = (String[]) params.get(key);
+
+                        String lowerKeyStr = keyStr.toLowerCase();
+                        boolean isSensitive = sensitiveFields.stream()
+                            .anyMatch(lowerKeyStr::contains);
+
+                        String logValue;
+                        if (isSensitive) {
+                            logValue = "******"; // mask sensitive values
+                        } else {
+                            logValue = (value == null) ? "'null'" : value[0];
+                        }
+
+                        logger.trace("   key: " + keyStr + ", value: " + logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -1334,6 +1348,25 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
+    @Override
+    public String getDomainId(Map<String, Object[]> params) {
+        if (MapUtils.isEmpty(params)) {
+            return null;
+        }
+
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+
+        if (domainIdArr == null || domainIdArr.length == 0) {
+            return null;
+        }
+
+        return domainIdArr[0];
+    }
+
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
@@ -1396,7 +1429,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final BasicHttpEntity body = new BasicHttpEntity();
             if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
-                body.setContentType(JSONcontentType.value());
+                body.setContentType(JSONContentType.value());
                 if (responseText == null) {
                     body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes(HttpUtils.UTF_8)));
                 }
@@ -1633,7 +1666,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,
                 EnableSecureSessionCookie,
-                JSONDefaultContentType,
+                JSONContentType,
                 proxyForwardList,
                 useForwardHeader,
                 listOfForwardHeaders,

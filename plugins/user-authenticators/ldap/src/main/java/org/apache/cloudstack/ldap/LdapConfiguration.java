@@ -27,9 +27,12 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class LdapConfiguration implements Configurable{
     private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<Long>(
             Long.class,
@@ -325,7 +328,7 @@ public class LdapConfiguration implements Configurable{
         try {
             provider = LdapUserManager.Provider.valueOf(ldapProvider.valueIn(domainId).toUpperCase());
         } catch (IllegalArgumentException ex) {
-            //openldap is the default
+            logger.warn("no LDAP provider found for domain {}, using openldap as default", domainId);
             provider = LdapUserManager.Provider.OPENLDAP;
         }
         return provider;

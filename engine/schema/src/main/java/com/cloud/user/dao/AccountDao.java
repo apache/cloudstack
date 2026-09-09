@@ -21,13 +21,11 @@ import java.util.List;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface AccountDao extends GenericDao<AccountVO, Long> {
-    Pair<User, Account> findUserAccountByApiKey(String apiKey);
 
     List<AccountVO> findAccountsLike(String accountName);
 

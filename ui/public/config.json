@@ -97,5 +97,7 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
-  "docHelpMappings": {}
+  "docHelpMappings": {},
+  "notifyLatestCSVersion": true,
+  "showSearchFilters": true
 }

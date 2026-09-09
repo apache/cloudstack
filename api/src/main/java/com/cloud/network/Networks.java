@@ -78,7 +78,7 @@ public class Networks {
             }
             @Override
             public String getValueFrom(URI uri) {
-                return uri.getAuthority();
+                return uri == null ? null : uri.getAuthority();
             }
         },
         Vswitch("vs", String.class), LinkLocal(null, null), Vnet("vnet", Long.class), Storage("storage", Integer.class), Lswitch("lswitch", String.class) {
@@ -96,7 +96,7 @@ public class Networks {
              */
             @Override
             public String getValueFrom(URI uri) {
-                return uri.getSchemeSpecificPart();
+                return uri == null ? null : uri.getSchemeSpecificPart();
             }
         },
         Mido("mido", String.class), Pvlan("pvlan", String.class),
@@ -176,7 +176,7 @@ public class Networks {
          * @return the scheme as BroadcastDomainType
          */
         public static BroadcastDomainType getSchemeValue(URI uri) {
-            return toEnumValue(uri.getScheme());
+            return toEnumValue(uri == null ? null : uri.getScheme());
         }
 
         /**
@@ -190,7 +190,7 @@ public class Networks {
             if (com.cloud.dc.Vlan.UNTAGGED.equalsIgnoreCase(str)) {
                 return Native;
             }
-            return getSchemeValue(new URI(str));
+            return getSchemeValue(str == null ? null : new URI(str));
         }
 
         /**
@@ -219,7 +219,7 @@ public class Networks {
          * @return the host part as String
          */
         public String getValueFrom(URI uri) {
-            return uri.getHost();
+            return uri == null ? null : uri.getHost();
         }
 
         /**
@@ -242,7 +242,7 @@ public class Networks {
          * @throws URISyntaxException the string is not even an uri
          */
         public static String getValue(String uriString) throws URISyntaxException {
-            return getValue(new URI(uriString));
+            return getValue(uriString == null ? null : new URI(uriString));
         }
 
         /**

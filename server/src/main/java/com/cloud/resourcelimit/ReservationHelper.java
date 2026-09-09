@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+package com.cloud.resourcelimit;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.resourcelimit.Reserver;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RoleTest {
+import java.util.List;
 
-    @Test
-    public void setTagsTestAddFieldTagsToCollection() {
-        Role variable = new Role();
-        variable.setType(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("type"));
+public class ReservationHelper {
+
+    public static void closeAll(List<Reserver> reservations) throws CloudRuntimeException {
+        for (Reserver reservation : reservations) {
+            reservation.close();
+        }
     }
+
 }

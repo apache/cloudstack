@@ -81,7 +81,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            logger.error("error deleting usage vm instance with vmId: " + instance.getVmInstanceId() + ", for account with id: " + instance.getAccountId());
+            logger.error("Error deleting usage Instance with vmId: " + instance.getVmInstanceId() + ", for account with id: " + instance.getAccountId());
         } finally {
             txn.close();
         }
@@ -139,7 +139,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                 usageInstances.add(usageInstance);
             }
         } catch (Exception ex) {
-            logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
+            logger.error("Error retrieving usage Instances for Account ID: " + accountId, ex);
         } finally {
             txn.close();
         }

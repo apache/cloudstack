@@ -46,7 +46,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
@@ -139,7 +138,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref1.getDataStoreId()).thenReturn(2L);
         Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(100L);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Image)).thenReturn(101L);
         Pair<List<SnapshotDataStoreVO>, List<Long>> pair = snapshotManager.getStoreRefsAndZonesForSnapshotDelete(snapshotId, null);
@@ -164,7 +163,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref2.getDataStoreId()).thenReturn(3L);
         Mockito.when(ref2.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1, ref2);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Primary)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(3L, DataStoreRole.Image)).thenReturn(2L);
@@ -284,12 +283,11 @@ public class SnapshotManagerImplTest {
         Mockito.when(result1.isFailed()).thenReturn(false);
         AsyncCallFuture<SnapshotResult> future1 = Mockito.mock(AsyncCallFuture.class);
         try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.when(future.get()).thenReturn(result);
             Mockito.when(snapshotService.queryCopySnapshot(Mockito.any())).thenReturn(future);
             Mockito.when(future1.get()).thenReturn(result1);
             Mockito.when(snapshotService.copySnapshot(Mockito.any(SnapshotInfo.class), Mockito.anyString(), Mockito.any(DataStore.class))).thenReturn(future1);
-        } catch (ResourceAllocationException | ResourceUnavailableException | ExecutionException | InterruptedException e) {
+        } catch (ResourceUnavailableException | ExecutionException | InterruptedException e) {
             Assert.fail(e.getMessage());
         }
         List<Long> addedZone = new ArrayList<>();

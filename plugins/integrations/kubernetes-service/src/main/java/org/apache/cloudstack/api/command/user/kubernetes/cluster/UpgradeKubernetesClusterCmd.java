@@ -55,12 +55,12 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class, required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "The ID of the Kubernetes cluster")
     private Long id;
 
     @Parameter(name = ApiConstants.KUBERNETES_VERSION_ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class, required = true,
-            description = "the ID of the Kubernetes version for upgrade")
+            description = "The ID of the Kubernetes version for upgrade")
     private Long kubernetesVersionId;
 
     /////////////////////////////////////////////////////

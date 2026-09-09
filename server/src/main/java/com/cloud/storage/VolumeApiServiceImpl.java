@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.resourcelimit.ReservationHelper;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -87,10 +89,12 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -354,6 +358,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private BackupDao backupDao;
     @Inject
     HostPodDao podDao;
+    @Inject
+    private ReservationDao reservationDao;
 
 
     protected Gson _gson;
@@ -421,9 +427,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
 
-        validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
+        VolumeVO volume;
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId, reservations);
+            volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -463,77 +476,83 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
 
-        validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId, reservations);
 
-        return Transaction.execute(new TransactionCallbackWithException<GetUploadParamsResponse, MalformedURLException>() {
-            @Override
-            public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
+            return Transaction.execute(new TransactionCallbackWithException<GetUploadParamsResponse, MalformedURLException>() {
+                @Override
+                public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
-                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
+                    VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
 
-                final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId, volume);
+                    final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId, volume);
 
-                VolumeInfo vol = volFactory.getVolume(volume.getId());
+                    VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), format);
-                vol.addPayload(payload);
+                    RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), format);
+                    vol.addPayload(payload);
 
-                Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
-                EndPoint ep = pair.first();
-                DataObject dataObject = pair.second();
+                    Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
+                    EndPoint ep = pair.first();
+                    DataObject dataObject = pair.second();
 
-                GetUploadParamsResponse response = new GetUploadParamsResponse();
+                    GetUploadParamsResponse response = new GetUploadParamsResponse();
 
-                String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
-                String protocol = UseHttpsToUpload.value() ? "https" : "http";
+                    String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+                    String protocol = UseHttpsToUpload.value() ? "https" : "http";
 
-                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
-                response.setPostURL(new URL(url));
+                    String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
+                    response.setPostURL(new URL(url));
 
-                // set the post url, this is used in the monitoring thread to determine the SSVM
-                VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
-                assert (volumeStore != null) : "sincle volume is registered, volumestore cannot be null at this stage";
-                volumeStore.setExtractUrl(url);
-                _volumeStoreDao.persist(volumeStore);
+                    // set the post url, this is used in the monitoring thread to determine the SSVM
+                    VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
+                    assert (volumeStore != null) : "sincle volume is registered, volumestore cannot be null at this stage";
+                    volumeStore.setExtractUrl(url);
+                    _volumeStoreDao.persist(volumeStore);
 
-                response.setId(UUID.fromString(vol.getUuid()));
+                    response.setId(UUID.fromString(vol.getUuid()));
 
-                int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
-                DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
-                String expires = currentDateTime.plusMinutes(timeout).toString();
-                response.setTimeout(expires);
+                    int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
+                    DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
+                    String expires = currentDateTime.plusMinutes(timeout).toString();
+                    response.setTimeout(expires);
 
-                String key = _configDao.getValue(Config.SSVMPSK.key());
-                /*
-                 * encoded metadata using the post upload config key
-                 */
-                TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
-                        vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
-                command.setLocalPath(volumeStore.getLocalDownloadPath());
-                //using the existing max upload size configuration
-                command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
-                command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
+                    String key = _configDao.getValue(Config.SSVMPSK.key());
+                    /*
+                     * encoded metadata using the post upload config key
+                     */
+                    TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
+                            vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
+                    command.setLocalPath(volumeStore.getLocalDownloadPath());
+                    //using the existing max upload size configuration
+                    command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
+                    command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
 
-                long accountId = vol.getAccountId();
-                Account account = _accountDao.findById(accountId);
-                Domain domain = domainDao.findById(account.getDomainId());
+                    long accountId = vol.getAccountId();
+                    Account account = _accountDao.findById(accountId);
+                    Domain domain = domainDao.findById(account.getDomainId());
 
-                command.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
-                command.setAccountId(accountId);
-                Gson gson = new GsonBuilder().create();
-                String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
-                response.setMetadata(metadata);
+                    command.setDefaultMaxSecondaryStorageInBytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
+                    command.setAccountId(accountId);
+                    Gson gson = new GsonBuilder().create();
+                    String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
+                    response.setMetadata(metadata);
 
-                /*
-                 * signature calculated on the url, expiry, metadata.
-                 */
-                response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
-                return response;
-            }
-        });
+                    /*
+                     * signature calculated on the url, expiry, metadata.
+                     */
+                    response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
+                    return response;
+                }
+            });
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
-    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format, Long diskOfferingId) throws ResourceAllocationException {
+    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format, Long diskOfferingId, List<Reserver> reservations) throws ResourceAllocationException {
 
         // permission check
         Account volumeOwner = _accountMgr.getActiveAccountById(ownerId);
@@ -544,7 +563,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, null, true, volumeOwner);
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkVolumeResourceLimit(volumeOwner, true, null, diskOffering);
+        _resourceLimitMgr.checkVolumeResourceLimit(volumeOwner, true, null, diskOffering, reservations);
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -918,30 +937,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
-        // Check that the resource limit for volume & primary storage won't be exceeded
-        _resourceLimitMgr.checkVolumeResourceLimit(owner,displayVolume, size, diskOffering);
-
-        // Verify that zone exists
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering);
+        if (tags.size() == 1 && tags.get(0) == null) {
+            tags = new ArrayList<>();
         }
 
-        // Check if zone is disabled
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone: %s is currently disabled", zone));
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            _resourceLimitMgr.checkVolumeResourceLimit(owner, displayVolume, size, diskOffering, reservations);
+
+            // Verify that zone exists
+            DataCenterVO zone = _dcDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+            }
+
+            // Check if zone is disabled
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+                throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone: %s is currently disabled", zone));
+            }
+
+            // If local storage is disabled then creation of volume with local disk
+            // offering not allowed
+            if (!zone.isLocalStorageEnabled() && diskOffering.isUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
+            }
+
+            String userSpecifiedName = getVolumeNameFromCommand(cmd);
+
+            return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
+                    _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
+        } finally {
+            ReservationHelper.closeAll(reservations);
         }
-
-        // If local storage is disabled then creation of volume with local disk
-        // offering not allowed
-        if (!zone.isLocalStorageEnabled() && diskOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
-        }
-
-        String userSpecifiedName = getVolumeNameFromCommand(cmd);
-
-        return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
-                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
     }
 
     @Override
@@ -1266,134 +1294,141 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (dataStore != null && dataStore.getDriver() instanceof PrimaryDataStoreDriver) {
             newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, isEncryptionRequired);
         }
-        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, diskOffering, newDiskOffering);
 
-        // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS is available to perform
-        // the requested change
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, diskOffering, newDiskOffering, reservations);
 
-        /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
-        // We need to publish this event to usage_volume table
-        if (volume.getState() == Volume.State.Allocated) {
-            logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
+            // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS is available to perform
+            // the requested change
 
-            volume.setSize(newSize);
-            volume.setMinIops(newMinIops);
-            volume.setMaxIops(newMaxIops);
-            volume.setHypervisorSnapshotReserve(newHypervisorSnapshotReserve);
+            /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
+            // We need to publish this event to usage_volume table
+            if (volume.getState() == Volume.State.Allocated) {
+                logger.debug("Volume is in the allocated state, but has never been created. Simply updating database with new size and IOPS.");
 
-            if (newDiskOffering != null) {
-                volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
-            }
+                volume.setSize(newSize);
+                volume.setMinIops(newMinIops);
+                volume.setMaxIops(newMaxIops);
+                volume.setHypervisorSnapshotReserve(newHypervisorSnapshotReserve);
 
-            _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
-                    diskOffering, newDiskOffering);
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
-            return volume;
-        }
-
-        Long newDiskOfferingId = newDiskOffering != null ? newDiskOffering.getId() : diskOffering.getId();
-
-        boolean volumeMigrateRequired = false;
-        List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = null;
-        StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
-        if (!storageMgr.storagePoolHasEnoughSpaceForResize(storagePool, currentSize, newSize)) {
-            if (!autoMigrateVolume) {
-                throw new CloudRuntimeException(String.format("Failed to resize volume %s since the storage pool does not have enough space to accommodate new size for the volume %s, try with automigrate set to true in order to check in the other suitable pools for the new size and then migrate & resize volume there.", volume.getUuid(), volume.getName()));
-            }
-            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOfferingId, currentSize, newMinIops, newMaxIops, true, false);
-            List<? extends StoragePool> suitableStoragePools = poolsPair.second();
-            if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) found for migrating to support new disk offering or new size", volume.getUuid()));
-            }
-            final Long newSizeFinal = newSize;
-            suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) with enough space found.", volume.getUuid()));
-            }
-            Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
-            volumeMigrateRequired = true;
-        }
-
-        boolean volumeResizeRequired = false;
-        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
-            volumeResizeRequired = true;
-        }
-        if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
-            _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
-            volume = _volsDao.findById(volume.getId());
-            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
-
-            return volume;
-        }
-
-        if (volumeMigrateRequired) {
-            MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOfferingId, true);
-            try {
-                Volume result = migrateVolume(migrateVolumeCmd);
-                volume = (result != null) ? _volsDao.findById(result.getId()) : null;
-                if (volume == null) {
-                    throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
-                }
-            } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
-            }
-        }
-
-        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
-
-        if (userVm != null) {
-            // serialize VM operation
-            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-
-            if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-                // avoid re-entrance
-
-                VmWorkJobVO placeHolder = null;
-
-                placeHolder = createPlaceHolderWork(userVm.getId());
-
-                try {
-                    return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
-                } finally {
-                    _workJobDao.expunge(placeHolder.getId());
-                }
-            } else {
-                Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
-
-                try {
-                    outcome.get();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Operation was interrupted", e);
-                } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution exception", e);
+                if (newDiskOffering != null) {
+                    volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
                 }
 
-                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                _volsDao.update(volume.getId(), volume);
+                _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+                        diskOffering, newDiskOffering);
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+                return volume;
+            }
 
-                if (jobResult != null) {
-                    if (jobResult instanceof ConcurrentOperationException) {
-                        throw (ConcurrentOperationException) jobResult;
-                    } else if (jobResult instanceof ResourceAllocationException) {
-                        throw (ResourceAllocationException) jobResult;
-                    } else if (jobResult instanceof RuntimeException) {
-                        throw (RuntimeException) jobResult;
-                    } else if (jobResult instanceof Throwable) {
-                        throw new RuntimeException("Unexpected exception", (Throwable) jobResult);
-                    } else if (jobResult instanceof Long) {
-                        return _volsDao.findById((Long) jobResult);
-                    }
+            Long newDiskOfferingId = newDiskOffering != null ? newDiskOffering.getId() : diskOffering.getId();
+
+            boolean volumeMigrateRequired = false;
+            List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = null;
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+            if (!storageMgr.storagePoolHasEnoughSpaceForResize(storagePool, currentSize, newSize)) {
+                if (!autoMigrateVolume) {
+                    throw new CloudRuntimeException(String.format("Failed to resize volume %s since the storage pool does not have enough space to accommodate new size for the volume %s, try with automigrate set to true in order to check in the other suitable pools for the new size and then migrate & resize volume there.", volume.getUuid(), volume.getName()));
                 }
+                Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOfferingId, currentSize, newMinIops, newMaxIops, true, false);
+                List<? extends StoragePool> suitableStoragePools = poolsPair.second();
+                if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) found for migrating to support new disk offering or new size", volume.getUuid()));
+                }
+                final Long newSizeFinal = newSize;
+                suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) with enough space found.", volume.getUuid()));
+                }
+                Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
+                volumeMigrateRequired = true;
+            }
+
+            boolean volumeResizeRequired = false;
+            if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
+                volumeResizeRequired = true;
+            }
+            if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
+                _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
+                volume = _volsDao.findById(volume.getId());
+                updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
 
                 return volume;
             }
-        }
 
-        return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
-                shrinkOk);
+            if (volumeMigrateRequired) {
+                MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOfferingId, true);
+                try {
+                    Volume result = migrateVolume(migrateVolumeCmd);
+                    volume = (result != null) ? _volsDao.findById(result.getId()) : null;
+                    if (volume == null) {
+                        throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
+                    }
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
+                }
+            }
+
+            UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+
+            if (userVm != null) {
+                // serialize VM operation
+                AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+
+                if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                    // avoid re-entrance
+
+                    VmWorkJobVO placeHolder = null;
+
+                    placeHolder = createPlaceHolderWork(userVm.getId());
+
+                    try {
+                        return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
+                                newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+                    } finally {
+                        _workJobDao.expunge(placeHolder.getId());
+                    }
+                } else {
+                    Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
+                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+
+                    try {
+                        outcome.get();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException("Operation was interrupted", e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException("Execution exception", e);
+                    }
+
+                    Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+
+                    if (jobResult != null) {
+                        if (jobResult instanceof ConcurrentOperationException) {
+                            throw (ConcurrentOperationException) jobResult;
+                        } else if (jobResult instanceof ResourceAllocationException) {
+                            throw (ResourceAllocationException) jobResult;
+                        } else if (jobResult instanceof RuntimeException) {
+                            throw (RuntimeException) jobResult;
+                        } else if (jobResult instanceof Throwable) {
+                            throw new RuntimeException("Unexpected exception", (Throwable) jobResult);
+                        } else if (jobResult instanceof Long) {
+                            return _volsDao.findById((Long) jobResult);
+                        }
+                    }
+
+                    return volume;
+                }
+            }
+
+            return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops,newHypervisorSnapshotReserve,
+                    newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     /**
@@ -1536,6 +1571,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
+            volume = _volsDao.findById(volumeId);
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
                 _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
@@ -1550,7 +1586,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            volume = _volsDao.findById(volumeId);
             if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
             } else if (volume.getSize() != newSize) {
@@ -1827,12 +1862,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a volume in Destroy state.");
         }
 
+        DiskOffering diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+
+        List<Reserver> reservations = new ArrayList<>();
         try {
-            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
-        } catch (ResourceAllocationException e) {
-            logger.error("primary storage resource limit check failed", e);
-            throw new InvalidParameterValueException(e.getMessage());
-        }
+        _resourceLimitMgr.checkVolumeResourceLimit(_accountMgr.getAccount(volume.getAccountId()), volume.isDisplayVolume(), volume.getSize(), diskOffering, reservations);
 
         try {
             _volsDao.detachVolume(volume.getId());
@@ -1844,6 +1878,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _resourceLimitMgr.incrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
                 volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
 
+        } catch (ResourceAllocationException e) {
+            logger.error("primary storage resource limit check failed", e);
+            throw new InvalidParameterValueException(e.getMessage());
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
 
         publishVolumeCreationUsageEvent(volume);
 
@@ -2011,7 +2051,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkCheckAndRepairVolume workInfo = new VmWorkCheckAndRepairVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
                 VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, repair);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -2073,96 +2113,102 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, newDiskOffering.getEncrypt());
         }
 
-        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, existingDiskOffering, newDiskOffering);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, existingDiskOffering, newDiskOffering, reservations);
 
-        /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
-        // We need to publish this event to usage_volume table
-        if (volume.getState() == Volume.State.Allocated) {
-            logger.debug("Volume {} is in the allocated state, but has never been created. Simply updating database with new size and IOPS.", volume);
+            /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
+            // We need to publish this event to usage_volume table
+            if (volume.getState() == Volume.State.Allocated) {
+                logger.debug("Volume {} is in the allocated state, but has never been created. Simply updating database with new size and IOPS.", volume);
 
-            volume.setSize(newSize);
-            volume.setMinIops(newMinIops);
-            volume.setMaxIops(newMaxIops);
-            volume.setHypervisorSnapshotReserve(newHypervisorSnapshotReserve);
+                volume.setSize(newSize);
+                volume.setMinIops(newMinIops);
+                volume.setMaxIops(newMaxIops);
+                volume.setHypervisorSnapshotReserve(newHypervisorSnapshotReserve);
 
-            if (newDiskOffering != null) {
-                volume.setDiskOfferingId(newDiskOfferingId);
-                _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
-            }
-
-            _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
-                    existingDiskOffering, newDiskOffering);
-
-            if (currentSize != newSize) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
-            }
-            return volume;
-        }
-
-        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
-            volumeResizeRequired = true;
-            validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
-        }
-
-        StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
-
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOffering.getId(), currentSize, newMinIops, newMaxIops, true, false);
-        List<? extends StoragePool> suitableStoragePools = poolsPair.second();
-
-        if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
-            volumeMigrateRequired = true;
-            if (!autoMigrateVolume) {
-                throw new InvalidParameterValueException(String.format("Failed to change offering for volume %s since automigrate is set to false but volume needs to migrated", volume.getUuid()));
-            }
-        }
-
-        if (!volumeMigrateRequired && !volumeResizeRequired) {
-            _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
-            volume = _volsDao.findById(volume.getId());
-            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
-
-            return volume;
-        }
-
-        if (volumeMigrateRequired) {
-            if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) found for migrating to support new disk offering", volume));
-            }
-            final Long newSizeFinal = newSize;
-            List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) with enough space found for volume migration.", volume));
-            }
-            Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
-            MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
-            try {
-                Volume result = migrateVolume(migrateVolumeCmd);
-                volume = (result != null) ? _volsDao.findById(result.getId()) : null;
-                if (volume == null) {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
+                if (newDiskOffering != null) {
+                    volume.setDiskOfferingId(newDiskOfferingId);
+                    _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
                 }
-            } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
-            }
-        }
 
-        if (volumeResizeRequired) {
-            // refresh volume data
-            volume = _volsDao.findById(volume.getId());
-            try {
-                volume = resizeVolumeInternal(volume, newDiskOffering, currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk);
-            } catch (Exception e) {
-                if (volumeMigrateRequired) {
-                    logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
-                } else {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
+                _volsDao.update(volume.getId(), volume);
+                _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+                        existingDiskOffering, newDiskOffering);
+
+                if (currentSize != newSize) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                            volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+                }
+                return volume;
+            }
+
+            if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
+                volumeResizeRequired = true;
+                validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
+            }
+
+            StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
+
+            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOffering.getId(), currentSize, newMinIops, newMaxIops, true, false);
+            List<? extends StoragePool> suitableStoragePools = poolsPair.second();
+
+            if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
+                volumeMigrateRequired = true;
+                if (!autoMigrateVolume) {
+                    throw new InvalidParameterValueException(String.format("Failed to change offering for volume %s since automigrate is set to false but volume needs to migrated", volume.getUuid()));
                 }
             }
-        }
 
-        return volume;
+            if (!volumeMigrateRequired && !volumeResizeRequired) {
+                _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
+                volume = _volsDao.findById(volume.getId());
+                updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+
+                return volume;
+            }
+
+            if (volumeMigrateRequired) {
+                if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) found for migrating to support new disk offering", volume));
+                }
+                final Long newSizeFinal = newSize;
+                List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) with enough space found for volume migration.", volume));
+                }
+                Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
+                MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
+                try {
+                    Volume result = migrateVolume(migrateVolumeCmd);
+                    volume = (result != null) ? _volsDao.findById(result.getId()) : null;
+                    if (volume == null) {
+                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
+                    }
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
+                }
+            }
+
+            if (volumeResizeRequired) {
+                // refresh volume data
+                volume = _volsDao.findById(volume.getId());
+                try {
+                    volume = resizeVolumeInternal(volume, newDiskOffering, currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk);
+                } catch (Exception e) {
+                    if (volumeMigrateRequired) {
+                        logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
+                    } else {
+                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
+                    }
+                }
+            }
+
+            return volume;
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
@@ -2368,14 +2414,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void validateVolumeResizeWithSize(VolumeVO volume, long currentSize, Long newSize, boolean shrinkOk,
-            DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) throws ResourceAllocationException {
+            DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, List<Reserver> reservations) throws ResourceAllocationException {
 
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
             if (volume.getInstanceId() != null) {
                 // Check that VM to which this volume is attached does not have VM snapshots
                 if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
+                    throw new InvalidParameterValueException("A volume that is attached to a Instance with any Instance Snapshots cannot be resized.");
                 }
             }
 
@@ -2420,7 +2466,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) &&
+                        !Arrays.asList(StoragePoolType.StorPool, StoragePoolType.Linstor).contains(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
@@ -2437,7 +2484,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Check resource limit for this account */
         _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
                 volume.isDisplayVolume(), currentSize, newSize != null ? newSize : currentSize,
-                existingDiskOffering, newDiskOffering);
+                existingDiskOffering, newDiskOffering, reservations);
     }
 
     @Override
@@ -2609,7 +2656,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         checkForBackups(vm, true);
 
-        checkRightsToAttach(caller, volumeToAttach, vm);
+        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
@@ -2636,16 +2683,34 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume's disk offering has encryption enabled, but volume encryption is not supported for hypervisor type " + rootDiskHyperType);
         }
 
-        _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
+        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+        Long requiredPrimaryStorageSpace = getRequiredPrimaryStorageSizeForVolumeAttach(resourceLimitStorageTags, volumeToAttach);
 
-        if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
-        } else {
-            return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+        try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {
+
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+
+            if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+            } else {
+                return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+            }
+
+        } catch (ResourceAllocationException e) {
+            logger.error("primary storage resource limit check failed", e);
+            throw new InvalidParameterValueException(e.getMessage());
         }
     }
 
-    @Nullable private Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
+    protected Long getRequiredPrimaryStorageSizeForVolumeAttach(List<String> resourceLimitStorageTags, VolumeInfo volumeToAttach) {
+        if (CollectionUtils.isEmpty(resourceLimitStorageTags) || Arrays.asList(Volume.State.Allocated, Volume.State.Ready).contains(volumeToAttach.getState())) {
+            return 0L;
+        }
+        return volumeToAttach.getSize();
+    }
+
+    @Nullable protected Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
         Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
 
         Volume vol = null;
@@ -2694,26 +2759,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, UserVmVO vm) {
-        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
-
-        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
-
-        if (!Arrays.asList(Volume.State.Allocated, Volume.State.Ready).contains(volumeToAttach.getState())) {
-            try {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
-            } catch (ResourceAllocationException e) {
-                logger.error("primary storage resource limit check failed", e);
-                throw new InvalidParameterValueException(e.getMessage());
-            }
-        }
-    }
-
     private void checkForVMSnapshots(Long vmId, UserVmVO vm) {
         // if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have VM snapshots", vm.getName(), vm.getUuid()));
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to Instance %s/%s, please specify an Instance that does not have Instance Snapshots", vm.getName(), vm.getUuid()));
         }
     }
 
@@ -3031,7 +3081,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Don't allow detach if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (CollectionUtils.isNotEmpty(vmSnapshots)) {
-            throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+            throw new InvalidParameterValueException("Unable to detach volume, please specify an Instance that does not have Instance Snapshots");
         }
 
         checkForBackups(vm, false);
@@ -3318,7 +3368,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
-            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
+            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all Instance Snapshots for Instance to which this volume is attached");
         }
 
         StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
@@ -3327,7 +3377,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-                throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+                throw new InvalidParameterValueException("Live Migration of GPU enabled Instance is not supported");
             }
 
             // Check if the underlying hypervisor supports storage motion.
@@ -4194,16 +4244,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
-        _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), reservations);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                updateVolumeAccount(oldAccount, volume, newAccount);
-            }
-        });
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    updateVolumeAccount(oldAccount, volume, newAccount);
+                }
+            });
 
-        return volume;
+            return volume;
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     protected void updateVolumeAccount(Account oldAccount, VolumeVO volume, Account newAccount) {
@@ -4967,7 +5023,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5001,7 +5057,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5033,7 +5089,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize,
                 newMinIops, newMaxIops, newHypervisorSnapshotReserve, newServiceOfferingId, shrinkOk);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5064,7 +5120,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkExtractVolume workInfo = new VmWorkExtractVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, zoneId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5095,7 +5151,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, vol.getId(), destPool.getId(),
                 liveMigrateVolume, newDiskOfferingId);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5128,7 +5184,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // save work context info (there are some duplications)
         VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(callingUser.getId(), accountId != null ? accountId : callingAccount.getId(), vm.getId(),
                 VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm, locationType, asyncBackup, zoneIds);
-        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        workJob.updateCmdInfoWithEncryptionIfNeeded(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
@@ -5199,7 +5255,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_PLACEHOLDER);
         workJob.setCmd("");
-        workJob.setCmdInfo("");
+        workJob.updateCmdInfoWithEncryptionIfNeeded("");
 
         workJob.setAccountId(0);
         workJob.setUserId(0);

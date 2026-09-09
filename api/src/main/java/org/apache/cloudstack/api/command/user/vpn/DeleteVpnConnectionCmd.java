@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVpnConnection", description = "Delete site to site vpn connection", responseObject = SuccessResponse.class, entityType = {Site2SiteVpnConnection.class},
+@APICommand(name = "deleteVpnConnection", description = "Delete site to site VPN connection", responseObject = SuccessResponse.class, entityType = {Site2SiteVpnConnection.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
 
@@ -39,7 +39,7 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnConnectionResponse.class, required = true, description = "id of vpn connection")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnConnectionResponse.class, required = true, description = "ID of VPN connection")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete site-to-site VPN connection for account " + getEntityOwnerId();
+        return "Delete site-to-site VPN connection for Account " + getEntityOwnerId();
     }
 
     @Override

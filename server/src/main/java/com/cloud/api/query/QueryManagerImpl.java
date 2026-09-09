@@ -2309,6 +2309,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long pageSize = cmd.getPageSizeVal();
         Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
         final CPU.CPUArch arch = cmd.getArch();
+        String version = cmd.getVersion();
 
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2325,11 +2326,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         hostSearchBuilder.and("resourceState", hostSearchBuilder.entity().getResourceState(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("hypervisor_type", hostSearchBuilder.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("arch", hostSearchBuilder.entity().getArch(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("version", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordStatus", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordType", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.or("keywordVersion", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.cp();
         }
 
@@ -2360,6 +2363,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("keywordName", "%" + keyword + "%");
             sc.setParameters("keywordStatus", "%" + keyword + "%");
             sc.setParameters("keywordType", "%" + keyword + "%");
+            sc.setParameters("keywordVersion", "%" + keyword + "%");
         }
 
         if (id != null) {
@@ -2407,6 +2411,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (arch != null) {
             sc.setParameters("arch", arch);
+        }
+
+        if (version != null) {
+            sc.setParameters("version", version);
         }
 
         Pair<List<HostVO>, Integer> uniqueHostPair = hostDao.searchAndCount(sc, searchFilter);
@@ -3190,23 +3198,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd) {
-        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal();
+        Account caller = CallContext.current().getCallingAccount();
+        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal(caller);
+        List<HostTagVO> tags = result.first();
         ListResponse<HostTagResponse> response = new ListResponse<>();
-        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(result.first().toArray(new HostTagVO[0]));
+        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(tags.toArray(new HostTagVO[0]));
+
+        Map<Long, String> hostUuidsById = hostDao.listByIds(tags.stream().map(HostTagVO::getHostId).distinct().collect(Collectors.toList()))
+                .stream().collect(Collectors.toMap(HostVO::getId, HostVO::getUuid));
+        for (int i = 0; i < tagResponses.size(); i++) {
+            tagResponses.get(i).setHostId(hostUuidsById.get(tags.get(i).getHostId()));
+        }
 
         response.setResponses(tagResponses, result.second());
 
         return response;
     }
 
-    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal() {
+    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal(Account caller) {
         Filter searchFilter = new Filter(HostTagVO.class, "id", Boolean.TRUE, null, null);
 
         SearchBuilder<HostTagVO> sb = _hostTagDao.createSearchBuilder();
 
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
 
+        List<Long> allowedHostIds = null;
+        if (!accountMgr.isRootAdmin(caller.getId())) {
+            allowedHostIds = getDedicatedHostIdsForDomain(caller);
+            if (allowedHostIds.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+            sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.IN);
+        }
+
         SearchCriteria<HostTagVO> sc = sb.create();
+        if (allowedHostIds != null) {
+            sc.setParameters("hostId", allowedHostIds.toArray());
+        }
 
         // search host tag details by ids
         Pair<List<HostTagVO>, Integer> uniqueTagPair = _hostTagDao.searchAndCount(sc, searchFilter);
@@ -3227,6 +3255,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<HostTagVO> vrs = _hostTagDao.searchByIds(vrIds);
 
         return new Pair<>(vrs, count);
+    }
+
+    /**
+     * Resolves the set of host IDs dedicated to the given non-root-admin caller's domain or any of its
+     * sub-domains - including resources dedicated to a specific account within that domain lineage,
+     * not just domain-wide dedications - either directly or via a dedicated cluster/pod/zone.
+     */
+    private List<Long> getDedicatedHostIdsForDomain(Account caller) {
+        Set<Long> hostIds = new HashSet<>();
+
+        List<DedicatedResourceVO> dedicatedResources = new ArrayList<>();
+        DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+        if (callerDomain != null) {
+            for (Long domainId : _domainMgr.getDomainChildrenIds(callerDomain.getPath())) {
+                dedicatedResources.addAll(_dedicatedDao.listAllByDomainId(domainId));
+            }
+        }
+
+        for (DedicatedResourceVO dedicated : dedicatedResources) {
+            if (dedicated.getHostId() != null) {
+                hostIds.add(dedicated.getHostId());
+            } else if (dedicated.getClusterId() != null) {
+                for (HostVO host : hostDao.findByClusterId(dedicated.getClusterId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getPodId() != null) {
+                for (HostVO host : hostDao.findByPodId(dedicated.getPodId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getDataCenterId() != null) {
+                for (HostVO host : hostDao.findByDataCenterId(dedicated.getDataCenterId())) {
+                    hostIds.add(host.getId());
+                }
+            }
+        }
+
+        return new ArrayList<>(hostIds);
     }
 
     @Override
@@ -5061,6 +5126,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("e1000", "virtio", "rtl8139", "vmxnet3", "ne2k_pci"));
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
+            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
@@ -5071,6 +5137,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VIRTUAL_TPM_VERSION, Arrays.asList("1.2", "2.0"));
             options.put(VmDetailConstants.GUEST_CPU_MODE, Arrays.asList("custom", "host-model", "host-passthrough"));
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
+            options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -5335,7 +5402,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType, true);
         }
 
         List<? extends ResourceDetail> detailList = new ArrayList<>();
@@ -5395,6 +5462,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     protected Pair<List<ManagementServerJoinVO>, Integer> listManagementServersInternal(ListMgmtsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getHostName();
+        String version = cmd.getVersion();
+        String keyword = cmd.getKeyword();
 
         SearchBuilder<ManagementServerJoinVO> sb = managementServerJoinDao.createSearchBuilder();
         SearchCriteria<ManagementServerJoinVO> sc = sb.create();
@@ -5403,6 +5472,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+        if (version != null) {
+            sc.addAnd("version", SearchCriteria.Op.EQ, version);
+        }
+        if (keyword != null) {
+            sc.addAnd("version", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
         return managementServerJoinDao.searchAndCount(sc, null);
     }

@@ -100,7 +100,7 @@ export default {
       this.breadList = []
       this.$route.matched.forEach((item, idx) => {
         const parent = this.$route.matched[idx - 1]
-        if (item && parent && parent.name !== 'index' && !item.path.endsWith(':id')) {
+        if (item && parent && parent.name !== 'index' && !item.path.endsWith(':id') && !item.path.endsWith(':id(.*)')) {
           this.breadList.pop()
         }
         this.breadList.push(item)

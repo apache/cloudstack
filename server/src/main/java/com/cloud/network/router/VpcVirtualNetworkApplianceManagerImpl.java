@@ -333,7 +333,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             defaultIp6Dns1 = nic.getIPv6Dns1();
                             defaultIp6Dns2 = nic.getIPv6Dns2();
                         }
-                        logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
+                        logger.debug("Removing NIC " + nic + " of type " + nic.getTrafficType() + " from the NICs passed on Instance start. " + "The NIC will be plugged later");
                         it.remove();
                     }
                 }

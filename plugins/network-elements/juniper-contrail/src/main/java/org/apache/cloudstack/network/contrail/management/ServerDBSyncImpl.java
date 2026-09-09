@@ -729,7 +729,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         final ApiConnector api = _manager.getApiConnector();
         for (ObjectReference<ApiPropertyBase> instIp : list) {
             api.delete(InstanceIp.class, instIp.getUuid());
-            syncLogMesg.append("VNC instance ip: " + instIp.getUuid() + " deleted\n");
+            syncLogMesg.append("VNC instance IP: " + instIp.getUuid() + " deleted\n");
         }
 
     }
@@ -741,7 +741,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         final ApiConnector api = _manager.getApiConnector();
         for (ObjectReference<?> floatingIp : list) {
             api.delete(FloatingIp.class, floatingIp.getUuid());
-            syncLogMesg.append("VNC instance ip: " + floatingIp.getUuid() + " deleted\n");
+            syncLogMesg.append("VNC instance IP: " + floatingIp.getUuid() + " deleted\n");
         }
     }
 

@@ -46,7 +46,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "the ID of the autoscale policy")
+               description = "The ID of the autoscale policy")
     private Long id;
 
     // ///////////////////////////////////////////////////

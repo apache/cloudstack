@@ -42,7 +42,7 @@ public class ListUcsProfileCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.UCS_MANAGER_ID,
                type = CommandType.UUID,
                entityType = UcsManagerResponse.class,
-               description = "the id for the ucs manager",
+               description = "The ID for the ucs manager",
                required = true)
     private Long ucsManagerId;
 

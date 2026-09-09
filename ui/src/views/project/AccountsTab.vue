@@ -157,17 +157,6 @@ export default {
     this.fetchData()
   },
   inject: ['parentFetchData'],
-  watch: {
-    resource: {
-      deep: true,
-      handler (newItem) {
-        if (!newItem || !newItem.id) {
-          return
-        }
-        this.fetchData()
-      }
-    }
-  },
   methods: {
     fetchData () {
       const params = {}
@@ -175,6 +164,7 @@ export default {
       params.page = this.page
       params.pageSize = this.pageSize
       this.updateProjectApi = this.$store.getters.apis.updateProject
+      if (!this.resource.id) return
       this.fetchUsers()
       this.fetchProjectAccounts(params)
       if (this.isProjectRolesSupported()) {

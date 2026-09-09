@@ -212,7 +212,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         try {
-            snapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+            snapshot.processEvent(Event.OperationSucceeded, result.getAnswer());
             snapshot.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (Exception e) {
             logger.debug("Failed to create snapshot: ", e);
@@ -382,8 +382,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (res.isFailed()) {
                 throw new CloudRuntimeException(res.getResult());
             }
-            SnapshotInfo destSnapshot = res.getSnapshot();
-            return destSnapshot;
+            return res.getSnapshot();
         } catch (InterruptedException e) {
             logger.debug("failed copy snapshot", e);
             throw new CloudRuntimeException("Failed to copy snapshot", e);
@@ -391,7 +390,6 @@ public class SnapshotServiceImpl implements SnapshotService {
             logger.debug("Failed to copy snapshot", e);
             throw new CloudRuntimeException("Failed to copy snapshot", e);
         }
-
     }
 
     protected Void copySnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback, CopySnapshotContext<CommandResult> context) {
@@ -423,7 +421,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed, copyCmdAnswer);
+            destSnapshot.processEvent(Event.OperationSucceeded, copyCmdAnswer);
             srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), copyCmdAnswer);
             future.complete(snapResult);
@@ -448,7 +446,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
         try {
             Answer answer = result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed);
+            destSnapshot.processEvent(Event.OperationSucceeded);
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
             future.complete(snapResult);
         } catch (Exception e) {
@@ -479,7 +477,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     protected Void deleteSnapshotCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> callback, DeleteSnapshotContext<CommandResult> context) {
-
         CommandResult result = callback.getResult();
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotInfo snapshot = context.snapshot;
@@ -491,7 +488,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
             } else {
-                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+                snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
@@ -607,7 +604,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         if (snapshot != null) {
             if (snapshot.getState() != Snapshot.State.BackedUp) {
-                List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+                List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotDataStoreVOs) {
                     logger.debug("Remove snapshot {}, status {} on snapshot_store_ref table with id: {}", snapshot, snapshotDataStoreVO.getState(), snapshotDataStoreVO.getId());
 
@@ -681,7 +678,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 // no change to existing snapshot_store_ref, will try to re-sync later if other call triggers this sync operation
             } else {
                 // this will update install path properly, next time it will not sync anymore.
-                destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destSnapshot.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -711,8 +708,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 try {
                     SnapshotObject srcSnapshot = (SnapshotObject)snapshot;
                     srcSnapshot.processEvent(Event.DestroyRequested);
-                    srcSnapshot.processEvent(Event.OperationSuccessed);
-
+                    srcSnapshot.processEvent(Event.OperationSucceeded);
                     srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
 
                     _snapshotDetailsDao.removeDetail(srcSnapshot.getId(), AsyncJob.Constants.MS_ID);
@@ -723,7 +719,6 @@ public class SnapshotServiceImpl implements SnapshotService {
                 }
             }
         });
-
     }
 
     @Override
