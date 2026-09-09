@@ -186,7 +186,6 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                 } else {
                     throw new CloudRuntimeException(String.format("Unable to find the SystemVM template for any of the available hypervisors in zone %s.", zone.toString()));
                 }
-
             }
 
             LaunchPermissionVO existingPermission = launchPermissionDao.findByTemplateAndAccount(template.getId(), owner.getId());
