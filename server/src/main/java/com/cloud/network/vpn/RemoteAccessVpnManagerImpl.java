@@ -603,7 +603,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         for (int i = 0; i < finals.length; i++) {
             final VpnUserVO user = users.get(i);
-            if (finals[i]) {
+            if (Boolean.TRUE.equals(finals[i])) {
                 if (user.getState() == State.Add) {
                     user.setState(State.Active);
                     _vpnUsersDao.update(user.getId(), user);

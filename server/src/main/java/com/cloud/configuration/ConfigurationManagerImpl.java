@@ -5406,7 +5406,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long domainId = domainMap != null ? domainMap.getDomainId() : null;
 
         final Boolean isRangeForSystemVM = checkIfVlanRangeIsForSystemVM(id);
-        if (forSystemVms != null && isRangeForSystemVM != forSystemVms) {
+        if (forSystemVms != null && !isRangeForSystemVM.equals(forSystemVms)) {
             if (VlanType.DirectAttached.equals(vlanRange.getVlanType())) {
                 throw new InvalidParameterValueException("forSystemVms is not available for this IP range with vlan type: " + VlanType.DirectAttached);
             }
