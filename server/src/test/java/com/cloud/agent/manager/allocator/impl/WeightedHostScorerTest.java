@@ -30,6 +30,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.Host;
+import com.cloud.host.HostLoad;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
