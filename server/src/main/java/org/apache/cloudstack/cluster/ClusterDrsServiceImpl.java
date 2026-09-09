@@ -768,6 +768,29 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * @param plan
      *         the DRS plan to be executed
      */
+    /**
+     * Checks a planned migration against the affinity rules as they stand now.
+     *
+     * A plan is generated once and executed later, so state can have moved on: VMs may have been
+     * created, migrated or destroyed in between. Anti-affinity in particular is only meaningful
+     * against current placements, and nothing downstream re-checks it - migrateVirtualMachine does
+     * not enforce affinity groups.
+     *
+     * @param dispatched
+     *         migrations already queued by this run, which the database does not reflect yet
+     */
+    protected boolean destinationViolatesAffinity(VirtualMachine vm, Host destHost, List<VirtualMachine> dispatched) {
+        if (CollectionUtils.isEmpty(affinityGroupVMMapDao.listByInstanceId(vm.getId()))) {
+            return false;
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(destHost.getDataCenterId(), destHost.getPodId(),
+                destHost.getClusterId(), null, null, null);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null,
+                serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()), null, null);
+        ExcludeList excludes = managementServer.applyAffinityConstraints(vm, vmProfile, plan, dispatched);
+        return excludes.shouldAvoid(destHost);
+    }
+
     void executeDrsPlan(ClusterDrsPlanVO plan) {
         List<ClusterDrsPlanMigrationVO> planMigrations = drsPlanMigrationDao.listPlanMigrationsToExecute(plan.getId());
         if (planMigrations == null || planMigrations.isEmpty()) {
@@ -783,13 +806,23 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         plan.setStatus(ClusterDrsPlan.Status.IN_PROGRESS);
         drsPlanDao.update(plan.getId(), plan);
 
+        List<VirtualMachine> dispatched = new ArrayList<>();
+
         for (ClusterDrsPlanMigrationVO migration : planMigrations) {
             try {
-                VirtualMachine vm = vmInstanceDao.findById(migration.getVmId());
+                VMInstanceVO vm = vmInstanceDao.findById(migration.getVmId());
                 Host host = hostDao.findById(migration.getDestHostId());
                 if (vm == null || host == null) {
                     throw new CloudRuntimeException(String.format("vm %s or host %s is not found", migration.getVmId(),
                             migration.getDestHostId()));
+                }
+
+                if (destinationViolatesAffinity(vm, host, dispatched)) {
+                    logger.warn("Skipping DRS migration of vm {} to host {}: it no longer satisfies the affinity " +
+                            "rules for that VM. The plan was generated against older state.", vm, host);
+                    migration.setStatus(JobInfo.Status.FAILED);
+                    drsPlanMigrationDao.update(migration.getId(), migration);
+                    continue;
                 }
 
                 logger.debug("Executing DRS plan {} for vm {} to host {}", plan, vm, host);
@@ -798,6 +831,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 migration.setJobId(jobId);
                 migration.setStatus(job.getStatus());
                 drsPlanMigrationDao.update(migration.getId(), migration);
+
+                // the migration job has only been queued, so the database still shows the old host.
+                // record where it is headed so later migrations in this plan see it.
+                vm.setHostId(host.getId());
+                dispatched.add(vm);
             } catch (Exception e) {
                 logger.warn("Unable to execute DRS plan {} due to {}", plan, e.getMessage());
                 migration.setStatus(JobInfo.Status.FAILED);
