@@ -54,10 +54,10 @@ public class ListSslCertsCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, required = false, description = "Account ID and " + ApiConstants.ACCOUNT + " are mutually exclusive.")
     private Long accountId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, since = "4.24", description = "Account owning the SSL certificate")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, since = "24.0.0", description = "Account owning the SSL certificate")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, since = "4.24", entityType = DomainResponse.class, description = "Domain ID of the account owning the SSL certificate")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, since = "24.0.0", entityType = DomainResponse.class, description = "Domain ID of the account owning the SSL certificate")
     private Long domainId;
 
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = false, description = "Load balancer rule ID")
