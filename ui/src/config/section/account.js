@@ -136,7 +136,10 @@ export default {
           options: ['GROUP', 'OU']
         },
         accounttype: {
-          options: ['0', '2']
+          options: [
+            { id: '0', description: 'label.account.type.normal' },
+            { id: '2', description: 'label.account.type.domain.admin' }
+          ]
         },
         domainid: {
           value: (record) => { return record.domainid }
