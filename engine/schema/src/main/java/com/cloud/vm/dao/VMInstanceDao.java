@@ -131,6 +131,16 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<Long> listHostIdsByVmCount(long dcId, Long podId, Long clusterId, long accountId);
 
+    /**
+     * Counts the VMs occupying each host in a zone, pod or cluster.
+     *
+     * @param startedAfter
+     *         when set, counts only VMs that last changed state after this time, which approximates
+     *         the VMs that have recently started and are still working through their startup load
+     * @return host id to VM count, hosts with no VMs omitted
+     */
+    Map<Long, Long> countVmsByHost(long dcId, Long podId, Long clusterId, Date startedAfter);
+
     Long countRunningAndStartingByAccount(long accountId);
 
     Long countByZoneAndState(long zoneId, State state);

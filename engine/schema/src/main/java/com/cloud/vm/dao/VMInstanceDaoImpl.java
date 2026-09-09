@@ -18,6 +18,7 @@ package com.cloud.vm.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,6 +154,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             + "WHERE vm_id IS NOT NULL AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY gpu_card.name, vgpu_profile.name";
+
+    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id) FROM `cloud`.`host` host " +
+            "LEFT JOIN `cloud`.`vm_instance` vm ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Migrating') " +
+            "AND vm.removed IS NULL %s WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BY_HOST_PART2 = " GROUP BY host.id ";
 
     private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
@@ -792,6 +798,44 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             throw new CloudRuntimeException("DB Exception on: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + ORDER_PODS_NUMBER_OF_VMS_FOR_ACCOUNT, e);
+        }
+    }
+
+
+    @Override
+    public Map<Long, Long> countVmsByHost(long dcId, Long podId, Long clusterId, Date startedAfter) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        Map<Long, Long> result = new HashMap<>();
+        String sql = String.format(COUNT_VMS_BY_HOST, startedAfter != null ? " AND vm.update_time > ? " : "");
+        if (podId != null) {
+            sql = sql + " AND host.pod_id = ? ";
+        }
+        if (clusterId != null) {
+            sql = sql + " AND host.cluster_id = ? ";
+        }
+        sql = sql + COUNT_VMS_BY_HOST_PART2;
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+            int index = 1;
+            if (startedAfter != null) {
+                pstmt.setTimestamp(index++, new Timestamp(startedAfter.getTime()));
+            }
+            pstmt.setLong(index++, dcId);
+            if (podId != null) {
+                pstmt.setLong(index++, podId);
+            }
+            if (clusterId != null) {
+                pstmt.setLong(index, clusterId);
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.put(rs.getLong(1), rs.getLong(2));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
 
