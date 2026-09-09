@@ -62,7 +62,7 @@ public class WeightedHostScorerTest {
     }
 
     private double score(double cpuAllocated, double memAllocated, HostLoad load, long vms, long recentStarts) {
-        return scorer.scoreHost(null, cpuAllocated, memAllocated, load, vms, recentStarts);
+        return scorer.scoreHostIn(null, cpuAllocated, memAllocated, load, vms, recentStarts);
     }
 
     @Test
