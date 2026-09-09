@@ -155,9 +155,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY gpu_card.name, vgpu_profile.name";
 
-    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id) FROM `cloud`.`host` host " +
-            "LEFT JOIN `cloud`.`vm_instance` vm ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Migrating') " +
-            "AND vm.removed IS NULL %s WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(vm.update_time > ?, 1, 0)) " +
+            "FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm " +
+            "ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Stopping', 'Migrating') " +
+            "AND vm.removed IS NULL WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BY_HOST_PART2 = " GROUP BY host.id ";
 
     private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
@@ -803,10 +804,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
 
     @Override
-    public Map<Long, Long> countVmsByHost(long dcId, Long podId, Long clusterId, Date startedAfter) {
+    public Map<Long, Pair<Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        Map<Long, Long> result = new HashMap<>();
-        String sql = String.format(COUNT_VMS_BY_HOST, startedAfter != null ? " AND vm.update_time > ? " : "");
+        Map<Long, Pair<Long, Long>> result = new HashMap<>();
+        String sql = COUNT_VMS_BY_HOST;
         if (podId != null) {
             sql = sql + " AND host.pod_id = ? ";
         }
@@ -817,19 +818,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         try {
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             int index = 1;
-            if (startedAfter != null) {
-                pstmt.setTimestamp(index++, new Timestamp(startedAfter.getTime()));
-            }
+            // a cut-off in the future counts nothing as recent, which is what a null asks for
+            long cutOff = changedStateAfter != null ? changedStateAfter.getTime() : Long.MAX_VALUE;
+            pstmt.setTimestamp(index++, new Timestamp(cutOff));
             pstmt.setLong(index++, dcId);
             if (podId != null) {
                 pstmt.setLong(index++, podId);
             }
             if (clusterId != null) {
-                pstmt.setLong(index, clusterId);
+                pstmt.setLong(index++, clusterId);
             }
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                result.put(rs.getLong(1), rs.getLong(2));
+                result.put(rs.getLong(1), new Pair<>(rs.getLong(2), rs.getLong(3)));
             }
             return result;
         } catch (SQLException e) {
