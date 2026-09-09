@@ -2481,7 +2481,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     private void throwExceptionForImageStoreObtentionFailure(Long zoneId, String operation) {
-        logger.error("Cannot find an image store for zone [{}].", zoneId);
+        logger.error("Cannot find an image store for zone [{}] while trying to {}.", zoneId, operation);
         throw new CloudRuntimeException(String.format("Failed to %s. Please contact the cloud administrator.", operation));
     }
 }
