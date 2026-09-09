@@ -31,6 +31,12 @@
         <property name="name" value="Balance" />
     </bean>
 
+    <bean id="hostLoadTracker"
+        class="com.cloud.agent.manager.allocator.impl.HostLoadTracker" />
+
+    <bean id="weightedHostScorer"
+        class="com.cloud.agent.manager.allocator.impl.WeightedHostScorer" />
+
     <bean id="firstFitAllocator"
         class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator" />
 
