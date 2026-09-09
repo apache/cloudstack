@@ -24,14 +24,20 @@ import java.util.Set;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.utils.Pair;
+
+import java.util.Date;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigDepotImplTest {
@@ -39,8 +45,32 @@ public class ConfigDepotImplTest {
     @Mock
     ConfigurationDao _configDao;
 
+    @Mock
+    ConfigurationSubGroupDao _configSubGroupDao;
+
     @InjectMocks
     private ConfigDepotImpl configDepotImpl = new ConfigDepotImpl();
+
+    @Test
+    public void createConfigObjectPersistsSubGroupWithNameAndGroupId() {
+        ConfigKey<?> key = Mockito.mock(ConfigKey.class);
+        Mockito.when(key.group()).thenReturn(null);
+        Mockito.when(key.subGroup()).thenReturn(new Pair<>("ConsoleProxy VM", 5L));
+        Mockito.when(key.key()).thenReturn("consoleproxy.capacity.standby");
+        Mockito.when(key.scope()).thenReturn(ConfigKey.Scope.Global);
+        Mockito.when(_configSubGroupDao.findByNameAndGroup("ConsoleProxy VM", 1L)).thenReturn(null);
+        Mockito.when(_configSubGroupDao.persist(Mockito.any(ConfigurationSubGroupVO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(_configDao.findById("consoleproxy.capacity.standby")).thenReturn(Mockito.mock(ConfigurationVO.class));
+
+        ArgumentCaptor<ConfigurationSubGroupVO> captor = ArgumentCaptor.forClass(ConfigurationSubGroupVO.class);
+        ReflectionTestUtils.invokeMethod(configDepotImpl, "createOrupdateConfigObject",
+                new Date(), "components", key, "someValue");
+
+        Mockito.verify(_configSubGroupDao).persist(captor.capture());
+        Assert.assertEquals("ConsoleProxy VM", captor.getValue().getName());
+        Assert.assertEquals(Long.valueOf(1L), captor.getValue().getGroupId());
+    }
 
     @Test
     public void createEmptyScopeLevelMappingsTest() {
