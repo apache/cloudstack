@@ -507,7 +507,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         LdapTrustMapVO oldVo = _ldapTrustMapDao.findByDomainId(domainId);
         if (oldVo != null) {
             ensureOldDomainMappingNotInUse(domainId, oldVo);
-            logger.warn(String.format("domain %d is already linked to ldap %s '%s'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName()));
+            logger.warn("domain {} is already linked to ldap {} ‘{}'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName());
             _ldapTrustMapDao.expunge(oldVo.getId());
         }
     }
