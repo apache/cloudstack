@@ -29,12 +29,14 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -70,6 +72,7 @@ import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.apache.cloudstack.jobs.JobInfo;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +80,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -950,5 +954,87 @@ public class ClusterDrsServiceImplTest {
         clusterDrsService.processPlans();
 
         Mockito.verify(clusterDrsService, Mockito.times(2)).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
+    }
+
+    @Test
+    public void testDestinationViolatesAffinityWhenVmHasNoAffinityGroups() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(affinityGroupVMMapDao.listByInstanceId(1L)).thenReturn(Collections.emptyList());
+
+        HostVO destHost = Mockito.mock(HostVO.class);
+
+        assertFalse(clusterDrsService.destinationViolatesAffinity(vm, destHost, Collections.emptyList()));
+        Mockito.verify(managementServer, Mockito.never())
+                .applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testDestinationViolatesAffinityWhenDestHostIsExcluded() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(5L);
+        Mockito.when(affinityGroupVMMapDao.listByInstanceId(1L))
+                .thenReturn(Collections.singletonList(Mockito.mock(AffinityGroupVMMapVO.class)));
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(1L, 5L))
+                .thenReturn(Mockito.mock(ServiceOfferingVO.class));
+
+        HostVO destHost = Mockito.mock(HostVO.class);
+        Mockito.when(destHost.getId()).thenReturn(20L);
+
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(20L);
+        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(excludes);
+
+        assertTrue(clusterDrsService.destinationViolatesAffinity(vm, destHost, Collections.emptyList()));
+    }
+
+    @Test
+    public void testDestinationViolatesAffinityWhenDestHostIsAllowed() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(5L);
+        Mockito.when(affinityGroupVMMapDao.listByInstanceId(1L))
+                .thenReturn(Collections.singletonList(Mockito.mock(AffinityGroupVMMapVO.class)));
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(1L, 5L))
+                .thenReturn(Mockito.mock(ServiceOfferingVO.class));
+
+        HostVO destHost = Mockito.mock(HostVO.class);
+        Mockito.when(destHost.getId()).thenReturn(20L);
+
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(21L);
+        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(excludes);
+
+        assertFalse(clusterDrsService.destinationViolatesAffinity(vm, destHost, Collections.emptyList()));
+    }
+
+    @Test
+    public void testExecuteDrsPlanSkipsMigrationThatViolatesAffinity() {
+        ClusterDrsPlanVO plan = Mockito.mock(ClusterDrsPlanVO.class);
+        Mockito.when(plan.getId()).thenReturn(1L);
+
+        ClusterDrsPlanMigrationVO migration = Mockito.mock(ClusterDrsPlanMigrationVO.class);
+        Mockito.when(migration.getId()).thenReturn(7L);
+        Mockito.when(migration.getVmId()).thenReturn(1L);
+        Mockito.when(migration.getDestHostId()).thenReturn(20L);
+        Mockito.when(drsPlanMigrationDao.listPlanMigrationsToExecute(1L))
+                .thenReturn(Collections.singletonList(migration));
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO destHost = Mockito.mock(HostVO.class);
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        Mockito.when(hostDao.findById(20L)).thenReturn(destHost);
+
+        Mockito.doReturn(true).when(clusterDrsService)
+                .destinationViolatesAffinity(Mockito.any(), Mockito.any(), Mockito.any());
+
+        clusterDrsService.executeDrsPlan(plan);
+
+        Mockito.verify(migration).setStatus(JobInfo.Status.FAILED);
+        Mockito.verify(clusterDrsService, Mockito.never())
+                .createMigrateVMAsyncJob(Mockito.any(), Mockito.any(), Mockito.anyLong());
     }
 }
