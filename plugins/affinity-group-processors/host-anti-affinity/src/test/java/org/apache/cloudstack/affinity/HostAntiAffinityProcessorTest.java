@@ -40,6 +40,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @RunWith(JUnit4.class)
@@ -151,10 +152,30 @@ public class HostAntiAffinityProcessorTest {
     public void testRemovedGroupVmIsSkipped() {
         when(_vmInstanceDao.findById(GROUP_VM_ID)).thenReturn(groupVM);
         when(groupVM.isRemoved()).thenReturn(true);
+        // a removed VM is not running anywhere, so neither of its hosts should be avoided
+        lenient().when(groupVM.getHostId()).thenReturn(HOST_ID);
+        lenient().when(groupVM.getState()).thenReturn(VirtualMachine.State.Stopped);
+        lenient().when(groupVM.getLastHostId()).thenReturn(LAST_HOST_ID);
+        lenient().when(groupVM.getUpdateTime()).thenReturn(DateUtil.currentGMTTime());
 
         processor.processAffinityGroup(vmGroupMapping, avoid, vm);
 
         assertFalse(avoids(HOST_ID));
+        assertFalse(avoids(LAST_HOST_ID));
+    }
+
+    @Test
+    public void testStartingGroupVmWithReservedCapacityLastHostIsAvoided() {
+        when(_vmInstanceDao.findById(GROUP_VM_ID)).thenReturn(groupVM);
+        when(groupVM.isRemoved()).thenReturn(false);
+        when(groupVM.getHostId()).thenReturn(null);
+        when(groupVM.getState()).thenReturn(VirtualMachine.State.Starting);
+        when(groupVM.getLastHostId()).thenReturn(LAST_HOST_ID);
+        when(groupVM.getUpdateTime()).thenReturn(DateUtil.currentGMTTime());
+
+        processor.processAffinityGroup(vmGroupMapping, avoid, vm);
+
+        assertTrue(avoids(LAST_HOST_ID));
     }
 
     @Test
