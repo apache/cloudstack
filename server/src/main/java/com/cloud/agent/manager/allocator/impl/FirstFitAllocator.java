@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.balancedweighted;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
@@ -95,6 +96,8 @@ public class FirstFitAllocator extends BaseAllocator {
     CapacityDao _capacityDao;
     @Inject
     VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Inject
+    WeightedHostScorer weightedHostScorer;
 
     boolean _checkHvm = true;
 
@@ -209,6 +212,8 @@ public class FirstFitAllocator extends BaseAllocator {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
         } else if (firstfitleastconsumed.toString().equals(vmAllocationAlgorithm)) {
             hosts = reorderHostsByCapacity(plan, hosts);
+        } else if (balancedweighted.toString().equals(vmAllocationAlgorithm)) {
+            hosts = weightedHostScorer.rank(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), hosts);
         }
 
         logger.debug("FirstFitAllocator has {} hosts to check for allocation {}.", hosts.size(), hosts);
