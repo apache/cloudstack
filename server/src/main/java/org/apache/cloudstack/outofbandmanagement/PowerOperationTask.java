@@ -19,6 +19,7 @@ package org.apache.cloudstack.outofbandmanagement;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -27,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.host.Host;
 
-public class PowerOperationTask implements Runnable {
+public class PowerOperationTask extends ManagedContextRunnable {
     protected Logger logger = LogManager.getLogger(getClass());
 
     final private OutOfBandManagementService service;
@@ -46,7 +47,7 @@ public class PowerOperationTask implements Runnable {
     }
 
     @Override
-    public void run() {
+    protected void runInContext() {
         try {
             service.executePowerOperation(host, powerOperation, null);
         } catch (Exception e) {
