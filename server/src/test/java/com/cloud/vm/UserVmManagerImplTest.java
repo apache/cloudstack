@@ -42,6 +42,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -84,6 +85,7 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -1404,6 +1406,105 @@ public class UserVmManagerImplTest {
         Assert.assertEquals(expected, userVmVoMock.getPassword());
     }
 
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
+    }
+
+    @Test
+    public void shouldClearUpdateParametersFlagTestVmDoesNotHaveParametersToUpdateReturnFalse() {
+        Mockito.doReturn(false).when(userVmVoMock).isUpdateParameters();
+
+        boolean result = userVmManagerImpl.shouldClearUpdateParametersFlag(userVmVoMock, new HashMap<>());
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldClearUpdateParametersFlagTestRegularStartReturnTrue() {
+        Mockito.doReturn(true).when(userVmVoMock).isUpdateParameters();
+
+        boolean result = userVmManagerImpl.shouldClearUpdateParametersFlag(userVmVoMock, new HashMap<>());
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void shouldClearUpdateParametersFlagTestVolumePrepareOnlyWithoutPasswordResetReturnTrue() {
+        Mockito.doReturn(true).when(userVmVoMock).isUpdateParameters();
+        Map<VirtualMachineProfile.Param, Object> additionalParams = new HashMap<>();
+        additionalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
+
+        boolean result = userVmManagerImpl.shouldClearUpdateParametersFlag(userVmVoMock, additionalParams);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void shouldClearUpdateParametersFlagTestVolumePrepareOnlyWithPasswordResetReturnFalse() {
+        Mockito.doReturn(true).when(userVmVoMock).isUpdateParameters();
+        Map<VirtualMachineProfile.Param, Object> additionalParams = new HashMap<>();
+        additionalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
+        additionalParams.put(VirtualMachineProfile.Param.ResetPasswordOnRestore, true);
+
+        boolean result = userVmManagerImpl.shouldClearUpdateParametersFlag(userVmVoMock, additionalParams);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isResetPasswordOnRestoreFromBackupTestCmdOverrideTrueIgnoresZoneSetting() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "false");
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getResetPassword()).thenReturn(true);
+
+        boolean result = userVmManagerImpl.isResetPasswordOnRestoreFromBackup(cmd);
+
+        Assert.assertTrue(result);
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "true");
+    }
+
+    @Test
+    public void isResetPasswordOnRestoreFromBackupTestCmdOverrideFalseIgnoresZoneSetting() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "true");
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getResetPassword()).thenReturn(false);
+
+        boolean result = userVmManagerImpl.isResetPasswordOnRestoreFromBackup(cmd);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isResetPasswordOnRestoreFromBackupTestNoCmdOverrideFallsBackToZoneSettingTrue() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "true");
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getResetPassword()).thenReturn(null);
+        when(cmd.getEntityId()).thenReturn(vmId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        Mockito.doReturn(1L).when(userVmVoMock).getDataCenterId();
+
+        boolean result = userVmManagerImpl.isResetPasswordOnRestoreFromBackup(cmd);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isResetPasswordOnRestoreFromBackupTestNoCmdOverrideFallsBackToZoneSettingFalse() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "false");
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getResetPassword()).thenReturn(null);
+        when(cmd.getEntityId()).thenReturn(vmId);
+        when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        Mockito.doReturn(1L).when(userVmVoMock).getDataCenterId();
+
+        boolean result = userVmManagerImpl.isResetPasswordOnRestoreFromBackup(cmd);
+
+        Assert.assertFalse(result);
+        overrideDefaultConfigValue(UserVmManager.ResetPasswordOnRestoreFromBackup, "true");
+    }
+
     @Test
     public void testSetVmRequiredFieldsForImportNotImport() {
         userVmManagerImpl.setVmRequiredFieldsForImport(false, userVmVoMock, _dcMock,
@@ -1847,6 +1948,7 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
     }
 
+    @Test
     public void testGetRootVolumeSizeForVmRestore() {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
