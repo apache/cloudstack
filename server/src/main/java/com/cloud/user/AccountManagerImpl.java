@@ -3315,15 +3315,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         String accessingApiKey = getAccessingApiKey(cmd);
-        ApiKeyPair keyPair;
+        ApiKeyPair keyPair = null;
         if (accessingApiKey != null) {
             ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(accessingApiKey);
-            if (userId == accessingKeyPair.getUserId()) {
-                keyPair = apiKeyPairService.findByApiKey(accessingApiKey);
-            } else {
-                keyPair = _accountService.getLatestUserKeyPair(userId);
+            if (accessingKeyPair != null && userId == accessingKeyPair.getUserId()) {
+                keyPair = accessingKeyPair;
             }
-        } else {
+        }
+        if (keyPair == null) {
             keyPair = _accountService.getLatestUserKeyPair(userId);
         }
 
@@ -3436,6 +3435,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return Boolean.TRUE;
         }
         ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(apiKey);
+        if (accessingKeyPair == null) {
+            logger.info("Unable to find the API key pair used to access the API; therefore, its permissions cannot be verified.");
+            return Boolean.FALSE;
+        }
         return isApiKeySupersetOfPermission(new ArrayList<>(getAllKeypairPermissions(accessingKeyPair.getApiKey())), new ArrayList<>(getAllKeypairPermissions(accessedKeyPair.getApiKey())));
     }
 
@@ -3454,7 +3457,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 String apiKey = requestPayload.entrySet().stream()
                         .filter(e -> ApiConstants.API_KEY.equalsIgnoreCase(e.getKey()))
                         .map(Map.Entry::getValue).findFirst().orElse(null);
-                if (apiKey != null) {
+                if (apiKey != null && isApiKeyOwnedByCallingUser(apiKey)) {
                     logger.info("Request's API key is [{}].", apiKey);
                     return apiKey;
                 }
@@ -3465,6 +3468,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         logger.info("Request's signature or API key were not identified; assuming it has been authenticated via session.");
         return null;
+    }
+
+    /**
+     * Checks whether the API key present in the request belongs to the calling user. When a request is authenticated through
+     * an API key pair, the calling user is always the owner of that key pair, so a request whose API key does not map to a
+     * key pair of the calling user was not authenticated through it.
+     * <p>
+     * Requests sent to the integration API port (see {@code integration.api.port}) are not signature-checked and run under the
+     * system user, so any API key and signature they carry are ignored and the caller's role permissions apply instead.
+     * For any other caller such a request is rejected: on the regular API port the signature is only verified when there is no
+     * authenticated session, so a mismatching API key can only be the result of a tampered request, and honoring it would
+     * derive permissions from a key pair that the caller did not prove ownership of.
+     *
+     * @throws PermissionDeniedException if the calling user is not the system user and the API key does not belong to them.
+     */
+    protected boolean isApiKeyOwnedByCallingUser(String apiKey) {
+        long callingUserId = CallContext.current().getCallingUserId();
+        ApiKeyPair keyPair = apiKeyPairService.findByApiKey(apiKey);
+        if (keyPair != null && Long.valueOf(callingUserId).equals(keyPair.getUserId())) {
+            return true;
+        }
+        String keyPairDescription = keyPair == null ? "an API key that does not map to any API key pair" :
+                String.format("API key pair [%s] which belongs to user with ID [%s]", keyPair.getUuid(), keyPair.getUserId());
+        if (callingUserId == User.UID_SYSTEM) {
+            logger.debug("Request made by the system user (e.g. through the integration API port) contains {}; ignoring it.", keyPairDescription);
+            return false;
+        }
+        logger.warn("Request made by user with ID [{}] contains {}; rejecting the request.", callingUserId, keyPairDescription);
+        throw new PermissionDeniedException("The API key present in the request does not belong to the calling user.");
     }
 
     private Boolean isApiKeySupersetOfPermission(List<RolePermissionEntity> baseKeyPairPermissions, List<RolePermissionEntity> comparedPermissions) {
@@ -3727,6 +3759,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("API key not present in the request's URL and, thus, unable to fetch API key rules.");
         }
         ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        if (apiKeyPair == null) {
+            throw new InvalidParameterValueException("Unable to find an API key pair matching the API key present in the request's URL and, thus, unable to fetch API key rules.");
+        }
         Account account = _accountDao.findById(apiKeyPair.getAccountId());
         List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(apiKeyPair.getId(), account.getRoleId());
         return new ArrayList<>(keyPairPermissions);

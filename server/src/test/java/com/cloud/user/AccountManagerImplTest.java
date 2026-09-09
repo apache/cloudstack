@@ -2289,4 +2289,100 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
         accountManagerImpl.checkRoleEscalation(caller, requested);
     }
+
+    private Map<String, String> buildSignedRequestParams(String apiKey) {
+        Map<String, String> params = new HashMap<>();
+        params.put(ApiConstants.API_KEY, apiKey);
+        params.put(ApiConstants.SIGNATURE, "signature");
+        return params;
+    }
+
+    @Test
+    public void getAccessingApiKeyTestReturnsApiKeyWhenKeyPairBelongsToCallingUser() {
+        Mockito.when(callingUser.getId()).thenReturn(111L);
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("api-key"));
+        Mockito.when(apiKeyPairVOMock.getUserId()).thenReturn(111L);
+        Mockito.when(apiKeyPairService.findByApiKey("api-key")).thenReturn(apiKeyPairVOMock);
+
+        Assert.assertEquals("api-key", accountManagerImpl.getAccessingApiKey(_getkeyscmd));
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void getAccessingApiKeyTestThrowsWhenKeyPairBelongsToAnotherUser() {
+        Mockito.when(callingUser.getId()).thenReturn(111L);
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("api-key"));
+        Mockito.when(apiKeyPairVOMock.getUserId()).thenReturn(222L);
+        Mockito.when(apiKeyPairService.findByApiKey("api-key")).thenReturn(apiKeyPairVOMock);
+
+        accountManagerImpl.getAccessingApiKey(_getkeyscmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void getAccessingApiKeyTestThrowsWhenKeyPairDoesNotExist() {
+        Mockito.when(callingUser.getId()).thenReturn(111L);
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("dummy"));
+        Mockito.when(apiKeyPairService.findByApiKey("dummy")).thenReturn(null);
+
+        accountManagerImpl.getAccessingApiKey(_getkeyscmd);
+    }
+
+    @Test
+    public void getAccessingApiKeyTestReturnsNullWhenKeyPairBelongsToAnotherUserAndCallerIsSystemUser() {
+        Mockito.when(callingUser.getId()).thenReturn(User.UID_SYSTEM);
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("api-key"));
+        Mockito.when(apiKeyPairVOMock.getUserId()).thenReturn(222L);
+        Mockito.when(apiKeyPairService.findByApiKey("api-key")).thenReturn(apiKeyPairVOMock);
+
+        Assert.assertNull(accountManagerImpl.getAccessingApiKey(_getkeyscmd));
+    }
+
+    @Test
+    public void getAccessingApiKeyTestReturnsNullWhenKeyPairDoesNotExistAndCallerIsSystemUser() {
+        Mockito.when(callingUser.getId()).thenReturn(User.UID_SYSTEM);
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("dummy"));
+        Mockito.when(apiKeyPairService.findByApiKey("dummy")).thenReturn(null);
+
+        Assert.assertNull(accountManagerImpl.getAccessingApiKey(_getkeyscmd));
+    }
+
+    @Test
+    public void getAccessingApiKeyTestReturnsNullWhenRequestIsNotSigned() {
+        Map<String, String> params = new HashMap<>();
+        params.put(ApiConstants.API_KEY, "api-key");
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(params);
+
+        Assert.assertNull(accountManagerImpl.getAccessingApiKey(_getkeyscmd));
+        Mockito.verify(apiKeyPairService, Mockito.never()).findByApiKey(Mockito.anyString());
+    }
+
+    @Test
+    public void getKeysTestReturnsLatestKeyPairWhenRequestApiKeyIsNotVerified() {
+        // Requests through the integration API port run as the system user and are not signature-checked, so the
+        // API key and signature they may carry must not be used to derive permissions.
+        Mockito.when(callingUser.getId()).thenReturn(User.UID_SYSTEM);
+        CallContext.register(callingUser, callingAccount);
+        long userId = 2L;
+        Mockito.when(_getkeyscmd.getId()).thenReturn(userId);
+        Mockito.when(_getkeyscmd.getFullUrlParams()).thenReturn(buildSignedRequestParams("dummy"));
+        Mockito.doReturn(userVoMock).when(accountManagerImpl).getActiveUser(userId);
+        Mockito.when(userVoMock.getApiKeyAccess()).thenReturn(Boolean.TRUE);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(accountMockId)).thenReturn(callingAccount);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(User.class), Mockito.any(ControlledEntity.class));
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(Mockito.any(User.class));
+        Mockito.when(apiKeyPairService.findByApiKey("dummy")).thenReturn(null);
+        Mockito.when(apiKeyPairVOMock.getApiKey()).thenReturn("latest-api-key");
+        Mockito.when(apiKeyPairVOMock.getSecretKey()).thenReturn("latest-secret-key");
+        Mockito.when(_accountService.getLatestUserKeyPair(userId)).thenReturn(apiKeyPairVOMock);
+
+        Pair<Boolean, Map<String, String>> result = accountManagerImpl.getKeys(_getkeyscmd);
+
+        Assert.assertTrue(result.first());
+        Assert.assertEquals("latest-api-key", result.second().get("apikey"));
+        Assert.assertEquals("latest-secret-key", result.second().get("secretkey"));
+    }
 }
