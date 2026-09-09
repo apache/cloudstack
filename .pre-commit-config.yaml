@@ -216,3 +216,10 @@ repos:
         types: [yaml]
         files: \.ya?ml$
         exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/.*\.lock\.ya?ml$
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 12e63946db2c5cfcc9030fac21c3883ba88c6ed8 # frozen: 0.38.0
+    hooks:
+      - id: check-dependabot
+        name: validate dependabot.yml
+        description: ensures the dependabot config file is valid
+        files: ^\.github/dependabot\.yml$
