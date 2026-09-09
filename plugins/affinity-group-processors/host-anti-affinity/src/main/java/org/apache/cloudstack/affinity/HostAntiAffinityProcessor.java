@@ -18,7 +18,6 @@ package org.apache.cloudstack.affinity;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -131,14 +130,6 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                 avoidHostOfVmInAffinityGroup(avoid, groupVM);
             }
         }
-    }
-
-    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
-        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
-        for (VirtualMachine vm : vmList) {
-            vmIdVmMap.put(vm.getId(), vm);
-        }
-        return vmIdVmMap;
     }
 
     protected void avoidHostOfVmInAffinityGroup(ExcludeList avoid, VMInstanceVO groupVM) {
