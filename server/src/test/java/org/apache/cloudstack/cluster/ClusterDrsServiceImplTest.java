@@ -38,6 +38,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
@@ -135,6 +136,9 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private AsyncJobManager asyncJobManager;
+
+    @Mock
+    private VolumeDao volumeDao;
 
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
