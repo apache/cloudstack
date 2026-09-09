@@ -251,7 +251,7 @@ public class CreateNetworkCmdTest {
         try {
             cmd.getPhysicalNetworkId();
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().startsWith("Physical network ID can be specified for networks of guest IP type Shared or L2 only."));
+            Assert.assertTrue(e.getMessage().startsWith("Physical network ID can be specified for networks of guest IP type Shared, L2 or L3 only."));
         }
     }
 

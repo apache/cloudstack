@@ -5560,6 +5560,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         }
 
+        if (ipv4 && network.getGuestType() == GuestType.L3) {
+            checkOverlapPublicIpRange(zoneId, startIP, endIP);
+        }
+
         long reservedIpAddressesAmount = 0L;
         if (forVirtualNetwork && vlanOwner != null) {
             reservedIpAddressesAmount = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
@@ -5837,9 +5841,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Vlan owner can be defined only in the zone of type " + NetworkType.Advanced);
         }
 
+        final boolean gatewaylessL3 = network.getGuestType() == GuestType.L3;
         if (ipv4) {
             // Make sure the gateway is valid
-            if (!NetUtils.isValidIp4(vlanGateway)) {
+            if (!(gatewaylessL3 && vlanGateway == null) && !NetUtils.isValidIp4(vlanGateway)) {
                 throw new InvalidParameterValueException("Please specify a valid gateway");
             }
 
@@ -5850,7 +5855,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (ipv6) {
-            if (!NetUtils.isValidIp6(vlanIp6Gateway)) {
+            if (!(gatewaylessL3 && vlanIp6Gateway == null) && !NetUtils.isValidIp6(vlanIp6Gateway)) {
                 throw new InvalidParameterValueException("Please specify a valid IPv6 gateway");
             }
             if (!NetUtils.isValidIp6Cidr(vlanIp6Cidr)) {
@@ -5858,12 +5863,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()));
+        final NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(networkOffering);
+        boolean isL3NetworkWithoutSpecifyVlan = _networkMgr.isL3NetworkWithoutSpecifyVlan(networkOffering);
         if (ipv4) {
-            final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+            final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway != null ? vlanGateway : startIP, vlanNetmask);
 
             //Make sure start and end ips are with in the range of cidr calculated for this gateway and netmask {
-            if (!NetUtils.isIpWithInCidrRange(vlanGateway, newCidr) || !NetUtils.isIpWithInCidrRange(startIP, newCidr) || !NetUtils.isIpWithInCidrRange(endIP, newCidr)) {
+            if ((vlanGateway != null && !NetUtils.isIpWithInCidrRange(vlanGateway, newCidr)) || !NetUtils.isIpWithInCidrRange(startIP, newCidr) || !NetUtils.isIpWithInCidrRange(endIP, newCidr)) {
                 throw new InvalidParameterValueException("Please specify a valid IP range or valid netmask or valid gateway");
             }
 
@@ -5897,7 +5904,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             final List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
             for (final VlanVO vlan : vlans) {
-                if (vlan.getIp6Gateway() == null) {
+                if (vlan.getIp6Cidr() == null) {
                     continue;
                 }
                 if ((StringUtils.isAllEmpty(ipv6Range, vlan.getIp6Range())) &&
@@ -5917,12 +5924,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Check if the vlan is being used
-        if (isSharedNetworkWithoutSpecifyVlan) {
+        if (isSharedNetworkWithoutSpecifyVlan || isL3NetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
         if (!bypassVlanOverlapCheck && !forExternalProvider && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
+        }
+
+        if (vlanId != null && vlanId.startsWith(BroadcastDomainType.Routed.scheme() + "://")
+                && !_networkDao.listByZoneAndUriAndGuestType(zoneId, vlanId, null).isEmpty()) {
+            throw new InvalidParameterValueException(String.format(
+                    "The routed id %s is already used by a guest network in zone %s", vlanId, zone.getName()));
         }
 
         String ipRange = null;
@@ -5940,7 +5953,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (vlan != null && network.getTrafficType() != TrafficType.Public) {
             if (ipv4) {
-                addCidrAndGatewayForIpv4(networkId, vlanGateway, vlanNetmask);
+                addCidrAndGatewayForIpv4(networkId, vlanGateway, vlanNetmask, startIP);
             } else if (ipv6) {
                 addCidrAndGatewayForIpv6(networkId, vlanIp6Gateway, vlanIp6Cidr);
             }
@@ -5949,10 +5962,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return vlan;
     }
 
-    private void addCidrAndGatewayForIpv4(final long networkId, final String vlanGateway, final String vlanNetmask) {
+    /**
+     * Appends the new range's subnet, and its gateway when the range carries one, to the network
+     * row. A gateway-less range (L3 networks) derives the same subnet from its start IP, and its
+     * absent gateway leaves the network's gateway untouched.
+     */
+    private void addCidrAndGatewayForIpv4(final long networkId, final String vlanGateway, final String vlanNetmask, final String startIP) {
         final NetworkVO networkVO = _networkDao.findById(networkId);
         String networkCidr = networkVO.getCidr();
-        String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+        String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway != null ? vlanGateway : startIP, vlanNetmask);
         String newNetworkCidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkCidr, newCidr, true);
         networkVO.setCidr(newNetworkCidr);
 
@@ -5999,6 +6017,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
                     networkVlanId = networkVlanId.split("-")[0];
                 }
+            } else if (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed) {
+                networkVlanId = BroadcastDomainType.getValue(uri);
             }
         }
         return networkVlanId;
@@ -6035,7 +6055,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 // extend IP range
-                if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                if (!Objects.equals(vlanGateway, otherVlanGateway) || !Objects.equals(vlanNetmask, vlan.getVlanNetmask())) {
                     throw new InvalidParameterValueException("The IP range has already been added with gateway "
                             + otherVlanGateway + " ,and netmask " + otherVlanNetmask
                             + ", Please specify the gateway/netmask if you want to extend ip range" );
@@ -6839,12 +6859,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the IP range's netmask.");
         }
 
-        if (!NetUtils.sameSubnet(startIP, vlanGateway, vlanNetmask)) {
-            throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
-        }
+        if (vlanGateway != null) {
+            if (!NetUtils.sameSubnet(startIP, vlanGateway, vlanNetmask)) {
+                throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+            }
 
-        if (endIP != null && !NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)) {
-            throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+            if (endIP != null && !NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)) {
+                throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+            }
         }
         // check if the gatewayip is the part of the ip range being added.
         // RFC 3021 - 31-Bit Prefixes on IPv4 Point-to-Point Links
@@ -6852,11 +6874,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // 192.168.24.0 - 255.255.255.254 - 192.168.24.0 - 192.168.24.1
         // https://tools.ietf.org/html/rfc3021
         // Added by Wilder Rodrigues
-        final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
-        if (!NetUtils.is31PrefixCidr(newCidr)) {
-            if (NetUtils.ipRangesOverlap(startIP, endIP, vlanGateway, vlanGateway)) {
-                throw new InvalidParameterValueException(
-                        "The gateway ip should not be the part of the ip range being added.");
+        if (vlanGateway != null) {
+            final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+            if (!NetUtils.is31PrefixCidr(newCidr)) {
+                if (NetUtils.ipRangesOverlap(startIP, endIP, vlanGateway, vlanGateway)) {
+                    throw new InvalidParameterValueException(
+                            "The gateway ip should not be the part of the ip range being added.");
+                }
             }
         }
     }
@@ -7214,7 +7238,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (guestType == null) {
-            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; can have Shared and Isolated values");
+            throw new InvalidParameterValueException("Invalid \"type\" parameter is given; supported values are " + Arrays.toString(Network.GuestType.values()));
         }
 
         if (internetProtocol != null) {
@@ -7271,9 +7295,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (service == Service.SecurityGroup) {
-                // allow security group service for Shared networks only
-                if (guestType != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Security group service is supported for network offerings with guest ip type " + GuestType.Shared);
+                // allow security group service for Shared and L3 (Direct Routed) networks only
+                if (guestType != GuestType.Shared && guestType != GuestType.L3) {
+                    throw new InvalidParameterValueException(String.format("Security group service is supported for network offerings with guest ip type %s or %s", GuestType.Shared, GuestType.L3));
                 }
                 final Set<Network.Provider> sgProviders = new HashSet<>();
                 sgProviders.add(Provider.SecurityGroupProvider);
@@ -7368,6 +7392,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // validate providers combination here
         _networkModel.canProviderSupportServices(providerCombinationToVerify);
+
+        if (guestType == GuestType.L3) {
+            validateL3NetworkOffering(serviceProviderMap, networkMode, specifyVlan, specifyIpRanges, forVpc);
+        }
 
         // validate the LB service capabilities specified in the network
         // offering
@@ -7469,6 +7497,49 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    /**
+     * Validates a network offering for the L3 (Direct Routed) guest type. There is no Virtual
+     * Router and no DHCP on these networks: the Instance learns its /32 (and /128) address,
+     * on-link gateway and routes exclusively from ConfigDrive. UserData via ConfigDrive is
+     * therefore mandatory. Dns is optional (a template may carry its own resolvers) but must be
+     * provided by ConfigDrive when present. SecurityGroup is the only other permitted service.
+     * specifyVlan is a free choice: with it the operator supplies the routed id (routed://&lt;id&gt;,
+     * naming the per-network bridge) at network creation via the vlan parameter; without it
+     * CloudStack allocates one from the ROUTED physical network's vnet range.
+     */
+    protected void validateL3NetworkOffering(final Map<Network.Service, Set<Network.Provider>> serviceProviderMap, final NetworkOffering.NetworkMode networkMode,
+            final boolean specifyVlan, final boolean specifyIpRanges, final Boolean forVpc) {
+        if (Boolean.TRUE.equals(forVpc)) {
+            throw new InvalidParameterValueException(String.format("VPC is not supported for network offerings with guest type %s", GuestType.L3));
+        }
+        if (networkMode != null) {
+            throw new InvalidParameterValueException(String.format("Network mode can not be specified for network offerings with guest type %s", GuestType.L3));
+        }
+        if (!specifyIpRanges) {
+            throw new InvalidParameterValueException(String.format("Network offerings with guest type %s must specify IP ranges", GuestType.L3));
+        }
+        if (serviceProviderMap.containsKey(Service.Dhcp)) {
+            throw new InvalidParameterValueException(String.format("DHCP is not supported (and not needed) for network offerings with guest type %s; addressing is delivered via ConfigDrive", GuestType.L3));
+        }
+        final Set<Service> allowedL3Services = new HashSet<>(Arrays.asList(Service.UserData, Service.Dns, Service.SecurityGroup));
+        for (final Service service : serviceProviderMap.keySet()) {
+            if (!allowedL3Services.contains(service)) {
+                throw new InvalidParameterValueException(String.format("Service %s is not supported for network offerings with guest type %s; supported services are %s",
+                        service.getName(), GuestType.L3, StringUtils.join(allowedL3Services.stream().map(Service::getName).toArray(), ", ")));
+            }
+        }
+        final Set<Provider> configDriveOnly = Collections.singleton(Provider.ConfigDrive);
+        final Set<Provider> userDataProviders = serviceProviderMap.get(Service.UserData);
+        if (!configDriveOnly.equals(userDataProviders)) {
+            throw new InvalidParameterValueException(String.format("UserData with provider %s is mandatory for network offerings with guest type %s; it is the only channel that carries the Instance's network configuration",
+                    Provider.ConfigDrive.getName(), GuestType.L3));
+        }
+        final Set<Provider> dnsProviders = serviceProviderMap.get(Service.Dns);
+        if (dnsProviders != null && !configDriveOnly.equals(dnsProviders)) {
+            throw new InvalidParameterValueException(String.format("DNS on network offerings with guest type %s must use provider %s", GuestType.L3, Provider.ConfigDrive.getName()));
+        }
     }
 
     public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {

@@ -131,6 +131,23 @@ public class Networks {
                 }
             }
         },
+        /**
+         * Direct Routed (L3) networks: the id is a label naming the per-network bridge on the
+         * hypervisor (brdr-&lt;id&gt;), not an encapsulation — nothing appears on the wire.
+         */
+        Routed("routed", Long.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("routed://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
         UnDecided(null, null),
         OpenDaylight("opendaylight", String.class),
         TUNGSTEN("tf", String.class),

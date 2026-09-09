@@ -100,4 +100,35 @@ public class BridgeVifDriverTest {
         String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
         Assert.assertEquals(BRIDGE_NAME, result);
     }
+
+    @Test
+    public void isDirectRoutedNicRecognisesBroadcastType() throws URISyntaxException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Routed);
+        nic.setBroadcastUri(new URI("routed://600"));
+        Assert.assertTrue(BridgeVifDriver.isDirectRoutedNic(nic));
+    }
+
+    /**
+     * Regression: a SystemVM's public NIC is rebuilt at start with the shared Public network's
+     * broadcast domain type (Vlan) — only its own broadcast URI carries routed://. It must still
+     * be recognised, or the agent runs modifyvlan.sh on the routed id and skips modifymacip.sh.
+     */
+    @Test
+    public void isDirectRoutedNicRecognisesRoutedUriWithForeignBroadcastType() throws URISyntaxException {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        nic.setBroadcastUri(new URI("routed://600"));
+        Assert.assertTrue(BridgeVifDriver.isDirectRoutedNic(nic));
+    }
+
+    @Test
+    public void isDirectRoutedNicRejectsOrdinaryNics() throws URISyntaxException {
+        Assert.assertFalse(BridgeVifDriver.isDirectRoutedNic(null));
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        Assert.assertFalse(BridgeVifDriver.isDirectRoutedNic(nic));
+        nic.setBroadcastUri(new URI("vlan://600"));
+        Assert.assertFalse(BridgeVifDriver.isDirectRoutedNic(nic));
+    }
 }

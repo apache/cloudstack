@@ -169,6 +169,12 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                 libvirtComputingResource.handleVmStartFailure(conn, vmName, vm);
             }
             return new StartAnswer(command, e.getMessage());
+        } catch (final RuntimeException e) {
+            logger.warn("RuntimeException while starting VM {}", vmName, e);
+            if (conn != null) {
+                libvirtComputingResource.handleVmStartFailure(conn, vmName, vm);
+            }
+            return new StartAnswer(command, e.toString());
         } finally {
             if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);

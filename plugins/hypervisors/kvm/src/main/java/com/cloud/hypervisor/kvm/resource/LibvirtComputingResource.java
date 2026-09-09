@@ -427,6 +427,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean imageServerTlsEnabled = false;
     private String imageServerListenAddress;
     private String securityGroupPath;
+    private String macIpPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
     private String routerProxyPath;
@@ -1195,6 +1196,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         securityGroupPath = Script.findScript(networkScriptsDir, "security_group.py");
+        macIpPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
         if (securityGroupPath == null) {
             throw new ConfigurationException("Unable to find the security_group.py");
         }
@@ -5020,7 +5022,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
     }
-    private void cleanupVMNetworks(final Connect conn, final List<InterfaceDef> nics) {
+    public void cleanupVMNetworks(final Connect conn, final List<InterfaceDef> nics) {
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
@@ -5724,6 +5726,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (checkBeforeApply) {
             cmd.add("--check");
         }
+        if (BridgeVifDriver.isDirectRoutedNic(nic)) {
+            cmd.add("--directrouted");
+        }
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -5852,7 +5857,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
-                                   final String secIps) {
+                                   final String secIps, final boolean directRouted) {
         if (!canBridgeFirewall) {
             return false;
         }
@@ -5862,7 +5867,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("add_network_rules");
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId);
-        cmd.add("--vmip", guestIP);
+        if (StringUtils.isNotBlank(guestIP)) {
+            cmd.add("--vmip", guestIP);
+        }
         if (StringUtils.isNotBlank(guestIP6)) {
             cmd.add("--vmip6", guestIP6);
         }
@@ -5875,6 +5882,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (newRules != null && !newRules.isEmpty()) {
             cmd.add("--rules", newRules);
         }
+        if (directRouted) {
+            cmd.add("--directrouted");
+        }
         final String result = cmd.execute();
         if (result != null) {
             return false;
@@ -5883,9 +5893,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action) {
+        return configureNetworkRulesVMSecondaryIP(conn, vmName, vmMac, secIp, action, false, true);
+    }
+
+    /**
+     * On a Direct Routed network the secondary address only reaches the Instance once the host
+     * has a route and a neighbour entry for it. Security groups may be disabled there, so that
+     * is done regardless of canBridgeFirewall, and before any firewall rules.
+     */
+    public boolean configureNetworkRulesVMSecondaryIP(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action,
+            final boolean directRouted, final boolean applySecurityGroupRules) {
+
+        if (directRouted && !configureDirectRoutedSecondaryIp(conn, vmName, vmMac, secIp, action)) {
+            return false;
+        }
+
+        if (!applySecurityGroupRules) {
+            return true;
+        }
 
         if (!canBridgeFirewall) {
-            return false;
+            return directRouted;
         }
 
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
@@ -5897,6 +5925,39 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String result = cmd.execute();
         if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Adds or removes the host route and static neighbour entry for a secondary IP of an
+     * Instance on a Direct Routed network, so the address is reachable without restarting it.
+     */
+    private boolean configureDirectRoutedSecondaryIp(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action) {
+        if (macIpPath == null) {
+            LOGGER.warn("Unable to find modifymacip.sh, cannot configure secondary IP {} for {}", secIp, vmName);
+            return false;
+        }
+        String brName = null;
+        for (final InterfaceDef intf : getInterfaces(conn, vmName)) {
+            if (vmMac.equalsIgnoreCase(intf.getMacAddress())) {
+                brName = intf.getBrName();
+                break;
+            }
+        }
+        if (brName == null) {
+            LOGGER.warn("Unable to find the interface of {} with MAC {}", vmName, vmMac);
+            return false;
+        }
+        final Script cmd = new Script(macIpPath, timeout, LOGGER);
+        cmd.add("-o", "-A".equals(action) ? "add" : "delete");
+        cmd.add("-b", brName);
+        cmd.add("-m", vmMac);
+        cmd.add(NetUtils.isValidIp6(secIp) ? "-6" : "-4", secIp);
+        final String result = cmd.execute();
+        if (result != null) {
+            LOGGER.warn("Failed to configure secondary IP {} for {}: {}", secIp, vmName, result);
             return false;
         }
         return true;

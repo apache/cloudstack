@@ -48,6 +48,9 @@
     <bean id="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru">
         <property name="name" value="DirectNetworkGuru" />
     </bean>
+    <bean id="DirectRoutedNetworkGuru" class="com.cloud.network.guru.DirectRoutedNetworkGuru">
+        <property name="name" value="DirectRoutedNetworkGuru" />
+    </bean>
     <bean id="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru">
         <property name="name" value="DirectPodBasedNetworkGuru" />
     </bean>

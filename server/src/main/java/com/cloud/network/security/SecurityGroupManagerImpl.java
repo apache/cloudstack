@@ -1451,18 +1451,23 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         // Verify permissions
         _accountMgr.checkAccess(caller, null, false, vm);
 
+        Network network = _networkModel.getNetwork(nic.getNetworkId());
+
+        boolean directRouted = Network.GuestType.L3.equals(network.getGuestType());
+
         // Validate parameters
         List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);
+        boolean applySecurityGroupRules = true;
         if (vmSgGrps.isEmpty()) {
             logger.debug("Vm is not in any Security group ");
-            return true;
-        }
-
-        //If network does not support SG service, no need add SG rules for secondary ip
-        Network network = _networkModel.getNetwork(nic.getNetworkId());
-        if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            applySecurityGroupRules = false;
+        } else if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
             logger.debug("Network " + network + " is not enabled with security group service, "+
                     "so not applying SG rules for secondary ip");
+            applySecurityGroupRules = false;
+        }
+
+        if (!applySecurityGroupRules && !directRouted) {
             return true;
         }
 
@@ -1473,7 +1478,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         //create command for the to add ip in ipset and arptables rules
-        NetworkRulesVmSecondaryIpCommand cmd = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, ruleAction);
+        NetworkRulesVmSecondaryIpCommand cmd = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, ruleAction,
+                directRouted, applySecurityGroupRules);
         logger.debug("Asking agent to configure rules for vm secondary ip");
         Commands cmds = null;
 
