@@ -795,12 +795,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *         the DRS plan to be executed
      */
     /**
-     * Checks a planned migration against the affinity rules as they stand now.
+     * Checks a planned migration against the placement rules as they stand now.
      *
      * A plan is generated once and executed later, so state can have moved on: VMs may have been
      * created, migrated or destroyed in between. Anti-affinity in particular is only meaningful
      * against current placements, and nothing downstream re-checks it - migrateVirtualMachine does
      * not enforce affinity groups.
+     *
+     * The processors also cover dedicated resources and DPDK, so a refusal is not necessarily about
+     * an affinity group.
      *
      * @param vm
      *         the VM the plan wants to move
@@ -863,10 +866,16 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 }
 
                 if (destinationViolatesAffinity(vm, host, dispatched, dispatchedSourceHosts)) {
-                    logger.warn("Skipping DRS migration of vm {} to host {}: it no longer satisfies the affinity " +
-                            "rules for that VM. The plan was generated against older state.", vm, host);
-                    migration.setStatus(JobInfo.Status.FAILED);
+                    String reason = String.format("Skipped DRS migration of %s to %s: the destination no longer "
+                            + "satisfies the placement rules for that VM. The plan was generated against older "
+                            + "state.", vm, host);
+                    logger.warn(reason);
+                    // cancelled rather than failed: nothing went wrong, the plan went out of date
+                    migration.setStatus(JobInfo.Status.CANCELLED);
                     drsPlanMigrationDao.update(migration.getId(), migration);
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                            EventVO.LEVEL_WARN, EventTypes.EVENT_CLUSTER_DRS, false, reason,
+                            plan.getClusterId(), ApiCommandResourceType.Cluster.toString(), plan.getEventId());
                     continue;
                 }
 
