@@ -1868,6 +1868,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cpuRatio);
         persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, ramRatio);
+        persistMemoryReclaimFlag(vmProfile.getId(), ramRatio);
 
         vmProfile.setCpuOvercommitRatio(cpuRatio);
         vmProfile.setMemoryOvercommitRatio(ramRatio);
@@ -1897,6 +1898,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.warn("Ignoring {} of {} on service offering {}: it is not a number.",
                     key, offeringRatio, vmProfile.getServiceOfferingId());
             return clusterRatio;
+        }
+    }
+
+    /**
+     * A VM that is not overcommitted on memory should hold what it was given rather than lend the
+     * unused part back, otherwise it is only exempt in the books. The hypervisor reads this when
+     * the VM starts.
+     */
+    private void persistMemoryReclaimFlag(long vmId, float memoryRatio) {
+        boolean disable = memoryRatio <= 1f;
+        VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.MEMORY_RECLAIM_DISABLED);
+        if (disable && existing == null) {
+            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.MEMORY_RECLAIM_DISABLED, "true", true);
+        } else if (!disable && existing != null) {
+            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.MEMORY_RECLAIM_DISABLED);
         }
     }
 
