@@ -38,6 +38,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostLoad;
 import com.cloud.host.HostScoringWeights;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;

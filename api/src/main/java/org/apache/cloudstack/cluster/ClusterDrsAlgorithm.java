@@ -63,6 +63,23 @@ public interface ClusterDrsAlgorithm extends Adapter {
                      List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
 
     /**
+     * As above, but keeping host identity.
+     *
+     * An algorithm that considers anything beyond the figures in the two maps - measured load, for
+     * instance - cannot attribute it without knowing which host each entry belongs to. Algorithms
+     * that only need the values keep the default.
+     *
+     * @param hostCpuMap
+     *         host id to a Ternary of used, reserved and total CPU
+     * @param hostMemoryMap
+     *         host id to a Ternary of used, reserved and total memory
+     */
+    default boolean needsDrs(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+        return needsDrs(cluster, new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()));
+    }
+
+    /**
      * Calculates the metrics (improvement, cost, benefit) for migrating a VM to a destination host. Improvement is
      * calculated based on the change in cluster imbalance before and after the migration.
      *

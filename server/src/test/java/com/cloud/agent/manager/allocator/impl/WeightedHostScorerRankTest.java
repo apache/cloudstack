@@ -40,6 +40,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostLoad;
 import com.cloud.utils.Pair;
 import com.cloud.vm.dao.VMInstanceDao;
 
