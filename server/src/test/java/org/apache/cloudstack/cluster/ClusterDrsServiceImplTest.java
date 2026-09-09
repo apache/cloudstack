@@ -1110,7 +1110,7 @@ public class ClusterDrsServiceImplTest {
 
         clusterDrsService.executeDrsPlan(plan);
 
-        Mockito.verify(migration).setStatus(JobInfo.Status.FAILED);
+        Mockito.verify(migration).setStatus(JobInfo.Status.CANCELLED);
         Mockito.verify(clusterDrsService, Mockito.never())
                 .createMigrateVMAsyncJob(Mockito.any(), Mockito.any(), Mockito.anyLong());
     }
