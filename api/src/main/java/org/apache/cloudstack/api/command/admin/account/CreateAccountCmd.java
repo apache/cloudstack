@@ -197,7 +197,7 @@ public class CreateAccountCmd extends BaseCmd {
      * only ever authenticate externally (SAML/LDAP) has no need for the admin to set one.
      */
     private void validateParams() {
-        if (StringUtils.isEmpty(getPassword())) {
+        if (StringUtils.isBlank(getPassword())) {
             password = PasswordGenerator.generateRandomPassword(12);
         }
         if (getAccountType() == null && (getRoleId() == null || getRoleId() < 1L)) {
