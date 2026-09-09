@@ -18,7 +18,6 @@ package org.apache.cloudstack.affinity;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -111,14 +110,6 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
                 processVmInAffinityGroup(plan, groupVM);
             }
         }
-    }
-
-    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
-        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
-        for (VirtualMachine vm : vmList) {
-            vmIdVmMap.put(vm.getId(), vm);
-        }
-        return vmIdVmMap;
     }
 
     protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
