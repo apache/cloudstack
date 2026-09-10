@@ -56,8 +56,15 @@ example.ver.1 > example.ver.2:
 
 4.22.0.1 > 4.23.0.0:
   * A service offering may now set its own overcommit ratio, overriding its cluster's, using the
-    cpuOvercommitRatio and memoryOvercommitRatio service offering details. Absent, the cluster's
-    ratio applies as before, so nothing changes for existing offerings.
+    cpuOvercommitRatio and memoryOvercommitRatio service offering details - the same detail keys
+    already used at cluster and VM scope. Absent, the cluster's ratio applies as before, so nothing
+    changes for existing offerings.
+
+    The value means the same thing at every scope: how far a VM's declared size is inflated
+    relative to what it really holds. 1 means not overcommitted at all, which is how an offering is
+    exempted from its cluster's overcommit. Values below 1 would mean reserving more than the VM
+    asked for and are rejected. An offering may declare a ratio higher than its cluster's; this is
+    logged.
 
     An offering with a memory ratio of 1 on an overcommitted cluster is charged its full request
     and keeps all of it: free page reporting and balloon auto-deflate are turned off for its VMs,

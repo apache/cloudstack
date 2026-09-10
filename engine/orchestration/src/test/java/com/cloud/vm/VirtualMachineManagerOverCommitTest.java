@@ -75,25 +75,41 @@ public class VirtualMachineManagerOverCommitTest {
     @Test
     public void testOfferingWithNoDetailInheritsTheCluster() {
         offeringSays(CPU, null);
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU));
+        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
     public void testOfferingRatioIsUsed() {
         offeringSays(CPU, "1");
-        assertEquals(1.0f, vmManager.offeringOverCommitRatio(profile(), CPU), 1e-6);
+        assertEquals(1.0f, vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
     }
 
     @Test
     public void testNonsenseOfferingRatioInheritsTheCluster() {
         offeringSays(CPU, "not a number");
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU));
+        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
     }
 
     @Test
     public void testNonPositiveOfferingRatioInheritsTheCluster() {
         offeringSays(CPU, "0");
-        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU));
+        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+    }
+
+    @Test
+    public void testUndercommitIsRejected() {
+        // below 1 would reserve more than the VM asked for. That is a different feature, and this
+        // is how a mistyped "1" would otherwise land
+        offeringSays(CPU, "0.1");
+        assertNull(vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f));
+    }
+
+    @Test
+    public void testAnOfferingMayBeMoreOvercommittedThanItsCluster() {
+        // the value is absolute - "this offering is oversubscribed 20 times" - so it does not have
+        // to sit below whatever the cluster happens to be set to
+        offeringSays(CPU, "20");
+        assertEquals(20.0f, vmManager.offeringOverCommitRatio(profile(), CPU, 10.0f), 1e-6);
     }
 
     // --- what gets recorded on the VM ---
