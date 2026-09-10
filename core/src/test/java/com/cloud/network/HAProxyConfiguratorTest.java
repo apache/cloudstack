@@ -171,6 +171,34 @@ public class HAProxyConfiguratorTest {
         Assert.assertTrue("keepalive should be requested explicitly", result.contains("\toption http-keep-alive"));
     }
 
+    @Test
+    public void generateConfigurationTestKeepAliveDoesNotLeakToNextConfig() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", true, 0L));
+
+        String result = genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 0L));
+        Assert.assertFalse("keepalive from an earlier config should not survive into this one",
+                result.contains("\tno option httpclose"));
+    }
+
+    @Test
+    public void generateConfigurationTestIdleTimeoutDoesNotLeakToNextConfig() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 1234L));
+
+        String result = genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, -1L));
+        assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout client     50000"));
+        assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout server     50000"));
+    }
+
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
         String[] sa = hpg.generateConfiguration(cmd);
         StringBuilder sb = new StringBuilder();
