@@ -1992,7 +1992,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Long vmId = backupVO.getVmId();
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException(String.format("Unable to find VM for backup [%s].", backupVO.getUuid()));
+            throw new CloudRuntimeException(String.format("Unable to find VM from backup [%s].", backupVO.getUuid()));
         }
         validateBackupForZone(vm.getDataCenterId());
 

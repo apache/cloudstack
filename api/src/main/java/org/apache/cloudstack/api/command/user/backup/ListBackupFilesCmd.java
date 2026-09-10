@@ -35,7 +35,7 @@ import java.util.List;
 
 @APICommand(name = "listBackupFiles",
         description = "List a backup inner files",
-        responseObject = DataStoreObjectResponse.class, since = "4.24.0.0")
+        responseObject = DataStoreObjectResponse.class, since = "24.0.0")
 public class ListBackupFilesCmd extends BaseListCmd {
 
     @Inject
@@ -64,7 +64,7 @@ public class ListBackupFilesCmd extends BaseListCmd {
     private String path;
 
     @Parameter(name = ApiConstants.IS_SYMLINK, type = CommandType.BOOLEAN,
-            description = "Path to list files in the backed-up volume.")
+            description = "Indicates whether the path references a symlink.")
     private Boolean isSymlink;
 
     /////////////////////////////////////////////////////

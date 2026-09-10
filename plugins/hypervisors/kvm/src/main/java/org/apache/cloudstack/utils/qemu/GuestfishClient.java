@@ -270,7 +270,7 @@ public class GuestfishClient implements AutoCloseable {
     }
 
     /**
-     * Given the directory, file list and details of those files, will populate the names, paths, canonicalPaths, isDirs, isSymlinks, sizes and modifiedList lists.
+     * Given the directory, file list, and details of those files, will populate the names, paths, canonicalPaths, isDirs, isSymlinks, sizes and modifiedList lists.
      * If a file is a symlink, will try to resolve it in a single hop, if unable to, we will not add it to the list; furthermore, if the symlink points to an inexistent file, we
      * will not add it to the list either.
      */

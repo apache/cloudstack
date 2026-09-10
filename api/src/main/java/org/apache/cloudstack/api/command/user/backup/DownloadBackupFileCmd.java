@@ -36,7 +36,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "downloadBackupFile",
         description = "Download a file from a backup",
-        responseObject = ExtractResponse.class, since = "4.24.0.0")
+        responseObject = ExtractResponse.class, since = "24.0.0")
 public class DownloadBackupFileCmd extends BaseAsyncCmd {
 
     @Inject

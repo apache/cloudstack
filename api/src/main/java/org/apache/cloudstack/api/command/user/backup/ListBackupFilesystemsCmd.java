@@ -34,7 +34,7 @@ import java.util.List;
 
 @APICommand(name = "listBackupFilesystems",
         description = "List a backup inner file systems",
-        responseObject = DataStoreObjectResponse.class, since = "4.24.0.0")
+        responseObject = DataStoreObjectResponse.class, since = "24.0.0")
 public class ListBackupFilesystemsCmd extends BaseListCmd {
 
     @Inject
