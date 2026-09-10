@@ -2415,8 +2415,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
         if (so != null) {
             ServiceOffering soffering = ApiDBUtils.findServiceOfferingById(so);
-            if (soffering != null) {
+            if (soffering != null && _accountMgr.isRootAdmin(CallContext.current().getCallingAccountId())) {
                 response.setServiceOfferingId(soffering.getUuid());
+                response.setServiceOfferingName(soffering.getName());
             }
         }
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
