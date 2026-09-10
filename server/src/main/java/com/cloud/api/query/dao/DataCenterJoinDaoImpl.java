@@ -16,22 +16,13 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.cpu.CPU;
-import com.cloud.dc.ASNumberRangeVO;
-import com.cloud.dc.dao.ASNumberRangeDao;
-import com.cloud.gpu.dao.HostGpuGroupsDao;
-import com.cloud.network.Network;
-import com.cloud.network.dao.NetrisProviderDao;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.element.NetrisProviderVO;
-import com.cloud.network.element.NsxProviderVO;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -48,11 +39,22 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -200,4 +202,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         return dcs.get(0);
     }
 
+    @Override
+    public List<DataCenterJoinVO> listByIds(List<Long> ids, Filter filter) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<DataCenterJoinVO> sb = createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), SearchCriteria.Op.IN);
+        SearchCriteria<DataCenterJoinVO> sc = sb.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc, filter);
+    }
 }

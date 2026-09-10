@@ -110,6 +110,10 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
         return projectAccountId;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     public void setProjectRoleId(Long projectRoleId) {
         this.projectRoleId = projectRoleId;
     }

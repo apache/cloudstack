@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.StoragePool;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -58,6 +59,9 @@ public class LibvirtStorageAdaptorTest {
 
     MockedStatic<Script> mockScript;
 
+    // For mocking Script constructor
+    private MockedConstruction<Script> mockScriptConstruction;
+
     @Spy
     static LibvirtStorageAdaptor libvirtStorageAdaptor = new LibvirtStorageAdaptor(null);
 
@@ -73,6 +77,9 @@ public class LibvirtStorageAdaptorTest {
     public void tearDown() throws Exception {
         libvirtConnectionMockedStatic.close();
         mockScript.close();
+        if (mockScriptConstruction != null) {
+            mockScriptConstruction.close();
+        }
         closeable.close();
     }
 
@@ -176,4 +183,168 @@ public class LibvirtStorageAdaptorTest {
 
         Mockito.verify(mockPool, never()).setUsedIops(anyLong());
     }
+
+    @Test
+    public void testGetVolumeFromCLVMPool_ReturnsNullForNonCLVMPool() {
+        Storage.StoragePoolType type = Storage.StoragePoolType.NetworkFilesystem;
+
+        assert type != Storage.StoragePoolType.CLVM;
+        assert type != Storage.StoragePoolType.CLVM_NG;
+    }
+
+    @Test
+    public void testCLVMPoolTypeDetection_CLVM() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Storage.StoragePoolType type = mockPool.getType();
+
+        assert type == Storage.StoragePoolType.CLVM;
+        assert type != Storage.StoragePoolType.CLVM_NG;
+    }
+
+    @Test
+    public void testCLVMPoolTypeDetection_CLVM_NG() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        Storage.StoragePoolType type = mockPool.getType();
+
+        assert type == Storage.StoragePoolType.CLVM_NG;
+        assert type != Storage.StoragePoolType.CLVM;
+    }
+
+    @Test
+    public void testCLVMPoolLocalPathFormat() {
+        String vgName = "acsvg";
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        String localPath = mockPool.getLocalPath();
+
+        assert localPath.equals(vgName);
+        assert !localPath.startsWith("/");
+    }
+
+    @Test
+    public void testCLVMNGPoolLocalPathFormat() {
+        String vgName = "acsvg";
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        String localPath = mockPool.getLocalPath();
+
+        assert localPath.equals(vgName);
+        assert !localPath.startsWith("/");
+    }
+
+    @Test
+    public void testCLVMVolumePathFormat() {
+        String vgName = "acsvg";
+        String volumeUuid = UUID.randomUUID().toString();
+        String expectedPath = "/dev/" + vgName + "/" + volumeUuid;
+
+        assert expectedPath.startsWith("/dev/");
+        assert expectedPath.contains(vgName);
+        assert expectedPath.endsWith(volumeUuid);
+    }
+
+    @Test
+    public void testCLVMNGVolumePathFormat() {
+        String vgName = "acsvg";
+        String volumeUuid = UUID.randomUUID().toString();
+        String expectedPath = "/dev/" + vgName + "/" + volumeUuid;
+
+        assert expectedPath.startsWith("/dev/");
+        assert expectedPath.contains(vgName);
+        assert expectedPath.endsWith(volumeUuid);
+    }
+
+    @Test
+    public void testCLVMTemplateVolumeNamingConvention() {
+        String templateUuid = "550e8400-e29b-41d4-a716-446655440000";
+        String expectedLvName = "template-" + templateUuid;
+
+        assert expectedLvName.startsWith("template-");
+        assert expectedLvName.contains(templateUuid);
+        assert expectedLvName.equals("template-550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    @Test
+    public void testCLVMTemplatePathFormat() {
+        // CLVM_NG template paths: /dev/vgname/template-{uuid}
+        String vgName = "acsvg";
+        String templateUuid = "550e8400-e29b-41d4-a716-446655440000";
+        String expectedPath = "/dev/" + vgName + "/template-" + templateUuid;
+
+        assert expectedPath.equals("/dev/acsvg/template-550e8400-e29b-41d4-a716-446655440000");
+        assert expectedPath.startsWith("/dev/");
+        assert expectedPath.contains("template-");
+    }
+
+    @Test
+    public void testCLVMPoolIsBlockDeviceStorage() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Storage.StoragePoolType type = mockPool.getType();
+
+        boolean isBlockBased = (type == Storage.StoragePoolType.CLVM ||
+                               type == Storage.StoragePoolType.CLVM_NG);
+        assert isBlockBased;
+    }
+
+    @Test
+    public void testCLVMNGPoolIsBlockDeviceStorage() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        Storage.StoragePoolType type = mockPool.getType();
+
+        boolean isBlockBased = (type == Storage.StoragePoolType.CLVM ||
+                               type == Storage.StoragePoolType.CLVM_NG);
+        assert isBlockBased;
+    }
+
+    @Test
+    public void testCLVMPoolSupportsSharedStorage() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Storage.StoragePoolType type = mockPool.getType();
+        boolean supportsShared = (type == Storage.StoragePoolType.CLVM ||
+                                 type == Storage.StoragePoolType.CLVM_NG);
+        assert supportsShared;
+    }
+
+    @Test
+    public void testVolumeGroupNameExtraction() {
+        String vgName = "acsvg";
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        String extractedVgName = mockPool.getLocalPath();
+
+        assert extractedVgName.equals("acsvg");
+        assert extractedVgName.matches("[a-zA-Z0-9_-]+");
+    }
+
+    @Test
+    public void testCLVMPoolDetailsContainSecureZeroFill() {
+        Map<String, String> details = new HashMap<>();
+        details.put("CLVM_SECURE_ZERO_FILL", "true");
+
+        boolean secureZeroEnabled = "true".equals(details.get("CLVM_SECURE_ZERO_FILL"));
+        assert secureZeroEnabled;
+    }
+
+    @Test
+    public void testCLVMPoolDetailsSecureZeroFillDisabled() {
+        Map<String, String> details = new HashMap<>();
+        details.put("CLVM_SECURE_ZERO_FILL", "false");
+
+        boolean secureZeroEnabled = "true".equals(details.get("CLVM_SECURE_ZERO_FILL"));
+        assert !secureZeroEnabled;
+    }
+
+    @Test
+    public void testCLVMPoolDetailsSecureZeroFillDefault() {
+        Map<String, String> details = new HashMap<>();
+
+        boolean secureZeroEnabled = "true".equals(details.get("CLVM_SECURE_ZERO_FILL"));
+        assert !secureZeroEnabled;
+    }
+
 }

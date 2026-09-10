@@ -868,10 +868,10 @@ class TestVPCOffering(cloudstackTestCase):
 
         # Validate the following
         # 1. Creating VPC Offering with services NOT supported by VPC
-        #    like Firewall should not be allowed
+        #    like SecurityGroup should not be allowed
 
-        self.logger.debug("Creating a VPC offering with Firewall")
-        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Firewall,Vpn,SourceNat,Lb,UserData,StaticNat'
+        self.logger.debug("Creating a VPC offering with SecurityGroup")
+        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,SecurityGroup,Vpn,SourceNat,Lb,UserData,StaticNat'
 
         with self.assertRaises(Exception):
             VpcOffering.create(

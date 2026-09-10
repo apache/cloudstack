@@ -182,7 +182,6 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         HostTagResponse tagResponse = new HostTagResponse();
 
         tagResponse.setName(tag.getTag());
-        tagResponse.setHostId(tag.getHostId());
         tagResponse.setImplicit(tag.getIsImplicit());
 
         tagResponse.setObjectName("hosttag");

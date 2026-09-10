@@ -30,8 +30,11 @@ import com.cloud.utils.PropertiesUtil;
 
 public class ServerPropertiesUtil {
     private static final Logger logger = LoggerFactory.getLogger(ServerPropertiesUtil.class);
+
     protected static final String PROPERTIES_FILE = "server.properties";
     protected static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
+    protected static final String KEYSTORE_FILE = "https.keystore";
+    protected static final String KEYSTORE_PASSWORD = "https.keystore.password";
 
     public static String getProperty(String name) {
         Properties props = propertiesRef.get();
@@ -54,5 +57,13 @@ public class ServerPropertiesUtil {
             tempProps = propertiesRef.get();
         }
         return tempProps.getProperty(name);
+    }
+
+    public static String getKeystoreFile() {
+        return getProperty(KEYSTORE_FILE);
+    }
+
+    public static String getKeystorePassword() {
+        return getProperty(KEYSTORE_PASSWORD);
     }
 }

@@ -168,6 +168,8 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         supportedTypes.add(StoragePoolType.Filesystem);
         supportedTypes.add(StoragePoolType.NetworkFilesystem);
         supportedTypes.add(StoragePoolType.SharedMountPoint);
+        supportedTypes.add(StoragePoolType.CLVM);
+        supportedTypes.add(StoragePoolType.CLVM_NG);
 
         return supportedTypes.contains(storagePoolType);
     }
@@ -505,6 +507,8 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         supportedTypes.add(StoragePoolType.Filesystem);
         supportedTypes.add(StoragePoolType.NetworkFilesystem);
         supportedTypes.add(StoragePoolType.SharedMountPoint);
+        supportedTypes.add(StoragePoolType.CLVM);
+        supportedTypes.add(StoragePoolType.CLVM_NG);
 
         for (StoragePoolType poolType : StoragePoolType.values()) {
             boolean isSupported = kvmNonManagedStorageDataMotionStrategy.supportStoragePoolType(poolType);

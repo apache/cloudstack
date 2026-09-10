@@ -65,14 +65,19 @@ export function parseDateToDatePicker (value) {
 }
 
 export function toLocalDate ({ date, timezoneoffset = store.getters.timezoneoffset, usebrowsertimezone = store.getters.usebrowsertimezone }) {
-  if (usebrowsertimezone) {
-    // Since GMT+530 is returned as -330 (minutes to GMT)
-    timezoneoffset = new Date().getTimezoneOffset() / -60
-  }
+  timezoneoffset = getTimezoneOffset({ timezoneoffset, usebrowsertimezone })
 
   const milliseconds = Date.parse(date)
   // e.g. "Tue, 08 Jun 2010 19:13:49 GMT"; "Tue, 25 May 2010 12:07:01 UTC"
   return new Date(milliseconds + (timezoneoffset * 60 * 60 * 1000))
+}
+
+export function getTimezoneOffset ({ timezoneoffset = store.getters.timezoneoffset, usebrowsertimezone = store.getters.usebrowsertimezone }) {
+  if (!usebrowsertimezone) {
+    return timezoneoffset
+  }
+  // Since GMT+530 is returned as -330 (mins to GMT)
+  return new Date().getTimezoneOffset() / -60
 }
 
 export function toLocaleDate ({ date, timezoneoffset = store.getters.timezoneoffset, usebrowsertimezone = store.getters.usebrowsertimezone, dateOnly = false, hourOnly = false }) {

@@ -127,7 +127,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
         Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
 
-        List<KVMPhysicalDisk> disks = importInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "");
+        List<KVMPhysicalDisk> disks = importInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "", "", "prefix");
         Mockito.verify(importInstanceCommandWrapper).sanitizeDisksPath(List.of(diskDef));
         Assert.assertEquals(1, disks.size());
         Assert.assertEquals("disk1", disks.get(0).getName());

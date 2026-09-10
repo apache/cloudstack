@@ -32,6 +32,7 @@ import java.util.Set;
  */
 public class SetFirewallRulesCommand extends NetworkElementCommand {
     FirewallRuleTO[] rules;
+    Long vpcId;
 
     protected SetFirewallRulesCommand() {
     }
@@ -40,8 +41,17 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
         this.rules = rules.toArray(new FirewallRuleTO[rules.size()]);
     }
 
+    public SetFirewallRulesCommand(List<FirewallRuleTO> rules, Long vpcId) {
+        this.rules = rules.toArray(new FirewallRuleTO[rules.size()]);
+        this.vpcId = vpcId;
+    }
+
     public FirewallRuleTO[] getRules() {
         return rules;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     public String[][] generateFwRules() {

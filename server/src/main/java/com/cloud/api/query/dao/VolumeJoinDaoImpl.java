@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+    // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -17,25 +17,33 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.offering.DiskOffering;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.kms.KMSKekVersionVO;
+import org.apache.cloudstack.kms.KMSWrappedKeyVO;
+import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -43,8 +51,10 @@ import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.VmDiskStatisticsDao;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
@@ -57,6 +67,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private VmDiskStatisticsDao vmDiskStatsDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private KMSWrappedKeyDao kmsWrappedKeyDao;
+    @Inject
+    private KMSKekVersionDao kmsKekVersionDao;
     @Inject
     private AnnotationDao annotationDao;
 
@@ -129,7 +143,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
 
         if (volume.getProvisioningType() != null) {
-            volResponse.setProvisioningType(volume.getProvisioningType().toString());
+            Long poolId = volume.getPoolId();
+            StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
+            if (poolVO == null || !ClvmPoolManager.isClvmPoolType(poolVO.getPoolType())) {
+                volResponse.setProvisioningType(volume.getProvisioningType().toString());
+            }
         }
 
         // Show the virtual size of the volume
@@ -284,6 +302,18 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         volResponse.setObjectName("volume");
         volResponse.setExternalUuid(volume.getExternalUuid());
         volResponse.setEncryptionFormat(volume.getEncryptionFormat());
+        volResponse.setKmsKeyId(volume.getKmsKeyUuid());
+        volResponse.setKmsKey(volume.getKmsKeyName());
+
+        if (volume.getKmsWrappedKeyId() != null) {
+            KMSWrappedKeyVO wrappedKey = kmsWrappedKeyDao.findById(volume.getKmsWrappedKeyId());
+            if (wrappedKey != null) {
+                KMSKekVersionVO kekVersion = kmsKekVersionDao.findById(wrappedKey.getKekVersionId());
+                if (kekVersion != null) {
+                    volResponse.setKmsKeyVersion(kekVersion.getVersionNumber());
+                }
+            }
+        }
         return volResponse;
     }
 
@@ -370,6 +400,46 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             }
         }
         return uvList;
+    }
+
+    @Override
+    public List<VolumeJoinVO> listByInstanceId(long instanceId) {
+        SearchCriteria<VolumeJoinVO> sc = createSearchCriteria();
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, instanceId);
+        return search(sc, null);
+    }
+
+    @Override
+    public List<VolumeJoinVO> listByZonesHypervisorTypeAndOwners(List<Long> zoneIds,
+                                                                 Hypervisor.HypervisorType hypervisorType,
+                                                                 List<Long> accountIds, String domainPath,
+                                                                 Filter filter) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<VolumeJoinVO> sc = sb.create();
+        sc.setParameters("dataCenterId", zoneIds.toArray());
+        sc.setParameters("vmType", VirtualMachine.Type.User);
+        sc.setParameters("hypervisorType", hypervisorType);
+        if (accountIdsNotEmpty) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (domainPathNotBlank) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
+        return search(sc, filter);
     }
 
 }

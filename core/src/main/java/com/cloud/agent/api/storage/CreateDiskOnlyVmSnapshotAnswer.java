@@ -20,20 +20,30 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.utils.Pair;
 
 import java.util.Map;
 
 public class CreateDiskOnlyVmSnapshotAnswer extends Answer {
 
-    protected Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath;
+    protected Map<String, Long> mapVolumeToSnapshotSize;
+    private String nvramSnapshotPath;
 
-    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath) {
-        super(command, success, details);
-        this.mapVolumeToSnapshotSizeAndNewVolumePath = mapVolumeToSnapshotSizeAndNewVolumePath;
+    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize) {
+        this(command, success, details, mapVolumeToSnapshotSize, null);
     }
 
-    public Map<String, Pair<Long, String>> getMapVolumeToSnapshotSizeAndNewVolumePath() {
-        return mapVolumeToSnapshotSizeAndNewVolumePath;
+    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize,
+            String nvramSnapshotPath) {
+        super(command, success, details);
+        this.mapVolumeToSnapshotSize = mapVolumeToSnapshotSize;
+        this.nvramSnapshotPath = nvramSnapshotPath;
+    }
+
+    public Map<String, Long> getMapVolumeToSnapshotSize() {
+        return mapVolumeToSnapshotSize;
+    }
+
+    public String getNvramSnapshotPath() {
+        return nvramSnapshotPath;
     }
 }

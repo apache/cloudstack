@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -79,6 +80,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "The date this backup offering was created")
     private Date created;
 
+    @SerializedName(ApiConstants.BACKUP_OFFERING_DETAILS)
+    @Param(description = "Details for the backup offering", since = "4.23.0")
+    private Map<String, String> details;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -127,4 +132,7 @@ public class BackupOfferingResponse extends BaseResponse {
         this.domain = domain;
     }
 
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
 }

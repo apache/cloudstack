@@ -21,8 +21,9 @@ package org.apache.cloudstack.api.command.user.vm;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.response.ResourceScheduleResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.schedule.ResourceScheduleManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,9 +35,11 @@ import org.mockito.MockitoAnnotations;
 
 public class CreateVMScheduleCmdTest {
     @Mock
-    public VMScheduleManager vmScheduleManager;
+    public ResourceScheduleManager resourceScheduleManager;
+
     @Mock
     public EntityManager entityManager;
+
     @InjectMocks
     private CreateVMScheduleCmd createVMScheduleCmd = new CreateVMScheduleCmd();
 
@@ -59,10 +62,19 @@ public class CreateVMScheduleCmdTest {
      */
     @Test
     public void testSuccessfulExecution() {
-        VMScheduleResponse vmScheduleResponse = Mockito.mock(VMScheduleResponse.class);
-        Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenReturn(vmScheduleResponse);
+        ResourceScheduleResponse scheduleResponse = new ResourceScheduleResponse();
+        scheduleResponse.setId("schedule-uuid");
+        scheduleResponse.setResourceId("vm-uuid");
+        Mockito.when(resourceScheduleManager.createSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.any()
+        )).thenReturn(scheduleResponse);
         createVMScheduleCmd.execute();
-        Assert.assertEquals(vmScheduleResponse, createVMScheduleCmd.getResponseObject());
+        VMScheduleResponse response = (VMScheduleResponse) createVMScheduleCmd.getResponseObject();
+        Assert.assertNotNull(response);
+        Assert.assertEquals("schedule-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "id"));
+        Assert.assertEquals("vm-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "vmId"));
     }
 
     /**
@@ -72,7 +84,11 @@ public class CreateVMScheduleCmdTest {
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testInvalidParameterValueException() {
-        Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
+        Mockito.when(resourceScheduleManager.createSchedule(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.any()
+        )).thenThrow(new InvalidParameterValueException("Invalid schedule"));
         createVMScheduleCmd.execute();
     }
 

@@ -38,6 +38,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.backup.BackupProvider;
 
 public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
@@ -74,7 +75,7 @@ public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru 
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
-                                                  String vmInternalName, Backup backup) {
+                                                  String vmInternalName, Backup backup, BackupProvider backupProvider) {
         VMInstanceVO vm = instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
         if (vm.getRemoved() != null) {
             vm.setState(VirtualMachine.State.Stopped);
@@ -92,7 +93,7 @@ public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru 
     }
 
     @Override
-    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup, BackupProvider backupProvider) {
 
         VMInstanceVO targetVM = instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(targetVM.getId());

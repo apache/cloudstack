@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.google.common.primitives.Ints;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -362,7 +364,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                     ChildTemplateResponse childTempl = new ChildTemplateResponse();
                     childTempl.setId(tmpl.getUuid());
                     childTempl.setName(tmpl.getName());
-                    childTempl.setSize(Math.round(tmpl.getSize() / (1024 * 1024 * 1024)));
+                    childTempl.setSize(Ints.saturatedCast(tmpl.getSize() / (1024 * 1024 * 1024)));
                     childTemplatesSet.add(childTempl);
                 }
             }

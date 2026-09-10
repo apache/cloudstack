@@ -85,4 +85,8 @@ public interface StorageProcessor {
     public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd);
 
     public Answer syncVolumePath(SyncVolumePathCommand cmd);
+
+    default Answer deleteBackup(DeleteCommand cmd) {
+        return new Answer(cmd, false, "Operation not implemented");
+    }
 }

@@ -129,4 +129,14 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         txn.commit();
         return result;
     }
+
+    @Override
+    public List<SecurityGroupVO> listByIds(List<Long> ids) {
+        SearchBuilder<SecurityGroupVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<SecurityGroupVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
 }

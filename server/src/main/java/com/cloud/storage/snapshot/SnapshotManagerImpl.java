@@ -165,6 +165,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1527,13 +1528,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
-    private boolean hostSupportsSnapsthotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
+    private boolean hostSupportsSnapshotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
         if (host.getHypervisorType() != HypervisorType.KVM) {
             return true;
         }
 
-        //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
-        //unless it is set in the global flag
+        // For KVM, snapshots of a volume attached to a vm that is not in the Stopped/Destroyed state are allowed
+        // unless the global flag kvm.snapshot.enabled is turned off (it is enabled by default since 4.22.0.0)
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
@@ -1584,9 +1585,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
-                if (!hostSupportsSnapsthotForVolume(host, volume, isFromVmSnapshot)) {
+                if (!hostSupportsSnapshotForVolume(host, volume, isFromVmSnapshot)) {
                     throw new CloudRuntimeException(
-                            "KVM Snapshot is not supported for Running VMs. It is disabled by default due to a possible volume corruption in certain cases. To enable it set global settings kvm.snapshot.enabled to True. See the documentation for more details.");
+                            "KVM Snapshot is not supported for Running VMs because the global setting " +
+                                    "kvm.snapshot.enabled is set to false for this deployment. It can be disabled to " +
+                                    "avoid a possible volume corruption in certain cases. To allow snapshots of running " +
+                                    "VMs, set kvm.snapshot.enabled to true. See the documentation for more details.");
                 }
             }
         }
@@ -1633,6 +1637,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean isKvmAndFileBasedStorage = isHypervisorKvmAndFileBasedStorage(volume, storagePool);
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
+        StoragePoolType poolType = volume.getStoragePoolType();
+
         if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
@@ -1641,7 +1647,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             snapshot.setImageStore(imageStore);
         }
 
-        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, clusterId);
+        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, poolType, clusterId);
 
         snapshot.addPayload(payload);
         try {
@@ -1659,6 +1665,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (backupSnapToSecondary) {
                 if (!isKvmAndFileBasedStorage) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
+                    if (!payload.getAsyncBackup() && ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
+                        _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
+                    }
                 } else {
                     postSnapshotDirectlyToSecondary(snapshot, snapshotOnPrimary, snapshotId);
                 }
@@ -1678,7 +1687,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId(), clusterId);
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
-                DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                DataStoreRole dataStoreRole;
+                if (payload.getAsyncBackup() && backupSnapToSecondary && !isKvmAndFileBasedStorage) {
+                    dataStoreRole = DataStoreRole.Primary;
+                } else {
+                    dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
+                }
 
                 List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, dataStoreRole);
                 if (CollectionUtils.isEmpty(snapshotStoreRefs)) {
@@ -1816,6 +1830,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
                     if (backupedSnapshot != null) {
                         snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                        removeClvmPrimarySnapshotStoreRefIfNeeded(snapshotOnPrimary);
                         copyNewSnapshotToZones(snapshotOnPrimary.getId(), snapshotOnPrimary.getDataCenterId(), zoneIds);
                     }
                 }
@@ -1841,7 +1856,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, Long clusterId) {
+    void removeClvmPrimarySnapshotStoreRefIfNeeded(SnapshotInfo snapshotOnPrimary) {
+        DataStore dataStore = snapshotOnPrimary.getDataStore();
+        StoragePoolVO pool = _storagePoolDao.findById(dataStore.getId());
+        if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            _snapshotStoreDao.removeBySnapshotStore(snapshotOnPrimary.getId(), dataStore.getId(), dataStore.getRole());
+        }
+    }
+
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, StoragePoolType poolType, Long clusterId) {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
         if (storagePoolVO.isManaged()) {

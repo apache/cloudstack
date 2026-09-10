@@ -21,14 +21,13 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaService;
 
 import javax.inject.Inject;
@@ -42,22 +41,35 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Inject
     QuotaService _quotaService;
 
-
-
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which quota credits need to be added")
+    @Deprecated
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Name of the Account for which Quota credits will be added. Deprecated, please use '" +
+            ApiConstants.ACCOUNT_ID + "' instead.")
     private String accountName;
 
     @ACL
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Domain for which quota credits need to be added")
+    @Deprecated
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain of the Account specified by '" + ApiConstants.ACCOUNT + "' for which Quota credits will be added. " +
+                    "Deprecated, please use '" + ApiConstants.ACCOUNT_ID + "' instead.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Value of the credits to be added+, subtracted-")
+    @ACL
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class,
+            description = "ID of the Account for which Quota credits will be added. Cannot be specified with '" + ApiConstants.PROJECT_ID + "'.")
+    private Long accountId;
+
+    @ACL
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "ID of the Project for which Quota credits will be added. Cannot be specified with '" + ApiConstants.ACCOUNT_ID + "'.")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, required = true, description = "Amount of credits to be added (in case of a positive value) or subtracted (in case of a negative value).")
     private Double value;
 
-    @Parameter(name = "min_balance", type = CommandType.DOUBLE, required = false, description = "Minimum balance threshold of the Account")
+    @Parameter(name = "min_balance", type = CommandType.DOUBLE, description = "An email will be sent to the Account when the Quota credits get below this threshold.")
     private Double minBalance;
 
-    @Parameter(name = "quota_enforce", type = CommandType.BOOLEAN, required = false, description = "Account for which quota enforce is set to false will not be locked when there is no credit balance")
+    @Parameter(name = "quota_enforce", type = CommandType.BOOLEAN, description = "Whether to lock the Account when Quota credits are below zero.")
     private Boolean quotaEnforce;
 
     public Double getMinBalance() {
@@ -100,31 +112,21 @@ public class QuotaCreditsCmd extends BaseCmd {
         this.value = value;
     }
 
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public QuotaCreditsCmd() {
         super();
     }
 
     @Override
     public void execute() {
-        Long accountId = null;
-        Account account = _accountService.getActiveAccountByName(accountName, domainId);
-        if (account != null) {
-            accountId = account.getAccountId();
-        }
-        if (accountId == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "The Account does not exists or has been removed/disabled");
-        }
-        if (getValue() == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please send a valid non-empty quota value");
-        }
-        if (getQuotaEnforce() != null) {
-            _quotaService.setLockAccount(accountId, getQuotaEnforce());
-        }
-        if (getMinBalance() != null) {
-            _quotaService.setMinBalance(accountId, getMinBalance());
-        }
-
-        final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, getDomainId(), getValue(), CallContext.current().getCallingUserId(), getQuotaEnforce());
+        QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(this);
         response.setResponseName(getCommandName());
         response.setObjectName("quotacredits");
         setResponseObject(response);
@@ -132,10 +134,6 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = _accountService.getActiveAccountByName(accountName, domainId);
-        if (account != null) {
-            return account.getAccountId();
-        }
         return Account.ACCOUNT_ID_SYSTEM;
     }
 

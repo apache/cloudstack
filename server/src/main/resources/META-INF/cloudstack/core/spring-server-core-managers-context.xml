@@ -183,6 +183,8 @@
 
     <bean id="oCFS2ManagerImpl" class="com.cloud.storage.OCFS2ManagerImpl" />
 
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
+
     <bean id="outOfBandManagementServiceImpl" class="org.apache.cloudstack.outofbandmanagement.OutOfBandManagementServiceImpl">
         <property name="outOfBandManagementDrivers" value="#{outOfBandManagementDriversRegistry.registered}" />
     </bean>
@@ -330,6 +332,11 @@
         <property name="caProviders" value="#{caProvidersRegistry.registered}" />
     </bean>
 
+    <!-- KMS manager -->
+    <bean id="kmsManager" class="org.apache.cloudstack.kms.KMSManagerImpl">
+        <property name="kmsProviders" value="#{kmsProvidersRegistry.registered}" />
+    </bean>
+
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
         <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
@@ -346,6 +353,8 @@
     </bean>
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
+
+    <bean id="kvmBackupExportService" class="org.apache.cloudstack.backup.KVMBackupExportServiceImpl" />
 
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
@@ -372,8 +381,11 @@
     <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
     <bean id="routedIpv4ManagerImpl" class="org.apache.cloudstack.network.RoutedIpv4ManagerImpl" />
 
-    <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
-    <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
+    <bean id="ResourceScheduleManagerImpl" class="org.apache.cloudstack.schedule.ResourceScheduleManagerImpl" />
+    <bean id="VMScheduleWorker" class="org.apache.cloudstack.schedule.vm.VMScheduleWorker">
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
+    <bean id="AutoScaleScheduleWorker" class="org.apache.cloudstack.schedule.autoscale.AutoScaleScheduleWorker">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
@@ -402,4 +414,13 @@
     <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
+    <bean id="internalBackupServiceImpl" class="org.apache.cloudstack.backup.InternalBackupServiceImpl" >
+        <property name="internalBackupProviders" value="#{internalBackupProvidersRegistry.registered}" />
+    </bean>
+    <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionServiceJobController" />
+    <bean id="backupValidationService" class="org.apache.cloudstack.backup.BackupValidationServiceJobController" />
+
+    <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" >
+        <property name="dnsProviders" value="#{dnsProvidersRegistry.registered}" />
+    </bean>
 </beans>

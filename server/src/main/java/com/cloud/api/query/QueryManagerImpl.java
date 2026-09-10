@@ -43,8 +43,9 @@ import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
-import com.cloud.dc.Pod;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
@@ -96,6 +97,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -118,6 +120,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -155,7 +158,11 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -656,6 +663,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     RoleDao roleDao;
+
+    @Inject
+    private InternalBackupServiceJobDao internalBackupServiceJobDao;
+
+    @Inject
+    private BackupDao backupDao;
 
     /*
      * (non-Javadoc)
@@ -2666,6 +2679,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long clusterId = cmd.getClusterId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Long diskOfferingId = cmd.getDiskOfferingId();
+        Long kmsKeyId = cmd.getKmsKeyId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
         boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
@@ -2702,6 +2716,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         volumeSearchBuilder.and("uuid", volumeSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
         volumeSearchBuilder.and("instanceId", volumeSearchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volumeSearchBuilder.and("dataCenterId", volumeSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("kmsKeyId", volumeSearchBuilder.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         if (cmd.isEncrypted() != null) {
             if (cmd.isEncrypted()) {
                 volumeSearchBuilder.and("encryptFormat", volumeSearchBuilder.entity().getEncryptFormat(), SearchCriteria.Op.NNULL);
@@ -2825,6 +2840,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (vmInstanceId != null) {
             sc.setParameters("instanceId", vmInstanceId);
+        }
+        if (kmsKeyId != null) {
+            sc.setParameters("kmsKeyId", kmsKeyId);
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
@@ -3522,23 +3540,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd) {
-        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal();
+        Account caller = CallContext.current().getCallingAccount();
+        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal(caller);
+        List<HostTagVO> tags = result.first();
         ListResponse<HostTagResponse> response = new ListResponse<>();
-        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(result.first().toArray(new HostTagVO[0]));
+        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(tags.toArray(new HostTagVO[0]));
+
+        Map<Long, String> hostUuidsById = hostDao.listByIds(tags.stream().map(HostTagVO::getHostId).distinct().collect(Collectors.toList()))
+                .stream().collect(Collectors.toMap(HostVO::getId, HostVO::getUuid));
+        for (int i = 0; i < tagResponses.size(); i++) {
+            tagResponses.get(i).setHostId(hostUuidsById.get(tags.get(i).getHostId()));
+        }
 
         response.setResponses(tagResponses, result.second());
 
         return response;
     }
 
-    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal() {
+    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal(Account caller) {
         Filter searchFilter = new Filter(HostTagVO.class, "id", Boolean.TRUE, null, null);
 
         SearchBuilder<HostTagVO> sb = _hostTagDao.createSearchBuilder();
 
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
 
+        List<Long> allowedHostIds = null;
+        if (!accountMgr.isRootAdmin(caller.getId())) {
+            allowedHostIds = getDedicatedHostIdsForDomain(caller);
+            if (allowedHostIds.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+            sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.IN);
+        }
+
         SearchCriteria<HostTagVO> sc = sb.create();
+        if (allowedHostIds != null) {
+            sc.setParameters("hostId", allowedHostIds.toArray());
+        }
 
         // search host tag details by ids
         Pair<List<HostTagVO>, Integer> uniqueTagPair = _hostTagDao.searchAndCount(sc, searchFilter);
@@ -3559,6 +3597,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<HostTagVO> vrs = _hostTagDao.searchByIds(vrIds);
 
         return new Pair<>(vrs, count);
+    }
+
+    /**
+     * Resolves the set of host IDs dedicated to the given non-root-admin caller's domain or any of its
+     * sub-domains - including resources dedicated to a specific account within that domain lineage,
+     * not just domain-wide dedications - either directly or via a dedicated cluster/pod/zone.
+     */
+    private List<Long> getDedicatedHostIdsForDomain(Account caller) {
+        Set<Long> hostIds = new HashSet<>();
+
+        List<DedicatedResourceVO> dedicatedResources = new ArrayList<>();
+        DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+        if (callerDomain != null) {
+            for (Long domainId : _domainMgr.getDomainChildrenIds(callerDomain.getPath())) {
+                dedicatedResources.addAll(_dedicatedDao.listAllByDomainId(domainId));
+            }
+        }
+
+        for (DedicatedResourceVO dedicated : dedicatedResources) {
+            if (dedicated.getHostId() != null) {
+                hostIds.add(dedicated.getHostId());
+            } else if (dedicated.getClusterId() != null) {
+                for (HostVO host : hostDao.findByClusterId(dedicated.getClusterId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getPodId() != null) {
+                for (HostVO host : hostDao.findByPodId(dedicated.getPodId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getDataCenterId() != null) {
+                for (HostVO host : hostDao.findByDataCenterId(dedicated.getDataCenterId())) {
+                    hostIds.add(host.getId());
+                }
+            }
+        }
+
+        return new ArrayList<>(hostIds);
     }
 
     @Override
@@ -5495,6 +5570,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.VALIDATION_COMMAND, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
+
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6347,6 +6429,34 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return bucketDao.searchByIds(bktIds);
+    }
+
+    @Override
+    public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
+        ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
+        Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        List<BackupServiceJobResponse> backupServiceJobResponses = new ArrayList<>();
+
+        for (InternalBackupServiceJobVO jobVO : result.first()) {
+            BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
+
+            BackupServiceJobResponse response =  new BackupServiceJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+                    jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
+
+            if (jobVO.getHostId() != null) {
+                response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
+            }
+            backupServiceJobResponses.add(response);
+        }
+
+        responses.setResponses(backupServiceJobResponses, result.second());
+        return responses;
+    }
+
+    private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        return internalBackupServiceJobDao.searchAndCountForListApi(cmd.getId(), cmd.getBackupId(), cmd.getHostId(), cmd.getZoneId(),
+                cmd.getType(), cmd.getExecuting(), cmd.getScheduled(), cmd.getStartIndex(), cmd.getPageSizeVal());
     }
 
     @Override

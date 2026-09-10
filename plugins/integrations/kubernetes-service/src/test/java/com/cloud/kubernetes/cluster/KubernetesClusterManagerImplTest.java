@@ -155,7 +155,7 @@ public class KubernetesClusterManagerImplTest {
     }
 
     private FirewallRuleVO createRule(int startPort, int endPort) {
-        FirewallRuleVO rule = new FirewallRuleVO(null, null, startPort, endPort, "tcp", 1, 1, 1, FirewallRule.Purpose.Firewall, List.of("0.0.0.0/0"), null, null, null, FirewallRule.TrafficType.Ingress);
+        FirewallRuleVO rule = new FirewallRuleVO(null, null, startPort, endPort, "tcp", 1L, 1, 1, FirewallRule.Purpose.Firewall, List.of("0.0.0.0/0"), null, null, null, FirewallRule.TrafficType.Ingress);
         return rule;
     }
 

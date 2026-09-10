@@ -585,6 +585,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+    @Override
+    public boolean isIsolationMethodNetworkExtension(Long networkOfferingId) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
@@ -904,7 +909,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) {
+    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) {
         // TODO Auto-generated method stub
         return null;
     }

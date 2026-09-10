@@ -32,13 +32,17 @@ export default {
       permission: ['listServiceOfferings'],
       searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
-        var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          return { isrecursive: 'true' }
         }
-        return params
+        return { state: 'Active' }
       },
-      filters: ['active', 'inactive'],
+      filters: () => {
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          return ['active', 'inactive']
+        }
+        return []
+      },
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
@@ -367,7 +371,7 @@ export default {
       permission: ['listBackupOfferings'],
       searchFilters: ['zoneid', 'domainid'],
       columns: ['name', 'description', 'domain', 'zonename'],
-      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created'],
+      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created', 'backupofferingdetails'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -393,6 +397,13 @@ export default {
         listView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
+      }, {
+        api: 'createBackupOffering',
+        icon: 'plus-outlined',
+        label: 'label.create.backup.offering',
+        listView: true,
+        popup: true,
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/CreateBackupOffering.vue')))
       }, {
         api: 'updateBackupOffering',
         icon: 'edit-outlined',
@@ -429,7 +440,13 @@ export default {
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
-      columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
+      columns: () => {
+        const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'egressdefaultpolicy', 'order']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(fields.length - 1, 0, { field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
+        }
+        return fields
+      },
       details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       customParamHandler: (params, query) => {

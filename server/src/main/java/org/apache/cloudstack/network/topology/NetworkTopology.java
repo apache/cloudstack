@@ -35,6 +35,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -72,6 +73,8 @@ public interface NetworkTopology {
 
     boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final VirtualRouter router) throws ResourceUnavailableException;
 
+    boolean applyFirewallRulesInVPC(final Vpc vpc, final List<? extends FirewallRule> rules, final VirtualRouter router) throws ResourceUnavailableException;
+
     boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final VirtualRouter router) throws ResourceUnavailableException;
 
     boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final VirtualRouter router) throws ResourceUnavailableException;
@@ -87,6 +90,9 @@ public interface NetworkTopology {
             throws ResourceUnavailableException;
 
     boolean applyRules(final Network network, final VirtualRouter router, final String typeString, final boolean isPodLevelException, final Long podId,
+            final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
+
+    boolean applyRulesInVPC(final Vpc vpc, final VirtualRouter router, final String typeString, final boolean isPodLevelException, final Long podId,
             final boolean failWhenDisconnect, RuleApplierWrapper<RuleApplier> ruleApplier) throws ResourceUnavailableException;
 
     boolean removeDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter virtualRouter) throws ResourceUnavailableException;

@@ -21,14 +21,20 @@ import java.util.List;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.Vpc;
 
 public interface FirewallServiceProvider extends NetworkElement {
     /**
-     * Apply rules
-     * @param network
-     * @param rules
-     * @return
-     * @throws ResourceUnavailableException
+     * Apply firewall rules in a network context.
      */
-    boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    default boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return false;
+    }
+
+    /**
+     * Apply firewall rules in a VPC context.
+     */
+    default boolean applyFWRulesInVPC(Vpc vpc, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        return false;
+    }
 }

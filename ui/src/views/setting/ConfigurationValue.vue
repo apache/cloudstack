@@ -190,10 +190,41 @@
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading || configrecord.value === configrecord.defaultvalue)" />
       </span>
     </a-list-item>
+    <a-modal
+      v-if="!suppressRelatedPrompt"
+      v-model:visible="relatedModalVisible"
+      :title="$t('label.related.settings')"
+      :footer="null"
+      :maskClosable="false"
+      :width="'60vw'"
+      @cancel="closeRelatedModal">
+      <p>{{ $t('message.related.settings.changed').replace('%x', relatedSourceConfigName) }}</p>
+      <a-table
+        size="small"
+        :showHeader="false"
+        :pagination="false"
+        :loading="relatedLoading"
+        :columns="relatedColumns"
+        :dataSource="relatedConfigs"
+        :rowKey="record => record.name">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <b>{{ record.displaytext }}</b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+          </template>
+          <template v-if="column.key === 'value'">
+            <ConfigurationValue
+              :configrecord="record"
+              :resource="resource"
+              :suppressRelatedPrompt="true"
+              @refresh="handleRelatedConfigRefresh" />
+          </template>
+        </template>
+      </a-table>
+    </a-modal>
   </a-list>
 </template>
 <script>
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -221,6 +252,10 @@ export default {
     resource: {
       type: Object,
       required: false
+    },
+    suppressRelatedPrompt: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -229,7 +264,24 @@ export default {
       scopeKey: '',
       actualValue: null,
       editableValue: null,
-      editableValueKey: null
+      editableValueKey: null,
+      relatedModalVisible: false,
+      relatedLoading: false,
+      relatedConfigs: [],
+      relatedSourceConfigName: '',
+      relatedColumns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          key: 'name'
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          key: 'value',
+          width: '35%'
+        }
+      ]
     }
   },
   created () {
@@ -259,8 +311,12 @@ export default {
   },
   watch: {
     configrecord: {
-      handler () {
+      handler (newRecord) {
         this.setConfigData()
+        if (newRecord && newRecord.type === 'Boolean' && !this.suppressRelatedPrompt &&
+            this.$route.meta.name === 'globalsetting' && this.isConfigNowActive(newRecord)) {
+          this.fetchRelatedConfigurations(newRecord)
+        }
       },
       deep: true
     }
@@ -295,13 +351,17 @@ export default {
         params[this.scopeKey] = this.resource?.id
       }
       postAPI('updateConfiguration', params).then(json => {
-        configRecordEntry = json.updateconfigurationresponse.configuration
+        // The updateConfiguration response can return a stale value for
+        // non-global scopes (server-side issue). Trust the value the user
+        // just submitted — the API returned success, so we know it was persisted.
+        const apiRecord = json.updateconfigurationresponse.configuration
+        configRecordEntry = { ...apiRecord, value: String(newValue) }
         this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
-        this.$notifyConfigurationValueChange(json?.updateconfigurationresponse?.configuration || null)
+        this.$notifyConfigurationValueChange(configRecordEntry)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -314,6 +374,66 @@ export default {
         this.valueLoading = false
         this.$emit('refresh', configrecord.name, configRecordEntry)
       })
+    },
+    isConfigNowActive (configrecord) {
+      const name = configrecord.name || ''
+      if (name.endsWith('.disabled')) {
+        return configrecord.value === 'false'
+      }
+      return configrecord.value === 'true'
+    },
+    getRelatedConfigPrefix (configrecord) {
+      const name = configrecord.name || ''
+      const segments = name.split('.')
+      if (segments.length < 2) {
+        return null
+      }
+      let prefixSegments = segments.slice(0, -1)
+      if ((name.endsWith('.service.enabled') || name.endsWith('.service.disabled')) && prefixSegments.length > 1) {
+        prefixSegments = prefixSegments.slice(0, -1)
+      }
+      return prefixSegments.join('.')
+    },
+    fetchRelatedConfigurations (configrecord) {
+      const prefix = this.getRelatedConfigPrefix(configrecord)
+      if (!prefix) {
+        return
+      }
+      this.relatedLoading = true
+      const params = {
+        [this.scopeKey]: this.$route.params?.id,
+        keyword: prefix,
+        pagesize: -1,
+        listAll: true
+      }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      getAPI('listConfigurations', params).then(json => {
+        const list = json?.listconfigurationsresponse?.configuration || []
+        this.relatedConfigs = list.filter(c => c.name !== configrecord.name && c.name.startsWith(prefix + '.'))
+        if (this.relatedConfigs.length > 0) {
+          this.relatedSourceConfigName = configrecord.name
+          this.relatedModalVisible = true
+        }
+      }).catch(error => {
+        console.error(error)
+      }).finally(() => {
+        this.relatedLoading = false
+      })
+    },
+    handleRelatedConfigRefresh (name, updatedRecord) {
+      if (!name || !updatedRecord) return
+      const index = this.relatedConfigs.findIndex(item => item.name === name)
+      if (index !== -1) {
+        this.relatedConfigs.splice(index, 1, updatedRecord)
+      }
+      this.$emit('refresh', name, updatedRecord)
+    },
+    closeRelatedModal () {
+      this.relatedModalVisible = false
+      this.relatedConfigs = []
+      this.relatedSourceConfigName = ''
     },
     resetConfigurationValue (configrecord) {
       let configRecordEntry = this.configrecord

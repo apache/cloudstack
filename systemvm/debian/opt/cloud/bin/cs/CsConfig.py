@@ -155,3 +155,6 @@ class CsConfig(object):
 
     def has_public_network(self):
         return self.cmdline().idata().get('has_public_network', 'true') == 'true'
+
+    def is_vpc_firewall_enabled(self):
+        return self.cmdline().idata().get('vpc_firewall_enabled', 'false') == 'true'

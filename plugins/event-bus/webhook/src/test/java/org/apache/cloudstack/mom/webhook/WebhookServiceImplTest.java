@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.mom.webhook;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.mom.webhook.WebhookServiceImpl.DeliveryConfig;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
@@ -98,7 +100,7 @@ public class WebhookServiceImplTest {
     public void getDeliveryJobReturnsProperlyConfiguredJob() {
         Event event = Mockito.mock(Event.class);
         Webhook webhook = Mockito.mock(Webhook.class);
-        Pair<Integer, Integer> configs = new Pair<>(4, 5000);
+        DeliveryConfig configs = new DeliveryConfig(4, 5000, null, false, true, true);
 
         Mockito.when(event.getEventId()).thenReturn(123L);
         Mockito.when(webhook.getId()).thenReturn(456L);
@@ -114,7 +116,7 @@ public class WebhookServiceImplTest {
     public void getDeliveryJobInjectsDependencies() {
         Event event = Mockito.mock(Event.class);
         Webhook webhook = Mockito.mock(Webhook.class);
-        Pair<Integer, Integer> configs = new Pair<>(1, 1000);
+        DeliveryConfig configs = new DeliveryConfig(1, 1000, null, false, true, true);
 
         WebhookDeliveryThread job = webhookServiceImpl.getDeliveryJob(event, webhook, configs);
 
@@ -413,9 +415,11 @@ public class WebhookServiceImplTest {
         Account account = Mockito.mock(Account.class);
 
         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+        Mockito.when(webhook.getPayloadUrl()).thenReturn("https://example.com");
         Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
 
-        Runnable job = webhookServiceImpl.getManualDeliveryJob(null, webhook, "   ", future);
+        URI uri = WebhookUrlValidator.validateWebhookDestinationUrl(webhook.getPayloadUrl(), false, null, true);
+        Runnable job = webhookServiceImpl.getManualDeliveryJob(null, webhook, "   ", uri, future);
 
         Assert.assertNotNull(job);
         Event event = (Event) ReflectionTestUtils.getField(job, "event");
@@ -438,7 +442,7 @@ public class WebhookServiceImplTest {
         Mockito.when(existingDelivery.getPayload()).thenReturn("test-payload");
         Mockito.when(eventJoinVO.getAccountUuid()).thenReturn("account-uuid");
 
-        Runnable job = webhookServiceImpl.getManualDeliveryJob(existingDelivery, webhook, null, future);
+        Runnable job = webhookServiceImpl.getManualDeliveryJob(existingDelivery, webhook, null, null, future);
 
         Assert.assertNotNull(job);
         Mockito.verify(eventJoinDao, Mockito.times(1)).findById(123L);
@@ -454,7 +458,7 @@ public class WebhookServiceImplTest {
         Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
         Mockito.when(account.getUuid()).thenReturn("account-uuid");
 
-        Runnable job = webhookServiceImpl.getManualDeliveryJob(null, webhook, "test-payload", future);
+        Runnable job = webhookServiceImpl.getManualDeliveryJob(null, webhook, "test-payload", null, future);
 
         Assert.assertNotNull(job);
         Mockito.verify(accountManager, Mockito.times(1)).getAccount(1L);
@@ -470,7 +474,7 @@ public class WebhookServiceImplTest {
         Mockito.when(webhook.getAccountId()).thenReturn(2L);
         Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
 
-        WebhookDeliveryThread job = (WebhookDeliveryThread) webhookServiceImpl.getManualDeliveryJob(null, webhook, "test-payload", future);
+        WebhookDeliveryThread job = (WebhookDeliveryThread) webhookServiceImpl.getManualDeliveryJob(null, webhook, "test-payload", null, future);
 
         Assert.assertEquals(3, ReflectionTestUtils.getField(job, "deliveryTries"));
         Assert.assertEquals(10, ReflectionTestUtils.getField(job, "deliveryTimeout"));
@@ -607,7 +611,7 @@ public class WebhookServiceImplTest {
         WebhookDeliveryVO persistedDelivery = Mockito.mock(WebhookDeliveryVO.class);
         Mockito.when(webhookDeliveryDao.persist(Mockito.any(WebhookDeliveryVO.class))).thenReturn(persistedDelivery);
 
-        WebhookDelivery returnedDelivery = webhookServiceImpl.executeWebhookDelivery(delivery, webhook, "payload");
+        WebhookDelivery returnedDelivery = webhookServiceImpl.executeWebhookDelivery(delivery, webhook, "payload", null);
 
         Assert.assertEquals(persistedDelivery, returnedDelivery);
         Mockito.verify(webhookDeliveryDao, Mockito.times(1)).persist(Mockito.any(WebhookDeliveryVO.class));
@@ -638,7 +642,7 @@ public class WebhookServiceImplTest {
         });
         ReflectionTestUtils.setField(webhookServiceImpl, "webhookJobExecutor", executorService);
 
-        WebhookDelivery returnedDelivery = webhookServiceImpl.executeWebhookDelivery(null, webhook, "payload");
+        WebhookDelivery returnedDelivery = webhookServiceImpl.executeWebhookDelivery(null, webhook, "payload", null);
 
         Assert.assertNotNull(returnedDelivery);
         Assert.assertEquals("headers", returnedDelivery.getHeaders());

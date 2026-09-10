@@ -26,6 +26,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -55,8 +56,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import org.junit.Assert;
 import org.junit.After;
@@ -105,6 +108,8 @@ public class SnapshotManagerImplTest {
     SnapshotScheduler snapshotScheduler;
     @Mock
     TaggedResourceService taggedResourceService;
+    @Mock
+    PrimaryDataStoreDao primaryDataStoreDao;
     @InjectMocks
     SnapshotManagerImpl snapshotManager = new SnapshotManagerImpl();
 
@@ -115,6 +120,7 @@ public class SnapshotManagerImplTest {
         snapshotManager._accountMgr = accountManager;
         snapshotManager._snapSchedMgr = snapshotScheduler;
         snapshotManager.taggedResourceService = taggedResourceService;
+        snapshotManager._storagePoolDao = primaryDataStoreDao;
     }
 
     @After
@@ -609,5 +615,58 @@ public class SnapshotManagerImplTest {
         Mockito.when(cmd.getIds()).thenReturn(null);
 
         snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test
+    public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_ClvmPool() {
+        SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+        Mockito.when(dataStore.getId()).thenReturn(2L);
+        Mockito.when(dataStore.getRole()).thenReturn(DataStoreRole.Primary);
+        Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.CLVM);
+
+        snapshotManager.removeClvmPrimarySnapshotStoreRefIfNeeded(snapshot);
+
+        Mockito.verify(snapshotStoreDao).removeBySnapshotStore(1L, 2L, DataStoreRole.Primary);
+    }
+
+    @Test
+    public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_ClvmNgPool() {
+        SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+        Mockito.when(snapshot.getId()).thenReturn(3L);
+        Mockito.when(dataStore.getId()).thenReturn(4L);
+        Mockito.when(dataStore.getRole()).thenReturn(DataStoreRole.Primary);
+        Mockito.when(primaryDataStoreDao.findById(4L)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
+
+        snapshotManager.removeClvmPrimarySnapshotStoreRefIfNeeded(snapshot);
+
+        Mockito.verify(snapshotStoreDao).removeBySnapshotStore(3L, 4L, DataStoreRole.Primary);
+    }
+
+    @Test
+    public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_NonClvmPool() {
+        SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+        Mockito.when(dataStore.getId()).thenReturn(5L);
+        Mockito.when(primaryDataStoreDao.findById(5L)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.NetworkFilesystem);
+
+        snapshotManager.removeClvmPrimarySnapshotStoreRefIfNeeded(snapshot);
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).removeBySnapshotStore(
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 }

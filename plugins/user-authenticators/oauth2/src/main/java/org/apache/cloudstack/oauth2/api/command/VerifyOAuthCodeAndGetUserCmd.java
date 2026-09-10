@@ -20,6 +20,9 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.user.Account;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -34,13 +37,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.commons.lang.ArrayUtils;
-
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.user.Account;
+import org.apache.commons.lang3.ArrayUtils;
 
 @APICommand(name = "verifyOAuthCodeAndGetUser", description = "Verify the OAuth Code and fetch the corresponding user from provider", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
@@ -58,6 +59,14 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     @Parameter(name = ApiConstants.SECRET_CODE, type = CommandType.STRING, description = "Code that is provided by OAuth provider (Eg. google, github) after successful login")
     private String secretCode;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID for domain-specific OAuth provider lookup. If not provided, uses global provider", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider lookup. Ignored when Domain ID is passed.", since = "4.23.0")
+    private String domainPath;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +77,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
 
     public String getSecretCode() {
         return secretCode;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -97,8 +110,9 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
+        domainId = _oauth2mgr.resolveDomainId(params);
 
-        String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider);
+        String email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId);
         if (email != null) {
             UserResponse response = new UserResponse();
             response.setEmail(email);

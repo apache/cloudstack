@@ -21,33 +21,46 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiServer;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.domain.Domain;
+import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
 
 @APICommand(name = "listOauthProvider", description = "List OAuth providers registered", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0")
 public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticator {
+
+    @Inject
+    ApiServerService apiServer;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,6 +72,14 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider")
     private String provider;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID to list OAuth providers for a specific domain. Use -1 for global providers only.", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider lookup. Ignored when Domain ID is passed.", since = "4.23.0")
+    private String domainPath;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +89,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     public String getProvider() {
         return provider;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -87,6 +112,34 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "This is an authentication api, cannot be used directly");
     }
 
+    protected boolean isSecretKeyAllowedForAuthenticatedCaller(Map<String, Object[]> params, HttpSession session,
+                                                               InetAddress remoteAddress, HttpServletRequest req) {
+        if (session == null) {
+            return false;
+        }
+        final Long userId = (Long)session.getAttribute("userid");
+        final String account = (String) session.getAttribute("account");
+        final Object accountObj = session.getAttribute("accountobj");
+        if (account != null) {
+            HttpUtils.ApiSessionKeyCheckOption sessionKeyCheckOption =
+                    EnumUtils.getEnumIgnoreCase(
+                            HttpUtils.ApiSessionKeyCheckOption.class,
+                            ApiServer.ApiSessionKeyCheckLocations.value(),
+                            HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter);
+            if (!HttpUtils.validateSessionKey(session, params, req.getCookies(),ApiConstants.SESSIONKEY,
+                    sessionKeyCheckOption)) {
+                return false;
+            }
+        }
+        if (ObjectUtils.anyNull(userId, account, accountObj) || !apiServer.verifyUser(userId)) {
+            return false;
+        }
+        if (!apiServer.verifyRequest(params, userId, remoteAddress)) {
+            return false;
+        }
+        return _accountService.isRootAdmin(((Account)accountObj).getId());
+    }
+
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
         final String[] idArray = (String[])params.get(ApiConstants.ID);
@@ -97,8 +150,28 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
+        boolean secretKeyAllowed = isSecretKeyAllowedForAuthenticatedCaller(params, session, remoteAddress, req);
 
-        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id);
+        boolean domainRequested = ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN_ID))
+                || ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN));
+        domainId = _oauth2mgr.resolveDomainId(params);
+
+        if (domainRequested && domainId == null) {
+            ListResponse<OauthProviderResponse> response = new ListResponse<>();
+            response.setResponses(new ArrayList<>(), 0);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+            return ApiResponseSerializer.toSerializedString(response, responseType);
+        }
+
+        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
+        boolean isAuthenticated = session != null && session.getAttribute(ApiConstants.USER_ID) != null;
+        if (domainRequested && domainId != null && domainId > 0) {
+            resultList.removeIf(p -> p.getDomainId() == null);
+        } else if (!domainRequested && !isAuthenticated) {
+            resultList.removeIf(p -> p.getDomainId() != null);
+        }
+
         List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
         List<String> authenticatorPluginNames = new ArrayList<>();
         for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
@@ -107,9 +180,12 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         List<OauthProviderResponse> responses = new ArrayList<>();
         for (OauthProviderVO result : resultList) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+                    result.getDescription(), result.getClientId(), secretKeyAllowed ? result.getSecretKey() : null,
+                    result.getRedirectUri(), result.getAuthorizeUrl(), result.getTokenUrl(), domain);
+            boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
+            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
@@ -118,8 +194,20 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             responses.add(r);
         }
 
+        int totalEnabledCount = responses.size();
+        if (!domainRequested && !isAuthenticated) {
+            List<OauthProviderVO> allProviders = _oauth2mgr.listOauthProviders(null, null, null);
+            for (OauthProviderVO domainProvider : allProviders) {
+                if (domainProvider.getDomainId() != null && domainProvider.isEnabled()
+                        && OAuth2AuthManager.isPluginEnabledForDomain(domainProvider.getDomainId())
+                        && authenticatorPluginNames.contains(domainProvider.getProvider())) {
+                    totalEnabledCount++;
+                }
+            }
+        }
+
         ListResponse<OauthProviderResponse> response = new ListResponse<>();
-        response.setResponses(responses, resultList.size());
+        response.setResponses(responses, totalEnabledCount);
         response.setResponseName(getCommandName());
         setResponseObject(response);
 

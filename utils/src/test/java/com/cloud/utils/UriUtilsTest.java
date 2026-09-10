@@ -283,4 +283,180 @@ public class UriUtilsTest {
         Pair<String, Integer> url2 = UriUtils.validateUrl("https://www.apache.org");
         Assert.assertEquals(url2.first(), "www.apache.org");
     }
+
+    @Test
+    public void testGetClvmUriInfoBasic() {
+        String host = "10.11.12.13";
+
+        String url1 = String.format("clvm://%s/vg0/lv0", host);
+        String url2 = String.format("clvm://%s/vg0", host);
+        String url3 = String.format("clvm://%s", host);
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm", info1.getScheme());
+        Assert.assertEquals(host, info1.getStorageHost());
+        Assert.assertEquals("/vg0/lv0", info1.getStoragePath());
+        Assert.assertNull(info1.getUserInfo());
+        Assert.assertEquals(-1, info1.getPort());
+        Assert.assertEquals(url1, info1.toString());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm", info2.getScheme());
+        Assert.assertEquals(host, info2.getStorageHost());
+        Assert.assertEquals("/vg0", info2.getStoragePath());
+
+        UriUtils.UriInfo info3 = UriUtils.getUriInfo(url3);
+        Assert.assertEquals("clvm", info3.getScheme());
+        Assert.assertEquals(host, info3.getStorageHost());
+        Assert.assertEquals("/", info3.getStoragePath());
+    }
+
+    @Test
+    public void testGetClvmNgUriInfoBasic() {
+        String host = "10.11.12.13";
+
+        String url1 = String.format("clvm_ng://%s/vg0/lv0", host);
+        String url2 = String.format("clvm_ng://%s/vg0", host);
+        String url3 = String.format("clvm_ng://%s", host);
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm_ng", info1.getScheme());
+        Assert.assertEquals(host, info1.getStorageHost());
+        Assert.assertEquals("/vg0/lv0", info1.getStoragePath());
+        Assert.assertNull(info1.getUserInfo());
+        Assert.assertEquals(-1, info1.getPort());
+        Assert.assertEquals(url1, info1.toString());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm_ng", info2.getScheme());
+        Assert.assertEquals(host, info2.getStorageHost());
+        Assert.assertEquals("/vg0", info2.getStoragePath());
+
+        UriUtils.UriInfo info3 = UriUtils.getUriInfo(url3);
+        Assert.assertEquals("clvm_ng", info3.getScheme());
+        Assert.assertEquals(host, info3.getStorageHost());
+        Assert.assertEquals("/", info3.getStoragePath());
+    }
+
+    @Test
+    public void testGetClvmUriInfoNoHost() {
+        String url1 = "clvm:///vg0/lv0";
+        String url2 = "clvm_ng:///vg0/lv0";
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm", info1.getScheme());
+        Assert.assertEquals("localhost", info1.getStorageHost());
+        Assert.assertEquals("/vg0/lv0", info1.getStoragePath());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm_ng", info2.getScheme());
+        Assert.assertEquals("localhost", info2.getStorageHost());
+        Assert.assertEquals("/vg0/lv0", info2.getStoragePath());
+    }
+
+    @Test
+    public void testGetClvmUriInfoMultipleSlashes() {
+        String url1 = "clvm://host1//vg0//lv0";
+        String url2 = "clvm_ng://host2///vg1///lv1";
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm", info1.getScheme());
+        Assert.assertEquals("host1", info1.getStorageHost());
+        Assert.assertEquals("/vg0//lv0", info1.getStoragePath());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm_ng", info2.getScheme());
+        Assert.assertEquals("host2", info2.getStorageHost());
+        Assert.assertEquals("/vg1///lv1", info2.getStoragePath());
+    }
+
+    @Test
+    public void testGetClvmUriInfoComplexPaths() {
+        String host = "storage-node1";
+        String url1 = String.format("clvm://%s/vg-name-with-dashes/lv_name_with_underscores", host);
+        String url2 = String.format("clvm_ng://%s/vg.name.with.dots/lv-123-456", host);
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm", info1.getScheme());
+        Assert.assertEquals(host, info1.getStorageHost());
+        Assert.assertEquals("/vg-name-with-dashes/lv_name_with_underscores", info1.getStoragePath());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm_ng", info2.getScheme());
+        Assert.assertEquals(host, info2.getStorageHost());
+        Assert.assertEquals("/vg.name.with.dots/lv-123-456", info2.getStoragePath());
+    }
+
+    @Test
+    public void testGetClvmUriInfoHostnames() {
+        String[] hosts = {
+            "localhost",
+            "node1",
+            "storage-node-1",
+            "storage.example.com",
+            "10.0.0.1",
+            "192.168.1.100"
+        };
+
+        for (String host : hosts) {
+            String clvmUrl = String.format("clvm://%s/vg0/lv0", host);
+            String clvmNgUrl = String.format("clvm_ng://%s/vg0/lv0", host);
+
+            UriUtils.UriInfo clvmInfo = UriUtils.getUriInfo(clvmUrl);
+            Assert.assertEquals("clvm", clvmInfo.getScheme());
+            Assert.assertEquals(host, clvmInfo.getStorageHost());
+            Assert.assertEquals("/vg0/lv0", clvmInfo.getStoragePath());
+
+            UriUtils.UriInfo clvmNgInfo = UriUtils.getUriInfo(clvmNgUrl);
+            Assert.assertEquals("clvm_ng", clvmNgInfo.getScheme());
+            Assert.assertEquals(host, clvmNgInfo.getStorageHost());
+            Assert.assertEquals("/vg0/lv0", clvmNgInfo.getStoragePath());
+        }
+    }
+
+    @Test
+    public void testGetClvmUriInfoToString() {
+        String url1 = "clvm://host1/vg0/lv0";
+        String url2 = "clvm_ng://host2/vg1/lv1";
+        String url3 = "clvm://localhost/vg0";
+
+        Assert.assertEquals(url1, UriUtils.getUriInfo(url1).toString());
+        Assert.assertEquals(url2, UriUtils.getUriInfo(url2).toString());
+        Assert.assertEquals(url3, UriUtils.getUriInfo(url3).toString());
+    }
+
+    @Test
+    public void testGetClvmUriInfoCaseInsensitive() {
+        String url1 = "CLVM://host1/vg0/lv0";
+        String url2 = "ClVm://host2/vg1/lv1";
+        String url3 = "CLVM_NG://host3/vg2/lv2";
+        String url4 = "clvm_NG://host4/vg3/lv3";
+
+        UriUtils.UriInfo info1 = UriUtils.getUriInfo(url1);
+        Assert.assertEquals("clvm", info1.getScheme());
+        Assert.assertEquals("host1", info1.getStorageHost());
+
+        UriUtils.UriInfo info2 = UriUtils.getUriInfo(url2);
+        Assert.assertEquals("clvm", info2.getScheme());
+        Assert.assertEquals("host2", info2.getStorageHost());
+
+        UriUtils.UriInfo info3 = UriUtils.getUriInfo(url3);
+        Assert.assertEquals("clvm_ng", info3.getScheme());
+        Assert.assertEquals("host3", info3.getStorageHost());
+
+        UriUtils.UriInfo info4 = UriUtils.getUriInfo(url4);
+        Assert.assertEquals("clvm_ng", info4.getScheme());
+        Assert.assertEquals("host4", info4.getStorageHost());
+    }
+
+    @Test
+    public void testGetClvmUriInfoIntegration() {
+        String host = "clvm-host";
+
+        String clvmUrl = String.format("clvm://%s/vg0/lv0", host);
+        String clvmNgUrl = String.format("clvm_ng://%s/vg1/lv1", host);
+
+        testGetUriInfoInternal(clvmUrl, host);
+        testGetUriInfoInternal(clvmNgUrl, host);
+    }
 }

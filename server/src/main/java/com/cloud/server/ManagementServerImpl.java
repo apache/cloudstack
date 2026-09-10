@@ -1507,6 +1507,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
      */
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
             final VirtualMachine vm,
+            final Host srcHost,
             final Long startIndex,
             final Long pageSize,
             final String keyword) {
@@ -1515,31 +1516,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             logger.info("Live Migration of GPU enabled VM : {} is not supported", vm);
             return new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
-        }
-
-        final long srcHostId = vm.getHostId();
-        final Host srcHost = _hostDao.findById(srcHostId);
-        if (srcHost == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Unable to find the host with ID: " + srcHostId + " of this Instance: " + vm);
-            }
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
-            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-
-        String srcHostVersion = srcHost.getHypervisorVersion();
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
-            srcHostVersion = "";
-        }
-
-        // Check if the vm can be migrated with storage.
-        boolean canMigrateWithStorage = false;
-
-        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
-        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
-            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1555,12 +1531,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             }
         }
 
+        boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
         if (!canMigrateWithStorage && usesLocal) {
             throw new InvalidParameterValueException("Unsupported operation, instance uses Local storage, cannot migrate");
         }
 
         validateVgpuProfileForVmMigration(vmProfile);
 
+        final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair;
         List<HostVO> allHosts;
@@ -1634,6 +1612,23 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         filteredHosts = uefiFilteredResult.second();
 
         return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
+    }
+
+    protected boolean isStorageMigrationSupported(final VirtualMachine vm, final Host srcHost) {
+        final List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.VMware, HypervisorType.KVM);
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
+            final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
+            return _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
+        }
+        return false;
+    }
+
+    protected String getHypervisorVersionOfHost(final Host host) {
+        final String version = host.getHypervisorVersion();
+        if (version == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return "";
+        }
+        return version;
     }
 
     /**
@@ -1727,9 +1722,19 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         validateVmForHostMigration(vm);
 
+        final long srcHostId = vm.getHostId();
+        final Host srcHost = _hostDao.findById(srcHostId);
+        if (srcHost == null) {
+            logger.debug("Unable to find the host with ID: {} of this Instance: {}", srcHostId, vm);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
+            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
+            throw ex;
+        }
+
         // Get technically compatible hosts (storage, hypervisor, UEFI)
         Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibilityResult =
-            getTechnicallyCompatibleHosts(vm, startIndex, pageSize, keyword);
+            getTechnicallyCompatibleHosts(vm, srcHost, startIndex, pageSize, keyword);
 
         Pair<List<? extends Host>, Integer> allHostsPair = compatibilityResult.first();
         List<? extends Host> filteredHosts = compatibilityResult.second();
@@ -1742,9 +1747,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
 
         // Create deployment plan and VM profile
-        final Host srcHost = _hostDao.findById(vm.getHostId());
-        final DataCenterDeployment plan = new DataCenterDeployment(
-            srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        final DataCenterDeployment plan = createDeploymentPlanForMigrationListing(vm, srcHost);
         final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(
             vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
 
@@ -1767,6 +1770,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
             }
         }
+    }
+
+    protected DataCenterDeployment createDeploymentPlanForMigrationListing(final VirtualMachine vm, final Host srcHost) {
+        final boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
+        if (canMigrateWithStorage) {
+            return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), null, null, null, null);
+        }
+        return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
     }
 
     /**
@@ -2357,6 +2368,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long managementServerId = cmd.getManagementServerId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         final String groupName = cmd.getGroupName();
@@ -2408,6 +2420,11 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         if (imageStoreId != null) {
             scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
+            paramCountCheck++;
+        }
+        if (managementServerId != null) {
+            scope = ConfigKey.Scope.ManagementServer;
+            id = managementServerId;
             paramCountCheck++;
         }
 
@@ -2481,7 +2498,14 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        Object value = key.valueInScope(scope, id);
+                        boolean useStrictLookup = key.isStrictScope()
+                                && scope == ConfigKey.Scope.Domain
+                                && id != null
+                                && id.longValue() != Domain.ROOT_DOMAIN;
+                        Object value = key.valueInScope(scope, id, useStrictLookup);
+                        if (value == null && useStrictLookup) {
+                            value = key.defaultValue();
+                        }
                         configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {

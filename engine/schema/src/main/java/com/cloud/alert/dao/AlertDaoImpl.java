@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertVO;
@@ -28,7 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
@@ -107,25 +108,20 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         }
         sc.setParameters("archived", false);
 
-        boolean result = true;
-        ;
         List<AlertVO> alerts = listBy(sc);
         if (ids != null && alerts.size() < ids.size()) {
-            result = false;
-            return result;
+            return false;
         }
-        if (alerts != null && !alerts.isEmpty()) {
-            TransactionLegacy txn = TransactionLegacy.currentTxn();
-            txn.start();
-            for (AlertVO alert : alerts) {
-                alert = lockRow(alert.getId(), true);
-                alert.setArchived(true);
-                update(alert.getId(), alert);
-                txn.commit();
-            }
-            txn.close();
+
+        if (CollectionUtils.isEmpty(alerts)) {
+            return true;
         }
-        return result;
+
+        AlertVO alertForUpdate = createForUpdate();
+        alertForUpdate.setArchived(true);
+        UpdateBuilder ub = getUpdateBuilder(alertForUpdate);
+        update(ub, sc, null);
+        return true;
     }
 
     @Override

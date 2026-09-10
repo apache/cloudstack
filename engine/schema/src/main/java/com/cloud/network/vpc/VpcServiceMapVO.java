@@ -25,8 +25,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -72,10 +70,10 @@ public class VpcServiceMapVO {
     public VpcServiceMapVO() {
     }
 
-    public VpcServiceMapVO(long vpcId, Service service, Provider provider) {
+    public VpcServiceMapVO(long vpcId, String serviceName, String providerName) {
         this.vpcId = vpcId;
-        this.service = service.getName();
-        this.provider = provider.getName();
+        this.service = serviceName;
+        this.provider = providerName;
     }
 
     @Override

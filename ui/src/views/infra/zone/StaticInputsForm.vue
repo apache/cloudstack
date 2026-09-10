@@ -187,6 +187,11 @@ export default {
         this.setRules(field)
         const fieldExists = this.isDisplayInput(field)
         if (!fieldExists) {
+          // A display-gated toggle that defaults on (checked: true) must be seeded while still
+          // hidden, otherwise it binds to an undefined value and shows off once it becomes visible.
+          if ((field.switch || field.checkbox) && field.checked) {
+            this.form[field.key] = true
+          }
           return
         }
         if (field.key === 'agentUserName' && !this.getPrefilled(field)) {

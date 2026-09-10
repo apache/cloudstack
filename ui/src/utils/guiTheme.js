@@ -63,6 +63,11 @@ async function applyDynamicCustomization (response) {
     jsonConfig = JSON.parse(response?.jsonconfiguration)
   }
 
+  vueProps.$config.loginBaseDomain = ''
+  if (response?.loginbasedomain) {
+    vueProps.$config.loginBaseDomain = response.loginbasedomain
+  }
+
   // Sets custom GUI fields only if is not nullish.
   vueProps.$config.appTitle = jsonConfig?.appTitle ?? vueProps.$config.appTitle
   vueProps.$config.footer = jsonConfig?.footer ?? vueProps.$config.footer

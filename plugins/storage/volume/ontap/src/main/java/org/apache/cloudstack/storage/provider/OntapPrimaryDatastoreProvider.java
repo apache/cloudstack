@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.provider;
 
 
 import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver;
 import org.apache.cloudstack.storage.lifecycle.OntapPrimaryDatastoreLifecycle;
 import org.apache.cloudstack.storage.listener.OntapHostListener;
-import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -66,7 +66,7 @@ public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
     @Override
     public String getName() {
         logger.trace("OntapPrimaryDatastoreProvider: getName: Called");
-        return OntapStorageConstants.ONTAP_PLUGIN_NAME;
+        return DataStoreProvider.ONTAP_PLUGIN_NAME;
     }
 
     @Override

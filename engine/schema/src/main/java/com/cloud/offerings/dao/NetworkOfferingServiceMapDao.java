@@ -44,4 +44,6 @@ public interface NetworkOfferingServiceMapDao extends GenericDao<NetworkOffering
     List<String> listServicesForNetworkOffering(long networkOfferingId);
 
     List<String> getDistinctProviders(long offId);
+
+    List<Long> listOfferingIdsByServiceAndProvider(Service service, String provider);
 }

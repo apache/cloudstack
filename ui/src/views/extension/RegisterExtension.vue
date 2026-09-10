@@ -120,7 +120,7 @@ export default {
     },
     fetchExtensionResourceTypes () {
       this.resourceTypes = []
-      const resourceTypesList = ['Cluster']
+      const resourceTypesList = ['Cluster', 'PhysicalNetwork']
       resourceTypesList.forEach((item) => {
         this.resourceTypes.push({
           id: item,

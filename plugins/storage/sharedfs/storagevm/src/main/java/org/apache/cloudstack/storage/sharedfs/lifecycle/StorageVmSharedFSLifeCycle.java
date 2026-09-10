@@ -180,7 +180,10 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         for (final Iterator<Hypervisor.HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final Hypervisor.HypervisorType hypervisor = iter.next();
             VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor, preferredArchitecture);
-            if (template == null && !iter.hasNext()) {
+            if (template == null) {
+                if (iter.hasNext()) {
+                    continue;
+                }
                 throw new CloudRuntimeException(String.format("Unable to find the systemvm template for %s or it was not downloaded in %s.", hypervisor.toString(), zone.toString()));
             }
 
@@ -199,7 +202,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                         diskOfferingId, size, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
                         null, null, keypairs, null, addrs, null, null, null,
                         customParameterMap, null, null, null, null,
-                        true, UserVmManager.SHAREDFSVM, null, null, null);
+                        true, UserVmManager.SHAREDFSVM, null, null, null, null);
                 vmContext.setEventResourceId(vm.getId());
                 userVmService.startVirtualMachine(vm, null);
             } catch (InsufficientCapacityException ex) {
@@ -298,7 +301,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             expunge = true;
             forceExpunge = true;
         }
-        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge);
+        volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge, null);
         return true;
     }
 

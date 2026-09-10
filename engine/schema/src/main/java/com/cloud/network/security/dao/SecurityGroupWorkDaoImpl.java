@@ -116,7 +116,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
                 //ensure that there is no job in Processing state for the same VM
                 processing = true;
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid=" + work.getInstanceId());
+                    logger.trace("Security Group work take: found a job in Scheduled and Processing vmid={}", work.getInstanceId());
                 }
             }
             work.setServerId(serverId);
@@ -141,26 +141,16 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
-        final TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
         SearchCriteria<SecurityGroupWorkVO> sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
 
-        final Filter filter = new Filter(SecurityGroupWorkVO.class, null, true, 0l, 1l);
-
-        final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
-        if (vos.size() == 0) {
-            txn.commit();
-            return;
-        }
-        SecurityGroupWorkVO work = vos.get(0);
-        work.setStep(step);
-        update(work.getId(), work);
-
-        txn.commit();
+        SecurityGroupWorkVO workForUpdate = createForUpdate();
+        workForUpdate.setStep(step);
+        // LIMIT 1 preserves the original single-row semantics: op_nwgrp_work has no
+        // uniqueness on (instance_id, seq_no), so without it duplicate rows would all be updated.
+        update(workForUpdate, sc, 1);
     }
 
     @Override
@@ -172,21 +162,10 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
     }
 
     @Override
-    @DB
     public void updateStep(Long workId, Step step) {
-        final TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-
-        SecurityGroupWorkVO work = lockRow(workId, true);
-        if (work == null) {
-            txn.commit();
-            return;
-        }
-        work.setStep(step);
-        update(work.getId(), work);
-
-        txn.commit();
-
+        SecurityGroupWorkVO workForUpdate = createForUpdate();
+        workForUpdate.setStep(step);
+        update(workId, workForUpdate);
     }
 
     @Override

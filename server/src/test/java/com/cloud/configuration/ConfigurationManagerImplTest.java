@@ -77,6 +77,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.kms.KMSManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -541,6 +542,33 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
+    public void testValidateConfig_KMSDekSizeBits_Failure() {
+        ConfigurationVO cfg = mock(ConfigurationVO.class);
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+        ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+        Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+        Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "512", configKey.getScopes().get(0));
+
+        Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testValidateConfig_KMSDekSizeBits_Success() {
+        ConfigurationVO cfg = mock(ConfigurationVO.class);
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+        ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+        Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+        Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+
+        for (String validVal : List.of("128", "192", "256")) {
+            String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), validVal, configKey.getScopes().get(0));
+            Assert.assertNull(msg);
+        }
+    }
+
+    @Test
     public void validateDomainTestInvalidIdThrowException() {
         Mockito.doReturn(null).when(domainDaoMock).findById(invalidId);
         Assert.assertThrows(InvalidParameterValueException.class, () -> configurationManagerImplSpy.validateDomain(List.of(invalidId)));
@@ -872,6 +900,7 @@ public class ConfigurationManagerImplTest {
         Mockito.when(cmd.getAccountId()).thenReturn(null);
         Mockito.when(cmd.getDomainId()).thenReturn(null);
         Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        Mockito.when(cmd.getManagementServerId()).thenReturn(null);
 
         ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "pool.storage.capacity.disablethreshold", null, "description");
         cfg.setScope(10);

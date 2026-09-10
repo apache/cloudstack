@@ -73,7 +73,8 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 try {
                     lifecycle.start();
                 } catch (Exception e) {
-                    logger.error("Error on starting bean {} - {}", lifecycle.getName(), e.getMessage(), e);
+                    logger.error("Error on starting bean [{}] due to: {}", lifecycle.getName(), e);
+                    throw new CloudRuntimeException("Failed to start bean [" + lifecycle.getName() + "]");
                 }
 
                 if (lifecycle instanceof ManagementBean) {

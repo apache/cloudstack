@@ -217,7 +217,7 @@ export default {
             data: element.data.map(d => d.stat),
             hidden: this.hideLine(element.data.map(d => d.stat)),
             pointRadius: element.pointRadius,
-            fill: 'origin'
+            fill: element.fill || 'origin'
           }
         )
       }

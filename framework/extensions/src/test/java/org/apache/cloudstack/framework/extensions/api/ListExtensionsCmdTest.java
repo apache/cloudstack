@@ -18,6 +18,7 @@
 package org.apache.cloudstack.framework.extensions.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -89,4 +90,21 @@ public class ListExtensionsCmdTest {
         setPrivateField("details", detailsList);
         cmd.getDetails();
     }
+
+    // -----------------------------------------------------------------------
+    // Tests for type getter
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testGetTypeReturnsValueWhenSet() {
+        setPrivateField("type", "NetworkOrchestrator");
+        assertEquals("NetworkOrchestrator", cmd.getType());
+    }
+
+    @Test
+    public void testGetTypeReturnsNullWhenUnset() {
+        setPrivateField("type", null);
+        assertNull(cmd.getType());
+    }
+
 }

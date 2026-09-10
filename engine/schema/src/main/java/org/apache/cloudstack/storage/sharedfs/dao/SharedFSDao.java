@@ -29,4 +29,6 @@ public interface SharedFSDao extends GenericDao<SharedFSVO, Long>, StateDao<Shar
     List<SharedFSVO> listSharedFSToBeDestroyed(Date date);
 
     SharedFSVO findSharedFSByNameAccountDomain(String name, Long accountId, Long domainId);
+
+    SharedFSVO findByVm(long vmId);
 }
