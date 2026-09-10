@@ -248,18 +248,17 @@ public class ConfigDriveBuilder {
     /**
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      *
-     * A direct routed NIC always gets its network data written: ConfigDrive is the only channel
-     * that carries its addressing, whatever services the offering does or does not have. For
-     * every other NIC the historical gate (Dhcp or Dns supported) is unchanged.
+     * An Instance with a direct routed NIC always gets its network data written: ConfigDrive is
+     * the only channel that carries that NIC's addressing, whatever services the offering does or
+     * does not have. The data then covers every NIC of the Instance, as it does when the
+     * historical gate (Dhcp or Dns supported) is met, because an explicit network configuration
+     * that listed only the direct routed NIC would stop cloud-init from configuring the others.
+     * For Instances without a direct routed NIC the historical gate is unchanged.
      */
     static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
         JsonObject finalNetworkData = new JsonObject();
-        boolean generateForAllNics = needForGeneratingNetworkData(supportedServices);
-        if (generateForAllNics || nics.stream().anyMatch(ConfigDriveBuilder::isDirectRoutedNic)) {
+        if (needForGeneratingNetworkData(supportedServices) || nics.stream().anyMatch(ConfigDriveBuilder::isDirectRoutedNic)) {
             for (NicProfile nic : nics) {
-                if (!generateForAllNics && !isDirectRoutedNic(nic)) {
-                    continue;
-                }
                 List<Network.Service> supportedService = supportedServices.get(nic.getId());
                 JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
 

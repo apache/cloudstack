@@ -761,6 +761,24 @@ public class ConfigDriveBuilderTest {
     }
 
     @Test
+    public void networkDataCoversEveryNicWhenOneIsDirectRouted() throws Exception {
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        try {
+            NicProfile shared = sharedNicProfile();
+            shared.setId(2L);
+            shared.setDeviceId(1);
+            Map<Long, List<Network.Service>> userDataOnly = Map.of(1L, List.of(Network.Service.UserData), 2L, List.of(Network.Service.UserData));
+            ConfigDriveBuilder.writeNetworkData(List.of(directRoutedNicProfile(), shared), userDataOnly, folder.getRoot());
+            String json = FileUtils.readFileToString(new File(folder.getRoot(), "network_data.json"), com.cloud.utils.StringUtils.getPreferredCharset());
+            Assert.assertTrue(json.contains("203.0.113.55"));
+            Assert.assertTrue("the other nic must be written too, or cloud-init leaves it unconfigured", json.contains(shared.getIPv4Address()));
+        } finally {
+            folder.delete();
+        }
+    }
+
+    @Test
     public void networkDataStaysEmptyForOrdinaryNicWithoutDhcpOrDns() throws Exception {
         TemporaryFolder folder = new TemporaryFolder();
         folder.create();
