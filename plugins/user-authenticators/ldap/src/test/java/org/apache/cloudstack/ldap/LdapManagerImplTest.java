@@ -32,7 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -43,6 +42,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -121,7 +121,8 @@ public class LdapManagerImplTest {
         AccountVO liveAccount = new AccountVO();
         when(accountDaoMock.findByIdIncludingRemoved(liveAccountId)).thenReturn(liveAccount);
 
-        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(buildCmd("cn=claimed,dc=my,dc=domain,dc=com")));
+        LinkDomainToLdapCmd cmd = buildCmd("cn=claimed,dc=my,dc=domain,dc=com");
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(cmd));
 
         verify(ldapTrustMapDaoMock, never()).persist(any());
     }
@@ -146,9 +147,10 @@ public class LdapManagerImplTest {
         LdapTrustMapVO oldMapping = new LdapTrustMapVO(DOMAIN_ID, LdapManager.LinkType.GROUP, "cn=old,dc=my,dc=domain,dc=com", Account.Type.NORMAL, 0);
         ReflectionTestUtils.setField(oldMapping, "id", OLD_MAPPING_ID);
         when(ldapTrustMapDaoMock.findByDomainId(DOMAIN_ID)).thenReturn(oldMapping);
-        Mockito.doThrow(new CloudRuntimeException("db blip")).when(ldapTrustMapDaoMock).expunge(Long.valueOf(OLD_MAPPING_ID));
+        doThrow(new CloudRuntimeException("db blip")).when(ldapTrustMapDaoMock).expunge(Long.valueOf(OLD_MAPPING_ID));
 
-        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com")));
+        LinkDomainToLdapCmd cmd = buildCmd("cn=new,dc=my,dc=domain,dc=com");
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(cmd));
 
         verify(ldapTrustMapDaoMock, never()).persist(any());
     }
@@ -167,7 +169,8 @@ public class LdapManagerImplTest {
         ReflectionTestUtils.setField(ldapUser, "source", User.Source.LDAP);
         when(userDaoMock.listByAccount(99L)).thenReturn(List.of(ldapUser));
 
-        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(buildCmd("cn=new,dc=my,dc=domain,dc=com")));
+        LinkDomainToLdapCmd cmd = buildCmd("cn=new,dc=my,dc=domain,dc=com");
+        assertThrows(CloudRuntimeException.class, () -> ldapManager.linkDomainToLdap(cmd));
 
         verify(ldapTrustMapDaoMock, never()).expunge(any(Long.class));
         verify(ldapTrustMapDaoMock, never()).persist(any());
