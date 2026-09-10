@@ -1139,4 +1139,57 @@ public class ClusterDrsServiceImplTest {
         assertFalse("a preferred host must stay available",
                 excludes.getHostsToAvoid().contains(31L));
     }
+
+    @Test
+    public void testEquivalentVmsShareOneCandidateHostLookup() throws ConfigurationException {
+        // the expensive call is listHostsForMigrationOfVM. Two interchangeable VMs must cost one
+        // pass, not two - otherwise the grouping is not actually doing anything.
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+
+        HostVO host1 = Mockito.mock(HostVO.class);
+        Mockito.when(host1.getId()).thenReturn(1L);
+
+        List<VMInstanceVO> vmList = new ArrayList<>();
+        for (long id : new long[] {1L, 2L}) {
+            VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+            Mockito.when(vm.getId()).thenReturn(id);
+            Mockito.when(vm.getHostId()).thenReturn(1L);
+            Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+            Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+            Mockito.when(vm.getServiceOfferingId()).thenReturn(9L);
+            Mockito.lenient().when(vm.getTemplateId()).thenReturn(8L);
+            vmList.add(vm);
+        }
+
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(offering.isDynamic()).thenReturn(false);
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(offering);
+        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong()))
+                .thenReturn(Collections.emptyMap());
+        Mockito.when(volumeDao.findCreatedByInstance(Mockito.anyLong())).thenReturn(Collections.emptyList());
+
+        HostJoinVO hostJoin1 = Mockito.mock(HostJoinVO.class);
+        Mockito.when(hostJoin1.getId()).thenReturn(1L);
+        Mockito.when(hostJoin1.getCpus()).thenReturn(4);
+        Mockito.when(hostJoin1.getSpeed()).thenReturn(1000L);
+        Mockito.when(hostJoin1.getTotalMemory()).thenReturn(8192L);
+
+        Mockito.when(hostDao.findByClusterId(1L)).thenReturn(List.of(host1));
+        Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
+        Mockito.when(hostJoinDao.searchByIds(Mockito.any())).thenReturn(List.of(hostJoin1));
+        Mockito.when(balancedAlgorithm.needsDrs(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.anyMap()))
+                .thenReturn(false);
+        Mockito.when(managementServer.listHostsForMigrationOfVM(Mockito.any(), Mockito.anyLong(),
+                        Mockito.anyLong(), Mockito.any(), Mockito.anyList()))
+                .thenReturn(new Ternary<>(new Pair<>(Collections.emptyList(), 0),
+                        List.of(host1), Collections.emptyMap()));
+
+        clusterDrsService.getDrsPlan(cluster, 5);
+
+        Mockito.verify(managementServer, Mockito.times(1)).listHostsForMigrationOfVM(
+                Mockito.any(), Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
+    }
 }
