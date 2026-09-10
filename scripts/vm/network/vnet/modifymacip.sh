@@ -20,7 +20,7 @@
 #
 # Usage:
 #   add:    modifymacip.sh -o add    -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ...
-#   delete: modifymacip.sh -o delete -b <bridge> -m <mac>
+#   delete: modifymacip.sh -o delete -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ...
 #
 # Both -4 and -6 may be specified multiple times to cover primary and secondary
 # addresses (e.g. link-local + global unicast for IPv6).
@@ -31,7 +31,8 @@
 # running Instance needs.
 
 usage() {
-    echo "Usage: $0 -o <add|delete> -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ..."
+    echo "Usage: $0 -o add    -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ..."
+    echo "       $0 -o delete -b <bridge> -m <mac> [-4 <ipv4>] ... [-6 <ipv6>] ..."
 }
 
 OP=

@@ -38,21 +38,69 @@
 # addresses are defined in exactly one place (NetUtils on the management
 # server).
 #
-# This script is the only place that knows how these bridges are named. 'add'
-# prints the bridge name on stdout for the agent to use, and 'delete' takes a
-# bridge name and answers on stdout:
-#   notmine  - not a bridge this script manages; the agent falls back to its
-#              regular unplug handling
-#   kept     - ours, but other Instances still use it
-#   deleted  - ours, removed
+# Host protection. Because the hypervisor routes for its Instances, a frame an
+# Instance sends enters the host's own IP stack, so unlike classic bridging an
+# Instance can address the host itself. Two netfilter measures are installed
+# once per host, shared by all brdr-* bridges, and removed again when the last
+# such bridge is deleted:
+#
+#   * The BRDR-INPUT chain, hooked from INPUT with -i brdr-+. It accepts
+#     replies to what the host itself initiated (conntrack ESTABLISHED,RELATED),
+#     what gateway resolution and reachability checks need (IPv4 ICMP echo
+#     request; ICMPv6 neighbour solicitation, neighbour advertisement and echo
+#     request) and drops everything else that arrives from a brdr-* bridge. It
+#     is what stops an Instance from reaching services on the hypervisor. The
+#     hook is inserted at the top of INPUT; an operator running a default-DROP
+#     INPUT policy of their own must still let neighbour discovery for fe80::1
+#     and ICMP echo requests in from brdr-+, or Instances cannot resolve or
+#     ping their gateway.
+#   * ip6tables -t raw PREROUTING -i brdr-+ -m rpfilter --invert -j DROP: the
+#     IPv6 counterpart of the per-bridge rp_filter=1 sysctl, which is IPv4 only.
+#     An Instance may only send from an address whose route points back out of
+#     the bridge it arrived on, so it cannot spoof another IPv6 source.
+#
+# No FORWARD rules are touched here; those belong to security_group.py.
+#
+# This script is the only place that knows how these bridges are named. Every
+# operation prints exactly one token on stdout and nothing else; all
+# diagnostics go to stderr.
+#   add:    the bridge name, for the agent to use in the domain XML
+#   delete: notmine  - not a bridge this script manages; the agent falls back
+#                      to its regular unplug handling
+#           kept     - ours, but other Instances still use it
+#           deleted  - ours, removed (or already gone)
+#   query:  mine | notmine - whether the name is one of ours; changes nothing
+# Exit codes: 0 success (the token is valid), 1 the operation failed, 2 bad
+# arguments.
 #
 # Usage:
 #   add:    modifybrdr.sh -o add    -n <routed id> -4 <ipv4 gateway> and/or -6 <ipv6 gateway>
 #   delete: modifybrdr.sh -o delete -b <bridge name>
+#   query:  modifybrdr.sh -o query  -b <bridge name>
 
 usage() {
-    echo "Usage: $0 -o add -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>] | -o delete -b <bridge name>"
+    echo "Usage: $0 -o add -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>] | -o delete -b <bridge name> | -o query -b <bridge name>" >&2
 }
+
+fail() {
+    echo "modifybrdr.sh: $*" >&2
+    exit 1
+}
+
+# Runs a command and reports on stderr when it fails, keeping the exit status
+must() {
+    if ! "$@"; then
+        echo "modifybrdr.sh: command failed: $*" >&2
+        return 1
+    fi
+}
+
+# Names known only to this script
+BRIDGE_NAME_RE='^brdr-[1-9][0-9]{0,9}$'
+ROUTED_ID_RE='^[1-9][0-9]{0,9}$'
+IPV4_RE='^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$'
+IPV6_RE='^[0-9A-Fa-f]{0,4}(:[0-9A-Fa-f]{0,4}){2,7}$'
+FW_CHAIN=BRDR-INPUT
 
 OP=
 ROUTED_ID=
@@ -61,9 +109,8 @@ IPV4_GATEWAY=
 IPV6_GATEWAY=
 
 while getopts 'o:n:b:4:6:' OPTION; do
-    case $OPTION in
-    o)    oflag=1
-          OP="$OPTARG"
+    case "$OPTION" in
+    o)    OP="$OPTARG"
           ;;
     n)    ROUTED_ID="$OPTARG"
           ;;
@@ -79,31 +126,48 @@ while getopts 'o:n:b:4:6:' OPTION; do
     esac
 done
 
-if [[ "$oflag" != "1" ]]; then
+if [[ -z "$OP" ]]; then
     usage
     exit 2
 fi
 
-if [[ "$OP" == "add" ]]; then
-    if [[ ! "$ROUTED_ID" =~ ^[0-9]+$ ]]; then
-        echo "Routed id must be numeric: ${ROUTED_ID}"
+isValidIpv6() {
+    [[ "$1" =~ $IPV6_RE && "$1" != *:::* ]] || return 1
+    # A single leading or trailing colon is not a group separator
+    [[ "$1" == :* && "$1" != ::* ]] && return 1
+    [[ "$1" == *: && "$1" != *:: ]] && return 1
+    # At most one '::'
+    local rest="${1//::/}"
+    [[ $(( ${#1} - ${#rest} )) -le 2 ]]
+}
+
+case "$OP" in
+add)
+    if [[ ! "$ROUTED_ID" =~ $ROUTED_ID_RE ]]; then
+        echo "Routed id must be a positive integer of at most 10 digits without leading zeros: '${ROUTED_ID}'" >&2
         exit 2
     fi
 
     if [[ -z "$IPV4_GATEWAY" && -z "$IPV6_GATEWAY" ]]; then
-        echo "At least one of -4 or -6 must be given for add"
+        echo "At least one of -4 or -6 must be given for add" >&2
         usage
         exit 2
     fi
 
-    BRNAME="brdr-${ROUTED_ID}"
-
-    # Linux caps interface names at 15 characters
-    if [[ ${#BRNAME} -gt 15 ]]; then
-        echo "Bridge name ${BRNAME} exceeds the 15 character interface name limit"
+    if [[ -n "$IPV4_GATEWAY" && ! "$IPV4_GATEWAY" =~ $IPV4_RE ]]; then
+        echo "Not a valid IPv4 address: '${IPV4_GATEWAY}'" >&2
         exit 2
     fi
-elif [[ "$OP" == "delete" ]]; then
+
+    if [[ -n "$IPV6_GATEWAY" ]] && ! isValidIpv6 "$IPV6_GATEWAY"; then
+        echo "Not a valid IPv6 address: '${IPV6_GATEWAY}'" >&2
+        exit 2
+    fi
+
+    # The id regex keeps this within the 15 character interface name limit
+    BRNAME="brdr-${ROUTED_ID}"
+    ;;
+delete|query)
     if [[ -z "$BRNAME" ]]; then
         usage
         exit 2
@@ -111,23 +175,122 @@ elif [[ "$OP" == "delete" ]]; then
 
     # Not one of ours: tell the agent so it can fall back to its regular
     # unplug handling. This is what keeps the bridge naming knowledge in
-    # this script and nowhere else.
-    if [[ "$BRNAME" != brdr-* ]]; then
+    # this script and nowhere else. Nothing is done with a foreign name.
+    if [[ ! "$BRNAME" =~ $BRIDGE_NAME_RE ]]; then
         echo "notmine"
         exit 0
     fi
-else
+
+    if [[ "$OP" == "query" ]]; then
+        echo "mine"
+        exit 0
+    fi
+    ;;
+*)
     usage
     exit 2
-fi
+    ;;
+esac
+
+hasIpv6() {
+    [[ -d /proc/sys/net/ipv6 ]]
+}
+
+# Ensures a rule is present in a chain: checked with -C, inserted at the given
+# position only when absent. Usage: ensureRule <iptables> <table> <chain> <pos> <rule...>
+ensureRule() {
+    local ipt="$1" table="$2" chain="$3" pos="$4"
+    shift 4
+    "$ipt" -w -t "$table" -C "$chain" "$@" 2>/dev/null && return 0
+    must "$ipt" -w -t "$table" -I "$chain" "$pos" "$@"
+}
+
+# Removes a rule if it is present. Usage: dropRule <iptables> <table> <chain> <rule...>
+dropRule() {
+    local ipt="$1" table="$2" chain="$3"
+    shift 3
+    "$ipt" -w -t "$table" -C "$chain" "$@" 2>/dev/null || return 0
+    "$ipt" -w -t "$table" -D "$chain" "$@"
+}
+
+# Builds the shared INPUT policy chain for one address family and hooks it
+# from INPUT. Idempotent; the DROP is appended last so the accepts inserted at
+# fixed positions always precede it.
+installInputChain() {
+    local ipt="$1"
+    shift
+    if ! "$ipt" -w -nL "$FW_CHAIN" >/dev/null 2>&1; then
+        must "$ipt" -w -N "$FW_CHAIN" || return 1
+    fi
+    local pos=1 rule
+    for rule in "$@"; do
+        # shellcheck disable=SC2086
+        ensureRule "$ipt" filter "$FW_CHAIN" "$pos" $rule || return 1
+        pos=$((pos + 1))
+    done
+    if ! "$ipt" -w -C "$FW_CHAIN" -j DROP 2>/dev/null; then
+        must "$ipt" -w -A "$FW_CHAIN" -j DROP || return 1
+    fi
+    ensureRule "$ipt" filter INPUT 1 -i brdr-+ -j "$FW_CHAIN"
+}
+
+removeInputChain() {
+    local ipt="$1"
+    "$ipt" -w -nL "$FW_CHAIN" >/dev/null 2>&1 || return 0
+    dropRule "$ipt" filter INPUT -i brdr-+ -j "$FW_CHAIN"
+    "$ipt" -w -F "$FW_CHAIN"
+    "$ipt" -w -X "$FW_CHAIN"
+}
+
+installHostProtection() {
+    command -v iptables >/dev/null 2>&1 || fail "iptables not found; Direct Routed bridges need it to protect the host from its Instances"
+    installInputChain iptables \
+        "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT" \
+        "-p icmp --icmp-type echo-request -j ACCEPT" || return 1
+
+    hasIpv6 || return 0
+    command -v ip6tables >/dev/null 2>&1 || fail "ip6tables not found; Direct Routed bridges need it to protect the host from its Instances"
+    installInputChain ip6tables \
+        "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT" \
+        "-p icmpv6 --icmpv6-type 135 -j ACCEPT" \
+        "-p icmpv6 --icmpv6-type 136 -j ACCEPT" \
+        "-p icmpv6 --icmpv6-type 128 -j ACCEPT" || return 1
+    ensureRule ip6tables raw PREROUTING 1 -i brdr-+ -m rpfilter --invert -j DROP
+}
+
+# Best effort: a leftover rule set is harmless and idempotently re-used
+removeHostProtection() {
+    if command -v iptables >/dev/null 2>&1; then
+        removeInputChain iptables
+    fi
+    if hasIpv6 && command -v ip6tables >/dev/null 2>&1; then
+        removeInputChain ip6tables
+        dropRule ip6tables raw PREROUTING -i brdr-+ -m rpfilter --invert -j DROP
+    fi
+}
+
+otherBridgesRemain() {
+    local dev
+    for dev in /sys/class/net/brdr-*; do
+        [[ -d "$dev" ]] && return 0
+    done
+    return 1
+}
 
 addBr() {
-    if [[ ! -d /sys/class/net/${BRNAME} ]]; then
+    if [[ -n "$IPV6_GATEWAY" ]] && ! hasIpv6; then
+        echo "An IPv6 gateway was requested but IPv6 is disabled on this host" >&2
+        return 1
+    fi
+
+    installHostProtection || return 1
+
+    if [[ ! -d "/sys/class/net/${BRNAME}" ]]; then
         # No STP and no forwarding delay: the bridge has no uplink, so there is
         # no loop to detect and no reason to hold ports down when an Instance starts
-        ip link add name ${BRNAME} type bridge stp_state 0 forward_delay 0
-        ip link set ${BRNAME} up
+        must ip link add name "${BRNAME}" type bridge stp_state 0 forward_delay 0 || return 1
     fi
+    must ip link set "${BRNAME}" up || return 1
 
     # The bridge answers ARP/NDP for the shared gateway with its own MAC.
     # Derive that MAC from the routed id so every hypervisor answers with the
@@ -138,53 +301,58 @@ addBr() {
     # kernel no longer derives the bridge MAC from whichever port attaches.
     # Applied on every add, so bridges created before this existed converge.
     BRMAC=$(printf '0e:%010x' "${ROUTED_ID}" | sed -r 's/(..)(..)(..)(..)(..)$/\1:\2:\3:\4:\5/')
-    ip link set dev ${BRNAME} address ${BRMAC}
+    must ip link set dev "${BRNAME}" address "${BRMAC}" || return 1
 
     # The bridge routes on behalf of every Instance attached to it
-    sysctl -qw net.ipv4.conf.${BRNAME}.forwarding=1
-    sysctl -qw net.ipv6.conf.${BRNAME}.disable_ipv6=0
-    sysctl -qw net.ipv6.conf.${BRNAME}.forwarding=1
-
-    # Never act on a router advertisement sent by an Instance
-    sysctl -qw net.ipv6.conf.${BRNAME}.accept_ra=0
+    must sysctl -qw "net.ipv4.conf.${BRNAME}.forwarding=1" || return 1
 
     # The same gateway address is configured on every brdr bridge on this host.
     # Only answer ARP for the address on the interface the request arrived on,
     # and always source ARP from that interface's own address.
-    sysctl -qw net.ipv4.conf.${BRNAME}.arp_ignore=1
-    sysctl -qw net.ipv4.conf.${BRNAME}.arp_announce=2
-
-    if [[ -n "${IPV4_GATEWAY}" ]]; then
-        ip address replace ${IPV4_GATEWAY}/32 dev ${BRNAME}
-    fi
-    if [[ -n "${IPV6_GATEWAY}" ]]; then
-        ip -6 address replace ${IPV6_GATEWAY}/64 dev ${BRNAME}
-    fi
+    must sysctl -qw "net.ipv4.conf.${BRNAME}.arp_ignore=1" || return 1
+    must sysctl -qw "net.ipv4.conf.${BRNAME}.arp_announce=2" || return 1
 
     # Strict reverse path filtering: an Instance may only send from an address
     # that is routed back out of this bridge, which is its own /32. Set on the
     # bridge only, never on 'all', so no other interface changes behaviour.
-    # Note this is IPv4 only; the kernel has no IPv6 equivalent.
-    sysctl -qw net.ipv4.conf.${BRNAME}.rp_filter=1
+    # IPv4 only; the ip6tables rpfilter rule above is the IPv6 counterpart.
+    must sysctl -qw "net.ipv4.conf.${BRNAME}.rp_filter=1" || return 1
 
+    if hasIpv6; then
+        must sysctl -qw "net.ipv6.conf.${BRNAME}.disable_ipv6=0" || return 1
+        must sysctl -qw "net.ipv6.conf.${BRNAME}.forwarding=1" || return 1
+        # Never act on a router advertisement sent by an Instance
+        must sysctl -qw "net.ipv6.conf.${BRNAME}.accept_ra=0" || return 1
+    fi
+
+    if [[ -n "${IPV4_GATEWAY}" ]]; then
+        must ip address replace "${IPV4_GATEWAY}/32" dev "${BRNAME}" || return 1
+    fi
+    if [[ -n "${IPV6_GATEWAY}" ]]; then
+        must ip -6 address replace "${IPV6_GATEWAY}/64" dev "${BRNAME}" || return 1
+    fi
 }
 
 deleteBr() {
-    if [[ ! -d /sys/class/net/${BRNAME} ]]; then
-        echo "deleted"
+    if [[ ! -d "/sys/class/net/${BRNAME}" ]]; then
+        echo "deleted" >&3
         return 0
     fi
 
     # An Instance may have been started on this network while the last one was
     # being stopped; leave the bridge alone if anything is still attached
-    if [[ -n "$(ls -A /sys/class/net/${BRNAME}/brif 2>/dev/null)" ]]; then
-        echo "kept"
+    if [[ -n "$(ls -A "/sys/class/net/${BRNAME}/brif" 2>/dev/null)" ]]; then
+        echo "kept" >&3
         return 0
     fi
 
-    ip link set ${BRNAME} down
-    ip link delete ${BRNAME} type bridge
-    echo "deleted"
+    ip link set "${BRNAME}" down
+    must ip link delete "${BRNAME}" type bridge || return 1
+
+    if ! otherBridgesRemain; then
+        removeHostProtection
+    fi
+    echo "deleted" >&3
 }
 
 #
@@ -198,17 +366,19 @@ LOCKFILE=/var/run/cloud/brdr.lock
 mkdir -p "${LOCKFILE%/*}"
 
 (
-    flock -x -w 10 200 || exit 1
-    if [[ "$OP" == "add" ]]; then
-        addBr
+    flock -x -w 10 200 || fail "could not acquire ${LOCKFILE} within 10 seconds"
 
-        if [[ $? -gt 0 ]]; then
-            exit 1
-        fi
+    # Only the result token may reach the agent on stdout: everything the
+    # commands below print goes to stderr, the token is written to fd 3.
+    exec 3>&1 1>&2
 
-        # The agent uses this as the bridge name; naming lives here only
-        echo "${BRNAME}"
-    elif [[ "$OP" == "delete" ]]; then
-        deleteBr
-    fi
-) 200>${LOCKFILE}
+    case "$OP" in
+    add)
+        addBr || exit 1
+        echo "${BRNAME}" >&3
+        ;;
+    delete)
+        deleteBr || exit 1
+        ;;
+    esac
+) 200>"${LOCKFILE}"

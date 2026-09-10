@@ -55,6 +55,16 @@ public class BridgeVifDriver extends VifDriverBase {
     private Long libvirtVersion;
 
     /**
+     * What a Linux interface name may look like; modifybrdr.sh prints exactly one such name on
+     * a successful add, and anything else in its output is a diagnostic.
+     */
+    private static final Pattern BRIDGE_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.-]{1,15}$");
+    private static final String BRDR_MINE = "mine";
+    private static final String BRDR_NOTMINE = "notmine";
+    private static final String BRDR_KEPT = "kept";
+    private static final String BRDR_DELETED = "deleted";
+
+    /**
      * A NIC on a Direct Routed (L3) network is recognised by its broadcast domain: routed://<id>,
      * stamped by the management server. The id is a label naming the per-network bridge
      * (brdr-<id>), never an encapsulation. An earlier revision inferred this from the address
@@ -341,16 +351,20 @@ public class BridgeVifDriver extends VifDriverBase {
 
     /**
      * How the bridges of Direct Routed (L3) networks are named is known only to modifybrdr.sh;
-     * the interface is classified at unplug by asking the script — "notmine" means it is not
-     * such a bridge and the regular unplug handling applies.
+     * the interface is classified at unplug by asking the script ("query"), which answers
+     * "notmine" when it is not such a bridge and the regular unplug handling applies. For a
+     * Direct Routed bridge the host route and neighbour entry of the interface are removed
+     * first, while the bridge they reference still exists, and only then is the script asked to
+     * delete the bridge should nothing else be attached to it.
      */
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
-        boolean directRouted = deleteDirectRoutedBridge(iface.getBrName());
+        boolean directRouted = isDirectRoutedBridge(iface.getBrName());
         if (_macIpStaticEnabled || directRouted) {
             executeMacIpScript(iface.getBrName(), iface.getMacAddress());
         }
         if (directRouted) {
+            deleteDirectRoutedBridge(iface.getBrName());
             return;
         }
         deleteVnetBr(iface.getBrName(), deleteBr);
@@ -360,19 +374,26 @@ public class BridgeVifDriver extends VifDriverBase {
      * Ensures the per-network bridge for a Direct Routed NIC exists, with the shared gateway
      * addresses and sysctls applied. Idempotent and flock'd in the script itself. A failure here
      * is fatal to the NIC plug: without the bridge the domain XML would reference a nonexistent
-     * device and the Instance would fail to start with a far less useful error.
+     * device and the Instance would fail to start with a far less useful error. A missing
+     * modifymacip.sh is fatal for the same reason: without the host route and neighbour entry it
+     * installs the Instance would start with no connectivity at all.
      *
      * The routed id — the value of the network's routed://&lt;id&gt; broadcast domain, operator
      * controlled and stable for the network's life — names the bridge, but how these bridges are
      * named is known only to modifybrdr.sh: the script prints the bridge name it created, never
-     * the agent. The gateway addresses passed along come from the NIC, whose values the
+     * the agent. The script's stderr is merged into its stdout by Script, so the last non-blank
+     * line is taken and must look like an interface name; anything else means the script did not
+     * produce a bridge. The gateway addresses passed along come from the NIC, whose values the
      * management server stamped at allocation (NetUtils.getLinkLocalGateway() /
      * getIpv6LinkLocalGateway()); the script has no defaults of its own, so the addresses are
      * defined in exactly one place.
      */
-    private String createDirectRoutedBridge(NicTO nic) throws InternalErrorException {
+    protected String createDirectRoutedBridge(NicTO nic) throws InternalErrorException {
         if (_modifyBrdrPath == null) {
             throw new InternalErrorException("Unable to find modifybrdr.sh: this host cannot run Instances on Direct Routed (L3) networks");
+        }
+        if (_macIpScriptPath == null) {
+            throw new InternalErrorException("Unable to find modifymacip.sh: this host cannot run Instances on Direct Routed (L3) networks");
         }
         String routedId = nic.getBroadcastUri() != null ? Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()) : null;
         if (StringUtils.isBlank(routedId)) {
@@ -387,41 +408,105 @@ public class BridgeVifDriver extends VifDriverBase {
         if (StringUtils.isNotBlank(nic.getIp6Gateway())) {
             command.add("-6", nic.getIp6Gateway());
         }
-        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
-        if (result != null || StringUtils.isBlank(parser.getLine())) {
+        if (result != null) {
             throw new InternalErrorException("Failed to create bridge for routed id " + routedId + ": " + result);
         }
-        return parser.getLine().trim();
+        String brName = lastNonBlankLine(parser.getLines());
+        if (brName == null || !BRIDGE_NAME_PATTERN.matcher(brName).matches()) {
+            throw new InternalErrorException("modifybrdr.sh did not return a usable bridge name for routed id " + routedId + ": " + parser.getLines());
+        }
+        return brName;
+    }
+
+    /**
+     * Asks modifybrdr.sh whether the bridge is one of its own without changing anything. Only an
+     * exact "mine" counts; "notmine", a script failure or an unexpected answer all send the
+     * caller down the regular unplug handling.
+     */
+    protected boolean isDirectRoutedBridge(String brName) {
+        if (_modifyBrdrPath == null || brName == null) {
+            return false;
+        }
+        String verdict = runModifyBrdrVerdict("query", brName);
+        if (verdict == null) {
+            return false;
+        }
+        if (BRDR_MINE.equals(verdict)) {
+            return true;
+        }
+        if (!BRDR_NOTMINE.equals(verdict)) {
+            logger.warn("Unexpected answer from modifybrdr.sh query for bridge {}: {}", brName, verdict);
+        }
+        return false;
     }
 
     /**
      * Asks modifybrdr.sh to remove the bridge if it is one of its own and nothing is attached to
-     * it any more. Returns whether the bridge belongs to a Direct Routed network at all —
-     * "notmine" means it does not, and the caller falls back to the regular unplug handling.
-     * Best-effort beyond that: the script keeps the bridge while other Instances of the network
-     * still use it, and a leftover empty bridge is harmless and re-used on the next plug.
+     * it any more. Returns whether the script gave one of its three answers (notmine, kept,
+     * deleted); anything else is a failure and is logged. Best-effort beyond that: the script
+     * keeps the bridge while other Instances of the network still use it, and a leftover empty
+     * bridge is harmless and re-used on the next plug.
      */
-    private boolean deleteDirectRoutedBridge(String brName) {
+    protected boolean deleteDirectRoutedBridge(String brName) {
         if (_modifyBrdrPath == null || brName == null) {
             return false;
         }
-        try {
-            Script command = new Script(_modifyBrdrPath, _timeout, logger);
-            command.add("-o", "delete");
-            command.add("-b", brName);
-            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-            String result = command.execute(parser);
-            String verdict = parser.getLine() != null ? parser.getLine().trim() : "";
-            if (result != null) {
-                logger.warn("Failed to delete bridge {}: {}", brName, result);
-                return false;
-            }
-            return !"notmine".equals(verdict);
-        } catch (Exception e) {
-            logger.warn("Failed to delete bridge {}", brName, e);
+        String verdict = runModifyBrdrVerdict("delete", brName);
+        if (verdict == null) {
             return false;
         }
+        if (BRDR_NOTMINE.equals(verdict) || BRDR_KEPT.equals(verdict) || BRDR_DELETED.equals(verdict)) {
+            logger.debug("modifybrdr.sh delete on bridge {}: {}", brName, verdict);
+            return true;
+        }
+        logger.warn("Unexpected answer from modifybrdr.sh delete for bridge {}: {}", brName, verdict);
+        return false;
+    }
+
+    /**
+     * Runs a modifybrdr.sh operation that takes a bridge name and answers with a single token,
+     * returning the last non-blank line of its output, or null when the script failed.
+     */
+    private String runModifyBrdrVerdict(String operation, String brName) {
+        try {
+            Script command = new Script(_modifyBrdrPath, _timeout, logger);
+            command.add("-o", operation);
+            command.add("-b", brName);
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            String result = command.execute(parser);
+            if (result != null) {
+                logger.warn("modifybrdr.sh {} failed for bridge {}: {}", operation, brName, result);
+                return null;
+            }
+            String verdict = lastNonBlankLine(parser.getLines());
+            if (verdict == null) {
+                logger.warn("modifybrdr.sh {} gave no answer for bridge {}", operation, brName);
+            }
+            return verdict;
+        } catch (Exception e) {
+            logger.warn("Failed to run modifybrdr.sh {} for bridge {}", operation, brName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the last non-blank line of a script's merged stdout/stderr output, trimmed, or
+     * null when there is none. The result token of modifybrdr.sh is always printed last.
+     */
+    protected static String lastNonBlankLine(String output) {
+        if (output == null) {
+            return null;
+        }
+        String[] lines = output.split("\n");
+        for (int i = lines.length - 1; i >= 0; i--) {
+            String line = lines[i].trim();
+            if (!line.isEmpty()) {
+                return line;
+            }
+        }
+        return null;
     }
 
     @Override

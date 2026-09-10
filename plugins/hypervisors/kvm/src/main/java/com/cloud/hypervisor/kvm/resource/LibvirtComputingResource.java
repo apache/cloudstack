@@ -5913,7 +5913,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (!canBridgeFirewall) {
-            return directRouted;
+            LOGGER.warn("Security group rules were requested for secondary IP {} of {} but this host cannot bridge firewall; the ipset was not updated", secIp, vmName);
+            return false;
         }
 
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
@@ -5937,6 +5938,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean configureDirectRoutedSecondaryIp(final Connect conn, final String vmName, final String vmMac, final String secIp, final String action) {
         if (macIpPath == null) {
             LOGGER.warn("Unable to find modifymacip.sh, cannot configure secondary IP {} for {}", secIp, vmName);
+            return false;
+        }
+        if (StringUtils.isBlank(vmMac) || StringUtils.isBlank(secIp)) {
+            LOGGER.warn("Cannot configure secondary IP for {}: MAC '{}' or address '{}' is missing", vmName, vmMac, secIp);
             return false;
         }
         String brName = null;
