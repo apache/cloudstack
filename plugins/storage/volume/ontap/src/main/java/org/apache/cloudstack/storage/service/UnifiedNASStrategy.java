@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -99,6 +100,18 @@ public class UnifiedNASStrategy extends NASStrategy {
             logger.error("createCloudStackVolume: error occured " + e);
             throw new CloudRuntimeException(e);
         }
+    }
+
+    /**
+     * NFS template cache: nothing is pre-created on the array. The KVM agent writes the qcow2
+     * into the mounted FlexVolume; the framework records {@code install_path} afterward.
+     */
+    @Override
+    public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                Map<String, String> details, long sizeInBytes) {
+        logger.info("createTemplateCache: NFS pool [{}], template [{}] will be written directly to the mounted FlexVolume",
+                storagePool.getId(), templateInfo.getId());
+        return null;
     }
 
     @Override

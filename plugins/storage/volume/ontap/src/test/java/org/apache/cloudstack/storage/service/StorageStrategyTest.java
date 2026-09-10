@@ -125,6 +125,13 @@ public class StorageStrategyTest {
         }
 
         @Override
+        public CloudStackVolume createTemplateCache(org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool,
+                org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo,
+                Map<String, String> details, long sizeInBytes) {
+            return null;
+        }
+
+        @Override
         CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
             return null;
         }

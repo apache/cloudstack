@@ -158,6 +158,60 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
+    void testCreateTemplateCache_Success() {
+        org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool =
+                mock(org.apache.cloudstack.storage.datastore.db.StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePool.getHypervisor()).thenReturn(com.cloud.hypervisor.Hypervisor.HypervisorType.KVM);
+
+        org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo =
+                mock(org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo.class);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+
+        Lun createdLun = new Lun();
+        createdLun.setName("/vol/vol1/cs_tmpl_50");
+        createdLun.setUuid("template-lun-uuid");
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(createdLun));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class))).thenReturn(response);
+
+            CloudStackVolume result = unifiedSANStrategy.createTemplateCache(
+                    storagePool, templateInfo, details, 5368709120L);
+
+            assertNotNull(result);
+            assertEquals("template-lun-uuid", result.getLun().getUuid());
+            assertEquals("/vol/vol1/cs_tmpl_50", result.getLun().getName());
+
+            ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+            verify(sanFeignClient).createLun(eq(authHeader), eq(true), lunCaptor.capture());
+            assertEquals("/vol/vol1/cs_tmpl_50", lunCaptor.getValue().getName());
+            assertEquals(5368709120L, lunCaptor.getValue().getSpace().getSize());
+        }
+    }
+
+    @Test
+    void testCreateTemplateCache_UnknownSize_ThrowsException() {
+        org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool =
+                mock(org.apache.cloudstack.storage.datastore.db.StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(1L);
+        org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo =
+                mock(org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo.class);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> unifiedSANStrategy.createTemplateCache(storagePool, templateInfo, Map.of(), 0L));
+        verify(sanFeignClient, never()).createLun(any(), anyBoolean(), any());
+    }
+
+    @Test
     void testCreateCloudStackVolume_NullRequest_ThrowsException() {
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.createCloudStackVolume(null));

@@ -69,6 +69,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -208,6 +209,22 @@ public class UnifiedNASStrategyTest {
         verify(volumeDao).update(anyLong(), any(VolumeVO.class));
         verify(epSelector).select(volumeObject);
         verify(endPoint).sendMessage(any(CreateObjectCommand.class));
+    }
+
+    @Test
+    public void testCreateTemplateCache_IsNoOp() {
+        org.apache.cloudstack.storage.datastore.db.StoragePoolVO storagePool =
+                mock(org.apache.cloudstack.storage.datastore.db.StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(1L);
+        org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo templateInfo =
+                mock(org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo.class);
+        when(templateInfo.getId()).thenReturn(50L);
+
+        CloudStackVolume result = strategy.createTemplateCache(storagePool, templateInfo, Map.of(), 0L);
+
+        assertNotNull(result);
+        assertNull(result.getLun());
+        assertNull(result.getFile());
     }
 
     // Test createCloudStackVolume - Volume Not Found

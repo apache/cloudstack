@@ -230,48 +230,48 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     /**
      * Creates the backend object that caches a template on this pool's FlexVolume.
      *
+     * <p>Protocol-specific work is delegated to {@link StorageStrategy#createTemplateCache}.
+     * This method maps the result to {@link CreateCmdResult} and records SAN identity on
+     * {@code template_spool_ref} ({@code local_download_path} = LUN uuid).</p>
      */
     private CreateCmdResult createTemplateOnPrimary(StoragePoolVO storagePool, TemplateInfo templateInfo, Map<String, String> details) {
-        if (!isIscsi(details)) {
-            logger.info("createTemplateOnPrimary: NFS pool [{}], template [{}] will be written directly to the mounted FlexVolume",
-                    storagePool.getId(), templateInfo.getId());
-            return new CreateCmdResult(templateInfo.getUuid(), new Answer(null, true, null));
-        }
-
-        VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateInfo.getId());
-
-        long sizeInBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
-        if (sizeInBytes <= 0) {
-            throw new CloudRuntimeException("Unknown virtual size for template [" + templateInfo.getId()
-                    + "]; cannot size the template LUN on pool [" + storagePool.getId() + "]");
-        }
-
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-        CloudStackVolume createdCloudStackVolume = null;
+        long sizeInBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
+        CloudStackVolume created = null;
         try {
-            createdCloudStackVolume = storageStrategy.createCloudStackVolume(
-                    createTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes));
-            // createCloudStackVolume validates the Feign response (LUN name + uuid) before returning
-            Lun lun = createdCloudStackVolume.getLun();
-            templatePoolRef.setLocalDownloadPath(lun.getUuid());
-            templatePoolRef.setTemplateSize(sizeInBytes);
-            vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
-
-            logger.info("createTemplateOnPrimary: Created template cache LUN [{}] (uuid [{}], {} bytes) on pool [{}] for template [{}]",
-                    lun.getName(), lun.getUuid(), sizeInBytes, storagePool.getId(), templateInfo.getId());
-
-            return new CreateCmdResult(lun.getName(), new Answer(null, true, null));
+            created = storageStrategy.createTemplateCache(storagePool, templateInfo, details, sizeInBytes);
+            String path = recordTemplateCacheOnSpoolRef(storagePool, templateInfo, created, sizeInBytes);
+            return new CreateCmdResult(path, new Answer(null, true, null));
         } catch (Exception e) {
-            // Compensating delete: orchestrator only cleans DB metadata on create failure.
-            bestEffortDeleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME),
-                    getTemplateLunName(storagePool, templateInfo.getId()),
-                    createdCloudStackVolume != null && createdCloudStackVolume.getLun() != null ? createdCloudStackVolume.getLun().getUuid() : null);
+            // Compensating delete for SAN: strategy cleans create-time LUN failures; this covers
+            // post-create failures (e.g. template_spool_ref update) after a LUN was returned.
+            if (created != null && created.getLun() != null) {
+                bestEffortDeleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME),
+                        created.getLun().getName(), created.getLun().getUuid());
+            }
             if (e instanceof CloudRuntimeException) {
                 throw (CloudRuntimeException) e;
             }
-            throw new CloudRuntimeException("Failed to create template cache LUN for template [" + templateInfo.getId()
+            throw new CloudRuntimeException("Failed to create template cache for template [" + templateInfo.getId()
                     + "]: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Persists SAN cache identity on {@code template_spool_ref} when a LUN was created.
+     * NFS returns the template uuid as the create path; {@code install_path} is filled later.
+     */
+    private String recordTemplateCacheOnSpoolRef(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                 CloudStackVolume created, long sizeInBytes) {
+        if (created == null || created.getLun() == null) {
+            return templateInfo.getUuid();
+        }
+        Lun lun = created.getLun();
+        VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateInfo.getId());
+        templatePoolRef.setLocalDownloadPath(lun.getUuid());
+        templatePoolRef.setTemplateSize(sizeInBytes);
+        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        return lun.getName();
     }
 
     /**
@@ -1399,31 +1399,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      */
     private String getTemplateLunName(StoragePoolVO storagePool, long templateId) {
         return OntapStorageUtils.getLunName(storagePool.getName(), OntapStorageConstants.TEMPLATE_LUN_PREFIX + templateId);
-    }
-
-    /**
-     * Builds the request that creates an empty LUN to cache a template.
-     *
-     * <p>The LUN is sized to the template's virtual disk size. That is the size KVM writes
-     * after {@code qemu-img convert} to RAW, so it must not be the compressed QCOW2 physical size.</p>
-     */
-    private CloudStackVolume createTemplateLunRequest(StoragePoolVO storagePool, Map<String, String> details,
-                                                      long templateId, long sizeInBytes) {
-        Svm svm = new Svm();
-        svm.setName(details.get(OntapStorageConstants.SVM_NAME));
-
-        Lun lunRequest = new Lun();
-        lunRequest.setSvm(svm);
-        lunRequest.setName(getTemplateLunName(storagePool, templateId));
-        lunRequest.setOsType(Lun.OsTypeEnum.valueOf(
-                OntapStorageUtils.getOSTypeFromHypervisor(storagePool.getHypervisor().name())));
-        LunSpace lunSpace = new LunSpace();
-        lunSpace.setSize(sizeInBytes);
-        lunRequest.setSpace(lunSpace);
-
-        CloudStackVolume request = new CloudStackVolume();
-        request.setLun(lunRequest);
-        return request;
     }
 
     /**

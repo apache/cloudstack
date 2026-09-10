@@ -22,7 +22,9 @@ package org.apache.cloudstack.storage.service;
 import com.cloud.host.HostVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import feign.FeignException;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Svm;
@@ -94,6 +96,89 @@ public class UnifiedSANStrategy extends SANStrategy {
         } catch (Exception e) {
             logger.error("Exception occurred while creating LUN: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
             throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Creates an empty LUN that caches a template on this pool's FlexVolume.
+     *
+     * <p>Sized to the template virtual disk size (what KVM writes after {@code qemu-img convert}
+     * to RAW). On create failure, best-effort deletes any leftover LUN before rethrowing.</p>
+     */
+    @Override
+    public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                Map<String, String> details, long sizeInBytes) {
+        if (sizeInBytes <= 0) {
+            throw new CloudRuntimeException("Unknown virtual size for template [" + templateInfo.getId()
+                    + "]; cannot size the template LUN on pool [" + storagePool.getId() + "]");
+        }
+
+        CloudStackVolume request = buildTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes);
+        String lunName = request.getLun().getName();
+        CloudStackVolume created = null;
+        try {
+            created = createCloudStackVolume(request);
+            Lun lun = created.getLun();
+            logger.info("createTemplateCache: Created template cache LUN [{}] (uuid [{}], {} bytes) on pool [{}] for template [{}]",
+                    lun.getName(), lun.getUuid(), sizeInBytes, storagePool.getId(), templateInfo.getId());
+            return created;
+        } catch (Exception e) {
+            bestEffortDeleteTemplateCacheLun(details.get(OntapStorageConstants.SVM_NAME), lunName,
+                    created != null && created.getLun() != null ? created.getLun().getUuid() : null);
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to create template cache LUN for template [" + templateInfo.getId()
+                    + "]: " + e.getMessage(), e);
+        }
+    }
+
+    private CloudStackVolume buildTemplateLunRequest(StoragePoolVO storagePool, Map<String, String> details,
+                                                     long templateId, long sizeInBytes) {
+        Svm svm = new Svm();
+        svm.setName(details.get(OntapStorageConstants.SVM_NAME));
+
+        Lun lunRequest = new Lun();
+        lunRequest.setSvm(svm);
+        lunRequest.setName(OntapStorageUtils.getLunName(storagePool.getName(),
+                OntapStorageConstants.TEMPLATE_LUN_PREFIX + templateId));
+        lunRequest.setOsType(Lun.OsTypeEnum.valueOf(
+                OntapStorageUtils.getOSTypeFromHypervisor(storagePool.getHypervisor().name())));
+        LunSpace lunSpace = new LunSpace();
+        lunSpace.setSize(sizeInBytes);
+        lunRequest.setSpace(lunSpace);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lunRequest);
+        return request;
+    }
+
+    private void bestEffortDeleteTemplateCacheLun(String svmName, String lunName, String lunUuid) {
+        try {
+            String uuid = lunUuid;
+            if (uuid == null || uuid.isEmpty()) {
+                Map<String, String> lookup = Map.of(
+                        OntapStorageConstants.NAME, lunName,
+                        OntapStorageConstants.SVM_DOT_NAME, svmName);
+                CloudStackVolume existing = getCloudStackVolume(lookup);
+                if (existing == null || existing.getLun() == null || existing.getLun().getUuid() == null) {
+                    logger.warn("bestEffortDeleteTemplateCacheLun: LUN [{}] not found on SVM [{}]; nothing to delete",
+                            lunName, svmName);
+                    return;
+                }
+                uuid = existing.getLun().getUuid();
+            }
+            Lun lun = new Lun();
+            lun.setUuid(uuid);
+            lun.setName(lunName);
+            CloudStackVolume deleteRequest = new CloudStackVolume();
+            deleteRequest.setLun(lun);
+            deleteCloudStackVolume(deleteRequest);
+            logger.info("bestEffortDeleteTemplateCacheLun: Removed leftover template cache LUN [{}] on SVM [{}]",
+                    lunName, svmName);
+        } catch (Exception cleanupEx) {
+            logger.warn("bestEffortDeleteTemplateCacheLun: Failed to remove leftover template cache LUN [{}] on SVM [{}]: {}",
+                    lunName, svmName, cleanupEx.getMessage());
         }
     }
 

@@ -40,6 +40,7 @@ import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
@@ -53,6 +54,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 
 /**
  * Storage Strategy represents the communication path for all the ONTAP storage options
@@ -494,6 +497,27 @@ public abstract class StorageStrategy {
      * @return the created CloudStackVolume object
      */
     abstract public CloudStackVolume createCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Creates the protocol-specific backend object that caches a template on this pool.
+     *
+     * <p>iSCSI creates an empty LUN ({@code /vol/&lt;flexVol&gt;/cs_tmpl_&lt;id&gt;}) sized to
+     * {@code sizeInBytes}. NFS is a no-op on the array: the KVM agent later writes the qcow2
+     * into the mounted FlexVolume.</p>
+     *
+     * <p>Returns a {@link CloudStackVolume} so the driver can map it to {@code CreateCmdResult}
+     * and update {@code template_spool_ref}. SAN populates {@code lun}; NAS returns an empty
+     * volume (no LUN / file yet).</p>
+     *
+     * @param storagePool   CloudStack primary storage pool (one FlexVolume)
+     * @param templateInfo  template being cached
+     * @param details       pool details (SVM, protocol, etc.)
+     * @param sizeInBytes   virtual size for the cache object (required for SAN; ignored for NAS)
+     * @return created cache identity, or an empty {@link CloudStackVolume} when nothing is
+     *         pre-created on the array
+     */
+    abstract public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+            Map<String, String> details, long sizeInBytes);
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
