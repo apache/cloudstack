@@ -486,7 +486,7 @@ export default {
         templatefilter: isAdmin() ? 'all' : 'executable'
       }
       addProjectFilter(params, this.resource)
-      api('listTemplates', params).then(json => {
+      getAPI('listTemplates', params).then(json => {
         // Ignore stale responses if templateid changed while this request was in flight.
         if (templateid !== this.templateid) return
         this.templateName = json.listtemplatesresponse?.template?.[0]?.name || templateid
