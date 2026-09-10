@@ -155,7 +155,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
             "GROUP BY gpu_card.name, vgpu_profile.name";
 
-    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(vm.update_time > ?, 1, 0)) " +
+    // %s is the "changed state recently" test, or a constant 0 when no cut-off is given. It is not
+    // a bound parameter because there is no timestamp that reliably means "never" - update_time is
+    // a TIMESTAMP column, so anything past 2038 is out of range.
+    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(%s, 1, 0)) " +
             "FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm " +
             "ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Stopping', 'Migrating') " +
             "AND vm.removed IS NULL WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
@@ -807,7 +810,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public Map<Long, Pair<Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         Map<Long, Pair<Long, Long>> result = new HashMap<>();
-        String sql = COUNT_VMS_BY_HOST;
+        String sql = String.format(COUNT_VMS_BY_HOST, changedStateAfter != null ? "vm.update_time > ?" : "0");
         if (podId != null) {
             sql = sql + " AND host.pod_id = ? ";
         }
@@ -818,9 +821,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         try {
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             int index = 1;
-            // a cut-off in the future counts nothing as recent, which is what a null asks for
-            long cutOff = changedStateAfter != null ? changedStateAfter.getTime() : Long.MAX_VALUE;
-            pstmt.setTimestamp(index++, new Timestamp(cutOff));
+            if (changedStateAfter != null) {
+                pstmt.setTimestamp(index++, new Timestamp(changedStateAfter.getTime()));
+            }
             pstmt.setLong(index++, dcId);
             if (podId != null) {
                 pstmt.setLong(index++, podId);
@@ -835,7 +838,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             return result;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
