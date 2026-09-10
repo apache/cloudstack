@@ -20,7 +20,6 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,13 +45,15 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     protected Logger logger = LogManager.getLogger(getClass());
     private static final String blankLine = "\t ";
-    private static String[] globalSection = {"global", "\tlog 127.0.0.1:3914   local0 warning", "\tmaxconn 4096", "\tmaxpipes 1024", "\tchroot /var/lib/haproxy",
-        "\tuser haproxy", "\tgroup haproxy", "\tstats socket /run/haproxy/admin.sock", "\tdaemon"};
+    // Immutable so a config cannot be built by writing into the shared copy.
+    private static final List<String> globalSection = List.of("global", "\tlog 127.0.0.1:3914   local0 warning", "\tmaxconn 4096", "\tmaxpipes 1024",
+        "\tchroot /var/lib/haproxy", "\tuser haproxy", "\tgroup haproxy", "\tstats socket /run/haproxy/admin.sock", "\tdaemon");
 
-    private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-        "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+    private static final List<String> defaultsSection = List.of("defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3",
+        "\toption redispatch", "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000",
+        "\ttimeout server     50000");
 
-    private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
+    private static final List<String> defaultListen = List.of("listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent");
 
     private static final String SSL_CERTS_DIR = "/etc/cloudstack/ssl/";
 
@@ -80,16 +81,16 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
         final List<String> result = new ArrayList<String>();
 
-        result.addAll(Arrays.asList(globalSection));
+        result.addAll(globalSection);
         result.add(blankLine);
-        result.addAll(Arrays.asList(defaultsSection));
+        result.addAll(defaultsSection);
         result.add(blankLine);
 
         if (pools.isEmpty()) {
             // haproxy cannot handle empty listen / frontend or backend, so add
             // a dummy listener
             // on port 9
-            result.addAll(Arrays.asList(defaultListen));
+            result.addAll(defaultListen);
         }
         result.add(blankLine);
 
@@ -617,8 +618,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     @Override
     public String[] generateConfiguration(final LoadBalancerConfigCommand lbCmd) {
         final List<String> result = new ArrayList<String>();
-        final List<String> gSection = Arrays.asList(globalSection);
-        //        note that this is overwritten on the String in the static ArrayList<String>
+        final List<String> gSection = new ArrayList<>(globalSection);
         gSection.set(2, "\tmaxconn " + lbCmd.maxconn);
         // TODO DH: write test for this function
         final String pipesLine = "\tmaxpipes " + Long.toString(Long.parseLong(lbCmd.maxconn) / 4);
@@ -631,7 +631,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.addAll(gSection);
 
         result.add(blankLine);
-        final List<String> dSection = Arrays.asList(defaultsSection);
+        final List<String> dSection = new ArrayList<>(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option httpclose");
         }
@@ -639,8 +639,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             dSection.set(9, "\ttimeout client     " + Long.toString(lbCmd.idleTimeout));
             dSection.set(10, "\ttimeout server     " + Long.toString(lbCmd.idleTimeout));
         } else if (lbCmd.idleTimeout == 0) {
-            // .remove() is not allowed, only .set() operations are allowed as the list
-            // is a fixed size.  So lets just mark the entry as blank.
+            // blank rather than removed, so the indexes above stay valid
             dSection.set(9, "");
             dSection.set(10, "");
         } else {
@@ -695,7 +694,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             // haproxy cannot handle empty listen / frontend or backend, so add
             // a dummy listener
             // on port 9
-            result.addAll(Arrays.asList(defaultListen));
+            result.addAll(defaultListen);
         }
         return result.toArray(new String[result.size()]);
     }
