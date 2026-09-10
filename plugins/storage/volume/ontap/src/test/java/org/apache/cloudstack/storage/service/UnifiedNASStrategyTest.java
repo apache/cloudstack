@@ -222,9 +222,8 @@ public class UnifiedNASStrategyTest {
 
         CloudStackVolume result = strategy.createTemplateCache(storagePool, templateInfo, Map.of(), 0L);
 
-        assertNotNull(result);
-        assertNull(result.getLun());
-        assertNull(result.getFile());
+        // NFS seeds via host CopyCommand; strategy intentionally returns null (no LUN/file yet).
+        assertNull(result);
     }
 
     // Test createCloudStackVolume - Volume Not Found
@@ -1057,5 +1056,123 @@ public class UnifiedNASStrategyTest {
         strategy.deleteFileByPath("flexvol-uuid", "template-uuid");
 
         verify(nasFeignClient).deleteFile(anyString(), eq("flexvol-uuid"), eq("template-uuid"));
+    }
+
+    @Test
+    public void testDeleteFileByPath_Non404Feign_Throws() {
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(500);
+        when(feignException.getMessage()).thenReturn("server error");
+        doThrow(feignException).when(nasFeignClient).deleteFile(anyString(), eq("flexvol-uuid"), eq("template-uuid"));
+
+        assertThrows(CloudRuntimeException.class,
+                () -> strategy.deleteFileByPath("flexvol-uuid", "template-uuid"));
+    }
+
+    @Test
+    public void testCloneCloudStackVolume_MissingFlexVolUuid_Throws() {
+        FileInfo source = new FileInfo();
+        source.setPath("template-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setDatastoreId("1");
+        request.setFile(source);
+        request.setDestinationPath("volume-uuid");
+
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.VOLUME_NAME, "flexvol1");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.cloneCloudStackVolume(request));
+        verify(nasFeignClient, never()).cloneFile(anyString(), any(FileCloneRequest.class));
+    }
+
+    @Test
+    public void testCloneCloudStackVolume_MissingDatastoreId_Throws() {
+        FileInfo source = new FileInfo();
+        source.setPath("template-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setFile(source);
+        request.setDestinationPath("volume-uuid");
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.cloneCloudStackVolume(request));
+    }
+
+    @Test
+    public void testCloneCloudStackVolume_FeignException_Throws() {
+        VolumeObject volumeObject = mock(VolumeObject.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.VOLUME_NAME, "flexvol1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        FileInfo source = new FileInfo();
+        source.setPath("template-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setDatastoreId("1");
+        request.setVolumeInfo(volumeObject);
+        request.setFile(source);
+        request.setDestinationPath("volume-uuid");
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(500);
+        when(feignException.getMessage()).thenReturn("clone failed");
+        when(nasFeignClient.cloneFile(anyString(), any(FileCloneRequest.class))).thenThrow(feignException);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.cloneCloudStackVolume(request));
+    }
+
+    @Test
+    public void testResizeCloudStackVolume_InvalidRequest_Throws() {
+        assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(null, 100L));
+        CloudStackVolume empty = new CloudStackVolume();
+        assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(empty, 100L));
+
+        VolumeObject volumeObject = mock(VolumeObject.class);
+        CloudStackVolume withVol = new CloudStackVolume();
+        withVol.setVolumeInfo(volumeObject);
+        assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(withVol, 0L));
+    }
+
+    @Test
+    public void testResizeCloudStackVolume_KvmHostFails_Throws() {
+        VolumeObject volumeObject = mock(VolumeObject.class);
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        EndPoint endPoint = mock(EndPoint.class);
+
+        when(volumeObject.getId()).thenReturn(100L);
+        when(volumeObject.getUuid()).thenReturn("volume-uuid");
+        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+        when(volumeVO.getPath()).thenReturn("volume-uuid");
+        when(volumeVO.getSize()).thenReturn(5368709120L);
+        when(volumeVO.getPoolId()).thenReturn(1L);
+        when(primaryDataStoreDao.findById(1L)).thenReturn(storagePool);
+        when(epSelector.select(volumeObject)).thenReturn(endPoint);
+        when(endPoint.sendMessage(any(ResizeVolumeCommand.class))).thenReturn(new Answer(null, false, "resize failed"));
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeObject);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(request, 21474836480L));
+    }
+
+    @Test
+    public void testResizeCloudStackVolume_NoEndpoint_Throws() {
+        VolumeObject volumeObject = mock(VolumeObject.class);
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+
+        when(volumeObject.getId()).thenReturn(100L);
+        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+        when(volumeVO.getPath()).thenReturn("volume-uuid");
+        when(volumeVO.getSize()).thenReturn(5368709120L);
+        when(volumeVO.getPoolId()).thenReturn(1L);
+        when(primaryDataStoreDao.findById(1L)).thenReturn(storagePool);
+        when(epSelector.select(volumeObject)).thenReturn(null);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeObject);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(request, 21474836480L));
     }
 }
