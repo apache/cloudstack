@@ -25,9 +25,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -168,6 +170,39 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
 
     private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
+
+    private static final String REDACTED = "REDACTED";
+
+    private static final Set<String> SENSITIVE_PARAMETER_KEYWORDS = Set.of(
+            "password",
+            "privatekey",
+            "accesskey",
+            "secretkey",
+            "apikey",
+            "signature",
+            "sessionkey",
+            "token"
+    );
+
+    public static boolean isSensitiveParameter(final String parameterName) {
+        if (parameterName == null) {
+            return false;
+        }
+
+        final String normalized = parameterName.toLowerCase(Locale.ROOT);
+        return SENSITIVE_PARAMETER_KEYWORDS.stream()
+                .anyMatch(normalized::contains);
+    }
+
+    public static String formatValuesForLog(final String parameterName, final String[] values) {
+        if (!isSensitiveParameter(parameterName)) {
+            return Arrays.toString(values);
+        }
+
+        final String[] masked = new String[values.length];
+        Arrays.fill(masked, REDACTED);
+        return Arrays.toString(masked);
+    }
 
     // Responsible for stripping sensitive content from request and response strings
     public static String cleanString(final String stringToClean) {
