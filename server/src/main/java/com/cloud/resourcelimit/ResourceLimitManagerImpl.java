@@ -1008,12 +1008,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             if (Domain.ROOT_DOMAIN == domainId) {
                 // no one can add limits on ROOT domain, disallow...
-                throw new PermissionDeniedException("Cannot update resource limit for ROOT domain " + domainId + ", permission denied");
+                throw new PermissionDeniedException("Cannot update resource limit for ROOT domain " +
+                        (domain != null ? domain + " (domain id: " + domainId + ")" : "id " + domainId) + ", permission denied");
             }
 
             if ((caller.getDomainId() == domainId) && caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
-                throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
+                throw new PermissionDeniedException("Unable to update resource limit for domain " +
+                        (domain != null ? domain + " (domain id: " + domainId + ")" : "id " + domainId) + ", permission denied");
             }
             if (StringUtils.isNotEmpty(tag)) {
                 long untaggedLimit = findCorrectResourceLimitForDomain(domain, resourceType, null);

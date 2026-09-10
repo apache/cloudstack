@@ -59,6 +59,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertFormatUtils;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -381,7 +382,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
         // send an email alert that the host is down, include VMs
         HostPodVO podVO = _podDao.findById(host.getPodId());
-        String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+        String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host is down, " + hostDesc,
                 "Host [" + hostDesc + "] is down." + ((sb != null) ? sb.toString() : ""));
 
@@ -527,9 +528,22 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
 
             if (!(ForceHA.value() || vm.isHaEnabled())) {
-                String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodIdToDeployIn();
+                HostVO stoppedHost = hostId != null ? _hostDao.findById(hostId) : null;
+                String hostDesc;
+                if (stoppedHost != null) {
+                    DataCenterVO stoppedHostDcVO = _dcDao.findById(stoppedHost.getDataCenterId());
+                    HostPodVO stoppedHostPodVO = _podDao.findById(stoppedHost.getPodId());
+                    hostDesc = AlertFormatUtils.describeHostLocation(stoppedHost, stoppedHostDcVO, stoppedHostPodVO);
+                } else {
+                    DataCenterVO vmDcVO = _dcDao.findById(vm.getDataCenterId());
+                    HostPodVO vmPodVO = vm.getPodIdToDeployIn() != null ? _podDao.findById(vm.getPodIdToDeployIn()) : null;
+                    hostDesc = String.format("host id: %s, availability zone: %s, pod: %s",
+                            hostId != null ? hostId : "unknown",
+                            vmDcVO != null ? vmDcVO.getName() : "unknown",
+                            vmPodVO != null ? vmPodVO.getName() : "unknown");
+                }
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() +
-                    ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() +
+                    ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + hostDesc +
                     "] stopped unexpectedly.");
 
                 if (logger.isDebugEnabled()) {

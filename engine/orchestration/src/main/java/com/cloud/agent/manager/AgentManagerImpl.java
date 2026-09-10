@@ -44,6 +44,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.command.ReconcileCommandUtils;
@@ -91,6 +92,7 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
+import com.cloud.alert.AlertFormatUtils;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -1145,13 +1147,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 logger.info("The agent from host {} state determined is {}", host, determinedState);
 
                 if (determinedState == Status.Down) {
-                    final String message = String.format("Host %s is down. Starting HA on the VMs", host);
+                    final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                    final HostPodVO podVO = _podDao.findById(host.getPodId());
+                    final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
+                    final String message = String.format("Host %s is down. Starting HA on the VMs", hostDesc);
                     logger.error(message);
                     if (Status.Down.equals(host.getStatus())) {
                         logger.debug(String.format("Skipping sending alert for %s as it already in %s state",
                                 host, host.getStatus()));
                     } else if (!HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES.contains(host.getType())) {
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host.getId(), message);
+                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + hostDesc, message);
                     }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
@@ -1173,9 +1178,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } else if (currentStatus == Status.Up) {
                         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                         final HostPodVO podVO = _podDao.findById(host.getPodId());
-                        final String hostDesc = "name: " + host.getName() + " (id:" + host.getUuid() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                        final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
                         if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
+                            _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
                                     "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, host will go to Alert state");
                         }
                         event = Status.Event.AgentDisconnected;
@@ -1184,12 +1189,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     // if we end up here we are in alert state, send an alert
                     final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     final HostPodVO podVO = _podDao.findById(host.getPodId());
-                    final String podName = podVO != null ? podVO.getName() : "NO POD";
-                    final String hostDesc = String.format("%s, availability zone: %s, pod: %s", host, dcVO, podName);
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST,
+                    final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
+                    _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST,
                             host.getDataCenterId(), host.getPodId(),
                             String.format("Host in ALERT state, %s", hostDesc),
-                            String.format("In availability zone %s, host is in alert state: %s", dcVO, host));
+                            String.format("Host is in alert state: %s", hostDesc));
                 }
             } else {
                 logger.debug("The next status of agent {} is not Alert, no need to investigate what happened", host);
@@ -1704,10 +1708,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                         final HostPodVO podVO = _podDao.findById(host.getPodId());
                                         final String hostDesc = String.format("%s, availability zone: %s, pod: %s", host, dcVO, podVO);
 
-                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc,
+                                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " + hostDesc,
                                                 "Host [" + hostDesc + "] lost connection to gateway (default route) and is possibly having network connection issues.");
                                     } else {
-                                        _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                        _alertMgr.clearAlert(AlertService.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
                                     }
                                 } else {
                                     logger.debug("Not processing {} for agent id={}; can't find the host in the DB", PingRoutingCommand.class.getSimpleName(), cmdHostId);
@@ -2005,8 +2009,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     if (_resourceMgr.checkAndMaintain(host.getId())) {
                         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                         final HostPodVO podVO = _podDao.findById(host.getPodId());
-                        final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc,
+                        final String hostDesc = AlertFormatUtils.describeHostLocation(host, dcVO, podVO);
+                        _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc,
                                 "Host [" + hostDesc + "] is ready for maintenance");
                     }
                 }
