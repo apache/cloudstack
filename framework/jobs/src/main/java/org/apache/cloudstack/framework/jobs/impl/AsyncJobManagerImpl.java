@@ -701,6 +701,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return signals;
     }
 
+    /**
+     * Dispatches the job behind a sync queue item.
+     * <p>
+     * TODO: stamping the executing management server id on the job can hit a DB deadlock. As a
+     * temporary workaround, a failed update returns the item to the sync queue so the job is retried
+     * on a later turn instead of failing. The proper fix is to remove the deadlock at its source, in
+     * the locking and transaction around the sync_queue and async_job updates on dispatch, after
+     * which this retry is no longer needed.
+     */
     protected void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
         AsyncJobVO job = _jobDao.findById(item.getContentId());
         if (job == null) {
@@ -716,11 +725,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
         job.setSyncSource(item);
 
-        //
-        // TODO: a temporary solution to work-around DB deadlock situation
-        //
-        // to live with DB deadlocks, we will give a chance for job to be rescheduled
-        // in case of exceptions (most-likely DB deadlock exceptions)
         try {
             job.setExecutingMsid(getMsid());
             _jobDao.update(job.getId(), job);
