@@ -46,16 +46,18 @@ public class LinstorStoragePool implements KVMStoragePool {
     private final Storage.StoragePoolType _storagePoolType;
     private final StorageAdaptor _storageAdaptor;
     private final String _resourceGroup;
+    private final boolean _insecureSsl;
     private final String localNodeName;
 
     public LinstorStoragePool(String uuid, String host, int port, String resourceGroup,
-                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor, boolean insecureSsl) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;
         _storagePoolType = storagePoolType;
         _storageAdaptor = storageAdaptor;
         _resourceGroup = resourceGroup;
+        _insecureSsl = insecureSsl;
         localNodeName = getHostname();
     }
 
@@ -211,6 +213,10 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     public String getResourceGroup() {
         return _resourceGroup;
+    }
+
+    public boolean isInsecureSsl() {
+        return _insecureSsl;
     }
 
     @Override
