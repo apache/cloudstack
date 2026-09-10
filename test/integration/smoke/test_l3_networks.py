@@ -19,8 +19,9 @@
     a /32 (or /128) with the shared link-local gateway, delivered via ConfigDrive.
 """
 
+import random
+
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.base import (Account,
                              Network,
                              NetworkOffering,
@@ -48,7 +49,6 @@ class TestL3Networks(cloudstackTestCase):
         cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
 
         cls._cleanup = []
-        cls.hypervisor = testClient.getHypervisorInfo()
         cls.skip = False
 
         zone = Zone(cls.zone.__dict__)
@@ -136,6 +136,20 @@ class TestL3Networks(cloudstackTestCase):
             domainid=self.account.domainid
         )
 
+    def deploy_vm(self, network, **kwargs):
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[network.id],
+            **kwargs
+        )
+        self.cleanup.append(virtual_machine)
+        self.assertEqual(virtual_machine.state, "Running")
+        return virtual_machine
+
     @attr(tags=["advanced", "smoke"], required_hardware="false")
     def test_01_create_l3_network(self):
         """ An L3 network is created like a Shared network: with a subnet. The subnet is an
@@ -162,17 +176,28 @@ class TestL3Networks(cloudstackTestCase):
             vlan parameter, so bridge names (brdr-<id>) are plannable before the network
             exists. The id must lie outside the physical network's dynamic range. """
         services = dict(self.services["l3_network"])
-        network = Network.create(
-            self.apiclient,
-            services,
-            zoneid=self.zone.id,
-            networkofferingid=self.network_offering_specifyid.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            vlan="5928"
-        )
+        network = None
+        # Outside the physical network's dynamic range (5800-5899); retried once in case the
+        # id is already taken by a pre-existing network or public range in the zone.
+        for attempt in range(2):
+            routed_id = random.randint(6000, 9999)
+            try:
+                network = Network.create(
+                    self.apiclient,
+                    services,
+                    zoneid=self.zone.id,
+                    networkofferingid=self.network_offering_specifyid.id,
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    vlan=str(routed_id)
+                )
+                break
+            except Exception as e:
+                if attempt == 0 and "already" in str(e):
+                    continue
+                raise
         self.cleanup.append(network)
-        self.assertEqual(network.broadcasturi, "routed://5928",
+        self.assertEqual(network.broadcasturi, "routed://%d" % routed_id,
                          "the operator-specified routed id must be carried verbatim, got %s" % network.broadcasturi)
 
     @attr(tags=["advanced", "smoke"], required_hardware="false")
@@ -182,21 +207,40 @@ class TestL3Networks(cloudstackTestCase):
         network = self.create_l3_network()
         self.cleanup.append(network)
 
-        virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            networkids=[network.id]
-        )
-        self.cleanup.append(virtual_machine)
-
-        self.assertEqual(virtual_machine.state, "Running")
+        virtual_machine = self.deploy_vm(network)
         nic = virtual_machine.nic[0]
         self.assertEqual(nic.netmask, "255.255.255.255", "an L3 NIC address is a host route (/32)")
         self.assertEqual(nic.gateway, "169.254.0.1", "an L3 NIC uses the shared link-local gateway")
         self.assertTrue(nic.ipaddress.startswith("203.0.113."), "the address must come from the network's subnet")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_02b_deploy_vm_with_requested_ip_in_l3_network(self):
+        """ As on a Shared network, a user may ask for a specific address from the network's
+            range at deploy time and the Instance receives exactly that address. """
+        network = self.create_l3_network()
+        self.cleanup.append(network)
+
+        virtual_machine = self.deploy_vm(network, ipaddress="203.0.113.25")
+        nic = virtual_machine.nic[0]
+        self.assertEqual(nic.ipaddress, "203.0.113.25", "the Instance must receive the requested address")
+        self.assertEqual(nic.netmask, "255.255.255.255", "an L3 NIC address is a host route (/32)")
+        self.assertEqual(nic.gateway, "169.254.0.1", "an L3 NIC uses the shared link-local gateway")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_02c_network_address_is_assignable(self):
+        """ There is no broadcast domain, so the subnet's first (.0) and last (.255) addresses
+            are ordinary routable addresses: every Instance is a /32 behind the host's routing
+            table and nothing broadcasts to them. A range consisting of only the network
+            address must therefore be accepted, and an Instance must receive it. """
+        network = self.create_l3_network(startip="203.0.115.0", endip="203.0.115.0")
+        self.cleanup.append(network)
+        self.assertEqual(network.cidr, "203.0.115.0/24", "the subnet must derive from the range and netmask")
+
+        virtual_machine = self.deploy_vm(network)
+        nic = virtual_machine.nic[0]
+        self.assertEqual(nic.ipaddress, "203.0.115.0", "the network address must be assignable to an Instance")
+        self.assertEqual(nic.netmask, "255.255.255.255", "an L3 NIC address is a host route (/32)")
+        self.assertEqual(nic.gateway, "169.254.0.1", "an L3 NIC uses the shared link-local gateway")
 
     @attr(tags=["advanced", "smoke"], required_hardware="false")
     def test_03_l3_offering_rejects_dhcp(self):
@@ -231,12 +275,9 @@ class TestL3Networks(cloudstackTestCase):
         network = self.create_l3_network(startip="203.0.113.10", endip="203.0.113.30")
         self.cleanup.append(network)
 
-        try:
+        with self.assertRaises(Exception):
             overlapping = self.create_l3_network(startip="203.0.113.20", endip="203.0.113.40")
             self.cleanup.append(overlapping)
-            self.fail("creating an L3 network overlapping another must fail")
-        except (CloudstackAPIException, Exception):
-            pass
 
     def create_ipv6_only_l3_network(self, ip6cidr="2001:db8:113::/64"):
         services = {
@@ -258,7 +299,7 @@ class TestL3Networks(cloudstackTestCase):
         """ Nothing on an L3 network depends on IPv4 - no DHCP, no password or metadata
             service - so IPv4 is optional and an IPv6-only network is valid. Addresses
             derive from the subnet and the NIC MAC (EUI-64), so no IPv6 range is needed
-            either: ip6gateway and ip6cidr alone define the network. """
+            either: ip6cidr alone defines the network, and a given ip6gateway is ignored. """
         network = self.create_ipv6_only_l3_network()
         self.cleanup.append(network)
 
@@ -274,17 +315,7 @@ class TestL3Networks(cloudstackTestCase):
         network = self.create_ipv6_only_l3_network()
         self.cleanup.append(network)
 
-        virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            networkids=[network.id]
-        )
-        self.cleanup.append(virtual_machine)
-
-        self.assertEqual(virtual_machine.state, "Running")
+        virtual_machine = self.deploy_vm(network)
         nic = virtual_machine.nic[0]
         self.assertTrue(getattr(nic, "ip6address", None), "the NIC must carry an IPv6 address")
         self.assertEqual(nic.ip6gateway, "fe80::1", "an L3 NIC uses the shared link-local IPv6 gateway")
@@ -320,7 +351,8 @@ class TestL3Networks(cloudstackTestCase):
     def test_09_l3_network_ignores_gateways(self):
         """ Gateways play no part on an L3 network - the Instance's gateway is always the
             shared link-local address - so given gateways are accepted but ignored, and no
-            address in the subnet is burnt for one. """
+            address in the subnet is burnt for one. An Instance on this dual-stack network
+            gets a /32 and a /128, each with its shared link-local gateway. """
         services = dict(self.services["l3_network"])
         services["gateway"] = "203.0.113.1"
         services["ip6gateway"] = "2001:db8:113::1"
@@ -336,6 +368,16 @@ class TestL3Networks(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertFalse(getattr(network, "gateway", None), "the given IPv4 gateway must be ignored")
         self.assertFalse(getattr(network, "ip6gateway", None), "the given IPv6 gateway must be ignored")
+
+        virtual_machine = self.deploy_vm(network)
+        nic = virtual_machine.nic[0]
+        self.assertTrue(getattr(nic, "ipaddress", None), "the NIC must carry an IPv4 address")
+        self.assertEqual(nic.netmask, "255.255.255.255", "an L3 NIC address is a host route (/32)")
+        self.assertEqual(nic.gateway, "169.254.0.1", "an L3 NIC uses the shared link-local gateway")
+        self.assertTrue(getattr(nic, "ip6address", None), "the NIC must carry an IPv6 address")
+        self.assertTrue(getattr(nic, "ip6cidr", "").endswith("/128"),
+                        "an L3 NIC IPv6 address is a host route (/128), got %s" % getattr(nic, "ip6cidr", None))
+        self.assertEqual(nic.ip6gateway, "fe80::1", "an L3 NIC uses the shared link-local IPv6 gateway")
 
     @attr(tags=["advanced", "smoke"], required_hardware="false")
     def test_10_create_l3_network_by_cidr(self):
