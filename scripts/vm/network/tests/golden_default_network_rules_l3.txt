@@ -1,0 +1,84 @@
+iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w brdr-42|awk '{print $9}' | head -1
+iptables -N i-2-7-VM
+ip6tables -N i-2-7-VM
+iptables -N i-2-7-VM-eg
+ip6tables -N i-2-7-VM-eg
+iptables -N i-2-7-def
+ip6tables -N i-2-7-def
+ipset -F i-2-7-VM
+ipset -X i-2-7-VM
+ipset -N i-2-7-VM iphash family inet
+ipset -F i-2-7-VM-6
+ipset -X i-2-7-VM-6
+ipset -N i-2-7-VM-6 hash:net family inet6
+ipset -! -A i-2-7-VM 10.1.1.55
+ipset -! -A i-2-7-VM 10.1.1.55
+ipset -! -A i-2-7-VM-6 fd00::55
+ipset -! -A i-2-7-VM-6 fe80::4cff:fe5f:1
+iptables -A BF-brdr-42-OUT -m set --match-set i-2-7-VM dst -j i-2-7-def
+iptables -A BF-brdr-42-IN -m physdev --physdev-in vnet3 -j i-2-7-def
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set ! --match-set i-2-7-VM src -j DROP
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -p udp --dport 53  -j MARK --set-xmark 0x40000000/0x40000000
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -p tcp --dport 53  -j MARK --set-xmark 0x40000000/0x40000000
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -j i-2-7-VM-eg
+iptables -A i-2-7-def -m set --match-set i-2-7-VM dst -j i-2-7-VM
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m state --state ESTABLISHED,RELATED -j MARK --set-xmark 0x40000000/0x40000000
+iptables -A i-2-7-def -m set --match-set i-2-7-VM dst -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m mark --mark 0x40000000/0x40000000 -j RETURN
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -j DROP
+iptables -A i-2-7-def -m set --match-set i-2-7-VM dst -j DROP
+iptables -A i-2-7-VM -j RETURN
+ebtables -t nat -N i-2-7-VM-in
+ebtables -t nat -N i-2-7-VM-out
+ebtables -t nat -N i-2-7-VM-in-ips
+ebtables -t nat -N i-2-7-VM-out-ips
+ebtables -t nat -N i-2-7-VM-in-src
+ebtables -t nat -N i-2-7-VM-out-dst
+ebtables -t nat -A PREROUTING -i vnet3 -j i-2-7-VM-in
+ebtables -t nat -A POSTROUTING -o vnet3 -j i-2-7-VM-out
+ebtables -t nat -A i-2-7-VM-in-ips -j DROP
+ebtables -t nat -A i-2-7-VM-out-ips -j DROP
+ebtables -t nat -A i-2-7-VM-in-src -j DROP
+ebtables -t nat -A i-2-7-VM-out-dst -p ARP --arp-op Reply -j DROP
+ebtables -t nat -A i-2-7-VM-in -j i-2-7-VM-in-src
+ebtables -t nat -I i-2-7-VM-in-src -s 02:00:4c:5f:00:01 -j RETURN
+ebtables -t nat -A i-2-7-VM-in -p ARP -j i-2-7-VM-in-ips
+ebtables -t nat -I i-2-7-VM-in-ips -p ARP -s 02:00:4c:5f:00:01 --arp-mac-src 02:00:4c:5f:00:01 --arp-ip-src 10.1.1.55 -j RETURN
+ebtables -t nat -A i-2-7-VM-in -p ARP --arp-op Request -j ACCEPT
+ebtables -t nat -A i-2-7-VM-in -p ARP --arp-op Reply -j ACCEPT
+ebtables -t nat -A i-2-7-VM-in -p ARP -j DROP
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Reply -j i-2-7-VM-out-dst
+ebtables -t nat -I i-2-7-VM-out-dst -p ARP --arp-op Reply --arp-mac-dst 02:00:4c:5f:00:01 -j RETURN
+ebtables -t nat -A i-2-7-VM-out -p ARP -j i-2-7-VM-out-ips
+ebtables -t nat -I i-2-7-VM-out-ips -p ARP --arp-ip-dst 10.1.1.55 -j RETURN
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Request -j ACCEPT
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Reply -j ACCEPT
+ebtables -t nat -A i-2-7-VM-out -p ARP -j DROP
+ebtables -t nat -I i-2-7-VM-in-ips -p ARP -s 02:00:4c:5f:00:01 --arp-mac-src 02:00:4c:5f:00:01 --arp-ip-src 10.1.1.55 -j RETURN
+ebtables -t nat -I i-2-7-VM-out-ips -p ARP --arp-ip-dst 10.1.1.55 -j RETURN
+ip6tables -A BF-brdr-42-OUT -m set --match-set i-2-7-VM-6 dst -j i-2-7-def
+ip6tables -A BF-brdr-42-IN -m physdev --physdev-in vnet3 -j i-2-7-def
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type router-advertisement -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type neighbor-advertisement -m set --match-set i-2-7-VM-6 src -m hl --hl-eq 255 -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type packet-too-big -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type destination-unreachable -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type time-exceeded -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type parameter-problem -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --dst ff02::16 -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --dport 53 -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p tcp --dport 53 -m set --match-set i-2-7-VM-6 src -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m mark --mark 0x40000000/0x40000000 -j RETURN
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m set ! --match-set i-2-7-VM-6 src -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM-6 src -j i-2-7-VM-eg
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -j i-2-7-VM
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m state --state ESTABLISHED,RELATED -j MARK --set-xmark 0x40000000/0x40000000
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -m state --state ESTABLISHED,RELATED -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m mark --mark 0x40000000/0x40000000 -j RETURN
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -j DROP
+ip6tables -A i-2-7-def -m set --match-set i-2-7-VM-6 dst -j DROP
+ip6tables -A i-2-7-VM -j RETURN
