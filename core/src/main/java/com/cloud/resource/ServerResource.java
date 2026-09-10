@@ -84,7 +84,8 @@ public interface ServerResource extends Manager {
     void setAgentControl(IAgentControl agentControl);
 
     default boolean isExitOnFailures() {
-        return true;
+        // true would cause unnecessary Agent service restart, don't want it by default
+        return false;
     }
 
     default boolean isAppendAgentNameToLogs() {

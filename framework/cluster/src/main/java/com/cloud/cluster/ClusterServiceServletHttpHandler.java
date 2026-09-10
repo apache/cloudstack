@@ -19,12 +19,14 @@ package com.cloud.cluster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.Optional;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.RequestLine;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
@@ -73,10 +75,11 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 
     @SuppressWarnings("deprecation")
     private void parseRequest(HttpRequest request) throws IOException {
+        String body = null;
         if (request instanceof HttpEntityEnclosingRequest) {
             final HttpEntityEnclosingRequest entityRequest = (HttpEntityEnclosingRequest)request;
 
-            final String body = EntityUtils.toString(entityRequest.getEntity());
+            body = EntityUtils.toString(entityRequest.getEntity());
             if (body != null) {
                 final String[] paramArray = body.split("&");
                 if (paramArray != null) {
@@ -97,6 +100,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
                 }
             }
         }
+        logRequest(request, body);
     }
 
     private void writeResponse(HttpResponse response, int statusCode, String content) {
@@ -111,6 +115,14 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         body.setContent(new ByteArrayInputStream(bodyData));
         body.setContentLength(bodyData.length);
         response.setEntity(body);
+    }
+
+    private void logRequest(HttpRequest request, String requestBody) {
+        Optional<HttpRequest> requestOpt = Optional.ofNullable(request);
+        Optional<RequestLine> requestLineOpt = requestOpt.map(HttpRequest::getRequestLine);
+        String method = requestLineOpt.map(RequestLine::getMethod).orElse(null);
+        String uri = requestLineOpt.map(RequestLine::getUri).orElse(null);
+        logger.debug("{} {} {}", method, uri, requestBody);
     }
 
     protected void handleRequest(HttpRequest req, HttpResponse response) {

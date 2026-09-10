@@ -29,6 +29,11 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     @Override
     boolean remove(Long id);
 
+    /**
+     * Returns all management servers (including down and removed).
+     */
+    List<ManagementServerHostVO> findAllIncludingRemoved();
+
     ManagementServerHostVO findByMsid(long msid);
 
     int increaseAlertCount(long id);
@@ -50,6 +55,8 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     List<ManagementServerHostVO> listBy(ManagementServerHost.State... states);
 
     List<String> listNonUpStateMsIPs();
+
+    List<String> listNonUpStateMsHostnames();
 
     /**
      * Lists msids for which hosts are orphaned, i.e. msids that hosts refer as their owning ms whilst no mshost entry exists with those msids

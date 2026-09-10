@@ -53,6 +53,7 @@ import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -73,6 +74,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
     private static final int DEFAULT_OUTGOING_WORKERS = 5;
+    static final String LOCALHOST_IP = "127.0.0.1";
+    static final String ANY_IP = "0.0.0.0"; // Represents "any" or "all interfaces" - used in bind operations
 
     private final List<ClusterManagerListener> _listeners = new ArrayList<>();
     private final Map<Long, ManagementServerHostVO> _activePeers = new HashMap<>();
@@ -508,7 +511,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             logger.debug("Notify management server node join to listeners.");
 
             for (final ManagementServerHostVO mshost : nodeList) {
-                logger.debug("Joining node, IP: {}, ms: {}", mshost.getServiceIP(), mshost);
+                logger.debug("Joining node, host: {}, ms: {}", mshost.getName(), mshost);
             }
         }
 
@@ -528,7 +531,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         for (final ManagementServerHostVO mshost : nodeList) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Leaving node, IP: {}, ms: {}", mshost.getServiceIP(), mshost);
+                logger.debug("Leaving node, host: {}, ms: {}", mshost.getName(), mshost);
             }
             cancelClusterRequestToPeer(String.valueOf(mshost.getMsid()));
         }
@@ -816,7 +819,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             if (logger.isInfoEnabled()) {
                 logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");
                 for (final ManagementServerHostVO host : inactiveList) {
-                    logger.info("Management server node msid: {}, service IP: {}, version: {}", host, host.getServiceIP(), host.getVersion());
+                    logger.info("Management server node msid: {}, host: {}, version: {}", host, host.getName(), host.getVersion());
                 }
             }
 
@@ -869,8 +872,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 if (current == null) {
                     if (entry.getKey().longValue() != _mshostId.longValue()) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Detected management node left {}, nodeIP:{}",
-                                    entry.getValue(), entry.getValue().getServiceIP());
+                            logger.debug("Detected management node left {}, node hostName:{}",
+                                    entry.getValue(), entry.getValue().getName());
                         }
                         removedNodeList.add(entry.getValue());
                     }
@@ -878,16 +881,16 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     if (current.getRunid() == 0) {
                         if (entry.getKey().longValue() != _mshostId.longValue()) {
                             if (logger.isDebugEnabled()) {
-                                logger.debug("Detected management node left because of invalidated session {}, nodeIP:{}",
-                                        entry.getValue(), entry.getValue().getServiceIP());
+                                logger.debug("Detected management node left because of invalidated session {}, node hostName:{}",
+                                        entry.getValue(), entry.getValue().getName());
                             }
                             invalidatedNodeList.add(entry.getValue());
                         }
                     } else {
                         if (entry.getValue().getRunid() != current.getRunid()) {
                             if (logger.isDebugEnabled()) {
-                                logger.debug("Detected management node left and rejoined quickly {}, nodeIP:{}",
-                                        entry.getValue(), entry.getValue().getServiceIP());
+                                logger.debug("Detected management node left and rejoined quickly {}, node hostName:{}",
+                                        entry.getValue(), entry.getValue().getName());
                             }
 
                             entry.getValue().setRunid(current.getRunid());
@@ -985,7 +988,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 _activePeers.put(mshost.getId(), mshost);
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Detected management node joined, {}, nodeIP:{}", mshost, mshost.getServiceIP());
+                    logger.debug("Detected management node joined, {}, node hostName:{}", mshost, mshost.getName());
                 }
                 newNodeList.add(mshost);
 
@@ -1250,7 +1253,18 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     private boolean pingManagementNode(final ManagementServerHostVO mshost) {
 
         final String targetIp = mshost.getServiceIP();
-        if ("127.0.0.1".equals(targetIp) || "0.0.0.0".equals(targetIp)) {
+        final String targetHostName = mshost.getName();
+        final String currentHostName = NetUtils.getCanonicalHostName();
+
+        // Prefer hostname (CNAME support) but fall back to the non-null service IP when name is unset.
+        final String connectTarget = StringUtils.isNotBlank(targetHostName) ? targetHostName : targetIp;
+
+        // Check for self-detection using hostname comparison (for CNAME support)
+        if (currentHostName != null && currentHostName.equals(targetHostName)) {
+            logger.info("ping management node cluster service can not be performed on self (hostname match: {})", currentHostName);
+            return false;
+        }
+        if (LOCALHOST_IP.equals(targetIp) || ANY_IP.equals(targetIp)) {
             logger.info("ping management node cluster service can not be performed on self");
             return false;
         }
@@ -1259,19 +1273,19 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         while (--retry > 0) {
             SocketChannel sch = null;
             try {
-                logger.info("Trying to connect to " + targetIp);
+                logger.info("Trying to connect to {}", connectTarget);
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
 
-                final InetSocketAddress addr = new InetSocketAddress(targetIp, mshost.getServicePort());
+                final InetSocketAddress addr = new InetSocketAddress(connectTarget, mshost.getServicePort());
                 sch.connect(addr);
                 return true;
             } catch (final IOException e) {
                 if (e instanceof ConnectException) {
-                    logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException");
+                    logger.error("Unable to ping management server at {}:{} due to ConnectException", connectTarget, mshost.getServicePort());
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                        logger.debug("Unable to ping management server at {}:{} due to ConnectException", connectTarget, mshost.getServicePort(), e);
                     }
                     return false;
                 }
@@ -1290,7 +1304,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             }
         }
 
-        logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " after retries");
+        logger.error("Unable to ping management server at {}:{} after retries", connectTarget, mshost.getServicePort());
         return false;
     }
 
@@ -1298,37 +1312,69 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return HeartbeatInterval.value();
     }
 
-    private void checkConflicts() throws ConfigurationException {
+    void checkConflicts() throws ConfigurationException {
         final Date cutTime = DateUtil.currentGMTTime();
-        final List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
+        final List<ManagementServerHostVO> peers = _mshostDao.getActiveList(
+                new Date(cutTime.getTime() - HeartbeatThreshold.value()));
+
+        final String currentHostname = NetUtils.getCanonicalHostName(); // Cache this
+
         for (final ManagementServerHostVO peer : peers) {
-            final String peerIP = peer.getServiceIP().trim();
-            if (_clusterNodeIP.equals(peerIP)) {
-                if ("127.0.0.1".equals(_clusterNodeIP)) {
-                    if (pingManagementNode(peer.getMsid())) {
-                        final String msg = "Detected another management node with localhost IP is already running, please check your cluster configuration";
-                        logger.error(msg);
-                        throw new ConfigurationException(msg);
-                    } else {
-                        final String msg =
-                                "Detected another management node with localhost IP is considered as running in DB, however it is not pingable, we will continue cluster initialization with this management server node";
-                        logger.info(msg);
-                    }
-                } else {
-                    if (pingManagementNode(peer.getMsid())) {
-                        final String msg =
-                                "Detected that another management node with the same IP " + peer.getServiceIP() +
-                                " is already running, please check your cluster configuration";
-                        logger.error(msg);
-                        throw new ConfigurationException(msg);
-                    } else {
-                        final String msg =
-                                "Detected that another management node with the same IP " + peer.getServiceIP() +
-                                " is considered as running in DB, however it is not pingable, we will continue cluster initialization with this management server node";
-                        logger.info(msg);
-                    }
-                }
-            }
+            checkNodeConflict(peer, currentHostname);
+        }
+    }
+
+    /*
+     * Check for conflicts with a peer node.
+     *
+     * @param peerNode The peer node to check for conflicts with.
+     * @param currentHostname The current hostname of the management node.
+     * @throws ConfigurationException If a fatal conflict is detected.
+     */
+    protected void checkNodeConflict(ManagementServerHostVO peerNode, String currentHostname) throws ConfigurationException {
+        final String currentIP = _clusterNodeIP;
+        final String peerHostname = peerNode.getName();
+        final String peerIP = peerNode.getServiceIP() != null ? peerNode.getServiceIP().trim() : "";
+
+        if (currentHostname != null && peerHostname != null &&
+                currentHostname.equalsIgnoreCase(peerHostname)) {
+            handleConflict(peerNode, "hostname", peerHostname, currentHostname);
+            return;
+        }
+
+        if (currentIP.equals(peerIP)) {
+            final String conflictType =
+                    LOCALHOST_IP.equals(_clusterNodeIP) ? "localhost IP" : "IP";
+            handleConflict(peerNode, conflictType, peerIP, currentHostname);
+        }
+    }
+
+    /*
+     * Handle a conflict with a peer node.
+     *
+     * @param peer The peer node with the conflict.
+     * @param conflictType The type of conflict (e.g. "hostname", "IP").
+     * @param conflictValue The value of the conflict (e.g. the conflicting hostname or IP).
+     * @param currentHostname The current hostname of the management node.
+     * @throws ConfigurationException If the conflict is fatal.
+     */
+    protected void handleConflict(ManagementServerHostVO peer, String conflictType,
+                                  String conflictValue, String currentHostname) throws ConfigurationException {
+        final String peerHostname = peer.getName();
+
+        if (pingManagementNode(peer.getMsid())) {
+            final String msg = String.format(
+                    "Detected another management node with the same %s '%s' is already running. " +
+                            "Current hostname: %s, Peer hostname: %s. Please check your cluster configuration.",
+                    conflictType, conflictValue, currentHostname, peerHostname);
+            logger.error(msg);
+            throw new ConfigurationException(msg);
+        } else {
+            String msg = String.format(
+                    "Detected management node with same %s '%s' in DB but not pingable. " +
+                            "Current: %s, Peer: %s. Continuing cluster initialization.",
+                    conflictType, conflictValue, currentHostname, peerHostname);
+            logger.info(msg);
         }
     }
 }

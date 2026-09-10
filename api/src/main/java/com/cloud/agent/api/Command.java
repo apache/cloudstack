@@ -58,6 +58,9 @@ public abstract class Command {
     // allow command to carry over hypervisor or other environment related context info
     @LogLevel(Log4jLevel.Trace)
     protected Map<String, String> contextMap = new HashMap<String, String>();
+
+    // separate map for logging/tracing related context info (ThreadContext parameters)
+    protected Map<String, String> traceContextMap = new HashMap<>();
     private int wait;  //in second
     private boolean bypassHostMaintenance = false;
     private transient long requestSequence = 0L;
@@ -106,6 +109,14 @@ public abstract class Command {
         return contextMap;
     }
 
+    public void setTraceContextParam(String name, String value) {
+        traceContextMap.put(name, value);
+    }
+
+    public String getTraceContextParam(String name) {
+        return traceContextMap.get(name);
+    }
+
     public boolean allowCaching() {
         return true;
     }
@@ -147,6 +158,7 @@ public abstract class Command {
 
         if (wait != command.wait) return false;
         if (contextMap != null ? !contextMap.equals(command.contextMap) : command.contextMap != null) return false;
+        if (traceContextMap != null ? !traceContextMap.equals(command.traceContextMap) : command.traceContextMap != null) return false;
 
         return true;
     }
@@ -154,6 +166,7 @@ public abstract class Command {
     @Override
     public int hashCode() {
         int result = contextMap != null ? contextMap.hashCode() : 0;
+        result = 31 * result + (traceContextMap != null ? traceContextMap.hashCode() : 0);
         result = 31 * result + wait;
         return result;
     }

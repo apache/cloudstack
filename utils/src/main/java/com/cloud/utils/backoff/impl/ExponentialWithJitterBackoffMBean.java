@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,27 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.utils.backoff.impl;
 
-package com.cloud.utils.backoff;
+import com.cloud.utils.mgmt.ManagementBean;
 
-import com.cloud.utils.component.Adapter;
+import java.util.Collection;
 
-import java.util.Map;
+public interface ExponentialWithJitterBackoffMBean extends ManagementBean {
+    long getTimeToWait();
 
-/**
- * BackoffAlgorithm implements multiple BackoffAlgorithm.
- */
-public interface BackoffAlgorithm extends Adapter {
+    void setTimeToWait(long seconds);
 
-    /**
-     */
-    void waitBeforeRetry();
+    Collection<String> getWaiters();
 
-    /**
-     * no longer need to backoff.  reset to beginning.
-     */
-    void reset();
+    boolean wakeup(String threadName);
 
-    Map<String, String> getConfiguration();
 }

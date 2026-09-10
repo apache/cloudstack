@@ -178,6 +178,9 @@ public class NetUtils {
     }
 
     public static String resolveToIp(final String host) {
+        if (host == null) {
+            return null;
+        }
         try {
             final InetAddress addr = InetAddress.getByName(host);
             return addr.getHostAddress();
