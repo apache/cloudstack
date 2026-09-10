@@ -1398,6 +1398,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    public static long getNodeCountForType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
+        if (WORKER == nodeType) {
+            return kubernetesCluster.getNodeCount();
+        } else if (CONTROL == nodeType) {
+            return kubernetesCluster.getControlNodeCount();
+        } else if (ETCD == nodeType) {
+            return kubernetesCluster.getEtcdNodeCount();
+        }
+        return kubernetesCluster.getTotalNodeCount();
+    }
 
     protected void validateServiceOfferingsForNodeTypesScale(Map<String, Long> map, Long defaultServiceOfferingId, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
         for (String key : CLUSTER_NODES_TYPES_LIST) {
@@ -1410,6 +1420,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 checkServiceOfferingForNodesScale(serviceOffering, kubernetesCluster, clusterVersion);
                 Long nodeTypeOfferingId = getExistingServiceOfferingIdForNodeType(key, kubernetesCluster);
                 if (nodeTypeOfferingId == null) {
+                    if (getNodeCountForType(KubernetesClusterNodeType.valueOf(key), kubernetesCluster) <=0) {
+                        continue;
+                    }
                     nodeTypeOfferingId = kubernetesCluster.getServiceOfferingId();
                 }
                 final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(nodeTypeOfferingId);
@@ -2196,18 +2209,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected Map<String, ServiceOffering> createNodeTypeToServiceOfferingMap(Map<String, Long> idsMapping,
                                                                               Long serviceOfferingId, KubernetesClusterVO kubernetesCluster) {
         Map<String, ServiceOffering> map = new HashMap<>();
-        if (MapUtils.isEmpty(idsMapping)) {
-            ServiceOfferingVO offering = serviceOfferingId != null ?
-                    serviceOfferingDao.findById(serviceOfferingId) :
-                    serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-            map.put(DEFAULT.name(), offering);
+        if (MapUtils.isNotEmpty(idsMapping)) {
+            for (String key : CLUSTER_NODES_TYPES_LIST) {
+                if (idsMapping.containsKey(key)) {
+                    map.put(key, serviceOfferingDao.findById(idsMapping.get(key)));
+                }
+            }
             return map;
         }
-        for (String key : CLUSTER_NODES_TYPES_LIST) {
-            if (!idsMapping.containsKey(key)) {
-                continue;
+        Long defaultOfferingId = serviceOfferingId != null ? serviceOfferingId : kubernetesCluster.getServiceOfferingId();
+        if (defaultOfferingId != null) {
+            ServiceOfferingVO offering = serviceOfferingDao.findById(defaultOfferingId);
+            if (offering != null) {
+                map.put(DEFAULT.name(), offering);
             }
-            map.put(key, serviceOfferingDao.findById(idsMapping.get(key)));
         }
         return map;
     }
