@@ -88,6 +88,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
 
+    private static final int MAX_TAP_QUEUES = 256;
+
     @Inject
     protected
     NicDao nicDao;
@@ -103,8 +105,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private DataCenterDao dcDao;
     @Inject
-    private static final int MAX_TAP_QUEUES = 256;
-
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     protected
