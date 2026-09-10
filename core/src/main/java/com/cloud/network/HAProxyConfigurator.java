@@ -452,15 +452,17 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     tempSb.append("appcookie_").append(srcip.hashCode()).append("_").append(lbTO.getSrcPort());
                     cookieName = tempSb.toString();
                 }
-                sb.append("\t").append("appsession ").append(cookieName).append(" len ").append(length).append(" timeout ").append(holdtime).append(" ");
-                if (prefix) {
-                    sb.append("prefix ");
-                }
+                // "appsession" was removed in haproxy 1.6 and is a fatal parse error on the
+                // versions the system VM ships. A stick table on the cookie is the replacement.
+                sb.append("\t").append("stick-table type string len ").append(length).append(" size 10k expire ").append(holdtime).append("\n");
+                sb.append("\t").append("stick store-response res.cook(").append(cookieName).append(")").append("\n");
+                sb.append("\t").append("stick match req.cook(").append(cookieName).append(")").append("\n");
                 if (requestlearn) {
-                    sb.append("request-learn").append(" ");
+                    sb.append("\t").append("stick store-request req.cook(").append(cookieName).append(")").append("\n");
                 }
-                if (mode != null) {
-                    sb.append("mode ").append(mode).append(" ");
+                if (prefix || mode != null) {
+                    logger.warn("Haproxy stickiness policy for lb rule: {}:{}: prefix and mode are not supported since haproxy 1.6 and are ignored",
+                            lbTO.getSrcIp(), lbTO.getSrcPort());
                 }
             } else {
                 /*

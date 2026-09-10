@@ -31,6 +31,9 @@ import org.junit.Test;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.utils.Pair;
+import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 
 import java.util.List;
@@ -197,6 +200,27 @@ public class HAProxyConfiguratorTest {
         String result = genConfig(hpg, new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, -1L));
         assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout client     50000"));
         assertTrue("an unset idle timeout should fall back to the default", result.contains("\ttimeout server     50000"));
+    }
+
+    @Test
+    public void generateConfigurationTestAppCookieStickinessUsesAStickTable() {
+        List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("cookie-name", "JSESSIONID"));
+        params.add(new Pair<>("length", "52"));
+        params.add(new Pair<>("holdtime", "3h"));
+        List<LbStickinessPolicy> policies = new ArrayList<>();
+        policies.add(new LbStickinessPolicy(StickinessMethodType.AppCookieBased.getName(), params));
+        List<LbDestination> dests = new ArrayList<>();
+        dests.add(new LbDestination(80, 80, "10.1.10.2", false));
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "roundrobin", false, false, false, dests, policies);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        String result = genConfig(new HAProxyConfigurator(),
+                new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false, 50000L));
+        Assert.assertFalse("appsession was removed in haproxy 1.6", result.contains("appsession"));
+        assertTrue(result.contains("stick-table type string len 52 size 10k expire 3h"));
+        assertTrue(result.contains("stick store-response res.cook(JSESSIONID)"));
+        assertTrue(result.contains("stick match req.cook(JSESSIONID)"));
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
