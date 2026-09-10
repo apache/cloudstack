@@ -1452,6 +1452,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         _accountMgr.checkAccess(caller, null, false, vm);
 
         Network network = _networkModel.getNetwork(nic.getNetworkId());
+        if (network == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find the network of NIC %s", nic));
+        }
 
         boolean directRouted = Network.GuestType.L3.equals(network.getGuestType());
 

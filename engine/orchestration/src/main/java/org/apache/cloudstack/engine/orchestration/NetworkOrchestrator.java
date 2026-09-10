@@ -629,7 +629,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             null, true, false, false, false, false, null, null, null, true, null, null, false);
                 }
 
-                //#3b - Direct Routed (L3) network offering
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL3NetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL3NetworkOffering,
                             "Offering for Direct Routed (L3) networks - public IPs routed directly to Instances, configuration via ConfigDrive (UserData and DNS), Security Groups enabled, no Virtual Router and no DHCP",
@@ -3710,7 +3709,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             logger.debug("Deleted ip range for private network {}", network);
         }
 
-        // release vlans of user-shared networks, and routed ids of L3 networks, without specifyvlan
         final NetworkOffering deletedNetworkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (isSharedNetworkWithoutSpecifyVlan(deletedNetworkOffering) || isL3NetworkWithoutSpecifyVlan(deletedNetworkOffering)) {
             logger.debug("Releasing vnet for the network {}", network);

@@ -869,18 +869,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     /**
-     * True when the NIC belongs to a Direct Routed (L3) network, where secondary IPs need a host
-     * route and neighbour entry on the hypervisor whether or not security groups are in use.
-     */
-    /**
      * An L3 (Direct Routed) network has no DHCP and no password/metadata service, so nothing in
      * it depends on IPv4: each address family is optional, making IPv6-only networks possible.
      * Gateways play no part at all — the Instance's gateway is always the shared link-local
      * address, so none needs to be declared (or burnt in the subnet). What remains mandatory is
-     * that a given family is complete — IPv4 is netmask and startip (endip defaults to startip,
-     * the subnet derives from startip and netmask), IPv6 is ip6cidr alone (no range: addresses
-     * derive from the subnet and the NIC MAC with EUI-64) — and that at least one family is
-     * present at all.
+     * that a given family is complete — IPv4 is a subnet (cidr, or netmask and startip; endip
+     * defaults to startip), IPv6 is ip6cidr alone (no range: addresses derive from the subnet
+     * and the NIC MAC with EUI-64) — and that at least one family is present at all. A cidr
+     * parameter has already been expanded into netmask and startip when this runs.
      */
     protected void validateL3AddressFamilies(String netmask, String startIP, String endIP,
             String ip6Cidr, String startIPv6, String endIPv6) {
@@ -890,7 +886,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean completeIpv6 = StringUtils.isNotBlank(ip6Cidr);
         if (anyIpv4 && !completeIpv4) {
             throw new InvalidParameterValueException(String.format(
-                    "IPv4 is optional for %s networks, but when any IPv4 detail is given, netmask and startip are both required", GuestType.L3));
+                    "IPv4 is optional for %s networks, but when any IPv4 detail is given, either cidr, or netmask and startip, is required", GuestType.L3));
         }
         if (anyIpv6 && !completeIpv6) {
             throw new InvalidParameterValueException(String.format(
@@ -898,16 +894,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         if (!anyIpv4 && !anyIpv6) {
             throw new InvalidParameterValueException(String.format(
-                    "A %s network needs at least one address family: IPv4 (netmask, startip) or IPv6 (ip6cidr)", GuestType.L3));
+                    "A %s network needs at least one address family: IPv4 (cidr, or netmask and startip) or IPv6 (ip6cidr)", GuestType.L3));
         }
     }
 
     /**
      * Expands the cidr parameter of an L3 network — the IPv4 counterpart of ip6cidr — into the
-     * netmask/startip/endip triple the rest of the creation flow works with. The IP range
-     * defaults to the subnet's usable addresses (network and broadcast excluded); explicit
-     * startip/endip narrow it and are validated against the subnet further down the flow. cidr
-     * and netmask are two ways of defining the same subnet, so they are mutually exclusive.
+     * netmask/startip/endip triple the rest of the creation flow works with. Without startip the
+     * IP range defaults to the subnet's usable addresses (network and broadcast excluded; give
+     * startip and endip explicitly to include them). An explicit startip/endip narrows the range
+     * and must lie inside the subnet, which is what keeps the network's stored subnet — derived
+     * from startip and netmask further down the flow — equal to the requested one. cidr and
+     * netmask are two ways of defining the same subnet, so they are mutually exclusive.
      *
      * @return {netmask, startIP, endIP}
      */
@@ -917,6 +915,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         if (!NetUtils.isValidIp4Cidr(requestedCidr)) {
             throw new InvalidParameterValueException(String.format("Invalid cidr %s", requestedCidr));
+        }
+        if (StringUtils.isBlank(startIP) && StringUtils.isNotBlank(endIP)) {
+            throw new InvalidParameterValueException("endip requires startip");
         }
         final Pair<String, Integer> parsedCidr = NetUtils.getCidr(requestedCidr);
         final String derivedNetmask = NetUtils.getCidrNetmask(parsedCidr.second());
@@ -928,8 +929,34 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             final String[] range = NetUtils.getIpRangeFromCidr(parsedCidr.first(), parsedCidr.second());
             startIP = range[0];
             endIP = range[1];
+        } else {
+            for (String ip : new String[] {startIP, endIP}) {
+                if (StringUtils.isBlank(ip)) {
+                    continue;
+                }
+                if (!NetUtils.isValidIp4(ip) || !NetUtils.isIpWithInCidrRange(ip, requestedCidr)) {
+                    throw new InvalidParameterValueException(String.format("IP address %s is not within the subnet %s", ip, requestedCidr));
+                }
+            }
         }
         return new String[] {derivedNetmask, startIP, endIP};
+    }
+
+    /**
+     * Canonicalises the routed id given for an L3 network through the vlan parameter. The id
+     * names the network's bridge on every hypervisor and derives that bridge's MAC address, so it
+     * is a positive integer without leading zeros; the routed:// scheme may be given or omitted.
+     *
+     * @return the bare id, which the orchestrator encodes into the routed://&lt;id&gt; broadcast URI
+     */
+    protected String canonicalizeRoutedId(String vlanId) {
+        String routedId = BroadcastDomainType.getRoutedId(vlanId);
+        if (routedId == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "The vlan parameter of a %s network is its routed id, a positive integer of at most %d digits (optionally prefixed with routed://), got %s",
+                    GuestType.L3, BroadcastDomainType.ROUTED_ID_MAX_DIGITS, vlanId));
+        }
+        return routedId;
     }
 
     /**
@@ -1040,7 +1067,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (StringUtils.isNotBlank(ipv6Address)) {
                 ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
-        } else if (network.getGuestType() == Network.GuestType.Shared) {
+        } else if (network.getGuestType() == Network.GuestType.Shared || network.getGuestType() == Network.GuestType.L3) {
             //for basic zone, need to provide the podId to ensure proper IP allocation
             Long podId = null;
             DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -1808,7 +1835,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException(String.format("Can only support create IPv6 network with advanced %s or %s network!", GuestType.Shared, GuestType.L3));
             }
 
-            if(StringUtils.isAllBlank(ip6Dns1, ip6Dns2, zone.getIp6Dns1(), zone.getIp6Dns2())) {
+            if (!isL3 && StringUtils.isAllBlank(ip6Dns1, ip6Dns2, zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
 
@@ -1870,6 +1897,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if ((ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.L3) && ! ntwkOff.isSpecifyVlan() && vlanId != null) {
             throw new InvalidParameterValueException("Cannot specify vlanId when create a network from network offering with specifyvlan=false");
         }
+        if (isL3 && vlanId != null) {
+            vlanId = canonicalizeRoutedId(vlanId);
+        }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
         if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
@@ -1923,9 +1953,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        // Vlan is created in these cases - works in Advance zone only:
-        // 1) GuestType is Shared or L3 (Direct Routed)
-        // 2) GuestType is Isolated without SourceNat
         boolean createVlan = (startIP != null && endIP != null && zone.getNetworkType() == NetworkType.Advanced && ((ntwkOff.getGuestType() == Network.GuestType.Shared)
                 || (ntwkOff.getGuestType() == Network.GuestType.L3)
                 || (ntwkOff.getGuestType() == GuestType.Isolated && !areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))));
@@ -2479,7 +2506,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             // Get vlanId from associated network
                             vlanId = associatedNetwork.getBroadcastUri().toString();
                         } else {
-                            // Allocate a vnet to a Shared network, or a routed id to an L3 network, with specifyvlan=false
                             vlanId = _dcDao.allocateVnet(zoneId, physicalNetworkId, owner.getAccountId(), null, GuestNetworkGuru.UseSystemGuestVlans.valueIn(owner.getAccountId()));
                             if (vlanId == null) {
                                 throw new InvalidParameterValueException(String.format("Cannot allocate a vnet for this %s network", ntwkOff.getGuestType()));

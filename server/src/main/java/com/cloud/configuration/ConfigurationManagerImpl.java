@@ -5560,10 +5560,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         }
 
-        if (ipv4 && network.getGuestType() == GuestType.L3) {
-            checkOverlapPublicIpRange(zoneId, startIP, endIP);
-        }
-
         long reservedIpAddressesAmount = 0L;
         if (forVirtualNetwork && vlanOwner != null) {
             reservedIpAddressesAmount = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
@@ -5835,6 +5831,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             vlanId = Vlan.UNTAGGED;
         }
 
+        if (vlanId != null && vlanId.startsWith(BroadcastDomainType.Routed.scheme() + "://")) {
+            vlanId = canonicalizeRoutedRangeId(zoneId, vlanId);
+        }
+
         final VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
 
         if ((domain != null || vlanOwner != null) && zone.getNetworkType() != NetworkType.Advanced) {
@@ -5893,6 +5893,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!isSharedNetworkWithoutSpecifyVlan) {
                 checkZoneVlanIpOverlap(zone, network, newCidr, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
             }
+
+            if (gatewaylessL3) {
+                checkOverlapPublicIpRange(zoneId, startIP, endIP);
+            }
         }
 
         String ipv6Range = null;
@@ -5932,12 +5936,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     + zone.getName());
         }
 
-        if (vlanId != null && vlanId.startsWith(BroadcastDomainType.Routed.scheme() + "://")
-                && !_networkDao.listByZoneAndUriAndGuestType(zoneId, vlanId, null).isEmpty()) {
-            throw new InvalidParameterValueException(String.format(
-                    "The routed id %s is already used by a guest network in zone %s", vlanId, zone.getName()));
-        }
-
         String ipRange = null;
 
         if (ipv4) {
@@ -5960,6 +5958,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return vlan;
+    }
+
+    /**
+     * Validates the routed id of a public IP range created with vlan=routed://&lt;id&gt; (SystemVMs on
+     * a ROUTED physical network). The id must be a well-formed routed id, must not already name a
+     * guest network's bridge anywhere in the zone, and must not fall inside the routed-id range
+     * of any ROUTED physical network, from which L3 networks without specifyVlan draw theirs:
+     * guest networks and public ranges share one id space, since both name a brdr-&lt;id&gt; bridge on
+     * the hosts.
+     *
+     * @return the canonical routed://&lt;id&gt; form
+     */
+    protected String canonicalizeRoutedRangeId(final long zoneId, final String vlanId) {
+        final String routedId = BroadcastDomainType.getRoutedId(vlanId);
+        if (routedId == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "%s is not a valid routed id: expected routed://<id> with a positive integer of at most %d digits", vlanId, BroadcastDomainType.ROUTED_ID_MAX_DIGITS));
+        }
+        final String canonicalVlanId = BroadcastDomainType.Routed.toUri(routedId).toString();
+        if (!_networkDao.listByZoneAndUriAndGuestType(zoneId, canonicalVlanId, null).isEmpty()) {
+            throw new InvalidParameterValueException(String.format("The routed id %s is already used by a guest network in zone %d", routedId, zoneId));
+        }
+        for (final PhysicalNetworkVO physicalNetwork : _physicalNetworkDao.listByZone(zoneId)) {
+            if (physicalNetwork.getIsolationMethods() == null || !physicalNetwork.getIsolationMethods().contains("ROUTED")) {
+                continue;
+            }
+            if (!_zoneDao.findVnet(zoneId, physicalNetwork.getId(), routedId).isEmpty()) {
+                throw new InvalidParameterValueException(String.format(
+                        "The routed id %s lies inside the routed id range of physical network %s, from which %s networks are allocated their ids",
+                        routedId, physicalNetwork.getName(), GuestType.L3));
+            }
+        }
+        return canonicalVlanId;
     }
 
     /**
@@ -6033,10 +6064,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String otherVlanGateway = vlan.getVlanGateway();
             final String otherVlanNetmask = vlan.getVlanNetmask();
             // Continue if it's not IPv4
-            if (ObjectUtils.anyNull(otherVlanGateway, otherVlanNetmask, vlan.getNetworkId())) {
+            if (ObjectUtils.anyNull(otherVlanNetmask, vlan.getNetworkId()) || (otherVlanGateway == null && StringUtils.isBlank(vlan.getIpRange()))) {
                 continue;
             }
-            final String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
+            final String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway != null ? otherVlanGateway : vlan.getIpRange().split("\\-")[0], otherVlanNetmask);
             if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
                 continue;
             }
@@ -6073,7 +6104,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     final Long nwId = vlan.getNetworkId();
                     if (nwId != null) {
                         final Network nw = _networkModel.getNetwork(nwId);
-                        if (nw != null && nw.getTrafficType() == TrafficType.Public) {
+                        if (nw != null && (nw.getTrafficType() == TrafficType.Public || nw.getGuestType() == GuestType.L3)) {
                             overlapped = true;
                         }
                     }
@@ -7295,7 +7326,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (service == Service.SecurityGroup) {
-                // allow security group service for Shared and L3 (Direct Routed) networks only
                 if (guestType != GuestType.Shared && guestType != GuestType.L3) {
                     throw new InvalidParameterValueException(String.format("Security group service is supported for network offerings with guest ip type %s or %s", GuestType.Shared, GuestType.L3));
                 }

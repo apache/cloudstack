@@ -82,7 +82,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
                description = "The ID of the network. Pass this in if you want to see the available network offering that a network can be changed to.")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, description = "List network offerings by guest type: shared or isolated")
+    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, description = "List network offerings by guest type: Shared, Isolated, L2 or L3")
     private String guestIpType;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,

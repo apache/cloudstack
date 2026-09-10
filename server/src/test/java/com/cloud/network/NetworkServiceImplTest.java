@@ -1410,6 +1410,49 @@ public class NetworkServiceImplTest {
     }
 
     @Test
+    public void expandL3Ipv4CidrDerivesRangeFromSubnet() {
+        String[] expanded = service.expandL3Ipv4Cidr("192.0.2.0/24", null, null, null);
+        Assert.assertArrayEquals(new String[] {"255.255.255.0", "192.0.2.1", "192.0.2.254"}, expanded);
+    }
+
+    @Test
+    public void expandL3Ipv4CidrKeepsExplicitRangeInsideSubnet() {
+        String[] expanded = service.expandL3Ipv4Cidr("192.0.2.0/24", null, "192.0.2.0", "192.0.2.255");
+        Assert.assertArrayEquals(new String[] {"255.255.255.0", "192.0.2.0", "192.0.2.255"}, expanded);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsStartIpOutsideSubnet() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, "198.51.100.7", null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsEndIpOutsideSubnet() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, "192.0.2.10", "192.0.3.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsEndIpWithoutStartIp() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, null, "192.0.2.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsCidrTogetherWithNetmask() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", "255.255.255.0", null, null);
+    }
+
+    @Test
+    public void canonicalizeRoutedIdStripsScheme() {
+        Assert.assertEquals("5828", service.canonicalizeRoutedId("routed://5828"));
+        Assert.assertEquals("5828", service.canonicalizeRoutedId("5828"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void canonicalizeRoutedIdRejectsNonNumericId() {
+        service.canonicalizeRoutedId("routed://abc");
+    }
+
+    @Test
     public void expandL3Ipv4CidrDerivesNetmaskAndUsableRange() {
         String[] expanded = service.expandL3Ipv4Cidr("2.57.59.0/24", null, null, null);
         Assert.assertEquals("255.255.255.0", expanded[0]);
