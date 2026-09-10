@@ -289,6 +289,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         if (hasBackingChain(backupPath)) {
             String[] qemuImgCmd = new String[] { Script.getExecutableAbsolutePath("qemu-img"), "convert", "-O", "qcow2", backupPath, volumePath };
             int flattenExit = Script.executeCommandForExitValue(qemuImgCmd);
+            return flattenExit == 0;
         }
 
         String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
