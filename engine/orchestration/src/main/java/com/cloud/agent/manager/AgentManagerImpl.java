@@ -456,8 +456,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     public void handleCommands(final AgentAttache attache, final long sequence, final Command[] cmds) {
         for (final Pair<Integer, Listener> listener : _cmdMonitors) {
-            final boolean processed = listener.second().processCommands(attache.getId(), sequence, cmds);
-            logger.trace("SeqA {}-{}: {} by {}", attache.getId(), sequence, (processed ? "processed" : "not processed"), listener.getClass());
+            try {
+                final boolean processed = listener.second().processCommands(attache.getId(), sequence, cmds);
+                logger.trace("SeqA {}-{}: {} by {}", attache.getId(), sequence, (processed ? "processed" : "not processed"), listener.second().getClass());
+            } catch (final Exception e) {
+                logger.warn("Listener {} threw an exception processing commands for agent {} seq {}; continuing to next listener",
+                        listener.second().getClass().getName(), attache.getId(), sequence, e);
+            }
         }
     }
 

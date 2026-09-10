@@ -355,6 +355,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         IdsPowerStateSelectSearch = createSearchBuilder();
         IdsPowerStateSelectSearch.and("id", IdsPowerStateSelectSearch.entity().getId(), Op.IN);
         IdsPowerStateSelectSearch.selectFields(IdsPowerStateSelectSearch.entity().getId(),
+                IdsPowerStateSelectSearch.entity().getHostId(),
                 IdsPowerStateSelectSearch.entity().getPowerHostId(),
                 IdsPowerStateSelectSearch.entity().getPowerState(),
                 IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
