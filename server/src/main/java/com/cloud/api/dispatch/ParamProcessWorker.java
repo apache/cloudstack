@@ -190,6 +190,11 @@ public class ParamProcessWorker implements DispatchWorker {
                         break;
                     }
                     break;
+                case SafeCommandOptions:
+                    validator.validate(paramObj, annotation);
+                    break;
+                default:
+                    break;
             }
         }
     }

@@ -97,7 +97,7 @@
     </a-pagination>
 
     <a-form-item
-      v-if="isUserVm && hasVolumes"
+      v-if="hasVolumes"
       class="top-spaced">
       <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
@@ -307,7 +307,8 @@ export default {
       this.volumes = []
       getAPI('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        listsystemvms: !this.isUserVm
       }).then(response => {
         this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {
@@ -338,11 +339,11 @@ export default {
     submitForm () {
       if (this.loading) return
       this.loading = true
-      const migrateApi = this.isUserVm
-        ? this.requiresStorageMigration()
-          ? 'migrateVirtualMachineWithVolume'
-          : 'migrateVirtualMachine'
-        : 'migrateSystemVm'
+      const migrateApi = !this.requiresStorageMigration()
+        ? this.isUserVm
+          ? 'migrateVirtualMachine'
+          : 'migrateSystemVm'
+        : 'migrateVirtualMachineWithVolume'
       var params = this.selectedHost.id === -1
         ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
