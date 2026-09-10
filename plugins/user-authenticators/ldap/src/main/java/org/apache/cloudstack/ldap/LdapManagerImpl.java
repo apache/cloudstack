@@ -18,9 +18,12 @@ package org.apache.cloudstack.ldap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -507,7 +510,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         LdapTrustMapVO oldVo = _ldapTrustMapDao.findByDomainId(domainId);
         if (oldVo != null) {
             ensureOldDomainMappingNotInUse(domainId, oldVo);
-            logger.warn("domain {} is already linked to ldap {} ‘{}'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName());
+            logger.warn("domain {} is already linked to ldap {} '{}'; replacing with the new mapping", domainId, oldVo.getType(), oldVo.getName());
             _ldapTrustMapDao.expunge(oldVo.getId());
         }
     }
@@ -519,17 +522,23 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
      * mapping, so dropping it would silently orphan that provisioning link.
      */
     private void ensureOldDomainMappingNotInUse(Long domainId, LdapTrustMapVO oldMapping) {
-        List<String> dependentAccountNames = new ArrayList<>();
-        for (AccountVO account : accountDao.findActiveAccountsForDomain(domainId)) {
-            if (_ldapTrustMapDao.findByAccount(domainId, account.getAccountId()) != null) {
-                continue;
-            }
-            boolean hasLdapUser = userDao.listByAccount(account.getAccountId()).stream()
-                    .anyMatch(user -> User.Source.LDAP.equals(user.getSource()));
-            if (hasLdapUser) {
-                dependentAccountNames.add(account.getAccountName());
-            }
+        List<AccountVO> activeAccounts = accountDao.findActiveAccountsForDomain(domainId);
+        if (activeAccounts.isEmpty()) {
+            return;
         }
+        Set<Long> accountsWithOwnMapping = _ldapTrustMapDao.searchByDomainId(domainId).stream()
+                .map(LdapTrustMapVO::getAccountId)
+                .filter(accountId -> accountId != 0L)
+                .collect(Collectors.toSet());
+        List<Long> candidateAccountIds = activeAccounts.stream()
+                .map(AccountVO::getAccountId)
+                .filter(accountId -> !accountsWithOwnMapping.contains(accountId))
+                .collect(Collectors.toList());
+        Set<Long> accountIdsWithLdapUser = new HashSet<>(userDao.listAccountIdsBySource(candidateAccountIds, User.Source.LDAP));
+        List<String> dependentAccountNames = activeAccounts.stream()
+                .filter(account -> accountIdsWithLdapUser.contains(account.getAccountId()))
+                .map(AccountVO::getAccountName)
+                .collect(Collectors.toList());
         if (!dependentAccountNames.isEmpty()) {
             String msg = String.format("domain %d has account(s) %s relying on its current ldap mapping %s '%s'; unlink or migrate them before linking the domain to a different GROUP or OU.",
                     domainId, String.join(", ", dependentAccountNames), oldMapping.getType(), oldMapping.getName());
