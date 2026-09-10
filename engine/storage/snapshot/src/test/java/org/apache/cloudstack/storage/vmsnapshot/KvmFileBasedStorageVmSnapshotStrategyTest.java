@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -121,6 +122,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         strategy.vmInstanceDetailsDao = mock(VMInstanceDetailsDao.class);
         strategy.hostDetailsDao = hostDetailsDao;
         strategy.alertManager = mock(AlertManager.class);
+        strategy.internalBackupService = mock(InternalBackupService.class);
         doNothing().when(strategy).publishUsageEvent(anyString(), any(VMSnapshot.class), any(UserVm.class), anyLong(), anyLong());
         doNothing().when(strategy).publishUsageEvent(anyString(), any(VMSnapshot.class), any(UserVm.class), any(VolumeObjectTO.class));
     }
@@ -343,12 +345,10 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         SnapshotInfo rootSnapshotInfo = mock(SnapshotInfo.class);
         SnapshotObjectTO rootSnapshotObjectTo = mock(SnapshotObjectTO.class);
         VolumeObjectTO rootSnapshotVolume = mock(VolumeObjectTO.class);
-        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(vmSnapshotId, "kvmFileBasedStorageSnapshot", String.valueOf(rootSnapshotId), true);
 
         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
-        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmFileBasedStorageSnapshot")).thenReturn(List.of(volumeSnapshotDetail));
-        when(snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(rootSnapshotId, DataStoreRole.Primary)).thenReturn(rootSnapshotDataStore);
+        when(vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotId)).thenReturn(List.of(rootSnapshotDataStore));
         when(rootSnapshotDataStore.getSnapshotId()).thenReturn(rootSnapshotId);
         when(rootSnapshotDataStore.getDataStoreId()).thenReturn(dataStoreId);
         when(strategy.snapshotDataFactory.getSnapshot(rootSnapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(rootSnapshotInfo);
