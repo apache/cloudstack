@@ -35,6 +35,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
@@ -183,6 +185,8 @@ import com.google.gson.reflect.TypeToken;
 
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
 
+    @Inject
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
@@ -2285,6 +2289,42 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return dstList;
     }
 
+    /**
+     * Haproxy rejects a negative timeout, and a rejected file leaves every rule on the router
+     * running its previous config. Refuse the value here rather than let it reach the VR.
+     */
+    protected void validateConnectionTimeout(String name, Long value) {
+        if (value != null && value < 0) {
+            throw new InvalidParameterValueException(String.format("%s must be 0 or greater, got [%s]. 0 means no timeout.", name, value));
+        }
+    }
+
+    @Override
+    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout) {
+        validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, idleTimeout);
+        validateConnectionTimeout(ApiConstants.KEEPALIVE_TIMEOUT, keepAliveTimeout);
+
+        boolean changed = storeDetail(lbRuleId, LoadBalancer.KEEPALIVE, keepAlive == null ? null : keepAlive.toString());
+        changed |= storeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT, idleTimeout == null ? null : idleTimeout.toString());
+        changed |= storeDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout == null ? null : keepAliveTimeout.toString());
+        return changed;
+    }
+
+    private boolean storeDetail(long lbRuleId, String key, String value) {
+        if (value == null) {
+            return false;
+        }
+        FirewallRuleDetailVO existing = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+        if (existing != null && value.equals(existing.getValue())) {
+            return false;
+        }
+        if (existing != null) {
+            _firewallRuleDetailsDao.removeDetail(lbRuleId, key);
+        }
+        _firewallRuleDetailsDao.addDetail(lbRuleId, key, value, true);
+        return true;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription = "updating load balancer", async = true)
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
@@ -2342,6 +2382,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setCidrList(cidrListStr);
         }
 
+        // lb.getId() rather than the id off the command, which is a Long and unboxes badly
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lb.getId(), cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout());
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2356,7 +2399,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean protocolChanged = !Objects.equals(lbProtocol, tmplbVo.getLbProtocol());
         boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
 
-        if (algorithmChanged || protocolChanged || cidrListChanged) {
+        if (algorithmChanged || protocolChanged || cidrListChanged || settingsChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);

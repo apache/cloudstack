@@ -480,6 +480,18 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         return sb.toString();
     }
 
+    /**
+     * Haproxy rejects a negative timeout, and one bad value costs the whole file. Drop it and keep
+     * whatever the defaults section says, the same way the global idle timeout does.
+     */
+    private Long timeoutOrNull(final LoadBalancerTO lbTO, final String name, final Long value) {
+        if (value != null && value < 0) {
+            logger.warn("Ignoring negative {} [{}] on lb rule {}:{}", name, value, lbTO.getSrcIp(), lbTO.getSrcPort());
+            return null;
+        }
+        return value;
+    }
+
     private List<String> getRulesForPool(final LoadBalancerTO lbTO, final LoadBalancerConfigCommand lbCmd) {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
@@ -572,12 +584,30 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (stickinessSubRule != null && !destsAvailable) {
             logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        boolean keepAliveEnabled = lbCmd.keepAliveEnabled;
-        boolean http = (publicPort == NetUtils.HTTP_PORT && !keepAliveEnabled);
-        if (http || httpbasedStickiness || sslOffloading) {
+        final Boolean ruleKeepAlive = lbTO.getKeepAlive();
+        final Long ruleIdleTimeout = timeoutOrNull(lbTO, "idletimeout", lbTO.getIdleTimeout());
+        final Long ruleKeepAliveTimeout = timeoutOrNull(lbTO, "keepalivetimeout", lbTO.getKeepAliveTimeout());
+        final boolean keepAliveEnabled = ruleKeepAlive != null ? ruleKeepAlive : lbCmd.keepAliveEnabled;
+        // A rule that asks for keepalive itself stays in http mode on port 80, so forwardfor keeps
+        // working. Without it, keepalive falls back to tcp mode as it always has.
+        final boolean port80HttpMode = publicPort == NetUtils.HTTP_PORT && (ruleKeepAlive != null || !keepAliveEnabled);
+        final boolean httpMode = port80HttpMode || httpbasedStickiness || sslOffloading;
+        if (httpMode) {
             frontendConfigs.add("\tmode http");
-            String keepAliveLine = keepAliveEnabled ? "\toption http-keep-alive" : "\toption httpclose";
-            frontendConfigs.add(keepAliveLine);
+            frontendConfigs.add(keepAliveEnabled ? "\toption http-keep-alive" : "\toption httpclose");
+            if (keepAliveEnabled && ruleKeepAliveTimeout != null) {
+                frontendConfigs.add("\ttimeout http-keep-alive " + ruleKeepAliveTimeout);
+            } else if (ruleKeepAliveTimeout != null) {
+                logger.warn("Keepalive timeout ignored for lb rule {}:{}, keepalive is off for this rule",
+                        lbTO.getSrcIp(), lbTO.getSrcPort());
+            }
+        } else if (ruleKeepAlive != null || ruleKeepAliveTimeout != null) {
+            logger.warn("Keepalive ignored for lb rule {}:{}, it is served in tcp mode. Keepalive applies on port {}, "
+                    + "with ssl offload, or with http based stickiness.", lbTO.getSrcIp(), lbTO.getSrcPort(), NetUtils.HTTP_PORT);
+        }
+        if (ruleIdleTimeout != null) {
+            frontendConfigs.add("\ttimeout client     " + ruleIdleTimeout);
+            frontendConfigs.add("\ttimeout server     " + ruleIdleTimeout);
         }
 
         // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"

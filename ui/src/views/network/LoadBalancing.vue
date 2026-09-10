@@ -472,6 +472,61 @@
             :placeholder="$t('label.sourcecidrlist')"
           />
         </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalive') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalive.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-select
+            v-model:value="editRuleDetails.keepalive"
+            :placeholder="$t('label.inherit.default')">
+            <a-select-option :value="undefined" :label="$t('label.inherit.default')">{{ $t('label.inherit.default') }}</a-select-option>
+            <a-select-option :value="true" :label="$t('label.yes')">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option :value="false" :label="$t('label.no')">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.idletimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.idletimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.idletimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalivetimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalivetimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.keepalivetimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
@@ -859,7 +914,10 @@ export default {
         name: '',
         algorithm: '',
         protocol: '',
-        cidrlist: ''
+        cidrlist: '',
+        keepalive: undefined,
+        idletimeout: undefined,
+        keepalivetimeout: undefined
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -1663,6 +1721,9 @@ export default {
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
       // Normalize cidrlist: replace spaces with commas and clean up
+      this.editRuleDetails.keepalive = this.selectedRule.keepalive
+      this.editRuleDetails.idletimeout = this.selectedRule.idletimeout
+      this.editRuleDetails.keepalivetimeout = this.selectedRule.keepalivetimeout
       this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
         .split(/[\s,]+/) // Split on spaces or commas
         .map(c => c.trim())
@@ -1680,11 +1741,12 @@ export default {
           cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
         })
       }
-      postAPI('updateLoadBalancerRule', {
-        ...this.editRuleDetails,
-        id: this.selectedRule.id,
-        ...payload
-      }).then(response => {
+      for (const key of ['keepalive', 'idletimeout', 'keepalivetimeout']) {
+        if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
+          delete payload[key]
+        }
+      }
+      postAPI('updateLoadBalancerRule', payload).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.edit.rule'),
