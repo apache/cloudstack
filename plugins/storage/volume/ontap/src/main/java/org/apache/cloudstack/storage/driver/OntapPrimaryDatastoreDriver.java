@@ -230,19 +230,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     /**
      * Creates the backend object that caches a template on this pool's FlexVolume.
      *
-     * <p>This is the first half of the cache-and-clone flow driven by
-     * {@code VolumeServiceImpl.createManagedStorageVolumeFromTemplateAsync}. Only the empty
-     * container is created here; the framework then sends a {@code CopyCommand} to a KVM host
-     * which writes the image content into it.</p>
-     *
-     * <p>For iSCSI the ONTAP identity of the cache is recorded on {@code template_spool_ref}:
-     * {@code local_download_path} holds the LUN uuid, which is the clone source later on.
-     * {@code install_path} is deliberately left for {@code grantAccess} to fill, because it must
-     * be {@code /<targetIQN>/<lunNumber>} and the LUN number does not exist until the LUN is
-     * mapped to an igroup.</p>
-     *
-     * <p>For NFS nothing is pre-created on the array: the KVM agent writes the qcow2 into the
-     * mounted FlexVolume and reports the path, which the framework stores as {@code install_path}.</p>
      */
     private CreateCmdResult createTemplateOnPrimary(StoragePoolVO storagePool, TemplateInfo templateInfo, Map<String, String> details) {
         if (!isIscsi(details)) {
@@ -384,7 +371,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         String lunName = getTemplateLunName(storagePool, templateInfo.getId());
         String lunUuid = templatePoolRef.getLocalDownloadPath();
         deleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME), lunName, lunUuid);
-        logger.info("deleteTemplateOnPrimary: Deleted template cache LUN [{}] for template [{}] on pool [{}]",
+        logger.info("deleteIscsiTemplateCache: Deleted template cache LUN [{}] for template [{}] on pool [{}]",
                 lunName, templateInfo.getId(), storagePool.getId());
     }
 
@@ -432,7 +419,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                                         VMTemplateStoragePoolVO templatePoolRef, StorageStrategy storageStrategy) {
         String filePath = templatePoolRef.getInstallPath();
         if (filePath == null || filePath.isEmpty()) {
-            logger.warn("deleteTemplateOnPrimary: No install_path recorded for template [{}]; nothing to delete",
+            logger.warn("deleteNfsTemplateCache: No install_path recorded for template [{}]; nothing to delete",
                     templateInfo.getId());
             return;
         }
@@ -446,7 +433,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     + templateInfo.getId() + "]");
         }
         ((UnifiedNASStrategy) storageStrategy).deleteFileByPath(flexVolUuid, filePath);
-        logger.info("deleteTemplateOnPrimary: Deleted template cache file [{}] for template [{}]",
+        logger.info("deleteNfsTemplateCache: Deleted template cache file [{}] for template [{}]",
                 filePath, templateInfo.getId());
     }
 
