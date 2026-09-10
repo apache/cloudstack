@@ -121,10 +121,8 @@ public class SnapshotManagerImplTest {
             Mockito.when(volume.getInstanceId()).thenReturn(null);
             Mockito.when(volume.getAccountId()).thenReturn(2L);
 
-            SnapshotVO existing = Mockito.mock(SnapshotVO.class);
-            Mockito.when(existing.getName()).thenReturn("dup");
-            Mockito.when(snapshotDao.listByStatusNotIn(volumeId, Snapshot.State.Destroyed, Snapshot.State.Error))
-                    .thenReturn(List.of(existing));
+            Mockito.when(snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, "dup", Snapshot.State.Destroyed, Snapshot.State.Error))
+                    .thenReturn(Mockito.mock(SnapshotVO.class));
 
             Assert.assertThrows(InvalidParameterValueException.class, () ->
                     snapshotManager.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, "dup", null));
