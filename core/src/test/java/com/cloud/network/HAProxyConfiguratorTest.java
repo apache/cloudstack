@@ -158,6 +158,19 @@ public class HAProxyConfiguratorTest {
         Assert.assertTrue(result.contains("bind 10.2.0.1:443 ssl crt /etc/cloudstack/ssl/10_2_0_1-443.pem"));
     }
 
+    @Test
+    public void generateConfigurationTestKeepAliveWithSslOffloading() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 443, "ssl", "roundrobin", false, false, false, null);
+        lb.setLbSslCert(new LbSslCert("cert", "key", "password", "chain", "fingerprint", false));
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", true, 0L);
+        String result = genConfig(hpg, cmd);
+        Assert.assertFalse("'forceclose' is rejected by HAProxy 2.0 and later", result.contains("forceclose"));
+        Assert.assertTrue("keepalive should be requested explicitly", result.contains("\toption http-keep-alive"));
+    }
+
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {
         String[] sa = hpg.generateConfiguration(cmd);
         StringBuilder sb = new StringBuilder();
