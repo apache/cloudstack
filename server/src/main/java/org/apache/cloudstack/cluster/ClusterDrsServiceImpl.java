@@ -34,6 +34,8 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.host.HostLoad;
+import com.cloud.host.HostLoadService;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
@@ -44,7 +46,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -96,7 +97,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -151,6 +151,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     VolumeDao volumeDao;
+
+    @Inject
+    HostLoadService hostLoadService;
 
     List<ClusterDrsAlgorithm> drsAlgorithms = new ArrayList<>();
 
@@ -401,7 +404,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<Ternary<VirtualMachine, Host, Host>> migrationPlan = new ArrayList<>();
         Map<Long, ExcludeList> vmToExcludesMap = null;
         Set<Long> staleAffinityVmIds = new HashSet<>();
-        while (iteration < maxIterations && algorithm.needsDrs(cluster, hostCpuMap, hostMemoryMap)) {
+        Map<Long, HostLoad> hostLoadMap = new HashMap<>();
+        for (Long hostId : hostCpuMap.keySet()) {
+            hostLoadMap.put(hostId, hostLoadService.getLoad(hostId));
+        }
+        algorithm.prepare(cluster, hostCpuMap, hostMemoryMap, hostLoadMap);
+
+        while (iteration < maxIterations && algorithm.needsDrs(cluster, hostCpuMap, hostMemoryMap, hostLoadMap)) {
 
             logger.debug("Starting DRS iteration {} for cluster {}", iteration + 1, cluster);
             // Affinity only changes for VMs that share a group with the one just moved, so after
@@ -597,16 +606,34 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     /**
+     * VM details that narrow which hosts a VM can run on. Matched as prefixes and case
+     * insensitively, so that related keys are covered without listing each one.
+     */
+    private static final List<String> PLACEMENT_AFFECTING_DETAIL_PREFIXES = List.of(
+            "uefi", "boot", "dpdk", "cpunumber", "cpuspeed", "memory", "rootdisk", "nic", "gpu", "vgpu",
+            "extraconfig", "hypervisortoolsversion", "kvm", "vmware", "hyperv");
+
+    /**
      * Identifies VMs that would get the same answer from listHostsForMigrationOfVM.
      *
-     * The answer depends on what the VM asks for (its offering and template), where it is now, the
-     * volumes that would have to follow it, and the affinity groups it belongs to. Two VMs matching
-     * on all of those are interchangeable for the purpose of finding candidate hosts.
+     * The answer depends on what the VM asks for, where it is now, the volumes that would have to
+     * follow it, and its affinity groups. Rather than enumerate everything that could possibly
+     * matter and risk missing one, a VM is only grouped when it has none of the per-VM inputs that
+     * are known to change the answer - a custom offering whose size comes from the VM rather than
+     * the offering, a boot mode or device setting, and so on. Anything else is worked out on its
+     * own, which costs what it always did.
+     *
+     * @return a key shared with equivalent VMs, or one unique to this VM when it cannot be grouped
      */
     protected String migrationEquivalenceKey(VirtualMachine vm) {
-        List<Long> poolIds = volumeDao.findCreatedByInstance(vm.getId()).stream()
-                .map(VolumeVO::getPoolId)
-                .filter(Objects::nonNull)
+        ServiceOffering offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+        if (offering == null || offering.isDynamic() || hasPlacementAffectingDetails(vm)) {
+            return "vm-" + vm.getId();
+        }
+
+        List<String> volumes = volumeDao.findCreatedByInstance(vm.getId()).stream()
+                .filter(volume -> volume.getPoolId() != null)
+                .map(volume -> volume.getPoolId() + ":" + volume.getDiskOfferingId())
                 .sorted()
                 .collect(Collectors.toList());
         List<Long> groupIds = affinityGroupVMMapDao.listByInstanceId(vm.getId()).stream()
@@ -614,7 +641,25 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 .sorted()
                 .collect(Collectors.toList());
         return String.format("%s|%s|%s|%s|%s|%s", vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHostId(),
-                vm.getHypervisorType(), poolIds, groupIds);
+                vm.getHypervisorType(), volumes, groupIds);
+    }
+
+    /**
+     * Whether the VM carries any detail that narrows the hosts it can run on. Such a VM is never
+     * grouped with another, because the details are per VM and two VMs on the same offering can
+     * differ entirely.
+     */
+    protected boolean hasPlacementAffectingDetails(VirtualMachine vm) {
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
+        if (MapUtils.isEmpty(details)) {
+            return false;
+        }
+        for (String key : details.keySet()) {
+            if (PLACEMENT_AFFECTING_DETAIL_PREFIXES.stream().anyMatch(prefix -> key.toLowerCase().startsWith(prefix))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
