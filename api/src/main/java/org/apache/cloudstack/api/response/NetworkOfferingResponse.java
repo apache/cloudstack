@@ -91,6 +91,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "The ID of the service offering used by virtual router provider")
     private String serviceOfferingId;
 
+    @SerializedName(ApiConstants.SERVICE_OFFERING_NAME)
+    @Param(description = "the name of the service offering used by virtual router provider")
+    private String serviceOfferingName;
+
     @SerializedName(ApiConstants.SERVICE)
     @Param(description = "The list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
@@ -329,5 +333,13 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setRoutingMode(String routingMode) {
         this.routingMode = routingMode;
+    }
+
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
+
+    public void setServiceOfferingName(String serviceOfferingName) {
+        this.serviceOfferingName = serviceOfferingName;
     }
 }
