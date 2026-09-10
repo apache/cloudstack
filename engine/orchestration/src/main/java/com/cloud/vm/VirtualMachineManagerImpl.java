@@ -1860,54 +1860,63 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private void updateOverCommitRatioForVmProfile(VirtualMachineProfile vmProfile, long clusterId) {
         final ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
         final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        final float clusterCpuRatio = Float.parseFloat(clusterDetailCpu.getValue());
+        final float clusterRamRatio = Float.parseFloat(clusterDetailRam.getValue());
 
-        final float cpuRatio = overCommitRatioForVm(vmProfile, VmDetailConstants.CPU_OVER_COMMIT_RATIO,
-                Float.parseFloat(clusterDetailCpu.getValue()));
-        final float ramRatio = overCommitRatioForVm(vmProfile, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO,
-                Float.parseFloat(clusterDetailRam.getValue()));
+        final Float offeringCpuRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        final Float offeringRamRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
 
-        persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cpuRatio);
-        persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, ramRatio);
-        persistMemoryReclaimFlag(vmProfile.getId(), ramRatio);
+        final float cpuRatio = offeringCpuRatio != null ? offeringCpuRatio : clusterCpuRatio;
+        final float ramRatio = offeringRamRatio != null ? offeringRamRatio : clusterRamRatio;
+
+        persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cpuRatio, clusterCpuRatio);
+        persistOverCommitRatio(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, ramRatio, clusterRamRatio);
+        persistMemoryReclaimFlag(vmProfile.getId(), offeringRamRatio);
 
         vmProfile.setCpuOvercommitRatio(cpuRatio);
         vmProfile.setMemoryOvercommitRatio(ramRatio);
     }
 
     /**
-     * The overcommit ratio a VM should run at: its service offering's if that offering sets one,
-     * otherwise its cluster's.
+     * The overcommit ratio a VM's service offering asks for, or null when it does not ask for one
+     * and should inherit its cluster's.
      *
-     * An offering setting a ratio of 1 in an overcommitted cluster is how infrastructure VMs are
+     * An offering setting a ratio of 1 on an overcommitted cluster is how infrastructure VMs are
      * kept off the overcommit: they are charged their full request and hold all of it.
      */
-    private float overCommitRatioForVm(VirtualMachineProfile vmProfile, String key, float clusterRatio) {
+    protected Float offeringOverCommitRatio(VirtualMachineProfile vmProfile, String key) {
         String offeringRatio = _serviceOfferingDetailsDao.getDetail(vmProfile.getServiceOfferingId(), key);
         if (offeringRatio == null) {
-            return clusterRatio;
+            return null;
         }
         try {
             float ratio = Float.parseFloat(offeringRatio);
             if (ratio <= 0) {
                 logger.warn("Ignoring {} of {} on service offering {}: it must be greater than zero.",
                         key, offeringRatio, vmProfile.getServiceOfferingId());
-                return clusterRatio;
+                return null;
             }
             return ratio;
         } catch (NumberFormatException e) {
             logger.warn("Ignoring {} of {} on service offering {}: it is not a number.",
                     key, offeringRatio, vmProfile.getServiceOfferingId());
-            return clusterRatio;
+            return null;
         }
     }
 
     /**
-     * A VM that is not overcommitted on memory should hold what it was given rather than lend the
-     * unused part back, otherwise it is only exempt in the books. The hypervisor reads this when
-     * the VM starts.
+     * Turns off returning the guest's unused pages to the host, for a VM whose offering has
+     * explicitly opted out of overcommit. Otherwise the exemption would hold in the books only.
+     *
+     * Only an explicit choice counts. An offering that says nothing inherits its cluster, and a
+     * cluster with no overcommit configured is the default everywhere - reading that as "pin the
+     * memory of every VM" would change behaviour for installations that opted into nothing.
+     *
+     * @param offeringRatio
+     *         the ratio the offering asked for, or null if it asked for nothing
      */
-    private void persistMemoryReclaimFlag(long vmId, float memoryRatio) {
-        boolean disable = memoryRatio <= 1f;
+    protected void persistMemoryReclaimFlag(long vmId, Float offeringRatio) {
+        boolean disable = offeringRatio != null && offeringRatio <= 1f;
         VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.MEMORY_RECLAIM_DISABLED);
         if (disable && existing == null) {
             vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.MEMORY_RECLAIM_DISABLED, "true", true);
@@ -1917,17 +1926,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Records the ratio the VM is running at, so that capacity accounting can scale it correctly
-     * even after the cluster or the offering is changed underneath it.
+     * Records the ratio the VM is running at.
+     *
+     * Capacity is counted in cluster-overcommitted units, and the charge scales a VM by this detail,
+     * so it has to be present whenever the VM's ratio differs from its cluster's - otherwise the VM
+     * is charged as though it shared the cluster's ratio. It is also kept while the cluster is
+     * overcommitted at all, so that capacity accounting survives the cluster ratio being changed
+     * beneath a running VM.
      */
-    private void persistOverCommitRatio(long vmId, String key, float ratio) {
+    protected void persistOverCommitRatio(long vmId, String key, float ratio, float clusterRatio) {
+        boolean needed = ratio != clusterRatio || clusterRatio > 1f;
         VMInstanceDetailVO existing = vmInstanceDetailsDao.findDetail(vmId, key);
-        if (existing == null) {
-            if (ratio != 1f) {
-                vmInstanceDetailsDao.addDetail(vmId, key, String.valueOf(ratio), true);
+        if (!needed) {
+            if (existing != null) {
+                vmInstanceDetailsDao.removeDetail(vmId, key);
             }
-        } else if (Float.parseFloat(existing.getValue()) != ratio) {
+            return;
+        }
+        if (existing == null || parseRatioOrDefault(existing.getValue(), Float.NaN) != ratio) {
             vmInstanceDetailsDao.addDetail(vmId, key, String.valueOf(ratio), true);
+        }
+    }
+
+    private float parseRatioOrDefault(String value, float fallback) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            return fallback;
         }
     }
 
