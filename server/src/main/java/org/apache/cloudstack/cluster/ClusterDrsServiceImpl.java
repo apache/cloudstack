@@ -788,13 +788,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     /**
-     * Executes the DRS plan by migrating virtual machines to their destination hosts.
-     * If there are no migrations to be executed, the plan is marked as completed.
-     *
-     * @param plan
-     *         the DRS plan to be executed
-     */
-    /**
      * Checks a planned migration against the placement rules as they stand now.
      *
      * A plan is generated once and executed later, so state can have moved on: VMs may have been
@@ -802,8 +795,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * against current placements, and nothing downstream re-checks it - migrateVirtualMachine does
      * not enforce affinity groups.
      *
-     * The processors also cover dedicated resources and DPDK, so a refusal is not necessarily about
-     * an affinity group.
+     * Checked for every VM, not only those in an affinity group: applyAffinityConstraints also
+     * applies DPDK and dedicated-resource exclusions, which apply regardless of group membership.
+     * A refusal here is therefore not necessarily about an affinity group.
      *
      * @param vm
      *         the VM the plan wants to move
@@ -821,9 +815,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             logger.debug("VM {} is no longer running, so its planned migration is out of date", vm);
             return true;
         }
-        if (CollectionUtils.isEmpty(affinityGroupVMMapDao.listByInstanceId(vm.getId()))) {
-            return false;
-        }
         if (dispatchedSourceHosts.contains(destHost.getId())) {
             logger.debug("Host {} is still occupied by a VM whose migration away from it is only queued", destHost);
             return true;
@@ -837,6 +828,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return excludes.shouldAvoid(destHost);
     }
 
+    /**
+     * Executes the DRS plan by migrating virtual machines to their destination hosts.
+     * If there are no migrations to be executed, the plan is marked as completed.
+     *
+     * @param plan
+     *         the DRS plan to be executed
+     */
     void executeDrsPlan(ClusterDrsPlanVO plan) {
         List<ClusterDrsPlanMigrationVO> planMigrations = drsPlanMigrationDao.listPlanMigrationsToExecute(plan.getId());
         if (planMigrations == null || planMigrations.isEmpty()) {
