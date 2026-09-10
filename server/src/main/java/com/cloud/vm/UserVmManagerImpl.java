@@ -5019,7 +5019,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
                             if (vlan == null || vlan.size() == 0 || vlan.get(0).getVlanType() != VlanType.DirectAttached)
                             {
-                                break; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
+                                continue; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
                             }
                             UserStatisticsVO previousvmNetworkStats = _userStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), nic.getNetworkId(), nic.getIPv4Address(), userVm.getId(), "UserVm");
                             if (previousvmNetworkStats == null) {
