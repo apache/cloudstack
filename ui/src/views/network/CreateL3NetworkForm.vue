@@ -21,7 +21,7 @@
       <div class="form">
         <a-alert type="info">
           <template #message>
-            <span v-html="$t('message.create.l3.network')" />
+            <span>{{ $t('message.create.l3.network') }}</span>
           </template>
         </a-alert>
         <br/>
@@ -72,6 +72,31 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item v-if="isAdmin()" name="physicalnetworkid" ref="physicalnetworkid">
+            <template #label>
+              <tooltip-label :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
+            </template>
+            <a-alert
+              v-if="!physicalNetworkLoading && physicalNetworks.length === 0"
+              type="warning"
+              show-icon
+              :message="$t('message.error.no.routed.physical.network')" />
+            <a-select
+              v-else
+              v-model:value="form.physicalnetworkid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="physicalNetworkLoading"
+              :placeholder="apiParams.physicalnetworkid.description"
+              @change="val => { handlePhysicalNetworkChange(physicalNetworks[val]) }">
+              <a-select-option v-for="(opt, optIndex) in physicalNetworks" :key="optIndex" :label="opt.name || opt.description">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
@@ -99,8 +124,11 @@
             <template #label>
               <tooltip-label :title="$t('label.routedid')" :tooltip="$t('message.routedid.description')"/>
             </template>
-            <a-input
+            <a-input-number
+              style="width: 100%"
               v-model:value="form.routedid"
+              :min="1"
+              :precision="0"
               :placeholder="$t('message.routedid.description')"/>
           </a-form-item>
           <a-row :gutter="12">
@@ -223,6 +251,9 @@ export default {
       zones: [],
       zoneLoading: false,
       selectedZone: {},
+      physicalNetworks: [],
+      physicalNetworkLoading: false,
+      selectedPhysicalNetwork: {},
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {}
@@ -253,7 +284,8 @@ export default {
         name: [{ required: true, message: this.$t('message.error.name') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
-        routedid: [{ required: true, message: this.$t('message.error.routedid') }]
+        physicalnetworkid: [{ required: true, message: this.$t('message.error.select') }],
+        routedid: [{ type: 'number', required: true, message: this.$t('message.error.routedid') }]
       })
     },
     fetchData () {
@@ -276,7 +308,39 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      if (this.isAdmin()) {
+        this.fetchPhysicalNetworkData()
+      }
       this.fetchNetworkOfferingData()
+    },
+    fetchPhysicalNetworkData () {
+      this.physicalNetworks = []
+      this.selectedPhysicalNetwork = {}
+      this.form.physicalnetworkid = undefined
+      if (this.isObjectEmpty(this.selectedZone)) {
+        return
+      }
+      this.physicalNetworkLoading = true
+      getAPI('listPhysicalNetworks', { zoneid: this.selectedZone.id }).then(json => {
+        const networks = json.listphysicalnetworksresponse.physicalnetwork || []
+        this.physicalNetworks = networks.filter(network => this.isRoutedPhysicalNetwork(network))
+        if (this.physicalNetworks.length === 1) {
+          this.form.physicalnetworkid = 0
+          this.handlePhysicalNetworkChange(this.physicalNetworks[0])
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.physicalNetworkLoading = false
+      })
+    },
+    isRoutedPhysicalNetwork (physicalNetwork) {
+      // listPhysicalNetworks returns isolationmethods as a comma-separated string
+      const methods = (physicalNetwork.isolationmethods || '').split(',')
+      return methods.some(method => method.trim().toUpperCase() === 'ROUTED')
+    },
+    handlePhysicalNetworkChange (physicalNetwork) {
+      this.selectedPhysicalNetwork = physicalNetwork
     },
     fetchNetworkOfferingData () {
       if (this.isObjectEmpty(this.selectedZone)) {
@@ -287,10 +351,6 @@ export default {
         zoneid: this.selectedZone.id,
         guestiptype: 'L3',
         state: 'Enabled'
-      }
-      if (this.owner.projectid) {
-        this.form.account = null
-        this.form.domainid = null
       }
       getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
@@ -348,6 +408,9 @@ export default {
         }
         if (this.selectedNetworkOffering.specifyvlan && values.routedid) {
           params.vlan = values.routedid
+        }
+        if (!this.isObjectEmpty(this.selectedPhysicalNetwork)) {
+          params.physicalnetworkid = this.selectedPhysicalNetwork.id
         }
         if (this.owner.account) {
           params.account = this.owner.account

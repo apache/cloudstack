@@ -96,17 +96,19 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="form.provider !== 'NSX' && form.provider !== 'Netris' && guestType !== 'l3'">
+        <a-row :gutter="12" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
               <template #label>
-                <tooltip-label :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
+                <tooltip-label
+                  :title="guestType === 'l3' ? $t('label.specifyroutedid') : $t('label.specifyvlan')"
+                  :tooltip="guestType === 'l3' ? $t('message.specifyroutedid.description') : apiParams.specifyvlan.description"/>
               </template>
               <a-switch v-model:checked="form.specifyvlan" />
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
-            <a-form-item name="ispersistent" ref="ispersistent" v-if="guestType !== 'shared'">
+            <a-form-item name="ispersistent" ref="ispersistent" v-if="guestType !== 'shared' && guestType !== 'l3'">
               <template #label>
                 <tooltip-label :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
               </template>
@@ -212,7 +214,7 @@
         <span v-if="guestType === 'l3'">
           <a-alert type="info">
             <template #message>
-              <span v-html="$t('message.offering.l3')" />
+              <span>{{ $t('message.offering.l3') }}</span>
             </template>
           </a-alert>
           <br/>
@@ -1183,6 +1185,9 @@ export default {
             delete params.ispersistent
           }
         } else if (values.guestiptype === 'l3') {
+          if (values.specifyvlan === true) {
+            params.specifyvlan = true
+          }
           params.specifyipranges = true
           delete params.ispersistent
           delete params.conservemode
