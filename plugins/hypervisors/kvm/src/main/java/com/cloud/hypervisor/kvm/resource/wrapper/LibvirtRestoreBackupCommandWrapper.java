@@ -59,10 +59,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     // Flattens the backing-file chain into a single self-contained qcow2 written to the
     // destination volume path. Used when the source backup is an incremental whose qcow2
     // has a backing reference to its parent (chain set up by nasbackup.sh's qemu-img rebase).
-    private static final String QEMU_IMG_FLATTEN_COMMAND = "qemu-img convert -O qcow2 %s %s";
-    // Detects whether a qcow2 file references a parent in its backing-file metadata.
-    // Returns 0 (true) when a backing file is present, 1 when not. Uses --output=json
-    // so the test is robust to qemu-img version differences in human-readable output.
     private static final String QEMU_IMG_HAS_BACKING_COMMAND =
             "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
 
@@ -291,9 +287,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         // chain via qemu-img convert, which follows the backing-file links and
         // produces a single self-contained qcow2.
         if (hasBackingChain(backupPath)) {
-            int flattenExit = Script.runSimpleBashScriptForExitValue(
-                    String.format(QEMU_IMG_FLATTEN_COMMAND, backupPath, volumePath), timeout, false);
-            return flattenExit == 0;
+            String[] qemuImgCmd = new String[] { Script.getExecutableAbsolutePath("qemu-img"), "convert", "-O", "qcow2", backupPath, volumePath };
+            int flattenExit = Script.executeCommandForExitValue(qemuImgCmd);
         }
 
         String[] rsyncCmd = new String[] { Script.getExecutableAbsolutePath("rsync"), "-az", backupPath, volumePath };
