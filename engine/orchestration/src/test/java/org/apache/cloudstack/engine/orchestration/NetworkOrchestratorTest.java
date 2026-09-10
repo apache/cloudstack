@@ -41,6 +41,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -76,6 +77,8 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -88,6 +91,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
@@ -135,6 +139,7 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.routerJoinDao = mock(DomainRouterJoinDao.class);
         testOrchestrator._ipAddrMgr = mock(IpAddressManager.class);
         testOrchestrator._entityMgr = mock(EntityManager.class);
+        testOrchestrator._vmDao = mock(VMInstanceDao.class);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();
@@ -1008,6 +1013,45 @@ public class NetworkOrchestratorTest extends TestCase {
             assertEquals(networkRate, nicProfile.getNetworkRate());
             assertFalse(nicProfile.isSecurityGroupEnabled());
             assertEquals("testtag", nicProfile.getName());
+        }
+    }
+
+    @Test
+    public void testAllocateNicWithFreeDeviceIdLocksVmRowBeforeReadingFreeDeviceId() throws Exception {
+        final long vmId = 100L;
+        final int freeDeviceId = 5;
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(vmId);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        when(vmProfile.getId()).thenReturn(vmId);
+        when(vmProfile.getVirtualMachine()).thenReturn(vm);
+
+        Network network = mock(Network.class);
+        NicProfile requested = mock(NicProfile.class);
+        NicProfile allocated = mock(NicProfile.class);
+
+        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(freeDeviceId);
+        Mockito.doReturn(new Pair<>(allocated, freeDeviceId)).when(testOrchestrator)
+                .allocateNic(requested, network, false, freeDeviceId, vmProfile);
+
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            // run the callback body so the lock/read/allocate ordering is exercised
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallbackWithException.class)))
+                    .thenAnswer(invocation -> {
+                        TransactionCallbackWithException<NicProfile, InsufficientCapacityException> cb = invocation.getArgument(0);
+                        return cb.doInTransaction(mock(TransactionStatus.class));
+                    });
+
+            NicProfile result = testOrchestrator.allocateNicWithFreeDeviceId(requested, network, false, vmProfile);
+
+            assertEquals(allocated, result);
+            // the vm_instance row must be locked before the free device id is read,
+            // otherwise two concurrent adds pick the same id (issue #11710)
+            InOrder inOrder = Mockito.inOrder(testOrchestrator._vmDao, testOrchestrator._nicDao);
+            inOrder.verify(testOrchestrator._vmDao).lockRow(vmId, true);
+            inOrder.verify(testOrchestrator._nicDao).getFreeDeviceId(vmId);
+            verify(testOrchestrator, times(1)).allocateNic(requested, network, false, freeDeviceId, vmProfile);
         }
     }
 }

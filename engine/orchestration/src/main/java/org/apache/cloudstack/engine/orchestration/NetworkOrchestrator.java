@@ -237,6 +237,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1139,6 +1140,29 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } while (retryIpAllocation);
 
         return vo;
+    }
+
+    /**
+     * Allocate a nic for {@code vm} on {@code network}, choosing its device id atomically.
+     *
+     * {@link NicDao#getFreeDeviceId(long)} picks the first unused device id by reading the vm's
+     * existing nics, but the new nic row is not persisted until the end of {@link #allocateNic}. Two
+     * nics being added to the same vm concurrently (e.g. several tiers of a VPC brought up in parallel,
+     * each attaching the shared redundant VR) would otherwise both read the same free id and land on
+     * the same {@code ethN} — corrupting the VR config and, for a redundant VPC, driving both routers
+     * PRIMARY (issue #11710). Holding the {@code vm_instance} row lock across the read-and-persist makes
+     * the device id assignment atomic per vm.
+     */
+    protected NicProfile allocateNicWithFreeDeviceId(final NicProfile requested, final Network network, final boolean isDefaultNic, final VirtualMachineProfile vm)
+            throws InsufficientCapacityException, ConcurrentOperationException {
+        return Transaction.execute(new TransactionCallbackWithException<NicProfile, InsufficientCapacityException>() {
+            @Override
+            public NicProfile doInTransaction(final TransactionStatus status) throws InsufficientCapacityException {
+                _vmDao.lockRow(vm.getId(), true);
+                final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
+                return allocateNic(requested, network, isDefaultNic, deviceId, vm).first();
+            }
+        });
     }
 
     @DB
@@ -4510,11 +4534,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
-            final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
+            final boolean isDefaultNic = getNicProfileDefaultNic(requested);
 
-            boolean isDefaultNic = getNicProfileDefaultNic(requested);
-
-            nic = allocateNic(requested, network, isDefaultNic, deviceId, vmProfile).first();
+            nic = allocateNicWithFreeDeviceId(requested, network, isDefaultNic, vmProfile);
 
             if (nic == null) {
                 throw new CloudRuntimeException("Failed to allocate nic for Instance " + vm + " in network " + network);
