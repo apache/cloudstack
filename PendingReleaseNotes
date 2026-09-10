@@ -82,9 +82,18 @@ example.ver.1 > example.ver.2:
     saturated host can still report a small percentage allocated.
 
     'weighted' blends CPU and memory allocated with CPU and memory in use, and balances the result.
-    Imbalance keeps its existing meaning - standard deviation over the mean - so drs.imbalance
-    still means what it did. Tuned with the drs.weighted.* settings, all cluster scoped. Where no
-    utilisation samples are available it falls back to allocation figures.
+    Imbalance keeps its existing shape - standard deviation over the mean - but it is computed over
+    a blend rather than over one metric, so drs.imbalance is not calibrated the same way and is
+    worth re-checking after switching. drs.metric, drs.metric.type and drs.metric.use.ratio choose
+    and shape the single metric the other algorithms balance; they do not apply to 'weighted' and
+    are ignored.
+
+    Utilisation is only used when every host in the cluster has been sampled. Comparing a host
+    measured on utilisation against one measured on allocation alone would report a difference that
+    is an artefact of the monitoring rather than of the load, so the cluster falls back to
+    allocation figures until every host can be measured.
+
+    Tuned with the drs.weighted.* settings, all cluster scoped.
 
   * DRS plan generation is considerably faster on large clusters. Working out where a VM could go
     is now done once for each group of VMs that would get the same answer rather than once per VM,
