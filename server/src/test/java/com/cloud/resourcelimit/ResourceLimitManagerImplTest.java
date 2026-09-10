@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcelimit.Reserver;
@@ -57,6 +58,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -73,8 +75,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
@@ -123,6 +127,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     UserVmDao userVmDao;
     @Mock
     SnapshotDataStoreDao snapshotDataStoreDao;
+    @Mock
+    EntityManager entityManager;
 
     private List<String> hostTags = List.of("htag1", "htag2", "htag3");
     private List<String> storageTags = List.of("stag1", "stag2");
@@ -1177,5 +1183,47 @@ public class ResourceLimitManagerImplTest extends TestCase {
                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCountWithTag(accountId, Resource.ResourceType.memory, tag, Long.valueOf(memory));
+    }
+
+    private Account mockResourceDomainAdmin(long domainId) {
+        Account resourceDomainAdmin = Mockito.mock(Account.class);
+        Mockito.when(resourceDomainAdmin.getDomainId()).thenReturn(domainId);
+        Mockito.when(resourceDomainAdmin.getType()).thenReturn(Account.Type.RESOURCE_DOMAIN_ADMIN);
+        return resourceDomainAdmin;
+    }
+
+    @Test
+    public void updateResourceLimitAllowsAResourceDomainAdminToUpdateASubdomain() {
+        long ownDomainId = 5L;
+        long subdomainId = 7L;
+        Domain subdomain = Mockito.mock(Domain.class);
+        Mockito.when(subdomain.getParent()).thenReturn(ownDomainId);
+        Mockito.when(entityManager.findById(Domain.class, subdomainId)).thenReturn(subdomain);
+        DomainVO ownDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(domainDao.findById(ownDomainId)).thenReturn(ownDomain);
+        Mockito.doReturn((long) Resource.RESOURCE_UNLIMITED).when(resourceLimitManager)
+                .findCorrectResourceLimitForDomain(ownDomain, Resource.ResourceType.user_vm, null);
+
+        CallContext.register(Mockito.mock(User.class), mockResourceDomainAdmin(ownDomainId));
+        try {
+            resourceLimitManager.updateResourceLimit(null, subdomainId, Resource.ResourceType.user_vm.getOrdinal(), 10L, null);
+        } finally {
+            CallContext.unregister();
+        }
+        Mockito.verify(resourceLimitDao).persist(Mockito.any(ResourceLimitVO.class));
+    }
+
+    @Test
+    public void updateResourceLimitDeniesAResourceDomainAdminOnTheirOwnDomain() {
+        long ownDomainId = 5L;
+        Mockito.when(entityManager.findById(Domain.class, ownDomainId)).thenReturn(Mockito.mock(Domain.class));
+
+        CallContext.register(Mockito.mock(User.class), mockResourceDomainAdmin(ownDomainId));
+        try {
+            Assert.assertThrows(PermissionDeniedException.class, () ->
+                    resourceLimitManager.updateResourceLimit(null, ownDomainId, Resource.ResourceType.user_vm.getOrdinal(), 10L, null));
+        } finally {
+            CallContext.unregister();
+        }
     }
 }
