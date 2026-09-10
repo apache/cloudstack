@@ -450,6 +450,7 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(result);
                 return future;
             }
+            deletePrimaryOnlySnapshotsBeforeRbdVolumeDelete(vol);
         }
 
         DeleteVolumeContext<VolumeApiResult> context = new DeleteVolumeContext<>(null, vo, future);
@@ -559,6 +560,32 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         snapshotApiService.deleteSnapshot(snapshotDataStoreVO.getSnapshotId(), null);
+    }
+
+    private void deletePrimaryOnlySnapshotsBeforeRbdVolumeDelete(VolumeVO vol) {
+        if (!HypervisorType.KVM.equals(volDao.getHypervisorType(vol.getId()))) {
+            return;
+        }
+        Long poolId = vol.getPoolId();
+        if (poolId == null) {
+            return;
+        }
+        StoragePoolVO pool = storagePoolDao.findById(poolId);
+        if (pool == null || !StoragePoolType.RBD.equals(pool.getPoolType())) {
+            return;
+        }
+
+        List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vol.getId(), DataStoreRole.Primary);
+        for (SnapshotDataStoreVO snapStoreVo : snapStoreVOs) {
+            try {
+                logger.debug("Deleting snapshot [{}] before deleting volume {} from RBD storage pool [{}], as it only exists on primary storage and " +
+                        "will otherwise be destroyed along with the volume.", snapStoreVo, vol, pool);
+                deleteKvmSnapshotOnPrimary(snapStoreVo);
+            } catch (Exception e) {
+                logger.warn("Failed to delete snapshot [{}] before deleting volume {} from RBD storage pool [{}]. Its database record may remain " +
+                        "after the volume is deleted.", snapStoreVo, vol, pool, e);
+            }
+        }
     }
 
     @Override
