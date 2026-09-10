@@ -337,6 +337,7 @@ import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
@@ -4034,6 +4035,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 response.setIkeVersion(customerGateway.getIkeVersion());
                 response.setSplitConnections(customerGateway.getSplitConnections());
             }
+        }
+
+        Site2SiteVpnTunnelInterface tunnelInterface =
+                site2SiteVpnManager.getSite2SiteVpnTunnelInterface(result);
+        if (tunnelInterface != null) {
+            response.setLocalVtiIp(tunnelInterface.getLocalIp());
+            response.setPeerVtiIp(tunnelInterface.getPeerIp());
+            response.setVtiPrefixLength(tunnelInterface.getPrefixLength());
         }
 
         populateAccount(response, result.getAccountId());

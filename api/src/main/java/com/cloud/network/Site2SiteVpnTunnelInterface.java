@@ -14,23 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.network;
 
-import java.util.List;
+public class Site2SiteVpnTunnelInterface {
+    private final String localIp;
+    private final String peerIp;
+    private final int prefixLength;
 
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.utils.db.GenericDao;
+    public Site2SiteVpnTunnelInterface(String localIp, String peerIp, int prefixLength) {
+        this.localIp = localIp;
+        this.peerIp = peerIp;
+        this.prefixLength = prefixLength;
+    }
 
-public interface Site2SiteVpnConnectionDao extends GenericDao<Site2SiteVpnConnectionVO, Long> {
-    List<Site2SiteVpnConnectionVO> listByCustomerGatewayId(long id);
+    public String getLocalIp() {
+        return localIp;
+    }
 
-    List<Site2SiteVpnConnectionVO> listByVpnGatewayId(long id);
+    public String getPeerIp() {
+        return peerIp;
+    }
 
-    List<Site2SiteVpnConnectionVO> listByVpcId(long vpcId);
-
-    List<Site2SiteVpnConnectionVO> listByStates(Site2SiteVpnConnection.State... states);
-
-    Site2SiteVpnConnectionVO findByVpnGatewayIdAndCustomerGatewayId(long vpnId, long customerId);
-
-    Site2SiteVpnConnectionVO findByCustomerGatewayId(long customerId);
+    public int getPrefixLength() {
+        return prefixLength;
+    }
 }
