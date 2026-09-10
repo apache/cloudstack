@@ -312,8 +312,19 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         logger.debug(logDeploymentWithoutException(vmProfile.getVirtualMachine(), plan, avoids, planner));
 
         ServiceOffering offering = vmProfile.getServiceOffering();
-        int cpuRequested = offering.getCpu() * offering.getSpeed();
-        long ramRequested = offering.getRamSize() * 1024L * 1024L;
+        // an offering may override its cluster's overcommit ratio, in which case the VM occupies a
+        // different share of the host than its size suggests; ask in the units the charge will use
+        Long lastVmHostId = vmProfile.getVirtualMachine().getLastHostId();
+        Long requestClusterId = lastVmHostId == null ? null
+                : Optional.ofNullable(_hostDao.findById(lastVmHostId)).map(HostVO::getClusterId).orElse(null);
+        final int cpuRequested = requestClusterId == null
+                ? offering.getCpu() * offering.getSpeed()
+                : (int) _capacityMgr.scaleRequestForOffering(offering.getId(), requestClusterId,
+                        (long) offering.getCpu() * offering.getSpeed(), true);
+        final long ramRequested = requestClusterId == null
+                ? offering.getRamSize() * 1024L * 1024L
+                : _capacityMgr.scaleRequestForOffering(offering.getId(), requestClusterId,
+                        offering.getRamSize() * 1024L * 1024L, false);
         VirtualMachine vm = vmProfile.getVirtualMachine();
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         boolean volumesRequireEncryption = anyVolumeRequiresEncryption(_volsDao.findByInstance(vm.getId()));
