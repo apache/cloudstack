@@ -1210,6 +1210,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (Boolean.TRUE.equals(disableRpFilter)) {
             buf.append(" disable_rp_filter=true");
         }
+        Long sessionReconnectionWindow = ConsoleProxySessionReconnectionWindow.valueIn(datacenterId);
+        if (sessionReconnectionWindow != null && sessionReconnectionWindow > 0) {
+            buf.append(" session_reconnection_window=").append(sessionReconnectionWindow);
+        }
 
         String msPublicKey = configurationDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
@@ -1486,12 +1490,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(State.Starting, State.Stopping);
-        if (l.size() > 0) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Zone {} has {} console proxy VM(s) in transition state", zone, l.size());
-            }
-
+        List<ConsoleProxyVO> consoleProxiesInTransitionStates = consoleProxyDao.getProxyListInStates(dataCenterId, State.Starting, State.Stopping);
+        if (!consoleProxiesInTransitionStates.isEmpty()) {
+            logger.debug("Zone {} has {} console proxy VM(s) in transition state.", zone, consoleProxiesInTransitionStates.size());
             return false;
         }
 
@@ -1591,7 +1592,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return new ConfigKey<?>[] {ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
                                    ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
                                    ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
-                                   ConsoleProxyVmUserData};
+                                   ConsoleProxyVmUserData, ConsoleProxySessionReconnectionWindow};
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

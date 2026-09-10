@@ -3451,23 +3451,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd) {
-        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal();
+        Account caller = CallContext.current().getCallingAccount();
+        Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal(caller);
+        List<HostTagVO> tags = result.first();
         ListResponse<HostTagResponse> response = new ListResponse<>();
-        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(result.first().toArray(new HostTagVO[0]));
+        List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(tags.toArray(new HostTagVO[0]));
+
+        Map<Long, String> hostUuidsById = hostDao.listByIds(tags.stream().map(HostTagVO::getHostId).distinct().collect(Collectors.toList()))
+                .stream().collect(Collectors.toMap(HostVO::getId, HostVO::getUuid));
+        for (int i = 0; i < tagResponses.size(); i++) {
+            tagResponses.get(i).setHostId(hostUuidsById.get(tags.get(i).getHostId()));
+        }
 
         response.setResponses(tagResponses, result.second());
 
         return response;
     }
 
-    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal() {
+    private Pair<List<HostTagVO>, Integer> searchForHostTagsInternal(Account caller) {
         Filter searchFilter = new Filter(HostTagVO.class, "id", Boolean.TRUE, null, null);
 
         SearchBuilder<HostTagVO> sb = _hostTagDao.createSearchBuilder();
 
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
 
+        List<Long> allowedHostIds = null;
+        if (!accountMgr.isRootAdmin(caller.getId())) {
+            allowedHostIds = getDedicatedHostIdsForDomain(caller);
+            if (allowedHostIds.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+            sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.IN);
+        }
+
         SearchCriteria<HostTagVO> sc = sb.create();
+        if (allowedHostIds != null) {
+            sc.setParameters("hostId", allowedHostIds.toArray());
+        }
 
         // search host tag details by ids
         Pair<List<HostTagVO>, Integer> uniqueTagPair = _hostTagDao.searchAndCount(sc, searchFilter);
@@ -3488,6 +3508,43 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<HostTagVO> vrs = _hostTagDao.searchByIds(vrIds);
 
         return new Pair<>(vrs, count);
+    }
+
+    /**
+     * Resolves the set of host IDs dedicated to the given non-root-admin caller's domain or any of its
+     * sub-domains - including resources dedicated to a specific account within that domain lineage,
+     * not just domain-wide dedications - either directly or via a dedicated cluster/pod/zone.
+     */
+    private List<Long> getDedicatedHostIdsForDomain(Account caller) {
+        Set<Long> hostIds = new HashSet<>();
+
+        List<DedicatedResourceVO> dedicatedResources = new ArrayList<>();
+        DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+        if (callerDomain != null) {
+            for (Long domainId : _domainMgr.getDomainChildrenIds(callerDomain.getPath())) {
+                dedicatedResources.addAll(_dedicatedDao.listAllByDomainId(domainId));
+            }
+        }
+
+        for (DedicatedResourceVO dedicated : dedicatedResources) {
+            if (dedicated.getHostId() != null) {
+                hostIds.add(dedicated.getHostId());
+            } else if (dedicated.getClusterId() != null) {
+                for (HostVO host : hostDao.findByClusterId(dedicated.getClusterId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getPodId() != null) {
+                for (HostVO host : hostDao.findByPodId(dedicated.getPodId())) {
+                    hostIds.add(host.getId());
+                }
+            } else if (dedicated.getDataCenterId() != null) {
+                for (HostVO host : hostDao.findByDataCenterId(dedicated.getDataCenterId())) {
+                    hostIds.add(host.getId());
+                }
+            }
+        }
+
+        return new ArrayList<>(hostIds);
     }
 
     @Override

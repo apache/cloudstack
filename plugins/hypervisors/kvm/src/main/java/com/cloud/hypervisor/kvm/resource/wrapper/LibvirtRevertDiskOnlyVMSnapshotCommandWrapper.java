@@ -31,14 +31,19 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import com.cloud.storage.Volume;
 
 @ResourceWrapper(handles = RevertDiskOnlyVmSnapshotCommand.class)
 public class LibvirtRevertDiskOnlyVMSnapshotCommandWrapper extends CommandWrapper<RevertDiskOnlyVmSnapshotCommand, Answer, LibvirtComputingResource> {
@@ -55,6 +60,8 @@ public class LibvirtRevertDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
 
         HashMap<SnapshotObjectTO, String> snapshotToNewDeltaPath = new HashMap<>();
         try {
+            SnapshotObjectTO rootVolumeSnapshot = getRootVolumeSnapshot(snapshotObjectTos);
+            validateNvramRevertState(cmd, resource, rootVolumeSnapshot, storagePoolMgr);
             for (SnapshotObjectTO snapshotObjectTo : snapshotObjectTos) {
                 KVMStoragePool kvmStoragePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(snapshotObjectTo, storagePoolMgr);
 
@@ -71,7 +78,8 @@ public class LibvirtRevertDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
                 qemuImg.create(newDelta, currentDelta);
                 snapshotToNewDeltaPath.put(snapshotObjectTo, deltaPath);
             }
-        } catch (LibvirtException | QemuImgException e) {
+            restoreNvramIfNeeded(cmd, resource, rootVolumeSnapshot, storagePoolMgr);
+        } catch (LibvirtException | QemuImgException | IOException e) {
             logger.error("Exception while reverting disk-only VM snapshot for VM [{}]. Deleting leftover deltas.", vmName, e);
             for (SnapshotObjectTO snapshotObjectTo : snapshotObjectTos) {
                 String newPath = snapshotToNewDeltaPath.get(snapshotObjectTo);
@@ -107,5 +115,89 @@ public class LibvirtRevertDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
         }
 
         return new RevertDiskOnlyVmSnapshotAnswer(cmd, volumeObjectTos);
+    }
+
+    protected SnapshotObjectTO getRootVolumeSnapshot(List<SnapshotObjectTO> snapshotObjectTos) {
+        return snapshotObjectTos.stream()
+                .filter(snapshotObjectTO -> Volume.Type.ROOT.equals(snapshotObjectTO.getVolume().getVolumeType()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    protected void validateNvramRevertState(RevertDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource, SnapshotObjectTO rootVolumeSnapshot,
+            KVMStoragePoolManager storagePoolMgr) throws IOException, LibvirtException {
+        String activeNvramPath = resource.getUefiNvramPath(cmd.getVmUuid());
+        if (StringUtils.isBlank(cmd.getNvramSnapshotPath())) {
+            if (cmd.isUefiEnabled()) {
+                throw new IOException(String.format("Cannot safely revert disk-only VM snapshot for UEFI VM [%s] because the snapshot does not contain NVRAM state.",
+                        cmd.getVmName()));
+            }
+            return;
+        }
+
+        if (StringUtils.isBlank(activeNvramPath)) {
+            throw new IOException(String.format("Unable to determine the active UEFI NVRAM path for VM [%s].", cmd.getVmName()));
+        }
+
+        Path snapshotNvramPath = getNvramSnapshotAbsolutePath(cmd.getNvramSnapshotPath(), rootVolumeSnapshot, resource, storagePoolMgr);
+        if (!Files.exists(snapshotNvramPath)) {
+            throw new IOException(String.format("Unable to find the UEFI NVRAM snapshot [%s] for VM [%s].", cmd.getNvramSnapshotPath(), cmd.getVmName()));
+        }
+    }
+
+    protected void restoreNvramIfNeeded(RevertDiskOnlyVmSnapshotCommand cmd, LibvirtComputingResource resource, SnapshotObjectTO rootVolumeSnapshot,
+            KVMStoragePoolManager storagePoolMgr) throws IOException, LibvirtException {
+        if (StringUtils.isBlank(cmd.getNvramSnapshotPath())) {
+            return;
+        }
+
+        String activeNvramPath = resource.getUefiNvramPath(cmd.getVmUuid());
+        if (StringUtils.isBlank(activeNvramPath)) {
+            throw new IOException(String.format("Unable to determine the active UEFI NVRAM path for VM [%s].", cmd.getVmName()));
+        }
+
+        Path snapshotNvramPath = getNvramSnapshotAbsolutePath(cmd.getNvramSnapshotPath(), rootVolumeSnapshot, resource, storagePoolMgr);
+        if (!Files.exists(snapshotNvramPath)) {
+            throw new IOException(String.format("Unable to find the UEFI NVRAM snapshot [%s] for VM [%s].", cmd.getNvramSnapshotPath(), cmd.getVmName()));
+        }
+
+        replaceNvramAtomically(snapshotNvramPath, Path.of(activeNvramPath));
+    }
+
+    protected void replaceNvramAtomically(Path snapshotNvramPath, Path activeNvramPath) throws IOException {
+        Path targetDirectory = activeNvramPath.getParent();
+        if (targetDirectory != null) {
+            Files.createDirectories(targetDirectory);
+        }
+
+        Path temporaryNvramPath = Files.createTempFile(targetDirectory, activeNvramPath.getFileName().toString(), ".tmp");
+        try {
+            copyNvramSnapshotToTemporaryPath(snapshotNvramPath, temporaryNvramPath);
+            moveTemporaryNvramIntoPlace(temporaryNvramPath, activeNvramPath);
+        } finally {
+            Files.deleteIfExists(temporaryNvramPath);
+        }
+    }
+
+    protected void copyNvramSnapshotToTemporaryPath(Path snapshotNvramPath, Path temporaryNvramPath) throws IOException {
+        Files.copy(snapshotNvramPath, temporaryNvramPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    protected void moveTemporaryNvramIntoPlace(Path temporaryNvramPath, Path activeNvramPath) throws IOException {
+        try {
+            Files.move(temporaryNvramPath, activeNvramPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(temporaryNvramPath, activeNvramPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    protected Path getNvramSnapshotAbsolutePath(String nvramSnapshotPath, SnapshotObjectTO rootVolumeSnapshot, LibvirtComputingResource resource,
+            KVMStoragePoolManager storagePoolMgr) throws IOException, LibvirtException {
+        if (rootVolumeSnapshot == null) {
+            throw new IOException("Unable to locate the root volume snapshot while handling the UEFI NVRAM state.");
+        }
+
+        KVMStoragePool storagePool = resource.getLibvirtUtilitiesHelper().getPrimaryPoolFromDataTo(rootVolumeSnapshot, storagePoolMgr);
+        return Path.of(storagePool.getLocalPathFor(nvramSnapshotPath));
     }
 }
