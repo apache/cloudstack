@@ -39,6 +39,16 @@ public class ConfigurationManagerOverCommitDetailTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
+    public void testUndercommitIsRejected() {
+        validate("0.1");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testJustBelowOneIsRejected() {
+        validate("0.99");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
     public void testZeroIsRejected() {
         validate("0");
     }
