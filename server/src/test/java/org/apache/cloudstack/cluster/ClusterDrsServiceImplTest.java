@@ -1001,15 +1001,20 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
-    public void testDestinationAllowedWhenVmHasNoAffinityGroups() {
+    public void testAVmWithNoAffinityGroupsIsStillRechecked() {
+        // applyAffinityConstraints also applies DPDK and dedicated-resource exclusions, which do
+        // not depend on affinity group membership, so every VM has to go through it
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(vm.getHostId()).thenReturn(10L);
-        Mockito.when(affinityGroupVMMapDao.listByInstanceId(1L)).thenReturn(Collections.emptyList());
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(5L);
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(1L, 5L))
+                .thenReturn(Mockito.mock(ServiceOfferingVO.class));
+        affinityExcludes(21L);
 
         assertFalse(clusterDrsService.destinationViolatesAffinity(vm, host(20L),
                 Collections.emptyList(), Collections.emptyList()));
-        Mockito.verify(managementServer, Mockito.never())
+        Mockito.verify(managementServer)
                 .applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
