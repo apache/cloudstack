@@ -1863,8 +1863,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final float clusterCpuRatio = Float.parseFloat(clusterDetailCpu.getValue());
         final float clusterRamRatio = Float.parseFloat(clusterDetailRam.getValue());
 
-        final Float offeringCpuRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-        final Float offeringRamRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        final Float offeringCpuRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterCpuRatio);
+        final Float offeringRamRatio = offeringOverCommitRatio(vmProfile, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterRamRatio);
 
         final float cpuRatio = offeringCpuRatio != null ? offeringCpuRatio : clusterCpuRatio;
         final float ramRatio = offeringRamRatio != null ? offeringRamRatio : clusterRamRatio;
@@ -1884,24 +1884,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * An offering setting a ratio of 1 on an overcommitted cluster is how infrastructure VMs are
      * kept off the overcommit: they are charged their full request and hold all of it.
      */
-    protected Float offeringOverCommitRatio(VirtualMachineProfile vmProfile, String key) {
+    protected Float offeringOverCommitRatio(VirtualMachineProfile vmProfile, String key, float clusterRatio) {
         String offeringRatio = _serviceOfferingDetailsDao.getDetail(vmProfile.getServiceOfferingId(), key);
         if (offeringRatio == null) {
             return null;
         }
+        float ratio;
         try {
-            float ratio = Float.parseFloat(offeringRatio);
-            if (ratio <= 0) {
-                logger.warn("Ignoring {} of {} on service offering {}: it must be greater than zero.",
-                        key, offeringRatio, vmProfile.getServiceOfferingId());
-                return null;
-            }
-            return ratio;
+            ratio = Float.parseFloat(offeringRatio);
         } catch (NumberFormatException e) {
-            logger.warn("Ignoring {} of {} on service offering {}: it is not a number.",
+            logger.warn("Ignoring {} of [{}] on service offering {}: it is not a number.",
                     key, offeringRatio, vmProfile.getServiceOfferingId());
             return null;
         }
+        if (ratio < 1) {
+            // rejected when the offering is created; only reachable by writing the detail directly
+            logger.warn("Ignoring {} of {} on service offering {}: it must be at least 1.",
+                    key, offeringRatio, vmProfile.getServiceOfferingId());
+            return null;
+        }
+        if (ratio > clusterRatio) {
+            logger.info("Service offering {} declares {} of {}, more than its cluster's {}, so its VMs are "
+                            + "oversubscribed further than the cluster default.",
+                    vmProfile.getServiceOfferingId(), key, ratio, clusterRatio);
+        }
+        return ratio;
     }
 
     /**
