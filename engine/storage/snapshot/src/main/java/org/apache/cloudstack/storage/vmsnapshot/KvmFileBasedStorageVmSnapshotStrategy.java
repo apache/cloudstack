@@ -108,7 +108,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     protected BackupOfferingDao backupOfferingDao;
 
     @Inject
-    private InternalBackupService internalBackupService;
+    protected InternalBackupService internalBackupService;
 
     @Inject
     private InternalBackupStoragePoolDao internalBackupStoragePoolDao;
