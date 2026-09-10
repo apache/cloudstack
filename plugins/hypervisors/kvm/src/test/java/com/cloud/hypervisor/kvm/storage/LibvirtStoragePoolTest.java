@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
+import java.nio.file.Files;
+
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -97,5 +100,58 @@ public class LibvirtStoragePoolTest extends TestCase {
 
         LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage);
         assertTrue(clvmPool.isExternalSnapshot());
+    }
+
+    @Test
+    public void testResolvePhysicalDiskFileUsesNestedRelativePathInsidePool() throws Exception {
+        File poolPath = Files.createTempDirectory("libvirt-storage-pool").toFile();
+        try {
+            LibvirtStoragePool pool = createNetworkFilesystemPool();
+            String volumeUid = "cloudstack-cbt/migration/virt-v2v-output/disk.qcow2";
+            File expectedVolume = new File(poolPath, volumeUid);
+            assertTrue(expectedVolume.getParentFile().mkdirs());
+            assertTrue(expectedVolume.createNewFile());
+
+            File resolvedVolume = pool.resolvePhysicalDiskFile(poolPath.getAbsolutePath(), volumeUid, "disk.qcow2");
+
+            assertEquals(expectedVolume.getCanonicalPath(), resolvedVolume.getCanonicalPath());
+        } finally {
+            deleteRecursively(poolPath);
+        }
+    }
+
+    @Test
+    public void testResolvePhysicalDiskFileRejectsRelativePathOutsidePool() throws Exception {
+        File poolPath = Files.createTempDirectory("libvirt-storage-pool").toFile();
+        try {
+            LibvirtStoragePool pool = createNetworkFilesystemPool();
+
+            File resolvedVolume = pool.resolvePhysicalDiskFile(poolPath.getAbsolutePath(), "../disk.qcow2", "disk.qcow2");
+
+            assertEquals(new File(poolPath, "disk.qcow2").getCanonicalPath(), resolvedVolume.getCanonicalPath());
+        } finally {
+            deleteRecursively(poolPath);
+        }
+    }
+
+    private LibvirtStoragePool createNetworkFilesystemPool() {
+        StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+        StoragePool storage = Mockito.mock(StoragePool.class);
+        return new LibvirtStoragePool("pool-uuid", "pool-name", StoragePoolType.NetworkFilesystem, adapter, storage);
+    }
+
+    private void deleteRecursively(File file) {
+        if (file == null || !file.exists()) {
+            return;
+        }
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursively(child);
+                }
+            }
+        }
+        file.delete();
     }
 }

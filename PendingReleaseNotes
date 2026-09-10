@@ -39,3 +39,23 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+4.23.0.0:
+  * VMware-to-KVM import using VDDK can import powered-off VMware VMs directly
+    into Ceph RBD primary storage when forceconverttopool is enabled and the
+    selected KVM conversion host supports qemu RBD access and in-place virt-v2v
+    finalization. Hosts without in-place finalization support can still use the
+    staged VDDK flow, converting to temporary qcow2 storage before copying the
+    finalized disks into RBD.
+
+  * Linstor primary storage can now be the destination for VMware-to-KVM
+    imports in all three modes. Staged imports (virt-v2v to a temporary NFS
+    location) copy the converted disks into pre-created DRBD block devices
+    through the Linstor storage adaptor; the import host must be a LINSTOR
+    satellite connected to the destination pool. Direct VDDK imports with
+    forceconverttopool write each powered-off VMware disk over nbdkit/VDDK
+    straight into the DRBD device and finalize it with virt-v2v in place.
+    VMware CBT warm migrations replicate the initial full copy and all
+    incremental changed-block cycles directly into Linstor volumes and
+    finalize in place at cutover; the conversion host requires VDDK,
+    in-place virt-v2v support and access to the Linstor pool.
