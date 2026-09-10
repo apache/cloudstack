@@ -400,8 +400,19 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {HostScoringWeights.CpuAllocatedWeight, HostScoringWeights.CpuUsedWeight, HostScoringWeights.MemoryAllocatedWeight, HostScoringWeights.MemoryUsedWeight,
-                VmCountWeight, RecentStartWeight, DominantResourceWeight, RecentStartWindow, ExpectedVmsPerHost,
-                CpuUtilisationThreshold, MemoryUtilisationThreshold, SelectionSpread};
+        return new ConfigKey<?>[] {
+                HostScoringWeights.CpuAllocatedWeight,
+                HostScoringWeights.CpuUsedWeight,
+                HostScoringWeights.MemoryAllocatedWeight,
+                HostScoringWeights.MemoryUsedWeight,
+                VmCountWeight,
+                RecentStartWeight,
+                DominantResourceWeight,
+                RecentStartWindow,
+                ExpectedVmsPerHost,
+                CpuUtilisationThreshold,
+                MemoryUtilisationThreshold,
+                SelectionSpread
+        };
     }
 }
