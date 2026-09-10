@@ -33,7 +33,6 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostLoad;
 import com.cloud.host.HostScoringWeights;
-import com.cloud.host.HostLoadService;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Ternary;
@@ -53,18 +52,91 @@ import com.cloud.vm.VmDetailConstants;
  * This blends four figures per host - CPU and memory allocated, CPU and memory in use - and
  * balances the result. The weights are the same host.weighted.* settings initial placement uses, on
  * purpose: if the two weighted them differently they would disagree about which host is the better
- * one, and rebalancing could move VMs off hosts that placement had just chosen. Imbalance keeps the same meaning as the other algorithms: the standard
- * deviation of the per-host figure over its mean, so drs.imbalance still means what it did.
+ * one, and rebalancing could move VMs off hosts that placement had just chosen. Imbalance keeps the same shape as the other algorithms - the standard
+ * deviation of the per-host figure over its mean - but it is computed over a blend rather than over
+ * one metric, so drs.imbalance is not calibrated the same way and is worth re-checking after
+ * switching.
+ *
+ * drs.metric, drs.metric.type and drs.metric.use.ratio choose and shape the single metric the other
+ * algorithms balance. They do not apply here and are ignored.
  */
 public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Configurable {
 
     private static final Logger LOGGER = LogManager.getLogger(Weighted.class);
 
-    @Inject
-    private HostLoadService hostLoadService;
+    public static final ConfigKey<Double> StorageMotionCost = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Double.class, "drs.weighted.storage.motion.cost", "0.02",
+            "How much a migration must improve the cluster's imbalance to be worth also moving the VM's "
+                    + "storage. Migrations that do not need storage moved only have to improve it at all.",
+            true, ConfigKey.Scope.Cluster);
 
     @Inject
     private ClusterDetailsDao clusterDetailsDao;
+
+    /**
+     * Everything that is constant for one plan. getMetrics is called for every candidate VM and
+     * host - up to hundreds of thousands of times for a large cluster - so nothing in that path may
+     * hit the database or re-read settings.
+     */
+    private static final class PlanContext {
+        private final float cpuOvercommit;
+        private final float memoryOvercommit;
+        private final double cpuAllocatedWeight;
+        private final double memoryAllocatedWeight;
+        private final double cpuUsedWeight;
+        private final double memoryUsedWeight;
+        private final Map<Long, HostLoad> hostLoadMap;
+        private final boolean everyHostMeasured;
+
+        private PlanContext(float cpuOvercommit, float memoryOvercommit, double cpuAllocatedWeight,
+                double memoryAllocatedWeight, double cpuUsedWeight, double memoryUsedWeight,
+                Map<Long, HostLoad> hostLoadMap, boolean everyHostMeasured) {
+            this.everyHostMeasured = everyHostMeasured;
+            this.cpuOvercommit = cpuOvercommit;
+            this.memoryOvercommit = memoryOvercommit;
+            this.cpuAllocatedWeight = cpuAllocatedWeight;
+            this.memoryAllocatedWeight = memoryAllocatedWeight;
+            this.cpuUsedWeight = cpuUsedWeight;
+            this.memoryUsedWeight = memoryUsedWeight;
+            this.hostLoadMap = hostLoadMap;
+        }
+
+        private HostLoad loadOf(long hostId) {
+            HostLoad load = hostLoadMap.get(hostId);
+            return load == null ? HostLoad.UNKNOWN : load;
+        }
+    }
+
+    private final ThreadLocal<PlanContext> context = new ThreadLocal<>();
+
+    @Override
+    public void prepare(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Map<Long, HostLoad> hostLoadMap) {
+        long clusterId = cluster.getId();
+        context.set(new PlanContext(
+                overcommitRatio(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO),
+                overcommitRatio(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO),
+                weight(HostScoringWeights.CpuAllocatedWeight, clusterId),
+                weight(HostScoringWeights.MemoryAllocatedWeight, clusterId),
+                weight(HostScoringWeights.CpuUsedWeight, clusterId),
+                weight(HostScoringWeights.MemoryUsedWeight, clusterId),
+                hostLoadMap == null ? new HashMap<>() : hostLoadMap,
+                hostLoadMap != null && !hostLoadMap.isEmpty()
+                        && hostLoadMap.values().stream().allMatch(HostLoad::isUsable)));
+    }
+
+    /**
+     * Falls back to reading everything when prepare has not been called, so the algorithm still
+     * works for a caller that does not know about it.
+     */
+    private PlanContext contextFor(Cluster cluster) {
+        PlanContext prepared = context.get();
+        if (prepared != null) {
+            return prepared;
+        }
+        prepare(cluster, null, null, null);
+        return context.get();
+    }
 
     @Override
     public String getName() {
@@ -81,12 +153,13 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
             cpuMap.put((long) -(i + 1), cpuList.get(i));
             memoryMap.put((long) -(i + 1), memoryList.get(i));
         }
-        return needsDrs(cluster, cpuMap, memoryMap);
+        return needsDrs(cluster, cpuMap, memoryMap, new HashMap<>());
     }
 
     @Override
     public boolean needsDrs(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Map<Long, HostLoad> hostLoadMap)
+            throws ConfigurationException {
         double threshold = 1.0 - ClusterDrsService.ClusterDrsImbalanceThreshold.valueIn(cluster.getId());
         double imbalance = imbalanceOf(blendByHost(cluster, hostCpuMap, hostMemoryMap).values());
         boolean needed = imbalance > threshold;
@@ -111,11 +184,12 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
 
         double after = imbalanceOf(blendByHost(cluster, cpuAfter, memoryAfter).values());
 
+        // the caller migrates when benefit > cost, so expressing both in units of imbalance makes
+        // that comparison mean "is this worth what it costs". A migration that has to move storage
+        // has to earn more than one that does not.
         double improvement = before - after;
-        // moving a VM costs something and buys nothing unless the cluster ends up more even, so a
-        // migration is only worth making when it measurably helps
-        double cost = Boolean.TRUE.equals(requiresStorageMotion) ? 1.0 : 0.0;
-        double benefit = improvement > 0 ? 1.0 + improvement : 0.0;
+        double cost = Boolean.TRUE.equals(requiresStorageMotion) ? weight(StorageMotionCost, cluster.getId()) : 0.0;
+        double benefit = improvement;
 
         LOGGER.trace("Cluster {} imbalance {} -> {} moving {} to {}", cluster, before, after, vm, destHost);
         return new Ternary<>(improvement, cost, benefit);
@@ -126,13 +200,7 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
      */
     protected Map<Long, Double> blendByHost(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) {
-        float cpuOvercommit = overcommitRatio(cluster.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-        float memoryOvercommit = overcommitRatio(cluster.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
-
-        double cpuAllocatedWeight = weight(HostScoringWeights.CpuAllocatedWeight, cluster.getId());
-        double memoryAllocatedWeight = weight(HostScoringWeights.MemoryAllocatedWeight, cluster.getId());
-        double cpuUsedWeight = weight(HostScoringWeights.CpuUsedWeight, cluster.getId());
-        double memoryUsedWeight = weight(HostScoringWeights.MemoryUsedWeight, cluster.getId());
+        PlanContext ctx = contextFor(cluster);
 
         Map<Long, Double> blended = new HashMap<>();
         for (Map.Entry<Long, Ternary<Long, Long, Long>> entry : hostCpuMap.entrySet()) {
@@ -141,20 +209,24 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
             if (memory == null) {
                 continue;
             }
-            double cpuAllocated = fractionOf(entry.getValue(), cpuOvercommit);
-            double memoryAllocated = fractionOf(memory, memoryOvercommit);
+            double cpuAllocated = fractionOf(entry.getValue(), ctx.cpuOvercommit);
+            double memoryAllocated = fractionOf(memory, ctx.memoryOvercommit);
 
-            HostLoad load = hostLoadService == null ? HostLoad.UNKNOWN : hostLoadService.getLoad(hostId);
-            double usedCpuWeight = load.isUsable() ? cpuUsedWeight : 0;
-            double usedMemoryWeight = load.isUsable() ? memoryUsedWeight : 0;
+            // utilisation is only used when every host has it. Imbalance compares hosts against
+            // each other, so mixing hosts measured on utilisation with hosts measured on allocation
+            // alone would report a difference that is an artefact of the monitoring, not the load -
+            // and would evacuate whichever host stopped reporting.
+            HostLoad load = ctx.loadOf(hostId);
+            double usedCpuWeight = ctx.everyHostMeasured ? ctx.cpuUsedWeight : 0;
+            double usedMemoryWeight = ctx.everyHostMeasured ? ctx.memoryUsedWeight : 0;
 
-            double sum = cpuAllocatedWeight + memoryAllocatedWeight + usedCpuWeight + usedMemoryWeight;
+            double sum = ctx.cpuAllocatedWeight + ctx.memoryAllocatedWeight + usedCpuWeight + usedMemoryWeight;
             if (sum <= 0) {
                 blended.put(hostId, 0.0);
                 continue;
             }
-            blended.put(hostId, (cpuAllocatedWeight * cpuAllocated
-                    + memoryAllocatedWeight * memoryAllocated
+            blended.put(hostId, (ctx.cpuAllocatedWeight * cpuAllocated
+                    + ctx.memoryAllocatedWeight * memoryAllocated
                     + usedCpuWeight * load.getCpuUtilisation()
                     + usedMemoryWeight * load.getMemoryUtilisation()) / sum);
         }
@@ -181,11 +253,14 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
      * Used over what the host can hand out, which is its real total scaled by the overcommit ratio.
      */
     private double fractionOf(Ternary<Long, Long, Long> capacity, float overcommit) {
-        double allocatable = (capacity.third() - capacity.second()) * (double) overcommit;
+        // overcommit scales the host's total; reserved is then taken off that, which is how
+        // CapacityManager computes free capacity everywhere else. Multiplying reserved by the ratio
+        // instead would make a host look fuller the more capacity it merely has reserved.
+        double allocatable = capacity.third() * (double) overcommit - capacity.second();
         if (allocatable <= 0) {
             return 0;
         }
-        return clamp(capacity.first() / allocatable);
+        return capacity.first() / allocatable;
     }
 
     protected float overcommitRatio(long clusterId, String key) {
@@ -239,7 +314,7 @@ public class Weighted extends AdapterBase implements ClusterDrsAlgorithm, Config
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        // the four host.weighted.* weights are shared with initial placement, which registers them
+        // the four host.weighted.* weights are shared with initial placement and registered there
         return new ConfigKey<?>[] {StorageMotionCost};
     }
 }

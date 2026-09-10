@@ -30,6 +30,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
@@ -50,6 +53,12 @@ public class ClusterDrsEquivalenceTest {
     @Mock
     private AffinityGroupVMMapDao affinityGroupVMMapDao;
 
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
+
     @InjectMocks
     private ClusterDrsServiceImpl service = new ClusterDrsServiceImpl();
 
@@ -68,7 +77,23 @@ public class ClusterDrsEquivalenceTest {
         }).collect(java.util.stream.Collectors.toList());
         Mockito.lenient().when(volumeDao.findCreatedByInstance(id)).thenReturn(volumes);
         Mockito.lenient().when(affinityGroupVMMapDao.listByInstanceId(id)).thenReturn(Collections.emptyList());
+
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.lenient().when(offering.isDynamic()).thenReturn(false);
+        Mockito.lenient().when(serviceOfferingDao.findByIdIncludingRemoved(id, offeringId)).thenReturn(offering);
+        Mockito.lenient().when(vmInstanceDetailsDao.listDetailsKeyPairs(id)).thenReturn(Collections.emptyMap());
         return vm;
+    }
+
+    private void offeringIsDynamic(long vmId, long offeringId) {
+        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(offering.isDynamic()).thenReturn(true);
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(vmId, offeringId)).thenReturn(offering);
+    }
+
+    private void vmHasDetail(long vmId, String key, String value) {
+        Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(vmId))
+                .thenReturn(java.util.Map.of(key, value));
     }
 
     @Test
@@ -116,6 +141,47 @@ public class ClusterDrsEquivalenceTest {
 
         assertNotEquals("a VM in an affinity group cannot reuse an ungrouped VM's candidate hosts",
                 service.migrationEquivalenceKey(grouped),
+                service.migrationEquivalenceKey(vm(2L, 10L, 20L, 30L, 40L)));
+    }
+
+    @Test
+    public void testVolumesOnTheSamePoolButDifferentDiskOfferingsAreNotGrouped() {
+        VMInstanceVO a = vm(1L, 10L, 20L, 30L, 40L);
+        VMInstanceVO b = vm(2L, 10L, 20L, 30L, 40L);
+        VolumeVO differentOffering = Mockito.mock(VolumeVO.class);
+        Mockito.when(differentOffering.getPoolId()).thenReturn(40L);
+        Mockito.when(differentOffering.getDiskOfferingId()).thenReturn(99L);
+        Mockito.when(volumeDao.findCreatedByInstance(2L)).thenReturn(List.of(differentOffering));
+
+        assertNotEquals("storage tags come from the disk offering, so it changes the answer",
+                service.migrationEquivalenceKey(a), service.migrationEquivalenceKey(b));
+    }
+
+    @Test
+    public void testACustomOfferingIsNeverGrouped() {
+        // a dynamic offering takes its size from the VM, so two VMs on the same offering can be
+        // wildly different and must not share a candidate host list
+        VMInstanceVO a = vm(1L, 10L, 20L, 30L, 40L);
+        VMInstanceVO b = vm(2L, 10L, 20L, 30L, 40L);
+        offeringIsDynamic(1L, 10L);
+        offeringIsDynamic(2L, 10L);
+
+        assertNotEquals(service.migrationEquivalenceKey(a), service.migrationEquivalenceKey(b));
+    }
+
+    @Test
+    public void testAVmWithABootModeIsNeverGrouped() {
+        VMInstanceVO a = vm(1L, 10L, 20L, 30L, 40L);
+        VMInstanceVO b = vm(2L, 10L, 20L, 30L, 40L);
+        vmHasDetail(1L, "UEFI", "SECURE");
+
+        assertNotEquals("a UEFI VM cannot run everywhere a BIOS VM can",
+                service.migrationEquivalenceKey(a), service.migrationEquivalenceKey(b));
+    }
+
+    @Test
+    public void testAVmWithNoDetailsIsStillGrouped() {
+        assertEquals(service.migrationEquivalenceKey(vm(1L, 10L, 20L, 30L, 40L)),
                 service.migrationEquivalenceKey(vm(2L, 10L, 20L, 30L, 40L)));
     }
 }
