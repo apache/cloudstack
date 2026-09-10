@@ -157,33 +157,28 @@ unfiltered — accepted for v1, see §12.3.
 
 ### 5.5 What the network object looks like
 
-Like a **Shared** network, not like L2: the network has a subnet. The operator supplies the CIDR,
-and optionally an IPv6 prefix, via the usual IP-range mechanism (`vlan` rows — `vlan_gateway`,
-`vlan_netmask`, `ip4_range`, `ip6_gateway`, `ip6_cidr`, `ip6_range` in
-`engine/schema/src/main/java/com/cloud/dc/VlanVO.java`).
+Like a **Shared** network, not like L2: the network has a subnet. The operator supplies the IPv4
+subnet (`cidr`, or `netmask` plus `startip`/`endip`) and/or an IPv6 prefix (`ip6cidr`) at
+`createNetwork`; they are stored via the usual IP-range mechanism (`vlan` rows — `vlan_netmask`,
+`ip4_range`, `ip6_cidr` in `engine/schema/src/main/java/com/cloud/dc/VlanVO.java`).
 
 The difference is what CloudStack does with it: the subnet is an **allocation pool that is routed to
-the hypervisors**, not a broadcast domain. Guests never see the subnet mask or its gateway.
+the hypervisors**, not a broadcast domain. Guests never see the subnet mask or a subnet gateway.
 
-**The subnet gateway is required, and ignored. DECIDED for v1.**
+**No subnet gateway exists. DECIDED — revised 2026-09-09 (supersedes "required, and ignored").**
 
-`vlan_gateway` / `ip6_gateway` are meaningless for this network type — nothing reads them, because
-the guest's gateway is always the shared link-local address and the whole subnet is routed to the
-hosts. `createVlanIpRange` requires a gateway today, and it stays required: relaxing it would mean
-touching validation shared with every other network type for no functional gain.
+`vlan_gateway` / `ip6_gateway` are meaningless for this network type: the guest's gateway is always
+the shared link-local address and the whole subnet is routed to the hosts. Requiring one only burnt
+an address, so guest L3 networks store **NULL** for both and `gateway`/`ip6gateway` given to
+`createNetwork` are accepted for API compatibility and ignored (`NetworkServiceImpl.createGuestNetwork()`,
+`ConfigurationManagerImpl.createVlanAndPublicIpRange()` — the gateway-less L3 branch). Every code
+path that keyed on the gateway's presence keys on the cidr instead (§6.3).
 
-The cost is a small wart — the operator has to nominate an address in the subnet that will never be
-configured anywhere or answer anything. Two practical notes:
-
-* It should be **documented as unused**, so nobody wastes time debugging why traffic is not reaching
-  it, and so nobody assumes reserving it is necessary.
-* Whichever address is given still gets consumed from the allocation pool unless explicitly kept
-  out of the IP range. Since every address in the subnet is otherwise usable (§6.3.1), an operator
-  can simply give the range as the full subnet and point the gateway at an address inside it — but
-  confirm existing validation does not reject a gateway that falls within the range.
-
-Making it optional remains available later if it proves annoying; it is a validation change, not a
-model change, so nothing here forecloses it.
+The one place a gateway is still typed is the **routed public IP range** for SystemVMs (§8.5):
+`createVlanIpRange` shares its validation with every other public range and still requires an
+IPv4 gateway outside the range (and an IPv6 gateway when `ip6cidr` is given). The guru replaces
+both with the link-local gateway on the NIC, so the typed addresses are never configured anywhere.
+Relaxing that stays available later; it is a validation change only.
 
 ## 6. Design decisions
 
@@ -271,10 +266,19 @@ This is the mechanism Shared networks already use: `DirectNetworkGuru.allocateDi
 **Each family is optional (added 2026-09-09): IPv6-only networks are supported.** Nothing on an
 L3 network depends on IPv4 — no DHCP, no password or metadata service, and ConfigDrive carries
 whatever families exist — so network creation requires only that at least one family is given and
-that a given family is complete: IPv4 is netmask + startip (a pool is mandatory, since v4
-addresses are drawn from one; the subnet derives from startip + netmask), IPv6 is ip6cidr alone
-(no range — §6.3.4). Enforced by `NetworkServiceImpl.validateL3AddressFamilies()`; the allocation
-chain gates on the cidrs. IPv4-only networks work symmetrically.
+that a given family is complete: IPv4 is a subnet with a pool (v4 addresses are drawn from one),
+IPv6 is ip6cidr alone (no range — §6.3.4). Enforced by
+`NetworkServiceImpl.validateL3AddressFamilies()`; the allocation chain gates on the cidrs.
+IPv4-only networks work symmetrically.
+
+**The IPv4 subnet is given as `cidr`, or as `netmask` + `startip` (+ `endip`).** `createNetwork`
+gained an optional `cidr` parameter for L3 networks (the IPv4 counterpart of `ip6cidr`; rejected
+for other guest types). `NetworkServiceImpl.expandL3Ipv4Cidr()` expands it into the
+netmask/startip/endip triple the rest of the flow uses: without `startip` the range defaults to
+the subnet's usable addresses (network and broadcast excluded — give `startip`/`endip` explicitly
+to include them, §6.3.1); an explicit `startip`/`endip` must lie inside the given cidr, and
+`endip` without `startip` is rejected. `cidr` and `netmask` are mutually exclusive. With
+`netmask` + `startip`, the subnet derives from the two.
 
 **Gateways play no part at all (revised 2026-09-09).** The Instance's gateway is always the
 shared link-local address (§6.2), so declaring a subnet gateway only burnt an address the
@@ -304,12 +308,12 @@ tightest, which is the common case for this feature:
 
 | Subnet | Addresses | Usable today (minus network, broadcast, gateway) | Usable here | Gain |
 |---|---|---|---|---|
-| /29 | 8 | 5 | 7 | +40% |
-| /28 | 16 | 13 | 15 | +15% |
-| /27 | 32 | 29 | 31 | +7% |
-| /24 | 256 | 253 | 255 | +0.8% |
+| /29 | 8 | 5 | 8 | +60% |
+| /28 | 16 | 13 | 16 | +23% |
+| /27 | 32 | 29 | 32 | +10% |
+| /24 | 256 | 253 | 256 | +1.2% |
 
-(The gateway is still deducted because §5.5 keeps it required, even though nothing uses it.)
+(No gateway is deducted either, since §5.5 stores none.)
 
 **Verified during implementation: no code change was needed.** The earlier draft assumed the
 exclusion lived in the `NetUtils` CIDR helpers (`getIpRangeFromCidr()` and friends, whose
@@ -321,9 +325,11 @@ start/end path this network type uses (Shared-style `createVlanIpRange`) validat
 gateway-not-in-range, and `savePublicIPRange()` then iterates the range without exclusions into
 `user_ip_address`. Allocation is row-based from that table and never re-derives from the CIDR.
 
-**`.0` and `.255` are therefore already assignable end-to-end on this path.** The smoke test should
-still assert it (an Instance actually receiving `.0` or `.255` and working), since this rests on
-tracing rather than an existing guarantee anyone maintains.
+**`.0` and `.255` are therefore already assignable end-to-end on this path** — when the operator
+gives `startip`/`endip` explicitly. The `cidr`-only form defaults the range to the usable
+addresses and so excludes them (§6.3, deliberately conservative). `test_l3_networks.py` asserts
+an Instance actually receives `.0`, since this rests on tracing rather than a guarantee anyone
+maintains.
 
 #### 6.3.2 Subnets must be unique across the routing domain **DECIDED — constraint**
 
@@ -344,11 +350,19 @@ Implications:
   sharing a subnet would produce duplicate /32s in one host routing table and duplicate
   advertisements into the fabric, with traffic delivered to whichever Instance the host resolved
   last.
-* **Implemented and verified:** the IPv6 vlan overlap check was already zone-wide
-  (`_vlanDao.listByZone()`). IPv4 was not — the `user_ip_address` unique key is
-  `(public_ip_address, source_network_id)`, i.e. per network — so `createVlanAndPublicIpRange` now
-  calls the existing zone-wide `checkOverlapPublicIpRange()` for L3 networks. Shared networks keep
-  their historical behaviour, where the same IPv4 range in two VLANs is legitimate.
+* **Implemented:** the IPv6 vlan overlap check was already zone-wide (`_vlanDao.listByZone()`).
+  IPv4 was not — the `user_ip_address` unique key is `(public_ip_address, source_network_id)`,
+  i.e. per network — so the range-creation path L3 networks take
+  (`ConfigurationManagerImpl.createVlanAndPublicIpRange()`, the long-argument form called from
+  `NetworkServiceImpl.commitNetwork()`) calls the existing zone-wide `checkOverlapPublicIpRange()`
+  for L3 networks: an L3 range may not contain any address already present in the zone, whether
+  it belongs to a public range, a Shared network or another L3 network. The reverse direction is
+  covered by `checkZoneVlanIpOverlap()`, which now also considers gateway-less (L3) vlan rows and
+  treats a subnet overlap with an L3 network like one with a public range, i.e. rejects it. Shared
+  networks among themselves keep their historical behaviour, where the same IPv4 range in two
+  VLANs is legitimate. (A first version placed the L3 call in the `createVlanIpRange` API path,
+  which L3 networks never take; the smoke test that should have caught it swallowed its own
+  assertion. Both are fixed.)
 * This is the main user-visible limitation of "networks separate tenants administratively only" and
   must be explicit in the documentation.
 * Per-tenant VRFs would lift the restriction but mean per-VRF routing tables on the host and
@@ -441,9 +455,14 @@ two of the three.
 
 **Why DNS is recommended rather than mandatory.** There is no VR and no resolver on the host, so
 `network_data.json` `services` is the only channel by which CloudStack can tell a guest its DNS
-servers (§8.3). An offering without it leaves Instances with addresses and routing but no name
-resolution — unless the template already carries resolvers, which is unusual but legitimate and the
-operator's call (§6.5). Note this depends on the §8.2 gate being fixed first.
+servers (§8.3). The `Dns` service on the offering is what makes the offering *declare* that it
+delivers resolvers; a template that already carries its own is unusual but legitimate and the
+operator's call (§6.5). Note, as verified in review, that `ConfigDriveBuilder` writes the
+`services` entries whenever the NIC profile carries DNS servers, which the allocation path sets
+from the network or the zone regardless of the `Dns` service (`getServicesJsonArrayForNic()` never
+consults the service list). In practice an L3 Instance therefore receives resolvers whenever the
+network or zone has any, with or without `Dns` on the offering. That is pre-existing ConfigDrive
+behaviour shared with every other network type and is left alone here.
 
 **Why DHCP is not merely unsupported but unnecessary.** ConfigDrive delivers the address, netmask,
 gateway and routes directly (§8.1). DHCP would have nothing left to hand out, and offering it would
@@ -471,11 +490,14 @@ network type needs to enforce — so an offering may omit `Dns`. The documentati
 `UserData` + `Dns` together, since omitting DNS leaves an Instance with connectivity but no name
 resolution unless its template handles it.
 
-**This has a hard prerequisite — see §8.2.** `ConfigDriveBuilder.needForGeneratingNetworkData()`
-currently writes network data only when the network supports `Dhcp` **or** `Dns`. Since this type
-never has `Dhcp`, an offering without `Dns` would today produce an **empty `network_data.json` and an
-Instance with no addressing at all** — a far worse outcome than missing resolvers. Making `Dns`
-optional therefore requires changing that gate first; it is not merely a validation relaxation.
+**This had a hard prerequisite — see §8.2, implemented.** `ConfigDriveBuilder.needForGeneratingNetworkData()`
+used to write network data only when the network supports `Dhcp` **or** `Dns`. Since this type
+never has `Dhcp`, an offering without `Dns` would have produced an **empty `network_data.json` and
+an Instance with no addressing at all** — a far worse outcome than missing resolvers. Network data
+is now always generated when a direct routed NIC is present.
+
+The IPv6 zone-DNS requirement that `createNetwork` applies to IPv6 Shared networks ("the zone has
+no IPv6 DNS") is not applied to L3 networks, for the same reason: DNS is optional here.
 
 **No warning is raised when a template ignores ConfigDrive. DECIDED.** Whether cloud-init is present
 and configured inside the guest is the operator's responsibility, not something CloudStack should
@@ -578,9 +600,16 @@ new allocation mechanism is introduced:
   use — `NetworkServiceImpl.commitNetwork()`), and releases it when the network is deleted (the
   existing release path in `NetworkOrchestrator`).
 
-The value must be numeric — `routed://<id>` carries a number, nothing else — and the existing
-Shared-network checks apply unchanged: an operator-specified id must not fall inside the dynamic
-range (`_dcDao.findVnet()`), and must not collide with another network's broadcast URI.
+The value must be numeric — `routed://<id>` carries a number, nothing else — and is enforced:
+`Networks.BroadcastDomainType.getRoutedId()` accepts a positive integer of at most ten digits
+without leading zeros (so `brdr-<id>` fits the 15-character interface-name limit and the bridge
+MAC derives from five bytes, §9.2), given bare or as `routed://<id>`, and canonicalises it.
+`NetworkServiceImpl.canonicalizeRoutedId()` applies it to the `vlan` parameter of an L3 network,
+`ConfigurationManagerImpl.canonicalizeRoutedRangeId()` to a routed public range (§8.5). Without
+this, the generic URI fallback accepted anything parseable (`routed://abc`, `routed://0534`),
+which bypassed the string-compare uniqueness checks. The existing Shared-network checks then
+apply unchanged: an operator-specified id must not fall inside the dynamic range
+(`_dcDao.findVnet()`), and must not collide with another network's broadcast URI.
 
 **Uniqueness must be zone-wide, not per physical network.** Bridge names are global on a host, so
 two networks with routed id 5828 anywhere in the zone would share `brdr-5828` and merge their L2
@@ -589,7 +618,11 @@ domains. The existing zone-wide URI overlap check
 physical network per zone — the expected deployment — it is equivalent to the per-physnet check
 anyway. **Guest networks and public ranges (§8.5) share the same id space** and are guarded in
 both directions: creating a guest network whose routed id a public range already carries is
-rejected, and so is creating a public range whose id a guest network holds.
+rejected (`NetworkOrchestrator`, `_vlanDao.findByZoneAndVlanId()`), and so is creating a public
+range whose id a guest network holds — or that lies inside the routed-id range of any `ROUTED`
+physical network in the zone, since auto-allocated networks draw from that range and a later
+random draw would otherwise collide with the public range
+(`ConfigurationManagerImpl.canonicalizeRoutedRangeId()`).
 
 Either way the URI is set at creation and **stable for the network's life**: the bridge name never
 changes, which is what makes it something host policy can reference.
@@ -724,10 +757,11 @@ ethernets:
 ```
 
 The failing behaviour was verified on Ubuntu 26.04 (cloud-init 26.1, netplan renderer): the
-routes-list form boots with IPv6 up and no IPv4 default route. **TODO:** verify the `gateway`-key
-emission on the same image and record the result here.
+routes-list form boots with IPv6 up and no IPv4 default route. The `gateway`-key emission was
+verified on the same image in the September 2026 lab: the IPv4 default route is installed with
+`on-link`, dual-stack and IPv6-only.
 
-### 8.2 network_data generation is gated on DHCP or DNS **REQUIRED CHANGE**
+### 8.2 network_data generation was gated on DHCP or DNS **IMPLEMENTED**
 
 ```java
 static boolean needForGeneratingNetworkData(Map<Long, List<Network.Service>> supportedServices) {
@@ -736,23 +770,25 @@ static boolean needForGeneratingNetworkData(Map<Long, List<Network.Service>> sup
                            || services.contains(Network.Service.Dns));
 }
 ```
-(`engine/storage/configdrive/src/main/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilder.java:266`,
-called from `writeNetworkData()` at `:252`.)
+(`engine/storage/configdrive/src/main/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilder.java`,
+called from `writeNetworkData()`.)
 
-If neither service is supported, `writeNetworkData()` writes an empty `{}` and **the guest receives
+If neither service is supported, `writeNetworkData()` wrote an empty `{}` and **the guest received
 no network configuration whatsoever** — no address, no netmask, no gateway, no routes.
 
-That gate is wrong for this network type. It equates "does this network have DHCP or DNS?" with
+That gate was wrong for this network type. It equates "does this network have DHCP or DNS?" with
 "does this NIC need its addressing written into ConfigDrive?", which held while ConfigDrive was a
 supplement to a VR but does not hold when ConfigDrive is the *only* channel. This type never has
 `Dhcp`, and §6.5 makes `Dns` optional, so the two conditions can both be false while the NIC still
 very much needs its /32 written.
 
-**Required:** extend the condition so network data is generated whenever the NIC belongs to a direct
-routed network — or, more generally, whenever the NIC has an address to convey and no other means of
-conveying it. Until that lands, a `Dns`-less offering is not merely degraded, it is non-functional.
-
-Worth a code comment either way, because the coupling is invisible from the offering side.
+**Implemented:** `writeNetworkData()` generates network data whenever the historical gate is met
+*or* any NIC of the Instance is direct routed (recognised by its host-route address form,
+`isDirectRoutedNic()`). When a direct routed NIC forces generation, **all** NICs of the Instance
+are written, matching the historical all-or-nothing semantics: an explicit network config that
+listed only the L3 NIC would stop cloud-init from configuring the Instance's other interfaces.
+The Javadoc on `writeNetworkData()` records the coupling, because it is invisible from the
+offering side.
 
 ### 8.3 DNS **DECIDED — per network, falling back to the zone**
 
@@ -768,9 +804,9 @@ DNS once per zone and overrides it only on the networks that need something diff
 zone. The VPC branch is simply never reached here (§6.6). The `networks` table already carries
 `dns1`, `dns2`, `ip6_dns1`, `ip6_dns2`, and `createNetwork`/`updateNetwork` already expose them.
 
-Note the interaction with §6.5: DNS is optional on the offering. If the offering omits the `Dns`
-service, these values are never written to ConfigDrive regardless of being configured on the network
-or zone.
+Note the interaction with §6.5: DNS is optional on the offering, but `ConfigDriveBuilder` writes
+the `services` entries from the NIC profile, which carries the network's or zone's resolvers
+whether or not the offering lists `Dns` (§6.4). Omitting `Dns` therefore does not suppress them.
 
 ### 8.4 Metadata service **DECIDED — none in v1**
 
@@ -967,6 +1003,12 @@ the host route and neighbour entry for the address whenever the former is set, i
 gained per-address delete (`-o delete` with `-4`/`-6` removes just those; without them it keeps its
 delete-everything-for-this-MAC behaviour, which is what unplug uses).
 
+**The allocation itself needed enabling too (found in review).**
+`NetworkServiceImpl.allocateSecondaryGuestIP()` handled only Isolated and Shared networks and
+logged "not supported" for anything else, so none of the above was reachable for L3. L3 now takes
+the Shared branch: IPv4 secondaries come from the network's pool, an IPv6 secondary is a
+user-chosen address inside `ip6cidr`, validated as for Shared networks.
+
 **The ipset-based dispatch pays off here.** Because to-Instance traffic on L3 matches
 `--match-set <ipset> dst` (§12.2), and secondary IPs are added to that same ipset, security group
 dispatch covers a new secondary IP with no rule changes at all.
@@ -993,9 +1035,19 @@ The bridge is created and removed by a new script,
 `scripts/vm/network/vnet/modifybrdr.sh`, modelled on `modifyvxlan.sh`:
 
 ```
-modifybrdr.sh -o add    -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>]
-modifybrdr.sh -o delete -b <bridge name>
+modifybrdr.sh -o add    -n <routed id> [-4 <ipv4 gateway>] [-6 <ipv6 gateway>]   → prints the bridge name
+modifybrdr.sh -o delete -b <bridge name>                                          → notmine | kept | deleted
+modifybrdr.sh -o query  -b <bridge name>                                          → mine | notmine
 ```
+
+Every operation prints exactly one token on stdout; all diagnostics go to stderr (the agent's
+`Script` runner merges the two streams, so the agent reads the **last** non-blank line and
+validates it before use — an earlier version read the first line, which a stray `sysctl` warning
+could turn into a bogus bridge name in the domain XML). Exit code 0 means the token is valid, 1
+that the operation failed (every `ip` and `sysctl` step is checked), 2 bad arguments. Inputs are
+validated: the id is a positive integer of at most ten digits (§6.7.2), the bridge name must match
+the script's own naming or the answer is `notmine` before anything is done with it, and the
+gateway addresses must be well-formed.
 
 On `add` it creates the bridge if absent (STP off, `forward_delay 0` — there is no uplink, so no
 loop to detect and no reason to hold ports down at Instance start), enables IPv4/IPv6 forwarding on
@@ -1035,10 +1087,14 @@ same way VLAN and VXLAN NICs receive theirs.
 
 `BridgeVifDriver` selects on the broadcast type (§9.1.3), extracts the routed id from the URI and
 passes it to `modifybrdr.sh`, which creates the bridge and **prints the name it chose** — the agent
-uses whatever comes back. On unplug the agent asks the same script (`-o delete -b <name>`), which
-answers `notmine`, `kept` or `deleted`; `notmine` sends the agent down its regular unplug path.
-**How the bridges are named is known only to the script**; no `brdr-` prefix appears anywhere in
-Java.
+uses whatever comes back. On unplug the agent first asks the script whether the interface's bridge
+is one of its own (`-o query -b <name>` → `mine`/`notmine`); `notmine` sends the agent down its
+regular unplug path. For its own bridges the agent then removes the Instance's routes and
+neighbour entries (`modifymacip.sh -o delete`, while the bridge still exists) and only then asks
+the script to delete the bridge (`-o delete -b <name>` → `kept` or `deleted`). **How the bridges
+are named is known only to the script**; no `brdr-` prefix appears anywhere in Java. The query on
+every unplug costs one script execution per NIC on every host, direct routed or not; that is the
+price of keeping the naming out of Java and is accepted.
 
 **This reverses the earlier decision**, which named the bridge from `networks.id` carried in
 `NicTO.networkId`, precisely to avoid a broadcast domain, an isolation method and an id allocation.
@@ -1147,8 +1203,29 @@ Strict mode is safe for the paths this design creates:
 * same-network hairpin (§5.4) — arrives on `brdr-N` from an address routed via `brdr-N` → passes
 * cross-network — arrives on `brdr-N`, forwarded out `brdr-M`; the check is on ingress only → passes
 
-**IPv4 only.** The kernel has no IPv6 `rp_filter`, so IPv6 source spoofing is not bounded by this and
-must be handled by security groups (§12.2) where it matters.
+**The sysctl is IPv4 only.** The kernel has no IPv6 `rp_filter`, so `modifybrdr.sh` installs the
+netfilter counterpart once per host: `ip6tables -t raw PREROUTING -i brdr-+ -m rpfilter --invert
+-j DROP`. An Instance can then not spoof an IPv6 source either, with or without security groups.
+
+**The host protects itself from its Instances (added 2026-09-10).** Because the host routes for
+them, an Instance's packets enter the host's own IP stack — something classic bridging never
+exposed. Without a rule an Instance could reach the hypervisor's management and storage addresses
+and everything the host routes to, including the `169.254.0.0/16` control network of the
+SystemVMs on `cloud0`. `modifybrdr.sh` therefore installs, once per host and shared by all
+`brdr-*` bridges, an `INPUT` chain hooked with `-i brdr-+` that accepts only what the gateway
+function needs — conntrack `ESTABLISHED,RELATED`, IPv4 ICMP echo request, ICMPv6 neighbour
+solicitation/advertisement and echo request — and drops everything else. Both rule sets are
+removed when the last `brdr-*` bridge on the host is deleted. Operators running their own
+default-DROP `INPUT` policy must still admit neighbour discovery for `fe80::1` and ICMP echo from
+`brdr-+`, or Instances cannot resolve or ping their gateway. Forwarding from `brdr-*` to the
+management and storage subnets is **not** filtered by CloudStack — that policy is the operator's
+host firewall, exactly like the routing daemon (§10), and must be stated in the operator
+documentation. `FORWARD` rules remain the exclusive domain of `security_group.py` (§12.2).
+
+Forwarding itself needs `net.ipv4.ip_forward=1` and `net.ipv6.conf.all.forwarding=1` on the host:
+the per-bridge `forwarding` sysctls the script sets do not enable it on their own (IPv6 forwards
+only when `all.forwarding` is set; IPv4's per-interface flag governs packets entering the bridge,
+not the uplink). A host running a routing daemon has both; they are a documented prerequisite.
 
 ### 9.6 No reconciliation on agent restart **DECIDED**
 
@@ -1225,9 +1302,11 @@ host state:
 
 To work through:
 
-* **Ordering.** Install-then-remove is safer than remove-then-install; a transient duplicate
-  advertisement is less harmful than a black hole. Confirm the plug/unplug sequence during
-  migration actually gives that ordering.
+* **Ordering — confirmed.** Install-then-remove is safer than remove-then-install; a transient
+  duplicate advertisement is less harmful than a black hole. The destination plugs (and so
+  installs) in `PrepareForMigration`; the source unplugs only after the migration succeeded
+  (`LibvirtMigrateCommandWrapper`). A failed prepare unplugs what it plugged; a migration that
+  fails *after* a successful prepare leaves the destination's entries in place — deferred (§15).
 * **Convergence gap.** Traffic may be black-holed until the fabric reconverges. **TODO:** quantify
   on a normal iBGP/OSPF setup — is sub-second realistic?
 * **No GARP needed — but the reverse direction bit us (fixed 2026-09-08).** Normally a migrating
@@ -1312,10 +1391,32 @@ bridge and MAC/IP hook (§9.1.3), so it passes `--directrouted` on `default_netw
 `add_network_rules`; the script's own re-entry points thread the flag through. This keeps the
 decision in exactly one host-side place and leaves the script with no inference to get wrong.
 
-One path cannot receive the flag: `network_rules_for_rebooted_vm` runs without the Agent. It
-restores dispatch rules in whichever form the Instance's per-VM chain already uses (destination
-ipset for Direct Routed, `physdev-out` for bridged), so a rebooted Instance is reprogrammed
-correctly either way.
+`network_rules_for_rebooted_vm` is dead code (its only caller has been commented out upstream for
+years) and carries no L3 handling; a rebooted Instance is reprogrammed by the Agent through the
+normal `default_network_rules`/`add_network_rules` path, which receives the flag.
+
+**Two-pass filtering on the routed path (added 2026-09-10).** A routed packet between two
+Instances on one host enters on one `brdr-*` bridge and leaves on another (or the same), so a
+single per-bridge FORWARD jump can only ever evaluate one of them — whichever bridge's rule came
+first decided terminally, which let an Instance bypass the ingress rules of an Instance in
+another account. The L3 framework therefore uses one FORWARD hook into a shared `BF-L3` chain
+that runs two passes: `BF-L3-IN` dispatches on `-i <bridge>` to the source Instance's egress
+rules, `BF-L3-OUT` on `-o <bridge>` to the destination Instance's ingress rules. On the source
+side an allowed egress does not ACCEPT but sets packet-mark bit `0x40000000` and returns; a
+packet that leaves `BF-L3-IN` unmarked (denied, spoofed, or from a port with no registered
+Instance) is dropped there. The destination side gives the terminal verdict; a destination on an
+L3 bridge no Instance claims is dropped; a marked packet not addressed to an L3 Instance on this
+host is accepted towards the fabric. The bit is cleared on entry so no other mark can approve
+traffic, and it is reserved on hosts running L3 networks (`MARK` in the filter table needs
+kernel >= 2.6.29 / iptables >= 1.4.3). Non-L3 traffic falls through `BF-L3` untouched, so classic
+bridges are unaffected; a bridge's rules are removed when its last Instance is destroyed, the
+shared chains and hook stay. Unit tests walk packets through the generated rules for every case
+in both bridge creation orders (`scripts/vm/network/tests/test_security_group.py`).
+
+**Still to verify in the lab:** on a real host, `iptables -C` against `-j MARK --set-xmark` and
+`-m mark ! --mark` rules (idempotency), that `iptables-save` renders them in the form
+`verify_network_rules` expects, and the four traffic cases end to end with two Instances in
+different accounts and networks on one host, including the same-bridge hairpin and IPv6 DAD.
 
 **Investigated and rejected: libvirt nwfilters.** An nwfilter-based implementation was built and
 then discarded. Its ebtables layer would have served anti-spoofing well (it sees routed delivery),
@@ -1330,9 +1431,12 @@ after the unification above, without duplicate code.
 Guests of the same network share a bridge. With security groups enabled, RA and gateway
 impersonation between them are handled by the shared rules (ebtables ARP pinning, NDP source
 checks, RA drop) and source spoofing is bounded by the ipset checks plus `rp_filter` (§9.5). An
-operator who disables security groups accepts intra-tenant spoofing between guests of that one
-network — a deliberate operator choice; isolation between *tenants* is topological and unaffected
-(§12.1). The host itself is immune either way: its neighbour entries are static (§5.3).
+operator who disables security groups accepts RA and gateway impersonation between guests of that
+one network — a deliberate operator choice; isolation between *tenants* is topological and
+unaffected (§12.1). Source-address spoofing is bounded with or without security groups: strict
+`rp_filter` for IPv4 and the `rpfilter` netfilter rule for IPv6 (§9.5). The host itself is immune
+either way: its neighbour entries are static (§5.3) and its `INPUT` path from `brdr-*` bridges is
+closed (§9.5).
 
 ### 12.4 Sharp edge
 
@@ -1343,52 +1447,47 @@ documentation.
 
 ## 13. Orchestration touchpoints
 
-Checklist to work through:
+Status of the implementation checklist (September 2026):
 
-- [ ] `NetworkOrchestrator.allocate()` / `prepare()` / `release()` — address lifecycle
-- [ ] `NetworkOrchestrator` and `VirtualMachineManagerImpl` — `L2` and `Shared` branches
-- [ ] `UserVmManagerImpl` — `addNicToVm`, `updateDefaultNic`, IP change
-- [ ] `NetworkModelImpl` — capability lookups, `getNetworkTag`, `isSecurityGroupSupportedInNetwork`
-- [ ] `IpAddressManagerImpl.allocateDirectIp()` — gateway/netmask override for /32 and /128
-- [ ] `Networks.BroadcastDomainType` — new `Routed("routed", Long.class)` value (§6.7)
-- [ ] `BridgeVifDriver` — select on `BroadcastDomainType.Routed`; gate the MAC/IP hook and bridge
-      selection on it. Script and bridge targeting reused unchanged (§9.1.3)
-- [ ] `scripts/vm/network/vnet/modifybrdr.sh` — per-network bridge lifecycle (§9.2)
-- [ ] `BridgeVifDriver` — take the routed id from the NIC's broadcast URI, call `modifybrdr.sh` on
-      plug and last unplug
-- [ ] Guru registers `IsolationMethod("ROUTED")`; `canHandle()` on guest type + isolation method;
-      `design()` sets `Routed` + `routed://<id>` (§6.7)
-- [ ] `NetworkOrchestrator.encodeVlanIdIntoBroadcastUri()` — `ROUTED` physical network →
-      `routed://` URI; broadcast domain type derived from the URI scheme, not hard-coded `Vlan`
-      (§6.7.2)
-- [ ] `NetworkServiceImpl.commitNetwork()` — extend the shared-without-`specifyVlan` vnet
-      auto-allocation to `GuestType.L3`; extend the matching release on deletion in
-      `NetworkOrchestrator` (§6.7.2)
-- [ ] Offering validation — require ConfigDrive `UserData`, reject `Dhcp`; allow `specifyVlan`
-      either way (§6.4)
-- [ ] `ConfigDriveBuilder.needForGeneratingNetworkData()` — must not gate on Dhcp/Dns (§8.2)
-- [ ] CPVM/SSVM boot args — emit `eth<N>ip6`/`eth<N>ip6prelen`/`ip6gateway` as the VR builder
-      already does (§8.5)
-- [ ] `systemvm/.../setup/common.sh` — `onlink` on the v4 default route for link-local gateways;
-      install the v6 default route from `IP6GW` instead of relying on RA (§8.5)
-- [ ] `PublicNetworkGuru` / `createVlanIpRange` — direct routed public range for systemvm IPs,
-      dual-stack: host-route NIC form (v4 and v6, EUI-64 computed in the guru), `Routed` broadcast
-      URI; `BridgeVifDriver` Public branch handles it; routed ids guarded against guest/public
-      collisions in both directions (§8.5, §6.7.2)
-- [ ] `createNetwork`/`createVlanIpRange` — reject an IPv6 CIDR with a prefix longer than /64 for
-      L3 networks; EUI-64 needs 64 interface-identifier bits (§6.3.4)
-- [ ] `NetworkServiceImpl.java:657` — stop rejecting DNS for this type as it does for L2 (§6.4)
-- [ ] `security_group.py` unified rules — verify on a real host that both directions match live
-      traffic on classic and Direct Routed bridges, and that ARP for `169.254.0.1` / ND for
-      `fe80::1` pass (§12.2)
-- [ ] `createVlanIpRange` — zone-wide subnet overlap validation (§6.3.2)
-- [ ] `NetUtils` — inclusive range variants so `.0` and `.255` are assignable (§6.3.1)
-- [ ] VM snapshot / restore, VM import (`UnmanagedVMsManagerImpl`), template creation
-- [ ] Network restart — no-op without a VR?
-- [ ] IP capacity reporting and usage records — is a directly routed address a billable public IP?
-- [ ] UI: `ROUTED` in the physical network isolation method options (zone wizard,
-      `phynetworks.js`); network creation wizard (the `vlan` field labelled as routed id for L3
-      offerings); network detail page, NIC display, offering creation
+- [x] `NetworkOrchestrator.allocate()` / `prepare()` / `release()` — address lifecycle inherited
+      from `DirectNetworkGuru` (§7.3)
+- [x] `NetworkOrchestrator` and `VirtualMachineManagerImpl` — `L2` and `Shared` branches reviewed;
+      L3 follows Shared where a subnet exists and L2 nowhere
+- [x] `UserVmManagerImpl` — `addNicToVm` works; `updateVmNicIp` is rejected for L3 (host-route
+      form would need re-stamping); secondary IPs via `allocateSecondaryGuestIP` (§9.1.5)
+- [x] `NetworkModelImpl` — `canUseForDeploy()`, `checkSecurityGroupSupportForNetwork()` extended
+- [x] `IpAddressManagerImpl.allocateDirectIp()` / `Ipv6AddressManagerImpl.setNicIp6Address()` —
+      gate on the cidr for L3; the guru forces /32 and /128 + link-local gateways (§6.3)
+- [x] `Networks.BroadcastDomainType.Routed` and `getRoutedId()` (§6.7, §6.7.2)
+- [x] `BridgeVifDriver` — selects on `BroadcastDomainType.Routed` (or a `routed://` URI, §9.1.3),
+      creates the bridge via `modifybrdr.sh`, runs the MAC/IP hook, unplugs in query → MAC/IP
+      delete → bridge delete order (§9.2.1)
+- [x] `scripts/vm/network/vnet/modifybrdr.sh` — bridge lifecycle, host protection (§9.2, §9.5)
+- [x] Guru registers `IsolationMethod("ROUTED")`; `canHandle()` on guest type + isolation method;
+      `design()` sets `Routed` (§6.7)
+- [x] `NetworkOrchestrator.encodeVlanIdIntoBroadcastUri()` — `ROUTED` physical network →
+      `routed://` URI; broadcast domain type derived from the URI scheme (§6.7.2)
+- [x] `NetworkServiceImpl.commitNetwork()` — vnet auto-allocation and release extended to L3
+- [x] Offering validation — `validateL3NetworkOffering()` (§6.4)
+- [x] `ConfigDriveBuilder.writeNetworkData()` — always generated with a direct routed NIC, for all
+      NICs (§8.2); network-level `gateway` key for direct routed IPv4 (§8.1)
+- [x] CPVM/SSVM boot args carry IPv6; `common.sh` installs `onlink` v4 and static v6 defaults (§8.5)
+- [x] `PublicNetworkGuru` — routed public ranges, EUI-64 IPv6 in the guru; routed ids guarded
+      against guest/public collisions in both directions and against `ROUTED` vnet ranges (§8.5,
+      §6.7.2)
+- [x] IPv6 CIDR longer than /64 rejected for L3 (§6.3.4)
+- [x] DNS on L3 offerings allowed; zone IPv6 DNS not required for L3 (§6.4, §6.5)
+- [x] `security_group.py` — unified rules with the L3 dispatch structure of §12.2; **lab
+      verification of live traffic in both directions still required after the September 2026
+      restructure**
+- [x] Zone-wide IPv4 overlap validation, both directions (§6.3.2)
+- [x] `.0`/`.255` assignable on the explicit range path; no `NetUtils` change needed (§6.3.1)
+- [ ] VM import (`importNic` selects IPs the Isolated way for L3) — deferred (§15)
+- [x] Network restart — no VR, nothing to restart; the element implementations are no-ops
+- [ ] IP capacity reporting and usage records — L3 addresses are `user_ip_address` rows like
+      Shared-network addresses and are reported and billed the same way; not separately reviewed
+- [x] UI: `ROUTED` in the isolation method lists, L3 offering form (specifyVlan as routed id),
+      L3 network form with physical network selector, Instance list addresses
 
 ## 14. Upgrade and compatibility
 
@@ -1420,6 +1519,38 @@ Checklist to work through:
   nwfilter if a narrower fix is preferred
 * **Per-tenant VRFs**, which would lift the non-overlapping-subnet constraint of §6.3.2
 
+Found in the September 2026 review and consciously deferred, not forgotten:
+
+* **Failed live migration** after a successful `PrepareForMigration`: the destination keeps the
+  host route and neighbour entry (and its daemon keeps advertising) for an Instance that stayed on
+  the source, so the fabric may black-hole it until the next start/stop. The orchestrator should
+  send the rollback form of `PrepareForMigrationCommand` on any migrate failure and the agent's
+  rollback should unplug the NICs (§11).
+* **Who may create L3 networks.** `validateNetworkOfferingForNonRootAdminUser()` admits Isolated,
+  L2 and Shared-without-specifyVlan only, so L3 networks are root-admin-only today. Security-group
+  enabled Advanced zones reject L3 in two places (`NetworkOrchestrator`, `UserVmManagerImpl`).
+  Decide and either add L3 or document root-admin-only.
+* **KVM-only is not enforced** (§6.8): no hypervisor check at network creation or placement.
+* **IPv6 start/end ranges** are accepted for L3 though §6.3 says `ip6cidr` alone; with a range
+  two networks can share a /64 and EUI-64 addresses could collide. Reject the range.
+* **Routed public ranges** still type an IPv4 and IPv6 gateway that nothing uses (§5.5).
+* `deleteVlanIpRange`/`updateVlanIpRange` key on gateway presence and so mishandle gateway-less L3
+  rows (stale `networks.cidr`, "IPv4 is not supported in this IP range").
+* `updateNetwork` cannot set IPv6 DNS on an L3 network (`isIpv6` keys on Shared).
+* `network_rules_for_rebooted_vm` in `security_group.py` is dead code; `verify_network_rules`
+  expects the pre-2026 rule stream (§12.2).
+* Per-interface `forwarding` sysctls do not enable forwarding by themselves: `net.ipv4.ip_forward=1`
+  and `net.ipv6.conf.all.forwarding=1` are host prerequisites (a host running a routing daemon has
+  them), to be stated in the operator documentation (§9.5).
+* SystemVMs with a security-group NIC on a routed public range would hit the classic framework in
+  `default_network_rules_systemvm`; VRs are not expected on routed public ranges.
+* The routed-id pool of a `ROUTED` physical network is capped at 1–4094 because the vnet-range
+  validation treats it like VLAN (§6.7.2).
+* `handleVmStartFailure` in the KVM start wrapper unplugs the NICs of a domain that may have
+  started before a late `RuntimeException`; checking the domain state first would avoid removing
+  a running Instance's routes ahead of the orchestrator's Stop.
+* VM import (`importNic`) treats L3 like Isolated when selecting an IP; it should follow Shared.
+
 ## 16. Decision log and open questions
 
 ### Revised 2026-09-04 — isolation model
@@ -1450,7 +1581,8 @@ the relevant sections as "reverses the earlier decision" notes.
 * New `GuestType.L3`, chosen over overloading `Shared`/`NetworkMode` (§6.1)
 * Gateway is a static, non-configurable `169.254.0.1` / `fe80::1`; a /32 means the guest must treat
   its gateway as on-link regardless, so configurability would buy nothing (§6.2)
-* ConfigDrive emits `on-link: true` for gateways in `169.254.0.0/16` (§8.1)
+* ConfigDrive emits a network-level `gateway` key for direct routed IPv4, from which cloud-init
+  derives `on-link` (§8.1)
 * The agent writes only routes and neighbour entries; FRR is out of scope (§9.1, §10)
 * That work is done by reusing `modifymacip.sh` + the `BridgeVifDriver` hook already in main from
   `4816e059383` / PR #13495, rather than new code (§9.1.1)
@@ -1491,19 +1623,24 @@ the relevant sections as "reverses the earlier decision" notes.
   `arp_announce=2` handle it (§9.2.2)
 * The guru is a **subclass of `DirectNetworkGuru`**, inheriting the address lifecycle rather than
   duplicating it (§7.3)
-* **No on-link plumbing in ConfigDrive** — cloud-init itself sets on-link for an IPv4 gateway in
-  `169.254.0.0/16` when consuming `network_data.json` (verified); the v2 `network-config` file is
-  deferred to a later PR (§8.1, §15)
+* **On-link via the network-level `gateway` key** — cloud-init applies its on-link detection only
+  to that key, never to routes-list entries, so CloudStack emits it for direct routed IPv4
+  (verified on Ubuntu 26.04 / cloud-init 26.1); the v2 `network-config` file is deferred to a
+  later PR (§8.1, §15)
 * DNS is **per network, falling back to the zone**; already implemented by
   `NetworkModelImpl.getNetworkIp4Dns()` (§8.3)
 * **No metadata service** in v1 — ConfigDrive only, no `169.254.169.254`; a v2 candidate (§8.4)
 * Route/neighbour install failures **stay silent** for v1, as they are for EVPN (§9.1.4)
 * Route scale is **out of scope** — fabric capacity and aggregation are local network design;
   ~100k routes is not usually a problem on modern equipment, but CloudStack states no ceiling (§6.3.3)
-* Network and broadcast addresses **must be assignable** — verified already true on the explicit
-  start/end range path; the `NetUtils` exclusion only affects CIDR-derived Isolated ranges (§6.3.1)
-* The subnet's gateway stays **required and ignored**; relaxing validation shared with other
-  network types is not worth it for v1 (§5.5)
+* Network and broadcast addresses **must be assignable** — true on the explicit start/end range
+  path and asserted by the smoke test; the `cidr`-only form defaults to the usable range (§6.3.1)
+* **No subnet gateway** for guest L3 networks: `gateway`/`ip6gateway` are ignored and stored as
+  NULL; routed public ranges still type one, which the guru replaces (§5.5, §6.3)
+* The routed id is a **positive integer of at most ten digits**, canonicalised on input; public
+  ranges may not take an id inside a `ROUTED` physical network's range (§6.7.2)
+* IPv4 range overlap is checked **zone-wide in both directions** on the range-creation path L3
+  networks actually take (§6.3.2)
 * The `--physdev-is-bridged` rework **lands in v1**; security groups are not shipped half-working
   (§12.2)
 * Zone-wide subnet overlap validation is **required** — an overlap is an address conflict (§6.3.2)
