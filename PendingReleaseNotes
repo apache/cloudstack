@@ -39,3 +39,15 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+
+4.22.0 > 4.23.0:
+  * Added NVMe-over-Fabrics (TCP) support to the adaptive storage framework
+    and the Pure Storage FlashArray plugin. Volumes on a FlashArray primary
+    pool can now be delivered to KVM hypervisors over NVMe-TCP instead of
+    Fibre Channel by setting transport=nvme-tcp on the pool's provider URL.
+    Volumes are identified on the host via EUI-128 NGUIDs and attached to
+    guests as plain block devices through the native NVMe multipath layer;
+    no device-mapper multipath configuration is required. A new
+    Storage.StoragePoolType.NVMeTCP + MultipathNVMeOFAdapterBase /
+    NVMeTCPAdapter on the KVM side back the new pool type.
