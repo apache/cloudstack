@@ -99,6 +99,15 @@ export default {
           return Promise.resolve()
         }
       },
+      overCommitRatioRule: {
+        type: 'number',
+        validator: async (rule, value) => {
+          if (value && (isNaN(value) || value < 1)) {
+            return Promise.reject(this.$t('message.error.overcommit.ratio'))
+          }
+          return Promise.resolve()
+        }
+      },
       storageType: 'shared',
       provisioningType: 'thin',
       cacheMode: 'none',
@@ -216,6 +225,8 @@ export default {
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
+        cpuovercommitratio: [this.overCommitRatioRule],
+        memoryovercommitratio: [this.overCommitRatioRule],
         networkrate: [this.naturalNumberRule],
         rootdisksize: [this.naturalNumberRule],
         diskbytesreadrate: [this.naturalNumberRule],
@@ -379,9 +390,20 @@ export default {
         this.handleDeploymentPlannerChange(r.deploymentplanner)
       }
 
-      if (r.serviceofferingdetails && Object.keys(r.serviceofferingdetails).length > 0) {
-        this.externalDetailsEnabled = true
-        this.form.externaldetails = r.serviceofferingdetails
+      if (r.serviceofferingdetails) {
+        const details = Object.assign({}, r.serviceofferingdetails)
+        if (details.cpuOvercommitRatio) {
+          this.form.cpuovercommitratio = details.cpuOvercommitRatio
+          delete details.cpuOvercommitRatio
+        }
+        if (details.memoryOvercommitRatio) {
+          this.form.memoryovercommitratio = details.memoryOvercommitRatio
+          delete details.memoryOvercommitRatio
+        }
+        if (Object.keys(details).length > 0) {
+          this.externalDetailsEnabled = true
+          this.form.externaldetails = details
+        }
       }
     },
     fetchGPUCards () {
@@ -577,13 +599,25 @@ export default {
            values.deploymentplanner != null && values.deploymentplanner.length > 0) {
           params.deploymentplanner = values.deploymentplanner
         }
+        var detailIndex = 0
         if ('deploymentplanner' in values &&
            values.deploymentplanner !== undefined &&
            values.deploymentplanner === 'ImplicitDedicationPlanner' &&
            values.plannermode !== undefined &&
            values.plannermode !== '') {
-          params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
-          params['serviceofferingdetails[0].value'] = values.plannermode
+          params['serviceofferingdetails[' + detailIndex + '].key'] = 'ImplicitDedicationMode'
+          params['serviceofferingdetails[' + detailIndex + '].value'] = values.plannermode
+          detailIndex++
+        }
+        if (values.cpuovercommitratio !== undefined && values.cpuovercommitratio !== null && values.cpuovercommitratio !== '') {
+          params['serviceofferingdetails[' + detailIndex + '].key'] = 'cpuOvercommitRatio'
+          params['serviceofferingdetails[' + detailIndex + '].value'] = values.cpuovercommitratio
+          detailIndex++
+        }
+        if (values.memoryovercommitratio !== undefined && values.memoryovercommitratio !== null && values.memoryovercommitratio !== '') {
+          params['serviceofferingdetails[' + detailIndex + '].key'] = 'memoryOvercommitRatio'
+          params['serviceofferingdetails[' + detailIndex + '].value'] = values.memoryovercommitratio
+          detailIndex++
         }
         if ('isvolatile' in values && values.isvolatile !== undefined) {
           params.isvolatile = values.isvolatile === true
