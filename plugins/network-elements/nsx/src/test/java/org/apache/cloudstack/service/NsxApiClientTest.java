@@ -22,14 +22,24 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.cluster.Status;
 import com.vmware.nsx.model.ClusterStatus;
 import com.vmware.nsx.model.ControllerClusterStatus;
+import com.vmware.nsx_policy.Infra;
+import com.vmware.nsx_policy.InfraStub;
+import com.vmware.nsx_policy.infra.IpDiscoveryProfiles;
 import com.vmware.nsx_policy.infra.LbAppProfiles;
 import com.vmware.nsx_policy.infra.LbMonitorProfiles;
 import com.vmware.nsx_policy.infra.LbPools;
 import com.vmware.nsx_policy.infra.LbServices;
 import com.vmware.nsx_policy.infra.LbVirtualServers;
+import com.vmware.nsx_policy.infra.MacDiscoveryProfiles;
+import com.vmware.nsx_policy.infra.SegmentSecurityProfiles;
+import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.ApiError;
+import com.vmware.nsx_policy.model.ChildSegment;
+import com.vmware.nsx_policy.model.ChildSegmentDiscoveryProfileBindingMap;
+import com.vmware.nsx_policy.model.ChildSegmentSecurityProfileBindingMap;
 import com.vmware.nsx_policy.model.Group;
+import com.vmware.nsx_policy.model.IPDiscoveryProfile;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBIcmpMonitorProfile;
 import com.vmware.nsx_policy.model.LBService;
@@ -37,9 +47,18 @@ import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
 import com.vmware.nsx_policy.model.LBPool;
 import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBVirtualServer;
+import com.vmware.nsx_policy.model.MacDiscoveryProfile;
 import com.vmware.nsx_policy.model.PathExpression;
+import com.vmware.nsx_policy.model.Segment;
+import com.vmware.nsx_policy.model.SegmentDiscoveryProfileBindingMap;
+import com.vmware.nsx_policy.model.SegmentSecurityProfile;
 import com.vmware.vapi.bindings.Service;
+import com.vmware.vapi.bindings.StubConfiguration;
 import com.vmware.vapi.bindings.Structure;
+import com.vmware.vapi.core.ApiProvider;
+import com.vmware.vapi.core.AsyncHandle;
+import com.vmware.vapi.core.MethodResult;
+import com.vmware.vapi.data.DataValue;
 import com.vmware.vapi.std.errors.Error;
 import com.vmware.vapi.std.errors.NotFound;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
@@ -47,6 +66,7 @@ import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -100,6 +120,219 @@ public class NsxApiClientTest {
             Mockito.verify(groups[0]).setExpression(List.of(pathExpressions[0]));
             Mockito.verify(pathExpressions[0]).setPaths(List.of(segmentPath));
         }
+    }
+
+    @Test
+    public void testCreateSegmentBindsConfiguredProfiles() {
+        ApiProvider apiProvider = Mockito.mock(ApiProvider.class);
+        Infra infraService = Mockito.spy(new InfraStub(apiProvider, new StubConfiguration()));
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        MacDiscoveryProfiles macProfiles = Mockito.mock(MacDiscoveryProfiles.class);
+        SegmentSecurityProfiles securityProfiles = Mockito.mock(SegmentSecurityProfiles.class);
+        IPDiscoveryProfile ipProfile = Mockito.mock(IPDiscoveryProfile.class);
+        MacDiscoveryProfile macProfile = Mockito.mock(MacDiscoveryProfile.class);
+        SegmentSecurityProfile securityProfile = Mockito.mock(SegmentSecurityProfile.class);
+        when(nsxService.apply(Infra.class)).thenReturn(infraService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(nsxService.apply(MacDiscoveryProfiles.class)).thenReturn(macProfiles);
+        when(nsxService.apply(SegmentSecurityProfiles.class)).thenReturn(securityProfiles);
+        when(ipProfiles.get("ip-profile")).thenReturn(ipProfile);
+        when(macProfiles.get("mac-profile")).thenReturn(macProfile);
+        when(securityProfiles.get("security-profile")).thenReturn(securityProfile);
+        when(ipProfile.getId()).thenReturn("ip-profile");
+        when(macProfile.getId()).thenReturn("mac-profile");
+        when(securityProfile.getId()).thenReturn("security-profile");
+        when(ipProfile.getPath()).thenReturn("/infra/ip-discovery-profiles/ip-profile");
+        when(macProfile.getPath()).thenReturn("/infra/mac-discovery-profiles/mac-profile");
+        when(securityProfile.getPath()).thenReturn("/infra/segment-security-profiles/security-profile");
+        Mockito.doAnswer(invocation -> {
+            AsyncHandle<MethodResult> asyncHandle = invocation.getArgument(4);
+            asyncHandle.setResult(MethodResult.EMPTY);
+            return null;
+        }).when(apiProvider).invoke(anyString(), eq("patch"), any(DataValue.class), any(), any());
+        ArgumentCaptor<com.vmware.nsx_policy.model.Infra> infraCaptor =
+                ArgumentCaptor.forClass(com.vmware.nsx_policy.model.Infra.class);
+
+        client.createSegment("segment", "tier1", "10.10.10.1/24", "/infra/sites/default/enforcement-points/default",
+                List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                "ip-profile", "mac-profile", "security-profile");
+
+        verify(infraService).patch(infraCaptor.capture(), eq(false));
+        verify(apiProvider).invoke(anyString(), eq("patch"), any(DataValue.class), any(), any());
+        verify(nsxService, never()).apply(Segments.class);
+        Assert.assertEquals("Infra", infraCaptor.getValue().getResourceType());
+        Assert.assertEquals(1, infraCaptor.getValue().getChildren().size());
+        ChildSegment childSegment = (ChildSegment) infraCaptor.getValue().getChildren().get(0);
+        Assert.assertEquals("ChildSegment", childSegment.getResourceType());
+        Assert.assertEquals("segment", childSegment.getId());
+        Assert.assertEquals("Segment", childSegment.getSegment().getResourceType());
+        Assert.assertEquals("segment", childSegment.getSegment().getId());
+        Assert.assertEquals(2, childSegment.getSegment().getChildren().size());
+        ChildSegmentDiscoveryProfileBindingMap discoveryChild = (ChildSegmentDiscoveryProfileBindingMap)
+                childSegment.getSegment().getChildren().get(0);
+        Assert.assertEquals("ChildSegmentDiscoveryProfileBindingMap", discoveryChild.getResourceType());
+        SegmentDiscoveryProfileBindingMap discoveryBinding = discoveryChild.getSegmentDiscoveryProfileBindingMap();
+        Assert.assertEquals("cloudstack-discovery-profile-binding", discoveryChild.getId());
+        Assert.assertEquals("cloudstack-discovery-profile-binding", discoveryBinding.getId());
+        Assert.assertEquals("SegmentDiscoveryProfileBindingMap", discoveryBinding.getResourceType());
+        Assert.assertEquals("/infra/ip-discovery-profiles/ip-profile", discoveryBinding.getIpDiscoveryProfilePath());
+        Assert.assertEquals("/infra/mac-discovery-profiles/mac-profile", discoveryBinding.getMacDiscoveryProfilePath());
+        ChildSegmentSecurityProfileBindingMap securityChild = (ChildSegmentSecurityProfileBindingMap)
+                childSegment.getSegment().getChildren().get(1);
+        Assert.assertEquals("cloudstack-security-profile-binding", securityChild.getId());
+        Assert.assertEquals("cloudstack-security-profile-binding",
+                securityChild.getSegmentSecurityProfileBindingMap().getId());
+        Assert.assertEquals("ChildSegmentSecurityProfileBindingMap", securityChild.getResourceType());
+        Assert.assertEquals("SegmentSecurityProfileBindingMap",
+                securityChild.getSegmentSecurityProfileBindingMap().getResourceType());
+        Assert.assertEquals("/infra/segment-security-profiles/security-profile",
+                securityChild.getSegmentSecurityProfileBindingMap().getSegmentSecurityProfilePath());
+    }
+
+    @Test
+    public void testSegmentProfileBindingsWithOnlyIpDiscoveryProfile() {
+        List<Structure> bindings = client.getSegmentProfileBindings("/infra/ip-discovery-profiles/ip-profile", null, null);
+
+        Assert.assertEquals(1, bindings.size());
+        ChildSegmentDiscoveryProfileBindingMap child = (ChildSegmentDiscoveryProfileBindingMap) bindings.get(0);
+        Assert.assertEquals("ChildSegmentDiscoveryProfileBindingMap", child.getResourceType());
+        Assert.assertEquals("SegmentDiscoveryProfileBindingMap",
+                child.getSegmentDiscoveryProfileBindingMap().getResourceType());
+        Assert.assertEquals("/infra/ip-discovery-profiles/ip-profile",
+                child.getSegmentDiscoveryProfileBindingMap().getIpDiscoveryProfilePath());
+        Assert.assertNull(child.getSegmentDiscoveryProfileBindingMap().getMacDiscoveryProfilePath());
+    }
+
+    @Test
+    public void testSegmentProfileBindingsWithOnlyMacDiscoveryProfile() {
+        List<Structure> bindings = client.getSegmentProfileBindings(null, "/infra/mac-discovery-profiles/mac-profile", null);
+
+        Assert.assertEquals(1, bindings.size());
+        ChildSegmentDiscoveryProfileBindingMap child = (ChildSegmentDiscoveryProfileBindingMap) bindings.get(0);
+        Assert.assertEquals("ChildSegmentDiscoveryProfileBindingMap", child.getResourceType());
+        Assert.assertEquals("SegmentDiscoveryProfileBindingMap",
+                child.getSegmentDiscoveryProfileBindingMap().getResourceType());
+        Assert.assertNull(child.getSegmentDiscoveryProfileBindingMap().getIpDiscoveryProfilePath());
+        Assert.assertEquals("/infra/mac-discovery-profiles/mac-profile",
+                child.getSegmentDiscoveryProfileBindingMap().getMacDiscoveryProfilePath());
+    }
+
+    @Test
+    public void testSegmentProfileBindingsWithOnlySecurityProfile() {
+        List<Structure> bindings = client.getSegmentProfileBindings(null, null,
+                "/infra/segment-security-profiles/security-profile");
+
+        Assert.assertEquals(1, bindings.size());
+        ChildSegmentSecurityProfileBindingMap child = (ChildSegmentSecurityProfileBindingMap) bindings.get(0);
+        Assert.assertEquals("ChildSegmentSecurityProfileBindingMap", child.getResourceType());
+        Assert.assertEquals("SegmentSecurityProfileBindingMap",
+                child.getSegmentSecurityProfileBindingMap().getResourceType());
+        Assert.assertEquals("/infra/segment-security-profiles/security-profile",
+                child.getSegmentSecurityProfileBindingMap().getSegmentSecurityProfilePath());
+    }
+
+    @Test
+    public void testCreateSegmentWithoutProfilesPreservesExistingBehavior() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+
+        client.createSegment("segment", "tier1", "10.10.10.1/24", "/infra/sites/default/enforcement-points/default",
+                List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()));
+
+        verify(segmentService).patch(eq("segment"), any(Segment.class));
+        verify(nsxService, never()).apply(IpDiscoveryProfiles.class);
+        verify(nsxService, never()).apply(MacDiscoveryProfiles.class);
+        verify(nsxService, never()).apply(SegmentSecurityProfiles.class);
+        verify(nsxService, never()).apply(Infra.class);
+    }
+
+    @Test
+    public void testCreateSegmentRejectsMissingProfileBeforeCreatingSegment() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        Infra infraService = Mockito.mock(Infra.class);
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        Structure errorData = Mockito.mock(Structure.class);
+        ApiError apiError = new ApiError();
+        apiError.setErrorMessage("profile not found");
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+        when(nsxService.apply(Infra.class)).thenReturn(infraService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
+        when(ipProfiles.get("missing-profile")).thenThrow(new NotFound(List.of(), errorData));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> client.createSegment("segment", "tier1", "10.10.10.1/24",
+                        "/infra/sites/default/enforcement-points/default",
+                        List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                        "missing-profile", null, null));
+
+        Assert.assertEquals("Error creating segment segment: profile not found", exception.getMessage());
+        verify(segmentService, never()).patch(anyString(), any(Segment.class));
+        verify(infraService, never()).patch(any(com.vmware.nsx_policy.model.Infra.class), eq(false));
+    }
+
+    @Test
+    public void testCreateSegmentRejectsProfileWithoutCanonicalPathBeforeCreatingSegment() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        IPDiscoveryProfile ipProfile = Mockito.mock(IPDiscoveryProfile.class);
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(ipProfiles.get("ip-profile")).thenReturn(ipProfile);
+        when(ipProfile.getId()).thenReturn("ip-profile");
+        when(ipProfile.getPath()).thenReturn(" ");
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> client.createSegment("segment", "tier1", "10.10.10.1/24",
+                        "/infra/sites/default/enforcement-points/default",
+                        List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                        "ip-profile", null, null));
+
+        verify(segmentService, never()).patch(anyString(), any(Segment.class));
+        verify(nsxService, never()).apply(Infra.class);
+    }
+
+    @Test
+    public void testCreateSegmentRejectsProfileMarkedForDeletionBeforeCreatingSegment() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        IPDiscoveryProfile ipProfile = Mockito.mock(IPDiscoveryProfile.class);
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(ipProfiles.get("ip-profile")).thenReturn(ipProfile);
+        when(ipProfile.getId()).thenReturn("ip-profile");
+        when(ipProfile.getPath()).thenReturn("/infra/ip-discovery-profiles/ip-profile");
+        when(ipProfile.getMarkedForDelete()).thenReturn(true);
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> client.createSegment("segment", "tier1", "10.10.10.1/24",
+                        "/infra/sites/default/enforcement-points/default",
+                        List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                        "ip-profile", null, null));
+
+        verify(segmentService, never()).patch(anyString(), any(Segment.class));
+        verify(nsxService, never()).apply(Infra.class);
+    }
+
+    @Test
+    public void testCreateSegmentRejectsProfileResolvedWithDifferentIdBeforeCreatingSegment() {
+        Segments segmentService = Mockito.mock(Segments.class);
+        IpDiscoveryProfiles ipProfiles = Mockito.mock(IpDiscoveryProfiles.class);
+        IPDiscoveryProfile ipProfile = Mockito.mock(IPDiscoveryProfile.class);
+        when(nsxService.apply(Segments.class)).thenReturn(segmentService);
+        when(nsxService.apply(IpDiscoveryProfiles.class)).thenReturn(ipProfiles);
+        when(ipProfiles.get("ip-profile")).thenReturn(ipProfile);
+        when(ipProfile.getId()).thenReturn("different-profile");
+        when(ipProfile.getPath()).thenReturn("/infra/ip-discovery-profiles/different-profile");
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> client.createSegment("segment", "tier1", "10.10.10.1/24",
+                        "/infra/sites/default/enforcement-points/default",
+                        List.of(new com.vmware.nsx.model.TransportZone.Builder().setId("tz").build()),
+                        "ip-profile", null, null));
+
+        verify(segmentService, never()).patch(anyString(), any(Segment.class));
+        verify(nsxService, never()).apply(Infra.class);
     }
 
     @Test

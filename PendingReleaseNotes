@@ -39,3 +39,9 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+4.22.1.0 > 4.23.0.0:
+  * NSX network offerings can reference existing IP discovery, MAC discovery,
+    and segment security profiles. New NSX segments bind selected profiles in
+    the same hierarchical request as segment creation. Existing networks are
+    not silently reconfigured when profile bindings change.
