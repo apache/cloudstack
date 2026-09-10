@@ -40,7 +40,14 @@ public class CapacityManagerScaleToClusterUnitsTest {
 
     @Test
     public void testVmWithoutARatioIsChargedAsRequested() {
-        assertEquals(4000L, scale(4000L, null, 10.0f));
+        // no detail is only written when the VM's ratio equals its cluster's and neither
+        // overcommits, in which case the request is already in cluster units
+        assertEquals(4000L, scale(4000L, null, 1.0f));
+    }
+
+    @Test
+    public void testUnreadableRatioDoesNotBreakTheCharge() {
+        assertEquals(4000L, scale(4000L, "not a number", 10.0f));
     }
 
     @Test
