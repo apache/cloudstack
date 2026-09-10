@@ -1067,6 +1067,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 Network.GuestType.Isolated, true, false, false, false, true, false);
 
                 defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                // Default egress policy is Allow on fresh installations, consistent with the
+                // createNetworkOffering API default (egressdefaultpolicy=true when not specified).
+                // Existing installations are not affected: this method only runs on first boot
+                // (guarded by the "init" configuration flag) and persistDefaultNetworkOffering()
+                // never updates an already existing offering.
+                defaultIsolatedSourceNatEnabledNetworkOffering.setEgressDefaultPolicy(true);
                 defaultIsolatedSourceNatEnabledNetworkOffering.setSupportsVmAutoScaling(true);
                 defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
@@ -1084,6 +1090,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 false, true, null, null, true, Availability.Optional, null, Network.GuestType.Isolated, true, true, false, false, false, false);
 
                 defaultIsolatedEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                // This offering carries no Firewall service, so the flag is not enforced anywhere;
+                // it is set for consistency so API responses do not advertise a misleading Deny policy.
+                defaultIsolatedEnabledNetworkOffering.setEgressDefaultPolicy(true);
                 defaultIsolatedEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedEnabledNetworkOffering);
 
                 for (Service service : defaultIsolatedNetworkOfferingProviders.keySet()) {
