@@ -222,4 +222,4 @@ repos:
       - id: check-dependabot
         name: validate dependabot.yml
         description: ensures the dependabot config file is valid
-        files: ^\.github/dependabot\.yml$
+        files: ^\.github/dependabot\.ya?ml$
