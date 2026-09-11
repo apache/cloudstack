@@ -145,9 +145,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "The CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name = ApiConstants.EXTERNAL_ID, type = CommandType.STRING, description = "ID of the network in an external system.")
-    private String externalId;
-
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
  description = "An optional field, whether to the display the network to the end User or not.", authorized = {RoleType.Admin})
@@ -269,10 +266,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
-    }
-
-    public String getExternalId() {
-        return externalId;
     }
 
     public String getIsolatedPvlanType() {
