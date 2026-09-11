@@ -1,0 +1,70 @@
+modprobe br_netfilter
+sysctl -w net.bridge.bridge-nf-call-arptables=1
+sysctl -w net.bridge.bridge-nf-call-iptables=1
+sysctl -w net.bridge.bridge-nf-call-ip6tables=1
+iptables -L BF-brdr-42
+iptables -N BF-brdr-42
+iptables -L BF-brdr-42-OUT
+iptables -N BF-brdr-42-OUT
+iptables -L BF-brdr-42-IN
+iptables -N BF-brdr-42-IN
+ip6tables -L BF-brdr-42
+ip6tables -N BF-brdr-42
+ip6tables -L BF-brdr-42-OUT
+ip6tables -N BF-brdr-42-OUT
+ip6tables -L BF-brdr-42-IN
+ip6tables -N BF-brdr-42-IN
+iptables -L BF-L3
+iptables -N BF-L3
+iptables -L BF-L3-IN
+iptables -N BF-L3-IN
+iptables -L BF-L3-OUT
+iptables -N BF-L3-OUT
+iptables -C BF-L3 -j MARK --set-xmark 0x0/0x40000000
+iptables -F BF-L3
+iptables -A BF-L3 -j MARK --set-xmark 0x0/0x40000000
+iptables -A BF-L3 -j BF-L3-IN
+iptables -A BF-L3 -j BF-L3-OUT
+iptables -A BF-L3 -m mark --mark 0x40000000/0x40000000 -j ACCEPT
+iptables -S FORWARD
+iptables -I FORWARD -j BF-L3
+iptables -C BF-L3-IN -i brdr-42 -j BF-brdr-42-IN
+iptables -I BF-L3-IN -i brdr-42 -j BF-brdr-42-IN
+iptables -C BF-L3-IN -i brdr-42 -m mark ! --mark 0x40000000/0x40000000 -j DROP
+iptables -A BF-L3-IN -i brdr-42 -m mark ! --mark 0x40000000/0x40000000 -j DROP
+iptables -C BF-L3-OUT -o brdr-42 -j BF-brdr-42-OUT
+iptables -I BF-L3-OUT -o brdr-42 -j BF-brdr-42-OUT
+iptables -C BF-L3-OUT -o brdr-42 -j DROP
+iptables -A BF-L3-OUT -o brdr-42 -j DROP
+ip6tables -L BF-L3
+ip6tables -N BF-L3
+ip6tables -L BF-L3-IN
+ip6tables -N BF-L3-IN
+ip6tables -L BF-L3-OUT
+ip6tables -N BF-L3-OUT
+ip6tables -C BF-L3 -j MARK --set-xmark 0x0/0x40000000
+ip6tables -F BF-L3
+ip6tables -A BF-L3 -j MARK --set-xmark 0x0/0x40000000
+ip6tables -A BF-L3 -j BF-L3-IN
+ip6tables -A BF-L3 -j BF-L3-OUT
+ip6tables -A BF-L3 -m mark --mark 0x40000000/0x40000000 -j ACCEPT
+ip6tables -S FORWARD
+ip6tables -I FORWARD -j BF-L3
+ip6tables -C BF-L3-IN -i brdr-42 -j BF-brdr-42-IN
+ip6tables -I BF-L3-IN -i brdr-42 -j BF-brdr-42-IN
+ip6tables -C BF-L3-IN -i brdr-42 -m mark ! --mark 0x40000000/0x40000000 -j DROP
+ip6tables -A BF-L3-IN -i brdr-42 -m mark ! --mark 0x40000000/0x40000000 -j DROP
+ip6tables -C BF-L3-OUT -o brdr-42 -j BF-brdr-42-OUT
+ip6tables -I BF-L3-OUT -o brdr-42 -j BF-brdr-42-OUT
+ip6tables -C BF-L3-OUT -o brdr-42 -j DROP
+ip6tables -A BF-L3-OUT -o brdr-42 -j DROP
+ipset -! create cs_notrack hash:ip family inet
+ipset -! create cs_notrack6 hash:ip family inet6
+iptables -t raw -n -L PREROUTING | grep -q 'match-set cs_notrack dst NOTRACK'
+iptables -t raw -A PREROUTING -m set --match-set cs_notrack dst -j NOTRACK
+iptables -t raw -n -L PREROUTING | grep -q 'match-set cs_notrack src NOTRACK'
+iptables -t raw -A PREROUTING -m set --match-set cs_notrack src -j NOTRACK
+ip6tables -t raw -n -L PREROUTING | grep -q 'match-set cs_notrack6 dst NOTRACK'
+ip6tables -t raw -A PREROUTING -m set --match-set cs_notrack6 dst -j NOTRACK
+ip6tables -t raw -n -L PREROUTING | grep -q 'match-set cs_notrack6 src NOTRACK'
+ip6tables -t raw -A PREROUTING -m set --match-set cs_notrack6 src -j NOTRACK

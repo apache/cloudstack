@@ -344,7 +344,13 @@
           :to="{ path: $route.path + '/' + record.id }"
         >{{ text }}</router-link>
         <span v-else>
-          <copy-label :label="text" />
+          <copy-label v-if="text" :label="text" />
+          <br v-if="text && ipV6Address(null, record)"/>
+          <copy-label
+            v-if="ipV6Address(null, record)"
+            :label="shortenIpV6(ipV6Address(null, record))"
+            :copyValue="ipV6Address(null, record)"
+            :tooltip="ipV6Address(null, record)" />
         </span>
         <span v-if="record.issourcenat">
           &nbsp;
@@ -1403,6 +1409,12 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    shortenIpV6 (address) {
+      if (!address || address.length <= 16) {
+        return address
+      }
+      return address.substring(0, 11) + '…' + address.substring(address.length - 4)
     },
     generateCommentsPath (record) {
       if (this.entityTypeToPath(record.entitytype) === 'ssh') {

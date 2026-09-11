@@ -2437,8 +2437,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
                 //This method allocates direct ip for the Shared network in Advance zones
-                boolean ipv4 = false;
-                if (network.getGateway() != null) {
+                if (network.getGateway() != null || (GuestType.L3 == network.getGuestType() && network.getCidr() != null)) {
                     if (nic.getIPv4Address() == null) {
                         PublicIp ip = null;
 

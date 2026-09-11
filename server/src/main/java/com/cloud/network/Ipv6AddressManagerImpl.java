@@ -204,7 +204,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
      */
     @Override
     public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network) throws InsufficientAddressCapacityException {
-        if (network.getIp6Gateway() != null) {
+        if (network.getIp6Gateway() != null || (Network.GuestType.L3 == network.getGuestType() && network.getIp6Cidr() != null)) {
             if (nic.getIPv6Address() == null) {
                 logger.debug("Found IPv6 CIDR " + network.getIp6Cidr() + " for Network " + network);
                 nic.setIPv6Cidr(network.getIp6Cidr());
