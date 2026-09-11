@@ -378,4 +378,16 @@ public class LoadBalancingRulesManagerImplTest{
         lbr.createPublicLoadBalancerRule("xid", "name", "desc", 53, 53, 53, 53,
                 null, "tcp", "roundrobin", networkId, lbOwnerId, false, "tcp", null, null);
     }
+
+    @Test
+    public void testValidateConnectionTimeoutAcceptsZeroAndAbove() {
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, null);
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, 0L);
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, 600000L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateConnectionTimeoutRejectsNegative() {
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, -1L);
+    }
 }
