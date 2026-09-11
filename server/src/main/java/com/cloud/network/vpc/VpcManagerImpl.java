@@ -572,8 +572,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String networkModeStr = cmd.getNetworkMode();
         final boolean enable = cmd.getEnable();
 
-        NetworkOffering.NetworkMode networkMode = null;
-        if (networkModeStr != null) {
+        NetworkOffering.NetworkMode networkMode = NetworkOffering.NetworkMode.NATTED;
+        if (StringUtils.isNotEmpty(networkModeStr)) {
             if (!EnumUtils.isValidEnum(NetworkOffering.NetworkMode.class, networkModeStr)) {
                 throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
@@ -616,6 +616,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _ntwkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
 
+        if (StringUtils.isEmpty(routingModeString)) {
+            routingModeString = NetworkOffering.RoutingMode.Static.toString(); // Defensive fallback for standard routing
+        }
         NetworkOffering.RoutingMode routingMode = ConfigurationManagerImpl.verifyRoutingMode(routingModeString);
 
         if (specifyAsNumber && !forNsx) {
