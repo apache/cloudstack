@@ -400,6 +400,20 @@ public class ActionEventUtils {
         return account.getDomainId();
     }
 
+    /**
+     * Retrieves the last non-archived event matching the specified criteria.
+     *
+     * @param type         the event type to search for
+     * @param state        the event state to search for (e.g., {@link Event.State#Scheduled})
+     * @param resourceId   the resource ID associated with the event
+     * @param resourceType the resource type associated with the event
+     * @return the most recent EventVO matching the criteria, or null if not found
+     * @see EventDao#findLastEvent(String, Event.State, Long, String)
+     */
+    public static EventVO getLastEvent(String type, Event.State state, Long resourceId, String resourceType) {
+        return s_eventDao.findLastEvent(type, state, resourceId, resourceType);
+    }
+
     private static void populateFirstClassEntities(Map<String, String> eventDescription){
 
         CallContext context = CallContext.current();

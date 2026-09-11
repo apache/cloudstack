@@ -363,6 +363,7 @@ public class SystemVmTemplateRegistrationTest {
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
+    @Test
     public void testValidateTemplates_downloadableFileNotFound() {
         CPU.CPUArch arch = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_ARCH_TYPES.get(0);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();

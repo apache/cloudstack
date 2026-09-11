@@ -31,8 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
@@ -58,9 +56,15 @@ public class GoogleOAuth2ProviderTest {
 
     private AutoCloseable closeable;
 
+    @Mock
+    private OauthProviderVO mockProvider;
+
     @Before
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
+        when(mockProvider.getClientId()).thenReturn("test_client_id");
+        when(mockProvider.getSecretKey()).thenReturn("test_secret_key");
+        when(mockProvider.getRedirectUri()).thenReturn("http://localhost/redirect");
     }
 
     @After

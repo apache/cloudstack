@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
@@ -207,4 +208,6 @@ public interface AccountManager extends AccountService, Configurable {
     UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user);
 
     void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount);
+
+    void refreshRoleCheckersCacheOnPermissionsChange(Role role);
 }
