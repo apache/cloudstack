@@ -96,9 +96,19 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @return the cluster imbalance after migration
      */
     default Double getImbalancePostMigration(VirtualMachine vm,
-            Host destHost, Long clusterId, long vmMetric, double[] baseMetricsArray,
+            Host destHost, Long clusterId, ServiceOffering serviceOffering, double[] baseMetricsArray,
             Map<Long, Integer> hostIdToIndexMap, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) {
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+        // Metric "both": return the worse of the cpu and memory post-migration imbalance. The
+        // baseMetricsArray fast path is single-metric, so evaluate both maps directly instead.
+        if ("both".equals(getClusterDrsMetric(clusterId))) {
+            long vmCpuMetric = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
+            long vmMemMetric = serviceOffering.getRamSize() * 1024L * 1024L;
+            return Math.max(
+                    imbalancePostMigrationForMap(vm, destHost, clusterId, vmCpuMetric, hostCpuMap),
+                    imbalancePostMigrationForMap(vm, destHost, clusterId, vmMemMetric, hostMemoryMap));
+        }
+        long vmMetric = getVmMetric(serviceOffering, clusterId);
         // Create a copy of the base array and adjust only the two affected hosts
         double[] adjustedMetrics = new double[baseMetricsArray.length];
         System.arraycopy(baseMetricsArray, 0, adjustedMetrics, 0, baseMetricsArray.length);
@@ -127,6 +137,23 @@ public interface ClusterDrsAlgorithm extends Adapter {
         }
 
         return calculateImbalance(adjustedMetrics);
+    }
+
+    /**
+     * Cluster imbalance for a single resource map after hypothetically migrating vm to destHost.
+     */
+    private Double imbalancePostMigrationForMap(VirtualMachine vm, Host destHost, Long clusterId,
+            long vmMetric, Map<Long, Ternary<Long, Long, Long>> metricMap) {
+        long destHostId = destHost.getId();
+        long vmHostId = vm.getHostId();
+        List<Double> list = new ArrayList<>();
+        for (Map.Entry<Long, Ternary<Long, Long, Long>> entry : metricMap.entrySet()) {
+            Double value = getMetricValuePostMigration(clusterId, entry.getValue(), vmMetric, entry.getKey(), destHostId, vmHostId);
+            if (value != null) {
+                list.add(value);
+            }
+        }
+        return getImbalance(list);
     }
 
     /**
@@ -272,6 +299,10 @@ public interface ClusterDrsAlgorithm extends Adapter {
             case "memory":
                 list = getMetricList(clusterId, memoryList, skipThreshold);
                 break;
+            case "both":
+                return Math.max(
+                        getImbalance(getMetricList(clusterId, cpuList, skipThreshold)),
+                        getImbalance(getMetricList(clusterId, memoryList, skipThreshold)));
             default:
                 throw new ConfigurationException(
                         String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
