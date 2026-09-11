@@ -592,6 +592,11 @@
             <artifactId>cloud-plugin-cluster-drs-condensed</artifactId>
             <version>${project.version}</version>
         </dependency>
+<dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-cluster-drs-weighted</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-database-quota</artifactId>

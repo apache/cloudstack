@@ -53,3 +53,49 @@ example.ver.1 > example.ver.2:
     the guest while the NVRAM sidecar is copied, so that the captured firmware
     state is consistent with the disk snapshot. Non-UEFI VMs are unaffected and
     continue to snapshot live.
+
+  * New VM allocation algorithm 'balancedweighted' for vm.allocation.algorithm. Existing
+    algorithms and the default are unchanged; the new one is opt-in.
+
+    Existing algorithms rank hosts on allocated capacity alone. Under a large overprovisioning
+    factor that reads badly: allocation is measured against a total that has already been
+    multiplied by the factor, so a host under real strain can still report a low percentage and
+    keep attracting new VMs. Concurrent deployments make it worse, since they all read the same
+    figures before any of them is accounted for.
+
+    'balancedweighted' ranks hosts on a blend of allocated CPU and memory, measured CPU and
+    memory utilisation, VM count, and how many VMs started on the host recently. It holds back
+    hosts that are measurably too busy, and chooses at random from among the best scoring hosts
+    so that simultaneous deployments do not all pick the same one.
+
+    Tuned with the host.weighted.* settings, most of which are cluster scoped. Measured
+    utilisation comes from a moving average configured with host.load.sample.interval and
+    host.load.half.life. Until a management server has collected samples, ranking falls back to
+    allocation figures alone.
+
+  * New DRS algorithm 'weighted' for drs.algorithm, alongside 'balanced' and 'condensed'. The
+    default is unchanged; the new one is opt-in per cluster.
+
+    The existing algorithms balance a single metric chosen by drs.metric, so choosing one leaves
+    the other unwatched: a cluster can be even on memory while its CPU load varies several fold and
+    nothing moves. Allocation is also a poor stand-in for load under overprovisioning, where a
+    saturated host can still report a small percentage allocated.
+
+    'weighted' blends CPU and memory allocated with CPU and memory in use, and balances the result.
+    Imbalance keeps its existing shape - standard deviation over the mean - but it is computed over
+    a blend rather than over one metric, so drs.imbalance is not calibrated the same way and is
+    worth re-checking after switching. drs.metric, drs.metric.type and drs.metric.use.ratio choose
+    and shape the single metric the other algorithms balance; they do not apply to 'weighted' and
+    are ignored.
+
+    Utilisation is only used when every host in the cluster has been sampled. Comparing a host
+    measured on utilisation against one measured on allocation alone would report a difference that
+    is an artefact of the monitoring rather than of the load, so the cluster falls back to
+    allocation figures until every host can be measured.
+
+    Tuned with the drs.weighted.* settings, all cluster scoped.
+
+  * DRS plan generation is considerably faster on large clusters. Working out where a VM could go
+    is now done once for each group of VMs that would get the same answer rather than once per VM,
+    and affinity is re-evaluated only for VMs affected by the migration just planned rather than
+    for every VM on every iteration.

@@ -27,28 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="ConsoleProxyAllocator" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator">
-        <property name="name" value="Balance" />
-    </bean>
-
-    <bean id="weightedHostScorer"
-        class="com.cloud.agent.manager.allocator.impl.WeightedHostScorer" />
-
-    <bean id="firstFitAllocator"
-        class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator" />
-
-    <bean id="randomAllocator"
-          class="com.cloud.agent.manager.allocator.impl.RandomAllocator" />
-
-    <bean id="FirstFitRouting"
-        class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
-        <property name="name" value="FirstFitRouting" />
-    </bean>
-
-    <bean id="recreateHostAllocator"
-        class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator" />
-
-    <bean id="testingAllocator"
-        class="com.cloud.agent.manager.allocator.impl.TestingAllocator" />
-
+  <bean id="weighted" class="org.apache.cloudstack.cluster.Weighted">
+      <property name="name" value="weighted" />
+  </bean>
 </beans>
