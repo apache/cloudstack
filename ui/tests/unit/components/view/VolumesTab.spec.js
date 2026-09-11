@@ -17,14 +17,25 @@
 
 import { flushPromises } from '@vue/test-utils'
 
+import mockAxios from '../../../mock/mockAxios'
 import common from '../../../common'
 import VolumesTab from '@/components/view/VolumesTab.vue'
+
+jest.mock('axios', () => mockAxios)
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      get: jest.fn(() => null)
+    }
+  }
+}))
 
 const router = common.createMockRouter()
 const i18n = common.createMockI18n('en')
 
 describe('Components > View > VolumesTab.vue', () => {
   beforeEach(() => {
+    jest.clearAllMocks()
     jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
@@ -52,6 +63,47 @@ describe('Components > View > VolumesTab.vue', () => {
 
     expect(wrapper.text()).toContain('2.00 GiB')
     expect(wrapper.text()).not.toContain('2.00 GB')
+    expect(mockAxios).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it.each([
+    ['project instance', { id: 'vm-1', projectid: 'project-1' }],
+    ['account instance', { id: 'vm-2' }],
+    ['system VM', { id: 'vm-3', systemvmtype: 'secondarystoragevm' }]
+  ])('requests volumes across project scopes for %s', async (name, resource) => {
+    mockAxios.mockResolvedValue({
+      listvolumesresponse: {
+        volume: [
+          { id: 'data-volume', name: 'Data volume', deviceid: 1 },
+          { id: 'root-volume', name: 'Root volume', deviceid: 0 }
+        ]
+      }
+    })
+    const wrapper = common.createFactory(VolumesTab, {
+      router,
+      i18n,
+      props: { resource }
+    })
+
+    await flushPromises()
+
+    expect(mockAxios).toHaveBeenCalledWith({
+      url: '/',
+      method: 'GET',
+      params: {
+        command: 'listVolumes',
+        response: 'json',
+        listall: true,
+        listsystemvms: true,
+        projectid: '-1',
+        virtualmachineid: resource.id
+      }
+    })
+    expect(wrapper.vm.volumes.map(volume => volume.id)).toEqual(['root-volume', 'data-volume'])
+    expect(wrapper.text()).toContain('Root volume')
+    expect(wrapper.text()).toContain('Data volume')
 
     wrapper.unmount()
   })
