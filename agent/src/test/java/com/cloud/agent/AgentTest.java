@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.logging.log4j.Logger;
+import com.cloud.utils.nio.NioClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,7 +46,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.nio.Link;
-import com.cloud.utils.nio.NioConnection;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AgentTest {
@@ -224,7 +224,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionValidConnectionNoWaitStopsAndCleansUp() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         agent.connection = mockConnection;
         agent.stopAndCleanupConnection(false);
         verify(mockConnection).stop();
@@ -233,7 +233,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionCleanupThrowsIOExceptionLogsWarning() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         agent.connection = mockConnection;
         doThrow(new IOException("Cleanup failed")).when(mockConnection).cleanUp();
         agent.stopAndCleanupConnection(false);
@@ -243,7 +243,7 @@ public class AgentTest {
 
     @Test
     public void testStopAndCleanupConnectionValidConnectionWaitForStopWaitsForStartupToStop() throws IOException {
-        NioConnection mockConnection = mock(NioConnection.class);
+        NioClient mockConnection = mock(NioClient.class);
         ConstantTimeBackoff mockBackoff = mock(ConstantTimeBackoff.class);
         mockBackoff.setTimeToWait(0);
         agent.connection = mockConnection;
