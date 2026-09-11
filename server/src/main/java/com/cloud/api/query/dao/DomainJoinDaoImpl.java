@@ -150,6 +150,14 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSnapshotTotal(snapshotTotal);
         response.setSnapshotAvailable(snapshotAvail);
 
+        Long instanceSnapshotLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getInstanceSnapshotLimit(), ResourceType.instance_snapshot, domain.getId());
+        String instanceSnapshotLimitDisplay = (fullView || instanceSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(instanceSnapshotLimit);
+        Long instanceSnapshotTotal = (domain.getInstanceSnapshotTotal() == null) ? 0 : domain.getInstanceSnapshotTotal();
+        String instanceSnapshotAvailable = (fullView || instanceSnapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(instanceSnapshotLimit - instanceSnapshotTotal);
+        response.setInstanceSnapshotLimit(instanceSnapshotLimitDisplay);
+        response.setInstanceSnapshotTotal(instanceSnapshotTotal);
+        response.setInstanceSnapshotAvailable(instanceSnapshotAvailable);
+
         Long templateLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getTemplateLimit(), ResourceType.template, domain.getId());
         String templateLimitDisplay = (fullView || templateLimit == -1) ? Resource.UNLIMITED : String.valueOf(templateLimit);
         Long templateTotal = (domain.getTemplateTotal() == null) ? 0 : domain.getTemplateTotal();

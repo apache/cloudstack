@@ -28,6 +28,9 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Resource;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -112,7 +115,6 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -175,6 +177,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    ResourceLimitService resourceLimitMgr;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -339,6 +343,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("VM snapshot operation is not allowed for hypervisor type External");
         }
 
+        Account owner = _accountMgr.getAccount(userVmVo.getAccountId());
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
             throw new InvalidParameterValueException("Instance Snapshot with MEMORY is not supported for vGPU enabled Instances.");
@@ -435,6 +440,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
 
+        resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.instance_snapshot);
+
         // check if there are other active VM snapshot tasks
         if (hasActiveVMSnapshotTasks(vmId)) {
             throw new CloudRuntimeException("There are other active Instance Snapshot tasks on the Instance, please try again later");
@@ -455,8 +462,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
 
         try {
+            resourceLimitMgr.incrementResourceCount(caller.getAccountId(), Resource.ResourceType.instance_snapshot);
             return createAndPersistVMSnapshot(userVmVo, vsDescription, vmSnapshotName, vsDisplayName, vmSnapshotType);
         } catch (Exception e) {
+            resourceLimitMgr.decrementResourceCount(caller.getAccountId(), Resource.ResourceType.instance_snapshot);
             String msg = e.getMessage();
             logger.error("Create Instance Snapshot record failed for Instance: " + userVmVo + " due to: " + msg);
         }
@@ -643,6 +652,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SNAPSHOT_DELETE, eventDescription = "Delete Instance Snapshots", async = true)
     public boolean deleteVMSnapshot(Long vmSnapshotId) {
+        boolean success = false;
+
         Account caller = getCaller();
 
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
@@ -673,7 +684,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             VmWorkJobVO placeHolder = null;
             placeHolder = createPlaceHolderWork(vmSnapshot.getVmId());
             try {
-                return orchestrateDeleteVMSnapshot(vmSnapshotId);
+                success =  orchestrateDeleteVMSnapshot(vmSnapshotId);
             } finally {
                 _workJobDao.expunge(placeHolder.getId());
             }
@@ -700,10 +711,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
 
             if (jobResult instanceof Boolean)
-                return ((Boolean)jobResult).booleanValue();
-
-            return false;
+                success = ((Boolean)jobResult).booleanValue();
         }
+
+        if (success) {
+            resourceLimitMgr.decrementResourceCount(caller.getAccountId(), Resource.ResourceType.instance_snapshot);
+        }
+        return success;
     }
 
     private boolean orchestrateDeleteVMSnapshot(Long vmSnapshotId) {

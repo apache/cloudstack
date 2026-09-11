@@ -37,6 +37,9 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.utils.Ternary;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -93,7 +96,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -120,7 +122,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -200,6 +201,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VpcDao _vpcDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
     @Inject
@@ -310,6 +313,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackupStorage.key())));
             projectResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectBuckets.key())));
             projectResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectObjectStorage.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.instance_snapshot.name(), MaxProjectInstanceSnapshot.value());
 
             accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
             accountResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
@@ -328,6 +332,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxAccountBackupStorage.key())));
             accountResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountBuckets.key())));
             accountResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountObjectStorage.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.instance_snapshot.name(), MaxAccountInstanceSnapshot.value());
 
             domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPublicIPs.key())));
             domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSnapshots.key())));
@@ -346,6 +351,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackupStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxDomainBuckets.key())));
             domainResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxDomainObjectStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.instance_snapshot.name(), MaxDomainInstanceSnapshot.value());
         } catch (NumberFormatException e) {
             logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");
@@ -1332,6 +1338,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = bucketDao.countBucketsForAccount(accountId);
         } else if (type == ResourceType.object_storage) {
             newCount = bucketDao.calculateObjectStorageAllocationForAccount(accountId);
+        } else if (type == Resource.ResourceType.instance_snapshot) {
+            newCount = (long) getAmountOfInstanceSnapshotsForAccount(accountId);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }
@@ -1356,6 +1364,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         return (newCount == null) ? 0 : newCount;
+    }
+
+    private int getAmountOfInstanceSnapshotsForAccount(long accountId) {
+        return CollectionUtils.size(vmSnapshotDao.listByAccountId(accountId));
     }
 
     protected List<UserVmJoinVO> getVmsWithAccountAndTag(long accountId, String tag) {
@@ -2259,7 +2271,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 DefaultMaxDomainProjects,
                 DefaultMaxAccountGpus,
                 DefaultMaxDomainGpus,
-                DefaultMaxProjectGpus
+                DefaultMaxProjectGpus,
+                DefaultMaxDomainProjects,
+                MaxAccountInstanceSnapshot,
+                MaxDomainInstanceSnapshot,
+                MaxProjectInstanceSnapshot
         };
     }
 
