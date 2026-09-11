@@ -228,6 +228,8 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
     public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+    public static final String EVENT_NIC_PACKET_CAPTURE_ENABLE = "NIC.PACKETCAPTURE.ENABLE";
+    public static final String EVENT_NIC_PACKET_CAPTURE_DISABLE = "NIC.PACKETCAPTURE.DISABLE";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -980,6 +982,8 @@ public class EventTypes {
 
         // Nic Events
         entityEventDetails.put(EVENT_NIC_CREATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PACKET_CAPTURE_ENABLE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PACKET_CAPTURE_DISABLE, Nic.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);

@@ -661,6 +661,27 @@ public class AgentProperties{
     public static final Property<String> KVM_SCRIPTS_DIR = new Property<>("kvm.scripts.dir", "scripts/vm/hypervisor/kvm");
 
     /**
+     * Name of the systemd template unit used for packet capture of VM NICs.<br>
+     * The agent starts and stops one instance of this unit per captured NIC, named
+     * <code>&lt;unit&gt;@&lt;interface&gt;.service</code> (e.g. <code>cloudstack-pcap@vnet3.service</code>).<br>
+     * When pointing this to a custom unit, make sure the unit reads its environment from
+     * the file defined by {@link #PACKET_CAPTURE_ENV_DIR}.<br>
+     * Data type: String.<br>
+     * Default value: <code>cloudstack-pcap</code>
+     */
+    public static final Property<String> PACKET_CAPTURE_SERVICE = new Property<>("packet.capture.service", "cloudstack-pcap");
+
+    /**
+     * Directory in which the agent writes the environment file for a packet capture,
+     * named <code>pcap-&lt;interface&gt;.env</code>. The default matches the
+     * <code>EnvironmentFile=</code> of the shipped cloudstack-pcap@.service unit;
+     * change both together.<br>
+     * Data type: String.<br>
+     * Default value: <code>/run/cloudstack</code>
+     */
+    public static final Property<String> PACKET_CAPTURE_ENV_DIR = new Property<>("packet.capture.env.dir", "/run/cloudstack");
+
+    /**
      * Specifies start MAC address for private IP range.<br>
      * Data type: String.<br>
      * Default value: <code>00:16:3e:77:e2:a0</code>
