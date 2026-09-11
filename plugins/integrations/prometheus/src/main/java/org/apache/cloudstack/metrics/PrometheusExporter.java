@@ -18,7 +18,23 @@ package org.apache.cloudstack.metrics;
 
 public interface PrometheusExporter {
 
+    /**
+     * Update the Prometheus metrics in text format.
+     *
+     * NOTE: capacity data is refreshed independently by {@code AlertManagerImpl}'s own
+     * periodic {@code CapacityChecker} timer. Do NOT force a synchronous
+     * {@code recalculateCapacity()} call here: it spins up a fresh thread pool per host
+     * and per storage pool across ALL zones on every single scrape, so with Z zones a
+     * single Prometheus scrape triggered Z redundant full recalculations. That extra,
+     * uncoordinated load compounds over time and can lead to {@code scrape_duration_seconds}
+     * climbing until a management-server restart.
+     *
+     * @see PrometheusExporterImpl#updateMetrics()
+     */
     void updateMetrics();
 
+    /**
+     * @return the latest Prometheus metrics refreshed by {@link #updateMetrics()}.
+     */
     String getMetrics();
 }
