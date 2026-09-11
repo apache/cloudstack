@@ -100,3 +100,14 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Add host_stats table for the host usage history
+CREATE TABLE IF NOT EXISTS `cloud`.`host_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `host_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_host_stats__host_id` (`host_id`),
+  KEY `i_host_stats__timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='historical per-host stats samples';
