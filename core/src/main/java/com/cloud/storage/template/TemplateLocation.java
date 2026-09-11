@@ -43,6 +43,10 @@ public class TemplateLocation {
     protected Logger logger = LogManager.getLogger(getClass());
     public final static String Filename = "template.properties";
 
+    /** Recorded sizes are only trusted when this is disabled; see verifyPhysicalSize(). */
+    private final static boolean VERIFY_PHYSICAL_SIZE =
+            Boolean.parseBoolean(System.getProperty("cloudstack.template.verify.physical.size", "true"));
+
     StorageLayer _storage;
     String _templatePath;
     boolean _isCorrupted;
@@ -133,6 +137,8 @@ public class TemplateLocation {
                 if (!checkFormatValidity(info)) {
                     _isCorrupted = true;
                     logger.warn("Cleaning up inconsistent information for " + format);
+                } else if (!verifyPhysicalSize(info)) {
+                    _isCorrupted = true;
                 }
             } else {
                 if (logger.isDebugEnabled()) {
@@ -223,6 +229,40 @@ public class TemplateLocation {
 
     protected boolean checkFormatValidity(FormatInfo info) {
         return (info.format != null && info.size > 0 && info.virtualSize > 0 && info.filename != null);
+    }
+
+    /**
+     * Compares the size recorded in the properties file against the actual size of the image on disk.
+     * <p>
+     * The recorded {@code <format>.size} is written at download time as {@link StorageLayer#getSize(String)} of the
+     * image, so the two values are directly comparable. Without this check a truncated or deleted image is still
+     * reported as a healthy, fully downloaded template, and only fails later when it is copied to primary storage.
+     *
+     * @return false if the image is missing or its size does not match the recorded size.
+     */
+    protected boolean verifyPhysicalSize(FormatInfo info) {
+        if (!VERIFY_PHYSICAL_SIZE) {
+            return true;
+        }
+
+        String imagePath = _templatePath + info.filename;
+        if (!_storage.exists(imagePath)) {
+            logger.warn("Image file '" + imagePath + "' referenced by '" + _file + "' is missing on disk.");
+            return false;
+        }
+
+        long actualSize = _storage.getSize(imagePath);
+        if (actualSize != info.size) {
+            logger.warn("Physical size mismatch for '" + imagePath + "': '" + _file + "' records "
+                    + toHumanReadableSize(info.size) + " (" + info.size + " bytes) but the file on disk is "
+                    + toHumanReadableSize(actualSize) + " (" + actualSize + " bytes).");
+            return false;
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Verified physical size of '" + imagePath + "' as " + toHumanReadableSize(actualSize) + ".");
+        }
+        return true;
     }
 
     protected FormatInfo deleteFormat(ImageFormat format) {
