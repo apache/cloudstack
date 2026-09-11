@@ -66,6 +66,10 @@ public interface VmDetailConstants {
     String CPU_SPEED = "cpuSpeed";
     String MEMORY = "memory";
 
+    // VM deployment with custom root disk offering params
+    String MIN_IOPS = "minIops";
+    String MAX_IOPS = "maxIops";
+
     // Misc details for internal usage (not to be set/changed by user or admin)
     String CPU_OVER_COMMIT_RATIO = "cpuOvercommitRatio";
     String MEMORY_OVER_COMMIT_RATIO = "memoryOvercommitRatio";
