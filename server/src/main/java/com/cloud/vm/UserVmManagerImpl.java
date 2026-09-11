@@ -1594,6 +1594,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(vmInstance.getId());
     }
 
+    private void refreshNicNetworkRates(long vmId) {
+        List<NicVO> nics = _nicDao.listByVmId(vmId);
+        for (NicVO nic : nics) {
+            Integer rate = _networkModel.getNetworkRate(nic.getNetworkId(), vmId);
+            nic.setNetworkRate(rate != null && rate > 0 ? rate : null);
+            _nicDao.update(nic.getId(), nic);
+        }
+    }
+
     private void validateVmZoneTypeForAddNic(UserVmVO vmInstance, DataCenter dc) {
         if (!NetworkType.Basic.equals(dc.getNetworkType())) {
             return;
@@ -3578,7 +3587,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
 
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner(), false).first();
+        UserVm vm = startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner(), false).first();
+        // Refresh nic_details with current network rates — the network offering may have changed since the VM was last running
+        refreshNicNetworkRates(vm.getId());
+        return vm;
     }
 
     @Override
