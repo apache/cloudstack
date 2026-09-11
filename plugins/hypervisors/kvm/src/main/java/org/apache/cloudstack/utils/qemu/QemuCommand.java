@@ -28,6 +28,7 @@ public class QemuCommand {
     public static final String AGENT_FREEZE = "guest-fsfreeze-freeze";
     public static final String AGENT_THAW = "guest-fsfreeze-thaw";
     public static final String AGENT_FREEZE_STATUS = "guest-fsfreeze-status";
+    public static final String AGENT_PING = "guest-ping";
 
     public static final String QEMU_CMD = "execute";
 
