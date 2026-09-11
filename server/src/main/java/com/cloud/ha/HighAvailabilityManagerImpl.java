@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -479,7 +480,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
             }
 
-            if (!(ForceHA.value() || vm.isHaEnabled())) {
+
+            Pair<Long, Long> clusterHostPair = _itMgr.findClusterAndHostIdForVm(vm, false);
+            if (!(ForceHA.valueIn(clusterHostPair.first()) || vm.isHaEnabled())) {
                 String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodIdToDeployIn();
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() +
                     ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() +
@@ -722,7 +725,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         vm = _itMgr.findById(vm.getId());
 
-        if (!ForceHA.value() && !vm.isHaEnabled()) {
+        if (!ForceHA.valueIn(host.getClusterId()) && !vm.isHaEnabled()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("VM is not HA enabled so we're done.");
             }
