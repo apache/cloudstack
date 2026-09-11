@@ -378,6 +378,7 @@
 "label.adding.user": "Adding User...",
 "label.address": "Address",
 "label.address.group": "Address group",
+"label.admin": "Domain Admin",
 "label.advanced": "Advanced",
 "label.advanced.mode": "Advanced mode",
 "label.affinity": "Affinity",
