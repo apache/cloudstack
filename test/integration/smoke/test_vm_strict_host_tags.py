@@ -22,6 +22,7 @@ from marvin.lib.base import (Account, ServiceOffering, Template, Host, VirtualMa
 from marvin.lib.common import (get_domain, get_zone)
 from nose.plugins.attrib import attr
 
+import time
 
 class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
 
@@ -529,6 +530,8 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         Host.update(self.apiclient, id=self.host_h2.id, hosttags="h1,t1,v1")
+
+        time.sleep(10)  # Wait for VM to boot into OS before migrating the VM
         vm.migrate(self.apiclient, self.host_h2.id)
         migrated_vm = VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0]
         self.assertEqual(migrated_vm.hostid, self.host_h2.id, "VM was not migratd")
@@ -545,6 +548,7 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         Host.update(self.apiclient, id=self.host_h2.id, hosttags="h2,t2,v2")
         try:
+            time.sleep(10)  # Wait for VM to boot into OS before migrating the VM
             vm.migrate(self.apiclient, self.host_h2.id)
             VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0]
             self.fail("VM should not be migrated")
