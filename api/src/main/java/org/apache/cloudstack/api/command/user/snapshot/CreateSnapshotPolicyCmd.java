@@ -52,7 +52,16 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = true, description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY",
+            allowedValues = {
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY"
+            })
     private String intervalType;
 
     @Parameter(name = ApiConstants.MAX_SNAPS, type = CommandType.INTEGER, required = true, description = "Maximum number of Snapshots to retain")
