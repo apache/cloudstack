@@ -38,6 +38,9 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ha.HAConfigManager;
 import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 
 import javax.inject.Inject;
 
@@ -49,6 +52,9 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
 
     @Inject
     private HAConfigManager haConfigManager;
+
+    @Inject
+    private OutOfBandManagementService outOfBandManagementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -96,6 +102,12 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
         final Host host = _resourceService.getHost(getHostId());
         if (host == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
+        }
+
+        if (host.getHypervisorType() == HypervisorType.KVM) {
+            if (!outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Cannot configure HA on KVM host because Out-of-Band Management (OOBM) is not enabled.");
+            }
         }
 
         final boolean result = haConfigManager.configureHA(host.getId(), HAResource.ResourceType.Host, getHaProvider());
