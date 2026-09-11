@@ -75,7 +75,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
@@ -136,6 +135,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -403,10 +403,10 @@ public class CommandSetupHelper {
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled(),
                 NetworkOrchestrationService.NETWORK_LB_HAPROXY_IDLE_TIMEOUT.value());
 
-        cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
-        cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-        cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-        cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
+        cmd.lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+        cmd.lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+        cmd.lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
@@ -806,7 +806,7 @@ public class CommandSetupHelper {
     public void createDhcpEntryCommandsForVMs(final DomainRouterVO router, final Commands cmds, final long guestNetworkId) {
         final List<UserVmVO> vms = _userVmDao.listByNetworkIdAndStates(guestNetworkId, VirtualMachine.State.Running, VirtualMachine.State.Migrating, VirtualMachine.State.Stopping);
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
-        String dnsBasicZoneUpdates = _configDao.getValue(Config.DnsBasicZoneUpdates.key());
+        String dnsBasicZoneUpdates = VirtualNetworkApplianceManager.DnsBasicZoneUpdates.value();
         for (final UserVmVO vm : vms) {
             if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
                     && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
@@ -1065,10 +1065,7 @@ public class CommandSetupHelper {
                 setIpAddressNetworkParams(ip, network, router);
                 if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     Map<String, String> details = new HashMap<>();
-                    String defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
-                    if (defaultSystemVmNicAdapterType == null) {
-                        defaultSystemVmNicAdapterType = Config.VmwareSystemVmNicDeviceType.getDefaultValue();
-                    }
+                    String defaultSystemVmNicAdapterType = ManagementServer.VmwareSystemVmNicDeviceType.value();
                     details.put(VmDetailConstants.NIC_ADAPTER, defaultSystemVmNicAdapterType);
                     ip.setDetails(details);
                 }
@@ -1338,7 +1335,7 @@ public class CommandSetupHelper {
         }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
-        String cloudIdentifier = _configDao.getValue("cloud.identifier");
+        String cloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
         } else {

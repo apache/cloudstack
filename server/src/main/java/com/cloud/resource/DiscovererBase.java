@@ -27,13 +27,15 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.NetworkModel;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.net.UrlUtil;
 
@@ -133,12 +135,12 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
 
         params.put("ipaddress", host.getPrivateIpAddress());
         params.put("secondary.storage.vm", "false");
-        params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
-        params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-        params.put(Config.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenServerMaxNics.toString()));
-        params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
-        params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
-        params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+        params.put("max.template.iso.size", String.valueOf(SecondaryStorageVmManager.MaxTemplateAndIsoSize.value()));
+        params.put("migratewait", String.valueOf(AgentManager.MigrateWait.value()));
+        params.put(AgentManager.XenServerMaxNics.toString().toLowerCase(), String.valueOf(AgentManager.XenServerMaxNics.value()));
+        params.put(ManagementServer.XenServerHeartBeatInterval.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatInterval.value()));
+        params.put(ManagementServer.XenServerHeartBeatTimeout.key().toLowerCase(), String.valueOf(ManagementServer.XenServerHeartBeatTimeout.value()));
+        params.put("router.aggregation.command.each.timeout", String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
 
         return params;
 

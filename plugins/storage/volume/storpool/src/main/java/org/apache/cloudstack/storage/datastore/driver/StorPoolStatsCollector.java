@@ -40,6 +40,7 @@ import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.server.StatsCollector;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -84,7 +85,7 @@ public class StorPoolStatsCollector extends ManagerBase {
         List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
         if (CollectionUtils.isNotEmpty(spPools)) {
             executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StorPoolStatsCollector"));
-            long storageStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("storage.stats.interval"), 60000L);
+            long storageStatsInterval = StatsCollector.StorageStatsInterval.value();
             long volumeStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("volume.stats.interval"), 60000L);
 
             if (StorPoolConfigurationManager.VolumesStatsInterval.value() > 0 && volumeStatsInterval > 0) {

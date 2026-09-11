@@ -42,8 +42,11 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -2492,5 +2495,33 @@ public class ManagementServerImplTest {
         Assert.assertEquals(6L, deploymentPlan.getDataCenterId());
         Assert.assertEquals(5L, (long) deploymentPlan.getPodId());
         Assert.assertEquals(4L, (long) deploymentPlan.getClusterId());
+    }
+
+    @Test
+    public void configureSchedulesAlertPurgeTaskWhenAlertPurgeDelayIsNonZero() throws Exception {
+        when(configDao.getConfiguration()).thenReturn(new HashMap<>());
+        overrideDefaultConfigValue(spy.AlertPurgeInterval, "_defaultValue", "10");
+        overrideDefaultConfigValue(spy.AlertPurgeDelay, "_defaultValue", "5");
+        ScheduledExecutorService alertExecutor = mock(ScheduledExecutorService.class);
+        ReflectionTestUtils.setField(spy, "_alertExecutor", alertExecutor);
+
+        spy.configure("management-server", new HashMap<>());
+
+        Mockito.verify(alertExecutor).scheduleAtFixedRate(any(Runnable.class), Mockito.eq(10L), Mockito.eq(10L), Mockito.eq(TimeUnit.SECONDS));
+        Assert.assertEquals(5, ReflectionTestUtils.getField(spy, "_alertPurgeDelay"));
+    }
+
+    @Test
+    public void configureDoesNotScheduleAlertPurgeTaskWhenAlertPurgeDelayIsZero() throws Exception {
+        when(configDao.getConfiguration()).thenReturn(new HashMap<>());
+        overrideDefaultConfigValue(spy.AlertPurgeInterval, "_defaultValue", "10");
+        overrideDefaultConfigValue(spy.AlertPurgeDelay, "_defaultValue", "0");
+        ScheduledExecutorService alertExecutor = mock(ScheduledExecutorService.class);
+        ReflectionTestUtils.setField(spy, "_alertExecutor", alertExecutor);
+
+        spy.configure("management-server", new HashMap<>());
+
+        Mockito.verifyNoInteractions(alertExecutor);
+        Assert.assertEquals(0, ReflectionTestUtils.getField(spy, "_alertPurgeDelay"));
     }
 }

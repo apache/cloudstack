@@ -26,6 +26,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -45,7 +47,6 @@ import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -91,7 +92,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
+public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     // boolean _isEnabled;
     ScheduledExecutorService _executorPool;
@@ -234,7 +235,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             throws AgentUnavailableException, OperationTimedoutException {
         String endpointIp = null;
         // Fetch fefault name for network label from configuration
-        String physNetLabel = _configDao.getValue(Config.OvsTunnelNetworkDefaultLabel.key());
+        String physNetLabel = OvsTunnelNetworkDefaultLabel.value();
         Long physNetId = nw.getPhysicalNetworkId();
         PhysicalNetworkTrafficType physNetTT =
                 _physNetTTDao.findBy(physNetId, TrafficType.Guest);
@@ -929,5 +930,15 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         } finally {
 
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return OvsTunnelManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {OvsTunnelNetworkDefaultLabel};
     }
 }

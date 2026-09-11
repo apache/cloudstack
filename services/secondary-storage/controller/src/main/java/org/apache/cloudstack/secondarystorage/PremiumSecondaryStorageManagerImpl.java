@@ -26,8 +26,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
-import com.cloud.configuration.Config;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -39,7 +39,6 @@ import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -79,10 +78,10 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        _capacityPerSSVM = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageSessionMax.key()), DEFAULT_SS_VM_CAPACITY);
-        _standbyCapacity = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCapacityStandby.key()), DEFAULT_STANDBY_CAPACITY);
+        _capacityPerSSVM = AgentManager.SecStorageSessionMax.value();
+        _standbyCapacity = AgentManager.SecStorageCapacityStandby.value();
 
-        int nMaxExecutionMinutes = NumbersUtil.parseInt(_configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
+        int nMaxExecutionMinutes = AgentManager.SecStorageCmdExecutionTimeMax.value();
         _maxExecutionTimeMs = nMaxExecutionMinutes * 60 * 1000;
 
         migrateCapPerSSVM = StorageManager.SecStorageMaxMigrateSessions.value();
@@ -239,10 +238,6 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
     }
 
     private boolean reserveStandbyCapacity() {
-        String value = _configDao.getValue(Config.SystemVMAutoReserveCapacity.key());
-        if (value != null && value.equalsIgnoreCase("true")) {
-            return true;
-        }
-        return false;
+        return SystemVMAutoReserveCapacity.value();
     }
 }

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.ratelimit;
 
 import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
@@ -26,6 +27,9 @@ import com.cloud.utils.component.PluggableService;
  *
  */
 public interface ApiRateLimitService extends PluggableService {
+
+    ConfigKey<Integer> ApiLimitCacheSize = new ConfigKey<>("Advanced", Integer.class, "api.throttling.cachesize", "50000",
+            "Account based API count cache size", true);
 
     public ApiLimitResponse searchApiLimit(Account caller);
 

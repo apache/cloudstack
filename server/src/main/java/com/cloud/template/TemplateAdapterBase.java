@@ -56,7 +56,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
@@ -74,6 +73,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
@@ -83,6 +83,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
 import com.cloud.storage.upload.params.UploadParams;
@@ -238,7 +239,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
                     templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
-            payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
+            payload.setMaxUploadSize(String.valueOf(SecondaryStorageVmManager.MaxTemplateAndIsoSize.value()));
 
             Long accountId = template.getAccountId();
             Account account = _accountDao.findById(accountId);
@@ -387,7 +388,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer)) {
             if (details == null || !details.containsKey("hypervisortoolsversion") || details.get("hypervisortoolsversion") == null ||
                 ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none")) {
-                String hpvs = _configDao.getValue(Config.XenServerPVdriverVersion.key());
+                String hpvs = ManagementServer.XenServerPVdriverVersion.value();
                 if (hpvs != null) {
                     if (details == null) {
                         details = new HashMap<String, String>();

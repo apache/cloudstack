@@ -71,7 +71,6 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
@@ -294,34 +293,34 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         try {
-            projectResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPublicIPs.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectSnapshots.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.template.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectTemplates.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.user_vm.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectUserVms.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.volume.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVolumes.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.network.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectNetworks.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.vpc.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVpcs.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.public_ip.name(), DefaultMaxProjectPublicIPs.value());
+            projectResourceLimitMap.put(Resource.ResourceType.snapshot.name(), DefaultMaxProjectSnapshots.value());
+            projectResourceLimitMap.put(Resource.ResourceType.template.name(), DefaultMaxProjectTemplates.value());
+            projectResourceLimitMap.put(Resource.ResourceType.user_vm.name(), DefaultMaxProjectUserVms.value());
+            projectResourceLimitMap.put(Resource.ResourceType.volume.name(), DefaultMaxProjectVolumes.value());
+            projectResourceLimitMap.put(Resource.ResourceType.network.name(), DefaultMaxProjectNetworks.value());
+            projectResourceLimitMap.put(Resource.ResourceType.vpc.name(), DefaultMaxProjectVpcs.value());
+            projectResourceLimitMap.put(Resource.ResourceType.cpu.name(), DefaultMaxProjectCpus.value());
+            projectResourceLimitMap.put(Resource.ResourceType.memory.name(), DefaultMaxProjectMemory.value());
             projectResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxProjectGpus.value());
-            projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), DefaultMaxProjectPrimaryStorage.value());
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
             projectResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackups.key())));
             projectResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackupStorage.key())));
             projectResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectBuckets.key())));
             projectResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxProjectObjectStorage.key())));
 
-            accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.template.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountTemplates.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.user_vm.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountUserVms.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.volume.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVolumes.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.network.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountNetworks.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.vpc.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVpcs.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), DefaultMaxAccountPublicIPs.value());
+            accountResourceLimitMap.put(Resource.ResourceType.snapshot.name(), DefaultMaxAccountSnapshots.value());
+            accountResourceLimitMap.put(Resource.ResourceType.template.name(), DefaultMaxAccountTemplates.value());
+            accountResourceLimitMap.put(Resource.ResourceType.user_vm.name(), DefaultMaxAccountUserVms.value());
+            accountResourceLimitMap.put(Resource.ResourceType.volume.name(), DefaultMaxAccountVolumes.value());
+            accountResourceLimitMap.put(Resource.ResourceType.network.name(), DefaultMaxAccountNetworks.value());
+            accountResourceLimitMap.put(Resource.ResourceType.vpc.name(), DefaultMaxAccountVpcs.value());
+            accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), DefaultMaxAccountCpus.value());
+            accountResourceLimitMap.put(Resource.ResourceType.memory.name(), DefaultMaxAccountMemory.value());
             accountResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxAccountGpus.value());
-            accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), DefaultMaxAccountPrimaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
             accountResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxAccountBackups.key())));
@@ -329,17 +328,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountBuckets.key())));
             accountResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxAccountObjectStorage.key())));
 
-            domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPublicIPs.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSnapshots.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.template.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainTemplates.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.user_vm.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainUserVms.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.volume.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainVolumes.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.network.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainNetworks.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.vpc.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainVpcs.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainCpus.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainMemory.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), DefaultMaxDomainPublicIPs.value());
+            domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), DefaultMaxDomainSnapshots.value());
+            domainResourceLimitMap.put(Resource.ResourceType.template.name(), DefaultMaxDomainTemplates.value());
+            domainResourceLimitMap.put(Resource.ResourceType.user_vm.name(), DefaultMaxDomainUserVms.value());
+            domainResourceLimitMap.put(Resource.ResourceType.volume.name(), DefaultMaxDomainVolumes.value());
+            domainResourceLimitMap.put(Resource.ResourceType.network.name(), DefaultMaxDomainNetworks.value());
+            domainResourceLimitMap.put(Resource.ResourceType.vpc.name(), DefaultMaxDomainVpcs.value());
+            domainResourceLimitMap.put(Resource.ResourceType.cpu.name(), DefaultMaxDomainCpus.value());
+            domainResourceLimitMap.put(Resource.ResourceType.memory.name(), DefaultMaxDomainMemory.value());
+            domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), DefaultMaxDomainPrimaryStorage.value());
+            domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), DefaultMaxDomainSecondaryStorage.value());
             domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
             domainResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxDomainGpus.value());
             domainResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackups.key())));
@@ -2259,7 +2258,38 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 DefaultMaxDomainProjects,
                 DefaultMaxAccountGpus,
                 DefaultMaxDomainGpus,
-                DefaultMaxProjectGpus
+                DefaultMaxProjectGpus,
+                DefaultMaxAccountUserVms,
+                DefaultMaxAccountPublicIPs,
+                DefaultMaxAccountTemplates,
+                DefaultMaxAccountSnapshots,
+                DefaultMaxAccountVolumes,
+                DefaultMaxAccountNetworks,
+                DefaultMaxAccountVpcs,
+                DefaultMaxAccountCpus,
+                DefaultMaxAccountMemory,
+                DefaultMaxAccountPrimaryStorage,
+                DefaultMaxDomainUserVms,
+                DefaultMaxDomainPublicIPs,
+                DefaultMaxDomainTemplates,
+                DefaultMaxDomainSnapshots,
+                DefaultMaxDomainVolumes,
+                DefaultMaxDomainNetworks,
+                DefaultMaxDomainVpcs,
+                DefaultMaxDomainCpus,
+                DefaultMaxDomainMemory,
+                DefaultMaxDomainPrimaryStorage,
+                DefaultMaxDomainSecondaryStorage,
+                DefaultMaxProjectUserVms,
+                DefaultMaxProjectPublicIPs,
+                DefaultMaxProjectTemplates,
+                DefaultMaxProjectSnapshots,
+                DefaultMaxProjectVolumes,
+                DefaultMaxProjectNetworks,
+                DefaultMaxProjectVpcs,
+                DefaultMaxProjectCpus,
+                DefaultMaxProjectMemory,
+                DefaultMaxProjectPrimaryStorage
         };
     }
 

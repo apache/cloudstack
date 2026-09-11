@@ -31,8 +31,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Event;
@@ -80,7 +80,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
     private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
-        String configKey = Config.PublishResourceStateEvent.key();
+        String configKey = ManagementServer.PublishResourceStateEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue) {
