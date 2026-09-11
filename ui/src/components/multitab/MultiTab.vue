@@ -42,7 +42,7 @@
 </template>
 -->
 
-<script>
+<script lang="jsx">
 export default {
   name: 'MultiTab',
   data () {
