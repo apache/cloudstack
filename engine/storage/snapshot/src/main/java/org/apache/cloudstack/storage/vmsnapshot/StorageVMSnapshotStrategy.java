@@ -343,7 +343,10 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
-       if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
+       // Failed (Error) storage snapshots do not have the STORAGE_SNAPSHOT detail persisted, as the
+       // details are removed during the creation rollback. They still need to be handled by this
+       // strategy so their database records can be cleaned up without requiring access to the VM.
+       if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState()) && !VMSnapshot.State.Error.equals(vmSnapshot.getState())) {
            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), STORAGE_SNAPSHOT);
            if (CollectionUtils.isEmpty(vmSnapshotDetails)) {
                return StrategyPriority.CANT_HANDLE;
@@ -362,6 +365,19 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
            return StrategyPriority.HYPERVISOR;
        }
        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public boolean deleteVMSnapshot(VMSnapshot vmSnapshot) {
+        // A failed (Error) storage snapshot has no underlying storage snapshot to delete: the
+        // takeVMSnapshot rollback already removed any snapshots that were created before the
+        // failure. Sending DeleteVMSnapshotCommand to the hypervisor would fail for a stopped VM
+        // with RAW/RBD volumes because no libvirt domain exists. Clean up the database record
+        // directly instead.
+        if (VMSnapshot.State.Error.equals(vmSnapshot.getState())) {
+            return deleteVMSnapshotFromDB(vmSnapshot, false);
+        }
+        return super.deleteVMSnapshot(vmSnapshot);
     }
 
     @Override
