@@ -1886,6 +1886,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                         vmResponse.setLinkLocalIp(singleNicProfile.getIPv4Address());
                         vmResponse.setLinkLocalMacAddress(singleNicProfile.getMacAddress());
                         vmResponse.setLinkLocalNetmask(singleNicProfile.getIPv4Netmask());
+                        if (singleNicProfile.getMacAddress() != null) {
+                            vmResponse.setLinkLocalIp6(NetUtils.ipv6LinkLocal(singleNicProfile.getMacAddress()).toString());
+                        }
                     } else if (network.getTrafficType() == TrafficType.Public) {
                         vmResponse.setPublicIp(singleNicProfile.getIPv4Address());
                         vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());

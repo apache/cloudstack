@@ -1600,6 +1600,7 @@
 "label.link": "Link",
 "label.link.domain.to.ldap": "Link domain to LDAP",
 "label.linklocalip": "Link-local/Control IP address",
+"label.linklocalip6": "Link-local/Control IPv6 address",
 "label.linux": "Linux",
 "label.list.ciscoasa1000v": "ASA 1000v",
 "label.list.ciscovnmc": "Cisco VNMC",

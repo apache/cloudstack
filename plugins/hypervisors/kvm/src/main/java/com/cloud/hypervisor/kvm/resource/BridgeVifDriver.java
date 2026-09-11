@@ -517,6 +517,7 @@ public class BridgeVifDriver extends VifDriverBase {
             Script.runSimpleBashScript("ip link set " + privBrName + " up");
             Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName);
         }
+        enableBridgeIpv6LinkLocal(privBrName);
     }
 
     @Override
