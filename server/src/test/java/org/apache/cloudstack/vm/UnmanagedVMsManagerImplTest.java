@@ -1609,4 +1609,140 @@ public class UnmanagedVMsManagerImplTest {
         details.put("key", "not-a-number");
         unmanagedVMsManager.getDetailAsInteger("key", details);
     }
+
+    // -------------------------------------------------------------------------
+    // mergeNicMacAddresses tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void mergeNicMacAddressesEmptyMacMapReturnsOriginal() {
+        Map<String, Network.IpAddresses> ipMap = new HashMap<>();
+        ipMap.put("nic1", new Network.IpAddresses("10.0.0.1", null));
+
+        Map<String, Network.IpAddresses> result = unmanagedVMsManager.mergeNicMacAddresses(ipMap, new HashMap<>());
+
+        Assert.assertSame(ipMap, result);
+        Assert.assertNull(result.get("nic1").getMacAddress());
+    }
+
+    @Test
+    public void mergeNicMacAddressesNullMacMapReturnsOriginal() {
+        Map<String, Network.IpAddresses> ipMap = new HashMap<>();
+        ipMap.put("nic1", new Network.IpAddresses("10.0.0.1", null));
+
+        Map<String, Network.IpAddresses> result = unmanagedVMsManager.mergeNicMacAddresses(ipMap, null);
+
+        Assert.assertSame(ipMap, result);
+    }
+
+    @Test
+    public void mergeNicMacAddressesMacMergedIntoExistingEntry() {
+        Map<String, Network.IpAddresses> ipMap = new HashMap<>();
+        ipMap.put("nic1", new Network.IpAddresses("10.0.0.1", null));
+
+        Map<String, String> macMap = new HashMap<>();
+        macMap.put("nic1", "aa:bb:cc:dd:ee:ff");
+
+        Map<String, Network.IpAddresses> result = unmanagedVMsManager.mergeNicMacAddresses(ipMap, macMap);
+
+        Assert.assertEquals("aa:bb:cc:dd:ee:ff", result.get("nic1").getMacAddress());
+        Assert.assertEquals("10.0.0.1", result.get("nic1").getIp4Address());
+    }
+
+    @Test
+    public void mergeNicMacAddressesNewEntryCreatedWhenNicNotInIpMap() {
+        Map<String, Network.IpAddresses> ipMap = new HashMap<>();
+
+        Map<String, String> macMap = new HashMap<>();
+        macMap.put("nic1", "aa:bb:cc:dd:ee:ff");
+
+        Map<String, Network.IpAddresses> result = unmanagedVMsManager.mergeNicMacAddresses(ipMap, macMap);
+
+        Assert.assertNotNull(result.get("nic1"));
+        Assert.assertEquals("aa:bb:cc:dd:ee:ff", result.get("nic1").getMacAddress());
+        Assert.assertNull(result.get("nic1").getIp4Address());
+    }
+
+    @Test
+    public void mergeNicMacAddressesMultipleNicsMergedCorrectly() {
+        Map<String, Network.IpAddresses> ipMap = new HashMap<>();
+        ipMap.put("nic1", new Network.IpAddresses("10.0.0.1", null));
+        ipMap.put("nic2", new Network.IpAddresses("10.0.0.2", null));
+
+        Map<String, String> macMap = new HashMap<>();
+        macMap.put("nic1", "aa:bb:cc:dd:ee:01");
+        macMap.put("nic2", "aa:bb:cc:dd:ee:02");
+
+        Map<String, Network.IpAddresses> result = unmanagedVMsManager.mergeNicMacAddresses(ipMap, macMap);
+
+        Assert.assertEquals("aa:bb:cc:dd:ee:01", result.get("nic1").getMacAddress());
+        Assert.assertEquals("10.0.0.1", result.get("nic1").getIp4Address());
+        Assert.assertEquals("aa:bb:cc:dd:ee:02", result.get("nic2").getMacAddress());
+        Assert.assertEquals("10.0.0.2", result.get("nic2").getIp4Address());
+    }
+
+    // -------------------------------------------------------------------------
+    // importNic: caller MAC vs hypervisor MAC selection
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void importNicUsesCallerSuppliedMacWhenPresent() throws Exception {
+        UnmanagedInstanceTO.Nic nic = new UnmanagedInstanceTO.Nic();
+        nic.setNicId("nic1");
+        nic.setMacAddress("11:22:33:44:55:66");
+
+        Network.IpAddresses ipAddresses = new Network.IpAddresses(null, null, "aa:bb:cc:dd:ee:ff");
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getDataCenterId()).thenReturn(1L);
+
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, ipAddresses, 0, true, false);
+
+        Assert.assertNotNull(result);
+        Mockito.verify(networkOrchestrationService).importNic(
+                Mockito.eq("aa:bb:cc:dd:ee:ff"),
+                Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void importNicFallsBackToHypervisorMacWhenIpAddressesHasNoMac() throws Exception {
+        UnmanagedInstanceTO.Nic nic = new UnmanagedInstanceTO.Nic();
+        nic.setNicId("nic1");
+        nic.setMacAddress("11:22:33:44:55:66");
+
+        Network.IpAddresses ipAddresses = new Network.IpAddresses("10.0.0.1", null); // no MAC
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getDataCenterId()).thenReturn(1L);
+
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, ipAddresses, 0, true, false);
+
+        Assert.assertNotNull(result);
+        Mockito.verify(networkOrchestrationService).importNic(
+                Mockito.eq("11:22:33:44:55:66"),
+                Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void importNicFallsBackToHypervisorMacWhenIpAddressesIsNull() throws Exception {
+        UnmanagedInstanceTO.Nic nic = new UnmanagedInstanceTO.Nic();
+        nic.setNicId("nic1");
+        nic.setMacAddress("11:22:33:44:55:66");
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getDataCenterId()).thenReturn(1L);
+
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicProfile result = unmanagedVMsManager.importNic(nic, vm, networkVO, null, 0, true, false);
+
+        Assert.assertNotNull(result);
+        Mockito.verify(networkOrchestrationService).importNic(
+                Mockito.eq("11:22:33:44:55:66"),
+                Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean(),
+                Mockito.any(), Mockito.isNull(), Mockito.any(), Mockito.anyBoolean());
+    }
 }
