@@ -299,13 +299,6 @@ public interface ConfigurationService {
      */
     Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException;
-    /**
-     * Marks the account with the default zone-id.
-     *
-     * @return The new account object
-     */
-    Account markDefaultZone(String accountName, long domainId, long defaultZoneId);
-
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
 
     Vlan dedicatePublicIpRange(DedicatePublicIpRangeCmd cmd) throws ResourceAllocationException;

@@ -8988,36 +8988,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return networkOfferingDetailsDao.findZoneIds(networkOfferingId);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the " + "default zone", async = true)
-    public AccountVO markDefaultZone(final String accountName, final long domainId, final long defaultZoneId) {
-
-        // Check if the account exists
-        final Account account = _accountDao.findEnabledAccount(accountName, domainId);
-        if (account == null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            String domainStr = domain == null ? String.valueOf(domainId) : domain.toString();
-            logger.error("Unable to find account by name: {} in domain {}", accountName, domainStr);
-            throw new InvalidParameterValueException(String.format("Account by name: %s doesn't exist in domain %s", accountName, domainStr));
-        }
-
-        // Don't allow modification of system account
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Can not modify system account");
-        }
-
-        final AccountVO acctForUpdate = _accountDao.findById(account.getId());
-
-        acctForUpdate.setDefaultZoneId(defaultZoneId);
-
-        if (_accountDao.update(account.getId(), acctForUpdate)) {
-            CallContext.current().setEventDetails("Default zone ID: " + defaultZoneId);
-            return _accountDao.findById(account.getId());
-        } else {
-            return null;
-        }
-    }
-
     // Note: This method will be used for entity name validations in the coming
     // releases (place holder for now)
     @SuppressWarnings("unused")

@@ -36,9 +36,6 @@ select
     `domain`.`uuid` AS `domain_uuid`,
     `domain`.`name` AS `domain_name`,
     `domain`.`path` AS `domain_path`,
-    `data_center`.`id` AS `data_center_id`,
-    `data_center`.`uuid` AS `data_center_uuid`,
-    `data_center`.`name` AS `data_center_name`,
     `account_netstats_view`.`bytesReceived` AS `bytesReceived`,
     `account_netstats_view`.`bytesSent` AS `bytesSent`,
     `vmlimit`.`max` AS `vmLimit`,
@@ -87,8 +84,6 @@ from
     `cloud`.`account`
         inner join
     `cloud`.`domain` ON account.domain_id = domain.id
-        left join
-    `cloud`.`data_center` ON account.default_zone_id = data_center.id
         left join
     `cloud`.`account_netstats_view` ON account.id = account_netstats_view.account_id
         left join

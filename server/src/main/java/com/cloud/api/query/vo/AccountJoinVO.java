@@ -81,15 +81,6 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name = "data_center_id")
-    private long dataCenterId;
-
-    @Column(name = "data_center_uuid")
-    private String dataCenterUuid;
-
-    @Column(name = "data_center_name")
-    private String dataCenterName;
-
     @Column(name = "bytesReceived")
     private Long bytesReceived;
 
@@ -281,18 +272,6 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public String getDomainPath() {
         return domainPath;
-    }
-
-    public long getDataCenterId() {
-        return dataCenterId;
-    }
-
-    public String getDataCenterUuid() {
-        return dataCenterUuid;
-    }
-
-    public String getDataCenterName() {
-        return dataCenterName;
     }
 
     public Long getBytesReceived() {
