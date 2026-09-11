@@ -145,3 +145,15 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration_cycle` (
     UNIQUE KEY `uc_vmware_cbt_migration_cycle__migration_id__cycle_number` (`migration_id`, `cycle_number`),
     INDEX `i_vmware_cbt_migration_cycle__migration_id` (`migration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add host_stats table for the host usage history
+CREATE TABLE IF NOT EXISTS `cloud`.`host_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `host_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_host_stats__host_id` (`host_id`),
+  KEY `i_host_stats__timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='historical per-host stats samples';
