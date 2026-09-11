@@ -29,8 +29,10 @@ import com.cloud.configuration.Resource;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -163,6 +165,8 @@ public class DownloadListener implements Listener {
     @Inject
     ReservationDao _reservationDao;
 
+    @Inject
+    private SnapshotDao _snapshotDao;
     private LazyCache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
 
     private List<Hypervisor.HypervisorType> listAvailHypervisorInZone(long zoneId) {
@@ -275,7 +279,9 @@ public class DownloadListener implements Listener {
         } else if (DataObjectType.VOLUME.equals(object.getType())) {
             VolumeVO v = _volumeDao.findById(object.getId());
             return v != null ? v.getAccountId() : null;
-        }
+        } else if (DataObjectType.SNAPSHOT.equals(object.getType())) {
+            SnapshotVO s = _snapshotDao.findById(object.getId());
+            return s != null ? s.getAccountId() : null;
         return null;
     }
 
