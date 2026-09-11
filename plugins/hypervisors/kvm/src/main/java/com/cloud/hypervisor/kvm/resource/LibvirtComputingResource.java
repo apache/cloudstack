@@ -3569,6 +3569,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         GuestResourceDef grd = new GuestResourceDef();
 
         grd.setMemBalloning(!noMemBalloon);
+        grd.setMemoryReclaim(!MapUtils.getBoolean(vmTO.getDetails(), VmDetailConstants.MEMORY_RECLAIM_DISABLED, false));
 
         long requestedRam = ByteScaleUtils.bytesToKibibytes(vmTO.getRequestedRam());
         long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
