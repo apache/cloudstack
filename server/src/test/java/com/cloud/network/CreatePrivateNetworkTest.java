@@ -62,12 +62,14 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 //@Ignore("Requires database to be set up")
 public class CreatePrivateNetworkTest {
@@ -142,7 +144,23 @@ public class CreatePrivateNetworkTest {
 
     @After
     public void tearDown() throws Exception {
+        CallContext.unregister();
         closeable.close();
+    }
+
+    @Test
+    public void createPrivateNetworkAcceptsVxlanUri() throws Exception {
+        TransactionLegacy txn = TransactionLegacy.open("createPrivateNetworkAcceptsVxlanUri");
+        try {
+            Network network = networkService.createPrivateNetwork("bla", "fake", 1L, "vxlan://1005002", "10.1.1.2", null,
+                    "10.1.1.1", "255.255.255.0", 1L, 1L, true, 1L, false, null);
+
+            Assert.assertNotNull(network);
+            verify(_networkMgr).createPrivateNetwork(anyLong(), eq("bla"), eq("fake"), eq("10.1.1.1"), eq("10.1.1.0/24"),
+                    eq("vxlan://1005002"), eq(false), any(Account.class), any(PhysicalNetwork.class), eq(1L));
+        } finally {
+            txn.close("createPrivateNetworkAcceptsVxlanUri");
+        }
     }
 
     @Test
