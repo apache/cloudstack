@@ -29,12 +29,24 @@ public class DataStoreObjectResponse extends BaseResponse {
     @Param(description = "Name of the data store object.")
     private String name;
 
+    @SerializedName(ApiConstants.CANONICAL_PATH)
+    @Param(description = "Canonical path of the object.")
+    private String canonicalPath;
+
     @SerializedName("isdirectory")
-    @Param(description = "Is it a directory.")
+    @Param(description = "Indicates whether the path references a directory.")
     private boolean isDirectory;
 
+    @SerializedName(ApiConstants.IS_SYMLINK)
+    @Param(description = "Indicates whether the path references a symlink.")
+    private Boolean isSymlink;
+
+    @SerializedName(ApiConstants.IS_FILESYSTEM)
+    @Param(description = "Indicates whether the path references a filesystem.")
+    private Boolean isFilesystem;
+
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "Size is in Bytes.")
+    @Param(description = "Size in Bytes.")
     private long size;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
@@ -46,7 +58,7 @@ public class DataStoreObjectResponse extends BaseResponse {
     private String templateName;
 
     @SerializedName(ApiConstants.FORMAT)
-    @Param(description = "Format of template associated with the data store object.")
+    @Param(description = "Format of object associated with the data store object.")
     private String format;
 
     @SerializedName(ApiConstants.SNAPSHOT_ID)
@@ -108,6 +120,30 @@ public class DataStoreObjectResponse extends BaseResponse {
 
     public void setVolumeName(String volumeName) {
         this.volumeName = volumeName;
+    }
+
+    public void setIsFilesystem(boolean isFilesystem) {
+        this.isFilesystem = isFilesystem;
+    }
+
+    public void setIsSymlink(Boolean isSymlink) {
+        this.isSymlink = isSymlink;
+    }
+
+    public void setCanonicalPath(String canonicalPath) {
+        this.canonicalPath = canonicalPath;
+    }
+
+    public boolean isFilesystem() {
+        return isFilesystem;
+    }
+
+    public Boolean isSymlink() {
+        return isSymlink;
+    }
+
+    public String getCanonicalPath() {
+        return canonicalPath;
     }
 
     public String getName() {

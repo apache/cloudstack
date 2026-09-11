@@ -151,6 +151,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Host ID where the backup is running", since = "4.23.0")
     private String hostId;
 
+    @SerializedName(ApiConstants.BROWSABLE)
+    @Param(description = "Whether it is possible to browse the backup files or not.")
+    private Boolean browsable;
+
     public String getId() {
         return id;
     }
@@ -385,5 +389,13 @@ public class BackupResponse extends BaseResponse {
 
     public String getHostId() {
         return this.hostId;
+    }
+
+    public Boolean getBrowsable() {
+        return browsable;
+    }
+
+    public void setBrowsable(Boolean browsable) {
+        this.browsable = browsable;
     }
 }
