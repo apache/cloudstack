@@ -53,3 +53,9 @@ example.ver.1 > example.ver.2:
     the guest while the NVRAM sidecar is copied, so that the captured firmware
     state is consistent with the disk snapshot. Non-UEFI VMs are unaffected and
     continue to snapshot live.
+
+KVM console:
+  * Added the global setting `consoleproxy.kvm.multiple.viewers.enabled` to allow
+    multiple users to simultaneously access the console of the same KVM user VM.
+    The setting defaults to false to preserve the existing single-viewer behavior.
+
