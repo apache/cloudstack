@@ -12,6 +12,8 @@
 "label.account.id": "ID de compte",
 "label.account.name": "Nom de compte",
 "label.account.specific": "Sp\u00e9cifique au compte",
+"label.account.type.domain.admin": "Administrateur de domaine",
+"label.account.type.normal": "Normal (Utilisateur)",
 "label.accounts": "Comptes",
 "label.accounttype": "Type Compte",
 "label.acl.export": "Export ACL rules",

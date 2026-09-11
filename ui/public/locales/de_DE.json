@@ -24,6 +24,8 @@
 "label.account.id": "Benutzerkonto-ID",
 "label.account.name": "Benutzerkonto-Name",
 "label.account.specific": "Besonderheiten des Benutzerkontos",
+"label.account.type.domain.admin": "Domänen-Administrator",
+"label.account.type.normal": "Normal (Benutzer)",
 "label.accounts": "Benutzerkonten",
 "label.accounttype": "Benutzerkontotyp",
 "label.acl.export": "Export ACL rules",

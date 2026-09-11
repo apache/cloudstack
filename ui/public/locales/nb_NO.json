@@ -12,6 +12,8 @@
 "label.account.id": "Konto ID",
 "label.account.name": "Kontonavn",
 "label.account.specific": "Kontospesifikk",
+"label.account.type.domain.admin": "Domeneadministrator",
+"label.account.type.normal": "Normal (Bruker)",
 "label.accounts": "Kontoer",
 "label.accounttype": "Kontotype",
 "label.acl.export": "Export ACL rules",
