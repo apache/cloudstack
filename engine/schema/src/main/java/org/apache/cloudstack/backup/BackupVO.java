@@ -60,7 +60,7 @@ public class BackupVO implements Backup {
     private String backupType;
 
     @Column(name = "date")
-    @Temporal(value = TemporalType.DATE)
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date date;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
