@@ -272,6 +272,10 @@ public class HeuristicRuleHelper {
                         "returning a valid UUID.", scriptReturn, rule));
             }
 
+            if (dataStoreManager.isRemovedOrReadonly(dataStore)) {
+                throw new CloudRuntimeException(String.format("DataStore [{}] returned by heuristic rule is marked as read-only.", dataStore));
+            }
+
             return dataStore;
         } catch (IOException ex) {
             String message = String.format("Error while executing script [%s].", rule);
