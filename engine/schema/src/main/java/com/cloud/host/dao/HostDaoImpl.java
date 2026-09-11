@@ -1456,6 +1456,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
     }
 
+    @Override
     public List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags) {
         List<HostTagVO> hostTagVOList = _hostTagsDao.findHostRuleTags();
         List<HostVO> result = new ArrayList<>();
@@ -1466,6 +1467,20 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
 
         return result;
+    }
+
+    @Override
+    public List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags, Long clusterId, Long podId, Long dcId) {
+        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOferringTags(computeOfferingTags);
+        if (dcId == null && podId == null && clusterId == null) {
+            return hosts;
+        }
+
+        return hosts.stream()
+                .filter(host -> host != null && (dcId == null || host.getDataCenterId() == dcId))
+                .filter(host -> podId == null || Objects.equals(host.getPodId(), podId))
+                .filter(host -> clusterId == null || Objects.equals(host.getClusterId(), clusterId))
+                .collect(Collectors.toList());
     }
 
     public List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags) {
