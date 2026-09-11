@@ -18,3 +18,15 @@
 --;
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
+
+-- Add host_stats table for the host usage history
+CREATE TABLE IF NOT EXISTS `cloud`.`host_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `host_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_host_stats__host_id` (`host_id`),
+  KEY `i_host_stats__timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='historical per-host stats samples';

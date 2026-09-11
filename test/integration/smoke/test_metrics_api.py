@@ -547,6 +547,29 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_list_hosts_metrics_history(self):
+        cmd = listHostsUsageHistory.listHostsUsageHistoryCmd()
+        now = datetime.datetime.now() - datetime.timedelta(minutes=15)
+        start_time = now.strftime("%Y-%m-%d %H:%M:%S")
+        cmd.startdate = start_time
+
+        result = self.apiclient.listHostsUsageHistory(cmd)[0]
+
+        self.assertTrue(hasattr(result, 'stats'))
+        self.assertTrue(type(result.stats) == list and len(result.stats) > 0)
+        stats = result.stats[0]
+        self.assertTrue(hasattr(stats, 'cpuused'))
+        self.assertTrue(hasattr(stats, 'memorykbs'))
+        self.assertTrue(hasattr(stats, 'memoryintfreekbs'))
+        self.assertTrue(hasattr(stats, 'networkkbsread'))
+        self.assertTrue(hasattr(stats, 'networkkbswrite'))
+        self.assertTrue(hasattr(stats, 'timestamp'))
+        self.assertTrue(self.valid_date(stats.timestamp))
+
+        return
+
     def validate_vm_stats(self, stats):
         self.assertTrue(hasattr(stats, 'cpuused'))
         self.assertTrue(hasattr(stats, 'diskiopstotal'))
