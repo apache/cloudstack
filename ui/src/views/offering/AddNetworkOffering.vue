@@ -113,7 +113,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item name="specifyipranges" ref="specifyipranges" v-if="guestType === 'isolated'">
+            <a-form-item name="specifyipranges" ref="specifyipranges" v-if="guestType === 'isolated' && !sourceNatServiceChecked">
               <template #label>
                 <tooltip-label :title="$t('label.specifyipranges')" :tooltip="apiParams.specifyipranges.description"/>
               </template>
