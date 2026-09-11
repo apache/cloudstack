@@ -64,11 +64,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostStatsEntryBase;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.host.HostStatsVO;
+import com.cloud.host.dao.HostStatsDaoImpl;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -100,6 +104,12 @@ public class StatsCollectorTest {
 
     @Mock
     VmStatsDaoImpl vmStatsDaoMock;
+
+    @Mock
+    HostStatsDaoImpl hostStatsDaoMock;
+
+    @Captor
+    ArgumentCaptor<HostStatsVO> hostStatsVOCaptor = ArgumentCaptor.forClass(HostStatsVO.class);
 
     @Mock
     VmStatsEntry statsForCurrentIterationMock;
@@ -146,6 +156,7 @@ public class StatsCollectorTest {
     public void setUp() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
         statsCollector.vmStatsDao = vmStatsDaoMock;
+        statsCollector.hostStatsDao = hostStatsDaoMock;
         statsCollector.volumeStatsDao = volumeStatsDao;
         Field msStatsGsonField = StatsCollector.class.getDeclaredField("msStatsGson");
         msStatsGsonField.setAccessible(true);
@@ -392,6 +403,59 @@ public class StatsCollectorTest {
         volumeStatsCleaner.run();
 
         Mockito.verify(statsCollector).cleanUpVolumeStats();
+    }
+
+    // host stats persistence + retention
+
+    private void setHostStatsMaxRetentionTimeValue(String value) {
+        StatsCollector.hostStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "host.stats.max.retention.time", value,
+                "The maximum time (in minutes) for keeping host stats records in the database. The host stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
+    }
+
+    @Test
+    public void cleanUpHostStatsTestIsDisabled() {
+        setHostStatsMaxRetentionTimeValue("0");
+
+        statsCollector.cleanUpHostStats();
+
+        Mockito.verify(hostStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void cleanUpHostStatsTestIsEnabled() {
+        setHostStatsMaxRetentionTimeValue("1");
+
+        statsCollector.cleanUpHostStats();
+
+        Mockito.verify(hostStatsDaoMock).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void persistHostStatsTestPersistsSuccessfully() {
+        statsCollector.msId = 7L;
+        Date timestamp = new Date();
+        // hostId, cpuUtilization, networkReadKBs, networkWriteKBs, entityType, totalMemoryKBs, freeMemoryKBs, xapiMemoryUsageKBs, averageLoad
+        HostStatsEntry statsForCurrentIteration = new HostStatsEntry(5L, 10.0, 20.0, 30.0, "host", 1000.0, 400.0, 0.0, 2.0);
+        Mockito.doReturn(new HostStatsVO()).when(hostStatsDaoMock).persist(Mockito.any());
+
+        statsCollector.persistHostStats(statsForCurrentIteration, timestamp);
+
+        Mockito.verify(hostStatsDaoMock).persist(hostStatsVOCaptor.capture());
+        HostStatsVO actual = hostStatsVOCaptor.getValue();
+        Assert.assertEquals(Long.valueOf(5L), actual.getHostId());
+        Assert.assertEquals(Long.valueOf(7L), actual.getMgmtServerId());
+        Assert.assertEquals(timestamp, actual.getTimestamp());
+        HostStatsEntryBase persisted = gson.fromJson(actual.getHostStatsData(), HostStatsEntryBase.class);
+        Assert.assertEquals(5L, persisted.getHostId());
+        Assert.assertEquals("host", persisted.getEntityType());
+        Assert.assertEquals(10.0, persisted.getCpuUtilization(), 0);
+        Assert.assertEquals(2.0, persisted.getLoadAverage(), 0);
+        Assert.assertEquals(20.0, persisted.getNetworkReadKBs(), 0);
+        Assert.assertEquals(30.0, persisted.getNetworkWriteKBs(), 0);
+        Assert.assertEquals(1000.0, persisted.getTotalMemoryKBs(), 0);
+        Assert.assertEquals(400.0, persisted.getFreeMemoryKBs(), 0);
+        // Lean payload must NOT carry a HostVO blob.
+        Assert.assertFalse(actual.getHostStatsData().contains("hostVo"));
     }
 
     @Test
