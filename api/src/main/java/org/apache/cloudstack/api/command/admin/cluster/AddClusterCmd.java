@@ -68,7 +68,9 @@ public class AddClusterCmd extends BaseCmd {
                description = "Hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.ARCH,
+            type = CommandType.STRING,
+            allowedValues = {"x86_64", "aarch64", "s390x"},
             description = "The CPU arch of the cluster. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
@@ -89,15 +91,17 @@ public class AddClusterCmd extends BaseCmd {
     private String vsmipaddress;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC,
-               type = CommandType.STRING,
-               required = false,
-               description = "Type of virtual switch used for guest traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
+                type = CommandType.STRING,
+                allowedValues = {"vmwaresvs", "vmwaredvs"},
+                required = false,
+                description = "Type of virtual switch used for guest traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
     private String vSwitchTypeGuestTraffic;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC,
-               type = CommandType.STRING,
-               required = false,
-               description = "Type of virtual switch used for public traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
+            type = CommandType.STRING,
+            allowedValues = {"vmwaresvs", "vmwaredvs"},
+            required = false,
+            description = "Type of virtual switch used for public traffic in the cluster. Allowed values are, vmwaresvs (for VMware standard vSwitch) and vmwaredvs (for VMware distributed vSwitch)")
     private String vSwitchTypePublicTraffic;
 
     @Parameter(name = ApiConstants.VSWITCH_NAME_GUEST_TRAFFIC,

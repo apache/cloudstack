@@ -63,7 +63,15 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "The end port for the rule")
     private Integer endPort;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "The protocol for the rule. Valid values are TCP or UDP.")
+    @Parameter(
+    name = ApiConstants.PROTOCOL,
+    type = CommandType.STRING,
+    required = true,
+    description = "The protocol for the rule. Valid values are TCP or UDP.",
+    allowedValues = {
+        "TCP",
+        "UDP"
+    })
     private String protocol;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL,

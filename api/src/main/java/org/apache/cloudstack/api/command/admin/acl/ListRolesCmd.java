@@ -49,10 +49,16 @@ public class ListRolesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List role by role name.")
     private String roleName;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "List role by role type, valid options are: Admin, ResourceAdmin, DomainAdmin, User.")
+    @Parameter(name = ApiConstants.TYPE,
+            type = CommandType.STRING,
+            allowedValues = {"Admin", "ResourceAdmin", "DomainAdmin", "User"},
+            description = "List role by role type, valid options are: Admin, ResourceAdmin, DomainAdmin, User.")
     private String roleType;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List role by role type status, valid options are: enabled, disabled")
+    @Parameter(name = ApiConstants.STATE,
+            type = CommandType.STRING,
+            allowedValues = {"enabled", "disabled"},
+            description = "List role by role type status, valid options are: enabled, disabled")
     private String roleState;
 
     /////////////////////////////////////////////////////

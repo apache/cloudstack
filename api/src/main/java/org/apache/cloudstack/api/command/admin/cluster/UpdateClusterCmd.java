@@ -57,7 +57,9 @@ public class UpdateClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "Whether this cluster is managed by cloudstack")
     private String managedState;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.ARCH,
+            type = CommandType.STRING,
+            allowedValues = {"x86_64", "aarch64", "s390x"},
             description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;

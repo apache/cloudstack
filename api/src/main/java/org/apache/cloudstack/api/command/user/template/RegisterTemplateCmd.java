@@ -45,6 +45,7 @@ import com.cloud.cpu.CPU;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.template.TemplateApiType;
 import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing Template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
@@ -67,9 +68,15 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.FORMAT,
-               type = CommandType.STRING,
-               required = true,
-               description = "The format for the Template. Possible values include QCOW2, RAW, VHD and OVA.")
+           type = CommandType.STRING,
+           required = true,
+           description = "The format for the Template. Possible values include QCOW2, RAW, VHD and OVA.",
+           allowedValues = {
+               "QCOW2",
+               "RAW",
+               "VHD",
+               "OVA"
+           })
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the Template")
@@ -174,14 +181,22 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             description = "if true, the templates would be available for deploying CKS clusters", since = "4.21.0")
     protected Boolean forCks;
 
-    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE,
+            type = CommandType.STRING,
+            allowedValueType = TemplateApiType.class,
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
             since = "4.19.0")
     private String templateType;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
-            since = "4.20")
+    @Parameter(name = ApiConstants.ARCH,
+           type = CommandType.STRING,
+           description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
+           since = "4.20",
+           allowedValues = {
+               "x86_64",
+               "aarch64",
+               "s390x"
+           })
     private String arch;
 
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class,
