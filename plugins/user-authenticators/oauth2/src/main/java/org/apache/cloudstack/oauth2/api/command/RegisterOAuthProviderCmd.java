@@ -79,7 +79,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)")
     private String tokenUrl;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value", since = "24.0.0")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value, defaults to true if not specified", since = "24.0.0")
     private Boolean enabled;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
@@ -128,6 +128,9 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     }
 
     public Boolean getEnabled() {
+        if (enabled == null) {
+            enabled = true; // default to enabled if not specified
+        }
         return enabled;
     }
 
