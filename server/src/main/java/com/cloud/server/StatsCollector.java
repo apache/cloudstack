@@ -84,6 +84,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
+import com.cloud.agent.api.HostStatsEntryBase;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
@@ -110,7 +111,9 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.HostStatsVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostStatsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
@@ -301,6 +304,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected static ConfigKey<Integer> vmDiskStatsMaxRetentionTime = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", "720",
             "The maximum time (in minutes) for keeping VM disks stats records in the database. The VM disks stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
+    protected static ConfigKey<Integer> hostStatsMaxRetentionTime = new ConfigKey<>("Advanced", Integer.class, "host.stats.max.retention.time", "720",
+            "The maximum time (in minutes) for keeping host stats records in the database. Host stats are not stored and the cleanup process is disabled if this is set to 0 or less than 0.", true);
+
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new Gson();
@@ -321,6 +327,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected UserVmDao _userVmDao;
     @Inject
     protected VmStatsDao vmStatsDao;
+    @Inject
+    protected HostStatsDao hostStatsDao;
     @Inject
     private VolumeDao _volsDao;
     @Inject
@@ -510,6 +518,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
+        _executor.scheduleWithFixedDelay(new HostStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
+
         _executor.scheduleWithFixedDelay(new VolumeStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
         scheduleCollection(MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL, new ManagementServerCollector(), 1L);
@@ -676,12 +686,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.debug(String.format("HostStatsCollector is running to process %d UP hosts", hosts.size()));
 
                 Map<Object, Object> metrics = new HashMap<>();
+                boolean persistHostStats = hostStatsMaxRetentionTime.value() > 0;
+                Date timestamp = new Date();
                 for (HostVO host : hosts) {
                     HostStatsEntry hostStatsEntry = (HostStatsEntry) _resourceMgr.getHostStatistics(host);
                     if (hostStatsEntry != null) {
                         hostStatsEntry.setHostVo(host);
                         metrics.put(hostStatsEntry.getHostId(), hostStatsEntry);
                         _hostStats.put(host.getId(), hostStatsEntry);
+                        if (persistHostStats) {
+                            persistHostStats(hostStatsEntry, timestamp);
+                        }
                     } else {
                         logger.warn("The Host stats is null for host: {}", host);
                     }
@@ -1312,6 +1327,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 cleanUpVirtualMachineStats();
             } catch (RuntimeException e) {
                 logger.error("Error trying to clean up VM stats", e);
+            }
+        }
+    }
+
+    class HostStatsCleaner extends ManagedContextRunnable{
+        @Override
+        protected void runInContext() {
+            try {
+                cleanUpHostStats();
+            } catch (RuntimeException e) {
+                logger.error("Error trying to clean up host stats", e);
             }
         }
     }
@@ -2001,6 +2027,23 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         vmStatsDao.persist(vmStatsVO);
     }
 
+    /**
+     * Persists the host stats of the current collection in the host_stats table.
+     *
+     * @param statsForCurrentIteration the host metrics to persist.
+     * @param timestamp the time that will be stamped.
+     */
+    protected void persistHostStats(HostStatsEntry statsForCurrentIteration, Date timestamp) {
+        HostStatsEntryBase hostStats = new HostStatsEntryBase(statsForCurrentIteration.getHostId(),
+                statsForCurrentIteration.getEntityType(), statsForCurrentIteration.getCpuUtilization(),
+                statsForCurrentIteration.getLoadAverage(), statsForCurrentIteration.getNetworkReadKBs(),
+                statsForCurrentIteration.getNetworkWriteKBs(), statsForCurrentIteration.getTotalMemoryKBs(),
+                statsForCurrentIteration.getFreeMemoryKBs());
+        HostStatsVO hostStatsVO = new HostStatsVO(statsForCurrentIteration.getHostId(), msId, timestamp, gson.toJson(hostStats));
+        logger.trace(String.format("Recording host stats: [%s].", hostStatsVO.toString()));
+        hostStatsDao.persist(hostStatsVO);
+    }
+
     private String getVmDiskStatsEntryAsString(VmDiskStatsEntry statsForCurrentIteration, Hypervisor.HypervisorType hypervisorType) {
         VmDiskStatsEntry entry;
         if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
@@ -2049,6 +2092,23 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
         vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
+    }
+
+    /**
+     * Removes the oldest host stats records according to the global
+     * parameter {@code host.stats.max.retention.time}.
+     */
+    protected void cleanUpHostStats() {
+        Integer maxRetentionTime = hostStatsMaxRetentionTime.value();
+        if (maxRetentionTime <= 0) {
+            logger.debug(String.format("Skipping host stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
+                    ConfigKey.Scope.decodeAsCsv(hostStatsMaxRetentionTime.getScopeBitmask()), hostStatsMaxRetentionTime.toString()));
+            return;
+        }
+        logger.trace("Removing older host stats records.");
+        Date now = new Date();
+        Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
+        hostStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -2245,6 +2305,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
+                hostStatsMaxRetentionTime,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
