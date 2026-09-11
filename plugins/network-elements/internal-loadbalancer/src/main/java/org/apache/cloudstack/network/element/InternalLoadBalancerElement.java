@@ -404,8 +404,6 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
-        List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
-        rules.add(rule);
         if (canHandle(network, rule.getScheme())) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.INTERNAL_LB_VM);
             if (routers == null || routers.isEmpty()) {

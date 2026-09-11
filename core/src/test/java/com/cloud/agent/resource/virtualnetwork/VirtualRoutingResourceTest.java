@@ -20,6 +20,7 @@
 package com.cloud.agent.resource.virtualnetwork;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -31,6 +32,9 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.utils.Pair;
 import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -795,6 +799,36 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
         dests.add(new LbDestination(80, 8080, "10.1.10.2", true));
         lbs.add(new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests));
+        final LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
+        lbs.toArray(arrayLbs);
+        final NicTO nic = new NicTO();
+        nic.setIp("10.1.10.2");
+        final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(arrayLbs, "64.10.2.10", "10.1.10.2", "192.168.1.2", nic, Long.valueOf(1), "1000", false);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, "10.1.10.2");
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
+        return cmd;
+    }
+
+    @Test
+    public void testLoadBalancerConfigCommandForAppCookie() {
+        _count = 0;
+        _file = "";
+
+        Answer answer = _resource.executeRequest(generateLoadBalancerConfigCommandWithAppCookie());
+        assertFalse(answer.getResult());
+    }
+
+    protected LoadBalancerConfigCommand generateLoadBalancerConfigCommandWithAppCookie() {
+        final List<LoadBalancerTO> lbs = new ArrayList<>();
+        final List<LbDestination> dests = new ArrayList<>();
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", false));
+        dests.add(new LbDestination(80, 8080, "10.1.10.2", true));
+        final List<LoadBalancingRule.LbStickinessPolicy> stickinessPolicies = new ArrayList<>();
+        final List<Pair<String, String>> params = new ArrayList<>();
+        params.add(new Pair<>("cookie", "testcookie"));
+        params.add(new Pair<>("name", "JSESSIONID"));
+        stickinessPolicies.add(new LoadBalancingRule.LbStickinessPolicy(LbStickinessMethod.StickinessMethodType.AppCookieBased.getName(), params));
+        lbs.add(new LoadBalancerTO(UUID.randomUUID().toString(), "64.10.1.10", 80, "tcp", "algo", false, false, false, dests, stickinessPolicies));
         final LoadBalancerTO[] arrayLbs = new LoadBalancerTO[lbs.size()];
         lbs.toArray(arrayLbs);
         final NicTO nic = new NicTO();
