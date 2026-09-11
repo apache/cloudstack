@@ -91,11 +91,12 @@ import com.cloud.upgrade.dao.Upgrade42000to42010;
 import com.cloud.upgrade.dao.Upgrade42020to42030;
 import com.cloud.upgrade.dao.Upgrade42030to42040;
 import com.cloud.upgrade.dao.Upgrade42040to42100;
-import com.cloud.upgrade.dao.Upgrade42100to42200;
-import com.cloud.upgrade.dao.Upgrade42200to42210;
 import com.cloud.upgrade.dao.Upgrade420to421;
+import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade421to430;
+import com.cloud.upgrade.dao.Upgrade42200to42210;
 import com.cloud.upgrade.dao.Upgrade42210to42300;
+import com.cloud.upgrade.dao.Upgrade42300to2400;
 import com.cloud.upgrade.dao.Upgrade430to440;
 import com.cloud.upgrade.dao.Upgrade431to440;
 import com.cloud.upgrade.dao.Upgrade432to440;
@@ -248,6 +249,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.21.0.0", new Upgrade42100to42200())
                 .next("4.22.0.0", new Upgrade42200to42210())
                 .next("4.22.1.0", new Upgrade42210to42300())
+                .next("4.23.0.0", new Upgrade42300to2400())
                 .build();
     }
 
@@ -513,8 +515,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             String csVersion = parseSystemVmMetadata();
             final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
             final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = sysVmVersion.getMajorRelease() + "." + sysVmVersion.getMinorRelease();
-            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
+            if (sysVmVersion.usesNewVersioning()) {
+                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(sysVmVersion.getMajorRelease());
+                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getMajorRelease());
+            } else {
+                SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
+                SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
+            }
 
             LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
 
