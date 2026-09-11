@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.admin.usage.AddTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -88,7 +89,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.MacAddress;
 
 @Component
 public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsageService, NetworkUsageManager, ResourceStateAdapter {
@@ -251,7 +251,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         private int _interval;
 
-        private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+        private final long mgmtSrvrId = ManagementServerNode.getManagementServerId();
 
         protected DirectNetworkStatsListener(int interval) {
             _interval = interval;
