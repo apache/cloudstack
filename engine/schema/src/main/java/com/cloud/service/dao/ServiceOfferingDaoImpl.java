@@ -56,6 +56,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicCpuRamSearch;
     protected final SearchBuilder<ServiceOfferingVO> SearchComputeOfferingByComputeOnlyDiskOffering;
+    protected final SearchBuilder<ServiceOfferingVO> CategoryIdSearch;
 
     public ServiceOfferingDaoImpl() {
         super();
@@ -79,6 +80,17 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         SearchComputeOfferingByComputeOnlyDiskOffering = createSearchBuilder();
         SearchComputeOfferingByComputeOnlyDiskOffering.and("disk_offering_id", SearchComputeOfferingByComputeOnlyDiskOffering.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
         SearchComputeOfferingByComputeOnlyDiskOffering.done();
+
+        CategoryIdSearch = createSearchBuilder();
+        CategoryIdSearch.and("category_id", CategoryIdSearch.entity().getCategoryId(), SearchCriteria.Op.EQ);
+        CategoryIdSearch.done();
+    }
+
+    @Override
+    public List<ServiceOfferingVO> listByCategoryId(Long categoryId) {
+        SearchCriteria<ServiceOfferingVO> sc = CategoryIdSearch.create();
+        sc.setParameters("category_id", categoryId);
+        return listBy(sc);
     }
 
     @Override

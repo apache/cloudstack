@@ -85,6 +85,9 @@ SELECT
     `vgpu_profile`.`max_resolution_y` AS `vgpu_profile_max_resolution_y`,
     `service_offering`.`gpu_count` AS `gpu_count`,
     `service_offering`.`gpu_display` AS `gpu_display`,
+    `service_offering`.`category_id` AS `category_id`,
+    `service_offering_category`.`uuid` AS `category_uuid`,
+    `service_offering_category`.`name` AS `category_name`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
@@ -104,6 +107,8 @@ FROM
     `cloud`.`vgpu_profile` ON service_offering.vgpu_profile_id = vgpu_profile.id
         LEFT JOIN
     `cloud`.`gpu_card` ON vgpu_profile.card_id = gpu_card.id
+        LEFT JOIN
+    `cloud`.`service_offering_category` ON service_offering.category_id = service_offering_category.id
         LEFT JOIN
     `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
         LEFT JOIN
