@@ -48,8 +48,8 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
     public Answer execute(final PostCertificateRenewalCommand command, final LibvirtComputingResource serverResource) {
         logger.info("Restarting libvirt after certificate provisioning/renewal");
         if (command != null) {
-            restartLibvirtd();
             pushRenewedVncCertificateToRunningVms(serverResource);
+            restartLibvirtd();
             return new SetupCertificateAnswer(true);
        }
         return new SetupCertificateAnswer(false);
