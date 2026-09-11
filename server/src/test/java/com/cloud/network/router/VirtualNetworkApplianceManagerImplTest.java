@@ -67,6 +67,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -91,6 +92,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -352,6 +354,28 @@ public class VirtualNetworkApplianceManagerImplTest {
         foo = "*:*:00";
         result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testInternalLbRouterExcludesDhcpAndDnsHealthChecks() throws Exception {
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        when(router.getId()).thenReturn(1L);
+        when(router.getInstanceName()).thenReturn("r-1-VM");
+        when(router.getDataCenterId()).thenReturn(1L);
+        when(router.getIsRedundantRouter()).thenReturn(false);
+        when(router.getRole()).thenReturn(VirtualRouter.Role.INTERNAL_LB_VM);
+        when(_routerControlHelper.getRouterControlIp(1L)).thenReturn("169.254.0.1");
+
+        java.lang.reflect.Method method = VirtualNetworkApplianceManagerImpl.class.getDeclaredMethod(
+                "createMonitorServiceCommand", DomainRouterVO.class, List.class, boolean.class, boolean.class, Map.class);
+        method.setAccessible(true);
+        SetMonitorServiceCommand command = (SetMonitorServiceCommand) method.invoke(
+                virtualNetworkApplianceManagerImpl, router, null, true, true, null);
+
+        String excluded = command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED);
+        Assert.assertNotNull(excluded);
+        Assert.assertTrue("Internal LB VM should exclude dhcp and dns health checks, got: " + excluded,
+                excluded.contains("dhcp_check.py") && excluded.contains("dns_check.py"));
     }
 
     @Test
