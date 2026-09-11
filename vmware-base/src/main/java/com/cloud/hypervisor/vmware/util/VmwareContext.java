@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -384,29 +385,29 @@ public class VmwareContext {
         conn.setRequestProperty("content-type", contentType);
         conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
-        OutputStream out = null;
-        InputStream in = null;
-        BufferedReader br = null;
 
         try {
-            out = conn.getOutputStream();
-            in = new FileInputStream(localFileName);
+            writeFileToConnection(conn, httpMethod, urlString, localFileName);
+            checkUploadResponse(conn, httpMethod, urlString, localFileName);
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    private void writeFileToConnection(HttpURLConnection conn, String httpMethod, String urlString, String localFileName) throws IOException {
+        long bytesWritten = 0;
+        try (OutputStream out = conn.getOutputStream();
+             InputStream in = new FileInputStream(localFileName)) {
             byte[] buf = new byte[ChunkSize];
-            int len = 0;
+            int len;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
+                bytesWritten += len;
             }
             out.flush();
-        } finally {
-            if (in != null)
-                in.close();
-
-            if (out != null)
-                out.close();
-
-            if (br != null)
-                br.close();
-            conn.disconnect();
+        } catch (IOException e) {
+            throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes: %s",
+                    localFileName, httpMethod, urlString, bytesWritten, new File(localFileName).length(), e.getMessage()), e);
         }
     }
 
@@ -442,32 +443,82 @@ public class VmwareContext {
         conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 
-        BufferedOutputStream bos = null;
-        BufferedInputStream is = null;
         try {
-            bos = new BufferedOutputStream(conn.getOutputStream());
-            is = new BufferedInputStream(new FileInputStream(localFileName));
-            int bufferSize = ChunkSize;
-            byte[] buffer = new byte[bufferSize];
+            writeVmdkFileToConnection(conn, httpMethod, urlString, localFileName, totalBytesUpdated, progressUpdater);
+            checkUploadResponse(conn, httpMethod, urlString, localFileName);
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    private void writeVmdkFileToConnection(HttpURLConnection conn, String httpMethod, String urlString, String localFileName, long totalBytesUpdated,
+            ActionDelegate<Long> progressUpdater) throws IOException {
+        long bytesWrittenThisCall = 0;
+        try (BufferedOutputStream bos = new BufferedOutputStream(conn.getOutputStream());
+             BufferedInputStream is = new BufferedInputStream(new FileInputStream(localFileName))) {
+            byte[] buffer = new byte[ChunkSize];
             while (true) {
-                int bytesRead = is.read(buffer, 0, bufferSize);
+                int bytesRead = is.read(buffer, 0, ChunkSize);
                 if (bytesRead == -1) {
                     break;
                 }
                 bos.write(buffer, 0, bytesRead);
                 totalBytesUpdated += bytesRead;
+                bytesWrittenThisCall += bytesRead;
                 bos.flush();
                 if (progressUpdater != null)
                     progressUpdater.action(new Long(totalBytesUpdated));
             }
             bos.flush();
-        } finally {
-            if (is != null)
-                is.close();
-            if (bos != null)
-                bos.close();
+        } catch (IOException e) {
+            throw new IOException(String.format("Upload of %s to %s %s failed after writing %d of %d bytes for this file " +
+                            "(%d bytes total written so far for this import): %s",
+                    localFileName, httpMethod, urlString, bytesWrittenThisCall, new File(localFileName).length(), totalBytesUpdated, e.getMessage()), e);
+        }
+    }
 
-            conn.disconnect();
+    /**
+     * HttpURLConnection does not surface a failed request just because the client finished writing the
+     * request body without an IOException: with chunked transfer encoding many HTTP servers, including
+     * ESXi's NFC endpoint, read and discard the whole body before responding with an error status (e.g. a
+     * VMFS file lock, an out-of-space datastore, or an authentication/session failure). Silently ignoring
+     * the response code is exactly how a rejected/short write can look like a "successful" upload to
+     * CloudStack. Surface the actual status code, reason phrase and (if any) response body so failures like
+     * "file locked" are visible in the CloudStack logs instead of only in vCenter/ESXi's own logs, if at all.
+     */
+    private void checkUploadResponse(HttpURLConnection conn, String httpMethod, String urlString, String localFileName) throws IOException {
+        int responseCode;
+        try {
+            responseCode = conn.getResponseCode();
+        } catch (IOException e) {
+            throw new IOException(String.format("Unable to read the response for %s %s (uploading %s): %s",
+                    httpMethod, urlString, localFileName, e.getMessage()), e);
+        }
+
+        if (responseCode < 200 || responseCode >= 300) {
+            String responseBody = readResponseBodyQuietly(conn);
+            boolean hasBody = responseBody != null && !responseBody.trim().isEmpty();
+            throw new IOException(String.format(
+                    "%s %s rejected the upload of %s with HTTP %d %s%s",
+                    httpMethod, urlString, localFileName, responseCode, conn.getResponseMessage(),
+                    hasBody ? (": " + responseBody) : ""));
+        }
+    }
+
+    private String readResponseBodyQuietly(HttpURLConnection conn) {
+        InputStream errorStream = conn.getErrorStream();
+        if (errorStream == null) {
+            return null;
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, getCharSetFromConnection(conn)))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null && sb.length() < 1024) {
+                sb.append(line);
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            return null;
         }
     }
 
