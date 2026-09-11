@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 
+import com.cloud.configuration.ConfigurationManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -37,7 +38,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.storage.S3.S3Utils;
 
 public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
@@ -86,22 +86,18 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
          */
         S3TO s3 = (S3TO)getStoreTO(store);
 
-        if(logger.isDebugEnabled()) {
-            logger.debug("Generating pre-signed s3 entity extraction URL for object: " + key);
-        }
+        logger.debug("Generating pre-signed s3 entity extraction URL for object: {}", key);
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
 
         // Get extract url expiration interval set in global configuration (in seconds)
-        String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
-
         // Expired after configured interval (in milliseconds), default 14400 seconds
-        milliSeconds += 1000 * NumbersUtil.parseInt(urlExpirationInterval, 14400);
+        milliSeconds += 1000L * ConfigurationManager.ExtractURLExpirationInterval.value();
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);
 
-        logger.info("Pre-Signed URL = " + s3url.toString());
+        logger.info("Pre-Signed URL = {}", s3url.toString());
 
         return s3url.toString();
     }

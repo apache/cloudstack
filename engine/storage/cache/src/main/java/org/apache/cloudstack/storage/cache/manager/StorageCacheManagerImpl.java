@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -161,7 +162,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         cacheReplacementEnabled = Boolean.parseBoolean(configDao.getValue(Config.StorageCacheReplacementEnabled.key()));
         cacheReplaceMentInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementInterval.key()), 86400);
-        workers = NumbersUtil.parseInt(configDao.getValue(Config.ExpungeWorkers.key()), 10);
+        workers = ConfigurationManager.ExpungeWorkers.value();
         executors = Executors.newScheduledThreadPool(workers, new NamedThreadFactory("StorageCacheManager-cache-replacement"));
         return true;
     }
