@@ -19,12 +19,12 @@
 
 package org.apache.cloudstack.storage.feign.model;
 
+import java.util.List;
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
-import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -43,6 +43,15 @@ public class IpInterface {
 
     @JsonProperty("services")
     private List<String> services;
+
+    @JsonProperty("state")
+    private String state;
+
+    @JsonProperty("enabled")
+    private Boolean enabled;
+
+    @JsonProperty("location")
+    private Location location;
 
     // Getters and setters
     public String getUuid() {
@@ -85,6 +94,30 @@ public class IpInterface {
         this.services = services;
     }
 
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -98,12 +131,14 @@ public class IpInterface {
                 Objects.equals(name, that.name) &&
                 Objects.equals(ip, that.ip) &&
                 Objects.equals(svm, that.svm) &&
-                Objects.equals(services, that.services);
+                Objects.equals(services, that.services) &&
+                Objects.equals(state, that.state) &&
+                Objects.equals(enabled, that.enabled);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(uuid, name, ip, svm, services);
+        return Objects.hash(uuid, name, ip, svm, services, state, enabled);
     }
 
     @Override
@@ -114,7 +149,50 @@ public class IpInterface {
                 ", ip=" + ip +
                 ", svm=" + svm +
                 ", services=" + services +
+                ", state='" + state + '\'' +
+                ", enabled=" + enabled +
                 '}';
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Node {
+        @JsonProperty("name")
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Location {
+        @JsonProperty("home_node")
+        private Node homeNode;
+
+        @JsonProperty("node")
+        private Node node;
+
+        public Node getHomeNode() {
+            return homeNode;
+        }
+
+        public void setHomeNode(Node homeNode) {
+            this.homeNode = homeNode;
+        }
+
+        public Node getNode() {
+            return node;
+        }
+
+        public void setNode(Node node) {
+            this.node = node;
+        }
     }
 
     // Nested class for IP information

@@ -887,6 +887,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public boolean deleteStoragePool(String uuid, Map<String, String> details) {
+        return deleteStoragePool(uuid);
+    }
+
+    @Override
     public boolean deleteStoragePool(String uuid) {
         logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
 
