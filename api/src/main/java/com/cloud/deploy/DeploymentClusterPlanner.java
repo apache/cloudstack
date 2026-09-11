@@ -62,11 +62,14 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             "vm.allocation.algorithm",
             "Advanced",
             "random",
-            "Order in which hosts within a cluster will be considered for VM allocation. The value can be 'random', 'firstfit', 'userdispersing', or 'firstfitleastconsumed'.",
+            "Order in which hosts within a cluster will be considered for VM allocation. The value can be 'random', "
+                    + "'firstfit', 'userdispersing', 'firstfitleastconsumed', or 'balancedweighted'. 'balancedweighted' "
+                    + "ranks hosts on a blend of allocated capacity, measured utilisation, VM count and how many VMs "
+                    + "started recently, and is tuned with the host.weighted.* settings.",
             true,
             ConfigKey.Scope.Global, null, null, null, null, null,
             ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,firstfitleastconsumed");
+            "random,firstfit,userdispersing,firstfitleastconsumed,balancedweighted");
 
     /**
      * This is called to determine list of possible clusters where a virtual
