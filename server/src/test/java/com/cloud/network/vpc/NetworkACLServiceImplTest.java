@@ -38,7 +38,10 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
@@ -1505,5 +1508,18 @@ public class NetworkACLServiceImplTest {
         Mockito.doReturn(null).when(vpcDaoMock).findById(Mockito.anyLong());
 
         networkAclServiceImpl.validateAclAssociatedToVpc(networkMockVpcMockId, accountMock, SOME_UUID);
+    }
+
+    @Test
+    public void createACLRuleFromMapDefaultsTrafficTypeToIngress() {
+        Map<String, Object> ruleMap = new HashMap<>();
+        ruleMap.put(ApiConstants.PROTOCOL, "tcp");
+        Mockito.doReturn(Mockito.mock(NetworkACLItem.class)).when(networkAclServiceImpl).createNetworkACLItem(Mockito.any());
+
+        ReflectionTestUtils.invokeMethod(networkAclServiceImpl, "createACLRuleFromMap", ruleMap, 1L);
+
+        ArgumentCaptor<CreateNetworkACLCmd> captor = ArgumentCaptor.forClass(CreateNetworkACLCmd.class);
+        Mockito.verify(networkAclServiceImpl).createNetworkACLItem(captor.capture());
+        Assert.assertEquals(NetworkACLItem.TrafficType.Ingress, captor.getValue().getTrafficType());
     }
 }
