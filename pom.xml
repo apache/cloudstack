@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>11</version>
+        <version>27</version>
         <relativePath />
     </parent>
 
@@ -47,6 +47,7 @@
 
     <properties>
         <!-- keep in alphabetic order -->
+        <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
@@ -74,13 +75,13 @@
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.9.0</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
+        <cs.git-commit-id-plugin.version>9.0.2</cs.git-commit-id-plugin.version>
         <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.28.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
-        <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.21.0</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
@@ -853,6 +854,22 @@
         <defaultGoal>install</defaultGoal>
         <plugins>
             <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>${cs.git-commit-id-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dateFormatTimeZone>UTC</dateFormatTimeZone>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <executions>
@@ -947,7 +964,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>${cs.release-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>default</id>
