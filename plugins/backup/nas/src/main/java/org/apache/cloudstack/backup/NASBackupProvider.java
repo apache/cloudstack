@@ -290,9 +290,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     private Pair<Boolean, String> restoreVMBackup(VirtualMachine vm, Backup backup) {
-        List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
-        List<String> backedVolumesUUIDs = backedVolumes.stream()
+        // Sort once and derive every per-volume list from that same ordering. The UUID list and the
+        // backup file list are consumed index-by-index on the agent side, so they have to agree;
+        // sorting only one of them leaves the two out of step whenever the stored order of the
+        // backed up volumes differs from their device id order.
+        List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes().stream()
                 .sorted(Comparator.comparingLong(Backup.VolumeInfo::getDeviceId))
+                .collect(Collectors.toList());
+        List<String> backedVolumesUUIDs = backedVolumes.stream()
                 .map(Backup.VolumeInfo::getUuid)
                 .collect(Collectors.toList());
 

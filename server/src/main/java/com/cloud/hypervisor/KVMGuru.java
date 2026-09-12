@@ -369,9 +369,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
                } else if (VMVolToRestore.getType() == Volume.Type.DATADISK) {
-                   List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
                    _volumeDao.update(volume.getId(), volume);
-                   _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                   // Reinstate the device id the volume had when the backup was taken. The volumes are
+                   // not detached before this loop, so their current device ids still count as "in use"
+                   // and getNextAvailableDeviceId() can never return the id a volume already holds. Using
+                   // it here shifts every data disk by one slot on every restore, which then misaligns the
+                   // device-id ordering that the restore itself uses to map backup files onto volumes.
+                   Long deviceId = VMVolToRestore.getDeviceId();
+                   if (deviceId == null) {
+                       // Backups taken before the device id was recorded in the backup metadata.
+                       deviceId = getNextAvailableDeviceId(_volumeDao.findByInstance(vm.getId()));
+                   }
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), deviceId);
                }
                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vm.getId(), volume.isDisplay());
