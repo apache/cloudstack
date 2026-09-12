@@ -29,12 +29,16 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -61,6 +65,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -70,6 +75,10 @@ import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Arrays;
+import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +86,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -122,6 +132,9 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private AffinityGroupVMMapDao affinityGroupVMMapDao;
+
+    @Mock
+    private AsyncJobManager asyncJobManager;
 
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
@@ -950,5 +963,177 @@ public class ClusterDrsServiceImplTest {
         clusterDrsService.processPlans();
 
         Mockito.verify(clusterDrsService, Mockito.times(2)).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
+    }
+
+    private VMInstanceVO vmWithAffinityGroup(long id, Long hostId) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.lenient().when(vm.getId()).thenReturn(id);
+        Mockito.lenient().when(vm.getHostId()).thenReturn(hostId);
+        Mockito.lenient().when(vm.getServiceOfferingId()).thenReturn(5L);
+        Mockito.lenient().when(affinityGroupVMMapDao.listByInstanceId(id))
+                .thenReturn(Collections.singletonList(Mockito.mock(AffinityGroupVMMapVO.class)));
+        Mockito.lenient().when(serviceOfferingDao.findByIdIncludingRemoved(id, 5L))
+                .thenReturn(Mockito.mock(ServiceOfferingVO.class));
+        return vm;
+    }
+
+    private HostVO host(long id) {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.lenient().when(host.getId()).thenReturn(id);
+        return host;
+    }
+
+    private void affinityExcludes(Long... hostIds) {
+        ExcludeList excludes = new ExcludeList();
+        for (Long hostId : hostIds) {
+            excludes.addHost(hostId);
+        }
+        Mockito.when(managementServer.applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(excludes);
+    }
+
+    @Test
+    public void testAVmWithNoAffinityGroupsIsStillRechecked() {
+        // applyAffinityConstraints also applies DPDK and dedicated-resource exclusions, which do
+        // not depend on affinity group membership, so every VM has to go through it
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getHostId()).thenReturn(10L);
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(5L);
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(1L, 5L))
+                .thenReturn(Mockito.mock(ServiceOfferingVO.class));
+        affinityExcludes(21L);
+
+        assertFalse(clusterDrsService.destinationViolatesAffinity(vm, host(20L),
+                Collections.emptyList(), Collections.emptyList()));
+        Mockito.verify(managementServer)
+                .applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testDestinationRefusedWhenAffinityExcludesIt() {
+        VMInstanceVO vm = vmWithAffinityGroup(1L, 10L);
+        affinityExcludes(20L);
+
+        assertTrue(clusterDrsService.destinationViolatesAffinity(vm, host(20L),
+                Collections.emptyList(), Collections.emptyList()));
+    }
+
+    @Test
+    public void testDestinationAllowedWhenAffinityExcludesSomewhereElse() {
+        VMInstanceVO vm = vmWithAffinityGroup(1L, 10L);
+        affinityExcludes(21L);
+
+        assertFalse(clusterDrsService.destinationViolatesAffinity(vm, host(20L),
+                Collections.emptyList(), Collections.emptyList()));
+    }
+
+    @Test
+    public void testDestinationRefusedWhenVmIsNoLongerRunning() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+
+        assertTrue("a plan for a VM that has since stopped is out of date",
+                clusterDrsService.destinationViolatesAffinity(vm, host(20L),
+                        Collections.emptyList(), Collections.emptyList()));
+    }
+
+    @Test
+    public void testDestinationRefusedWhileItIsStillOccupiedByAQueuedMigration() {
+        // the swap case: A is queued to leave host1, so host1 is not free for B yet - and if A's
+        // migration fails, A never leaves at all
+        VMInstanceVO b = vmWithAffinityGroup(2L, 11L);
+
+        assertTrue("a host is not free until the VM leaving it has actually gone",
+                clusterDrsService.destinationViolatesAffinity(b, host(10L),
+                        Collections.emptyList(), Collections.singletonList(10L)));
+        Mockito.verify(managementServer, Mockito.never())
+                .applyAffinityConstraints(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testExecuteDrsPlanKeepsSourceHostsOccupiedAcrossMigrations() {
+        // plan: A host10 -> host12, B host11 -> host10. B must not be sent to host10.
+        ClusterDrsPlanVO plan = Mockito.mock(ClusterDrsPlanVO.class);
+        Mockito.when(plan.getId()).thenReturn(1L);
+
+        ClusterDrsPlanMigrationVO first = Mockito.mock(ClusterDrsPlanMigrationVO.class);
+        Mockito.when(first.getVmId()).thenReturn(1L);
+        Mockito.when(first.getDestHostId()).thenReturn(12L);
+        ClusterDrsPlanMigrationVO second = Mockito.mock(ClusterDrsPlanMigrationVO.class);
+        Mockito.when(second.getId()).thenReturn(8L);
+        Mockito.when(second.getVmId()).thenReturn(2L);
+        Mockito.when(second.getDestHostId()).thenReturn(10L);
+        Mockito.when(drsPlanMigrationDao.listPlanMigrationsToExecute(1L))
+                .thenReturn(Arrays.asList(first, second));
+
+        VMInstanceVO a = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(a.getHostId()).thenReturn(10L);
+        VMInstanceVO b = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(a);
+        Mockito.when(vmInstanceDao.findById(2L)).thenReturn(b);
+        HostVO host12 = host(12L);
+        HostVO host10 = host(10L);
+        Mockito.when(hostDao.findById(12L)).thenReturn(host12);
+        Mockito.when(hostDao.findById(10L)).thenReturn(host10);
+
+        Mockito.doReturn(false).when(clusterDrsService).destinationViolatesAffinity(
+                Mockito.eq(a), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(1L).when(clusterDrsService)
+                .createMigrateVMAsyncJob(Mockito.any(), Mockito.any(), Mockito.anyLong());
+        Mockito.when(asyncJobManager.getAsyncJob(1L)).thenReturn(Mockito.mock(AsyncJobVO.class));
+
+        clusterDrsService.executeDrsPlan(plan);
+
+        // A's source host must have been carried into the check for B
+        ArgumentCaptor<List> sources = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(clusterDrsService).destinationViolatesAffinity(
+                Mockito.eq(b), Mockito.any(), Mockito.any(), sources.capture());
+        assertTrue("the host A is leaving must still count as occupied",
+                sources.getValue().contains(10L));
+    }
+
+    @Test
+    public void testExecuteDrsPlanSkipsMigrationThatViolatesAffinity() {
+        ClusterDrsPlanVO plan = Mockito.mock(ClusterDrsPlanVO.class);
+        Mockito.when(plan.getId()).thenReturn(1L);
+
+        ClusterDrsPlanMigrationVO migration = Mockito.mock(ClusterDrsPlanMigrationVO.class);
+        Mockito.when(migration.getId()).thenReturn(7L);
+        Mockito.when(migration.getVmId()).thenReturn(1L);
+        Mockito.when(migration.getDestHostId()).thenReturn(20L);
+        Mockito.when(drsPlanMigrationDao.listPlanMigrationsToExecute(1L))
+                .thenReturn(Collections.singletonList(migration));
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO host20 = host(20L);
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        Mockito.when(hostDao.findById(20L)).thenReturn(host20);
+
+        Mockito.doReturn(true).when(clusterDrsService)
+                .destinationViolatesAffinity(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        clusterDrsService.executeDrsPlan(plan);
+
+        Mockito.verify(migration).setStatus(JobInfo.Status.CANCELLED);
+        Mockito.verify(clusterDrsService, Mockito.never())
+                .createMigrateVMAsyncJob(Mockito.any(), Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void testNonStrictAntiAffinityIsHonoured() {
+        // a non-strict group lowers a host's priority rather than excluding it. rebalancing is
+        // never a reason to break it, since not migrating is always available.
+        DataCenterDeployment plan = new DataCenterDeployment(1L, 1L, 1L, null, null, null);
+        plan.adjustHostPriority(30L, DeploymentPlan.HostPriorityAdjustment.LOWER);
+        plan.adjustHostPriority(31L, DeploymentPlan.HostPriorityAdjustment.HIGHER);
+
+        ExcludeList excludes = new ExcludeList();
+        clusterDrsService.excludeHostsDispreferredByAffinity(plan, excludes);
+
+        assertTrue("a dispreferred host must not be a DRS destination",
+                excludes.getHostsToAvoid().contains(30L));
+        assertFalse("a preferred host must stay available",
+                excludes.getHostsToAvoid().contains(31L));
     }
 }

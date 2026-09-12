@@ -25,6 +25,7 @@ import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEventUtils;
@@ -80,6 +81,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
@@ -432,6 +434,29 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return migrationPlan;
     }
 
+    /**
+     * Turns the non-strict affinity preferences recorded on the plan into exclusions.
+     *
+     * Non-strict groups express themselves by lowering a host's priority rather than by excluding
+     * it, and DRS only reads the exclude list - so the preference was being discarded. Rebalancing
+     * is never a reason to break it: the VM is already running somewhere that satisfies the group,
+     * and leaving it there is always available to DRS. "Non-strict" means the rule may be broken
+     * when there is nowhere else to put a VM, which cannot arise while merely rebalancing.
+     */
+    protected void excludeHostsDispreferredByAffinity(DeploymentPlan plan, ExcludeList excludes) {
+        Map<Long, Integer> priorities = plan.getHostPriorities();
+        if (MapUtils.isEmpty(priorities)) {
+            return;
+        }
+        for (Map.Entry<Long, Integer> entry : priorities.entrySet()) {
+            if (entry.getValue() != null && entry.getValue() < DeploymentPlan.DEFAULT_HOST_PRIORITY) {
+                excludes.addHost(entry.getKey());
+                logger.debug("Host {} is dispreferred by a non-strict affinity group, so DRS will not migrate onto it",
+                        entry.getKey());
+            }
+        }
+    }
+
     private Map<Long, ExcludeList> getVmToExcludesMap(List<VirtualMachine> vmList, Map<Long, Host> hostMap,
             Set<Long> vmsWithAffinityGroups, Map<Long, List<? extends Host>> vmToCompatibleHostsCache,
             Map<Long, ServiceOffering> vmIdServiceOfferingMap) {
@@ -452,6 +477,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
                         excludes = managementServer.applyAffinityConstraints(
                                 vm, vmProfile, plan, vmList);
+                        excludeHostsDispreferredByAffinity(plan, excludes);
                     } else {
                         // VM has no affinity groups - create minimal ExcludeList (just source host)
                         excludes = new ExcludeList();
@@ -762,6 +788,47 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     /**
+     * Checks a planned migration against the placement rules as they stand now.
+     *
+     * A plan is generated once and executed later, so state can have moved on: VMs may have been
+     * created, migrated or destroyed in between. Anti-affinity in particular is only meaningful
+     * against current placements, and nothing downstream re-checks it - migrateVirtualMachine does
+     * not enforce affinity groups.
+     *
+     * Checked for every VM, not only those in an affinity group: applyAffinityConstraints also
+     * applies DPDK and dedicated-resource exclusions, which apply regardless of group membership.
+     * A refusal here is therefore not necessarily about an affinity group.
+     *
+     * @param vm
+     *         the VM the plan wants to move
+     * @param destHost
+     *         where the plan wants to move it
+     * @param dispatched
+     *         migrations already queued by this run, which the database does not reflect yet
+     * @param dispatchedSourceHosts
+     *         hosts those queued migrations have not actually left yet
+     * @return true when the migration should not go ahead
+     */
+    protected boolean destinationViolatesAffinity(VirtualMachine vm, Host destHost, List<VirtualMachine> dispatched,
+            List<Long> dispatchedSourceHosts) {
+        if (vm.getHostId() == null) {
+            logger.debug("VM {} is no longer running, so its planned migration is out of date", vm);
+            return true;
+        }
+        if (dispatchedSourceHosts.contains(destHost.getId())) {
+            logger.debug("Host {} is still occupied by a VM whose migration away from it is only queued", destHost);
+            return true;
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(destHost.getDataCenterId(), destHost.getPodId(),
+                destHost.getClusterId(), null, null, null);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null,
+                serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()), null, null);
+        ExcludeList excludes = managementServer.applyAffinityConstraints(vm, vmProfile, plan, dispatched);
+        excludeHostsDispreferredByAffinity(plan, excludes);
+        return excludes.shouldAvoid(destHost);
+    }
+
+    /**
      * Executes the DRS plan by migrating virtual machines to their destination hosts.
      * If there are no migrations to be executed, the plan is marked as completed.
      *
@@ -783,13 +850,31 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         plan.setStatus(ClusterDrsPlan.Status.IN_PROGRESS);
         drsPlanDao.update(plan.getId(), plan);
 
+        // a queued migration occupies both ends until it completes, and it may not complete at all
+        List<VirtualMachine> dispatched = new ArrayList<>();
+        List<Long> dispatchedSourceHosts = new ArrayList<>();
+
         for (ClusterDrsPlanMigrationVO migration : planMigrations) {
             try {
-                VirtualMachine vm = vmInstanceDao.findById(migration.getVmId());
+                VMInstanceVO vm = vmInstanceDao.findById(migration.getVmId());
                 Host host = hostDao.findById(migration.getDestHostId());
                 if (vm == null || host == null) {
                     throw new CloudRuntimeException(String.format("vm %s or host %s is not found", migration.getVmId(),
                             migration.getDestHostId()));
+                }
+
+                if (destinationViolatesAffinity(vm, host, dispatched, dispatchedSourceHosts)) {
+                    String reason = String.format("Skipped DRS migration of %s to %s: the destination no longer "
+                            + "satisfies the placement rules for that VM. The plan was generated against older "
+                            + "state.", vm, host);
+                    logger.warn(reason);
+                    // cancelled rather than failed: nothing went wrong, the plan went out of date
+                    migration.setStatus(JobInfo.Status.CANCELLED);
+                    drsPlanMigrationDao.update(migration.getId(), migration);
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                            EventVO.LEVEL_WARN, EventTypes.EVENT_CLUSTER_DRS, false, reason,
+                            plan.getClusterId(), ApiCommandResourceType.Cluster.toString(), plan.getEventId());
+                    continue;
                 }
 
                 logger.debug("Executing DRS plan {} for vm {} to host {}", plan, vm, host);
@@ -798,8 +883,18 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 migration.setJobId(jobId);
                 migration.setStatus(job.getStatus());
                 drsPlanMigrationDao.update(migration.getId(), migration);
+
+                // the migration job has only been queued, so the database still shows the old host.
+                // record both ends: the VM is headed for the destination but has not left the
+                // source, and if the job fails it never will.
+                Long sourceHostId = vm.getHostId();
+                if (sourceHostId != null) {
+                    dispatchedSourceHosts.add(sourceHostId);
+                }
+                vm.setHostId(host.getId());
+                dispatched.add(vm);
             } catch (Exception e) {
-                logger.warn("Unable to execute DRS plan {} due to {}", plan, e.getMessage());
+                logger.warn("Unable to execute DRS plan {}", plan, e);
                 migration.setStatus(JobInfo.Status.FAILED);
                 drsPlanMigrationDao.update(migration.getId(), migration);
             }
