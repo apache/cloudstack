@@ -125,6 +125,9 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
             if (userSpecified.getBroadcastUri() != null) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
+                if (BroadcastDomainType.getSchemeValue(userSpecified.getBroadcastUri()) == BroadcastDomainType.Vxlan) {
+                    network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+                }
                 network.setState(State.Setup);
             }
         } else {
