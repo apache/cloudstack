@@ -17,7 +17,6 @@
 package com.cloud.network.guru;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -529,16 +528,15 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             return; // Nothing to do here if the uri is null already
         }
 
-        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan || profile.getBroadcastDomainType() == BroadcastDomainType.Netris) && !offering.isSpecifyVlan()) {
-            logger.debug("Releasing vnet for the network: {}", profile);
-            _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
+        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
+            logger.debug("Releasing vnet for the network id=" + profile.getId());
+            final String vnetValue = BroadcastDomainType.getValue(profile.getBroadcastUri());
+            _dcDao.releaseVnet(vnetValue, profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());
-            String eventType = EventTypes.EVENT_ZONE_VLAN_RELEASE;
-            if (Arrays.asList(BroadcastDomainType.Vxlan, BroadcastDomainType.Netris).contains(profile.getBroadcastDomainType())) {
-                eventType = EventTypes.EVENT_ZONE_VXLAN_RELEASE;
-            }
+            String eventType = profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan
+                    ? EventTypes.EVENT_ZONE_VXLAN_RELEASE : EventTypes.EVENT_ZONE_VLAN_RELEASE;
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, eventType,
-                    "Released Zone Vnet: " + BroadcastDomainType.getValue(profile.getBroadcastUri()) + " for Network: " + profile.getId(),
+                    "Released Zone Vnet: " + vnetValue + " for Network: " + profile.getId(),
                     profile.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
         }
 

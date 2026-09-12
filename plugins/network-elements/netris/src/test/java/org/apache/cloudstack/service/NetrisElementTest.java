@@ -136,6 +136,6 @@ public class NetrisElementTest {
         ReservationContext context = Mockito.mock(ReservationContext.class);
         netrisElement.destroy(network, context);
         Mockito.verify(netrisService).deleteVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
-                networkName, networkId, networkCidr);
+                networkName, networkId, networkCidr, false);
     }
 }

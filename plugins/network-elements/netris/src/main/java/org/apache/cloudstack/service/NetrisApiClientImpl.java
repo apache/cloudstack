@@ -21,6 +21,7 @@ import com.cloud.network.netris.NetrisLbBackend;
 import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -108,6 +109,7 @@ import io.netris.model.VnetResAddBody;
 import io.netris.model.VnetResDeleteBody;
 import io.netris.model.VnetResListBody;
 import io.netris.model.VnetsBody;
+import io.netris.model.VnetsBodyGateways;
 import io.netris.model.VpcEditResponseOK;
 import io.netris.model.VpcVpcIdBody;
 import io.netris.model.response.AuthResponse;
@@ -329,6 +331,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     @Override
     public boolean createVpc(CreateNetrisVpcCommand cmd) {
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
+        VPCListing existingNetrisVpc = getVpcByNameAndTenant(netrisVpcName);
+        if (existingNetrisVpc != null) {
+            logger.info("Netris VPC {} already exists, skipping creation", netrisVpcName);
+            return true;
+        }
         VPCResponseObjectOK createdVpc = createVpcInternal(netrisVpcName, tenantId, tenantName);
         if (createdVpc == null || !createdVpc.isIsSuccess()) {
             String reason = createdVpc == null ? "Empty response" : "Operation failed on Netris";
@@ -338,8 +345,19 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
         String netrisIpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, cmd.getCidr());
         String vpcCidr = cmd.getCidr();
-        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, createdVpc.getData());
-        return createdIpamAllocation != null;
+        VPCListing vpcListing = createdVpc.getData();
+        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, vpcListing);
+        if (createdIpamAllocation == null) {
+            logger.warn("IPAM Allocation creation failed for VPC {}, rolling back VPC", netrisVpcName);
+            try {
+                deleteVpcInternal(vpcListing);
+            } catch (Exception e) {
+                logger.error("Failed to rollback VPC {} after IPAM Allocation failure - manual cleanup may be required: {}",
+                        netrisVpcName, e.getMessage());
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -352,9 +370,13 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
         String netrisPrevVpcName = String.format("D%s-A%s-Z%s-V%s-%s", domainId, accountId, zoneId, vpcId, prevVpcName);
         VpcEditResponseOK updatedVpc = updateVpcInternal(netrisVpcName, netrisPrevVpcName, tenantId, tenantName);
+        return validateNetrisVpcUpdateResponse(updatedVpc, prevVpcName);
+    }
+
+    private boolean validateNetrisVpcUpdateResponse(VpcEditResponseOK updatedVpc, String previousVpcName) {
         if (updatedVpc == null || !updatedVpc.isIsSuccess()) {
             String reason = updatedVpc == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The update of Netris VPC {} failed: {}", cmd.getPreviousVpcName(), reason);
+            logger.debug("The update of Netris VPC {} failed: {}", previousVpcName, reason);
             return false;
         }
         return true;
@@ -372,6 +394,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
             String natRuleName = cmd.getNatRuleName();
             NatGetBody existingNatRule = netrisNatRuleExists(natRuleName);
+            // Backward compatibility: rules created before the public-IP suffix was added use the legacy name
+            if (existingNatRule == null && "STATICNAT".equals(cmd.getNatRuleType())) {
+                String legacyName = getLegacyStaticNatRuleName(natRuleName);
+                if (legacyName != null) {
+                    logger.debug("Static NAT rule not found with name '{}', falling back to legacy name '{}'", natRuleName, legacyName);
+                    existingNatRule = netrisNatRuleExists(legacyName);
+                    if (existingNatRule != null) {
+                        natRuleName = legacyName;
+                    }
+                }
+            }
             boolean ruleExists = Objects.nonNull(existingNatRule);
             if (ruleExists) {
                 deleteNatRule(natRuleName, existingNatRule.getId(), vpcResource.getName());
@@ -416,7 +449,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 try {
                     aclApi.apiAclPut(aclEditItem);
                 } catch (ApiException e) {
-                    if (e.getResponseBody().contains("This kind of acl already exists")) {
+                    if (e.getResponseBody().contains("already exists")) {
                         logger.info("Netris ACL rule: {} already exists and doesn't need to be updated", aclName);
                         return true;
                     }
@@ -426,7 +459,15 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
             AclAddItem aclAddItem = getAclAddItem(cmd, aclName);
             aclAddItem.setVpc(vpc);
-            aclApi.apiAclPost(aclAddItem);
+            try {
+                aclApi.apiAclPost(aclAddItem);
+            } catch (ApiException e) {
+                if (e.getResponseBody() != null && e.getResponseBody().contains("already exists")) {
+                    logger.info("Netris ACL rule: {} already exists, skipping creation", aclName);
+                    return true;
+                }
+                throw e;
+            }
         } catch (ApiException e) {
             logAndThrowException(String.format("Failed to create Netris ACL: %s", cmd.getNetrisAclName()), e);
         }
@@ -949,13 +990,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 logger.error("Could not find the Netris LB rule with name {}", lbName);
                 return false;
             }
-            if (matchingLbId.isEmpty()) {
+            if (!matchingLbId.isEmpty()) {
+                L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
+                lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
+            } else {
                 logger.warn("There doesn't seem to be any LB rule on Netris matching {}", lbName);
-                return true;
             }
-
-            L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
-            lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
             if (Objects.nonNull(cidrList)) {
                 deleteAclRulesForLb(cmd);
             }
@@ -1104,6 +1144,32 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return null;
     }
 
+    private String getL2VpcName(NetrisCommand cmd, String name) {
+        return String.format("D%s-A%s-Z%s-N%s-%s",
+                cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getId(), name);
+    }
+
+    /**
+     * Returns the existing dedicated Netris VPC for an L2 network, creating it if it does not yet exist.
+     * The VPC is created with no IPAM allocation.
+     */
+    private VPCListing getOrCreateL2Vpc(NetrisCommand cmd) {
+        String l2VpcName = getL2VpcName(cmd, cmd.getName());
+        VPCListing existing = getVpcByNameAndTenant(l2VpcName);
+        if (existing != null) {
+            logger.debug("Found existing dedicated L2 VPC {} on Netris", l2VpcName);
+            return existing;
+        }
+        logger.debug("Creating dedicated L2 VPC {} on Netris (no subnet)", l2VpcName);
+        VPCResponseObjectOK created = createVpcInternal(l2VpcName, tenantId, tenantName);
+        if (created == null || !created.isIsSuccess()) {
+            logger.error("Failed to create dedicated L2 VPC {} on Netris", l2VpcName);
+            return null;
+        }
+
+        return getVpcByNameAndTenant(l2VpcName);
+    }
+
     private VPCListing getVpcByNameAndTenant(String vpcName) {
         try {
             List<VPCListing> vpcListings = listVPCs();
@@ -1159,18 +1225,52 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String vnetCidr = cmd.getCidr();
         Integer vxlanId = cmd.getVxlanId();
         String netrisTag = cmd.getNetrisTag();
-        String netmask = vnetCidr.split("/")[1];
-        String netrisGateway = cmd.getGateway() + "/" + netmask;
-        String netrisV6Cidr = cmd.getIpv6Cidr();
         boolean isVpc = cmd.isVpc();
-        Boolean isGlobalRouting = cmd.isGlobalRouting();
+        boolean isL2 = cmd.isL2();
+
+        // Derive per-address-family global routing flags from networkMode + internetProtocol:
+        //   ipv4 NAT      -> ipv4 global routing: false,  ipv6 global routing: n/a
+        //   ipv4 ROUTED   -> ipv4 global routing: true,   ipv6 global routing: n/a
+        //   dual NAT      -> ipv4 global routing: false,  ipv6 global routing: true
+        //   dual ROUTED   -> ipv4 global routing: true,   ipv6 global routing: true
+        NetworkOffering.NetworkMode networkMode = cmd.getNetworkMode();
+        NetUtils.InternetProtocol internetProtocol = cmd.getInternetProtocol();
+        Boolean ipv4GlobalRouting = null;
+        Boolean ipv6GlobalRouting = null;
+        if (networkMode != null) {
+            ipv4GlobalRouting = NetworkOffering.NetworkMode.ROUTED.equals(networkMode);
+            if (NetUtils.InternetProtocol.DualStack.equals(internetProtocol)) {
+                ipv6GlobalRouting = true;
+            }
+        }
+
+        String netrisGateway = null;
+        if (!isL2 && vnetCidr != null && cmd.getGateway() != null) {
+            String netmask = vnetCidr.split("/")[1];
+            netrisGateway = cmd.getGateway() + "/" + netmask;
+        }
+        String netrisV6Cidr = cmd.getIpv6Cidr();
+
+        VPCListing associatedVpc = null;
+        String netrisSubnetName = null;
+        String netrisV6IpamAllocationName = null;
+        String netrisV6SubnetName = null;
+        boolean createdIpv6Allocation = false;
 
         try {
-            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
-            VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
-            if (associatedVpc == null) {
-                logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
-                return false;
+            if (isL2) {
+                associatedVpc = getOrCreateL2Vpc(cmd);
+                if (associatedVpc == null) {
+                    logger.error("Failed to get or create dedicated L2 VPC to create the corresponding vNet for L2 network {}", networkName);
+                    return false;
+                }
+            } else {
+                String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+                associatedVpc = getNetrisVpcResource(netrisVpcName);
+                if (associatedVpc == null) {
+                    logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
+                    return false;
+                }
             }
 
             String vNetName;
@@ -1179,31 +1279,44 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             } else {
                 vNetName = String.format("N%s-%s", networkId, networkName);
             }
-            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
+            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName);
+            NetrisResourceObjectUtils.validateNetrisVnetNameLength(netrisVnetName, networkName);
 
-            createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
-            if (Objects.nonNull(netrisV6Cidr)) {
-                String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
-                String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET,  String.valueOf(cmd.getVpcId()), netrisV6Cidr) ;
-                BigDecimal ipamAllocationId = getIpamAllocationIdByPrefixAndVpc(netrisV6Cidr, associatedVpc);
-                if (ipamAllocationId == null) {
-                    InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
-                    if (Objects.isNull(createdIpamAllocation)) {
-                        throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
+            if (!isL2) {
+                netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
+                createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv4GlobalRouting);
+                if (Objects.nonNull(netrisV6Cidr)) {
+                    netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
+                    netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), netrisV6Cidr);
+                    BigDecimal ipamAllocationId = getIpamAllocationIdByPrefixAndVpc(netrisV6Cidr, associatedVpc);
+                    if (ipamAllocationId == null) {
+                        InlineResponse2004Data createdIpamAllocationData = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
+                        if (Objects.isNull(createdIpamAllocationData)) {
+                            rollbackVnetResources(associatedVpc, netrisSubnetName, null, null, networkName);
+                            throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, associatedVpc.getName()));
+                        }
+                        createdIpv6Allocation = true;
                     }
+                    createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, ipv6GlobalRouting);
                 }
-                createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
+                logger.debug("Successfully created IPAM Subnet for network {} on Netris", networkName);
             }
-            logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-            VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, netrisV6Cidr, vxlanId, netrisTag);
+            VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, isL2 ? null : netrisV6Cidr, vxlanId, netrisTag);
             if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
                 String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
                 logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
+                if (!isL2) {
+                    rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
+                            createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+                }
                 return false;
             }
-        } catch (ApiException e) {
+        } catch (Exception e) {
+            if (!isL2 && associatedVpc != null) {
+                rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
+                        createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+            }
             throw new CloudRuntimeException(String.format("Failed to create Netris vNet %s", networkName), e);
         }
         return true;
@@ -1217,11 +1330,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String vpcName = cmd.getVpcName();
         Long vpcId = cmd.getVpcId();
         boolean isVpc = cmd.isVpc();
+        boolean isL2 = cmd.isL2();
 
-        String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
-        VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
+        VPCListing associatedVpc = getAssociatedVPC(cmd);
+
         if (associatedVpc == null) {
-            logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
+            logger.error("Failed to find Netris VPC with name: {}, to update the corresponding vNet for network {}", vpcName, networkName);
             return false;
         }
 
@@ -1237,13 +1351,37 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
         String prevNetrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, prevVnetName) ;
 
+        NetrisResourceObjectUtils.validateNetrisVnetNameLength(netrisVnetName, networkName);
         VnetResAddBody response = updateVnetInternal(associatedVpc, netrisVnetName, prevNetrisVnetName);
         if (response == null || !response.isIsSuccess()) {
             String reason = response == null ? "Empty response" : "Operation failed on Netris";
             logger.debug("Netris vNet: {} update failed: {}", vNetName, reason);
             return false;
         }
+        if (isL2) {
+            String netrisNewVpcName = String.format("D%s-A%s-Z%s-N%s-%s", cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), networkId, networkName);
+            VpcEditResponseOK updatedVpc = updateVpcInternal(netrisNewVpcName, associatedVpc.getName(), tenantId, tenantName);
+            return validateNetrisVpcUpdateResponse(updatedVpc, associatedVpc.getName());
+        }
         return true;
+    }
+
+    private VPCListing getAssociatedVPC(UpdateNetrisVnetCommand cmd) {
+        VPCListing associatedVpc;
+        boolean isL2 = cmd.isL2();
+        if (isL2) {
+            String l2VpcName = getL2VpcName(cmd, cmd.getPrevNetworkName());
+            associatedVpc = getVpcByNameAndTenant(l2VpcName);
+            if (associatedVpc == null) {
+                logger.error("Failed to find dedicated L2 VPC {} to update the corresponding vNet for L2 network {}", l2VpcName, cmd.getName());
+            }
+        } else {
+            Long vpcId = cmd.getVpcId();
+            String vpcName = cmd.getVpcName();
+            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+            associatedVpc = getNetrisVpcResource(netrisVpcName);
+        }
+        return associatedVpc;
     }
 
     private VnetResAddBody updateVnetInternal(VPCListing associatedVpc, String netrisVnetName, String prevVnetName) {
@@ -1263,24 +1401,27 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             vnetBody.setCustomAnycastMac(vnetBody.getCustomAnycastMac());
 
-            VnetEditBodyGateways gatewayV4 = new VnetEditBodyGateways();
-            gatewayV4.prefix(vnetsBody.getGateways().get(0).getPrefix());
-            gatewayV4.setDhcpEnabled(false);
-            VnetEditBodyDhcp dhcp = new VnetEditBodyDhcp();
-            dhcp.setEnd("");
-            dhcp.setStart("");
-            dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
-            gatewayV4.setDhcp(dhcp);
             List<VnetEditBodyGateways> gatewaysList = new ArrayList<>();
-            gatewaysList.add(gatewayV4);
+            List<VnetsBodyGateways> existingGateways = vnetsBody.getGateways();
+            if (!CollectionUtils.isEmpty(existingGateways)) {
+                VnetEditBodyDhcp dhcp = new VnetEditBodyDhcp();
+                dhcp.setEnd("");
+                dhcp.setStart("");
+                dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
 
-            if (vnetsBody.getGateways().size() > 1 && Objects.nonNull(vnetsBody.getGateways().get(1))) {
-                String netrisV6Gateway = vnetsBody.getGateways().get(1).getPrefix();
-                VnetEditBodyGateways gatewayV6 = new VnetEditBodyGateways();
-                gatewayV6.prefix(netrisV6Gateway);
-                gatewayV6.setDhcpEnabled(false);
-                gatewayV6.setDhcp(dhcp);
-                gatewaysList.add(gatewayV6);
+                VnetEditBodyGateways gatewayV4 = new VnetEditBodyGateways();
+                gatewayV4.prefix(vnetsBody.getGateways().get(0).getPrefix());
+                gatewayV4.setDhcpEnabled(false);
+                gatewayV4.setDhcp(dhcp);
+                gatewaysList.add(gatewayV4);
+
+                if (existingGateways.size() > 1 && Objects.nonNull(vnetsBody.getGateways().get(1))) {
+                    VnetEditBodyGateways gatewayV6 = new VnetEditBodyGateways();
+                    gatewayV6.prefix(vnetsBody.getGateways().get(1).getPrefix());
+                    gatewayV6.setDhcpEnabled(false);
+                    gatewayV6.setDhcp(dhcp);
+                    gatewaysList.add(gatewayV6);
+                }
             }
 
             vnetBody.setGateways(gatewaysList);
@@ -1333,14 +1474,25 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String networkName = cmd.getName();
         Long networkId = cmd.getId();
         boolean isVpc = cmd.isVpc();
+        boolean isL2 = cmd.isL2();
         String vnetCidr = cmd.getVNetCidr();
         String vnetV6Cidr = cmd.getvNetV6Cidr();
         try {
-            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
-            VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
-            if (associatedVpc == null) {
-                logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
-                return false;
+            VPCListing associatedVpc;
+            if (isL2) {
+                String l2VpcName = getL2VpcName(cmd, networkName);
+                associatedVpc = getVpcByNameAndTenant(l2VpcName);
+                if (associatedVpc == null) {
+                    logger.warn("Dedicated L2 VPC {} not found on Netris — vNet for network {} may have already been deleted", l2VpcName, networkName);
+                    return true;
+                }
+            } else {
+                String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+                associatedVpc = getNetrisVpcResource(netrisVpcName);
+                if (associatedVpc == null) {
+                    logger.error("Failed to find Netris VPC with name: {}, to delete the corresponding vNet for network {}", netrisVpcName, networkName);
+                    return false;
+                }
             }
 
             String vNetName;
@@ -1350,19 +1502,28 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 vNetName = String.format("N%s-%s", networkId, networkName);
             }
 
-            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
+            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName);
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(associatedVpc.getId());
             deleteVnetInternal(associatedVpc, vpcFilter, netrisVnetName, vNetName);
-
             logger.debug("Successfully deleted vNet {}", vNetName);
-            deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
-            if (Objects.nonNull(vnetV6Cidr)) {
-                String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, vnetV6Cidr);
-                String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetV6Cidr);
-                deleteSubnetInternal(vpcFilter, netrisVnetName, netrisV6SubnetName);
-                deleteVpcIpamAllocationInternal(associatedVpc, netrisV6IpamAllocationName);
+
+            if (isL2) {
+                // Delete the dedicated L2 VPC now that its only vNet is gone
+                logger.debug("Deleting dedicated L2 VPC {} on Netris", associatedVpc.getName());
+                VPCResponseObjectOK deleteResponse = deleteVpcInternal(associatedVpc);
+                if (deleteResponse == null || !deleteResponse.isIsSuccess()) {
+                    logger.warn("Failed to delete dedicated L2 VPC {} after vNet deletion — manual cleanup may be required", associatedVpc.getName());
+                }
+            } else {
+                String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
+                deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
+                if (Objects.nonNull(vnetV6Cidr)) {
+                    String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, vnetV6Cidr);
+                    String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetV6Cidr);
+                    deleteSubnetInternal(vpcFilter, netrisVnetName, netrisV6SubnetName);
+                    deleteVpcIpamAllocationInternal(associatedVpc, netrisV6IpamAllocationName);
+                }
             }
 
         } catch (Exception e) {
@@ -1542,6 +1703,18 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
                 return false;
             }
+
+            NatGetBody existingRule = netrisNatRuleExists(staticNatRuleName);
+            if (existingRule != null) {
+                logger.debug("Static NAT rule '{}' already exists on Netris, skipping creation", staticNatRuleName);
+                return true;
+            }
+            // Backward compatibility: rule with legacy naming convention (no public IP post-fixed) exists - don't create a duplicate
+            String legacyName = getLegacyStaticNatRuleName(staticNatRuleName);
+            if (legacyName != null && netrisNatRuleExists(legacyName) != null) {
+                logger.debug("Legacy static NAT rule '{}' already exists on Netris, skipping creation of '{}'", legacyName, staticNatRuleName);
+                return true;
+            }
             // Create a /32 subnet for the DNAT IP
             createNatSubnet(cmd, natIP, vpcResource.getId());
             NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
@@ -1590,12 +1763,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 IpTreeSubnet existingSubnet = matchedSubnets.stream().filter(x -> x.getPrefix().equals(natIp)).collect(Collectors.toList()).get(0);
                 if (existingSubnet.getPurpose() != IpTreeSubnet.PurposeEnum.NAT) {
                     VPCListing systemVpc = getSystemVpc();
-                    logger.debug("Subnet: {} already exists, but purpose is not NAT, updating its purpose to 'nat'", natIp);
+                    logger.debug("Subnet: {} already exists with purpose '{}', updating its purpose to 'nat'", natIp, existingSubnet.getPurpose());
                     updateIpamSubnetInternal(existingSubnet.getId().intValue(), netrisSubnetName, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
                 }
             }
         } catch (ApiException e) {
-            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with NAT purpose", natIp));
+            logAndThrowException(String.format("Failed to create subnet for %s with NAT purpose (current purpose conflicts and could not be changed)", natIp), e);
         }
     }
 
@@ -1611,12 +1784,13 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (matchedSubnets.isEmpty()) {
                 createIpamSubnetInternal(netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
             } else if (IpTreeSubnet.PurposeEnum.LOAD_BALANCER != matchedSubnets.get(0).getPurpose()){
-                logger.debug("Updating existing NAT subnet {} to have load balancer purpose", netrisSubnetName);
-                updateIpamSubnetInternal(matchedSubnets.get(0).getId().intValue(), netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
+                IpTreeSubnet existingSubnet = matchedSubnets.get(0);
+                logger.debug("Updating existing NAT subnet {} with purpose '{}' to have load balancer purpose", netrisSubnetName, existingSubnet.getPurpose());
+                updateIpamSubnetInternal(existingSubnet.getId().intValue(), netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
             }
             logger.debug("LB subnet: {} already exists", netrisSubnetName);
         } catch (ApiException e) {
-            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with LB purpose", lbIp));
+            logAndThrowException(String.format("Failed to create subnet for %s with LB purpose (current purpose conflicts and could not be changed)", lbIp), e);
         }
     }
 
@@ -1813,6 +1987,26 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
+    private void rollbackVnetResources(VPCListing associatedVpc, String ipv4SubnetName, String ipv6SubnetName,
+                                       String ipv6AllocationName, String networkName) {
+        logger.warn("Rolling back Netris resources created for network {}", networkName);
+        FilterByVpc vpcFilter = new FilterByVpc();
+        vpcFilter.add(associatedVpc.getId());
+        try {
+            if (ipv6SubnetName != null) {
+                deleteSubnetInternal(vpcFilter, null, ipv6SubnetName);
+            }
+            if (ipv6AllocationName != null) {
+                deleteVpcIpamAllocationInternal(associatedVpc, ipv6AllocationName);
+            }
+            if (ipv4SubnetName != null) {
+                deleteSubnetInternal(vpcFilter, null, ipv4SubnetName);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to rollback Netris resources for network {} - manual cleanup may be required: {}", networkName, e.getMessage());
+        }
+    }
+
     private SubnetBody getIpamSubnetBody(VPCListing vpc, SubnetBody.PurposeEnum purpose, String subnetName, String subnetPrefix, Boolean isGlobalRouting) {
         SubnetBody subnetBody = new SubnetBody();
         subnetBody.setName(subnetName);
@@ -1886,24 +2080,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             vnetBody.setCustomAnycastMac("");
 
-            VnetAddBodyGateways gatewayV4 = new VnetAddBodyGateways();
-            gatewayV4.prefix(netrisGateway);
-            gatewayV4.setDhcpEnabled(false);
-            VnetAddBodyDhcp dhcp = new VnetAddBodyDhcp();
-            dhcp.setEnd("");
-            dhcp.setStart("");
-            dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
-            gatewayV4.setDhcp(dhcp);
             List<VnetAddBodyGateways> gatewaysList = new ArrayList<>();
-            gatewaysList.add(gatewayV4);
-
-            if (Objects.nonNull(netrisV6Cidr)) {
-                VnetAddBodyGateways gatewayV6 = new VnetAddBodyGateways();
-                gatewayV6.prefix(NetUtils.getIpv6Gateway(netrisV6Cidr));
-                gatewayV6.setDhcpEnabled(false);
-                gatewayV6.setDhcp(dhcp);
-                gatewaysList.add(gatewayV6);
-            }
+            updateGatewayList(gatewaysList, netrisGateway, netrisV6Cidr);
 
             vnetBody.setGateways(gatewaysList);
             vnetBody.setGuestTenants(new ArrayList<>());
@@ -1948,6 +2126,32 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
+    private void updateGatewayList(List<VnetAddBodyGateways> gatewaysList, String netrisGateway, String netrisV6Cidr) {
+        if (netrisGateway != null) {
+            VnetAddBodyGateways gatewayV4 = new VnetAddBodyGateways();
+            gatewayV4.prefix(netrisGateway);
+            gatewayV4.setDhcpEnabled(false);
+            VnetAddBodyDhcp dhcp = new VnetAddBodyDhcp();
+            dhcp.setEnd("");
+            dhcp.setStart("");
+            dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
+            gatewayV4.setDhcp(dhcp);
+            gatewaysList.add(gatewayV4);
+
+            if (Objects.nonNull(netrisV6Cidr)) {
+                VnetAddBodyDhcp dhcpV6 = new VnetAddBodyDhcp();
+                dhcpV6.setEnd("");
+                dhcpV6.setStart("");
+                dhcpV6.setOptionSet(new VnetAddBodyDhcpOptionSet());
+                VnetAddBodyGateways gatewayV6 = new VnetAddBodyGateways();
+                gatewayV6.prefix(NetUtils.getIpv6Gateway(netrisV6Cidr));
+                gatewayV6.setDhcpEnabled(false);
+                gatewayV6.setDhcp(dhcpV6);
+                gatewaysList.add(gatewayV6);
+            }
+        }
+    }
+
     private String getNetrisVpcNameSuffix(Long vpcId, String vpcName, Long networkId, String networkName, boolean isVpc) {
         String suffix = null;
         if (isVpc) {
@@ -1971,10 +2175,23 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 return null;
             }
             return data.get(0);
-
         } catch (ApiException e) {
             throw new CloudRuntimeException("Failed to list Netris NAT rules");
         }
+    }
+
+    /**
+     * Derives the legacy static NAT rule name (without the public IP suffix) from the new name format.
+     * New format: ...-VM{vmId}-STATICNAT-{publicIp}
+     * Legacy format: ...-VM{vmId}-STATICNAT
+     * Returns null if the name doesn't match the new format.
+     */
+    private String getLegacyStaticNatRuleName(String newName) {
+        int idx = newName.indexOf("-STATICNAT-");
+        if (idx == -1) {
+            return null;
+        }
+        return newName.substring(0, idx + "-STATICNAT".length());
     }
 
     private VPCListing getNetrisVpcResource(String netrisVpcName) {

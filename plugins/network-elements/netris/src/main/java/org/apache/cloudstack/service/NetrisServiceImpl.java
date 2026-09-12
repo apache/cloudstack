@@ -38,6 +38,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
 import io.netris.model.NatPostBody;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import com.cloud.utils.Pair;
@@ -222,14 +223,16 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting) {
+    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, NetworkOffering.NetworkMode networkMode, NetUtils.InternetProtocol internetProtocol, boolean isL2) {
         NetworkVO network = networkDao.findById(networkId);
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
         cmd.setVxlanId(Integer.parseInt(vxlanId));
+        cmd.setL2(isL2);
         NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
         cmd.setNetrisTag(netrisProvider.getNetrisTag());
-        cmd.setGlobalRouting(globalRouting);
+        cmd.setNetworkMode(networkMode);
+        cmd.setInternetProtocol(internetProtocol);
         if (Objects.nonNull(networkId)) {
             Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
             if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {
@@ -241,18 +244,20 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName) {
+    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName, boolean isL2) {
         UpdateNetrisVnetCommand cmd = new UpdateNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, Objects.nonNull(vpcId));
         cmd.setPrevNetworkName(prevNetworkName);
         cmd.setVpcId(vpcId);
         cmd.setVpcName(vpcName);
+        cmd.setL2(isL2);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }
 
     @Override
-    public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
+    public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, boolean isL2) {
         DeleteNetrisVnetCommand cmd = new DeleteNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, vpcName, vpcId, cidr, Objects.nonNull(vpcName));
+        cmd.setL2(isL2);
         Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
         if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {
             cmd.setvNetV6Cidr(ipv6PrefixNetworkMapVO.getSubnet());
@@ -354,7 +359,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         cmd.setNatRuleType("STATICNAT");
         cmd.setNatIp(staticNatIp);
         cmd.setVmIp(vmIp);
-        String[] suffixes = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String[] suffixes = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId, staticNatIp);
         String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
@@ -375,7 +380,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
             networkId = networkResourceId;
         }
         DeleteNetrisNatRuleCommand cmd = new DeleteNetrisNatRuleCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, isForVpc);
-        String suffixes[] = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String suffixes[] = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId, staticNatIp);
         String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         cmd.setNatRuleType("STATICNAT");
@@ -547,10 +552,9 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         return answer.getResult();
     }
 
-    public static String[] getStaticNatResourceSuffixes(Long vpcId, Long networkId, boolean isForVpc, long vmId) {
-        String[] suffixes = new String[2];
-        suffixes[0] = isForVpc ? String.valueOf(vpcId) : String.valueOf(networkId);
-        suffixes[1] = String.valueOf(vmId);
-        return suffixes;
+    public static String[] getStaticNatResourceSuffixes(Long vpcId, Long networkId, boolean isForVpc, long vmId, String publicIp) {
+        String resourceId = isForVpc ? String.valueOf(vpcId) : String.valueOf(networkId);
+        // Always include the public IP to ensure uniqueness across multiple static NATs on the same VM
+        return new String[]{resourceId, String.valueOf(vmId), publicIp};
     }
 }
