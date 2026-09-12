@@ -888,46 +888,30 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     }
 
     private long getNextTopologyUpdateSequenceNumber(final long vpcId) {
-
-        try {
-            return  Transaction.execute(new TransactionCallback<Long>() {
-                @Override
-                public Long doInTransaction(TransactionStatus status) {
-                    VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
-                    if (seqVo == null) {
-                        seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
-                        _vpcDrSeqNoDao.persist(seqVo);
-                    }
-                    seqVo = _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
-                    seqVo.incrTopologyUpdateSequenceNo();
-                    _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
-                    return seqVo.getTopologyUpdateSequenceNo();
+        return Transaction.execute(new TransactionCallback<Long>() {
+            @Override
+            public Long doInTransaction(TransactionStatus status) {
+                VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
+                if (seqVo == null) {
+                    seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
+                    seqVo = _vpcDrSeqNoDao.persist(seqVo);
                 }
-            });
-        } finally {
-
-        }
+                return _vpcDrSeqNoDao.incrementAndGetTopologySeqNo(seqVo.getId());
+            }
+        });
     }
 
     private long getNextRoutingPolicyUpdateSequenceNumber(final long vpcId) {
-
-        try {
-            return  Transaction.execute(new TransactionCallback<Long>() {
-                @Override
-                public Long doInTransaction(TransactionStatus status) {
-                    VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
-                    if (seqVo == null) {
-                        seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
-                        _vpcDrSeqNoDao.persist(seqVo);
-                    }
-                    seqVo = _vpcDrSeqNoDao.lockRow(seqVo.getId(), true);
-                    seqVo.incrPolicyUpdateSequenceNo();
-                    _vpcDrSeqNoDao.update(seqVo.getId(), seqVo);
-                    return seqVo.getPolicyUpdateSequenceNo();
+        return Transaction.execute(new TransactionCallback<Long>() {
+            @Override
+            public Long doInTransaction(TransactionStatus status) {
+                VpcDistributedRouterSeqNoVO seqVo = _vpcDrSeqNoDao.findByVpcId(vpcId);
+                if (seqVo == null) {
+                    seqVo = new VpcDistributedRouterSeqNoVO(vpcId);
+                    seqVo = _vpcDrSeqNoDao.persist(seqVo);
                 }
-            });
-        } finally {
-
-        }
+                return _vpcDrSeqNoDao.incrementAndGetPolicySeqNo(seqVo.getId());
+            }
+        });
     }
 }
