@@ -20,11 +20,12 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -37,14 +38,13 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 
 /**
  * SecondaryStorageDiscoverer is used to discover secondary
@@ -64,6 +64,8 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     protected VMTemplateZoneDao _vmTemplateZoneDao = null;
     @Inject
     protected VMTemplateDao _vmTemplateDao = null;
+    @Inject
+    protected TemplateService templateService;
     @Inject
     protected AgentManager _agentMgr = null;
 
@@ -285,24 +287,12 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
                 _agentMgr.agentStatusTransitTo(h, Event.AgentDisconnected, msId);
             }
         }
+        Set<Long> dcIds = new HashSet<>();
         for (HostVO h : hosts) {
-            associateTemplatesToZone(h.getId(), h.getDataCenterId());
+            dcIds.add(h.getDataCenterId());
         }
-
-    }
-
-    private void associateTemplatesToZone(long hostId, long dcId) {
-        VMTemplateZoneVO tmpltZone;
-
-        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
-        for (VMTemplateVO vt : allTemplates) {
-            if (vt.isCrossZones()) {
-                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-                if (tmpltZone == null) {
-                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-                    _vmTemplateZoneDao.persist(vmTemplateZone);
-                }
-            }
+        for (Long dcId : dcIds) {
+            templateService.associateCrossZoneTemplatesToZone(dcId);
         }
     }
 }
