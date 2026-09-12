@@ -20,14 +20,19 @@
 package com.cloud.utils.ssh;
 
 import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.interfaces.RSAPublicKey;
 
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
-
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.KeyPair;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 public class SSHKeysHelper {
 
@@ -45,8 +50,8 @@ public class SSHKeysHelper {
 
     public SSHKeysHelper(Integer keyLength) {
         try {
-            keyPair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA, keyLength);
-        } catch (JSchException e) {
+            keyPair = CertUtils.generateRandomKeyPair(keyLength);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             e.printStackTrace();
         }
     }
@@ -105,17 +110,53 @@ public class SSHKeysHelper {
     }
 
     public String getPublicKey() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        keyPair.writePublicKey(baos, "");
+        if (keyPair == null || keyPair.getPublic() == null) {
+            return null;
+        }
+        try {
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
 
-        return baos.toString();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+            writeString(buffer, "ssh-rsa");
+            writeBigInt(buffer, rsaPublicKey.getPublicExponent());
+            writeBigInt(buffer, rsaPublicKey.getModulus());
+
+            String base64 = Base64.encodeBase64String(buffer.toByteArray());
+
+            return "ssh-rsa " + base64;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static void writeString(ByteArrayOutputStream out, String str) throws Exception {
+        byte[] data = str.getBytes(StandardCharsets.UTF_8);
+        out.write(ByteBuffer.allocate(4).putInt(data.length).array());
+        out.write(data);
+    }
+
+    private static void writeBigInt(ByteArrayOutputStream out, BigInteger value) throws Exception {
+        byte[] data = value.toByteArray();
+        out.write(ByteBuffer.allocate(4).putInt(data.length).array());
+        out.write(data);
     }
 
     public String getPrivateKey() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        keyPair.writePrivateKey(baos);
-
-        return baos.toString();
+        if (keyPair == null || keyPair.getPrivate() == null) {
+            return null;
+        }
+        try {
+            StringWriter sw = new StringWriter();
+            try (JcaPEMWriter pemWriter = new JcaPEMWriter(sw)) {
+                pemWriter.writeObject(keyPair.getPrivate());
+            }
+            return sw.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }
