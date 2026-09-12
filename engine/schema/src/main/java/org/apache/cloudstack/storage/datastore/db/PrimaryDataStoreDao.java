@@ -91,6 +91,22 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope);
 
     /**
+     * Finds disabled storage pools within the specified scope that are associated with the given storage access groups.
+     * This method is used to locate storage pools with 'Disabled' status that match specific storage access group
+     * filters.
+     *
+     * @param dcId the data center ID.
+     * @param podId the pod ID.
+     * @param clusterId the cluster ID.
+     * @param scope ZONE, CLUSTER OR HOST type scope
+     * @param storageAccessGroups array of storage access group names to match against.
+     *                           Only pools associated with these access groups will be returned.
+     *                           If null or empty, returns an empty list.
+     * @return a list of {@link StoragePoolVO} objects.
+     */
+    List<StoragePoolVO> findDisabledPoolsByScopeAndAccessGroups(long dcId, Long podId, Long clusterId, ScopeType scope, String[] storageAccessGroups);
+
+    /**
      * Find pool by UUID.
      *
      * @param uuid
@@ -167,7 +183,19 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> listByIds(List<Long> ids);
 
-    List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType);
+    /**
+     * Finds storage pools that have no storage access groups associated with them within the specified criteria.
+     * This method identifies storage pools without access group restrictions.
+     *
+     * @param dcId the data center ID. Can be null to include all data centers.
+     * @param podId the pod ID. Can be null to include all pods.
+     * @param clusterId the cluster ID. Can be null to include all clusters.
+     * @param scope ZONE, CLUSTER or HOST type scope
+     * @param hypervisorType the hypervisor type filter. Can be null to include all hypervisor types.
+     * @param status the storage pool status to filter by.
+     * @return a list of {@link StoragePoolVO} objects that have no storage access groups associated.
+     */
+    List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType, StoragePoolStatus status);
 
     List<StoragePoolVO> findPoolsByStorageTypeAndZone(Storage.StoragePoolType storageType, Long zoneId);
 

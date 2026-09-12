@@ -25,6 +25,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Profiler;
@@ -123,21 +124,21 @@ public class StoragePoolMonitor implements Listener {
             List<StoragePoolVO> pools = new ArrayList<>();
             // SAG -> Storage Access Group
             if (ArrayUtils.isEmpty(sags)) {
-                List<StoragePoolVO> clusterStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, null);
-                List<StoragePoolVO> storagePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, null);
-                List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, scCmd.getHypervisorType());
+                List<StoragePoolVO> clusterStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, null, StoragePoolStatus.Up);
+                List<StoragePoolVO> storagePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, null, StoragePoolStatus.Up);
+                List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, scCmd.getHypervisorType(), StoragePoolStatus.Up);
                 storagePoolsByEmptySAGs.retainAll(zoneStoragePoolsByHypervisor);
                 pools.addAll(storagePoolsByEmptySAGs);
                 pools.addAll(clusterStoragePoolsByEmptySAGs);
-                List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, HypervisorType.Any);
+                List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, HypervisorType.Any, StoragePoolStatus.Up);
                 pools.addAll(zoneStoragePoolsByAnyHypervisor);
             } else {
                 List<StoragePoolVO> storagePoolsBySAGs = new ArrayList<>();
                 List<StoragePoolVO> clusterStoragePoolsBySAGs = _poolDao.findPoolsByAccessGroupsForHostConnection(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, sags);
-                List<StoragePoolVO> clusterStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, null);
+                List<StoragePoolVO> clusterStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, null, StoragePoolStatus.Up);
                 List<StoragePoolVO> zoneStoragePoolsBySAGs = _poolDao.findZoneWideStoragePoolsByAccessGroupsAndHypervisorTypeForHostConnection(host.getDataCenterId(), sags, scCmd.getHypervisorType());
                 List<StoragePoolVO> zoneStoragePoolsByHypervisorTypeAny = _poolDao.findZoneWideStoragePoolsByAccessGroupsAndHypervisorTypeForHostConnection(host.getDataCenterId(), sags, HypervisorType.Any);
-                List<StoragePoolVO> zoneStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, null);
+                List<StoragePoolVO> zoneStoragePoolsByEmptySAGs = _poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, null, StoragePoolStatus.Up);
 
                 storagePoolsBySAGs.addAll(zoneStoragePoolsBySAGs);
                 storagePoolsBySAGs.addAll(zoneStoragePoolsByEmptySAGs);
@@ -148,13 +149,15 @@ public class StoragePoolMonitor implements Listener {
             }
 
             // get the zone wide disabled pools list if global setting is true.
-            if (StorageManager.MountDisabledStoragePool.value()) {
-                pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+            if (StorageManager.getMountDisabledStoragePool().value()) {
+                pools.addAll(_poolDao.findDisabledPoolsByScopeAndAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, sags));
+                pools.addAll(_poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), null, null, ScopeType.ZONE, null, StoragePoolStatus.Disabled));
             }
 
             // get the cluster wide disabled pool list
-            if (StorageManager.MountDisabledStoragePool.valueIn(host.getClusterId())) {
-                pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER));
+            if (StorageManager.getMountDisabledStoragePool().valueIn(host.getClusterId())) {
+                pools.addAll(_poolDao.findDisabledPoolsByScopeAndAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, sags));
+                pools.addAll(_poolDao.findStoragePoolsByEmptyStorageAccessGroups(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER, null, StoragePoolStatus.Disabled));
             }
 
             List<StoragePoolHostVO> previouslyConnectedPools = new ArrayList<>();
