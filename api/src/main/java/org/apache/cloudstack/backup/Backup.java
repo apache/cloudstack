@@ -31,7 +31,11 @@ import com.cloud.storage.Volume;
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
     enum Status {
-        Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
+        Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged,
+        // Hidden: a chain backup kept as a tombstone after the user deleted it while it still has
+        // live descendants (incremental chains). Excluded from listBackups and from all backup
+        // operations (which require BackedUp); swept from the DB once its last descendant is gone.
+        Hidden
     }
 
     class Metric {
