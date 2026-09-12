@@ -1259,7 +1259,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         if (destPool.getType() == StoragePoolType.RBD) {
             disk = createDiskFromTemplateOnRBD(template, name, format, provisioningType, size, destPool, timeout);
         } else {
-            try (KeyFile keyFile = new KeyFile(passphrase)){
+            try (KeyFile keyFile = new KeyFile(passphrase)) {
                 String newUuid = name;
                 List<QemuObject> passphraseObjects = new ArrayList<>();
                 disk = destPool.createPhysicalDisk(newUuid, format, provisioningType, template.getVirtualSize(), passphrase);

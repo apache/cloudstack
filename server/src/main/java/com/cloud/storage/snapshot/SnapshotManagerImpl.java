@@ -383,12 +383,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         Long instanceId = volume.getInstanceId();
 
-        // If this volume is attached to an VM, then the VM needs to be in the stopped state
-        // in order to revert the volume
+        // If this volume is attached to an Instance, then the Instance needs to be in the stopped or shutdown state
+        // in order to revert volume to the snapshot
         if (instanceId != null) {
             UserVmVO vm = _vmDao.findById(instanceId);
             if (vm.getState() != State.Stopped && vm.getState() != State.Shutdown) {
-                throw new InvalidParameterValueException("The Instance the specified disk is attached to is not in the shutdown state.");
+                throw new InvalidParameterValueException("The Instance of the specified disk is attached to, is not in the stopped/shutdown state.");
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
@@ -1177,7 +1177,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
         if (diskOffering == null) {
             throw new InvalidParameterValueException(String.format("Failed to find disk offering for the volume [%s]", volume.getUuid()));
-        } else if(diskOffering.getEncrypt()) {
+        } else if (diskOffering.getEncrypt()) {
             throw new UnsupportedOperationException(String.format("Encrypted volumes don't support snapshot schedules, cannot create snapshot policy for the volume [%s]", volume.getUuid()));
         }
 

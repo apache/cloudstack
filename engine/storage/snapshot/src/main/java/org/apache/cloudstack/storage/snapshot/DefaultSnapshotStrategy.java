@@ -646,7 +646,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             return StrategyPriority.CANT_HANDLE;
         }
         if (zoneId != null && SnapshotOperation.DELETE.equals(op)) {
-            logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
+            logger.debug("canHandle for zone ID: {}, operation: {} - {}", zoneId, op, StrategyPriority.DEFAULT);
         }
         return StrategyPriority.DEFAULT;
     }
