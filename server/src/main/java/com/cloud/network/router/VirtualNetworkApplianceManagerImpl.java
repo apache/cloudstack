@@ -1568,14 +1568,21 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+
+        final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
         if (router.getIsRedundantRouter()) {
             // Disable gateway check if VPC has no tiers or no active VM's in it
-            final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
             if (RedundantState.BACKUP.equals(router.getRedundantState()) ||
                     routerGuestNtwkIds == null || routerGuestNtwkIds.isEmpty()) {
                 excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
             }
+        }
+
+        if (router.getVpcId() != null && CollectionUtils.isEmpty(routerGuestNtwkIds)) {
+            // If router belongs to a VPC and has no guest network associated, exclude webserver service which is expected to fail
+            String webserverServiceName = _monitorServiceDao.getServiceByName(MonitoringService.Service.Webserver.toString()).getServiceName();
+            excludedTests = excludedTests.isEmpty() ? webserverServiceName : excludedTests + "," + webserverServiceName;
         }
 
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
