@@ -28,43 +28,43 @@ public interface HAManager extends HAConfigManager {
     ConfigKey<Integer> MaxConcurrentHealthCheckOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.concurrent.health.check.operations",
             "50",
-            "The number of concurrent health check operations per management server. This setting determines the size of the thread pool consuming the HEALTH CHECK queue.", true);
+            "The number of concurrent health check operations per management server. This setting determines the size of the thread pool consuming the HEALTH CHECK queue.", false);
 
     ConfigKey<Integer> MaxPendingHealthCheckOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.pending.health.check.operations",
             "5000",
-            "The number of pending health check operations per management server. This setting determines the size of the HEALTH CHECK queue.", true);
+            "The number of pending health check operations per management server. This setting determines the size of the HEALTH CHECK queue.", false);
 
     ConfigKey<Integer> MaxConcurrentActivityCheckOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.concurrent.activity.check.operations",
             "25",
             "The number of concurrent activity check operations per management server. This setting determines the size of the thread pool consuming the ACTIVITY CHECK queue.",
-            true);
+            false);
 
     ConfigKey<Integer> MaxPendingActivityCheckOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.pending.activity.check.operations",
             "2500",
-            "The number of pending activity check operations per management server. This setting determines the size of the size of the ACTIVITY CHECK queue.", true);
+            "The number of pending activity check operations per management server. This setting determines the size of the ACTIVITY CHECK queue.", false);
 
     ConfigKey<Integer> MaxConcurrentRecoveryOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.concurrent.recovery.operations",
             "25",
-            "The number of concurrent recovery operations per management server.", true);
+            "The number of concurrent recovery operations per management server. This setting determines the size of the thread pool consuming the RECOVERY queue.", false);
 
     ConfigKey<Integer> MaxPendingRecoveryOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.pending.recovery.operations",
             "2500",
-            "The number of pending recovery operations per management server. This setting determines the size of the size of the RECOVERY queue.", true);
+            "The number of pending recovery operations per management server. This setting determines the size of the RECOVERY queue.", false);
 
     ConfigKey<Integer> MaxConcurrentFenceOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.concurrent.fence.operations",
             "25",
-            "The number of concurrent fence operations per management server.", true);
+            "The number of concurrent fence operations per management server. This setting determines the size of the thread pool consuming the FENCE queue.", false);
 
     ConfigKey<Integer> MaxPendingFenceOperations = new ConfigKey<>("Advanced", Integer.class,
             "ha.max.pending.fence.operations",
             "2500",
-            "The number of pending fence operations per management server. This setting determines the size of the size of the FENCE queue.", true);
+            "The number of pending fence operations per management server. This setting determines the size of the FENCE queue.", false);
 
     boolean transitionHAState(final HAConfig.Event event, final HAConfig haConfig);
 

@@ -39,7 +39,7 @@ public interface HighAvailabilityManager extends Manager {
         "Force High-Availability to happen even if the VM says no.", true, Cluster);
 
     ConfigKey<Integer> HAWorkers = new ConfigKey<>("Advanced", Integer.class, "ha.workers", "5",
-        "The number of High-Availability worker threads.", true, Cluster);
+        "The number of High-Availability worker threads.", false, Cluster);
 
     ConfigKey<Integer> InvestigateRetryInterval = new ConfigKey<>("Advanced", Integer.class, "investigate.retry.interval",
         "60", "The time (in seconds) between VM pings when the agent is disconnected.", true, Cluster);
@@ -59,12 +59,6 @@ public interface HighAvailabilityManager extends Manager {
         + "that were successful and is now ready to be purged from the database (table: op_ha_work).",
         true, Cluster);
 
-    ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
-        "5", "The number of times to try a restart for the different Work-Types: "
-        + "Migrating - VMs off of a host, Destroy - a VM, Stop - a VM for storage pool migration purposes,"
-        + " CheckStop - checks if a VM has been stopped, ForceStop - force a VM to stop even if the "
-        + "states don't allow it, Destroy - a VM and HA - restart a VM.", true, Cluster);
-
     ConfigKey<Long> TimeToSleep = new ConfigKey<>("Advanced", Long.class, "time.to.sleep",
         "60", "The time in seconds to sleep before checking the database (table: op_ha_work) "
         + "for new working types (Migration, Stop, CheckStop, ForceStop, Destroy and HA), if no work items are found.",
@@ -76,7 +70,7 @@ public interface HighAvailabilityManager extends Manager {
         true, Cluster);
 
     ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
-            "Proceed fencing the host even the heartbeat failed for only one storage pool", false, ConfigKey.Scope.Zone);
+            "Proceed fencing the host even the heartbeat failed for only one storage pool", true, ConfigKey.Scope.Zone);
 
     enum WorkType {
         Migration,  // Migrating VMs off of a host.
