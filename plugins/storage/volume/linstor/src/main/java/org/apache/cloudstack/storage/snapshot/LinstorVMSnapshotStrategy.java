@@ -214,7 +214,7 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     private String linstorDeleteSnapshot(final DevelopersApi api, final String rscName, final String snapshotName) {
         String resultMsg = null;
         try {
-            ApiCallRcList answers = api.resourceSnapshotDelete(rscName, snapshotName, Collections.emptyList());
+            ApiCallRcList answers = api.resourceSnapshotDelete(rscName, snapshotName, Collections.emptyList(), null);
             if (answers.hasError()) {
                 resultMsg = LinstorUtil.getBestErrorMessage(answers);
             }

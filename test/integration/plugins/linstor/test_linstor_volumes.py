@@ -857,7 +857,10 @@ class TestLinstorVolumes(cloudstackTestCase):
         # STEP 3: Reboot VM with detached vol #
         #######################################
 
-        self.virtual_machine.reboot(self.apiClient)
+        # via the helper, which waits for the guest to come back: CloudStack reports
+        # Running as soon as the domain exists, so leaving it un-awaited lets the next
+        # test attach and detach a volume against a guest that has not enumerated it yet
+        TestLinstorVolumes._reboot_vm(self.virtual_machine)
 
         vm = self._get_vm(self.virtual_machine.id)
 

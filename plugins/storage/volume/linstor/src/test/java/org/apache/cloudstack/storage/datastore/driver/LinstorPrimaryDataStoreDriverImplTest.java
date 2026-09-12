@@ -19,7 +19,9 @@ package org.apache.cloudstack.storage.datastore.driver;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.ControllerVersion;
 import com.linbit.linstor.api.model.LayerType;
+import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceGroup;
 
 import java.util.Arrays;
@@ -35,6 +37,8 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -84,5 +88,46 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
         layers = LinstorUtil.getEncryptedLayerList(api, "EncryptedGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE), layers);
+    }
+
+    private DevelopersApi mockApiWithRestVersion(String restApiVersion) throws ApiException {
+        DevelopersApi apiMock = mock(DevelopersApi.class);
+        ControllerVersion version = new ControllerVersion();
+        version.setRestApiVersion(restApiVersion);
+        when(apiMock.controllerVersion()).thenReturn(version);
+        return apiMock;
+    }
+
+    @Test
+    public void testApplyCloneSizeNewController() throws ApiException {
+        DevelopersApi newCtrl = mockApiWithRestVersion("1.29.1");
+        ResourceDefinitionCloneRequest req = new ResourceDefinitionCloneRequest();
+
+        boolean resizeAfter = LinstorPrimaryDataStoreDriverImpl.applyCloneSize(newCtrl, req, 40L * 1024 * 1024 * 1024);
+
+        Assert.assertFalse(resizeAfter);
+        Assert.assertEquals(Collections.singletonList(40L * 1024 * 1024), req.getVolumeSizes());
+    }
+
+    @Test
+    public void testApplyCloneSizeOldController() throws ApiException {
+        DevelopersApi oldCtrl = mockApiWithRestVersion("1.28.0");
+        ResourceDefinitionCloneRequest req = new ResourceDefinitionCloneRequest();
+
+        boolean resizeAfter = LinstorPrimaryDataStoreDriverImpl.applyCloneSize(oldCtrl, req, 40L * 1024 * 1024 * 1024);
+
+        Assert.assertTrue(resizeAfter);
+        Assert.assertNull(req.getVolumeSizes());
+    }
+
+    @Test
+    public void testApplyCloneSizeWithoutSize() throws ApiException {
+        DevelopersApi newCtrl = mockApiWithRestVersion("1.29.1");
+        ResourceDefinitionCloneRequest req = new ResourceDefinitionCloneRequest();
+
+        Assert.assertFalse(LinstorPrimaryDataStoreDriverImpl.applyCloneSize(newCtrl, req, null));
+        Assert.assertFalse(LinstorPrimaryDataStoreDriverImpl.applyCloneSize(newCtrl, req, 0L));
+        Assert.assertNull(req.getVolumeSizes());
+        verify(newCtrl, never()).controllerVersion();
     }
 }
