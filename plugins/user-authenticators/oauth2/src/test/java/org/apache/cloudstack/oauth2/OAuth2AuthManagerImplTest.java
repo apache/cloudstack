@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doNothing;
@@ -118,6 +119,29 @@ public class OAuth2AuthManagerImplTest {
         OauthProviderVO result = _authManager.registerOauthProvider(cmd);
         assertEquals("github", result.getProvider());
         assertEquals("testSecretKey", result.getSecretKey());
+    }
+
+    @Test
+    public void testRegisterOauthProviderDisabledWhenRequested() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getDescription()).thenReturn("test description");
+        when(cmd.getProvider()).thenReturn("github");
+        when(cmd.getClientId()).thenReturn("client-id");
+        when(cmd.getSecretKey()).thenReturn("secret-key");
+        when(cmd.getRedirectUri()).thenReturn("http://localhost");
+        when(cmd.getAuthorizeUrl()).thenReturn("https://auth.example.com");
+        when(cmd.getTokenUrl()).thenReturn("https://token.example.com");
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getDomainPath()).thenReturn(null);
+        when(cmd.getEnabled()).thenReturn(false);
+        when(_authManager._oauthProviderDao.findByProviderAndDomain("github", null)).thenReturn(null);
+        when(_authManager._oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        OauthProviderVO result = _authManager.registerOauthProvider(cmd);
+
+        assertFalse(result.isEnabled());
     }
 
     @Test
