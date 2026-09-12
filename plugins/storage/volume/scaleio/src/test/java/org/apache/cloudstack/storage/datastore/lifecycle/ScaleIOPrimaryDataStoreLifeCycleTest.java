@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -65,7 +64,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolAutomation;
@@ -129,9 +127,8 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     }
 
     @Test
-    public void testAttachZone() throws Exception {
+    public void testAttachZone() {
         final DataStore dataStore = mock(DataStore.class);
-        when(dataStore.getId()).thenReturn(1L);
 
         MockedStatic<ScaleIOGatewayClientConnectionPool> scaleIOGatewayClientConnectionPoolMocked = mockStatic(ScaleIOGatewayClientConnectionPool.class);
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
@@ -152,12 +149,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         when(resourceManager.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), Hypervisor.HypervisorType.KVM))
                 .thenReturn(Arrays.asList(host1, host2));
 
-        when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
-        when(store.isShared()).thenReturn(true);
-        when(store.getStorageProviderName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
-
-        when(dataStoreProviderMgr.getDataStoreProvider(ScaleIOUtil.PROVIDER_NAME)).thenReturn(dataStoreProvider);
-        when(dataStoreProvider.getName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
         storageMgr.registerHostListener(ScaleIOUtil.PROVIDER_NAME, hostListener);
 
         when(dataStoreHelper.attachZone(Mockito.any(DataStore.class))).thenReturn(null);
