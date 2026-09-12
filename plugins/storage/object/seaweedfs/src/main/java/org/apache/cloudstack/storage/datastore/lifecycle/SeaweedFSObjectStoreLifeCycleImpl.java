@@ -91,9 +91,12 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         if (StringUtils.isBlank(s3Url)) {
             s3Url = url;
         }
-        // If iamUrl is not provided, default it to the s3Url + "/iam"
+        // If iamUrl is not provided, default it to the s3Url.
+        // SeaweedFS registers its embedded IAM API at POST / on the same S3
+        // endpoint (UnifiedPostHandler), so the IAM endpoint is the same as
+        // the S3 endpoint unless the deployment runs a separate weed iam server.
         if (StringUtils.isBlank(iamUrl)) {
-            iamUrl = StringUtils.stripEnd(s3Url, "/") + "/iam";
+            iamUrl = s3Url;
         }
 
         if (StringUtils.isAnyBlank(accessKey, secretKey, s3Url, iamUrl)) {
