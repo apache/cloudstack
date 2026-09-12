@@ -19,10 +19,13 @@ package com.cloud.network;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +39,7 @@ import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,10 +58,18 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.net.Ip;
 
@@ -105,6 +117,21 @@ public class IpAddressManagerTest {
     @Mock
     AccountManager accountManagerMock;
 
+    @Mock
+    AnnotationDao annotationDao;
+
+    @Mock
+    VpcDao vpcDao;
+
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
+
+    @Mock
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+
+    @Mock
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+
     final long dummyID = 1L;
 
     final String UUID = "uuid";
@@ -128,6 +155,90 @@ public class IpAddressManagerTest {
         networkOfferingVO.setSharedSourceNat(false);
 
         Mockito.when(networkOfferingDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
+    }
+
+    @Test
+    public void disassociatePublicIpAddressUnassignsReleasingIpWhenAssociatedNetworkIsMissing() throws ResourceUnavailableException {
+        long networkId = 2L;
+        long vpcId = 3L;
+        long vpcOfferingId = 4L;
+        prepareIpDisassociation(networkId);
+        when(ipAddressVoMock.getId()).thenReturn(dummyID);
+        when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Releasing);
+        when(ipAddressVoMock.getVpcId()).thenReturn(vpcId);
+        when(networkDao.findById(networkId)).thenReturn(null);
+        doReturn(publicIpQuarantineVOMock).when(ipAddressManager).addPublicIpAddressToQuarantine(ipAddressVoMock, account.getDomainId());
+
+        VpcVO vpc = mock(VpcVO.class);
+        VpcOfferingVO offering = mock(VpcOfferingVO.class);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        when(vpc.getVpcOfferingId()).thenReturn(vpcOfferingId);
+        when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(offering);
+        when(offering.getId()).thenReturn(vpcOfferingId);
+        when(vpcOfferingServiceMapDao.listProvidersForServiceForVpcOffering(vpcOfferingId, Service.NetworkACL))
+                .thenReturn(Collections.singletonList(new VpcOfferingServiceMapVO(vpcOfferingId, Service.NetworkACL, Network.Provider.VPCVirtualRouter)));
+        NetworkElement element = mock(NetworkElement.class);
+        ipAddressManager._networkModel = mock(NetworkModel.class);
+        when(ipAddressManager._networkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName())).thenReturn(element);
+
+        boolean result = ipAddressManager.disassociatePublicIpAddress(ipAddressMock, dummyID, account);
+
+        assertTrue(result);
+        verify(ipAddressManager, never()).applyIpAssociations(any(), anyBoolean());
+        verify(ipAddressManager).addPublicIpAddressToQuarantine(ipAddressVoMock, account.getDomainId());
+        verify(ipAddressDao).unassignIpAddress(dummyID);
+        verify(element).releaseIp(ipAddressVoMock);
+        verify(annotationDao).removeByEntityType("PUBLIC_IP_ADDRESS", UUID);
+        verify(ipAddressDao).releaseFromLockTable(dummyID);
+    }
+
+    @Test
+    public void disassociatePublicIpAddressAppliesAssociationsWhenNetworkExists() throws ResourceUnavailableException {
+        verifyDisassociationWithExistingNetwork(true);
+    }
+
+    @Test
+    public void disassociatePublicIpAddressReturnsFailureWhenAssociationsFail() throws ResourceUnavailableException {
+        verifyDisassociationWithExistingNetwork(false);
+    }
+
+    private void verifyDisassociationWithExistingNetwork(boolean associationsApplied) throws ResourceUnavailableException {
+        long networkId = 2L;
+        prepareIpDisassociation(networkId);
+        NetworkVO network = mock(NetworkVO.class);
+        when(networkDao.findById(networkId)).thenReturn(network);
+        doReturn(associationsApplied).when(ipAddressManager).applyIpAssociations(network, IpAddressManagerImpl.rulesContinueOnErrFlag);
+
+        boolean result = ipAddressManager.disassociatePublicIpAddress(ipAddressMock, dummyID, account);
+
+        Assert.assertEquals(associationsApplied, result);
+        verify(ipAddressManager).applyIpAssociations(network, IpAddressManagerImpl.rulesContinueOnErrFlag);
+        verify(ipAddressManager, never()).addPublicIpAddressToQuarantine(any(), anyLong());
+        verify(ipAddressDao, never()).unassignIpAddress(anyLong());
+        verify(ipAddressDao).releaseFromLockTable(dummyID);
+    }
+
+    @Test
+    public void disassociatePublicIpAddressDoesNotUnassignFreeIpWhenNetworkIsMissing() throws ResourceUnavailableException {
+        prepareIpDisassociation(2L);
+        when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Free);
+
+        boolean result = ipAddressManager.disassociatePublicIpAddress(ipAddressMock, dummyID, account);
+
+        assertTrue(result);
+        verify(ipAddressManager, never()).applyIpAssociations(any(), anyBoolean());
+        verify(ipAddressManager, never()).addPublicIpAddressToQuarantine(any(), anyLong());
+        verify(ipAddressDao, never()).unassignIpAddress(anyLong());
+        verify(ipAddressDao).releaseFromLockTable(dummyID);
+    }
+
+    private void prepareIpDisassociation(long networkId) {
+        when(ipAddressMock.getId()).thenReturn(dummyID);
+        when(ipAddressDao.acquireInLockTable(dummyID)).thenReturn(ipAddressVoMock);
+        doReturn(true).when(ipAddressManager).cleanupIpResources(ipAddressMock, dummyID, account);
+        doReturn(ipAddressVoMock).when(ipAddressManager).markIpAsUnavailable(dummyID);
+        when(ipAddressVoMock.getAssociatedWithNetworkId()).thenReturn(networkId);
+        when(ipAddressVoMock.getUuid()).thenReturn(UUID);
     }
 
     @Test
