@@ -283,7 +283,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setAuthorizeUrl(authorizeUrl);
         oauthProviderVO.setTokenUrl(tokenUrl);
-        oauthProviderVO.setEnabled(enabled);
+        // If enabled is null, default to true (enabled), NPE safeguard for Boolean unboxing
+        oauthProviderVO.setEnabled(enabled == null || enabled);
 
         _oauthProviderDao.persist(oauthProviderVO);
 
