@@ -20,6 +20,8 @@
 package org.apache.cloudstack.ca.provider;
 
 import java.lang.reflect.Field;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -38,6 +40,7 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -47,9 +50,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.configuration.Config;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -206,6 +213,78 @@ public class RootCAProviderTest {
             Assert.assertTrue(provider.isManagementCertificate(certificate));
         } catch (CertificateParsingException e) {
             Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Tests for addConfiguredManagementIp
+    // ---------------------------------------------------------------
+
+    private ConfigurationDao mockConfigDao(String cidr) throws Exception {
+        ConfigurationDao mockDao = Mockito.mock(ConfigurationDao.class);
+        Mockito.when(mockDao.getValue(Config.ManagementNetwork.key())).thenReturn(cidr);
+        addField(provider, "configDao", mockDao);
+        return mockDao;
+    }
+
+    @Test
+    public void testAddConfiguredManagementIpWithMatchingCidr() throws Exception {
+        // 127.0.0.0/8 covers the loopback address (127.0.0.1) that is always
+        // present on a Linux host, so the method must add it to the list.
+        mockConfigDao("127.0.0.0/8");
+
+        List<String> ipList = new ArrayList<>();
+        provider.addConfiguredManagementIp(ipList);
+
+        Assert.assertTrue("127.0.0.1 should be included for CIDR 127.0.0.0/8",
+                ipList.contains("127.0.0.1"));
+    }
+
+    @Test
+    public void testAddConfiguredManagementIpWithNonMatchingCidr() throws Exception {
+        // 192.0.2.0/24 is TEST-NET-1 (RFC 5737) and is never assigned to a real
+        // interface, so nothing should be added to the list.
+        mockConfigDao("192.0.2.0/24");
+
+        List<String> ipList = new ArrayList<>();
+        provider.addConfiguredManagementIp(ipList);
+
+        Assert.assertTrue("No IP should be added when no interface matches the CIDR",
+                ipList.isEmpty());
+    }
+
+    @Test
+    public void testAddConfiguredManagementIpWithMultipleCidrs() throws Exception {
+        // First CIDR is a non-matching TEST-NET; second covers loopback.
+        // The method splits on "," and checks each CIDR individually, so
+        // 127.0.0.1 must still be found via the second CIDR.
+        mockConfigDao("192.0.2.0/24,127.0.0.0/8");
+
+        List<String> ipList = new ArrayList<>();
+        provider.addConfiguredManagementIp(ipList);
+
+        Assert.assertTrue("127.0.0.1 should be included when the second comma-separated CIDR matches",
+                ipList.contains("127.0.0.1"));
+    }
+
+    @Test
+    public void testAddConfiguredManagementIpSocketException() throws Exception {
+        mockConfigDao("127.0.0.0/8");
+
+        try (MockedStatic<NetworkInterface> networkInterfaceMock =
+                     Mockito.mockStatic(NetworkInterface.class)) {
+            networkInterfaceMock.when(NetworkInterface::getNetworkInterfaces)
+                    .thenThrow(new SocketException("simulated network error"));
+
+            try {
+                provider.addConfiguredManagementIp(new ArrayList<>());
+                Assert.fail("Expected CloudRuntimeException to be thrown on SocketException");
+            } catch (CloudRuntimeException e) {
+                Assert.assertTrue("Exception message should describe the failure",
+                        e.getMessage().contains("Exception while trying to gather the management server's network interfaces."));
+                Assert.assertTrue("Cause should be the original SocketException",
+                        e.getCause() instanceof SocketException);
+            }
         }
     }
 }
