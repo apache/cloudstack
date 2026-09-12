@@ -1391,7 +1391,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (!"nas".equals(offering.getProvider())) {
                 Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
                 host = restoreInfo.first().getPrivateIpAddress();
-                dataStore = restoreInfo.second().getUuid();
+                String[] datastorePossibleValues = getDatastorePossibleValues(restoreInfo.second());
+                dataStore = datastorePossibleValues[0];
             }
             result = backupProvider.restoreBackupToVM(vm, backup, host, dataStore);
 
@@ -1481,7 +1482,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         logger.debug(String.format("Trying to restore volume using host private IP address: [%s].", host.getPrivateIpAddress()));
 
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
-        String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
+        String[] datastoresPossibleValues = getDatastorePossibleValues(datastore);
 
         Pair<Boolean, String> result = restoreBackedUpVolume(backupVolumeInfo, backup, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
@@ -1494,6 +1495,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s].", backedUpVolumeUuid, vm.getUuid()));
         }
         return true;
+    }
+
+    /**
+     * For VMFS datastores, the identifier to be used for Veeam restore is the datastore name.
+     * Otherwise, possible values are the datastore UUID and the datastore name..
+     */
+    protected String[] getDatastorePossibleValues(StoragePoolVO datastore) {
+        if (datastore == null) {
+            return new String[0];
+        }
+        if (Storage.StoragePoolType.VMFS == datastore.getPoolType()) {
+            return new String[]{datastore.getName()};
+        }
+        return new String[]{datastore.getUuid(), datastore.getName()};
     }
 
     protected Pair<Boolean, String> restoreBackedUpVolume(final Backup.VolumeInfo backupVolumeInfo, final BackupVO backup,
