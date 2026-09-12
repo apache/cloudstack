@@ -1013,8 +1013,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public boolean isDynamicRoutedNetwork(NetworkOffering networkOffering) {
-        return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode());
+        return NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode()) &&
+                (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode()) ||
+                        NetUtils.InternetProtocol.DualStack.equals(networkOfferingDao.getNetworkOfferingInternetProtocol(networkOffering.getId())));
     }
 
     @Override
@@ -1030,8 +1031,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public boolean isDynamicRoutedVpc(VpcOffering vpcOffering) {
-        return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
-                && NetworkOffering.RoutingMode.Dynamic.equals(vpcOffering.getRoutingMode());
+        return NetworkOffering.RoutingMode.Dynamic.equals(vpcOffering.getRoutingMode()) &&
+                (NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode()) ||
+                        NetUtils.InternetProtocol.DualStack.equals(vpcOfferingDao.getVpcOfferingInternetProtocol(vpcOffering.getId())));
     }
 
     @Override
