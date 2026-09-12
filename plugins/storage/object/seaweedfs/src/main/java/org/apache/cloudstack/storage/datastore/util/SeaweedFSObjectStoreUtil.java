@@ -84,28 +84,16 @@ public class SeaweedFSObjectStoreUtil {
         "  ]\n" +
         "}\n";
 
-    /**
-     * IAM policy applied to the CloudStack service credential (the access/secret
-     * key configured on the object store). Grants only the SeaweedFS-specific
-     * quota management permissions, so the service credential cannot delete
-     * buckets, manage users, or change cluster topology. Bucket lifecycle
-     * operations (create/delete bucket) are performed by the per-account IAM
-     * users, not the service credential.
-     */
-    public static final String SERVICE_CREDENTIAL_POLICY = "{\n" +
-        "  \"Version\": \"2012-10-17\",\n" +
-        "  \"Statement\": [\n" +
-        "    {\n" +
-        "      \"Sid\": \"AllowBucketQuotaManagement\",\n" +
-        "      \"Effect\": \"Allow\",\n" +
-        "      \"Action\": [\n" +
-        "        \"s3:PutBucketQuota\",\n" +
-        "        \"s3:GetBucketQuota\"\n" +
-        "      ],\n" +
-        "      \"Resource\": \"*\"\n" +
-        "    }\n" +
-        "  ]\n" +
-        "}\n";
+    // The CloudStack service credential (the accesskey/secretkey configured on
+    // the object store) is the admin credential used for ALL driver operations:
+    //   - AmazonS3 client: bucket CRUD, policy, versioning, encryption, listing
+    //   - AmazonIdentityManagement client: per-account IAM user provisioning
+    //   - setBucketQuotaViaS3Extension: PUT /{bucket}?seaweedfs-quota
+    // It must therefore have broad S3 and IAM permissions. It is NOT scoped
+    // down to only s3:PutBucketQuota/s3:GetBucketQuota — that was an earlier
+    // design idea that does not match the implementation. The per-account IAM
+    // users (created by createUser) are the ones with restricted permissions
+    // (see IAM_USER_POLICY above).
 
     /**
      * Returns an S3 connection for the given endpoint and credentials.
@@ -256,9 +244,11 @@ public class SeaweedFSObjectStoreUtil {
                 request.getHeaders().put("Content-Type", "application/json");
             }
 
-            // Sign with SigV4
+            // Sign with SigV4 (AWSS3V4Signer, not the legacy S3Signer which is SigV2)
             com.amazonaws.auth.AWSCredentials credentials = new com.amazonaws.auth.BasicAWSCredentials(accessKey, secretKey);
-            com.amazonaws.services.s3.internal.S3Signer signer = new com.amazonaws.services.s3.internal.S3Signer();
+            com.amazonaws.services.s3.internal.AWSS3V4Signer signer = new com.amazonaws.services.s3.internal.AWSS3V4Signer();
+            signer.setServiceName("s3");
+            signer.setRegionName("us-east-1");
             signer.sign(request, credentials);
 
             // Build and send the HTTP request with signed headers
