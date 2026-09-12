@@ -64,6 +64,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     float findClusterConsumption(Long clusterId, short capacityType, long computeRequested);
 
+
     Pair<List<Long>, Map<Long, Double>> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityType);
 
     List<CapacityVO> listHostCapacityByCapacityTypes(Long zoneId, Long clusterId, List<Short> capacityTypes);
@@ -71,4 +72,16 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     List<CapacityVO> listPodCapacityByCapacityTypes(Long zoneId, List<Short> capacityTypes);
 
     List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes);
+
+    void decrementUsedCapacity(long id, long amount);
+
+    void decrementReservedCapacity(long id, long amount);
+
+    void incrementUsedCapacity(long id, long amount);
+
+    void decrementUsedIncrementReservedCapacity(long id, long usedDecrement, long reservedIncrement, float overcommitRatio);
+
+    void decrementUsedIncrementReservedCapacity(long id, long usedDecrement, long reservedIncrement);
+
+    void incrementUsedDecrementReservedCapacity(long id, long usedIncrement, long reservedDecrement);
 }
