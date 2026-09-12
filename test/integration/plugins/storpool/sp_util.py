@@ -88,6 +88,7 @@ class TestData():
     diskOfferingMedium = "diskOfferingMedium"
     diskOfferingLarge = "diskOfferingLarge"
     diskOfferingCustom = "diskOfferingCustom"
+    diskOfferingCustomAdditionalZone = "diskOfferingCustomAdditionalZone"
     domainId = "domainId"
     hypervisor = "hypervisor"
     login = "login"
@@ -121,11 +122,13 @@ class TestData():
     zoneId = "zoneId"
     sp_template_1 = 'sp_template_1'
     sp_template_2 = 'sp_template_2'
+    sp_template_4 = 'sp_template_4'
 
     def __init__(self):
         sp_template_1 = 'ssd'
         sp_template_2 = 'ssd2'
         sp_template_3 = 'test-primary'
+        sp_template_4 = 'ssd-b'
         self.testdata = {
             TestData.primaryStorage: {
                 "name": sp_template_1,
@@ -372,6 +375,14 @@ class TestData():
                 "custom": True,
                 "hypervisorsnapshotreserve": 200,
                 TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingCustomAdditionalZone: {
+                "name": "Test-Custom-Zone-B",
+                "displaytext": "Custom Disk Offering",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_4,
                 "storagetype": "shared"
             },
             TestData.volume_1: {
@@ -970,9 +981,11 @@ class StorPoolHelper():
             if obj.zoneid not in snapshots:
                 new_list.append(obj)
                 snapshots.add(obj.zoneid)
-
+        logging.debug("new list %s" % new_list)
+        logging.debug("zone IDs %s" % zone_ids)
+        logging.debug("snapshot entries %s" % snapshot_entries)
         if len(new_list) != len(zone_ids):
-            cls.fail("Undesired list snapshot size for multiple zones")
+            raise Exception("Undesired list snapshot size for multiple zones")
         for zone_id in zone_ids:
             zone_found = False
             for entry in new_list:
@@ -980,4 +993,4 @@ class StorPoolHelper():
                     zone_found = True
                     break
             if zone_found == False:
-                cls.fail("Unable to find snapshot entry for the zone ID: %s" % zone_id)
+                raise Exception("Unable to find snapshot entry for the zone ID: %s" % zone_id)
