@@ -115,7 +115,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     @Parameter(name = ApiConstants.ARCH,
            type = CommandType.STRING,
-           description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
+           description = "the CPU arch of the template. Valid options are: i686, x86_64, aarch64, s390x",
            since = "4.20",
            allowedValueType = CPU.CPUArch.class)
     private String arch;

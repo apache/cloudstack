@@ -165,6 +165,18 @@ def extract_inner_enums(source):
         for constant in body.split(","):
             constant = constant.strip()
 
+            # Enum constants with a constructor argument, e.g.
+            # x86("i686", 32)
+            value_match = re.match(
+                r"[A-Za-z_][A-Za-z0-9_]*\s*\(\s*\"([^\"]+)\"",
+                constant,
+            )
+
+            if value_match:
+                constants.append(value_match.group(1))
+                continue
+
+            # Plain enum constants, e.g. LEAKS, ALL
             constant_match = re.match(
                 r"([A-Z][A-Z0-9_]*)\b",
                 constant,
@@ -178,6 +190,31 @@ def extract_inner_enums(source):
 
     return enums
 
+def build_enum_index():
+    enum_index = {}
+
+    for path in find_java_files():
+        source = path.read_text(encoding="utf-8")
+        enums = extract_inner_enums(source)
+
+        for enum_name, values in enums.items():
+            enum_index[enum_name] = values
+
+    return enum_index
+
+def extract_allowed_value_type(block):
+    match = re.search(
+        r"\ballowedValueType\s*=\s*([A-Za-z_][A-Za-z0-9_]*)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\.class",
+        block,
+    )
+
+    if not match:
+        return None
+
+    if match.group(2):
+        return match.group(2)
+
+    return match.group(1)
 
 def extract_parameter_field_name(source, parameter_end):
     match = re.match(
@@ -205,20 +242,19 @@ def find_enum_for_parameter(source, parameter_end, field_name):
 
     return None
 
-def check_file(path):
+def check_file(path, enum_index=None):
     source = Path(path).read_text(encoding="utf-8")
     violations = []
-
     enums = extract_inner_enums(source)
+
+    if enum_index is None:
+        enum_index = {}
 
     for start, block in extract_parameter_blocks(source):
         if not is_string_parameter(block):
             continue
 
         if re.search(r"\ballowedValues\s*=", block):
-            continue
-
-        if re.search(r"\ballowedValueType\s*=", block):
             continue
 
         parameter_end = start + len(block)
@@ -233,27 +269,50 @@ def check_file(path):
             field_name,
         )
 
-        if enum_name and enum_name in enums:
-            line = source[:start].count("\n") + 1
-            name = extract_parameter_name(block)
-
-            violations.append(
-                (
-                    str(path),
-                    line,
-                    enums[enum_name],
-                    name,
-                )
-            )
-
-            continue
+        if not enum_name:
+            enum_name = extract_allowed_value_type(block)
 
         description = extract_description(block)
+        values = extract_valid_values(description) if description else []
 
-        if not description:
+        enum_values = None
+        if enum_name and enum_name in enums:
+            enum_values = enums[enum_name]
+        elif enum_name and enum_name in enum_index:
+            enum_values = enum_index[enum_name]
+
+        if enum_values is not None:
+
+            if re.search(r"\ballowedValueType\s*=", block):
+                if values and values != enum_values:
+                    line = source[:start].count("\n") + 1
+                    name = extract_parameter_name(block)
+
+                    violations.append(
+                        (
+                            str(path),
+                            line,
+                            enum_values,
+                            name,
+                        )
+                    )
+            else:
+                line = source[:start].count("\n") + 1
+                name = extract_parameter_name(block)
+
+                violations.append(
+                    (
+                        str(path),
+                        line,
+                        enum_values,
+                        name,
+                    )
+                )
+
             continue
 
-        values = extract_valid_values(description)
+        if re.search(r"\ballowedValueType\s*=", block):
+            continue
 
         if not values:
             continue
@@ -269,9 +328,10 @@ def check_file(path):
 
 def main():
     violations = []
+    enum_index = build_enum_index()
 
     for path in find_java_files():
-        violations.extend(check_file(path))
+        violations.extend(check_file(path, enum_index))
 
     if violations:
         print("Missing allowedValues annotations:")

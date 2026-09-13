@@ -281,6 +281,50 @@ class CheckAllowedValuesTest(unittest.TestCase):
         finally:
             path.unlink()
 
+    def test_external_enum_parameter_with_mismatched_description_is_reported(self):
+        enum_source = """
+        public class CPU {
+            public enum CPUArch {
+                x86("i686", 32),
+                amd64("x86_64", 64),
+                arm64("aarch64", 64),
+                s390x("s390x", 64);
+            }
+        }
+        """
+
+        command_source = """
+        public class TestCmd {
+            @Parameter(
+                name = "arch",
+                type = CommandType.STRING,
+                allowedValueType = CPU.CPUArch.class,
+                description = "the CPU arch. Valid options are: x86_64, aarch64, s390x"
+            )
+            private String arch;
+        }
+        """
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".java",
+            encoding="utf-8",
+            delete=False,
+        ) as file:
+            file.write(command_source)
+            path = Path(file.name)
+
+        try:
+            enum_index = check_allowed_values.extract_inner_enums(enum_source)
+            violations = check_allowed_values.check_file(path, enum_index)
+
+            self.assertEqual(len(violations), 1)
+            self.assertEqual(
+                violations[0][2],
+                ["i686", "x86_64", "aarch64", "s390x"],
+            )
+        finally:
+            path.unlink()
 
 if __name__ == "__main__":
     unittest.main()

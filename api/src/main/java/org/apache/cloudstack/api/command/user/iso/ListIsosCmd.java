@@ -90,7 +90,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ARCH,
         type = CommandType.STRING,
-        description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64, s390x",
+        description = "the CPU arch of the ISO. Valid options are: i686, x86_64, aarch64, s390x",
         since = "4.20",
         allowedValueType = CPU.CPUArch.class)
     private String arch;
