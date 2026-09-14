@@ -518,11 +518,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
-    protected long getHypervisorLibvirtVersion() {
+    public long getHypervisorLibvirtVersion() {
         return hypervisorLibvirtVersion;
     }
 
-    protected long getHypervisorQemuVersion() {
+    public long getHypervisorQemuVersion() {
         return hypervisorQemuVersion;
     }
 
