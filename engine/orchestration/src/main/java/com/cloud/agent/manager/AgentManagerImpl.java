@@ -808,8 +808,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
+                String vlanFilteringEnabled = detailsMap.get(Host.HOST_VLAN_FILTERING_ENABLED);
+                String vlanTrunkXmlSupported = detailsMap.get(Host.HOST_VLAN_TRUNK_XML_SUPPORTED);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion, vlanFilteringEnabled, vlanTrunkXmlSupported)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -826,6 +828,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                     if (StringUtils.isNotBlank(vddkSupport) && !vddkSupport.equals(host.getDetails().get(Host.HOST_VDDK_SUPPORT))) {
                         host.getDetails().put(Host.HOST_VDDK_SUPPORT, vddkSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vlanFilteringEnabled) && !vlanFilteringEnabled.equals(host.getDetails().get(Host.HOST_VLAN_FILTERING_ENABLED))) {
+                        host.getDetails().put(Host.HOST_VLAN_FILTERING_ENABLED, vlanFilteringEnabled);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vlanTrunkXmlSupported) && !vlanTrunkXmlSupported.equals(host.getDetails().get(Host.HOST_VLAN_TRUNK_XML_SUPPORTED))) {
+                        host.getDetails().put(Host.HOST_VLAN_TRUNK_XML_SUPPORTED, vlanTrunkXmlSupported);
                         updateNeeded = true;
                     }
                     if (!StringUtils.defaultString(vddkLibDir).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VDDK_LIB_DIR)))) {

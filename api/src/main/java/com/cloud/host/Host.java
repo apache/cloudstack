@@ -64,6 +64,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
     String HOST_SSH_PORT = "host.ssh.port";
     String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
+    String HOST_VLAN_FILTERING_ENABLED = "vlan.filtering.enabled";
+    String HOST_VLAN_TRUNK_XML_SUPPORTED = "vlan.trunk.xml.supported";
     String GUEST_OS_CATEGORY_ID = "guest.os.category.id";
     String GUEST_OS_RULE = "guest.os.rule";
 

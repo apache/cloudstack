@@ -23,6 +23,8 @@ import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
+import static com.cloud.host.Host.HOST_VLAN_FILTERING_ENABLED;
+import static com.cloud.host.Host.HOST_VLAN_TRUNK_XML_SUPPORTED;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
@@ -352,6 +354,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * It is supported since Libvirt 0.9.0
      */
     private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
+    /**
+     * Libvirt supports multi-tag trunk mode (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge since 11.0.0.
+     */
+    private static final long MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK = 11000000;
     /**
      * Constant that defines ARM64 (aarch64) guest architectures.
      */
@@ -4415,6 +4421,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
+        cmd.getHostDetails().put(HOST_VLAN_FILTERING_ENABLED, String.valueOf(hostSupportsVlanFiltering()));
+        cmd.getHostDetails().put(HOST_VLAN_TRUNK_XML_SUPPORTED, String.valueOf(hostSupportsVlanTrunkXml()));
         if (StringUtils.isNotBlank(vddkLibDir)) {
             cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
         }
@@ -6234,6 +6242,39 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_NBDKIT_PKG_CHECK_CMD);
         }
         return exitValue == 0;
+    }
+
+    /**
+     * Static capability: whether this host's libvirt understands multi-tag trunk vlan XML
+     * (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge interface.
+     */
+    public boolean hostSupportsVlanTrunkXml() {
+        return hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK;
+    }
+
+    /**
+     * Live state: whether vlan_filtering is currently enabled on this host's guest bridge.
+     * A vlan_filtering=0 bridge floods every tagged frame to every port regardless of tag,
+     * so this must be true before any multi-VLAN trunk nic can be placed on this host.
+     */
+    public boolean hostSupportsVlanFiltering() {
+        return isBridgeVlanFilteringEnabled(guestBridgeName);
+    }
+
+    protected boolean isBridgeVlanFilteringEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File vlanFilteringFile = new File("/sys/class/net/" + bridgeName + "/bridge/vlan_filtering");
+        if (!vlanFilteringFile.exists()) {
+            return false;
+        }
+        try {
+            return "1".equals(FileUtils.readFileToString(vlanFilteringFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read vlan_filtering state for bridge " + bridgeName, e);
+            return false;
+        }
     }
 
     public boolean hostSupportsVddk() {
