@@ -88,6 +88,7 @@ class TestHAKVM(cloudstackTestCase):
 
         self.configureAndDisableHostHa()
         self.cleanup = [self.service_offering]
+        self.configureAndEnableOobm()
 
     def updateConfiguration(self, name, value):
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -150,12 +151,13 @@ class TestHAKVM(cloudstackTestCase):
         return cmd
 
     def configureAndEnableHostHa(self):
-        #Adding sleep between configuring and enabling
+        self.setupDummyOOBM()  
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         response = self.apiclient.enableHAForHost(self.getHostHaEnableCmd())
         self.assertEqual(response.haenable, True)
-
+    
     def configureAndDisableHostHa(self):
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaDisableCmd()
         cmd.hostid = self.host.id
@@ -229,6 +231,7 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_disable_oobm_ha_state_ineligible")
 
         # Enable ha for host
+        self.configureAndEnableOobm()
         self.configureAndEnableHostHa()
 
         # Disable OOBM
@@ -252,6 +255,7 @@ class TestHAKVM(cloudstackTestCase):
         """
         self.logger.debug("Starting test_hostha_configure_default_driver")
 
+        self.configureAndEnableOobm()
         cmd = self.getHostHaConfigCmd()
         response = self.apiclient.configureHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
@@ -343,6 +347,7 @@ class TestHAKVM(cloudstackTestCase):
 
 
         # Enable HA
+        self.configureAndEnableOobm()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
         cmd.hostid = self.host.id
@@ -403,6 +408,7 @@ class TestHAKVM(cloudstackTestCase):
         self.skipIfMSIsUnsupported()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
+        self.configureAndEnableOobm()
         self.configureAndEnableHostHa()
 
         self.deployVM()
@@ -443,6 +449,7 @@ class TestHAKVM(cloudstackTestCase):
         self.skipIfMSIsUnsupported()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
+        self.configureAndEnableOobm()
         self.configureAndEnableHostHa()
 
         self.deployVM()
