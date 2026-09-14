@@ -3444,6 +3444,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long totalSize = pool.getCapacityBytes();
+        if (totalSize <= 0) {
+            return false;
+        }
         long usedSize = getUsedSize(pool);
         double usedPercentage = ((double)usedSize / (double)totalSize);
         double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getId());
