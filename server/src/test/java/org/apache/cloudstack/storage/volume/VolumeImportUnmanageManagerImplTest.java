@@ -274,7 +274,7 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
         doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
-                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull());
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), eq(Storage.ImageFormat.QCOW2));
         when(diskProfile.getVolumeId()).thenReturn(volumeId);
         when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
 
@@ -288,6 +288,15 @@ public class VolumeImportUnmanageManagerImplTest {
             VolumeResponse result = volumeImportUnmanageManager.importVolume(cmd);
             Assert.assertEquals(response, result);
         }
+    }
+
+    @Test
+    public void testGetImageFormat() {
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat(null));
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat(""));
+        Assert.assertNull(volumeImportUnmanageManager.getImageFormat("not-a-format"));
+        Assert.assertEquals(Storage.ImageFormat.RAW, volumeImportUnmanageManager.getImageFormat("raw"));
+        Assert.assertEquals(Storage.ImageFormat.QCOW2, volumeImportUnmanageManager.getImageFormat("qcow2"));
     }
 
     @Test
