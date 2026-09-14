@@ -18,6 +18,15 @@ package org.apache.cloudstack.metrics;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.Collections;
+
+import com.cloud.dc.dao.DataCenterDao;
 
 import org.junit.Test;
 
@@ -104,5 +113,67 @@ public class PrometheusExporterImplTest {
         String metricsString = item.toMetricsString();
         assertTrue("Metric should contain correct timestamp value",
                 metricsString.endsWith(" " + CERT_EXPIRY_EPOCH));
+    }
+
+    /**
+     * Two rapid calls to updateMetrics() within the min refresh interval
+     * should result in only one actual recomputation (one call to dcDao.listAll()).
+     */
+    @Test
+    public void testUpdateMetricsTTLGuardSkipsSecondCall() throws Exception {
+        PrometheusExporterImpl exporter = new PrometheusExporterImpl();
+
+        DataCenterDao mockDcDao = mock(DataCenterDao.class);
+        when(mockDcDao.listAll()).thenReturn(Collections.emptyList());
+        setField(exporter, "dcDao", mockDcDao);
+
+        // First call should trigger recomputation
+        exporter.updateMetrics();
+        // Second immediate call should be skipped by the TTL guard
+        exporter.updateMetrics();
+
+        verify(mockDcDao, times(1)).listAll();
+    }
+
+    /**
+     * After the min refresh interval has elapsed, updateMetrics() should
+     * trigger a fresh recomputation.
+     */
+    @Test
+    public void testUpdateMetricsTTLGuardAllowsAfterInterval() throws Exception {
+        PrometheusExporterImpl exporter = new PrometheusExporterImpl();
+
+        DataCenterDao mockDcDao = mock(DataCenterDao.class);
+        when(mockDcDao.listAll()).thenReturn(Collections.emptyList());
+        setField(exporter, "dcDao", mockDcDao);
+
+        // First call
+        exporter.updateMetrics();
+
+        // Simulate that the min interval has already elapsed by resetting lastMetricsUpdateTime
+        setField(exporter, "lastMetricsUpdateTime", 0L);
+
+        // Second call should now trigger recomputation
+        exporter.updateMetrics();
+
+        verify(mockDcDao, times(2)).listAll();
+    }
+
+    private static void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = null;
+        Class<?> clazz = target.getClass();
+        while (clazz != null) {
+            try {
+                field = clazz.getDeclaredField(fieldName);
+                break;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        if (field == null) {
+            throw new NoSuchFieldException(fieldName);
+        }
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }
