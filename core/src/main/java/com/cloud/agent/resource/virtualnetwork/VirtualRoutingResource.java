@@ -34,6 +34,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.network.rules.LbStickinessMethod;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -157,6 +160,7 @@ public class VirtualRoutingResource {
                 return new Answer(cmd);
             }
 
+            checkAndFailForAppCookieStickinessTypeInLoadBalancerConfigCommand(cmd);
             List<ConfigItem> cfg = generateCommandCfg(cmd);
             if (cfg == null) {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -170,7 +174,21 @@ public class VirtualRoutingResource {
             if (!aggregated) {
                 ExecutionResult rc = _vrDeployer.cleanupCommand(cmd);
                 if (!rc.isSuccess()) {
-                    logger.error("Failed to cleanup VR command due to " + rc.getDetails());
+                    logger.error("Failed to cleanup VR command due to {}", rc.getDetails());
+                }
+            }
+        }
+    }
+
+    private void checkAndFailForAppCookieStickinessTypeInLoadBalancerConfigCommand(NetworkElementCommand cmd) {
+        if (!(cmd instanceof LoadBalancerConfigCommand)) {
+            return;
+        }
+        LoadBalancerConfigCommand lbConfigCmd = (LoadBalancerConfigCommand) cmd;
+        for (final LoadBalancerTO lbTO : lbConfigCmd.getLoadBalancers()) {
+            for (final LoadBalancerTO.StickinessPolicyTO stickinessPolicy : lbTO.getStickinessPolicies()) {
+                if (stickinessPolicy != null && LbStickinessMethod.StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    throw new IllegalArgumentException("App cookie based stickiness type not supported for Virtual Router, as 'appsession' support is not available from HAProxy 1.6)");
                 }
             }
         }
@@ -302,7 +320,7 @@ public class VirtualRoutingResource {
             ScriptConfigItem configItem = (ScriptConfigItem)c;
             return _vrDeployer.executeInVR(routerAccessIp, configItem.getScript(), configItem.getArgs(), timeout);
         }
-        throw new CloudRuntimeException("Unable to apply unknown configitem of type " + c.getClass().getSimpleName());
+        throw new CloudRuntimeException("Unable to apply unknown config item of type " + c.getClass().getSimpleName());
     }
 
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
@@ -591,7 +609,7 @@ public class VirtualRoutingResource {
          * [TODO] Still have to migrate LoadBalancerConfigCommand and BumpUpPriorityCommand
          * [FIXME] Have a look at SetSourceNatConfigItem
          */
-        logger.debug("Transforming " + cmd.getClass().getCanonicalName() + " to ConfigItems");
+        logger.debug("Transforming {} to ConfigItems", cmd.getClass().getCanonicalName());
 
         final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(cmd.getClass());
 

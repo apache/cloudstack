@@ -333,7 +333,7 @@ StaticNatServiceProvider, IpDeployer {
                 "This is App session based sticky method. Define session stickiness on an existing application cookie. " +
                 "It can be used only for a specific http traffic");
         method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will " +
-                "have to learn for each new session. Default value: Auto geneared based on ip", false);
+                "have to learn for each new session. Default value: Auto generated based on ip", false);
         method.addParam("length", false, "This is the max number of characters that will be memorized and checked in " +
                 "each cookie value. Default value:52", false);
         method.addParam(

@@ -44,19 +44,19 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface NetworkHelper {
 
-    public abstract boolean sendCommandsToRouter(VirtualRouter router,
-            Commands cmds) throws AgentUnavailableException, ResourceUnavailableException;
+    boolean sendCommandsToRouter(VirtualRouter router,
+                                 Commands cmds) throws AgentUnavailableException, ResourceUnavailableException;
 
-    public abstract void handleSingleWorkingRedundantRouter(
+    void handleSingleWorkingRedundantRouter(
             List<? extends VirtualRouter> connectedRouters,
             List<? extends VirtualRouter> disconnectedRouters, String reason)
                     throws ResourceUnavailableException;
 
-    public abstract NicTO getNicTO(VirtualRouter router, Long networkId,
-            String broadcastUri);
+    NicTO getNicTO(VirtualRouter router, Long networkId,
+                   String broadcastUri);
 
-    public abstract VirtualRouter destroyRouter(long routerId, Account caller,
-            Long callerUserId) throws ResourceUnavailableException,
+    VirtualRouter destroyRouter(long routerId, Account caller,
+                                Long callerUserId) throws ResourceUnavailableException,
             ConcurrentOperationException;
 
     /**
@@ -65,35 +65,35 @@ public interface NetworkHelper {
      * @param router
      * @return
      */
-    public abstract boolean checkRouterVersion(VirtualRouter router);
-    public abstract boolean checkRouterTemplateVersion(VirtualRouter router);
+    boolean checkRouterVersion(VirtualRouter router);
+    boolean checkRouterTemplateVersion(VirtualRouter router);
 
-    public abstract List<DomainRouterVO> startRouters(
+    List<DomainRouterVO> startRouters(
             RouterDeploymentDefinition routerDeploymentDefinition)
                     throws StorageUnavailableException, InsufficientCapacityException,
                     ConcurrentOperationException, ResourceUnavailableException;
 
-    public abstract DomainRouterVO startVirtualRouter(DomainRouterVO router,
-            User user, Account caller, Map<Param, Object> params)
+    DomainRouterVO startVirtualRouter(DomainRouterVO router,
+                                      User user, Account caller, Map<Param, Object> params)
                     throws StorageUnavailableException, InsufficientCapacityException,
                     ConcurrentOperationException, ResourceUnavailableException;
 
-    public abstract DomainRouterVO deployRouter(
+    DomainRouterVO deployRouter(
             RouterDeploymentDefinition routerDeploymentDefinition, boolean startRouter)
                     throws InsufficientAddressCapacityException,
                     InsufficientServerCapacityException, InsufficientCapacityException,
                     StorageUnavailableException, ResourceUnavailableException;
 
-    public abstract void reallocateRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouter router, VMTemplateVO template, HypervisorType hType)
+    void reallocateRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouter router, VMTemplateVO template, HypervisorType hType)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientCapacityException;
 
-    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(RouterDeploymentDefinition routerDeploymentDefinition)
+    LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
-    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(RouterDeploymentDefinition routerDeploymentDefinition)
+    LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
-    public boolean validateHAProxyLBRule(final LoadBalancingRule rule);
+    boolean validateHAProxyLBRule(final LoadBalancingRule rule);
 
-    public Map<HypervisorType, ConfigKey<String>> getHypervisorRouterTemplateConfigMap();
+    Map<HypervisorType, ConfigKey<String>> getHypervisorRouterTemplateConfigMap();
 }
