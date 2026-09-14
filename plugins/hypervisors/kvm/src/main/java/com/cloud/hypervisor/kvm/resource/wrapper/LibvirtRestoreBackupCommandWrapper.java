@@ -211,6 +211,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             mountCmd.add(backupRepoType);
             mountCmd.add(backupRepoAddress);
             mountCmd.add(mountDirectory);
+            mountOptions = normalizeMountOptions(mountOptions);
             if ("cifs".equals(backupRepoType)) {
                 if (StringUtils.isBlank(mountOptions)) {
                     mountOptions = "nobrl";
@@ -228,6 +229,31 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
         }
         return mountDirectory;
+    }
+
+    /**
+     * Removes the whitespace around each option of a comma-separated mount option list.
+     *
+     * mount(8) is handed the list as a single argument and libmount splits it on commas only, so a
+     * blank next to a comma, or at either end of the list, stays glued to the neighbouring option
+     * and is rejected as part of its name or value.
+     *
+     * Only the whitespace around the delimiters is removed. The option text itself is passed
+     * through unchanged, as rejecting unsafe or malformed options belongs to the API layer, not
+     * to the agent.
+     */
+    protected static String normalizeMountOptions(String mountOptions) {
+        if (StringUtils.isBlank(mountOptions)) {
+            return mountOptions;
+        }
+        List<String> options = new ArrayList<>();
+        for (String option : mountOptions.split(",")) {
+            String trimmedOption = option.trim();
+            if (!trimmedOption.isEmpty()) {
+                options.add(trimmedOption);
+            }
+        }
+        return String.join(",", options);
     }
 
     private void unmountBackupDirectory(String backupDirectory) {
