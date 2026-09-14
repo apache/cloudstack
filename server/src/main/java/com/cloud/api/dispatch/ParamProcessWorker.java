@@ -174,7 +174,7 @@ public class ParamProcessWorker implements DispatchWorker {
                             break;
                     }
                     break;
-                case SafeCommandOptions:
+                case SafeMountCommandOptions:
                     validator.validate(paramObj, annotation);
                     break;
                 default:

@@ -49,15 +49,21 @@ public enum ApiArgValidator {
     RFCComplianceDomainName,
 
     /**
-     * Validates command option strings to avoid unsafe/code-like content.
+     * Validates mount command option strings to avoid unsafe/code-like content.
      */
-    SafeCommandOptions((param, annotation) -> {
+    SafeMountCommandOptions((param, annotation) -> {
         if (BaseCmd.CommandType.STRING.equals(annotation.type())) {
-            validateSafeCommandOptions(param, annotation.name());
+            validateSafeMountCommandOptions(param, annotation.name());
         }
     });
 
-    private static final Pattern SAFE_COMMAND_OPTIONS_PATTERN = Pattern.compile("^[A-Za-z0-9,._=:/+\\-\\s]*$");
+    /**
+     * A mount option list is a comma separated list of "key" or "key=value" entries. Keys stay
+     * restrictive. Values additionally allow the punctuation that commonly appears in credentials,
+     * for instance a CIFS username of the form user@domain or a password containing !#%^~.
+     */
+    private static final Pattern SAFE_MOUNT_COMMAND_OPTION_PATTERN =
+            Pattern.compile("[A-Za-z0-9_.\\-]+(=[A-Za-z0-9_.\\-+:/@!#%^~=]*)?");
 
     private static final String[] UNSAFE_TOKENS = {
             "$(", "`", "&&", "||", ";", "|", ">", "<"
@@ -79,14 +85,22 @@ public enum ApiArgValidator {
         }
     }
 
-    private static void validateSafeCommandOptions(final Object param, final String argName) {
+    private static void validateSafeMountCommandOptions(final Object param, final String argName) {
+        if (param == null) {
+            return;
+        }
         final String value = String.valueOf(param);
-        if (StringUtils.isBlank(value)) {
+        // An empty value clears the mount options and is allowed. A value that only looks empty is
+        // not: whitespace is rejected everywhere else in the list, and the backup script would pass
+        // it on to mount as an option of its own.
+        if (value.isEmpty()) {
             return;
         }
 
-        if (!SAFE_COMMAND_OPTIONS_PATTERN.matcher(value).matches()) {
-            throwInvalidParameterValueException(argName, "contains unsupported or unsafe characters");
+        for (final String option : value.split(",", -1)) {
+            if (!SAFE_MOUNT_COMMAND_OPTION_PATTERN.matcher(option).matches()) {
+                throwInvalidParameterValueException(argName, "contains unsupported or unsafe characters");
+            }
         }
 
         final String normalized = value.toLowerCase(Locale.ROOT);
