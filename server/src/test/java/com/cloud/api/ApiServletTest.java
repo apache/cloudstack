@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
@@ -109,17 +110,17 @@ public class ApiServletTest {
         servlet = new ApiServlet();
         spyServlet = Mockito.spy(servlet);
         responseWriter = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(
+        when(response.getWriter()).thenReturn(
                 new PrintWriter(responseWriter));
-        Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        Mockito.when(accountService.getSystemUser()).thenReturn(user);
-        Mockito.when(accountService.getSystemAccount()).thenReturn(account);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(accountService.getSystemUser()).thenReturn(user);
+        when(accountService.getSystemAccount()).thenReturn(account);
 
         Field accountMgrField = ApiServlet.class.getDeclaredField("accountMgr");
         accountMgrField.setAccessible(true);
         accountMgrField.set(servlet, accountService);
 
-        Mockito.when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(authenticator);
+        when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(authenticator);
         Mockito.lenient().when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
                 Mockito.same(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletRequest.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
 
@@ -155,7 +156,7 @@ public class ApiServletTest {
 
     @Test
     public void utf8Fixup() {
-        Mockito.when(request.getQueryString()).thenReturn(
+        when(request.getQueryString()).thenReturn(
                 "foo=12345&bar=blah&baz=&param=param");
         HashMap<String, Object[]> params = new HashMap<String, Object[]>();
         servlet.utf8Fixup(request, params);
@@ -165,13 +166,13 @@ public class ApiServletTest {
 
     @Test
     public void utf8FixupNull() {
-        Mockito.when(request.getQueryString()).thenReturn("&&=a&=&&a&a=a=a=a");
+        when(request.getQueryString()).thenReturn("&&=a&=&&a&a=a=a=a");
         servlet.utf8Fixup(request, new HashMap<String, Object[]>());
     }
 
     @Test
     public void utf8FixupStrangeInputs() {
-        Mockito.when(request.getQueryString()).thenReturn("&&=a&=&&a&a=a=a=a");
+        when(request.getQueryString()).thenReturn("&&=a&=&&a&a=a=a=a");
         HashMap<String, Object[]> params = new HashMap<String, Object[]>();
         servlet.utf8Fixup(request, params);
         Assert.assertTrue(params.containsKey(""));
@@ -179,7 +180,7 @@ public class ApiServletTest {
 
     @Test
     public void utf8FixupUtf() throws UnsupportedEncodingException {
-        Mockito.when(request.getQueryString()).thenReturn(
+        when(request.getQueryString()).thenReturn(
                 URLEncoder.encode("防水镜钻孔机", "UTF-8") + "="
                         + URLEncoder.encode("árvíztűrőtükörfúró", "UTF-8"));
         HashMap<String, Object[]> params = new HashMap<String, Object[]>();
@@ -190,7 +191,7 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextUnauthorizedGET() {
-        Mockito.when(request.getMethod()).thenReturn("GET");
+        when(request.getMethod()).thenReturn("GET");
         Mockito.lenient().when(
                 apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong(), Mockito.any(InetAddress.class)))
         .thenReturn(false);
@@ -204,8 +205,8 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextAuthorizedGet() {
-        Mockito.when(request.getMethod()).thenReturn("GET");
-        Mockito.when(
+        when(request.getMethod()).thenReturn("GET");
+        when(
                 apiServer.verifyRequest(nullable(Map.class), nullable(Long.class), nullable(InetAddress.class)))
         .thenReturn(true);
         servlet.processRequestInContext(request, response);
@@ -218,16 +219,16 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextLogout() throws UnknownHostException {
-        Mockito.when(request.getMethod()).thenReturn("GET");
-        Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getSession(Mockito.anyBoolean())).thenReturn(
                 session);
-        Mockito.when(session.getAttribute("userid")).thenReturn(1l);
-        Mockito.when(session.getAttribute("accountobj")).thenReturn(account);
+        when(session.getAttribute("userid")).thenReturn(1l);
+        when(session.getAttribute("accountobj")).thenReturn(account);
         HashMap<String, String[]> params = new HashMap<String, String[]>();
         params.put(ApiConstants.COMMAND, new String[] { "logout" });
-        Mockito.when(request.getParameterMap()).thenReturn(params);
+        when(request.getParameterMap()).thenReturn(params);
 
-        Mockito.when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.LOGOUT_API);
+        when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.LOGOUT_API);
 
         servlet.processRequestInContext(request, response);
 
@@ -241,8 +242,8 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextLogin() throws UnknownHostException {
-        Mockito.when(request.getMethod()).thenReturn("GET");
-        Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getSession(Mockito.anyBoolean())).thenReturn(
                 session);
         HashMap<String, String[]> params = new HashMap<String, String[]>();
         params.put(ApiConstants.COMMAND, new String[] { "login" });
@@ -250,7 +251,7 @@ public class ApiServletTest {
         params.put(ApiConstants.PASSWORD, new String[] { "TEST-PWD" });
         params.put(ApiConstants.DOMAIN_ID, new String[] { "42" });
         params.put(ApiConstants.DOMAIN, new String[] { "TEST-DOMAIN" });
-        Mockito.when(request.getParameterMap()).thenReturn(params);
+        when(request.getParameterMap()).thenReturn(params);
 
         servlet.processRequestInContext(request, response);
 
@@ -262,41 +263,41 @@ public class ApiServletTest {
     @Test
     public void getClientAddressWithXForwardedFor() throws UnknownHostException {
         String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
-        Mockito.when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
+        when(spyServlet.proxyNets()).thenReturn(proxynet);
+        when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
         Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpXForwardedFor() throws UnknownHostException {
         String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
-        Mockito.when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
+        when(spyServlet.proxyNets()).thenReturn(proxynet);
+        when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
         Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithRemoteAddr() throws UnknownHostException {
         String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        when(spyServlet.proxyNets()).thenReturn(proxynet);
+        when(spyServlet.doUseForwardHeaders()).thenReturn(true);
         Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpClientIp() throws UnknownHostException {
         String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
-        Mockito.when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
+        when(spyServlet.proxyNets()).thenReturn(proxynet);
+        when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
         Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressDefault() throws UnknownHostException {
-        Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
     }
 
@@ -326,8 +327,25 @@ public class ApiServletTest {
 
     @Test
     public void testSkip2FAcheckForUserWhenAlreadyVerified() {
-        Mockito.when(session.getAttribute("userid")).thenReturn(1L);
-        Mockito.when(session.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(true);
+        when(session.getAttribute("userid")).thenReturn(1L);
+        when(session.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(true);
+
+        boolean result = servlet.skip2FAcheckForUser(session);
+        Assert.assertEquals(true, result);
+    }
+
+    @Test
+    public void testSkip2FAcheckForUserWhenVerifiedAttributeIsAbsent() {
+        servlet.accountMgr = accountMgr;
+        when(session.getAttribute("userid")).thenReturn(1L);
+        when(session.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(null);
+        when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        when(userAccount.getDomainId()).thenReturn(1L);
+        when(userAccount.isUser2faEnabled()).thenReturn(false);
+
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+        when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
 
         boolean result = servlet.skip2FAcheckForUser(session);
         Assert.assertEquals(true, result);
@@ -337,10 +355,10 @@ public class ApiServletTest {
     public void testDoNotSkip2FAcheckForUserWhen2FAEnabled() {
         servlet.accountMgr = accountMgr;
         HttpSession cuurentSession = Mockito.mock(HttpSession.class);
-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
-        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
-        Mockito.when(userAccount.isUser2faEnabled()).thenReturn(true);
+        when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+        when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
+        when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        when(userAccount.isUser2faEnabled()).thenReturn(true);
 
         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
         Assert.assertEquals(false, result);
@@ -350,16 +368,16 @@ public class ApiServletTest {
     public void testDoNotSkip2FAcheckForUserWhen2FAMandated() {
         servlet.accountMgr = accountMgr;
         HttpSession cuurentSession = Mockito.mock(HttpSession.class);
-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
+        when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+        when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
 
-        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
-        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
-        Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+        when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        when(userAccount.getDomainId()).thenReturn(1L);
+        when(userAccount.isUser2faEnabled()).thenReturn(false);
 
         ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
+        when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
 
         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
         Assert.assertEquals(true, result);
@@ -369,20 +387,20 @@ public class ApiServletTest {
     public void testSkip2FAcheckForUserWhen2FAisNotEnabledAndNotMandated() {
         servlet.accountMgr = accountMgr;
         HttpSession cuurentSession = Mockito.mock(HttpSession.class);
-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
+        when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+        when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
 
-        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
-        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
-        Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+        when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        when(userAccount.getDomainId()).thenReturn(1L);
+        when(userAccount.isUser2faEnabled()).thenReturn(false);
 
         ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+        when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
 
         ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+        when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
 
         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
         Assert.assertEquals(false, result);
@@ -406,7 +424,7 @@ public class ApiServletTest {
     @Test
     public void testVerify2FAWhenAuthenticatorNotFound() throws UnknownHostException {
         String command = ValidateUserTwoFactorAuthenticationCodeCmd.APINAME;
-        Mockito.when(authManager.getAPIAuthenticator(command)).thenReturn(null);
+        when(authManager.getAPIAuthenticator(command)).thenReturn(null);
         StringBuilder auditTrailSb = new StringBuilder();
         Map<String, Object[]> params = new HashMap<String, Object[]>();
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
@@ -420,9 +438,9 @@ public class ApiServletTest {
     public void testVerify2FAWhenExpectedCommandIsNotCalled() throws UnknownHostException {
         servlet.accountMgr = accountMgr;
         String command = "listZones";
-        Mockito.when(session.getAttribute("userid")).thenReturn(1L);
-        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
-        Mockito.when(userAccount.isUser2faEnabled()).thenReturn(true);
+        when(session.getAttribute("userid")).thenReturn(1L);
+        when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        when(userAccount.isUser2faEnabled()).thenReturn(true);
 
         StringBuilder auditTrailSb = new StringBuilder();
         Map<String, Object[]> params = new HashMap<String, Object[]>();
