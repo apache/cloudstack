@@ -28,8 +28,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,10 +50,12 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -59,8 +66,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotManagerImplTest {
@@ -86,8 +95,41 @@ public class SnapshotManagerImplTest {
     SnapshotZoneDao snapshotZoneDao;
     @Mock
     VolumeDao volumeDao;
+    @Mock
+    PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    VolumeDataFactory volFactory;
+    @Mock
+    UserVmDao userVmDao;
     @InjectMocks
     SnapshotManagerImpl snapshotManager = new SnapshotManagerImpl();
+
+    @Test
+    public void testAllocSnapshotRejectsDuplicateNameForVolume() {
+        long volumeId = 1L;
+        CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        try {
+            VolumeInfo volume = Mockito.mock(VolumeInfo.class);
+            Mockito.when(volFactory.getVolume(volumeId)).thenReturn(volume);
+            DataStore dataStore = Mockito.mock(DataStore.class);
+            Mockito.when(volume.getDataStore()).thenReturn(dataStore);
+            Mockito.when(dataStore.getId()).thenReturn(10L);
+            StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(primaryDataStoreDao.findById(10L)).thenReturn(pool);
+            Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
+            Mockito.when(pool.getHypervisor()).thenReturn(HypervisorType.None);
+            Mockito.when(volume.getInstanceId()).thenReturn(null);
+            Mockito.when(volume.getAccountId()).thenReturn(2L);
+
+            Mockito.when(snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, "dup", Snapshot.State.Destroyed, Snapshot.State.Error))
+                    .thenReturn(Mockito.mock(SnapshotVO.class));
+
+            Assert.assertThrows(InvalidParameterValueException.class, () ->
+                    snapshotManager.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, "dup", null));
+        } finally {
+            CallContext.unregister();
+        }
+    }
 
     @Test
     public void testGetSnapshotZoneImageStoreValid() {
