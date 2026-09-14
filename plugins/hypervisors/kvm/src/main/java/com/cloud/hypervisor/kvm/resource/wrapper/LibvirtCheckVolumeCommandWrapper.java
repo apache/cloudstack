@@ -67,11 +67,16 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                 final String path = vol.getPath();
                 final boolean isRbd = Storage.StoragePoolType.RBD.equals(storageFilerTO.getType());
 
+                Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
+                if (MapUtils.isEmpty(volumeDetails)) {
+                    return new Answer(command, false, "Unable to read the volume on the storage pool");
+                }
+
                 if (!isRbd) {
                     try {
                         KVMPhysicalDisk.checkQcow2File(path);
                     } catch (final CloudRuntimeException e) {
-                        return new CheckVolumeAnswer(command, false, "", 0, getVolumeDetails(pool, vol));
+                        return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
                     }
                 }
 
