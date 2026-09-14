@@ -87,8 +87,12 @@ public final class Version {
         }
         version.setMajor(String.valueOf(csVersion.getMajorRelease()));
         version.setMinor(String.valueOf(csVersion.getMinorRelease()));
-        version.setBuild(String.valueOf(csVersion.getPatchRelease()));
-        version.setRevision(String.valueOf(csVersion.getSecurityRelease()));
+        if (csVersion.usesNewVersioning()) {
+            version.setBuild(String.valueOf(csVersion.getSecurityRelease()));
+        } else {
+            version.setBuild(String.valueOf(csVersion.getPatchRelease()));
+            version.setRevision(String.valueOf(csVersion.getSecurityRelease()));
+        }
         return version;
     }
 }

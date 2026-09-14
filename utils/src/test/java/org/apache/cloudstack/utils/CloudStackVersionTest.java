@@ -36,12 +36,38 @@ public final class CloudStackVersionTest {
         "1.2.3, 1.2.3",
         "1.2.3.4, 1.2.3.4",
         "1.2.3-12, 1.2.3",
-        "1.2.3.4-14, 1.2.3.4"
+        "1.2.3.4-14, 1.2.3.4",
+        "23.9.5, 23.9.5",
+        "24.0.0, 24.0.0",
+        "24.0.1, 24.0.1",
+        "25.1.1, 25.1.1"
     })
     public void testValidParse(final String inputValue, final String expectedVersion) {
         final CloudStackVersion version = CloudStackVersion.parse(inputValue);
         assertNotNull(version);
         assertEquals(expectedVersion, version.toString());
+    }
+
+    @Test
+    public void testParseComponentMappingForLegacyAndNewVersioning() {
+        final CloudStackVersion legacyVersion = CloudStackVersion.parse("23.9.5");
+        assertEquals(23, legacyVersion.getMajorRelease());
+        assertEquals(9, legacyVersion.getMinorRelease());
+        assertEquals(5, legacyVersion.getPatchRelease());
+        Assert.assertNull(legacyVersion.getSecurityRelease());
+
+        final CloudStackVersion newVersion = CloudStackVersion.parse("24.0.1");
+        assertEquals(24, newVersion.getMajorRelease());
+        assertEquals(0, newVersion.getMinorRelease());
+        // Patch is retained as 0 to represent "no patch" in the new major.minor.security scheme.
+        assertEquals(0, newVersion.getPatchRelease());
+        assertEquals(Integer.valueOf(1), newVersion.getSecurityRelease());
+
+        final CloudStackVersion futureNewVersion = CloudStackVersion.parse("25.1.1");
+        assertEquals(25, futureNewVersion.getMajorRelease());
+        assertEquals(1, futureNewVersion.getMinorRelease());
+        assertEquals(0, futureNewVersion.getPatchRelease());
+        assertEquals(Integer.valueOf(1), futureNewVersion.getSecurityRelease());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -52,7 +78,10 @@ public final class CloudStackVersionTest {
         "aaaa",
         "",
         "  ",
-        "1.2.3.4.5"
+        "1.2.3.4.5",
+        "24.0.0.1",
+        "25.0.0.1",
+        "26.2.3.4"
     })
     public void testInvalidParse(final String invalidValue) {
         CloudStackVersion.parse(invalidValue);
@@ -147,7 +176,9 @@ public final class CloudStackVersionTest {
         "1.2.3.4-10, 1.0.0.0-5",
         "1.2.3-10, 1.0.0-5",
         "1.2.3.4, 1.0.0.0-5",
-        "1.2.3.4-10, 1.0.0"
+        "1.2.3.4-10, 1.0.0",
+        "24.0.2, 24.0.1",
+        "24.1.0, 24.0.9"
     })
     public void testGreaterThanAndLessThanCompareTo(final String value, final String thatValue) {
 
@@ -178,7 +209,9 @@ public final class CloudStackVersionTest {
         "1.2.3.4-10, 1.0.0.0-5",
         "1.2.3-10, 1.0.0-5",
         "1.2.3.4, 1.0.0.0-5",
-        "1.2.3.4-10, 1.0.0"
+        "1.2.3.4-10, 1.0.0",
+        "24.0.2, 24.0.1",
+        "24.1.0, 24.0.9"
     })
     public void testGreaterThanAndLessThanCompareDirect(final String value, final String thatValue) {
 
@@ -213,6 +246,7 @@ public final class CloudStackVersionTest {
             Assert.assertEquals(CloudStackVersion.getVMwareParentVersion(hypervisorVersion), expectedParentVersion);
         }
     }
+
     @Test
     public void testGetParentVersion() {
         verifyGetVMwareParentVersion(null, null);
@@ -223,5 +257,6 @@ public final class CloudStackVersionTest {
         verifyGetVMwareParentVersion("8.0.0", "8.0");
         verifyGetVMwareParentVersion("8.0.0.2", "8.0");
         verifyGetVMwareParentVersion("8.0.1.0", "8.0.1");
+        verifyGetVMwareParentVersion("24.1.1", "24.1");
     }
 }
