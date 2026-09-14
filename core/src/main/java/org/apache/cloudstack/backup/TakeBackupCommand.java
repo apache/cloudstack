@@ -23,9 +23,20 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TakeBackupCommand extends Command {
+    // Detail-map keys shared between the management server (NASBackupProvider) and
+    // the KVM agent wrapper. Defining them once here avoids drift between producer
+    // and consumer when a key is renamed.
+    public static final String DETAIL_COMPRESSION = "compression";
+    public static final String DETAIL_ENCRYPTION = "encryption";
+    public static final String DETAIL_ENCRYPTION_PASSPHRASE = "encryption_passphrase";
+    public static final String DETAIL_BANDWIDTH_LIMIT = "bandwidth_limit";
+    public static final String DETAIL_INTEGRITY_CHECK = "integrity_check";
+
     private String vmName;
     private String backupPath;
     private String backupRepoType;
@@ -35,6 +46,8 @@ public class TakeBackupCommand extends Command {
     private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private Map<String, String> details = new HashMap<>();
 
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
@@ -104,6 +117,18 @@ public class TakeBackupCommand extends Command {
 
     public void setQuiesce(Boolean quiesce) {
         this.quiesce = quiesce;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details != null ? details : new HashMap<>();
+    }
+
+    public void addDetail(String key, String value) {
+        this.details.put(key, value);
     }
 
     @Override
