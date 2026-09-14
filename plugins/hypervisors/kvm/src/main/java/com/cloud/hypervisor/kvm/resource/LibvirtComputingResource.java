@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
 import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
@@ -320,6 +321,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
+    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
@@ -3332,6 +3335,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
+        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+            // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
+            // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
+            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            if (videoRam == 0) {
+                videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
+            }
+        }
         return new VideoDef(videoHw, videoRam);
     }
 
@@ -3482,6 +3493,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
+    }
+
+    protected boolean isGuestX86(VirtualMachineTO vmTO) {
+        String arch = guestCpuArch != null ? guestCpuArch : vmTO.getArch();
+        return arch == null || arch.equals("x86_64") || arch.equals("i686");
     }
 
     private boolean isGuestS390x() {
@@ -4409,6 +4425,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
@@ -4507,12 +4524,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         LOGGER.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            LOGGER.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            LOGGER.info("Setting host CPU max capacity: {} to 0, as it uses cgroup v1.", getHostCpuMaxCapacity());
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        LOGGER.info(String.format("Calculating the max shares of the host."));
+        LOGGER.info("Calculating the max shares of the host.");
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
         LOGGER.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
@@ -6126,7 +6143,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         for (String snapshotName: snapshotNames) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+                LOGGER.debug("Cleaning snapshot {} of VM {} metadata.", Arrays.toString(snapshotNames), dm.getName());
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
@@ -6618,6 +6635,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] diskPathSplitted = diskPath.split(File.separator);
         diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
         return String.join(File.separator, diskPathSplitted);
+    }
+
+    public String getUefiNvramPath(String vmUuid) {
+        String nvramDirectory = uefiProperties.getProperty(LibvirtVMDef.GuestDef.GUEST_NVRAM_PATH);
+        if (StringUtils.isBlank(nvramDirectory) || StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+
+        return nvramDirectory + vmUuid + ".fd";
     }
 
     public static String generateSecretUUIDFromString(String seed) {

@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.user.userdata;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,7 +29,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
@@ -43,6 +44,7 @@ public class DeleteUserDataCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "The ID of the Userdata")
     private Long id;
 
@@ -97,16 +99,11 @@ public class DeleteUserDataCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if ((account == null || _accountService.isAdmin(account.getId())) && (domainId != null && accountName != null)) {
-            Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-            if (userAccount != null) {
-                return userAccount.getId();
+        if (id != null) {
+            UserData userData = _entityMgr.findById(UserData.class, id);
+            if (userData != null) {
+                return userData.getAccountId();
             }
-        }
-
-        if (account != null) {
-            return account.getId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked

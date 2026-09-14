@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
@@ -154,7 +155,7 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
      * {@inheritDoc}
      */
     @Override
-    public boolean moveUser(MoveUserCmd cmd) {
+    public boolean moveUser(MoveUserCmd cmd) throws ResourceAllocationException {
         return _regionMgr.moveUser(cmd);
     }
 

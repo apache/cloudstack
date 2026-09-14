@@ -871,7 +871,7 @@ public class HypervisorHostHelper {
 
     private static boolean areBoolPoliciesDifferent(BoolPolicy currentPolicy, BoolPolicy newPolicy) {
         return eitherObjectNull(currentPolicy, newPolicy) ||
-                (newPolicy != null && newPolicy.isValue() != currentPolicy.isValue());
+                (newPolicy != null && !newPolicy.isValue().equals(currentPolicy.isValue()));
     }
 
     private static boolean areDVSSecurityPoliciesDifferent(DVSSecurityPolicy currentSecurityPolicy, DVSSecurityPolicy newSecurityPolicy) {
@@ -890,9 +890,9 @@ public class HypervisorHostHelper {
     private static boolean areDVSMacManagementPoliciesDifferent(DVSMacManagementPolicy currentMacManagementPolicy, DVSMacManagementPolicy newMacManagementPolicy) {
         return eitherObjectNull(currentMacManagementPolicy, newMacManagementPolicy) ||
                 (newMacManagementPolicy != null &&
-                        (currentMacManagementPolicy.isAllowPromiscuous() != newMacManagementPolicy.isAllowPromiscuous() ||
-                                currentMacManagementPolicy.isForgedTransmits() != newMacManagementPolicy.isForgedTransmits() ||
-                                currentMacManagementPolicy.isMacChanges() != newMacManagementPolicy.isMacChanges() ||
+                        (!currentMacManagementPolicy.isAllowPromiscuous().equals(newMacManagementPolicy.isAllowPromiscuous()) ||
+                                !currentMacManagementPolicy.isForgedTransmits().equals(newMacManagementPolicy.isForgedTransmits()) ||
+                                !currentMacManagementPolicy.isMacChanges().equals(newMacManagementPolicy.isMacChanges()) ||
                                 areDVSMacLearningPoliciesDifferent(currentMacManagementPolicy.getMacLearningPolicy(), newMacManagementPolicy.getMacLearningPolicy())));
     }
 

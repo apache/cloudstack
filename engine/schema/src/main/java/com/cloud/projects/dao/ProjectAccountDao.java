@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectAccountVO;
+import com.cloud.user.User;
 import com.cloud.utils.db.GenericDao;
 
 public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
@@ -47,9 +48,11 @@ public interface ProjectAccountDao extends GenericDao<ProjectAccountVO, Long> {
 
     void removeAccountFromProjects(long accountId);
 
-    void removeUserFromProjects(long userId);
-
     boolean canUserModifyProject(long projectId, long accountId, long userId);
 
     List<ProjectAccountVO> listUsersOrAccountsByRole(long id);
+
+    List<ProjectAccountVO> listBy(Long projectId, Long accountId, Long userId);
+
+    void move(User oldUser, User newUser);
 }

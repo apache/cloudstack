@@ -177,6 +177,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         }
                     }
                     logger.info("Connection with client [{}] [IP: {}] is dead.", clientId, clientSourceIp);
+                    ConsoleProxy.grantReconnectWindowForSessionAndClientIp(sessionUuid, clientSourceIp);
                 } catch (IOException e) {
                     logger.error("Error on VNC client", e);
                 }
@@ -374,6 +375,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         this.connectionAlive = false;
         // Clear buffer reference to allow GC when client disconnects
         this.readBuffer = null;
+        if (client != null) {
+            client.close();
+        }
         ConsoleProxy.removeViewer(this);
     }
 

@@ -252,7 +252,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             boolean isAllowed = true;
             for (APIChecker apiChecker : _apiAccessCheckers) {
                 try {
-                    apiChecker.checkAccess(account, apiName);
+                    apiChecker.checkAccess(account, apiName, null);
                 } catch (Exception ex) {
                     isAllowed = false;
                 }
@@ -287,7 +287,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
             for (APIChecker apiChecker : _apiAccessCheckers) {
                 try {
-                    apiChecker.checkAccess(user, name);
+                    apiChecker.checkAccess(user, name, null);
                 } catch (Exception ex) {
                     logger.error(String.format("API discovery access check failed for [%s] with error [%s].", name, ex.getMessage()), ex);
                     return null;

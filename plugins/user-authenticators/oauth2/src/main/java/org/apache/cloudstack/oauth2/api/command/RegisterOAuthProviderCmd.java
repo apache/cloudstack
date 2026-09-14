@@ -70,10 +70,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
             description = "Domain path for domain-specific OAuth provider. Ignored when Domain ID is passed.", since = "4.23.0")
     private String domainPath;
 
-    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloak provider)")
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloak provider)", since = "4.23.0")
     private String authorizeUrl;
 
-    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)")
+    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)", since = "4.23.0")
     private String tokenUrl;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
