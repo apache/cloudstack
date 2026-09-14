@@ -24,7 +24,6 @@ under the License.
       <!-- Preserve messages in a local file -->
       <!-- ================================= -->
 
-
       <!-- A regular appender -->
       <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -34,7 +33,6 @@ under the License.
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
-
       <RollingFile name="INFO-FILE" append="true" fileName="/var/log/cloudstack/management/management-server-info.log" filePattern="/var/log/cloudstack/management/management-server-info.log.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
          <Policies>
@@ -42,7 +40,6 @@ under the License.
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
-
 
       <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -56,7 +53,6 @@ under the License.
       <!-- Append warnings+ to the syslog if it is listening on UDP port -->
       <!-- ============================== -->
 
-
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
          <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
@@ -67,8 +63,13 @@ under the License.
       <!-- ============================== -->
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
-         <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
+         <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
+      </Console>
+
+      <Console name="CONSOLE_ERR" target="SYSTEM_ERR">
+         <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </Console>
    </Appenders>
 
@@ -101,6 +102,7 @@ under the License.
       <Logger name="org.apache.cloudstack.alerts" additivity="false" level="WARN">
          <AppenderRef ref="SYSLOG"/>
          <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="CONSOLE_ERR"/>
          <AppenderRef ref="FILE"/>
          <AppenderRef ref="SNMP"/>
          <AppenderRef ref="ALERTSYSLOG"/>
@@ -113,6 +115,7 @@ under the License.
       <Root level="INFO">
          <AppenderRef ref="SYSLOG"/>
          <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="CONSOLE_ERR"/>
          <AppenderRef ref="FILE"/>
          <AppenderRef ref="INFO-FILE"/>
       </Root>
