@@ -198,7 +198,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             clusterHosts.retainAll(hostsMatchingUefiTag);
         }
 
-        clusterHosts.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
+        clusterHosts.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering, clusterId, podId, dcId));
 
 
         if (clusterHosts.isEmpty()) {
@@ -274,7 +274,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
         }
 
-        hostsCopy.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
+        hostsCopy.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering, clusterId, podId, dcId));
 
         if (!hostsCopy.isEmpty()) {
             suitableHosts = allocateTo(plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);

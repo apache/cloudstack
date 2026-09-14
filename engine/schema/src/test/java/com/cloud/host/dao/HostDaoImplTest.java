@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -228,6 +229,114 @@ public class HostDaoImplTest {
         assertEquals(1, result.size());
         assertEquals(Hypervisor.HypervisorType.VMware, result.get(0).first());
         assertEquals(CPU.CPUArch.amd64, result.get(0).second());
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedNoScopeReturnsAllMatches() {
+        String offeringTag = "ssd";
+        HostVO host1 = mock(HostVO.class);
+        HostVO host2 = mock(HostVO.class);
+        List<HostVO> unscopedMatches = List.of(host1, host2);
+        doReturn(unscopedMatches).when(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, null, null, null);
+
+        assertEquals(unscopedMatches, result);
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedFiltersByDataCenter() {
+        String offeringTag = "ssd";
+        long dcId = 1L;
+        HostVO hostInZone = mock(HostVO.class);
+        when(hostInZone.getDataCenterId()).thenReturn(dcId);
+        HostVO hostInOtherZone = mock(HostVO.class);
+        when(hostInOtherZone.getDataCenterId()).thenReturn(2L);
+        doReturn(List.of(hostInZone, hostInOtherZone)).when(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, null, null, dcId);
+
+        assertEquals(1, result.size());
+        Assert.assertSame(hostInZone, result.get(0));
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedFiltersByPodAndCluster() {
+        String offeringTag = "ssd";
+        long dcId = 1L;
+        Long podId = 2L;
+        Long clusterId = 3L;
+
+        HostVO matchingHost = mock(HostVO.class);
+        when(matchingHost.getDataCenterId()).thenReturn(dcId);
+        when(matchingHost.getPodId()).thenReturn(podId);
+        when(matchingHost.getClusterId()).thenReturn(clusterId);
+
+        HostVO wrongPodHost = mock(HostVO.class);
+        when(wrongPodHost.getDataCenterId()).thenReturn(dcId);
+        when(wrongPodHost.getPodId()).thenReturn(99L);
+
+        HostVO wrongClusterHost = mock(HostVO.class);
+        when(wrongClusterHost.getDataCenterId()).thenReturn(dcId);
+        when(wrongClusterHost.getPodId()).thenReturn(podId);
+        when(wrongClusterHost.getClusterId()).thenReturn(99L);
+
+        doReturn(List.of(matchingHost, wrongPodHost, wrongClusterHost)).when(hostDao)
+                .findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+
+        assertEquals(1, result.size());
+        Assert.assertSame(matchingHost, result.get(0));
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedExcludesHostWithNullPod() {
+        String offeringTag = "ssd";
+        long dcId = 1L;
+        Long podId = 2L;
+        Long clusterId = 3L;
+
+        HostVO hostWithNoPod = mock(HostVO.class);
+        when(hostWithNoPod.getDataCenterId()).thenReturn(dcId);
+        when(hostWithNoPod.getPodId()).thenReturn(null);
+
+        doReturn(List.of(hostWithNoPod)).when(hostDao)
+                .findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedExcludesHostWithNullCluster() {
+        String offeringTag = "ssd";
+        long dcId = 1L;
+        Long podId = 2L;
+        Long clusterId = 3L;
+
+        HostVO hostWithNoCluster = mock(HostVO.class);
+        when(hostWithNoCluster.getDataCenterId()).thenReturn(dcId);
+        when(hostWithNoCluster.getPodId()).thenReturn(podId);
+        when(hostWithNoCluster.getClusterId()).thenReturn(null);
+
+        doReturn(List.of(hostWithNoCluster)).when(hostDao)
+                .findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, clusterId, podId, dcId);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFindHostsWithTagRuleThatMatchComputeOferringTagsScopedNoMatchesReturnsEmpty() {
+        String offeringTag = "ssd";
+        doReturn(new ArrayList<>()).when(hostDao).findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag);
+
+        List<HostVO> result = hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringTag, 3L, 2L, 1L);
+
+        Assert.assertTrue(result.isEmpty());
     }
 
     @Test
