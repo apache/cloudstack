@@ -1226,6 +1226,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && ManagementServerNode.getManagementServerId() != host.getManagementServerId()) {
+                        logger.debug("Skipping VM stat collection for [{}] as it is connected to another Management Server node [{}].", host, host.getManagementServerId());
+                        continue;
+                    }
                     Date timestamp = new Date();
                     Pair<Map<Long, VMInstanceVO>, Map<String, Long>> vmsAndMap = getVmMapForStatsForHost(host);
                     Map<Long, VMInstanceVO> vmMap = vmsAndMap.first();
