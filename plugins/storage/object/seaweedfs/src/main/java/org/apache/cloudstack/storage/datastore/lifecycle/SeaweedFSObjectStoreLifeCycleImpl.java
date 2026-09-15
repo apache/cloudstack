@@ -143,11 +143,16 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL);
         }
 
-        // Validate S3 and IAM Service URLs.
+        // Validate the S3 and IAM endpoints behave like the respective
+        // services, then authenticate with the supplied admin credentials so a
+        // store with bad credentials is rejected here rather than failing on
+        // the first bucket or IAM operation.
         logger.info("Validating SeaweedFS S3 endpoint: {}", s3Url);
         SeaweedFSObjectStoreUtil.validateS3Url(s3Url);
         logger.info("Validating SeaweedFS IAM endpoint: {}", iamUrl);
         SeaweedFSObjectStoreUtil.validateIAMUrl(iamUrl);
+        logger.info("Validating SeaweedFS admin credentials");
+        SeaweedFSObjectStoreUtil.validateCredentials(s3Url, iamUrl, accessKey, secretKey);
 
         logger.info("Successfully validated SeaweedFS object store: {} (quota management via S3 ?seaweedfs-quota extension)", name);
 

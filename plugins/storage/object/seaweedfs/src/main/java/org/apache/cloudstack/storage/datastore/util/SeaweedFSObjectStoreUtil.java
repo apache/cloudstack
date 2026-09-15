@@ -237,6 +237,46 @@ public class SeaweedFSObjectStoreUtil {
     }
 
     /**
+     * Verify the configured admin credentials actually authenticate against
+     * both the S3 and IAM endpoints.
+     *
+     * {@link #validateS3Url} and {@link #validateIAMUrl} deliberately use bad
+     * credentials to probe that the endpoint behaves like the respective
+     * service, so on their own they accept a store whose admin credentials are
+     * wrong; that only surfaces later on the first bucket or IAM operation.
+     * This performs an authenticated call with the supplied credentials so the
+     * failure happens at registration time.
+     *
+     * @param s3Url     the S3 endpoint URL
+     * @param iamUrl    the IAM endpoint URL
+     * @param accessKey the admin access key
+     * @param secretKey the admin secret key
+     * @throws CloudRuntimeException if the credentials are rejected
+     */
+    public static void validateCredentials(String s3Url, String iamUrl, String accessKey, String secretKey) {
+        try {
+            getS3Client(s3Url, accessKey, secretKey).listBuckets();
+        } catch (AmazonServiceException e) {
+            if (StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "SignatureDoesNotMatch",
+                    "AccessDenied", "InvalidClientTokenId")) {
+                throw new CloudRuntimeException("SeaweedFS rejected the supplied admin credentials on the S3 endpoint: "
+                        + e.getErrorCode(), e);
+            }
+            throw new CloudRuntimeException("Unexpected response validating admin credentials against the S3 endpoint.", e);
+        }
+        try {
+            getIAMClient(iamUrl, accessKey, secretKey).listUsers();
+        } catch (AmazonServiceException e) {
+            if (StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "SignatureDoesNotMatch",
+                    "AccessDenied", "InvalidClientTokenId")) {
+                throw new CloudRuntimeException("SeaweedFS rejected the supplied admin credentials on the IAM endpoint: "
+                        + e.getErrorCode(), e);
+            }
+            throw new CloudRuntimeException("Unexpected response validating admin credentials against the IAM endpoint.", e);
+        }
+    }
+
+    /**
      * Set bucket quota via the SeaweedFS S3 extension endpoint.
      *
      * SeaweedFS exposes a custom S3 subresource at
