@@ -83,7 +83,7 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                 // Images on RBD are raw and the path is an image name that qemu-img cannot open
                 // without the rbd: URI, so take the size libvirt already reported for the volume.
                 long size = isRbd ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
-                return new CheckVolumeAnswer(command, true, "", size, getVolumeDetails(pool, vol));
+                return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
