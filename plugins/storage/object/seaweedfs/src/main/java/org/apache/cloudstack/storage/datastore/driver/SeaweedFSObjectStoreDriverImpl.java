@@ -508,12 +508,24 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
+        // Remove the BucketVO row before refreshing the IAM policy so a
+        // concurrent createUser/createBucket policy rebuild (which reads the
+        // bucket list from the DB) cannot re-add the deleted bucket ARN
+        // between this exclusion and BucketApiServiceImpl's row removal.
+        // BucketApiServiceImpl's subsequent _bucketDao.remove is idempotent.
+        for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId)) {
+            if (bucketName.equals(bvo.getName())) {
+                _bucketDao.remove(bvo.getId());
+                break;
+            }
+        }
+
         // Refresh the account's IAM policy to drop the deleted bucket.
         // Bucket names are reusable, so a stale grant would let the old
         // account access a new tenant's bucket with the same name. This
         // must succeed; if it fails, the caller sees the exception and can
         // retry (the policy refresh is idempotent because the bucket is
-        // already gone from S3 and excludeBucket still applies).
+        // already gone from S3 and the DB, so excludeBucket is a no-op).
         AmazonIdentityManagement iamClient = getIAMClient(storeId);
         updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
