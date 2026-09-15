@@ -243,6 +243,7 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -2717,7 +2718,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setPrivateMtu(network.getPrivateMtu());
         NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
         if (networkRateDetail != null) {
-            response.setNetworkRate(networkRateDetail.getValue());
+            int networkRate = NumberUtils.toInt(networkRateDetail.getValue(), -1);
+            response.setNetworkRate(networkRate > 0 ? networkRate : -1);
         }
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
@@ -4910,7 +4912,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         response.setEnabled(result.isEnabled());
 
-        response.setNetworkRate(result.getNetworkRate());
+        Integer nicNetworkRate = result.getNetworkRate();
+        response.setNetworkRate(nicNetworkRate != null && nicNetworkRate > 0 ? nicNetworkRate : -1);
 
         return response;
     }

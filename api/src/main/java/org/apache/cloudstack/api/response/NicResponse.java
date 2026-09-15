@@ -139,7 +139,7 @@ public class NicResponse extends BaseResponse {
     private Integer mtu;
 
     @SerializedName(ApiConstants.NETWORKRATE)
-    @Param(description = "Network rate (in Mb/s) configured for the NIC; absent if unlimited", since = "4.24.0")
+    @Param(description = "Network rate (in Mb/s) configured for the NIC; -1 if unlimited", since = "4.24.0")
     private Integer networkRate;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)

@@ -779,8 +779,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private void saveNetworkRateInDetails(long networkId, NetworkOffering offering, long dataCenterId) {
         Integer rate = _configMgr.getNetworkOfferingNetworkRate(offering.getId(), dataCenterId);
-        String networkRate = (rate == null || rate <= 0) ? ApiConstants.UNLIMITED : String.valueOf(rate);
-        networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, networkRate, true);
+        networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, String.valueOf(rate), true);
     }
 
     @Override
