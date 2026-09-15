@@ -370,15 +370,25 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
-        // Configure permissive CORS so the CloudStack S3 bucket browser
-        // (which performs list/upload/delete from the browser) can function.
-        // SeaweedFS supports the standard PutBucketCors operation.
-        configureBucketCORS(s3client, bucketName);
-
-        // Step 2: update the bucket record with the account's IAM credentials.
-        // If this fails, clean up the remote bucket so a retry does not find
-        // it already existing — mirroring the Cloudian createBucket pattern.
+        // Step 2: update the bucket record with the account's IAM credentials,
+        // configure CORS, and refresh the IAM policy. If any of these fail,
+        // clean up the remote bucket so a retry does not find it already
+        // existing — mirroring the Cloudian createBucket pattern.
+        //
+        // Hold the IAM lock for the account so a concurrent createUser key
+        // rotation does not change the account credentials between reading
+        // them and writing the BucketVO, which would leave the bucket with
+        // a stale key pair.
+        GlobalLock iamLock = acquireIamLock(storeId, accountId);
+        if (iamLock == null) {
+            throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
+        }
         try {
+            // Configure permissive CORS so the CloudStack S3 bucket browser
+            // (which performs list/upload/delete from the browser) can function.
+            // SeaweedFS supports the standard PutBucketCors operation.
+            configureBucketCORS(s3client, bucketName);
+
             Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
             String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.keyAccessKey(storeId));
             String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.keySecretKey(storeId));
