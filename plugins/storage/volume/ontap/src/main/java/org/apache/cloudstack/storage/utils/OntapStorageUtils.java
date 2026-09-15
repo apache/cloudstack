@@ -120,16 +120,29 @@ public class OntapStorageUtils {
     }
 
     public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details) {
+        return getStrategyByStoragePoolDetails(details, false);
+    }
+
+    /**
+     * Same as {@link #getStrategyByStoragePoolDetails(Map)} but does not call
+     * {@link StorageStrategy#connect}. ASUP uses this for cluster GET and EMS POST only.
+     */
+    public static StorageStrategy resolveStrategyFromPoolDetails(Map<String, String> details) {
         if (details == null || details.isEmpty()) {
-            logger.error("getStrategyByStoragePoolDetails: Storage pool details are null or empty");
+            logger.error("resolveStrategyFromPoolDetails: Storage pool details are null or empty");
             throw new CloudRuntimeException("Storage pool details are null or empty");
         }
         String protocol = details.get(OntapStorageConstants.PROTOCOL);
         OntapStorage ontapStorage = new OntapStorage(details.get(OntapStorageConstants.USERNAME), details.get(OntapStorageConstants.PASSWORD),
                 details.get(OntapStorageConstants.STORAGE_IP), details.get(OntapStorageConstants.SVM_NAME), Long.parseLong(details.get(OntapStorageConstants.SIZE)),
                 ProtocolType.valueOf(protocol));
-        StorageStrategy storageStrategy = StorageProviderFactory.getStrategy(ontapStorage);
-        boolean isValid = storageStrategy.connect();
+        return StorageProviderFactory.getStrategy(ontapStorage);
+    }
+
+    public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details,
+            boolean validateAggregatesForVolumeCreation) {
+        StorageStrategy storageStrategy = resolveStrategyFromPoolDetails(details);
+        boolean isValid = storageStrategy.connect(validateAggregatesForVolumeCreation);
         if (isValid) {
             logger.info("Connection to Ontap SVM [{}] successful", details.get(OntapStorageConstants.SVM_NAME));
             return storageStrategy;

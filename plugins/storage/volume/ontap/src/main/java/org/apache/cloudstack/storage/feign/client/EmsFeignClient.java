@@ -19,24 +19,14 @@
 
 package org.apache.cloudstack.storage.feign.client;
 
-import feign.QueryMap;
-import org.apache.cloudstack.storage.feign.model.Cluster;
-import org.apache.cloudstack.storage.feign.model.ClusterNode;
-import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
+import org.apache.cloudstack.storage.feign.model.EmsApplicationLog;
 
-import java.util.Map;
+public interface EmsFeignClient {
 
-public interface ClusterFeignClient {
-
-    @RequestLine("GET /api/cluster")
-    @Headers({"Authorization: {authHeader}", "return_records: {returnRecords}"})
-    Cluster getCluster(@Param("authHeader") String authHeader, @Param("returnRecords") boolean returnRecords);
-
-    @RequestLine("GET /api/cluster/nodes")
-    @Headers({"Authorization: {authHeader}"})
-    OntapResponse<ClusterNode> getClusterNodes(@Param("authHeader") String authHeader,
-            @QueryMap Map<String, Object> queryMap);
+    @RequestLine("POST /api/support/ems/application-logs")
+    @Headers({"Authorization: {authHeader}", "Content-Type: application/json"})
+    void sendEmsApplicationLog(@Param("authHeader") String authHeader, EmsApplicationLog emsApplicationLog);
 }
