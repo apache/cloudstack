@@ -290,6 +290,17 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testSetBucketQuotaNegativeRejected() {
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+        // Negative quotas must be rejected, not treated as a disable
+        assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, -1));
+    }
+
+    @Test
     public void testSetBucketQuotaNonZero() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);

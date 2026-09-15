@@ -247,8 +247,14 @@ public class SeaweedFSObjectStoreUtil {
      */
     public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey,
                                                      String bucketName, long sizeGiB, java.net.http.HttpClient httpClient) {
+        if (sizeGiB < 0) {
+            // Only zero disables a quota; a negative value would corrupt
+            // resource accounting (BucketApiServiceImpl persists the requested
+            // value and computes deltas from it), so reject it outright.
+            throw new CloudRuntimeException("Bucket quota cannot be negative: " + sizeGiB);
+        }
         String body;
-        if (sizeGiB <= 0) {
+        if (sizeGiB == 0) {
             body = "{\"quota_size\":0,\"quota_unit\":\"B\",\"quota_enabled\":false}";
         } else {
             body = String.format("{\"quota_size\":%d,\"quota_unit\":\"GB\",\"quota_enabled\":true}", sizeGiB);
