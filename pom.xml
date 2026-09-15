@@ -1072,6 +1072,7 @@
                             <exclude>debian/dirs</exclude>
                             <exclude>debian/rules</exclude>
                             <exclude>debian/source/format</exclude>
+                            <exclude>docs/design/direct-routed-networks.md</exclude>
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
                             <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
