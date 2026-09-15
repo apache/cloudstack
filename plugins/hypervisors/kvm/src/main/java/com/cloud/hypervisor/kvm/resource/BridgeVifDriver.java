@@ -49,8 +49,40 @@ public class BridgeVifDriver extends VifDriverBase {
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
     private String _macIpScriptPath;
+    private boolean _macIpStaticEnabled;
+    private String _modifyBrdrPath;
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
+
+    /**
+     * What a Linux interface name may look like; modifybrdr.sh prints exactly one such name on
+     * a successful add, and anything else in its output is a diagnostic.
+     */
+    private static final Pattern BRIDGE_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.-]{1,15}$");
+    private static final String BRDR_MINE = "mine";
+    private static final String BRDR_NOTMINE = "notmine";
+    private static final String BRDR_KEPT = "kept";
+    private static final String BRDR_DELETED = "deleted";
+
+    /**
+     * A NIC on a Direct Routed (L3) network is recognised by its broadcast domain: routed://<id>,
+     * stamped by the management server. The id is a label naming the per-network bridge
+     * (brdr-<id>), never an encapsulation. An earlier revision inferred this from the address
+     * form (/32 + link-local gateway); the explicit broadcast type supersedes that implicit
+     * contract, and works for guest and (systemvm) public NICs alike.
+     *
+     * The URI is checked as well as the type enum: a SystemVM's public NIC profile is rebuilt at
+     * start from the shared Public network, whose broadcast domain type is Vlan — only the NIC's
+     * own broadcast URI carries the routed:// stamp then (NicProfile copies broadcastType from
+     * the network, not the nic row).
+     */
+    public static boolean isDirectRoutedNic(NicTO nic) {
+        if (nic == null) {
+            return false;
+        }
+        return nic.getBroadcastType() == Networks.BroadcastDomainType.Routed
+                || (nic.getBroadcastUri() != null && Networks.BroadcastDomainType.Routed.scheme().equals(nic.getBroadcastUri().getScheme()));
+    }
 
     private static boolean isVxlanOrNetris(String protocol) {
         return protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme()) || protocol.equals(Networks.BroadcastDomainType.Netris.scheme());
@@ -84,13 +116,16 @@ public class BridgeVifDriver extends VifDriverBase {
             throw new ConfigurationException("Unable to find " + vxlanScript);
         }
 
-        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC))) {
-            _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+        _macIpScriptPath = Script.findScript(networkScriptsDir, "modifymacip.sh");
+        _macIpStaticEnabled = Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_NETWORK_MACIP_STATIC));
+        if (_macIpStaticEnabled) {
             if (_macIpScriptPath == null) {
                 throw new ConfigurationException("Unable to find modifymacip.sh");
             }
             logger.info("VM network MAC/IP static script configured: {}", _macIpScriptPath);
         }
+
+        _modifyBrdrPath = Script.findScript(networkScriptsDir, "modifybrdr.sh");
 
         libvirtVersion = (Long) params.get("libvirtVersion");
         if (libvirtVersion == null) {
@@ -221,6 +256,15 @@ public class BridgeVifDriver extends VifDriverBase {
         return createVnetBr(vNetId, storageBrName, protocol);
     }
 
+    /**
+     * Direct Routed (L3) NICs — guest Instances and the public NICs of SystemVMs alike — go on
+     * the network's own uplink-less bridge, never on a shared guest/public bridge, and always get
+     * the MAC/IP script run: the host route and static neighbour entry it installs are what
+     * deliver their traffic. For every other NIC the MAC/IP script runs only when the host-wide
+     * vm.network.macip.static property (the EVPN use case) enables it — which is why the script
+     * path is resolved unconditionally in configure() but only required there when the property
+     * is set.
+     */
     @Override
     public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
 
@@ -247,7 +291,10 @@ public class BridgeVifDriver extends VifDriverBase {
             networkRateKBps = getNetworkRateKbps(nic);
         }
 
-        if (nic.getType() == Networks.TrafficType.Guest) {
+        if ((nic.getType() == Networks.TrafficType.Guest || nic.getType() == Networks.TrafficType.Public) && isDirectRoutedNic(nic)) {
+            String brName = createDirectRoutedBridge(nic);
+            intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+        } else if (nic.getType() == Networks.TrafficType.Guest) {
             if (isBroadcastTypeVlanOrVxlan(nic) && isValidProtocolAndVnetId(vNetId, protocol)) {
                     if (trafficLabel != null && !trafficLabel.isEmpty()) {
                         logger.debug("creating a vNet dev and bridge for guest traffic per traffic label " + trafficLabel);
@@ -295,15 +342,171 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         intf.setLinkStateUp(nic.isEnabled());
 
-        executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
+        if (_macIpStaticEnabled || isDirectRoutedNic(nic)) {
+            executeMacIpScript(intf.getBrName(), nic.getMac(), nic.getIp(), nic.getIp6Address(), nic.getNicSecIps());
+        }
 
         return intf;
     }
 
+    /**
+     * How the bridges of Direct Routed (L3) networks are named is known only to modifybrdr.sh;
+     * the interface is classified at unplug by asking the script ("query"), which answers
+     * "notmine" when it is not such a bridge and the regular unplug handling applies. For a
+     * Direct Routed bridge the host route and neighbour entry of the interface are removed
+     * first, while the bridge they reference still exists, and only then is the script asked to
+     * delete the bridge should nothing else be attached to it.
+     */
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
-        executeMacIpScript(iface.getBrName(), iface.getMacAddress());
+        boolean directRouted = isDirectRoutedBridge(iface.getBrName());
+        if (_macIpStaticEnabled || directRouted) {
+            executeMacIpScript(iface.getBrName(), iface.getMacAddress());
+        }
+        if (directRouted) {
+            deleteDirectRoutedBridge(iface.getBrName());
+            return;
+        }
         deleteVnetBr(iface.getBrName(), deleteBr);
+    }
+
+    /**
+     * Ensures the per-network bridge for a Direct Routed NIC exists, with the shared gateway
+     * addresses and sysctls applied. Idempotent and flock'd in the script itself. A failure here
+     * is fatal to the NIC plug: without the bridge the domain XML would reference a nonexistent
+     * device and the Instance would fail to start with a far less useful error. A missing
+     * modifymacip.sh is fatal for the same reason: without the host route and neighbour entry it
+     * installs the Instance would start with no connectivity at all.
+     *
+     * The routed id — the value of the network's routed://&lt;id&gt; broadcast domain, operator
+     * controlled and stable for the network's life — names the bridge, but how these bridges are
+     * named is known only to modifybrdr.sh: the script prints the bridge name it created, never
+     * the agent. The script's stderr is merged into its stdout by Script, so the last non-blank
+     * line is taken and must look like an interface name; anything else means the script did not
+     * produce a bridge. The gateway addresses passed along come from the NIC, whose values the
+     * management server stamped at allocation (NetUtils.getLinkLocalGateway() /
+     * getIpv6LinkLocalGateway()); the script has no defaults of its own, so the addresses are
+     * defined in exactly one place.
+     */
+    protected String createDirectRoutedBridge(NicTO nic) throws InternalErrorException {
+        if (_modifyBrdrPath == null) {
+            throw new InternalErrorException("Unable to find modifybrdr.sh: this host cannot run Instances on Direct Routed (L3) networks");
+        }
+        if (_macIpScriptPath == null) {
+            throw new InternalErrorException("Unable to find modifymacip.sh: this host cannot run Instances on Direct Routed (L3) networks");
+        }
+        String routedId = nic.getBroadcastUri() != null ? Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()) : null;
+        if (StringUtils.isBlank(routedId)) {
+            throw new InternalErrorException("Direct Routed NIC " + nic.getMac() + " carries no routed:// broadcast URI; cannot derive its bridge");
+        }
+        Script command = new Script(_modifyBrdrPath, _timeout, logger);
+        command.add("-o", "add");
+        command.add("-n", routedId);
+        if (StringUtils.isNotBlank(nic.getGateway())) {
+            command.add("-4", nic.getGateway());
+        }
+        if (StringUtils.isNotBlank(nic.getIp6Gateway())) {
+            command.add("-6", nic.getIp6Gateway());
+        }
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result != null) {
+            throw new InternalErrorException("Failed to create bridge for routed id " + routedId + ": " + result);
+        }
+        String brName = lastNonBlankLine(parser.getLines());
+        if (brName == null || !BRIDGE_NAME_PATTERN.matcher(brName).matches()) {
+            throw new InternalErrorException("modifybrdr.sh did not return a usable bridge name for routed id " + routedId + ": " + parser.getLines());
+        }
+        return brName;
+    }
+
+    /**
+     * Asks modifybrdr.sh whether the bridge is one of its own without changing anything. Only an
+     * exact "mine" counts; "notmine", a script failure or an unexpected answer all send the
+     * caller down the regular unplug handling.
+     */
+    protected boolean isDirectRoutedBridge(String brName) {
+        if (_modifyBrdrPath == null || brName == null) {
+            return false;
+        }
+        String verdict = runModifyBrdrVerdict("query", brName);
+        if (verdict == null) {
+            return false;
+        }
+        if (BRDR_MINE.equals(verdict)) {
+            return true;
+        }
+        if (!BRDR_NOTMINE.equals(verdict)) {
+            logger.warn("Unexpected answer from modifybrdr.sh query for bridge {}: {}", brName, verdict);
+        }
+        return false;
+    }
+
+    /**
+     * Asks modifybrdr.sh to remove the bridge if it is one of its own and nothing is attached to
+     * it any more. Returns whether the script gave one of its three answers (notmine, kept,
+     * deleted); anything else is a failure and is logged. Best-effort beyond that: the script
+     * keeps the bridge while other Instances of the network still use it, and a leftover empty
+     * bridge is harmless and re-used on the next plug.
+     */
+    protected boolean deleteDirectRoutedBridge(String brName) {
+        if (_modifyBrdrPath == null || brName == null) {
+            return false;
+        }
+        String verdict = runModifyBrdrVerdict("delete", brName);
+        if (verdict == null) {
+            return false;
+        }
+        if (BRDR_NOTMINE.equals(verdict) || BRDR_KEPT.equals(verdict) || BRDR_DELETED.equals(verdict)) {
+            logger.debug("modifybrdr.sh delete on bridge {}: {}", brName, verdict);
+            return true;
+        }
+        logger.warn("Unexpected answer from modifybrdr.sh delete for bridge {}: {}", brName, verdict);
+        return false;
+    }
+
+    /**
+     * Runs a modifybrdr.sh operation that takes a bridge name and answers with a single token,
+     * returning the last non-blank line of its output, or null when the script failed.
+     */
+    private String runModifyBrdrVerdict(String operation, String brName) {
+        try {
+            Script command = new Script(_modifyBrdrPath, _timeout, logger);
+            command.add("-o", operation);
+            command.add("-b", brName);
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            String result = command.execute(parser);
+            if (result != null) {
+                logger.warn("modifybrdr.sh {} failed for bridge {}: {}", operation, brName, result);
+                return null;
+            }
+            String verdict = lastNonBlankLine(parser.getLines());
+            if (verdict == null) {
+                logger.warn("modifybrdr.sh {} gave no answer for bridge {}", operation, brName);
+            }
+            return verdict;
+        } catch (Exception e) {
+            logger.warn("Failed to run modifybrdr.sh {} for bridge {}", operation, brName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the last non-blank line of a script's merged stdout/stderr output, trimmed, or
+     * null when there is none. The result token of modifybrdr.sh is always printed last.
+     */
+    protected static String lastNonBlankLine(String output) {
+        if (output == null) {
+            return null;
+        }
+        String[] lines = output.split("\n");
+        for (int i = lines.length - 1; i >= 0; i--) {
+            String line = lines[i].trim();
+            if (!line.isEmpty()) {
+                return line;
+            }
+        }
+        return null;
     }
 
     @Override
