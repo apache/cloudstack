@@ -296,8 +296,15 @@ public class SeaweedFSObjectStoreUtil {
             // available (404/405), tolerate the failure for quota 0 so basic
             // bucket CRUD works on deployments without the extension. A
             // positive quota still requires the extension and must fail.
+            //
+            // Distinguish "extension not available" from "bucket not found":
+            // SeaweedFS returns a standard S3 NoSuchBucket error (with
+            // <Code>NoSuchBucket</Code> in the body) when the bucket does not
+            // exist, which must NOT be swallowed — it indicates CloudStack and
+            // S3 are out of sync.
             if (sizeGiB == 0 && e.getMessage() != null
-                    && (e.getMessage().contains("status 404") || e.getMessage().contains("status 405"))) {
+                    && (e.getMessage().contains("status 404") || e.getMessage().contains("status 405"))
+                    && !e.getMessage().contains("NoSuchBucket")) {
                 org.apache.logging.log4j.LogManager.getLogger(SeaweedFSObjectStoreUtil.class)
                         .warn("SeaweedFS quota extension not available for bucket {}; skipping quota disable (quota is already off by default)", bucketName);
                 return;
