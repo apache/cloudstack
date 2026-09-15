@@ -134,11 +134,15 @@ public class SeaweedFSObjectStoreUtil {
             sb.append("      ]\n");
             sb.append("    }\n");
         }
-        // Always deny bucket creation/deletion — CloudStack controls lifecycle
+        // Always deny bucket creation/deletion and quota mutation —
+        // CloudStack controls lifecycle and resource accounting. Denying
+        // s3:PutBucketQuota prevents a tenant from using the credentials
+        // returned in BucketResponse to call the SeaweedFS quota extension
+        // directly and bypass CloudStack's resource accounting.
         sb.append("    ,{\n");
-        sb.append("      \"Sid\": \"DenyBucketLifecycle\",\n");
+        sb.append("      \"Sid\": \"DenyBucketLifecycleAndQuota\",\n");
         sb.append("      \"Effect\": \"Deny\",\n");
-        sb.append("      \"Action\": [\"s3:CreateBucket\", \"s3:DeleteBucket\"],\n");
+        sb.append("      \"Action\": [\"s3:CreateBucket\", \"s3:DeleteBucket\", \"s3:PutBucketQuota\"],\n");
         sb.append("      \"Resource\": \"*\"\n");
         sb.append("    }\n");
         sb.append("  ]\n");
