@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -159,6 +160,12 @@ public class SeaweedFSObjectStoreDriverImplTest {
         lenient().when(accountDetailsDao.findDetails(TEST_ACCOUNT_ID)).thenReturn(accountDetailsMap);
 
         bucketVo = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, null, false, false, false, null);
+
+        // Stub the DB-backed IAM lock with a no-op mock so tests don't
+        // require a real transaction context.
+        com.cloud.utils.db.GlobalLock mockIamLock = mock(com.cloud.utils.db.GlobalLock.class);
+        lenient().doReturn(mockIamLock).when(driver).acquireIamLock(anyLong(), anyLong());
+        lenient().when(mockIamLock.unlock()).thenReturn(true);
     }
 
     @After
@@ -466,6 +473,37 @@ public class SeaweedFSObjectStoreDriverImplTest {
         storeDetailsMap.clear();
         lenient().when(objectStoreDao.findById(TEST_STORE_ID)).thenReturn(null);
         assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
+    }
+
+    @Test
+    public void testBuildAccountIAMPolicyEmptyBuckets() throws Exception {
+        String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(java.util.Collections.emptyList());
+        // Empty bucket list: deny all S3 access
+        assertTrue(policy.contains("\"Sid\": \"DenyAllS3\""));
+        assertTrue(policy.contains("\"Effect\": \"Deny\""));
+        assertTrue(policy.contains("\"Action\": [\"s3:*\"]"));
+        assertTrue(policy.contains("\"arn:aws:s3:::*\""));
+        // Must still deny bucket lifecycle and quota
+        assertTrue(policy.contains("\"s3:PutBucketQuota\""));
+        assertFalse(policy.contains("\"AllowAccountBuckets\""));
+    }
+
+    @Test
+    public void testBuildAccountIAMPolicyPopulatedBuckets() throws Exception {
+        String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(
+                java.util.Arrays.asList("bucket-a", "bucket-b"));
+        // Allow access to both bucket and object ARNs
+        assertTrue(policy.contains("\"Sid\": \"AllowAccountBuckets\""));
+        assertTrue(policy.contains("\"arn:aws:s3:::bucket-a\""));
+        assertTrue(policy.contains("\"arn:aws:s3:::bucket-a/*\""));
+        assertTrue(policy.contains("\"arn:aws:s3:::bucket-b\""));
+        assertTrue(policy.contains("\"arn:aws:s3:::bucket-b/*\""));
+        // Must deny bucket lifecycle and quota
+        assertTrue(policy.contains("\"Sid\": \"DenyBucketLifecycleAndQuota\""));
+        assertTrue(policy.contains("\"s3:CreateBucket\""));
+        assertTrue(policy.contains("\"s3:DeleteBucket\""));
+        assertTrue(policy.contains("\"s3:PutBucketQuota\""));
+        assertFalse(policy.contains("\"DenyAllS3\""));
     }
 
     /**
