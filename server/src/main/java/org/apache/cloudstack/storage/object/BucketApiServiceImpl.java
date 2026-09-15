@@ -276,6 +276,13 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
 
+        // Validate quota before applying any remote side effects so a
+        // negative value does not leave encryption/versioning/policy changes
+        // applied while the API returns an error.
+        if (cmd.getQuota() != null && cmd.getQuota() < 0) {
+            throw new InvalidParameterValueException("Bucket quota cannot be negative: " + cmd.getQuota());
+        }
+
         try {
             if (cmd.getEncryption() != null) {
                 if (cmd.getEncryption()) {
@@ -314,9 +321,6 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         Integer quota = cmd.getQuota();
         if (quota == null) {
             return;
-        }
-        if (quota < 0) {
-            throw new InvalidParameterValueException("Bucket quota cannot be negative: " + quota);
         }
 
         int quotaDelta = quota - bucket.getQuota();
