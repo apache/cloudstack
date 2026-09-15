@@ -37,6 +37,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+
+import java.io.ByteArrayOutputStream;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
@@ -46,10 +55,14 @@ import org.apache.cloudstack.storage.object.Bucket;
 
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.model.AccessKey;
+import com.amazonaws.services.identitymanagement.model.AccessKeyMetadata;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyRequest;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyResult;
 import com.amazonaws.services.identitymanagement.model.CreateUserRequest;
+import com.amazonaws.services.identitymanagement.model.DeleteAccessKeyRequest;
 import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
+import com.amazonaws.services.identitymanagement.model.ListAccessKeysRequest;
+import com.amazonaws.services.identitymanagement.model.ListAccessKeysResult;
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
@@ -71,6 +84,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -249,26 +263,77 @@ public class SeaweedFSObjectStoreDriverImplTest {
     public void testSetBucketQuotaZero() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
-        // Mock the S3 helpers to return valid values
-        doReturn("http://s3-endpoint").when(driver).getS3Url(TEST_STORE_ID);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
         doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
         doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
-        // Should not throw for 0 — uses static method, can't easily mock, but
-        // the test validates the code path doesn't throw before the HTTP call
-        // Since we can't mock the static HTTP call, we expect a CloudRuntimeException
-        // from the HTTP call failing (no real server). That's acceptable — it proves
-        // the code path reaches the S3 extension rather than throwing "not supported".
-        assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 0));
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn("");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        driver.setBucketQuota(bucketTO, TEST_STORE_ID, 0);
+
+        ArgumentCaptor<HttpRequest> reqCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockHttpClient, times(1)).send(reqCaptor.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        HttpRequest sent = reqCaptor.getValue();
+        assertEquals("PUT", sent.method());
+        assertEquals("/" + TEST_BUCKET_NAME, sent.uri().getPath());
+        assertTrue("query must carry the seaweedfs-quota subresource",
+                sent.uri().getQuery().contains("seaweedfs-quota"));
+        assertNotNull("request must be SigV4-signed", sent.headers().firstValue("Authorization"));
+        assertEquals("{\"quota_size\":0,\"quota_unit\":\"B\",\"quota_enabled\":false}", extractBody(sent));
     }
 
     @Test
-    public void testSetBucketQuotaNonZeroThrows() throws Exception {
+    public void testSetBucketQuotaNonZero() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
-        doReturn("http://s3-endpoint").when(driver).getS3Url(TEST_STORE_ID);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
         doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
         doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
-        // Non-zero quota should now attempt the S3 extension (not throw "not supported")
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn("");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10);
+
+        ArgumentCaptor<HttpRequest> reqCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockHttpClient, times(1)).send(reqCaptor.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        HttpRequest sent = reqCaptor.getValue();
+        assertEquals("PUT", sent.method());
+        assertEquals("/" + TEST_BUCKET_NAME, sent.uri().getPath());
+        assertTrue(sent.uri().getQuery().contains("seaweedfs-quota"));
+        assertNotNull(sent.headers().firstValue("Authorization"));
+        assertEquals("{\"quota_size\":10,\"quota_unit\":\"GB\",\"quota_enabled\":true}", extractBody(sent));
+    }
+
+    @Test
+    public void testSetBucketQuotaPropagatesFailure() throws Exception {
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(403);
+        when(mockResponse.body()).thenReturn("forbidden");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
         assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
     }
 
@@ -280,6 +345,32 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
     }
 
+    /**
+     * Extract the request body from an HttpRequest.BodyPublisher so tests can
+     * assert the JSON payload sent to the SeaweedFS S3 extension.
+     */
+    private static String extractBody(HttpRequest request) throws Exception {
+        return request.bodyPublisher()
+                .map(SeaweedFSObjectStoreDriverImplTest::readBodyPublisher)
+                .orElse(null);
+    }
+
+    private static String readBodyPublisher(HttpRequest.BodyPublisher publisher) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        publisher.subscribe(new Flow.Subscriber<ByteBuffer>() {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            @Override public void onSubscribe(Flow.Subscription s) { s.request(Long.MAX_VALUE); }
+            @Override public void onNext(ByteBuffer b) {
+                byte[] arr = new byte[b.remaining()];
+                b.get(arr);
+                baos.write(arr, 0, arr.length);
+            }
+            @Override public void onError(Throwable t) { future.completeExceptionally(t); }
+            @Override public void onComplete() { future.complete(baos.toString(StandardCharsets.UTF_8)); }
+        });
+        return future.join();
+    }
+
     @Test
     public void testCreateUserNew() throws Exception {
         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
@@ -287,8 +378,11 @@ public class SeaweedFSObjectStoreDriverImplTest {
         when(account.getAccountName()).thenReturn("testaccount");
         doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
 
-        // IAM user creation succeeds
-        // (createUser returns void on success; EntityAlreadyExistsException means it exists)
+        // No stored credentials yet
+        accountDetailsMap.clear();
+        // No existing access keys to clean up
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResult());
 
         // Access key creation
         AccessKey accessKey = mock(AccessKey.class);
@@ -313,15 +407,70 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testCreateUserReusesStoredKey() throws Exception {
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
+        when(account.getAccountName()).thenReturn("testaccount");
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+
+        // Stored credential still exists in IAM -> must be reused, not rotated
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResult(TEST_AK));
+
+        boolean created = driver.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID);
+        assertTrue(created);
+
+        verify(iamClient, times(1)).putUserPolicy(any(PutUserPolicyRequest.class));
+        verify(iamClient, never()).createAccessKey(any(CreateAccessKeyRequest.class));
+        verify(iamClient, never()).deleteAccessKey(any(DeleteAccessKeyRequest.class));
+        verify(accountDetailsDao, never()).persist(anyLong(), ArgumentMatchers.<Map<String, String>>any());
+    }
+
+    @Test
+    public void testCreateUserStoredKeyMissingCreatesReplacement() throws Exception {
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
+        when(account.getAccountName()).thenReturn("testaccount");
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+
+        // Stored key is gone from IAM; an unmanaged leftover key is present
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResult("unmanaged-key"));
+
+        AccessKey accessKey = mock(AccessKey.class);
+        CreateAccessKeyResult accessKeyResult = mock(CreateAccessKeyResult.class);
+        when(accessKey.getAccessKeyId()).thenReturn("new-ak");
+        when(accessKey.getSecretAccessKey()).thenReturn("new-sk");
+        when(accessKeyResult.getAccessKey()).thenReturn(accessKey);
+        when(iamClient.createAccessKey(any(CreateAccessKeyRequest.class))).thenReturn(accessKeyResult);
+
+        boolean created = driver.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID);
+        assertTrue(created);
+
+        // The unmanaged leftover key must be cleaned up before creating a replacement
+        verify(iamClient, times(1)).deleteAccessKey(any(DeleteAccessKeyRequest.class));
+        verify(iamClient, times(1)).createAccessKey(any(CreateAccessKeyRequest.class));
+
+        ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(accountDetailsDao, times(1)).persist(anyLong(), detailsCaptor.capture());
+        Map<String, String> persisted = detailsCaptor.getValue();
+        assertEquals("new-ak", persisted.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY));
+        assertEquals("new-sk", persisted.get(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY));
+    }
+
+    @Test
     public void testCreateUserAlreadyExists() throws Exception {
         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
         when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
         when(account.getAccountName()).thenReturn("testaccount");
         doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
 
-        // IAM user already exists
+        // IAM user already exists; no stored credential, no leftover keys
+        accountDetailsMap.clear();
         lenient().when(iamClient.createUser(any(CreateUserRequest.class)))
                 .thenThrow(new EntityAlreadyExistsException("user exists"));
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResult());
 
         AccessKey accessKey = mock(AccessKey.class);
         CreateAccessKeyResult accessKeyResult = mock(CreateAccessKeyResult.class);
@@ -336,6 +485,16 @@ public class SeaweedFSObjectStoreDriverImplTest {
         // Policy and access key should still be applied even if user already existed
         verify(iamClient, times(1)).putUserPolicy(any(PutUserPolicyRequest.class));
         verify(iamClient, times(1)).createAccessKey(any(CreateAccessKeyRequest.class));
+    }
+
+    private static ListAccessKeysResult listAccessKeysResult(String... accessKeyIds) {
+        ListAccessKeysResult result = new ListAccessKeysResult();
+        List<AccessKeyMetadata> metadata = new ArrayList<>();
+        for (String keyId : accessKeyIds) {
+            metadata.add(new AccessKeyMetadata().withAccessKeyId(keyId));
+        }
+        result.setAccessKeyMetadata(metadata);
+        return result;
     }
 
     @Test

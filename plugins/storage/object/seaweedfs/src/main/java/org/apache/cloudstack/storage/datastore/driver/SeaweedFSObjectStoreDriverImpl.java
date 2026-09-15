@@ -38,10 +38,13 @@ import org.apache.cloudstack.storage.object.BucketObject;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.model.AccessKey;
+import com.amazonaws.services.identitymanagement.model.AccessKeyMetadata;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyRequest;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyResult;
 import com.amazonaws.services.identitymanagement.model.CreateUserRequest;
+import com.amazonaws.services.identitymanagement.model.DeleteAccessKeyRequest;
 import com.amazonaws.services.identitymanagement.model.EntityAlreadyExistsException;
+import com.amazonaws.services.identitymanagement.model.ListAccessKeysRequest;
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AccessControlList;
@@ -109,8 +112,15 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     /**
      * Create the IAM user for the CloudStack account if it doesn't exist,
-     * attach the restricted S3 policy, create an access key, and persist the
-     * credentials in the account details.
+     * attach the restricted S3 policy, and ensure the account has a usable
+     * IAM access key persisted in its account details.
+     *
+     * <p>If a previously stored access key is still present in IAM, it is
+     * reused rather than rotated. A new key is only created when no stored
+     * key exists or the stored key is no longer found in IAM; in the latter
+     * case any unmanaged (leftover) keys for the user are deleted first to
+     * avoid hitting IAM access-key limits. This keeps bucket records that
+     * reference the stored credentials valid across repeated calls.
      *
      * @return true if the user exists or was created, false on failure.
      */
@@ -136,19 +146,75 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
                 "CloudStackPolicy", SeaweedFSObjectStoreUtil.IAM_USER_POLICY));
 
-        // Create a new access key for this user
+        // Reuse the stored access key if it is still present in IAM; only
+        // create a new one when no usable key exists.
+        Map<String, String> details = _accountDetailsDao.findDetails(accountId);
+        String storedAccessKeyId = details.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY);
+        if (storedAccessKeyId != null && iamAccessKeyExists(iamClient, userName, storedAccessKeyId)) {
+            logger.debug("Reusing existing IAM access key {} for user {}", storedAccessKeyId, userName);
+            return true;
+        }
+
+        // The stored key is missing or no longer in IAM. Clean up any
+        // unmanaged leftover keys before creating a replacement so we do not
+        // accumulate keys and hit IAM access-key limits.
+        deleteUnmanagedAccessKeys(iamClient, userName, storedAccessKeyId);
+
         CreateAccessKeyResult result = iamClient.createAccessKey(
                 new CreateAccessKeyRequest().withUserName(userName));
         AccessKey key = result.getAccessKey();
 
         // Persist the credentials in the account details
-        Map<String, String> details = _accountDetailsDao.findDetails(accountId);
         details.put(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY, key.getAccessKeyId());
         details.put(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY, key.getSecretAccessKey());
         _accountDetailsDao.persist(accountId, details);
 
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;
+    }
+
+    /**
+     * Check whether the given access key id is still listed in IAM for the user.
+     */
+    private boolean iamAccessKeyExists(AmazonIdentityManagement iamClient, String userName, String accessKeyId) {
+        try {
+            for (AccessKeyMetadata metadata :
+                    iamClient.listAccessKeys(new ListAccessKeysRequest()
+                            .withUserName(userName)).getAccessKeyMetadata()) {
+                if (accessKeyId.equals(metadata.getAccessKeyId())) {
+                    return true;
+                }
+            }
+        } catch (AmazonClientException e) {
+            logger.warn("Failed to list IAM access keys for user {}: {}", userName, e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Delete access keys for the user other than the (optionally) preserved
+     * key id. Used to clean up unmanaged leftover keys before creating a
+     * replacement so repeated calls do not hit IAM access-key limits.
+     */
+    private void deleteUnmanagedAccessKeys(AmazonIdentityManagement iamClient, String userName, String preserveAccessKeyId) {
+        try {
+            for (AccessKeyMetadata metadata :
+                    iamClient.listAccessKeys(new ListAccessKeysRequest()
+                            .withUserName(userName)).getAccessKeyMetadata()) {
+                String keyId = metadata.getAccessKeyId();
+                if (preserveAccessKeyId != null && preserveAccessKeyId.equals(keyId)) {
+                    continue;
+                }
+                DeleteAccessKeyRequest deleteReq =
+                        new DeleteAccessKeyRequest()
+                                .withUserName(userName)
+                                .withAccessKeyId(keyId);
+                logger.info("Deleting un-managed IAM access key {} for user {}", keyId, userName);
+                iamClient.deleteAccessKey(deleteReq);
+            }
+        } catch (AmazonClientException e) {
+            logger.warn("Failed to clean up IAM access keys for user {}: {}", userName, e.getMessage());
+        }
     }
 
     @Override
@@ -389,7 +455,17 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException("SeaweedFS S3 URL and credentials are required to set bucket quota. " +
                     "Configure 's3Url', 'accesskey', and 'secretkey' in the object store details.");
         }
-        SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size);
+        SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size, getS3ExtensionHttpClient());
+    }
+
+    /**
+     * Returns the HTTP client used to send SeaweedFS S3 extension requests
+     * (e.g. PUT /{bucket}?seaweedfs-quota). Exposed as a protected seam so
+     * tests can inject a mock client and assert the signed request without
+     * touching the network.
+     */
+    protected java.net.http.HttpClient getS3ExtensionHttpClient() {
+        return java.net.http.HttpClient.newHttpClient();
     }
 
     @Override

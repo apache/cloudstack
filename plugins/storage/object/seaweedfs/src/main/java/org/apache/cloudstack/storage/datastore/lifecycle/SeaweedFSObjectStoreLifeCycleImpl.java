@@ -59,6 +59,7 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String name = (String)dsInfos.get(SeaweedFSObjectStoreUtil.STORE_KEY_NAME);
         String url = (String)dsInfos.get(SeaweedFSObjectStoreUtil.STORE_KEY_URL);
         String providerName = (String)dsInfos.get(SeaweedFSObjectStoreUtil.STORE_KEY_PROVIDER_NAME);
+        Long size = (Long)dsInfos.get(SeaweedFSObjectStoreUtil.STORE_KEY_SIZE);
 
         // Check the providerName is what we expect
         if (! StringUtils.equalsIgnoreCase(providerName, SeaweedFSObjectStoreUtil.OBJECT_STORE_PROVIDER_NAME)) {
@@ -71,6 +72,7 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         objectStoreParameters.put(SeaweedFSObjectStoreUtil.STORE_KEY_NAME, name);
         objectStoreParameters.put(SeaweedFSObjectStoreUtil.STORE_KEY_URL, url);
         objectStoreParameters.put(SeaweedFSObjectStoreUtil.STORE_KEY_PROVIDER_NAME, providerName);
+        objectStoreParameters.put(SeaweedFSObjectStoreUtil.STORE_KEY_SIZE, size);
 
         // Pull out the details map
         @SuppressWarnings("unchecked")

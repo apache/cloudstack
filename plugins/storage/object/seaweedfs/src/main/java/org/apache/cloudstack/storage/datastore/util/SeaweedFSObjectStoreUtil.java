@@ -44,6 +44,7 @@ public class SeaweedFSObjectStoreUtil {
     public static final String STORE_KEY_PROVIDER_NAME = "providerName";
     public static final String STORE_KEY_URL           = "url";
     public static final String STORE_KEY_NAME          = "name";
+    public static final String STORE_KEY_SIZE          = "size";
     public static final String STORE_KEY_DETAILS       = "details";
 
     // Store Details Map key names - managed outside of plugin
@@ -200,13 +201,23 @@ public class SeaweedFSObjectStoreUtil {
      * @throws CloudRuntimeException on any failure
      */
     public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey, String bucketName, long sizeGiB) {
+        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, java.net.http.HttpClient.newHttpClient());
+    }
+
+    /**
+     * Set bucket quota via the SeaweedFS S3 extension endpoint using the
+     * supplied HTTP client. The client is injected so tests can assert the
+     * signed request without hitting the network.
+     */
+    public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey,
+                                                     String bucketName, long sizeGiB, java.net.http.HttpClient httpClient) {
         String body;
         if (sizeGiB <= 0) {
             body = "{\"quota_size\":0,\"quota_unit\":\"B\",\"quota_enabled\":false}";
         } else {
             body = String.format("{\"quota_size\":%d,\"quota_unit\":\"GB\",\"quota_enabled\":true}", sizeGiB);
         }
-        executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body);
+        executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body, httpClient);
     }
 
     /**
@@ -217,26 +228,58 @@ public class SeaweedFSObjectStoreUtil {
      * extensions (like ?seaweedfs-quota) that the AWS SDK doesn't natively
      * support.
      *
+     * The query string portion of {@code resourcePath} (e.g.
+     * {@code /bucket?seaweedfs-quota}) is split off and added to the request
+     * via {@code addParameter(...)} before signing, so the signer includes it
+     * in the canonical query string. {@code DefaultRequest.setResourcePath}
+     * does not parse an embedded query string, so passing it verbatim would
+     * leave the subresource unsigned while the outgoing URI would still carry
+     * it, causing a signature mismatch on the server.
+     *
      * @param method     HTTP method (PUT, GET, etc.)
      * @param s3Url      the S3 endpoint base URL
-     * @param resourcePath the path + query string (e.g. /bucket?seaweedfs-quota)
+     * @param resourcePath the path + optional query string (e.g. /bucket?seaweedfs-quota)
      * @param accessKey  S3 access key
      * @param secretKey  S3 secret key
      * @param body       the request body (null for GET)
+     * @param httpClient the HTTP client used to send the request
      * @return the response body as a string
      * @throws CloudRuntimeException on any failure
      */
-    private static String executeSignedS3Request(String method, String s3Url, String resourcePath,
-                                                  String accessKey, String secretKey, String body) {
+    protected static String executeSignedS3Request(String method, String s3Url, String resourcePath,
+                                                   String accessKey, String secretKey, String body,
+                                                   java.net.http.HttpClient httpClient) {
         try {
             java.net.URI endpointUri = java.net.URI.create(s3Url);
-            java.net.URL endpointUrl = endpointUri.toURL();
+
+            // Split the resource path into a path and a query string so the
+            // query parameters are signed as canonical query parameters.
+            String path = resourcePath;
+            String queryString = "";
+            int q = resourcePath.indexOf('?');
+            if (q >= 0) {
+                path = resourcePath.substring(0, q);
+                queryString = resourcePath.substring(q + 1);
+            }
 
             // Build AWS SDK v1 Request for SigV4 signing
             com.amazonaws.DefaultRequest<?> request = new com.amazonaws.DefaultRequest<>("s3");
             request.setEndpoint(endpointUri);
             request.setHttpMethod(com.amazonaws.http.HttpMethodName.valueOf(method));
-            request.setResourcePath(resourcePath);
+            request.setResourcePath(path);
+            if (! queryString.isEmpty()) {
+                for (String pair : queryString.split("&")) {
+                    if (pair.isEmpty()) {
+                        continue;
+                    }
+                    int eq = pair.indexOf('=');
+                    if (eq >= 0) {
+                        request.addParameter(pair.substring(0, eq), pair.substring(eq + 1));
+                    } else {
+                        request.addParameter(pair, "");
+                    }
+                }
+            }
             if (body != null) {
                 byte[] bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 request.setContent(new java.io.ByteArrayInputStream(bodyBytes));
@@ -251,14 +294,27 @@ public class SeaweedFSObjectStoreUtil {
             signer.setRegionName("us-east-1");
             signer.sign(request, credentials);
 
-            // Build and send the HTTP request with signed headers
-            java.net.URI fullUri = endpointUri.resolve(resourcePath);
+            // Build and send the HTTP request with signed headers. The URI
+            // carries the original query string; the signed headers (including
+            // Authorization) are copied from the signed request. Restricted
+            // headers (e.g. Content-Length, Host) are set by the HTTP client /
+            // URI itself and cannot be added via HttpRequest.Builder.header(),
+            // so they are skipped here.
+            java.net.URI fullUri = endpointUri.resolve(path);
+            if (! queryString.isEmpty()) {
+                fullUri = java.net.URI.create(fullUri.toString() + "?" + queryString);
+            }
             java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
                     .uri(fullUri);
             for (java.util.Map.Entry<String, String> entry : request.getHeaders().entrySet()) {
-                if (entry.getKey() != null && entry.getValue() != null) {
-                    reqBuilder.header(entry.getKey(), entry.getValue());
+                String headerName = entry.getKey();
+                if (headerName == null || entry.getValue() == null) {
+                    continue;
                 }
+                if (isRestrictedHttpHeader(headerName)) {
+                    continue;
+                }
+                reqBuilder.header(headerName, entry.getValue());
             }
             if (body != null) {
                 reqBuilder.method(method, java.net.http.HttpRequest.BodyPublishers.ofString(body));
@@ -266,8 +322,7 @@ public class SeaweedFSObjectStoreUtil {
                 reqBuilder.method(method, java.net.http.HttpRequest.BodyPublishers.noBody());
             }
 
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-            java.net.http.HttpResponse<String> response = client.send(reqBuilder.build(),
+            java.net.http.HttpResponse<String> response = httpClient.send(reqBuilder.build(),
                     java.net.http.HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 400) {
@@ -280,6 +335,28 @@ public class SeaweedFSObjectStoreUtil {
             throw e;
         } catch (Exception e) {
             throw new CloudRuntimeException("S3 extension request failed: " + method + " " + resourcePath, e);
+        }
+    }
+
+    /**
+     * Headers that {@code java.net.http.HttpRequest.Builder.header()} rejects
+     * because they are managed by the HTTP client itself (content length is
+     * derived from the body publisher, host from the URI, etc.). They must be
+     * skipped when copying the signed headers onto the outgoing request.
+     */
+    private static boolean isRestrictedHttpHeader(String headerName) {
+        if (headerName == null) {
+            return true;
+        }
+        switch (headerName.toLowerCase(java.util.Locale.ROOT)) {
+            case "content-length":
+            case "host":
+            case "connection":
+            case "expect":
+            case "upgrade":
+                return true;
+            default:
+                return false;
         }
     }
 }
