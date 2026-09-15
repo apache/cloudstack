@@ -524,8 +524,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 } while (result.isTruncated());
                 bucketUsage.put(bucket.getName(), size);
             } catch (AmazonClientException e) {
-                logger.warn("Failed to get usage for bucket {}: {}", bucket.getName(), e.getMessage());
-                bucketUsage.put(bucket.getName(), 0L);
+                // Omit the bucket rather than reporting 0 — returning 0 would
+                // cause BucketApiServiceImpl to overwrite the stored size with
+                // a false zero, erasing known usage on a transient failure.
+                logger.warn("Failed to get usage for bucket {} (omitting from result): {}", bucket.getName(), e.getMessage());
             }
         }
         return bucketUsage;
