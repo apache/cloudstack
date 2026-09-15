@@ -512,39 +512,49 @@ public class SeaweedFSObjectStoreUtil {
      * time, replacing the O(total objects) {@code ListObjectsV2} scan used as a
      * fallback.
      *
-     * <p>{@code metricsUrl} must point at a SeaweedFS S3 server's Prometheus
-     * exporter (the address configured with {@code -metricsPort}), NOT at a
-     * Prometheus server. A Prometheus server's own {@code /metrics} endpoint
-     * exposes its internal metrics, not the scraped SeaweedFS series, which
-     * would silently report zero for every bucket. The response is validated
-     * to contain the {@link #METRIC_BUCKET_SIZE_BYTES} metric family so a
-     * misconfigured URL raises a scrape failure and the caller falls back to
-     * the S3 listing.
+     * <p>{@code metricsUrl} must point at a single SeaweedFS S3 server's
+     * Prometheus exporter (the address configured with {@code -metricsPort}),
+     * NOT at a Prometheus server and NOT at a load-balanced S3 service:
+     * <ul>
+     *   <li>A Prometheus server's own {@code /metrics} endpoint exposes its
+     *       internal metrics, not the scraped SeaweedFS series.</li>
+     *   <li>SeaweedFS refreshes the bucket-size gauges only on the S3 instance
+     *       holding the distributed {@code s3.leader} lock, so a load-balanced
+     *       endpoint can route to a non-leader whose gauges are empty.</li>
+     * </ul>
+     * Both cases would return HTTP 200 with no usable samples. To detect them,
+     * this method requires a sample line for <em>every</em> managed bucket:
+     * SeaweedFS publishes a zero gauge for empty buckets, so the leader always
+     * exports one sample per bucket it knows about. A missing sample therefore
+     * indicates a wrong endpoint, a non-leader, or a bucket the metrics loop
+     * has not yet observed — all of which must raise a scrape failure so the
+     * caller falls back to the accurate S3 listing rather than reporting zero.
      *
      * @param metricsUrl  the base URL of the SeaweedFS Prometheus exporter
      * @param bucketNames the set of bucket names CloudStack manages (used to
      *                    filter the scraped metrics; buckets not in this set
      *                    are ignored)
      * @param httpClient  the HTTP client used to send the request
-     * @return a map of bucket name to size in bytes. Every bucket in
-     *         {@code bucketNames} is present; buckets not found in the
-     *         metrics response are set to 0 so stale sizes from a previous
-     *         scan are overwritten.
-     * @throws CloudRuntimeException on any HTTP failure, if the response does
-     *         not contain the expected metric family, or if a sample value
-     *         cannot be parsed. All failures cause the caller to fall back to
-     *         the S3 listing rather than reporting incorrect (zero) usage.
+     * @return a map of bucket name to size in bytes, containing exactly the
+     *         buckets in {@code bucketNames}
+     * @throws CloudRuntimeException on any HTTP failure, if a sample is missing
+     *         for any managed bucket, or if a sample value cannot be parsed.
+     *         All failures cause the caller to fall back to the S3 listing
+     *         rather than reporting incorrect (zero) usage.
      */
     public static java.util.Map<String, Long> parseBucketUsageFromMetrics(String metricsUrl,
             java.util.Set<String> bucketNames, java.net.http.HttpClient httpClient) {
         java.util.Map<String, Long> result = new java.util.HashMap<>();
-        // Initialize all managed buckets to zero so missing samples do not
-        // leave stale sizes from a previous scan in BucketApiServiceImpl.
-        for (String name : bucketNames) {
-            result.put(name, 0L);
-        }
         try {
-            java.net.URI uri = java.net.URI.create(metricsUrl + "/metrics");
+            // Normalize trailing slashes so a configured URL ending in '/'
+            // does not request '//metrics', which can redirect or 404 (the
+            // HTTP client does not follow redirects here) and would silently
+            // force the O(total objects) S3 scan on every usage poll.
+            String base = metricsUrl;
+            while (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            java.net.URI uri = java.net.URI.create(base + "/metrics");
             java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
                     .uri(uri)
                     .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS))
@@ -555,20 +565,13 @@ public class SeaweedFSObjectStoreUtil {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new CloudRuntimeException("Prometheus metrics scrape failed with status " + response.statusCode());
             }
-            String body = response.body();
-            // Verify the response is a SeaweedFS S3 exporter rather than a
-            // Prometheus server (whose /metrics exposes its own internals).
-            // Without this check a misconfigured URL returns HTTP 200 with no
-            // bucket samples and every bucket would be reported as zero.
-            if (!body.contains(METRIC_BUCKET_SIZE_BYTES)) {
-                throw new CloudRuntimeException("Prometheus metrics response from " + metricsUrl
-                        + " does not contain the " + METRIC_BUCKET_SIZE_BYTES
-                        + " metric family; metricsUrl must point at a SeaweedFS S3 server's metrics port");
-            }
-            // Parse Prometheus text exposition format lines like:
+            // Parse Prometheus text exposition format sample lines like:
             //   SeaweedFS_s3_bucket_size_bytes{bucket="mybucket"} 12345678
-            for (String line : body.split("\n")) {
-                if (!line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
+            // Comment lines (# HELP / # TYPE) are skipped: matching them would
+            // accept a response that declares the family but exports no
+            // samples, which happens on a non-leader S3 instance.
+            for (String line : response.body().split("\n")) {
+                if (line.startsWith("#") || !line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
                     continue;
                 }
                 int bucketLabelStart = line.indexOf("bucket=\"");
@@ -604,6 +607,18 @@ public class SeaweedFSObjectStoreUtil {
                     throw new CloudRuntimeException("Unparseable " + METRIC_BUCKET_SIZE_BYTES
                             + " value for bucket " + bucket + ": " + rawValue, e);
                 }
+            }
+            // Require a sample for every managed bucket. A missing sample means
+            // the endpoint is not a SeaweedFS S3 leader exporter, or the
+            // metrics loop has not yet observed the bucket. Reporting the
+            // remaining buckets as zero would under-report store usage, so
+            // fail and let the caller fall back to the S3 listing.
+            if (!result.keySet().containsAll(bucketNames)) {
+                java.util.Set<String> missing = new java.util.HashSet<>(bucketNames);
+                missing.removeAll(result.keySet());
+                throw new CloudRuntimeException("Prometheus metrics response from " + metricsUrl
+                        + " is missing " + METRIC_BUCKET_SIZE_BYTES + " samples for buckets " + missing
+                        + "; metricsUrl must point at the SeaweedFS S3 leader's metrics port");
             }
             return result;
         } catch (CloudRuntimeException e) {

@@ -860,9 +860,12 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      * scrapes per-bucket sizes from this endpoint instead of listing every
      * object via S3 ListObjectsV2.
      *
-     * The URL must point at a SeaweedFS S3 server's Prometheus exporter (the
-     * address configured with {@code -metricsPort}), not at a Prometheus
-     * server. See
+     * The URL must point at a single SeaweedFS S3 server's Prometheus exporter
+     * (the address configured with {@code -metricsPort}), not at a Prometheus
+     * server and not at a load-balanced S3 service: SeaweedFS only refreshes
+     * the bucket-size gauges on the instance holding the {@code s3.leader}
+     * lock. A wrong endpoint is detected by the scrape validation and falls
+     * back to the S3 listing. See
      * {@link SeaweedFSObjectStoreUtil#parseBucketUsageFromMetrics}.
      */
     protected String getMetricsUrl(long storeId) {
