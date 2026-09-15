@@ -149,7 +149,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         // Reuse the stored access key if it is still present in IAM; only
         // create a new one when no usable key exists.
         Map<String, String> details = _accountDetailsDao.findDetails(accountId);
-        String storedAccessKeyId = details.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY);
+        String accessKeyDetailKey = SeaweedFSObjectStoreUtil.keyAccessKey(storeId);
+        String secretKeyDetailKey = SeaweedFSObjectStoreUtil.keySecretKey(storeId);
+        String storedAccessKeyId = details.get(accessKeyDetailKey);
         if (storedAccessKeyId != null && iamAccessKeyExists(iamClient, userName, storedAccessKeyId)) {
             logger.debug("Reusing existing IAM access key {} for user {}", storedAccessKeyId, userName);
             return true;
@@ -164,9 +166,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 new CreateAccessKeyRequest().withUserName(userName));
         AccessKey key = result.getAccessKey();
 
-        // Persist the credentials in the account details
-        details.put(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY, key.getAccessKeyId());
-        details.put(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY, key.getSecretAccessKey());
+        // Persist the credentials in the account details (namespaced by storeId)
+        details.put(accessKeyDetailKey, key.getAccessKeyId());
+        details.put(secretKeyDetailKey, key.getSecretAccessKey());
         _accountDetailsDao.persist(accountId, details);
 
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
@@ -249,8 +251,8 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         // Update the bucket record with the account's IAM credentials
         Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
-        String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY);
-        String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY);
+        String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.keyAccessKey(storeId));
+        String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.keySecretKey(storeId));
         if (accessKey == null || secretKey == null) {
             logger.warn("No IAM credentials found for account {}. Bucket will be created without per-account credentials.", accountId);
         }

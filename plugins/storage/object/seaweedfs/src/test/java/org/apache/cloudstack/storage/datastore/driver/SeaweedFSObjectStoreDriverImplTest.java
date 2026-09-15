@@ -154,8 +154,8 @@ public class SeaweedFSObjectStoreDriverImplTest {
         lenient().when(objectStoreDetailsDao.getDetails(TEST_STORE_ID)).thenReturn(storeDetailsMap);
 
         accountDetailsMap = new HashMap<>();
-        accountDetailsMap.put(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY, TEST_AK);
-        accountDetailsMap.put(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY, TEST_SK);
+        accountDetailsMap.put(SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID), TEST_AK);
+        accountDetailsMap.put(SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), TEST_SK);
         lenient().when(accountDetailsDao.findDetails(TEST_ACCOUNT_ID)).thenReturn(accountDetailsMap);
 
         bucketVo = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, null, false, false, false, null);
@@ -402,8 +402,8 @@ public class SeaweedFSObjectStoreDriverImplTest {
         ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
         verify(accountDetailsDao, times(1)).persist(anyLong(), detailsCaptor.capture());
         Map<String, String> persisted = detailsCaptor.getValue();
-        assertEquals(TEST_AK, persisted.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY));
-        assertEquals(TEST_SK, persisted.get(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY));
+        assertEquals(TEST_AK, persisted.get(SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID)));
+        assertEquals(TEST_SK, persisted.get(SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID)));
     }
 
     @Test
@@ -454,8 +454,8 @@ public class SeaweedFSObjectStoreDriverImplTest {
         ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
         verify(accountDetailsDao, times(1)).persist(anyLong(), detailsCaptor.capture());
         Map<String, String> persisted = detailsCaptor.getValue();
-        assertEquals("new-ak", persisted.get(SeaweedFSObjectStoreUtil.KEY_ACCESS_KEY));
-        assertEquals("new-sk", persisted.get(SeaweedFSObjectStoreUtil.KEY_SECRET_KEY));
+        assertEquals("new-ak", persisted.get(SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID)));
+        assertEquals("new-sk", persisted.get(SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID)));
     }
 
     @Test

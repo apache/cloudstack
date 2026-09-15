@@ -53,9 +53,25 @@ public class SeaweedFSObjectStoreUtil {
     public static final String STORE_DETAILS_KEY_S3_URL     = "s3Url";        // S3 endpoint URL
     public static final String STORE_DETAILS_KEY_IAM_URL     = "iamUrl";       // IAM endpoint URL
 
-    // Account Detail Map key names - credentials created per CloudStack account
-    public static final String KEY_ACCESS_KEY = "swfs_AccessKey";
-    public static final String KEY_SECRET_KEY = "swfs_SecretKey";
+    // Account Detail Map key names - credentials created per CloudStack account.
+    // Namespaced by store ID so one account can use multiple SeaweedFS pools
+    // without the second pool overwriting the first pool's credentials.
+    public static final String KEY_ACCESS_KEY_PREFIX = "swfs_AccessKey_";
+    public static final String KEY_SECRET_KEY_PREFIX = "swfs_SecretKey_";
+
+    /**
+     * Build the account-detail key for the IAM access key of a given store.
+     */
+    public static String keyAccessKey(long storeId) {
+        return KEY_ACCESS_KEY_PREFIX + storeId;
+    }
+
+    /**
+     * Build the account-detail key for the IAM secret key of a given store.
+     */
+    public static String keySecretKey(long storeId) {
+        return KEY_SECRET_KEY_PREFIX + storeId;
+    }
 
     /**
      * IAM user policy applied to each per-account IAM user. Grants full S3
