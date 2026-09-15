@@ -226,10 +226,17 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         // remaining buckets.
         updateAccountBucketCredentials(storeId, accountId, key);
 
-        // Persist the credentials in the account details (namespaced by storeId)
+        // Persist the credentials in the account details (namespaced by
+        // storeId) with per-key writes. AccountDetailsDao.persist(accountId,
+        // map) expunges every existing detail for the account before inserting
+        // the supplied map, so it would clobber details this snapshot never saw
+        // — including another object store's namespaced credentials, since the
+        // IAM lock is keyed by storeId+accountId and two pools can provision
+        // the same account concurrently. addDetail touches only the named key.
         details.put(accessKeyDetailKey, key.getAccessKeyId());
         details.put(secretKeyDetailKey, key.getSecretAccessKey());
-        _accountDetailsDao.persist(accountId, details);
+        _accountDetailsDao.addDetail(accountId, accessKeyDetailKey, key.getAccessKeyId(), false);
+        _accountDetailsDao.addDetail(accountId, secretKeyDetailKey, key.getSecretAccessKey(), false);
 
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;

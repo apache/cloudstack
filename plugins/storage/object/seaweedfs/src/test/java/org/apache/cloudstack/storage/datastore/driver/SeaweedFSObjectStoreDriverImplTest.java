@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -660,11 +661,14 @@ public class SeaweedFSObjectStoreDriverImplTest {
         verify(iamClient, times(1)).putUserPolicy(any(PutUserPolicyRequest.class));
         verify(iamClient, times(1)).createAccessKey(any(CreateAccessKeyRequest.class));
 
-        ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
-        verify(accountDetailsDao, times(1)).persist(anyLong(), detailsCaptor.capture());
-        Map<String, String> persisted = detailsCaptor.getValue();
-        assertEquals(TEST_AK, persisted.get(SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID)));
-        assertEquals(TEST_SK, persisted.get(SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID)));
+        // Credentials must be written per key. AccountDetailsDao.persist(id, map)
+        // expunges every existing detail for the account first, which would wipe
+        // another object store's namespaced credentials.
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID), TEST_AK, false);
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), TEST_SK, false);
+        verify(accountDetailsDao, never()).persist(anyLong(), anyMap());
     }
 
     @Test
@@ -738,11 +742,11 @@ public class SeaweedFSObjectStoreDriverImplTest {
         verify(iamClient, times(1)).deleteAccessKey(any(DeleteAccessKeyRequest.class));
         verify(iamClient, times(1)).createAccessKey(any(CreateAccessKeyRequest.class));
 
-        ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
-        verify(accountDetailsDao, times(1)).persist(anyLong(), detailsCaptor.capture());
-        Map<String, String> persisted = detailsCaptor.getValue();
-        assertEquals("new-ak", persisted.get(SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID)));
-        assertEquals("new-sk", persisted.get(SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID)));
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID), "new-ak", false);
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), "new-sk", false);
+        verify(accountDetailsDao, never()).persist(anyLong(), anyMap());
     }
 
     @Test
