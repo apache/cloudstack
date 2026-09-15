@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.api.response.BucketKeyResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
@@ -233,6 +234,10 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.BucketCredential;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
+import org.apache.cloudstack.storage.object.BucketApiService;
+import org.apache.cloudstack.storage.object.BucketCredentialKey;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
@@ -536,6 +541,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     @Inject
     ObjectStoreDao _objectStoreDao;
+    @Inject
+    BucketApiService _bucketApiService;
     @Inject
     VpcOfferingDao vpcOfferingDao;
     @Inject
@@ -5612,15 +5619,51 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         bucketResponse.setObjectLock(bucket.isObjectLock());
         bucketResponse.setPolicy(bucket.getPolicy());
         bucketResponse.setBucketURL(bucket.getBucketURL());
-        bucketResponse.setAccessKey(bucket.getAccessKey());
-        bucketResponse.setSecretKey(bucket.getSecretKey());
+        // keys are only final once the bucket is Created: until then the row may hold interim
+        // material from a creation still in progress, and a bucket in any other state is unusable
+        if (bucket.getState() == Bucket.State.Created) {
+            bucketResponse.setAccessKey(bucket.getAccessKey());
+            bucketResponse.setSecretKey(bucket.getSecretKey());
+        }
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
         bucketResponse.setObjectStoragePool(objectStoreVO.getName());
         bucketResponse.setObjectName("bucket");
         bucketResponse.setProvider(objectStoreVO.getProviderName());
+        List<? extends BucketCredentialKey> keys = _bucketApiService.listBucketKeys(bucket.getId());
+        if (keys == null) {
+            bucketResponse.setCredentialScope(BucketCredential.SCOPE_ACCOUNT);
+            // whether this bucket could be given its own credential, so callers and the UI can
+            // tell apart "not migrated yet" from "the account is ready and this bucket is not".
+            // Only asked for buckets still on the account credential, and an account with no
+            // record of being set up answers from the database without calling the gateway.
+            ObjectStoreEntity objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+            boolean accountReady = objectStore.accountSupportsBucketCredentials(bucket.getAccountId());
+            bucketResponse.setAccountCredentialScope(accountReady ? BucketCredential.SCOPE_BUCKET : BucketCredential.SCOPE_ACCOUNT);
+        } else {
+            bucketResponse.setCredentialScope(BucketCredential.SCOPE_BUCKET);
+            List<BucketKeyResponse> keyResponses = new ArrayList<>();
+            for (BucketCredentialKey key : keys) {
+                keyResponses.add(createBucketKeyResponse(key));
+            }
+            bucketResponse.setKeys(keyResponses);
+            bucketResponse.setAccountCredentialScope(BucketCredential.SCOPE_BUCKET);
+        }
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public BucketKeyResponse createBucketKeyResponse(BucketCredentialKey key) {
+        BucketKeyResponse response = new BucketKeyResponse();
+        response.setId(key.getUuid());
+        response.setKeySlot(key.getKeySlot());
+        response.setAccessKey(key.getAccessKey());
+        response.setSecretKey(key.getSecretKey());
+        response.setState(key.getState().toString());
+        response.setCreated(key.getCreated());
+        response.setLastUsed(key.getLastUsed());
+        return response;
     }
 
     @Override

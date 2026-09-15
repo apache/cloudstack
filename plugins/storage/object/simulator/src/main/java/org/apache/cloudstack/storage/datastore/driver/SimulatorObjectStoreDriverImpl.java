@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.agent.api.to.BucketCredentialTO;
+import com.cloud.agent.api.to.BucketKeyTO;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.storage.object.Bucket;
@@ -32,9 +34,12 @@ import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
@@ -134,5 +139,53 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     @Override
     public Map<String, Long> getAllBucketsUsage(long storeId) {
         return new HashMap<String, Long>();
+    }
+
+    // Per-bucket credentials: stateless fakes that hand out fresh key material so the
+    // service layer's slot bookkeeping can be exercised without a real backend.
+
+    @Override
+    public boolean supportsBucketCredentials(long storeId) {
+        return true;
+    }
+
+    @Override
+    public boolean accountSupportsBucketCredentials(long accountId, long storeId) {
+        return true;
+    }
+
+    @Override
+    public boolean migrateAccountForBucketCredentials(long accountId, long storeId) {
+        return true;
+    }
+
+    @Override
+    public BucketCredentialTO createBucketCredential(BucketTO bucket, long storeId) {
+        return new BucketCredentialTO(bucket.getUuid(), Collections.singletonList(generateKey()));
+    }
+
+    @Override
+    public BucketKeyTO createBucketCredentialKey(BucketTO bucket, long storeId, Set<String> knownAccessKeys) {
+        return generateKey();
+    }
+
+    @Override
+    public boolean removeBucketCredentialKey(BucketTO bucket, long storeId, String accessKey) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteBucketCredential(BucketTO bucket, long storeId) {
+        return true;
+    }
+
+    @Override
+    public BucketKeyTO rotateAccountKey(long accountId, long storeId) {
+        return generateKey();
+    }
+
+    private static BucketKeyTO generateKey() {
+        return new BucketKeyTO("AK" + UUID.randomUUID().toString().replace("-", "").substring(0, 18).toUpperCase(),
+                UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "").substring(0, 8));
     }
 }
