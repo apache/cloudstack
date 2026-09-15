@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.object;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -50,6 +51,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.configuration.Resource;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.storage.BucketVO;
@@ -258,5 +260,53 @@ public class BucketApiServiceImplTest {
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCount(ACCOUNT_ID, Resource.ResourceType.object_storage,
                         (bucketQuota - cmdQuota) * Resource.ResourceType.bytesToGiB);
+    }
+
+    @Test
+    public void testAllocBucketNegativeQuotaRejected() throws ResourceAllocationException {
+        String bucketName = "bucket1";
+        Long poolId = 2L;
+        int quota = -1;
+
+        CreateBucketCmd cmd = Mockito.mock(CreateBucketCmd.class);
+        Mockito.when(cmd.getBucketName()).thenReturn(bucketName);
+        Mockito.lenient().when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+        Mockito.lenient().when(cmd.getObjectStoragePoolId()).thenReturn(poolId);
+        Mockito.when(cmd.getQuota()).thenReturn(quota);
+
+        assertThrows(InvalidParameterValueException.class, () -> bucketApiService.allocBucket(cmd));
+
+        // Verify no user provisioning or resource reservation occurred
+        Mockito.verifyNoInteractions(dataStoreMgr);
+    }
+
+    @Test
+    public void testUpdateBucketNegativeQuotaRejected() {
+        Long bucketId = 1L;
+        Long objectStoreId = 2L;
+        Integer bucketQuota = 2;
+        Integer cmdQuota = -1;
+        String bucketName = "bucket1";
+
+        UpdateBucketCmd cmd = Mockito.mock(UpdateBucketCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(bucketId);
+        Mockito.when(cmd.getQuota()).thenReturn(cmdQuota);
+
+        BucketVO bucket = new BucketVO(bucketName);
+        ReflectionTestUtils.setField(bucket, "quota", bucketQuota);
+        ReflectionTestUtils.setField(bucket, "accountId", ACCOUNT_ID);
+        ReflectionTestUtils.setField(bucket, "objectStoreId", objectStoreId);
+        Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+        Mockito.lenient().when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.lenient().when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+
+        assertThrows(InvalidParameterValueException.class, () -> bucketApiService.updateBucket(cmd, null));
+
+        // Verify no encryption/versioning/policy/quota side effects occurred
+        Mockito.verifyNoInteractions(objectStore);
     }
 }

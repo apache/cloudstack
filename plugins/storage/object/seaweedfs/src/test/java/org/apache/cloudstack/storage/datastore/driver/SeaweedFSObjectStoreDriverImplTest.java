@@ -359,6 +359,27 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testSetBucketQuotaZeroTolerates404() throws Exception {
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(404);
+        when(mockResponse.body()).thenReturn("not found");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        // Quota 0 (disable) tolerates 404 so bucket creation works on
+        // deployments without the SeaweedFS quota extension.
+        driver.setBucketQuota(bucketTO, TEST_STORE_ID, 0);
+    }
+
+    @Test
     public void testSetBucketQuotaRejects3xx() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
