@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.storage.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +191,7 @@ public abstract class StorageStrategy {
             logger.error("No aggregates are assigned to SVM " + svmName);
             throw new CloudRuntimeException("No aggregates are assigned to SVM " + svmName);
         }
+        List<Aggregate> eligibleAggregates = new ArrayList<>();
         for (Aggregate aggr : aggrs) {
             logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
             Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
@@ -209,12 +211,13 @@ public abstract class StorageStrategy {
                 continue;
             }
             logger.info("Selected aggregate: " + aggr.getName() + " for volume operations.");
-            this.aggregates = List.of(aggr);
+            eligibleAggregates.add(aggrResp);
         }
-        if (this.aggregates == null || this.aggregates.isEmpty()) {
+        if (eligibleAggregates.isEmpty()) {
             logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
             throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume creation.");
         }
+        this.aggregates = eligibleAggregates;
     }
 
     // Common methods like create/delete etc., should be here
@@ -528,7 +531,10 @@ public abstract class StorageStrategy {
             IpInterface fallbackInterface = null;
 
             for (IpInterface iface : response.getRecords()) {
-                if (!Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
+                if (iface == null || !Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
+                    continue;
+                }
+                if (iface.getIp() == null || iface.getIp().getAddress() == null) {
                     continue;
                 }
                 if (!isIPv4Address(iface.getIp().getAddress())) {
