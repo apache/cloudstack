@@ -859,6 +859,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      * or {@code null} if not configured. When set, {@link #getAllBucketsUsage}
      * scrapes per-bucket sizes from this endpoint instead of listing every
      * object via S3 ListObjectsV2.
+     *
+     * The URL must point at a SeaweedFS S3 server's Prometheus exporter (the
+     * address configured with {@code -metricsPort}), not at a Prometheus
+     * server. See
+     * {@link SeaweedFSObjectStoreUtil#parseBucketUsageFromMetrics}.
      */
     protected String getMetricsUrl(long storeId) {
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);

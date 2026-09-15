@@ -510,11 +510,18 @@ public class SeaweedFSObjectStoreUtil {
      *
      * <p>This is a single HTTP GET that returns all bucket sizes in O(buckets)
      * time, replacing the O(total objects) {@code ListObjectsV2} scan used as a
-     * fallback. The operator configures {@code metricsUrl} as a store detail
-     * pointing at the SeaweedFS S3 server's metrics port (or a Prometheus
-     * server that scrapes it).
+     * fallback.
      *
-     * @param metricsUrl  the base URL of the Prometheus metrics endpoint
+     * <p>{@code metricsUrl} must point at a SeaweedFS S3 server's Prometheus
+     * exporter (the address configured with {@code -metricsPort}), NOT at a
+     * Prometheus server. A Prometheus server's own {@code /metrics} endpoint
+     * exposes its internal metrics, not the scraped SeaweedFS series, which
+     * would silently report zero for every bucket. The response is validated
+     * to contain the {@link #METRIC_BUCKET_SIZE_BYTES} metric family so a
+     * misconfigured URL raises a scrape failure and the caller falls back to
+     * the S3 listing.
+     *
+     * @param metricsUrl  the base URL of the SeaweedFS Prometheus exporter
      * @param bucketNames the set of bucket names CloudStack manages (used to
      *                    filter the scraped metrics; buckets not in this set
      *                    are ignored)
@@ -523,7 +530,10 @@ public class SeaweedFSObjectStoreUtil {
      *         {@code bucketNames} is present; buckets not found in the
      *         metrics response are set to 0 so stale sizes from a previous
      *         scan are overwritten.
-     * @throws CloudRuntimeException on any HTTP or parse failure
+     * @throws CloudRuntimeException on any HTTP failure, if the response does
+     *         not contain the expected metric family, or if a sample value
+     *         cannot be parsed. All failures cause the caller to fall back to
+     *         the S3 listing rather than reporting incorrect (zero) usage.
      */
     public static java.util.Map<String, Long> parseBucketUsageFromMetrics(String metricsUrl,
             java.util.Set<String> bucketNames, java.net.http.HttpClient httpClient) {
@@ -545,9 +555,19 @@ public class SeaweedFSObjectStoreUtil {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new CloudRuntimeException("Prometheus metrics scrape failed with status " + response.statusCode());
             }
+            String body = response.body();
+            // Verify the response is a SeaweedFS S3 exporter rather than a
+            // Prometheus server (whose /metrics exposes its own internals).
+            // Without this check a misconfigured URL returns HTTP 200 with no
+            // bucket samples and every bucket would be reported as zero.
+            if (!body.contains(METRIC_BUCKET_SIZE_BYTES)) {
+                throw new CloudRuntimeException("Prometheus metrics response from " + metricsUrl
+                        + " does not contain the " + METRIC_BUCKET_SIZE_BYTES
+                        + " metric family; metricsUrl must point at a SeaweedFS S3 server's metrics port");
+            }
             // Parse Prometheus text exposition format lines like:
             //   SeaweedFS_s3_bucket_size_bytes{bucket="mybucket"} 12345678
-            for (String line : response.body().split("\n")) {
+            for (String line : body.split("\n")) {
                 if (!line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
                     continue;
                 }
@@ -567,11 +587,22 @@ public class SeaweedFSObjectStoreUtil {
                 if (valueStart < 0) {
                     continue;
                 }
+                String rawValue = line.substring(valueStart + 1).trim();
+                // Prometheus gauge values are floating point and may use
+                // scientific notation (e.g. 1.2345678e+07). Parse as double
+                // and round, and treat an unparseable value as a scrape
+                // failure so the caller falls back to the S3 listing rather
+                // than reporting this bucket as zero.
                 try {
-                    long size = Long.parseLong(line.substring(valueStart + 1).trim());
-                    result.put(bucket, size);
-                } catch (NumberFormatException ignored) {
-                    // Skip unparseable metric values
+                    double value = Double.parseDouble(rawValue);
+                    if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+                        throw new CloudRuntimeException("Invalid " + METRIC_BUCKET_SIZE_BYTES
+                                + " value for bucket " + bucket + ": " + rawValue);
+                    }
+                    result.put(bucket, Math.round(value));
+                } catch (NumberFormatException e) {
+                    throw new CloudRuntimeException("Unparseable " + METRIC_BUCKET_SIZE_BYTES
+                            + " value for bucket " + bucket + ": " + rawValue, e);
                 }
             }
             return result;
