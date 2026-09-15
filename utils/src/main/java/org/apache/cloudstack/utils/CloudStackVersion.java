@@ -75,7 +75,9 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      *     <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;security release&gt;</code> (for versions &gt;= 24.0.0)</li>
      * </ul>
      *
-     * Legacy patch-based formats remain supported for backward compatibility.
+     * Legacy patch-based formats remain supported for backward compatibility, e.g. <code>4.23.0.1-SNAPSHOT</code>,
+     * but only below major version 24: a 4-position value whose major release is at or above 24, e.g.
+     * <code>24.0.0.1</code>, is rejected.
      *
      * If the string contains a suffix that begins with a "-" character, then the "-" and all characters following it
      * will be dropped.
@@ -208,11 +210,24 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     public static String trimRouterVersion(String version) {
         final String[] tokens = version.split(" ");
 
-        if (tokens.length >= 3 && FULL_VERSION_FORMAT.matcher(tokens[2]).matches()) {
+        if (tokens.length >= 3 && FULL_VERSION_FORMAT.matcher(tokens[2]).matches() && isParseableVersion(tokens[2])) {
             return tokens[2];
         }
 
         return "0";
+    }
+
+    /**
+     * Whether {@link #parse(String)} would accept the given value, following the same cutover rule that
+     * rejects a 4-position <code>major.minor.patch.security</code> value once the major release reaches 24.
+     */
+    private static boolean isParseableVersion(final String value) {
+        try {
+            parse(value);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private static ImmutableList<Integer> normalizeVersionValues(final ImmutableList<Integer> values) {

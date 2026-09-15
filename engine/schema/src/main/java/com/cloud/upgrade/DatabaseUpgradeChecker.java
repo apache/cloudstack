@@ -515,8 +515,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             String csVersion = parseSystemVmMetadata();
             final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
             final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
-            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.usesNewVersioning() ? sysVmVersion.getSecurityRelease() : sysVmVersion.getPatchRelease());
+            updateSystemVmTemplateVersion(sysVmVersion);
 
             LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
 
@@ -540,6 +539,18 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Sets the system VM template major/tiny version used to look up the matching system VM template,
+     * from the version parsed out of the system VM template metadata file. Below the versioning cutover
+     * (major &lt; 24) the tiny version is the legacy patch release; from the cutover onwards it is the
+     * security release, since the patch position is dropped in that scheme.
+     */
+    @VisibleForTesting
+    protected static void updateSystemVmTemplateVersion(CloudStackVersion sysVmVersion) {
+        SystemVmTemplateRegistration.CS_MAJOR_VERSION = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
+        SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.usesNewVersioning() ? sysVmVersion.getSecurityRelease() : sysVmVersion.getPatchRelease());
     }
 
     /**
