@@ -103,11 +103,14 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     /**
-     * Get the SeaweedFS IAM user name for the given CloudStack account.
-     * Uses the account UUID prefixed with "acs-" for namespacing.
+     * Get the SeaweedFS IAM user name for the given CloudStack account and
+     * store. The store ID is included so that two CloudStack pools pointing
+     * at the same SeaweedFS IAM service do not collide on the same
+     * {@code acs-<uuid>} user and overwrite each other's policy and access
+     * keys.
      */
-    protected String getUserNameForAccount(Account account) {
-        return String.format("%s-%s", ACS_PREFIX, account.getUuid());
+    protected String getUserNameForAccount(Account account, long storeId) {
+        return String.format("%s-%d-%s", ACS_PREFIX, storeId, account.getUuid());
     }
 
     /**
@@ -131,7 +134,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             logger.error("Account {} not found", accountId);
             return false;
         }
-        String userName = getUserNameForAccount(account);
+        String userName = getUserNameForAccount(account, storeId);
         AmazonIdentityManagement iamClient = getIAMClient(storeId);
 
         // Create the IAM user if it doesn't already exist
@@ -216,7 +219,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         if (account == null) {
             return;
         }
-        String userName = getUserNameForAccount(account);
+        String userName = getUserNameForAccount(account, storeId);
         List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
         List<String> bucketNames = new ArrayList<>();
         for (BucketVO bvo : buckets) {
