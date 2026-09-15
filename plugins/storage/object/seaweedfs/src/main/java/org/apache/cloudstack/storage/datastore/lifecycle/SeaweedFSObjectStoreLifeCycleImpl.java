@@ -88,12 +88,16 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String secretKey = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_SECRET_KEY);
         String s3Url = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
         String iamUrl = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        String metricsUrl = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL);
 
         // Track whether the endpoints were explicitly supplied. Only
         // explicitly-supplied values are persisted in the details map; the
         // driver falls back to ObjectStoreVO.url / getS3Url() when the
         // details are absent, so updateObjectStore can change the store URL
         // without a stale persisted s3Url/iamUrl overriding it.
+        // StorageManagerImpl.updateObjectStore rewrites the stored
+        // BucketVO.bucketURL values on a URL change so the object-store
+        // browser does not keep targeting the old endpoint.
         boolean s3UrlExplicit = StringUtils.isNotBlank(s3Url);
         boolean iamUrlExplicit = StringUtils.isNotBlank(iamUrl);
 
@@ -129,6 +133,14 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, iamUrl);
         } else {
             details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        }
+        // Preserve the optional Prometheus metrics endpoint so getMetricsUrl()
+        // can find it; without this the scalable usage-reporting path is never
+        // used and every poll falls back to the ListObjectsV2 scan.
+        if (StringUtils.isNotBlank(metricsUrl)) {
+            details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL, metricsUrl);
+        } else {
+            details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL);
         }
 
         // Validate S3 and IAM Service URLs.
