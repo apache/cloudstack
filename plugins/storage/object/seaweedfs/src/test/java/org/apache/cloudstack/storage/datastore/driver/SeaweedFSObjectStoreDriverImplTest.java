@@ -778,10 +778,10 @@ public class SeaweedFSObjectStoreDriverImplTest {
         when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
 
         // Mock the HTTP client to return a Prometheus text exposition response
-        String metricsBody = "# HELP seaweed_s3_bucket_size_bytes Current size\n" +
-                "seaweed_s3_bucket_size_bytes{bucket=\"b1\"} 12345678\n" +
-                "seaweed_s3_bucket_size_bytes{bucket=\"b2\"} 87654321\n" +
-                "seaweed_s3_bucket_size_bytes{bucket=\"other\"} 999\n";
+        String metricsBody = "# HELP SeaweedFS_s3_bucket_size_bytes Current size\n" +
+                "SeaweedFS_s3_bucket_size_bytes{bucket=\"b1\"} 12345678\n" +
+                "SeaweedFS_s3_bucket_size_bytes{bucket=\"b2\"} 87654321\n" +
+                "SeaweedFS_s3_bucket_size_bytes{bucket=\"other\"} 999\n";
         HttpClient mockHttpClient = mock(HttpClient.class);
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
