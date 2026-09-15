@@ -129,6 +129,9 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             logger.error("Invalid Bucket Name: " +cmd.getBucketName(), e);
             throw new InvalidParameterValueException("Invalid Bucket Name: "+e.getMessage());
         }
+        if (cmd.getQuota() != null && cmd.getQuota() < 0) {
+            throw new InvalidParameterValueException("Bucket quota cannot be negative: " + cmd.getQuota());
+        }
         //ToDo check bucket exists
         long ownerId = cmd.getEntityOwnerId();
         Account owner = _accountMgr.getActiveAccountById(ownerId);
@@ -311,6 +314,9 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         Integer quota = cmd.getQuota();
         if (quota == null) {
             return;
+        }
+        if (quota < 0) {
+            throw new InvalidParameterValueException("Bucket quota cannot be negative: " + quota);
         }
 
         int quotaDelta = quota - bucket.getQuota();
