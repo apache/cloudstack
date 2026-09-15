@@ -415,7 +415,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             AmazonIdentityManagement iamClient = getIAMClient(storeId);
             updateAccountIAMPolicy(iamClient, storeId, accountId, null);
 
-            return bucket;
+            // Return the updated BucketVO (not the stale input bucket) so
+            // BucketApiServiceImpl.createBucket does not overwrite the
+            // persisted credentials with the stale values.
+            return bucketVO;
         } catch (Exception e) {
             logger.error("Post-create bucket record update failed for {}; cleaning up remote bucket", bucketName, e);
             try {
