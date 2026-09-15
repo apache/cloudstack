@@ -534,13 +534,17 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     // ---- Client builders ----
 
     protected String getS3Url(long storeId) {
-        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        String s3Url = storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
-        if (s3Url == null || s3Url.isEmpty()) {
-            ObjectStoreVO store = _storeDao.findById(storeId);
-            s3Url = store.getUrl();
+        // Prefer the current store URL (ObjectStoreVO.url) over the persisted
+        // s3Url detail. initialize() persists a resolved s3Url detail, but if
+        // an administrator later updates the store URL via updateObjectStore,
+        // the detail becomes stale. Using the current store URL keeps bucket
+        // operations pointed at the live endpoint.
+        ObjectStoreVO store = _storeDao.findById(storeId);
+        if (store != null && store.getUrl() != null && ! store.getUrl().isEmpty()) {
+            return store.getUrl();
         }
-        return s3Url;
+        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
+        return storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
     }
 
     protected String getIAMUrl(long storeId) {
