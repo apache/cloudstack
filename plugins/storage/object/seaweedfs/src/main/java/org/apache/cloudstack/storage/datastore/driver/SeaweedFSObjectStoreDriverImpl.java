@@ -191,8 +191,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         // Attach a scoped IAM policy that allows access only to this
         // account's own buckets (the tenant boundary). Refreshed whenever
-        // buckets are created or deleted.
-        updateAccountIAMPolicy(iamClient, storeId, accountId, null);
+        // buckets are created or deleted. Use the lock-free variant since
+        // createUser already holds the IAM lock.
+        updateAccountIAMPolicyLocked(iamClient, storeId, accountId, null);
 
         // Reuse the stored access key only if both the access key id and the
         // secret key are present and the key is still Active in IAM; otherwise
@@ -259,6 +260,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      * being deleted). This is the tenant boundary: each account's IAM
      * credentials can only operate on that account's own buckets.
      *
+     * Acquires the per-store/account IAM lock. Callers that already hold the
+     * lock (e.g. createUser, createBucket post-create) should call
+     * {@link #updateAccountIAMPolicyLocked} instead to avoid re-entrant lock
+     * acquisition warnings from GlobalLock.
+     *
      * @param iamClient the IAM client
      * @param storeId the object store
      * @param accountId the CloudStack account
@@ -271,26 +277,36 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
         }
         try {
-            Account account = _accountDao.findById(accountId);
-            if (account == null) {
-                return;
-            }
-            String userName = getUserNameForAccount(account, storeId);
-            List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
-            List<String> bucketNames = new ArrayList<>();
-            for (BucketVO bvo : buckets) {
-                if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
-                    continue;
-                }
-                bucketNames.add(bvo.getName());
-            }
-            String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
-            iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
-                    SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
+            updateAccountIAMPolicyLocked(iamClient, storeId, accountId, excludeBucket);
         } finally {
             lock.unlock();
             lock.releaseRef();
         }
+    }
+
+    /**
+     * Lock-free variant of {@link #updateAccountIAMPolicy} for callers that
+     * already hold the per-store/account IAM lock. Performs the policy refresh
+     * without reacquiring the lock, avoiding the GlobalLock re-entrant
+     * acquisition warning.
+     */
+    protected void updateAccountIAMPolicyLocked(AmazonIdentityManagement iamClient, long storeId, long accountId, String excludeBucket) {
+        Account account = _accountDao.findById(accountId);
+        if (account == null) {
+            return;
+        }
+        String userName = getUserNameForAccount(account, storeId);
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
+        List<String> bucketNames = new ArrayList<>();
+        for (BucketVO bvo : buckets) {
+            if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
+                continue;
+            }
+            bucketNames.add(bvo.getName());
+        }
+        String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
+        iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
+                SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
     }
 
     /**
@@ -411,9 +427,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             bucketVO.setBucketURL(s3Url + "/" + bucketName);
             _bucketDao.update(bucket.getId(), bucketVO);
 
-            // Refresh the account's IAM policy to include the new bucket
+            // Refresh the account's IAM policy to include the new bucket.
+            // Use the lock-free variant since createBucket already holds the
+            // IAM lock for the post-create section.
             AmazonIdentityManagement iamClient = getIAMClient(storeId);
-            updateAccountIAMPolicy(iamClient, storeId, accountId, null);
+            updateAccountIAMPolicyLocked(iamClient, storeId, accountId, null);
 
             // Return the updated BucketVO (not the stale input bucket) so
             // BucketApiServiceImpl.createBucket does not overwrite the
@@ -421,24 +439,29 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             return bucketVO;
         } catch (Exception e) {
             logger.error("Post-create bucket record update failed for {}; cleaning up remote bucket", bucketName, e);
+            CloudRuntimeException primary = new CloudRuntimeException(e);
             try {
                 s3client.deleteBucket(bucketName);
                 logger.info("Cleanup of bucket {} succeeded", bucketName);
             } catch (AmazonClientException cleanupEx) {
                 logger.error("Cleanup of bucket {} also failed", bucketName, cleanupEx);
+                primary.addSuppressed(cleanupEx);
             }
             // Revoke the IAM policy grant for the new bucket so the account's
             // credentials cannot access a bucket that no longer exists. If the
             // policy PUT succeeded before the DB update failed, the grant
             // would otherwise persist and could be reused if another account
-            // later creates the same bucket name.
+            // later creates the same bucket name. Use the lock-free variant
+            // since createBucket already holds the IAM lock. Propagate
+            // failures as suppressed exceptions so they are not silently lost.
             try {
                 AmazonIdentityManagement iamClient = getIAMClient(storeId);
-                updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
+                updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
             } catch (Exception policyEx) {
                 logger.warn("Failed to revoke IAM policy for bucket {} after cleanup: {}", bucketName, policyEx.getMessage());
+                primary.addSuppressed(policyEx);
             }
-            throw new CloudRuntimeException(e);
+            throw primary;
         } finally {
             iamLock.unlock();
             iamLock.releaseRef();
@@ -493,42 +516,46 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
 
-        // Delete the S3 bucket first. If this fails (non-empty bucket,
-        // transient error), the IAM policy is still intact so the user
-        // can empty the bucket and retry.
-        //
-        // If the bucket is already gone (e.g. from a previous partial
-        // failure where the S3 delete succeeded but the IAM policy refresh
-        // failed), skip the S3 delete so the retry is idempotent.
+        // Acquire the per-store/account IAM lock so the S3 delete and the
+        // subsequent policy refresh are atomic with respect to concurrent
+        // createUser/createBucket operations. Without the lock, a concurrent
+        // policy rebuild could re-add the deleted bucket ARN between the
+        // excludeBucket refresh and BucketApiServiceImpl's row removal.
+        GlobalLock iamLock = acquireIamLock(storeId, accountId);
+        if (iamLock == null) {
+            throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
+        }
         try {
-            if (s3client.doesBucketExistV2(bucketName)) {
-                s3client.deleteBucket(bucketName);
+            // Delete the S3 bucket first. If this fails (non-empty bucket,
+            // transient error), the IAM policy is still intact so the user
+            // can empty the bucket and retry.
+            //
+            // If the bucket is already gone (e.g. from a previous partial
+            // failure where the S3 delete succeeded but the IAM policy refresh
+            // failed), skip the S3 delete so the retry is idempotent.
+            try {
+                if (s3client.doesBucketExistV2(bucketName)) {
+                    s3client.deleteBucket(bucketName);
+                }
+            } catch (AmazonClientException e) {
+                throw new CloudRuntimeException(e);
             }
-        } catch (AmazonClientException e) {
-            throw new CloudRuntimeException(e);
-        }
 
-        // Remove the BucketVO row before refreshing the IAM policy so a
-        // concurrent createUser/createBucket policy rebuild (which reads the
-        // bucket list from the DB) cannot re-add the deleted bucket ARN
-        // between this exclusion and BucketApiServiceImpl's row removal.
-        // BucketApiServiceImpl's subsequent _bucketDao.remove is idempotent.
-        for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId)) {
-            if (bucketName.equals(bvo.getName())) {
-                _bucketDao.remove(bvo.getId());
-                break;
-            }
+            // Refresh the account's IAM policy to drop the deleted bucket.
+            // Bucket names are reusable, so a stale grant would let the old
+            // account access a new tenant's bucket with the same name. This
+            // must succeed; if it fails, the caller sees the exception and
+            // can retry. The BucketVO row is left intact so a retry can find
+            // the bucket; BucketApiServiceImpl removes the row only after
+            // this method returns successfully. The lock-free variant is used
+            // because deleteBucket already holds the IAM lock.
+            AmazonIdentityManagement iamClient = getIAMClient(storeId);
+            updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
+            return true;
+        } finally {
+            iamLock.unlock();
+            iamLock.releaseRef();
         }
-
-        // Refresh the account's IAM policy to drop the deleted bucket.
-        // Bucket names are reusable, so a stale grant would let the old
-        // account access a new tenant's bucket with the same name. This
-        // must succeed; if it fails, the caller sees the exception and can
-        // retry (the policy refresh is idempotent because the bucket is
-        // already gone from S3 and the DB, so excludeBucket is a no-op).
-        AmazonIdentityManagement iamClient = getIAMClient(storeId);
-        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
-        return true;
     }
 
     @Override
