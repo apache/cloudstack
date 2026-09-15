@@ -421,4 +421,28 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades[2] instanceof Upgrade42040to42100);
         assertEquals(currentVersion.toString(), upgrades[2].getUpgradedVersion());
     }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionBelowCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("4.22.1.0"));
+
+        assertEquals("4.22", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("1", SystemVmTemplateRegistration.CS_TINY_VERSION);
+    }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionAtCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("24.0.1"));
+
+        assertEquals("24.0", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("1", SystemVmTemplateRegistration.CS_TINY_VERSION);
+    }
+
+    @Test
+    public void testUpdateSystemVmTemplateVersionAfterCutover() {
+        DatabaseUpgradeChecker.updateSystemVmTemplateVersion(CloudStackVersion.parse("25.3.2"));
+
+        assertEquals("25.3", SystemVmTemplateRegistration.CS_MAJOR_VERSION);
+        assertEquals("2", SystemVmTemplateRegistration.CS_TINY_VERSION);
+    }
 }

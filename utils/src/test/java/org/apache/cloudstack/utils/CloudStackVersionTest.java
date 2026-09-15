@@ -231,7 +231,9 @@ public final class CloudStackVersionTest {
         "Cloudstack Release 1.2.3.4-brnading-1519453362 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-brnading-1519453362",
         "Cloudstack Release 1.2 Mon Jan  1 10:10:10 UTC 2018, 0",
         "Cloudstack Release 1.2-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 0",
-        "Cloud stack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 0"
+        "Cloud stack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 0",
+        "Cloudstack Release 24.0.0 Mon Jan  1 10:10:10 UTC 2018, 24.0.0",
+        "Cloudstack Release 24.0.0.1 Mon Jan  1 10:10:10 UTC 2018, 0"
     })
     public void testTrimRouterVersion(final String value, final String expected) {
 
