@@ -97,6 +97,18 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     private static final String ACS_PREFIX = "acs";
 
+    /**
+     * Lock object map for serializing IAM provisioning and policy refreshes
+     * per store+account. Prevents concurrent createUser calls from both
+     * rotating credentials and concurrent policy refreshes from building
+     * different snapshots.
+     */
+    private static final java.util.Map<String, Object> IAM_LOCKS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static Object getIamLock(long storeId, long accountId) {
+        return IAM_LOCKS.computeIfAbsent(storeId + ":" + accountId, k -> new Object());
+    }
+
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         return null;
@@ -137,6 +149,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String userName = getUserNameForAccount(account, storeId);
         AmazonIdentityManagement iamClient = getIAMClient(storeId);
 
+        // Serialize per store+account so two concurrent bucket requests do
+        // not both rotate credentials and leave bucket rows with mismatched
+        // key pairs.
+        synchronized (getIamLock(storeId, accountId)) {
+
         // Create the IAM user if it doesn't already exist
         try {
             iamClient.createUser(new CreateUserRequest(userName));
@@ -173,18 +190,22 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 new CreateAccessKeyRequest().withUserName(userName));
         AccessKey key = result.getAccessKey();
 
+        // Update existing bucket records for this account/store with the new
+        // credentials BEFORE persisting the new key in account details. If a
+        // bucket update fails, the stored key remains the old one and a retry
+        // will re-enter the replacement path; if we persisted first, a retry
+        // would see the new stored key and return without repairing the
+        // remaining buckets.
+        updateAccountBucketCredentials(storeId, accountId, key);
+
         // Persist the credentials in the account details (namespaced by storeId)
         details.put(accessKeyDetailKey, key.getAccessKeyId());
         details.put(secretKeyDetailKey, key.getSecretAccessKey());
         _accountDetailsDao.persist(accountId, details);
 
-        // Update existing bucket records for this account/store with the new
-        // credentials so previously created buckets don't keep handing out
-        // the old (now invalid) key pair.
-        updateAccountBucketCredentials(storeId, accountId, key);
-
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;
+        } // synchronized
     }
 
     /**
@@ -215,22 +236,24 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      *                      or null to include all of the account's buckets
      */
     protected void updateAccountIAMPolicy(AmazonIdentityManagement iamClient, long storeId, long accountId, String excludeBucket) {
-        Account account = _accountDao.findById(accountId);
-        if (account == null) {
-            return;
-        }
-        String userName = getUserNameForAccount(account, storeId);
-        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
-        List<String> bucketNames = new ArrayList<>();
-        for (BucketVO bvo : buckets) {
-            if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
-                continue;
+        synchronized (getIamLock(storeId, accountId)) {
+            Account account = _accountDao.findById(accountId);
+            if (account == null) {
+                return;
             }
-            bucketNames.add(bvo.getName());
+            String userName = getUserNameForAccount(account, storeId);
+            List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
+            List<String> bucketNames = new ArrayList<>();
+            for (BucketVO bvo : buckets) {
+                if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
+                    continue;
+                }
+                bucketNames.add(bvo.getName());
+            }
+            String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
+            iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
+                    SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
         }
-        String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
-        iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
-                SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
     }
 
     /**
@@ -315,7 +338,8 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.keyAccessKey(storeId));
             String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.keySecretKey(storeId));
             if (accessKey == null || secretKey == null) {
-                logger.warn("No IAM credentials found for account {}. Bucket will be created without per-account credentials.", accountId);
+                throw new CloudRuntimeException("No IAM credentials found for account " + accountId
+                        + " on store " + storeId + ". Run createUser before creating a bucket.");
             }
 
             String s3Url = getS3Url(storeId);
@@ -376,19 +400,14 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
-        // Best-effort: refresh the account's IAM policy to drop the deleted
-        // bucket. The S3 deletion has already succeeded, so a policy refresh
-        // failure must not cause deleteBucket to throw — that would leave
-        // BucketApiServiceImpl with a BucketVO for a bucket that no longer
-        // exists remotely. The stale policy entry is harmless (it grants
-        // access to a non-existent bucket) and will be corrected on the
-        // next create/delete or manually by an operator.
-        try {
-            AmazonIdentityManagement iamClient = getIAMClient(storeId);
-            updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
-        } catch (Exception e) {
-            logger.warn("Failed to refresh IAM policy after deleting bucket {}: {}", bucketName, e.getMessage());
-        }
+        // Refresh the account's IAM policy to drop the deleted bucket. This
+        // must succeed: bucket names are reusable, so a stale grant would
+        // let the old account access a new tenant's bucket with the same
+        // name. If the policy refresh fails, throw so the caller knows the
+        // remote bucket is gone but the IAM policy still grants access to
+        // the (now deleted) bucket name — an operator must reconcile.
+        AmazonIdentityManagement iamClient = getIAMClient(storeId);
+        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
     }
 
@@ -594,10 +613,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 } while (result.isTruncated());
                 bucketUsage.put(bucket.getName(), size);
             } catch (AmazonClientException e) {
-                // Omit the bucket rather than reporting 0 — returning 0 would
-                // cause BucketApiServiceImpl to overwrite the stored size with
-                // a false zero, erasing known usage on a transient failure.
-                logger.warn("Failed to get usage for bucket {} (omitting from result): {}", bucket.getName(), e.getMessage());
+                // Propagate the failure so BucketApiServiceImpl does not
+                // overwrite objectStoreVO.usedSize with a partial total.
+                // Returning only the successful buckets would under-report
+                // store usage and trigger false capacity alerts.
+                throw new CloudRuntimeException("Failed to get usage for bucket " + bucket.getName(), e);
             }
         }
         return bucketUsage;
