@@ -516,8 +516,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
             final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
             SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
-            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
-            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = sysVmVersion.getMajorRelease() + "." + sysVmVersion.getMinorRelease();
             SystemVmTemplateRegistration.CS_TINY_VERSION = sysVmVersion.usesNewVersioning() ? "0" : String.valueOf(sysVmVersion.getPatchRelease());
 
             LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
