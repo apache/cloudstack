@@ -361,7 +361,11 @@ public class SeaweedFSObjectStoreDriverImplTest {
     public void testSetBucketQuotaNoS3ConfigThrows() {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
-        // No S3 URL/credentials configured — should throw with a clear message
+        // Clear store details so no S3 URL/credentials are configured.
+        // Without this, setUp() stubs valid values and the exception would
+        // come from a real network call rather than the missing-config check.
+        storeDetailsMap.clear();
+        lenient().when(objectStoreDao.findById(TEST_STORE_ID)).thenReturn(null);
         assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
     }
 
