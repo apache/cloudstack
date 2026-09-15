@@ -356,11 +356,14 @@ public class SeaweedFSObjectStoreUtil {
                 queryString = resourcePath.substring(q + 1);
             }
 
-            // Prepend the endpoint's path prefix (e.g. /object-s3) to the
-            // resource path so the SigV4 canonical URI matches the outgoing
-            // request URI. Without this, a path-prefixed endpoint behind a
-            // reverse proxy would sign /bucket but send /object-s3/bucket,
-            // causing SignatureDoesNotMatch.
+            // The AWS SDK v1 AWS4Signer already combines the endpoint path
+            // (request.getEndpoint().getPath()) with the resource path
+            // (request.getResourcePath()) via SdkHttpUtils.appendUri when
+            // building the canonical URI. Set the resource path to just the
+            // bucket/key path (e.g. /bucket) and let the signer prepend the
+            // endpoint path prefix (e.g. /object-s3). The outgoing URI must
+            // also include the endpoint path so the server sees the same path
+            // the signer canonicalized.
             String endpointPath = endpointUri.getPath();
             if (endpointPath == null) {
                 endpointPath = "";
@@ -368,13 +371,12 @@ public class SeaweedFSObjectStoreUtil {
             if (endpointPath.endsWith("/")) {
                 endpointPath = endpointPath.substring(0, endpointPath.length() - 1);
             }
-            String signedResourcePath = endpointPath + path;
 
             // Build AWS SDK v1 Request for SigV4 signing
             com.amazonaws.DefaultRequest<?> request = new com.amazonaws.DefaultRequest<>("s3");
             request.setEndpoint(endpointUri);
             request.setHttpMethod(com.amazonaws.http.HttpMethodName.valueOf(method));
-            request.setResourcePath(signedResourcePath);
+            request.setResourcePath(path);
             if (! queryString.isEmpty()) {
                 for (String pair : queryString.split("&")) {
                     if (pair.isEmpty()) {
@@ -410,7 +412,8 @@ public class SeaweedFSObjectStoreUtil {
             // so they are skipped here.
             // Build the outgoing URI preserving the endpoint path prefix (e.g.
             // https://host/object-s3) by concatenating it with the resource
-            // path. This matches the signed resource path so SigV4 verifies.
+            // path. The signer internally combines the endpoint path with the
+            // resource path to form the same canonical URI, so SigV4 verifies.
             java.net.URI fullUri = java.net.URI.create(
                     endpointUri.getScheme() + "://" + endpointUri.getRawAuthority()
                     + endpointPath + path);
@@ -479,7 +482,7 @@ public class SeaweedFSObjectStoreUtil {
      * Prometheus metric name for per-bucket logical size. SeaweedFS publishes
      * this gauge from the S3 API server's bucket-size metrics loop.
      */
-    public static final String METRIC_BUCKET_SIZE_BYTES = "seaweed_s3_bucket_size_bytes";
+    public static final String METRIC_BUCKET_SIZE_BYTES = "SeaweedFS_s3_bucket_size_bytes";
 
     /**
      * Scrape the SeaweedFS Prometheus {@code /metrics} endpoint and return a
@@ -496,14 +499,20 @@ public class SeaweedFSObjectStoreUtil {
      *                    filter the scraped metrics; buckets not in this set
      *                    are ignored)
      * @param httpClient  the HTTP client used to send the request
-     * @return a map of bucket name to size in bytes; buckets in
-     *         {@code bucketNames} that are not found in the metrics response
-     *         are omitted (the caller treats them as zero)
+     * @return a map of bucket name to size in bytes. Every bucket in
+     *         {@code bucketNames} is present; buckets not found in the
+     *         metrics response are set to 0 so stale sizes from a previous
+     *         scan are overwritten.
      * @throws CloudRuntimeException on any HTTP or parse failure
      */
     public static java.util.Map<String, Long> parseBucketUsageFromMetrics(String metricsUrl,
             java.util.Set<String> bucketNames, java.net.http.HttpClient httpClient) {
         java.util.Map<String, Long> result = new java.util.HashMap<>();
+        // Initialize all managed buckets to zero so missing samples do not
+        // leave stale sizes from a previous scan in BucketApiServiceImpl.
+        for (String name : bucketNames) {
+            result.put(name, 0L);
+        }
         try {
             java.net.URI uri = java.net.URI.create(metricsUrl + "/metrics");
             java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
@@ -517,7 +526,7 @@ public class SeaweedFSObjectStoreUtil {
                 throw new CloudRuntimeException("Prometheus metrics scrape failed with status " + response.statusCode());
             }
             // Parse Prometheus text exposition format lines like:
-            //   seaweed_s3_bucket_size_bytes{bucket="mybucket"} 12345678
+            //   SeaweedFS_s3_bucket_size_bytes{bucket="mybucket"} 12345678
             for (String line : response.body().split("\n")) {
                 if (!line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
                     continue;
