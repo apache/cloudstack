@@ -302,6 +302,13 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
                 continue;
             }
+            // Skip buckets whose remote counterpart has been deleted but whose
+            // row is still present for resource accounting. Including them
+            // would re-grant a bucket name that is now free for another account
+            // to claim.
+            if (Bucket.State.Destroyed.equals(bvo.getState())) {
+                continue;
+            }
             bucketNames.add(bvo.getName());
         }
         String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
@@ -541,31 +548,27 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 throw new CloudRuntimeException(e);
             }
 
+            // Mark the row Destroyed inside the lock. The row itself must
+            // survive so BucketApiServiceImpl.deleteCheckedBucket can still
+            // decrement the resource counts and allocated size, and so a
+            // failure in that cleanup leaves state a retry can reconcile.
+            // Marking it (rather than relying only on excludeBucket) closes the
+            // window where a concurrent createUser/createBucket for this
+            // account rebuilds the policy from the DB and re-adds this bucket's
+            // ARN: buildAccountIAMPolicy skips Destroyed rows, so the grant
+            // cannot come back on a name that is now reusable.
+            markBucketDestroyed(storeId, accountId, bucketName);
+
             // Refresh the account's IAM policy to drop the deleted bucket.
             // Bucket names are reusable, so a stale grant would let the old
             // account access a new tenant's bucket with the same name. This
-            // must succeed; if it fails, the exception propagates with the
-            // BucketVO row still intact, so BucketApiServiceImpl leaves its
-            // accounting alone and a retry can find the bucket. The lock-free
-            // variant is used because deleteBucket already holds the IAM lock.
+            // must succeed; if it fails the exception propagates and the
+            // caller can retry (the S3 delete is skipped when the bucket is
+            // already gone, and the Destroyed marker is idempotent). The
+            // lock-free variant is used because deleteBucket holds the lock.
             AmazonIdentityManagement iamClient = getIAMClient(storeId);
             updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
 
-            // Remove the BucketVO row here, inside the lock, now that the
-            // policy no longer grants this bucket. Deferring the removal to
-            // BucketApiServiceImpl (which runs after the lock is released)
-            // would let a concurrent createUser/createBucket acquire the lock,
-            // observe the still-present row, and publish a policy that re-adds
-            // this bucket ARN; the row would then be removed, leaving a stale
-            // grant on a reusable name. BucketApiServiceImpl's subsequent
-            // _bucketDao.remove is a no-op, and its resource-limit and
-            // allocated-size cleanup still runs because this returns true.
-            for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId)) {
-                if (bucketName.equals(bvo.getName())) {
-                    _bucketDao.remove(bvo.getId());
-                    break;
-                }
-            }
             return true;
         } finally {
             iamLock.unlock();
@@ -738,6 +741,24 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         boolean allowMissingExtension = !hasPositiveQuota(storeId, bucket);
         SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size,
                 getS3ExtensionHttpClient(), allowMissingExtension);
+    }
+
+    /**
+     * Mark the BucketVO for this bucket as {@link Bucket.State#Destroyed} so
+     * {@link #updateAccountIAMPolicyLocked} stops granting its ARN while the
+     * row is still present for the caller's resource accounting. Must be
+     * called while holding the store/account IAM lock.
+     */
+    protected void markBucketDestroyed(long storeId, long accountId, String bucketName) {
+        for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId)) {
+            if (bucketName.equals(bvo.getName())) {
+                if (!Bucket.State.Destroyed.equals(bvo.getState())) {
+                    bvo.setState(Bucket.State.Destroyed);
+                    _bucketDao.update(bvo.getId(), bvo);
+                }
+                return;
+            }
+        }
     }
 
     /**
