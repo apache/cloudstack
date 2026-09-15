@@ -253,10 +253,14 @@ public class SeaweedFSObjectStoreUtil {
      * @param secretKey the S3 secret key
      * @param bucketName the bucket name
      * @param sizeGiB    the quota size in GiB (0 to disable quota)
+     * @param allowMissingExtension tolerate a 404/405 for quota 0 when the
+     *        optional quota extension is not deployed (initial create only)
      * @throws CloudRuntimeException on any failure
      */
-    public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey, String bucketName, long sizeGiB) {
-        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, newS3ExtensionHttpClient());
+    public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey, String bucketName,
+                                                     long sizeGiB, boolean allowMissingExtension) {
+        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, newS3ExtensionHttpClient(),
+                allowMissingExtension);
     }
 
     /**
@@ -274,9 +278,18 @@ public class SeaweedFSObjectStoreUtil {
      * Set bucket quota via the SeaweedFS S3 extension endpoint using the
      * supplied HTTP client. The client is injected so tests can assert the
      * signed request without hitting the network.
+     *
+     * @param allowMissingExtension when true and {@code sizeGiB == 0}, a
+     *        404/405 response (indicating the optional SeaweedFS quota
+     *        extension is not deployed) is tolerated as a no-op. This is only
+     *        safe for the initial bucket create, where the bucket has no quota
+     *        to clear. It must be false when clearing an existing positive
+     *        quota, because reporting success would lower CloudStack's
+     *        accounting while SeaweedFS retains the old quota/read-only state.
      */
     public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey,
-                                                     String bucketName, long sizeGiB, java.net.http.HttpClient httpClient) {
+                                                     String bucketName, long sizeGiB, java.net.http.HttpClient httpClient,
+                                                     boolean allowMissingExtension) {
         if (sizeGiB < 0) {
             // Only zero disables a quota; a negative value would corrupt
             // resource accounting (BucketApiServiceImpl persists the requested
@@ -292,18 +305,25 @@ public class SeaweedFSObjectStoreUtil {
         try {
             executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body, httpClient);
         } catch (CloudRuntimeException e) {
-            // A quota of 0 disables the quota, which is the default state for
-            // a newly created bucket. If the SeaweedFS quota extension is not
-            // available (404/405), tolerate the failure for quota 0 so basic
-            // bucket CRUD works on deployments without the extension. A
-            // positive quota still requires the extension and must fail.
+            // CreateBucketCmd requires a quota parameter and
+            // BucketApiServiceImpl.createBucket invokes setQuota for every
+            // create, including quota 0. On deployments without the optional
+            // quota extension that call returns 404/405 and would abort the
+            // create. Tolerate it only for the initial create (quota 0 with
+            // allowMissingExtension), where there is no existing quota to
+            // clear, so basic bucket CRUD works without the extension.
+            //
+            // A quota clear on an existing positive quota must NOT be
+            // swallowed: reporting success would lower CloudStack's DB and
+            // resource accounting while SeaweedFS retains the old quota and
+            // read-only state, leaving the two systems inconsistent.
             //
             // Distinguish "extension not available" from "bucket not found":
             // SeaweedFS returns a standard S3 NoSuchBucket error (with
             // <Code>NoSuchBucket</Code> in the body) when the bucket does not
             // exist, which must NOT be swallowed — it indicates CloudStack and
             // S3 are out of sync.
-            if (sizeGiB == 0 && e.getMessage() != null
+            if (allowMissingExtension && sizeGiB == 0 && e.getMessage() != null
                     && (e.getMessage().contains("status 404") || e.getMessage().contains("status 405"))
                     && !e.getMessage().contains("NoSuchBucket")) {
                 org.apache.logging.log4j.LogManager.getLogger(SeaweedFSObjectStoreUtil.class)

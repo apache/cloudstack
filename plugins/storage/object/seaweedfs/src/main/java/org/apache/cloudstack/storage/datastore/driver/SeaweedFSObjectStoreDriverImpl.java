@@ -715,7 +715,29 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException("SeaweedFS S3 URL and credentials are required to set bucket quota. " +
                     "Configure 's3Url', 'accesskey', and 'secretkey' in the object store details.");
         }
-        SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size, getS3ExtensionHttpClient());
+        // A 404/405 from the optional quota extension is only tolerable when
+        // setting quota 0 on a bucket that has no quota to clear (the initial
+        // create path, where CreateBucketCmd always calls setQuota). If the
+        // bucket already has a positive quota, a clear must fail loudly so
+        // CloudStack accounting does not diverge from SeaweedFS state.
+        boolean allowMissingExtension = !hasPositiveQuota(storeId, bucket);
+        SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size,
+                getS3ExtensionHttpClient(), allowMissingExtension);
+    }
+
+    /**
+     * Returns true when the persisted BucketVO for this bucket already has a
+     * positive quota, meaning a subsequent quota 0 request is a clear of an
+     * existing quota rather than the initial no-quota create.
+     */
+    protected boolean hasPositiveQuota(long storeId, BucketTO bucket) {
+        for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, bucket.getAccountId())) {
+            if (bucket.getName().equals(bvo.getName())) {
+                Integer quota = bvo.getQuota();
+                return quota != null && quota > 0;
+            }
+        }
+        return false;
     }
 
     /**
