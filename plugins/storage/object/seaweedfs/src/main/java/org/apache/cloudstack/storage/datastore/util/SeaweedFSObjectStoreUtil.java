@@ -342,7 +342,23 @@ public class SeaweedFSObjectStoreUtil {
             // headers (e.g. Content-Length, Host) are set by the HTTP client /
             // URI itself and cannot be added via HttpRequest.Builder.header(),
             // so they are skipped here.
-            java.net.URI fullUri = endpointUri.resolve(path);
+            // Build the outgoing URI preserving any path prefix in the
+            // endpoint URL (e.g. https://host/object-s3). URI.resolve(path)
+            // would replace that prefix because path starts with '/', sending
+            // the request to the wrong route and breaking signature
+            // verification. Instead, concatenate the endpoint path and the
+            // resource path explicitly.
+            String endpointPath = endpointUri.getPath();
+            if (endpointPath == null) {
+                endpointPath = "";
+            }
+            // Strip a trailing slash from the endpoint path to avoid doubles
+            if (endpointPath.endsWith("/")) {
+                endpointPath = endpointPath.substring(0, endpointPath.length() - 1);
+            }
+            java.net.URI fullUri = java.net.URI.create(
+                    endpointUri.getScheme() + "://" + endpointUri.getRawAuthority()
+                    + endpointPath + path);
             if (! queryString.isEmpty()) {
                 fullUri = java.net.URI.create(fullUri.toString() + "?" + queryString);
             }
