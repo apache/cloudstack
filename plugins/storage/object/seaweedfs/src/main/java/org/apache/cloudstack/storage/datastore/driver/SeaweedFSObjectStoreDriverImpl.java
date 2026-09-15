@@ -429,6 +429,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 logger.warn("Failed to revoke IAM policy for bucket {} after cleanup: {}", bucketName, policyEx.getMessage());
             }
             throw new CloudRuntimeException(e);
+        } finally {
+            iamLock.unlock();
+            iamLock.releaseRef();
         }
     }
 
@@ -479,10 +482,21 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String bucketName = bucket.getName();
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
+
+        // Refresh the account's IAM policy to drop the deleted bucket BEFORE
+        // the S3 delete. Bucket names are reusable, so revoking the grant
+        // before the name becomes reusable prevents the old account from
+        // accessing a new tenant's bucket with the same name. If this fails,
+        // the bucket still exists and a retry can proceed. If it succeeds but
+        // the S3 delete fails, the grant is already revoked and a retry only
+        // needs to delete the S3 bucket (the policy refresh is idempotent
+        // because excludeBucket still applies).
+        AmazonIdentityManagement iamClient = getIAMClient(storeId);
+        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
+
         // If the bucket is already gone (e.g. from a previous partial
-        // failure where the S3 delete succeeded but the IAM policy refresh
-        // failed), skip the S3 delete and proceed to policy reconciliation
-        // so the retry is idempotent.
+        // failure where the policy refresh succeeded but the S3 delete
+        // failed), skip the S3 delete so the retry is idempotent.
         try {
             if (s3client.doesBucketExistV2(bucketName)) {
                 s3client.deleteBucket(bucketName);
@@ -490,15 +504,6 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
-        // Refresh the account's IAM policy to drop the deleted bucket. This
-        // must succeed: bucket names are reusable, so a stale grant would
-        // let the old account access a new tenant's bucket with the same
-        // name. The policy is refreshed after the remote delete so a policy
-        // refresh failure does not leave an orphaned remote bucket; if it
-        // fails, the caller sees the exception and can reconcile the IAM
-        // policy while the CloudStack BucketVO is removed.
-        AmazonIdentityManagement iamClient = getIAMClient(storeId);
-        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
     }
 
