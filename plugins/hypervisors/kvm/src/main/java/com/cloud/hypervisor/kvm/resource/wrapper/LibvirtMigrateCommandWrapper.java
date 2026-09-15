@@ -705,7 +705,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         boolean destVlanFilteringEnabled = Boolean.TRUE.equals(command.getDestVlanFilteringEnabled());
         boolean anyNicNeedsHandling = false;
         for (NicTO nic : nics) {
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+            if (needsVlanTrunkHandling(nic, sourceVlanFilteringEnabled, destVlanFilteringEnabled)) {
                 failIfBroadcastUriMissing(nic);
                 anyNicNeedsHandling = true;
             }
@@ -735,8 +735,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 Element interfaceElement = (Element) deviceChildNode;
                 String mac = findInterfaceMacAddress(interfaceElement);
                 NicTO nic = mac == null ? null : findNicByMac(nics, mac);
-                if (nic == null || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan
-                        || !(sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                if (nic == null || !needsVlanTrunkHandling(nic, sourceVlanFilteringEnabled, destVlanFilteringEnabled)) {
                     continue;
                 }
                 replaceVlanTrunkInterface(doc, interfaceElement, nic, command);
@@ -780,6 +779,19 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
         return null;
+    }
+
+    /**
+     * Only Vlan-broadcast NICs that live on a shared VLAN-aware bridge on either side, or that trunk
+     * several VLANs, need their bridge or trunk XML rewritten. A Direct Routed NIC is never one of
+     * them: it sits on its per-network routed bridge on both hosts, even when it carries the Vlan
+     * broadcast domain type of the shared Public network with a routed:// URI (a SystemVM public NIC).
+     */
+    private boolean needsVlanTrunkHandling(NicTO nic, boolean sourceVlanFilteringEnabled, boolean destVlanFilteringEnabled) {
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan || BridgeVifDriver.isDirectRoutedNic(nic)) {
+            return false;
+        }
+        return sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan();
     }
 
     private void replaceVlanTrunkInterface(Document doc, Element interfaceElement, NicTO nic, MigrateCommand command) {
