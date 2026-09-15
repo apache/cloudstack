@@ -544,13 +544,28 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             // Refresh the account's IAM policy to drop the deleted bucket.
             // Bucket names are reusable, so a stale grant would let the old
             // account access a new tenant's bucket with the same name. This
-            // must succeed; if it fails, the caller sees the exception and
-            // can retry. The BucketVO row is left intact so a retry can find
-            // the bucket; BucketApiServiceImpl removes the row only after
-            // this method returns successfully. The lock-free variant is used
-            // because deleteBucket already holds the IAM lock.
+            // must succeed; if it fails, the exception propagates with the
+            // BucketVO row still intact, so BucketApiServiceImpl leaves its
+            // accounting alone and a retry can find the bucket. The lock-free
+            // variant is used because deleteBucket already holds the IAM lock.
             AmazonIdentityManagement iamClient = getIAMClient(storeId);
             updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
+
+            // Remove the BucketVO row here, inside the lock, now that the
+            // policy no longer grants this bucket. Deferring the removal to
+            // BucketApiServiceImpl (which runs after the lock is released)
+            // would let a concurrent createUser/createBucket acquire the lock,
+            // observe the still-present row, and publish a policy that re-adds
+            // this bucket ARN; the row would then be removed, leaving a stale
+            // grant on a reusable name. BucketApiServiceImpl's subsequent
+            // _bucketDao.remove is a no-op, and its resource-limit and
+            // allocated-size cleanup still runs because this returns true.
+            for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId)) {
+                if (bucketName.equals(bvo.getName())) {
+                    _bucketDao.remove(bvo.getId());
+                    break;
+                }
+            }
             return true;
         } finally {
             iamLock.unlock();
