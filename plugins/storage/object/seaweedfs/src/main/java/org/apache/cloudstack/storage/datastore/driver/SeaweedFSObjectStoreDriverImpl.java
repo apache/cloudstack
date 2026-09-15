@@ -709,10 +709,29 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             return bucketUsage;
         }
 
-        // List objects per bucket via S3 (no admin API needed).
-        // SeaweedFS also publishes per-bucket Prometheus metrics and an SOSAPI
-        // capacity.xml response; operators who need scalable usage reporting
-        // should consume those instead of S3 list-based aggregation.
+        // If the operator has configured a Prometheus metricsUrl, scrape
+        // per-bucket sizes from the /metrics endpoint in a single HTTP GET.
+        // This is O(buckets) and avoids the O(total objects) ListObjectsV2
+        // scan that doesn't scale to large deployments. Falls back to
+        // ListObjectsV2 when metricsUrl is not configured.
+        String metricsUrl = getMetricsUrl(storeId);
+        if (metricsUrl != null) {
+            java.util.Set<String> bucketNames = new java.util.HashSet<>();
+            for (BucketVO bucket : bucketList) {
+                bucketNames.add(bucket.getName());
+            }
+            try {
+                return SeaweedFSObjectStoreUtil.parseBucketUsageFromMetrics(
+                        metricsUrl, bucketNames, getS3ExtensionHttpClient());
+            } catch (CloudRuntimeException e) {
+                logger.warn("Prometheus metrics scrape failed for store {}; falling back to ListObjectsV2", storeId, e);
+            }
+        }
+
+        // Fallback: list objects per bucket via S3. This is O(total objects)
+        // and does not scale to large deployments; configure metricsUrl for
+        // production usage reporting. ListObjectsV2 only counts current
+        // object versions; noncurrent versions and delete markers are omitted.
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
         for (BucketVO bucket : bucketList) {
             try {
@@ -784,6 +803,21 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     protected String getSecretKey(long storeId) {
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
         return storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_SECRET_KEY);
+    }
+
+    /**
+     * Returns the configured Prometheus metrics endpoint URL for the store,
+     * or {@code null} if not configured. When set, {@link #getAllBucketsUsage}
+     * scrapes per-bucket sizes from this endpoint instead of listing every
+     * object via S3 ListObjectsV2.
+     */
+    protected String getMetricsUrl(long storeId) {
+        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
+        String metricsUrl = storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL);
+        if (metricsUrl == null || metricsUrl.isEmpty()) {
+            return null;
+        }
+        return metricsUrl;
     }
 
     protected AmazonS3 getS3ClientByStoreId(long storeId) {

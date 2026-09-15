@@ -52,6 +52,7 @@ public class SeaweedFSObjectStoreUtil {
     public static final String STORE_DETAILS_KEY_SECRET_KEY = "secretkey";   // admin/root secret key
     public static final String STORE_DETAILS_KEY_S3_URL     = "s3Url";        // S3 endpoint URL
     public static final String STORE_DETAILS_KEY_IAM_URL     = "iamUrl";       // IAM endpoint URL
+    public static final String STORE_DETAILS_KEY_METRICS_URL = "metricsUrl";  // Prometheus metrics endpoint URL (optional, for scalable usage reporting)
 
     // Account Detail Map key names - credentials created per CloudStack account.
     // Namespaced by store ID so one account can use multiple SeaweedFS pools
@@ -471,6 +472,84 @@ public class SeaweedFSObjectStoreUtil {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /**
+     * Prometheus metric name for per-bucket logical size. SeaweedFS publishes
+     * this gauge from the S3 API server's bucket-size metrics loop.
+     */
+    public static final String METRIC_BUCKET_SIZE_BYTES = "seaweed_s3_bucket_size_bytes";
+
+    /**
+     * Scrape the SeaweedFS Prometheus {@code /metrics} endpoint and return a
+     * map of bucket name to logical size in bytes.
+     *
+     * <p>This is a single HTTP GET that returns all bucket sizes in O(buckets)
+     * time, replacing the O(total objects) {@code ListObjectsV2} scan used as a
+     * fallback. The operator configures {@code metricsUrl} as a store detail
+     * pointing at the SeaweedFS S3 server's metrics port (or a Prometheus
+     * server that scrapes it).
+     *
+     * @param metricsUrl  the base URL of the Prometheus metrics endpoint
+     * @param bucketNames the set of bucket names CloudStack manages (used to
+     *                    filter the scraped metrics; buckets not in this set
+     *                    are ignored)
+     * @param httpClient  the HTTP client used to send the request
+     * @return a map of bucket name to size in bytes; buckets in
+     *         {@code bucketNames} that are not found in the metrics response
+     *         are omitted (the caller treats them as zero)
+     * @throws CloudRuntimeException on any HTTP or parse failure
+     */
+    public static java.util.Map<String, Long> parseBucketUsageFromMetrics(String metricsUrl,
+            java.util.Set<String> bucketNames, java.net.http.HttpClient httpClient) {
+        java.util.Map<String, Long> result = new java.util.HashMap<>();
+        try {
+            java.net.URI uri = java.net.URI.create(metricsUrl + "/metrics");
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS))
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> response = httpClient.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new CloudRuntimeException("Prometheus metrics scrape failed with status " + response.statusCode());
+            }
+            // Parse Prometheus text exposition format lines like:
+            //   seaweed_s3_bucket_size_bytes{bucket="mybucket"} 12345678
+            for (String line : response.body().split("\n")) {
+                if (!line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
+                    continue;
+                }
+                int bucketLabelStart = line.indexOf("bucket=\"");
+                if (bucketLabelStart < 0) {
+                    continue;
+                }
+                int bucketLabelEnd = line.indexOf("\"", bucketLabelStart + 8);
+                if (bucketLabelEnd < 0) {
+                    continue;
+                }
+                String bucket = line.substring(bucketLabelStart + 8, bucketLabelEnd);
+                if (!bucketNames.contains(bucket)) {
+                    continue;
+                }
+                int valueStart = line.indexOf(' ', bucketLabelEnd + 2);
+                if (valueStart < 0) {
+                    continue;
+                }
+                try {
+                    long size = Long.parseLong(line.substring(valueStart + 1).trim());
+                    result.put(bucket, size);
+                } catch (NumberFormatException ignored) {
+                    // Skip unparseable metric values
+                }
+            }
+            return result;
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to scrape Prometheus metrics from " + metricsUrl, e);
         }
     }
 }
