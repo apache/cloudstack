@@ -380,6 +380,34 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testSetBucketQuotaClearExistingPropagates404() throws Exception {
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        when(bucketTO.getAccountId()).thenReturn(TEST_ACCOUNT_ID);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+
+        // The bucket already has a positive quota, so a quota 0 request is a
+        // clear of an existing quota. A 404 must NOT be tolerated: reporting
+        // success would lower CloudStack accounting while SeaweedFS keeps the
+        // old quota and read-only state.
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, 100, false, false, false, null));
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(404);
+        when(mockResponse.body()).thenReturn("not found");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 0));
+    }
+
+    @Test
     public void testSetBucketQuotaRejects3xx() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
@@ -832,5 +860,95 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertNotNull(usage);
         assertEquals(1, usage.size());
         assertEquals(42L, usage.get("b1").longValue());
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMetricsFloatValueParsed() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // Prometheus gauges are floating point and may use scientific notation
+        String metricsBody = "SeaweedFS_s3_bucket_size_bytes{bucket=\"b1\"} 1.2345678e+07\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(12345678L, usage.get("b1").longValue());
+        verify(s3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+    }
+
+    @Test
+    public void testGetAllBucketsUsageUnparseableMetricFallsBackToList() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // An unparseable sample value must be treated as a scrape failure so
+        // the S3 fallback runs, rather than reporting the bucket as zero.
+        String metricsBody = "SeaweedFS_s3_bucket_size_bytes{bucket=\"b1\"} not-a-number\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        ListObjectsV2Result b1Result = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(77L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(b1Result.getObjectSummaries()).thenReturn(summaries);
+        when(b1Result.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(b1Result);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(77L, usage.get("b1").longValue());
+    }
+
+    @Test
+    public void testGetAllBucketsUsageWrongMetricsEndpointFallsBackToList() throws Exception {
+        doReturn("http://prometheus.local:9090").when(driver).getMetricsUrl(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // metricsUrl pointing at a Prometheus server returns HTTP 200 with its
+        // own internal metrics, not the SeaweedFS bucket series. This must be
+        // detected so the S3 fallback runs instead of reporting zero.
+        String metricsBody = "prometheus_build_info{version=\"2.0\"} 1\n" +
+                "go_goroutines 42\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        ListObjectsV2Result b1Result = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(88L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(b1Result.getObjectSummaries()).thenReturn(summaries);
+        when(b1Result.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(b1Result);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(88L, usage.get("b1").longValue());
     }
 }
