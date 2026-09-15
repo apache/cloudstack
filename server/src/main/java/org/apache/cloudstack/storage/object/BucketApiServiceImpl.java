@@ -332,22 +332,60 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             return;
         }
 
-        int quotaDelta = quota - bucket.getQuota();
-        objectStore.setQuota(bucketTO, quota);
-        bucket.setQuota(quota);
-
+        int previousQuota = ObjectUtils.defaultIfNull(bucket.getQuota(), 0);
+        int quotaDelta = quota - previousQuota;
         long diff = quotaDelta * Resource.ResourceType.bytesToGiB;
 
         if (quotaDelta < 0) {
-            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
-            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            // A decrease needs no reservation. Apply it remotely first, then
+            // compensate the backend if the accounting update fails so the two
+            // cannot diverge.
+            objectStore.setQuota(bucketTO, quota);
+            try {
+                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
+                _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            } catch (RuntimeException e) {
+                restoreRemoteQuota(objectStore, bucketTO, bucket.getName(), previousQuota, e);
+                throw e;
+            }
+            bucket.setQuota(quota);
             return;
         }
 
+        // Reserve BEFORE mutating the remote quota. Applying it first meant an
+        // increase that exceeded the account or store limit left the backend
+        // with the new quota while the BucketVO and resource counts kept the
+        // old value. If the remote call or the accounting update fails inside
+        // the reservation, the reservation is rolled back by try-with-resources
+        // and the backend quota is restored.
         Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
         try (CheckedReservation objectStorageReservation = new CheckedReservation(owner, Resource.ResourceType.object_storage, diff, reservationDao, resourceLimitManager)) {
-            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
-            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            objectStore.setQuota(bucketTO, quota);
+            try {
+                resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
+                _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            } catch (RuntimeException e) {
+                restoreRemoteQuota(objectStore, bucketTO, bucket.getName(), previousQuota, e);
+                throw e;
+            }
+            bucket.setQuota(quota);
+        }
+    }
+
+    /**
+     * Best-effort compensation that puts the backend quota back to its previous
+     * value after the accounting update failed, so CloudStack's records and the
+     * storage backend do not diverge. A failure here is logged against the
+     * original exception rather than masking it.
+     */
+    private void restoreRemoteQuota(ObjectStoreEntity objectStore, BucketTO bucketTO, String bucketName,
+            int previousQuota, RuntimeException cause) {
+        try {
+            objectStore.setQuota(bucketTO, previousQuota);
+        } catch (Exception rollbackEx) {
+            logger.error("Failed to restore quota {} on bucket {} after a resource accounting failure; "
+                    + "the backend quota and CloudStack accounting may be inconsistent", previousQuota, bucketName, rollbackEx);
+            cause.addSuppressed(rollbackEx);
         }
     }
 
