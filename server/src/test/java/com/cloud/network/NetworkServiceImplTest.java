@@ -1378,4 +1378,133 @@ public class NetworkServiceImplTest {
 
         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
     }
+
+    @Test
+    public void validateL3AddressFamiliesAcceptsDualStackWithoutGateways() {
+        service.validateL3AddressFamilies("255.255.255.0", "10.1.1.10", "10.1.1.20", "fd00::/64", null, null);
+    }
+
+    @Test
+    public void validateL3AddressFamiliesAcceptsIpv4Only() {
+        service.validateL3AddressFamilies("255.255.255.0", "10.1.1.10", null, null, null, null);
+    }
+
+    @Test
+    public void validateL3AddressFamiliesAcceptsIpv6CidrAlone() {
+        service.validateL3AddressFamilies(null, null, null, "fd00::/64", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3AddressFamiliesRejectsNetmaskWithoutStartIp() {
+        service.validateL3AddressFamilies("255.255.255.0", null, null, "fd00::/64", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3AddressFamiliesRejectsStartIpWithoutNetmask() {
+        service.validateL3AddressFamilies(null, "10.1.1.10", null, "fd00::/64", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3AddressFamiliesRejectsIpv6RangeWithoutCidr() {
+        service.validateL3AddressFamilies(null, null, null, null, "fd00::100", "fd00::200");
+    }
+
+    @Test
+    public void expandL3Ipv4CidrDerivesRangeFromSubnet() {
+        String[] expanded = service.expandL3Ipv4Cidr("192.0.2.0/24", null, null, null);
+        Assert.assertArrayEquals(new String[] {"255.255.255.0", "192.0.2.1", "192.0.2.254"}, expanded);
+    }
+
+    @Test
+    public void expandL3Ipv4CidrKeepsExplicitRangeInsideSubnet() {
+        String[] expanded = service.expandL3Ipv4Cidr("192.0.2.0/24", null, "192.0.2.0", "192.0.2.255");
+        Assert.assertArrayEquals(new String[] {"255.255.255.0", "192.0.2.0", "192.0.2.255"}, expanded);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsStartIpOutsideSubnet() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, "198.51.100.7", null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsEndIpOutsideSubnet() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, "192.0.2.10", "192.0.3.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsEndIpWithoutStartIp() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", null, null, "192.0.2.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsCidrTogetherWithNetmask() {
+        service.expandL3Ipv4Cidr("192.0.2.0/24", "255.255.255.0", null, null);
+    }
+
+    @Test
+    public void canonicalizeRoutedIdStripsScheme() {
+        Assert.assertEquals("5828", service.canonicalizeRoutedId("routed://5828"));
+        Assert.assertEquals("5828", service.canonicalizeRoutedId("5828"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void canonicalizeRoutedIdRejectsNonNumericId() {
+        service.canonicalizeRoutedId("routed://abc");
+    }
+
+    @Test
+    public void expandL3Ipv4CidrDerivesNetmaskAndUsableRange() {
+        String[] expanded = service.expandL3Ipv4Cidr("2.57.59.0/24", null, null, null);
+        Assert.assertEquals("255.255.255.0", expanded[0]);
+        Assert.assertEquals("2.57.59.1", expanded[1]);
+        Assert.assertEquals("2.57.59.254", expanded[2]);
+    }
+
+    @Test
+    public void expandL3Ipv4CidrKeepsExplicitRange() {
+        String[] expanded = service.expandL3Ipv4Cidr("2.57.59.0/24", null, "2.57.59.10", "2.57.59.20");
+        Assert.assertEquals("255.255.255.0", expanded[0]);
+        Assert.assertEquals("2.57.59.10", expanded[1]);
+        Assert.assertEquals("2.57.59.20", expanded[2]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsNetmaskAlongside() {
+        service.expandL3Ipv4Cidr("2.57.59.0/24", "255.255.255.0", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsInvalidCidr() {
+        service.expandL3Ipv4Cidr("2.57.59.0/33", null, null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void expandL3Ipv4CidrRejectsTinySubnetWithoutExplicitRange() {
+        service.expandL3Ipv4Cidr("2.57.59.0/31", null, null, null);
+    }
+
+    @Test
+    public void checkL3Ip6ParametersAcceptsCidrAlone() {
+        service.checkL3Ip6Parameters(null, null, "fd00::/64");
+    }
+
+    @Test
+    public void checkL3Ip6ParametersAcceptsRangeInsideCidr() {
+        service.checkL3Ip6Parameters("fd00::100", "fd00::200", "fd00::/64");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkL3Ip6ParametersRejectsRangeOutsideCidr() {
+        service.checkL3Ip6Parameters("fd00:1::100", null, "fd00::/64");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkL3Ip6ParametersRejectsInvalidCidr() {
+        service.checkL3Ip6Parameters(null, null, "not-a-cidr");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3AddressFamiliesRejectsNoFamilyAtAll() {
+        service.validateL3AddressFamilies(null, null, null, null, null, null);
+    }
 }
