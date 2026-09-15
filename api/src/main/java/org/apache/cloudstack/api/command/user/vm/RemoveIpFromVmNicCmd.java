@@ -124,6 +124,16 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     }
 
 
+    /**
+     * A Direct Routed (L3) network needs the agent told when a secondary IP goes away, so the
+     * host route and neighbour entry are removed - otherwise the host keeps routing an address
+     * the Instance no longer owns, and the routing daemon keeps advertising it.
+     */
+    private boolean isDirectRoutedNetwork() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        return ntwk != null && Network.GuestType.L3.equals(ntwk.getGuestType());
+    }
+
     private boolean isZoneSGEnabled() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
@@ -144,7 +154,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             secIp = nicSecIp.getIp6Address();
         }
 
-        if (isZoneSGEnabled()) {
+        if (isZoneSGEnabled() || isDirectRoutedNetwork()) {
             //remove the security group rules for this secondary ip
             boolean success = false;
             success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), secIp, false);
