@@ -288,7 +288,22 @@ public class SeaweedFSObjectStoreUtil {
         } else {
             body = String.format("{\"quota_size\":%d,\"quota_unit\":\"GB\",\"quota_enabled\":true}", sizeGiB);
         }
-        executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body, httpClient);
+        try {
+            executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body, httpClient);
+        } catch (CloudRuntimeException e) {
+            // A quota of 0 disables the quota, which is the default state for
+            // a newly created bucket. If the SeaweedFS quota extension is not
+            // available (404/405), tolerate the failure for quota 0 so basic
+            // bucket CRUD works on deployments without the extension. A
+            // positive quota still requires the extension and must fail.
+            if (sizeGiB == 0 && e.getMessage() != null
+                    && (e.getMessage().contains("status 404") || e.getMessage().contains("status 405"))) {
+                org.apache.logging.log4j.LogManager.getLogger(SeaweedFSObjectStoreUtil.class)
+                        .warn("SeaweedFS quota extension not available for bucket {}; skipping quota disable (quota is already off by default)", bucketName);
+                return;
+            }
+            throw e;
+        }
     }
 
     /**
