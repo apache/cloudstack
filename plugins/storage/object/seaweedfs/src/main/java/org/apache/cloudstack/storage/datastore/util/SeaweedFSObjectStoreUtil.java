@@ -83,43 +83,68 @@ public class SeaweedFSObjectStoreUtil {
     public static final int S3_EXTENSION_REQUEST_TIMEOUT_SECONDS = 30;
 
     /**
-     * IAM user policy applied to each per-account IAM user. Grants full S3
-     * access except bucket creation/deletion, so CloudStack retains control of
-     * bucket lifecycle while the account's IAM credentials can manage objects.
+     * IAM user policy name applied to each per-account IAM user.
      */
-    public static final String IAM_USER_POLICY = "{\n" +
-        "  \"Version\": \"2012-10-17\",\n" +
-        "  \"Statement\": [\n" +
-        "    {\n" +
-        "      \"Sid\": \"AllowFullS3Access\",\n" +
-        "      \"Effect\": \"Allow\",\n" +
-        "      \"Action\": [\n" +
-        "        \"s3:*\"\n" +
-        "      ],\n" +
-        "      \"Resource\": \"*\"\n" +
-        "    },\n" +
-        "    {\n" +
-        "      \"Sid\": \"ExceptBucketCreationOrDeletion\",\n" +
-        "      \"Effect\": \"Deny\",\n" +
-        "      \"Action\": [\n" +
-        "        \"s3:CreateBucket\",\n" +
-        "        \"s3:DeleteBucket\"\n" +
-        "      ],\n" +
-        "      \"Resource\": \"*\"\n" +
-        "    }\n" +
-        "  ]\n" +
-        "}\n";
+    public static final String IAM_USER_POLICY_NAME = "CloudStackPolicy";
 
-    // The CloudStack service credential (the accesskey/secretkey configured on
-    // the object store) is the admin credential used for ALL driver operations:
-    //   - AmazonS3 client: bucket CRUD, policy, versioning, encryption, listing
-    //   - AmazonIdentityManagement client: per-account IAM user provisioning
-    //   - setBucketQuotaViaS3Extension: PUT /{bucket}?seaweedfs-quota
-    // It must therefore have broad S3 and IAM permissions. It is NOT scoped
-    // down to only s3:PutBucketQuota/s3:GetBucketQuota — that was an earlier
-    // design idea that does not match the implementation. The per-account IAM
-    // users (created by createUser) are the ones with restricted permissions
-    // (see IAM_USER_POLICY above).
+    /**
+     * Build an IAM user policy that grants full S3 access only to the given
+     * buckets (both the bucket and its contents), while denying bucket
+     * creation and deletion everywhere so CloudStack retains control of the
+     * bucket lifecycle. When no buckets are provided, all S3 access is denied.
+     *
+     * <p>This is the tenant boundary: each account's IAM credentials can only
+     * operate on that account's own buckets, not on every bucket in the
+     * SeaweedFS pool. The policy is refreshed whenever buckets are created or
+     * deleted (see
+     * {@code SeaweedFSObjectStoreDriverImpl.updateAccountIAMPolicy}).
+     *
+     * @param bucketNames the bucket names the account is allowed to access
+     * @return a JSON IAM policy document
+     */
+    public static String buildAccountIAMPolicy(java.util.List<String> bucketNames) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"Version\": \"2012-10-17\",\n");
+        sb.append("  \"Statement\": [\n");
+        if (bucketNames == null || bucketNames.isEmpty()) {
+            // No buckets: deny all S3 access. A Resource cannot be empty in
+            // an IAM policy, so deny everything explicitly.
+            sb.append("    {\n");
+            sb.append("      \"Sid\": \"DenyAllS3\",\n");
+            sb.append("      \"Effect\": \"Deny\",\n");
+            sb.append("      \"Action\": [\"s3:*\"],\n");
+            sb.append("      \"Resource\": [\"arn:aws:s3:::*\", \"arn:aws:s3:::*/*\"]\n");
+            sb.append("    }\n");
+        } else {
+            sb.append("    {\n");
+            sb.append("      \"Sid\": \"AllowAccountBuckets\",\n");
+            sb.append("      \"Effect\": \"Allow\",\n");
+            sb.append("      \"Action\": [\"s3:*\"],\n");
+            sb.append("      \"Resource\": [\n");
+            for (int i = 0; i < bucketNames.size(); i++) {
+                String name = bucketNames.get(i);
+                sb.append("        \"arn:aws:s3:::").append(name).append("\",\n");
+                sb.append("        \"arn:aws:s3:::").append(name).append("/*\"");
+                if (i < bucketNames.size() - 1) {
+                    sb.append(",");
+                }
+                sb.append("\n");
+            }
+            sb.append("      ]\n");
+            sb.append("    }\n");
+        }
+        // Always deny bucket creation/deletion — CloudStack controls lifecycle
+        sb.append("    ,{\n");
+        sb.append("      \"Sid\": \"DenyBucketLifecycle\",\n");
+        sb.append("      \"Effect\": \"Deny\",\n");
+        sb.append("      \"Action\": [\"s3:CreateBucket\", \"s3:DeleteBucket\"],\n");
+        sb.append("      \"Resource\": \"*\"\n");
+        sb.append("    }\n");
+        sb.append("  ]\n");
+        sb.append("}\n");
+        return sb.toString();
+    }
 
     /**
      * Returns an S3 connection for the given endpoint and credentials.

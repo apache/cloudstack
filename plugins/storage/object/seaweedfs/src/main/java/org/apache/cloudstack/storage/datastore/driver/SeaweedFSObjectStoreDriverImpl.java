@@ -142,9 +142,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             logger.debug("IAM user {} already exists", userName);
         }
 
-        // Attach the restricted S3 policy (idempotent — overwrites if present)
-        iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
-                "CloudStackPolicy", SeaweedFSObjectStoreUtil.IAM_USER_POLICY));
+        // Attach a scoped IAM policy that allows access only to this
+        // account's own buckets (the tenant boundary). Refreshed whenever
+        // buckets are created or deleted.
+        updateAccountIAMPolicy(iamClient, storeId, accountId, null);
 
         // Reuse the stored access key only if both the access key id and the
         // secret key are present and the key is still Active in IAM; otherwise
@@ -160,10 +161,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             return true;
         }
 
-        // The stored key is missing or no longer in IAM. Clean up any
-        // unmanaged leftover keys before creating a replacement so we do not
-        // accumulate keys and hit IAM access-key limits.
-        deleteUnmanagedAccessKeys(iamClient, userName, storedAccessKeyId);
+        // The stored key is missing, inactive, or no longer in IAM. Clean up
+        // ALL keys (including the inactive stored one) before creating a
+        // replacement so we do not accumulate keys and hit IAM limits.
+        deleteUnmanagedAccessKeys(iamClient, userName, null);
 
         CreateAccessKeyResult result = iamClient.createAccessKey(
                 new CreateAccessKeyRequest().withUserName(userName));
@@ -196,6 +197,37 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             bucketVO.setSecretKey(iamCredential.getSecretAccessKey());
             _bucketDao.update(bucketVO.getId(), bucketVO);
         }
+    }
+
+    /**
+     * Refresh the per-account IAM user policy so it grants S3 access only to
+     * the account's current buckets (optionally excluding one, e.g. a bucket
+     * being deleted). This is the tenant boundary: each account's IAM
+     * credentials can only operate on that account's own buckets.
+     *
+     * @param iamClient the IAM client
+     * @param storeId the object store
+     * @param accountId the CloudStack account
+     * @param excludeBucket a bucket name to omit (e.g. a bucket being deleted),
+     *                      or null to include all of the account's buckets
+     */
+    protected void updateAccountIAMPolicy(AmazonIdentityManagement iamClient, long storeId, long accountId, String excludeBucket) {
+        Account account = _accountDao.findById(accountId);
+        if (account == null) {
+            return;
+        }
+        String userName = getUserNameForAccount(account);
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
+        List<String> bucketNames = new ArrayList<>();
+        for (BucketVO bvo : buckets) {
+            if (excludeBucket != null && excludeBucket.equals(bvo.getName())) {
+                continue;
+            }
+            bucketNames.add(bvo.getName());
+        }
+        String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
+        iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
+                SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
     }
 
     /**
@@ -289,6 +321,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             bucketVO.setSecretKey(secretKey);
             bucketVO.setBucketURL(s3Url + "/" + bucketName);
             _bucketDao.update(bucket.getId(), bucketVO);
+
+            // Refresh the account's IAM policy to include the new bucket
+            AmazonIdentityManagement iamClient = getIAMClient(storeId);
+            updateAccountIAMPolicy(iamClient, storeId, accountId, null);
+
             return bucket;
         } catch (Exception e) {
             logger.error("Post-create bucket record update failed for {}; cleaning up remote bucket", bucketName, e);
@@ -321,19 +358,24 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
+        String bucketName = bucket.getName();
+        long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
         try {
-            if (! s3client.doesBucketExistV2(bucket.getName())) {
-                throw new CloudRuntimeException("Bucket doesn't exist: " + bucket.getName());
+            if (! s3client.doesBucketExistV2(bucketName)) {
+                throw new CloudRuntimeException("Bucket doesn't exist: " + bucketName);
             }
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
         try {
-            s3client.deleteBucket(bucket.getName());
+            s3client.deleteBucket(bucketName);
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
+        // Refresh the account's IAM policy to drop the deleted bucket
+        AmazonIdentityManagement iamClient = getIAMClient(storeId);
+        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
     }
 
@@ -559,7 +601,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String s3Url = storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
         if (s3Url == null || s3Url.isEmpty()) {
             ObjectStoreVO store = _storeDao.findById(storeId);
-            s3Url = store.getUrl();
+            if (store != null) {
+                s3Url = store.getUrl();
+            }
         }
         return s3Url;
     }
