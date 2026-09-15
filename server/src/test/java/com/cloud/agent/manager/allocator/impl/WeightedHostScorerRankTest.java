@@ -33,6 +33,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -40,7 +41,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static org.junit.Assert.assertEquals;
@@ -76,8 +77,9 @@ public class WeightedHostScorerRankTest {
     @InjectMocks
     private WeightedHostScorer scorer = new WeightedHostScorer();
 
+
     private final List<CapacityVO> capacities = new ArrayList<>();
-    private final Map<Long, Pair<Long, Long>> vmCounts = new HashMap<>();
+    private final Map<Long, Ternary<Long, Long, Long>> vmCounts = new HashMap<>();
     private final Map<Long, Host> hosts = new HashMap<>();
 
     @Before
@@ -102,6 +104,12 @@ public class WeightedHostScorerRankTest {
     /** Registers a host with a share of its allocatable CPU and memory already committed. */
     private Host host(long id, String name, double cpuAllocatedFraction, double memoryAllocatedFraction,
             HostLoad load, long vms) {
+        return host(id, name, cpuAllocatedFraction, memoryAllocatedFraction, load, vms, 0L);
+    }
+
+    /** As above, with a number of VMs left sitting in Starting on the host. */
+    private Host host(long id, String name, double cpuAllocatedFraction, double memoryAllocatedFraction,
+            HostLoad load, long vms, long startingVms) {
         Host host = Mockito.mock(Host.class);
         Mockito.lenient().when(host.getId()).thenReturn(id);
         Mockito.lenient().when(host.getName()).thenReturn(name);
@@ -109,7 +117,7 @@ public class WeightedHostScorerRankTest {
                 (long) (CORES * CPU_OVERCOMMIT * cpuAllocatedFraction), CORES));
         capacities.add(capacity(id, Capacity.CAPACITY_TYPE_MEMORY,
                 (long) (MEMORY * MEMORY_OVERCOMMIT * memoryAllocatedFraction), MEMORY));
-        vmCounts.put(id, new Pair<>(vms, 0L));
+        vmCounts.put(id, new Ternary<>(vms, 0L, startingVms));
         Mockito.lenient().when(hostLoadTracker.getLoad(id)).thenReturn(load);
         hosts.put(id, host);
         return host;
@@ -215,5 +223,101 @@ public class WeightedHostScorerRankTest {
 
         assertEquals("complete", ranked.get(0));
         assertEquals("partial", ranked.get(1));
+    }
+
+    @Test
+    public void testHostWithTooManyVmsStartingIsHeldBack() {
+        // the emptiest host in the cluster by every other measure, but already working through a
+        // queue of starts: the next deployment must not join that queue
+        Host queueing = host(1L, "queueing", 0.05, 0.05, new HostLoad(0.05, 0.05, 10), 5, 12);
+        Host busier = host(2L, "busier", 0.60, 0.60, new HostLoad(0.50, 0.50, 10), 60, 0);
+
+        List<String> ranked = rankedNames(Arrays.asList(queueing, busier));
+
+        assertEquals("busier", ranked.get(0));
+        assertEquals("queueing", ranked.get(1));
+    }
+
+    @Test
+    public void testHostBelowTheStartingThresholdIsNotHeldBack() {
+        Host starting = host(1L, "starting", 0.05, 0.05, new HostLoad(0.05, 0.05, 10), 5, 9);
+        Host busier = host(2L, "busier", 0.60, 0.60, new HostLoad(0.50, 0.50, 10), 60, 0);
+
+        assertEquals("nine starts is under the default threshold of ten",
+                "starting", rankedNames(Arrays.asList(starting, busier)).get(0));
+    }
+
+    @Test
+    public void testEveryHostBackedUpStillDeploys() {
+        // nothing is eligible, but a deployment must still be placed rather than failing. The
+        // held-back group is ordered by starting count rather than by score, so the most backed up
+        // host stays last even though it is the cheapest on every other measure.
+        Host worst = host(1L, "worst", 0.10, 0.10, new HostLoad(0.10, 0.10, 10), 10, 40);
+        Host least = host(2L, "least", 0.80, 0.80, new HostLoad(0.60, 0.60, 10), 80, 11);
+        Host middle = host(3L, "middle", 0.10, 0.10, new HostLoad(0.10, 0.10, 10), 10, 20);
+        Host nearly = host(4L, "nearly", 0.10, 0.10, new HostLoad(0.10, 0.10, 10), 10, 25);
+
+        List<Host> input = Arrays.asList(worst, least, middle, nearly);
+
+        for (int attempt = 0; attempt < 200; attempt++) {
+            List<String> ranked = rankedNames(input);
+            assertEquals("every host must still be offered", 4, ranked.size());
+            assertEquals("the most backed up host must stay last", "worst", ranked.get(3));
+            assertFalse("the most backed up host must never lead", "worst".equals(ranked.get(0)));
+        }
+    }
+
+    @Test
+    public void testStartingThresholdOfZeroDisablesTheGate() {
+        scorer = new WeightedHostScorer() {
+            @Override
+            protected int startingVmsThreshold(Long clusterId) {
+                return 0;
+            }
+        };
+        ReflectionTestUtils.setField(scorer, "capacityDao", capacityDao);
+        ReflectionTestUtils.setField(scorer, "clusterDetailsDao", clusterDetailsDao);
+        ReflectionTestUtils.setField(scorer, "vmInstanceDao", vmInstanceDao);
+        ReflectionTestUtils.setField(scorer, "hostLoadTracker", hostLoadTracker);
+        scorer.random = new Random(1L);
+
+        Host queueing = host(1L, "queueing", 0.05, 0.05, new HostLoad(0.05, 0.05, 10), 5, 50);
+        Host busier = host(2L, "busier", 0.60, 0.60, new HostLoad(0.50, 0.50, 10), 60, 0);
+
+        assertEquals("with the gate disabled only the score matters",
+                "queueing", rankedNames(Arrays.asList(queueing, busier)).get(0));
+    }
+
+    @Test
+    public void testSpreadStillAppliesWhenNoHostIsEligible() {
+        // regression: the spread used to be applied to the healthy list only. With every host held
+        // back, healthy was empty, the shuffle was a no-op and concurrent deployments fell through
+        // in strict score order - agreeing on one host in exactly the conditions that created the
+        // pile-up in the first place.
+        List<Host> input = Arrays.asList(
+                host(1L, "a", 0.30, 0.30, new HostLoad(0.10, 0.10, 10), 30, 20),
+                host(2L, "b", 0.31, 0.30, new HostLoad(0.10, 0.10, 10), 30, 20),
+                host(3L, "c", 0.32, 0.30, new HostLoad(0.10, 0.10, 10), 30, 20));
+
+        Set<String> leaders = new HashSet<>();
+        for (int attempt = 0; attempt < 200; attempt++) {
+            leaders.add(rankedNames(input).get(0));
+        }
+
+        assertTrue("held-back hosts must still be spread over, not handed out in strict order",
+                leaders.size() > 1);
+    }
+
+    @Test
+    public void testUnmeasuredHostIsPreferredOverAResourceSaturatedOne() {
+        // regression for the same branch: with healthy empty but an unmeasured host present, the
+        // ordering between the remaining tiers must still hold
+        Host saturated = host(1L, "saturated", 0.95, 0.95, new HostLoad(0.99, 0.99, 10), 95);
+        Host unknown = host(2L, "unknown", 0.10, 0.10, HostLoad.UNKNOWN, 10);
+
+        List<String> ranked = rankedNames(Arrays.asList(saturated, unknown));
+
+        assertEquals("unknown", ranked.get(0));
+        assertEquals("saturated", ranked.get(1));
     }
 }
