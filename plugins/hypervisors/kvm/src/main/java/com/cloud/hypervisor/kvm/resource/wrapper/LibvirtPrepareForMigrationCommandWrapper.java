@@ -20,6 +20,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
         boolean skipDisconnect = false;
 
+        final List<LibvirtVMDef.InterfaceDef> pluggedNics = new ArrayList<>();
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -83,6 +85,9 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             for (final NicTO nic : nics) {
                 VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
                 LibvirtVMDef.InterfaceDef interfaceDef = vifDriver.plug(nic, null, "", vm.getExtraConfig());
+                if (interfaceDef != null) {
+                    pluggedNics.add(interfaceDef);
+                }
                 if (vm.getDetails() != null) {
                     libvirtComputingResource.setInterfaceDefQueueSettings(vm.getDetails(), vm.getCpus(), interfaceDef);
                 }
@@ -129,6 +134,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             skipDisconnect = true;
 
             if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm, true)) {
+                libvirtComputingResource.cleanupVMNetworks(conn, pluggedNics);
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
@@ -153,6 +159,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                     removeDpdkPort(to.getPort());
                 }
             }
+            libvirtComputingResource.cleanupVMNetworks(null, pluggedNics);
             return new PrepareForMigrationAnswer(command, e.toString());
         } finally {
             if (!skipDisconnect) {
