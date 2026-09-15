@@ -249,7 +249,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
 import com.cloud.ha.HighAvailabilityManager;
@@ -5431,7 +5430,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!tmpVm.getState().equals(State.Running)) {
                 // Some other thread changed state of VM, possibly vmsync
                 logger.error("VM " + tmpVm + " unexpectedly went to " + tmpVm.getState() + " state");
-                throw new ConcurrentOperationException("Failed to deploy VM "+vm);
+                throw Exceptions.concurrentOperationException("vm.deploy.unexpected.state", Map.of("instance", vm));
             }
 
             try {
@@ -8895,8 +8894,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw Exceptions.invalidParameterValueException("vm.restore.instance.not.supported", Map.of("instance", vm));
         }
         if (isVMPartOfAnyCKSCluster(vm)) {
-            throw new UnsupportedServiceException("Cannot restore VM with id = " + vm.getUuid() +
-                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before restoring.");
+            throw Exceptions.unsupportedServiceException("vm.restore.cks.not.supported", Map.of("instance", vm));
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 

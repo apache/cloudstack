@@ -980,7 +980,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Thread.sleep(VmOpWaitInterval.value()*1000);
             } catch (final InterruptedException e) {
                 logger.info("Waiting for {} but is interrupted", vm);
-                throw new ConcurrentOperationException("Waiting for " + vm + " but is interrupted");
+                throw Exceptions.concurrentOperationException("vm.start.interrupted", Map.of("instance", vm));
             }
             logger.debug("Waited some more to make sure there's no activity on " + vm);
         }
@@ -1027,7 +1027,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final VMInstanceVO instance = _vmDao.findById(vmId);
             if (instance == null) {
-                throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
+                throw Exceptions.concurrentOperationException("vm.start.lock.failed", Map.of("instance", vm));
             }
 
             logger.debug("Determining why we're unable to update the state to Starting for " + instance + ".  Retry=" + retry);
@@ -1040,7 +1040,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (state.isTransitional()) {
                 if (!checkWorkItems(vm, state)) {
-                    throw new ConcurrentOperationException("There are concurrent operations on " + vm);
+                    throw Exceptions.concurrentOperationException("vm.start.concurrent.operations", Map.of("instance", vm));
                 } else {
                     continue;
                 }
@@ -1053,7 +1053,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
 
-        throw new ConcurrentOperationException("Unable to change the state of " + vm);
+        throw Exceptions.concurrentOperationException("vm.start.state.change.failed", Map.of("instance", vm));
     }
 
     protected <T extends VMInstanceVO> boolean changeState(final T vm, final Event event, final Long hostId, final ItWorkVO work, final Step step) throws NoTransitionException {
@@ -1486,10 +1486,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
-                        throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine "+vm.getUuid()+" oldstate: "+vm.getState()+ "Event :"+Event.OperationRetry);
+                        throw Exceptions.concurrentOperationException("vm.start.transition.failed", Map.of("instance", vm, "state", vm.getState(), "event", Event.OperationRetry));
                     }
                 } catch (final NoTransitionException e1) {
-                    throw new ConcurrentOperationException(e1.getMessage());
+                    throw Exceptions.concurrentOperationException("vm.start.transition.exception", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e1.getMessage())));
                 }
 
                 try {
@@ -1510,7 +1510,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             if (!changeState(vm, Event.AgentReportStopped, destHostId, work, Step.Done)) {
                                 logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.AgentReportStopped);
-                                throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
+                                throw Exceptions.concurrentOperationException("vm.start.deploy.failed", Map.of("instance", vm));
                             }
 
                             logger.debug("Volume preparation completed for VM {} (VM state set to Stopped)", vm);
@@ -1547,7 +1547,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
-                        throw new ConcurrentOperationException("Work steps have been changed: " + work);
+                        throw Exceptions.concurrentOperationException("vm.start.work.step.changed", Map.of("instance", vm, "work", work));
                     }
 
                     _workDao.updateStep(work, Step.Starting);
@@ -1574,7 +1574,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.OperationSucceeded);
-                                throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
+                                throw Exceptions.concurrentOperationException("vm.start.deploy.failed", Map.of("instance", vm));
                             }
 
                             final GPUDeviceTO gpuDevice = startAnswer.getVirtualMachine().getGpuDevice();
@@ -1702,7 +1702,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         conditionallySetPodToDeployIn(vm);
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
                     } catch (final NoTransitionException e) {
-                        throw new ConcurrentOperationException(e.getMessage());
+                        throw Exceptions.concurrentOperationException("vm.start.transition.exception", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e.getMessage())));
                     }
                 }
             }
@@ -2066,7 +2066,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (CollectionUtils.isNotEmpty(pendingWorkJobs) || _haMgr.hasPendingHaWork(vm.getId())) {
             String msg = String.format("There are pending jobs or HA tasks working on the VM: %s, can't unmanage the VM.", vm);
             logger.info(msg);
-            throw new ConcurrentOperationException(msg);
+            throw Exceptions.concurrentOperationException("vm.unmanage.pending.jobs", Map.of("instance", vm));
         }
 
         Long agentHostId = vm.getHostId();
@@ -2509,7 +2509,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
             if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
-                throw new ConcurrentOperationException(String.format("%s is being operated on.", vm.toString()));
+                throw Exceptions.concurrentOperationException("vm.stop.being.operated", Map.of("instance", vm));
             }
         } catch (final NoTransitionException e1) {
             if (!cleanUpEvenIfUnableToStop) {
@@ -3185,9 +3185,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     volumeMgr.release(vm.getId(), dstHostId);
                 }
 
-                String msg = "Migration cancelled because state has changed: " + vm;
-                logger.warn(msg);
-                throw new ConcurrentOperationException(msg);
+                logger.warn("Migration cancelled because state has changed: {}", vm);
+                throw Exceptions.concurrentOperationException("vm.migrate.state.changed", Map.of("instance", vm));
             }
         } catch (final NoTransitionException e1) {
             _networkMgr.rollbackNicForMigration(vmSrc, profile);
@@ -3195,7 +3194,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String msg = String.format("Migration cancelled for VM %s due to state transition failure: %s",
                     vm.getInstanceName(), e1.getMessage());
             logger.warn(msg, e1);
-            throw new ConcurrentOperationException("Migration cancelled because " + e1.getMessage());
+            throw Exceptions.concurrentOperationException("vm.migrate.state.transition.cancelled", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e1.getMessage())));
         } catch (final CloudRuntimeException e2) {
             _networkMgr.rollbackNicForMigration(vmSrc, profile);
             volumeMgr.release(vm.getId(), dstHostId);
@@ -3255,10 +3254,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             try {
                 if (!changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started)) {
-                    throw new ConcurrentOperationException("Unable to change the state for " + vm);
+                    throw Exceptions.concurrentOperationException("vm.migrate.state.change.failed", Map.of("instance", vm));
                 }
             } catch (final NoTransitionException e1) {
-                throw new ConcurrentOperationException("Unable to change state due to " + e1.getMessage());
+                throw Exceptions.concurrentOperationException("vm.migrate.state.change.exception", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e1.getMessage())));
             }
 
             try {
@@ -3576,12 +3575,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private <T extends VMInstanceVO> void moveVmToMigratingState(final T vm, final Long hostId, final ItWorkVO work) throws ConcurrentOperationException {
         try {
             if (!changeState(vm, Event.MigrationRequested, hostId, work, Step.Migrating)) {
-                logger.error("Migration cancelled because state has changed: " + vm);
-                throw new ConcurrentOperationException("Migration cancelled because state has changed: " + vm);
+                logger.error("Migration cancelled because state has changed: {}", vm);
+                throw Exceptions.concurrentOperationException("vm.migrate.state.changed", Map.of("instance", vm));
             }
         } catch (final NoTransitionException e) {
             logger.error("Migration cancelled because " + e.getMessage(), e);
-            throw new ConcurrentOperationException("Migration cancelled because " + e.getMessage());
+            throw Exceptions.concurrentOperationException("vm.migrate.state.transition.cancelled", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e.getMessage())));
         }
     }
 
@@ -3589,11 +3588,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             if (!changeState(vm, Event.OperationSucceeded, hostId, work, Step.Started)) {
                 logger.error("Unable to change the state for " + vm);
-                throw new ConcurrentOperationException("Unable to change the state for " + vm);
+                throw Exceptions.concurrentOperationException("vm.migrate.state.change.failed", Map.of("instance", vm));
             }
         } catch (final NoTransitionException e) {
             logger.error("Unable to change state due to " + e.getMessage(), e);
-            throw new ConcurrentOperationException("Unable to change state due to " + e.getMessage());
+            throw Exceptions.concurrentOperationException("vm.migrate.state.change.exception", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e.getMessage())));
         }
     }
 
@@ -4760,7 +4759,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.debug("Not need to remove the vm {} from network {} as the vm doesn't have nic in this network.", vm, network);
                 return true;
             }
-            throw new ConcurrentOperationException(String.format("Unable to lock nic %s", nic));
+            throw Exceptions.concurrentOperationException("vm.removenic.lock.failed", Map.of("nic", nic));
         }
 
         logger.debug("Lock is acquired for nic {} as a part of remove vm {} from network {}", lock, vm, network);
@@ -4957,12 +4956,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
                 String message = String.format("Migration of %s cancelled because state has changed.", vm.toString());
                 logger.warn(message);
-                throw new ConcurrentOperationException(message);
+                throw Exceptions.concurrentOperationException("vm.scale.migrate.state.changed", Map.of("instance", vm));
             }
         } catch (final NoTransitionException e1) {
             String message = String.format("Migration of %s cancelled due to [%s].", vm.toString(), e1.getMessage());
             logger.error(message, e1);
-            throw new ConcurrentOperationException(message);
+            throw Exceptions.concurrentOperationException("vm.scale.migrate.cancelled.exception", Map.of("instance", vm, "error", org.apache.commons.lang3.StringUtils.defaultString(e1.getMessage())));
         }
 
         boolean migrated = false;
@@ -4986,11 +4985,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 final long newServiceOfferingId = vm.getServiceOfferingId();
                 vm.setServiceOfferingId(oldSvcOfferingId);
                 if (!changeState(vm, VirtualMachine.Event.OperationSucceeded, dstHostId, work, Step.Started)) {
-                    throw new ConcurrentOperationException("Unable to change the state for " + vm);
+                    throw Exceptions.concurrentOperationException("vm.migrate.state.change.failed", Map.of("instance", vm));
                 }
                 vm.setServiceOfferingId(newServiceOfferingId);
             } catch (final NoTransitionException e1) {
-                throw new ConcurrentOperationException("Unable to change state due to " + e1.getMessage());
+                throw Exceptions.concurrentOperationException("vm.migrate.state.change.exception", Map.of("error", org.apache.commons.lang3.StringUtils.defaultString(e1.getMessage())));
             }
 
             try {

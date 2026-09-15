@@ -26,8 +26,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.ResponseMessageResolver;
 import org.apache.commons.collections.MapUtils;
 
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -80,6 +82,24 @@ public final class Exceptions {
         }
 
         return new ServerApiException(errorCode, message);
+    }
+
+    public static ConcurrentOperationException concurrentOperationException(final String errorKey) {
+        return concurrentOperationException(errorKey, Collections.emptyMap());
+    }
+
+    public static ConcurrentOperationException concurrentOperationException(final String errorKey,
+                                                                            final Map<String, Object> metadata) {
+        return build(errorKey, metadata, ConcurrentOperationException::new);
+    }
+
+    public static UnsupportedServiceException unsupportedServiceException(final String errorKey) {
+        return unsupportedServiceException(errorKey, Collections.emptyMap());
+    }
+
+    public static UnsupportedServiceException unsupportedServiceException(final String errorKey,
+                                                                           final Map<String, Object> metadata) {
+        return build(errorKey, metadata, UnsupportedServiceException::new);
     }
 
     public static CloudRuntimeException cloudRuntimeException(final String errorKey) {
