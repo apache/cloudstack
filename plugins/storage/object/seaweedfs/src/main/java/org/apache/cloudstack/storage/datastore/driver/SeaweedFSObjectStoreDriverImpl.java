@@ -487,7 +487,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      * touching the network.
      */
     protected java.net.http.HttpClient getS3ExtensionHttpClient() {
-        return java.net.http.HttpClient.newHttpClient();
+        return SeaweedFSObjectStoreUtil.newS3ExtensionHttpClient();
     }
 
     @Override

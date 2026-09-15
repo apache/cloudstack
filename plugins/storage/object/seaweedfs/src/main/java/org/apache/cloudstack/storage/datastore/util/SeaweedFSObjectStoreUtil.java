@@ -74,6 +74,15 @@ public class SeaweedFSObjectStoreUtil {
     }
 
     /**
+     * Connect timeout for the S3 extension HTTP client, in seconds.
+     */
+    public static final int S3_EXTENSION_CONNECT_TIMEOUT_SECONDS = 10;
+    /**
+     * Per-request timeout for the S3 extension HTTP request, in seconds.
+     */
+    public static final int S3_EXTENSION_REQUEST_TIMEOUT_SECONDS = 30;
+
+    /**
      * IAM user policy applied to each per-account IAM user. Grants full S3
      * access except bucket creation/deletion, so CloudStack retains control of
      * bucket lifecycle while the account's IAM credentials can manage objects.
@@ -217,7 +226,18 @@ public class SeaweedFSObjectStoreUtil {
      * @throws CloudRuntimeException on any failure
      */
     public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey, String bucketName, long sizeGiB) {
-        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, java.net.http.HttpClient.newHttpClient());
+        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, newS3ExtensionHttpClient());
+    }
+
+    /**
+     * Build a bounded HTTP client for SeaweedFS S3 extension requests with a
+     * connect timeout so a stalled endpoint cannot block the management-server
+     * API thread indefinitely.
+     */
+    public static java.net.http.HttpClient newS3ExtensionHttpClient() {
+        return java.net.http.HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(S3_EXTENSION_CONNECT_TIMEOUT_SECONDS))
+                .build();
     }
 
     /**
@@ -321,7 +341,8 @@ public class SeaweedFSObjectStoreUtil {
                 fullUri = java.net.URI.create(fullUri.toString() + "?" + queryString);
             }
             java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
-                    .uri(fullUri);
+                    .uri(fullUri)
+                    .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS));
             for (java.util.Map.Entry<String, String> entry : request.getHeaders().entrySet()) {
                 String headerName = entry.getKey();
                 if (headerName == null || entry.getValue() == null) {
