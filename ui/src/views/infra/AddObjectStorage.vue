@@ -89,14 +89,14 @@
           <a-form-item name="secretKey" ref="secretKey" :label="$t('label.secret.key')">
             <a-input-password v-model:value="form.secretKey" autocomplete="off"/>
           </a-form-item>
-          <a-form-item name="s3Url" ref="s3Url" label="S3 Endpoint URL (optional)">
-            <a-input v-model:value="form.s3Url" placeholder="Override S3 endpoint if different from URL"/>
+          <a-form-item name="s3Url" ref="s3Url" :label="$t('label.seaweedfs.s3.url')">
+            <a-input v-model:value="form.s3Url" :placeholder="$t('label.seaweedfs.s3.url.placeholder')"/>
           </a-form-item>
-          <a-form-item name="iamUrl" ref="iamUrl" label="IAM Endpoint URL (optional)">
-            <a-input v-model:value="form.iamUrl" placeholder="Override IAM endpoint if different from S3 URL"/>
+          <a-form-item name="iamUrl" ref="iamUrl" :label="$t('label.seaweedfs.iam.url')">
+            <a-input v-model:value="form.iamUrl" :placeholder="$t('label.seaweedfs.iam.url.placeholder')"/>
           </a-form-item>
-          <a-form-item name="metricsUrl" ref="metricsUrl" label="Prometheus Metrics URL (optional)">
-            <a-input v-model:value="form.metricsUrl" placeholder="http://seaweedfs-s3:9327 (for scalable usage reporting)"/>
+          <a-form-item name="metricsUrl" ref="metricsUrl" :label="$t('label.seaweedfs.metrics.url')">
+            <a-input v-model:value="form.metricsUrl" :placeholder="$t('label.seaweedfs.metrics.url.placeholder')"/>
           </a-form-item>
           <a-form-item name="size" ref="size">
             <template #label>
