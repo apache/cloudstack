@@ -233,6 +233,27 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testDeleteBucketRemovesRowInsideLock() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        when(bucketTO.getAccountId()).thenReturn(TEST_ACCOUNT_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(true);
+
+        BucketVO existing = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME,
+                null, false, false, false, null);
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(existing);
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+
+        assertTrue(driver.deleteBucket(bucketTO, TEST_STORE_ID));
+        // The row must be removed by the driver (inside the IAM lock, after the
+        // policy refresh) so a concurrent policy rebuild cannot observe the
+        // stale row and re-add the deleted bucket ARN.
+        verify(bucketDao, times(1)).remove(existing.getId());
+    }
+
+    @Test
     public void testDeleteBucketNotFound() throws Exception {
         doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
         BucketTO bucketTO = mock(BucketTO.class);
@@ -950,5 +971,104 @@ public class SeaweedFSObjectStoreDriverImplTest {
 
         Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
         assertEquals(88L, usage.get("b1").longValue());
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMetadataOnlyFallsBackToList() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // A non-leader SeaweedFS S3 instance declares the metric family in its
+        // HELP/TYPE metadata but exports no samples. Matching the metadata
+        // alone would report every bucket as zero, so the parser must require
+        // an actual sample line and fall back to the S3 listing.
+        String metricsBody = "# HELP SeaweedFS_s3_bucket_size_bytes Current size of each S3 bucket in bytes.\n" +
+                "# TYPE SeaweedFS_s3_bucket_size_bytes gauge\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        ListObjectsV2Result b1Result = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(99L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(b1Result.getObjectSummaries()).thenReturn(summaries);
+        when(b1Result.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(b1Result);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(99L, usage.get("b1").longValue());
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMissingSampleFallsBackToList() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b2", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // Only b1 has a sample. Reporting b2 as zero would under-report store
+        // usage, so a missing sample must trigger the S3 fallback.
+        String metricsBody = "SeaweedFS_s3_bucket_size_bytes{bucket=\"b1\"} 100\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        ListObjectsV2Result result = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(11L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(result.getObjectSummaries()).thenReturn(summaries);
+        when(result.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(result);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(2, usage.size());
+        assertEquals(11L, usage.get("b1").longValue());
+        assertEquals(11L, usage.get("b2").longValue());
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMetricsUrlTrailingSlashNormalized() throws Exception {
+        doReturn("http://metrics.local:9327/").when(driver).getMetricsUrl(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        String metricsBody = "SeaweedFS_s3_bucket_size_bytes{bucket=\"b1\"} 555\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(555L, usage.get("b1").longValue());
+
+        // A trailing slash must not produce '//metrics', which can redirect
+        // or 404 and silently force the O(total objects) S3 scan.
+        ArgumentCaptor<HttpRequest> reqCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockHttpClient, times(1)).send(reqCaptor.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        assertEquals("/metrics", reqCaptor.getValue().uri().getPath());
     }
 }
