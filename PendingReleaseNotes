@@ -77,6 +77,15 @@ example.ver.1 > example.ver.2:
     hosts that are measurably too busy, and chooses at random from among the best scoring hosts
     so that simultaneous deployments do not all pick the same one.
 
+    It also holds back hosts that already have host.weighted.starting.vms.threshold VMs sitting
+    in the Starting state, so that a burst of deployments does not queue up behind itself on one
+    host. This is the only signal that reacts within a single deployment: capacity is not charged
+    until a VM reaches Starting and a utilisation average is a sample interval behind, so neither
+    notices a burst until it is over. Set the threshold to 0 to disable it.
+
+    Held-back hosts are never excluded, only moved to the back of the list, so no threshold can
+    turn a deployment that would have succeeded into an InsufficientServerCapacity failure.
+
     Tuned with the host.weighted.* settings, most of which are cluster scoped. Measured
     utilisation comes from a moving average configured with host.load.sample.interval and
     host.load.half.life. Until a management server has collected samples, ranking falls back to

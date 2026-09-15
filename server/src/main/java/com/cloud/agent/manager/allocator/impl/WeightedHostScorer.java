@@ -39,7 +39,7 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostScoringWeights;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -111,7 +111,15 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
                     + "of them is accounted for. 1 restores strict ordering.",
             true, ConfigKey.Scope.Cluster);
 
-    private static final Pair<Long, Long> NO_VMS = new Pair<>(0L, 0L);
+    public static final ConfigKey<Integer> StartingVmsThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Integer.class, "host.weighted.starting.vms.threshold", "10",
+            "Hosts with at least this many VMs still in the Starting state are held back from new VMs, so "
+                    + "that a burst of deployments does not queue up behind itself on one host. Unlike the "
+                    + "utilisation thresholds this reacts within a single deployment rather than waiting for a "
+                    + "load sample. Ignored if it would leave nowhere to deploy. Set to 0 to disable.",
+            true, ConfigKey.Scope.Cluster);
+
+    private static final Ternary<Long, Long, Long> NO_VMS = new Ternary<>(0L, 0L, 0L);
 
     @Inject
     private CapacityDao capacityDao;
@@ -136,7 +144,8 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
             return hosts == null ? new ArrayList<>() : new ArrayList<>(hosts);
         }
 
-        Map<Long, Double> scores = score(zoneId, podId, clusterId, hosts);
+        Map<Long, Ternary<Long, Long, Long>> vmCounts = countVmsByHost(zoneId, podId, clusterId);
+        Map<Long, Double> scores = score(zoneId, clusterId, hosts, vmCounts);
 
         List<Host> unscored = new ArrayList<>();
         List<Host> measured = new ArrayList<>();
@@ -159,24 +168,42 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
         List<Host> tooBusy = new ArrayList<>();
         partitionByUtilisation(clusterId, measured, healthy, tooBusy);
 
+        // held back for having too many VMs still starting. Taken out of healthy, so a host that is
+        // fine on resources but already working through a queue of starts stops attracting more.
+        List<Host> backedUp = new ArrayList<>();
+        partitionByStartingVms(clusterId, healthy, vmCounts, backedUp);
+
+        // Tiers, best first. Nothing is ever dropped: a tier is only reached when every better tier
+        // is empty, so holding a host back can never turn a deployment that would have succeeded
+        // into an InsufficientServerCapacity failure.
+        //
+        //   healthy    - no known problem
+        //   backedUp   - fine on resources, momentarily queueing starts; clears on its own
+        //   unmeasured - unknown, and not assumed to be idle
+        //   tooBusy    - measurably over a resource threshold
+        List<List<Host>> tiers = List.of(healthy, backedUp, unmeasured, tooBusy);
         List<Host> result = new ArrayList<>();
-        if (healthy.isEmpty() && unmeasured.isEmpty()) {
-            logger.warn("Every candidate host is above its utilisation threshold, so the thresholds are being "
-                    + "ignored for this deployment. The cluster is short of capacity.");
-            result.addAll(tooBusy);
-            applySelectionSpread(clusterId, result);
-        } else {
-            result.addAll(healthy);
-            // spread only over hosts known to be healthy, before anything else is appended,
-            // otherwise a busy or unmeasured host can be shuffled into the lead
-            applySelectionSpread(clusterId, result);
-            // a host we cannot measure is not assumed to be idle: it ranks behind every host we can
-            result.addAll(unmeasured);
-            result.addAll(tooBusy);
+        for (List<Host> tier : tiers) {
+            // the spread belongs on whichever tier deployments will actually draw from, which is
+            // the first non-empty one. Applying it only to healthy left concurrent deployments in
+            // strict score order - and so agreeing on one host - whenever healthy was empty.
+            if (result.isEmpty()) {
+                applySelectionSpread(clusterId, tier);
+            }
+            result.addAll(tier);
         }
 
+        // only when a held-back host actually has to be used. Hosts merely being unmeasured, as
+        // they all are on a freshly started management server, is not a capacity problem.
+        if (healthy.isEmpty() && unmeasured.isEmpty() && !(backedUp.isEmpty() && tooBusy.isEmpty())) {
+            logger.warn("No candidate host is within its utilisation thresholds and clear of the starting VM "
+                    + "threshold, so they are being ignored for this deployment. The cluster is short of capacity.");
+        }
         if (!tooBusy.isEmpty()) {
             logger.debug("Holding back {} host(s) above their utilisation threshold: {}", tooBusy.size(), tooBusy);
+        }
+        if (!backedUp.isEmpty()) {
+            logger.debug("Holding back {} host(s) with too many VMs still starting: {}", backedUp.size(), backedUp);
         }
         logger.debug("Weighted host ranking: {}", () -> result.stream()
                 .filter(h -> scores.containsKey(h.getId()))
@@ -187,11 +214,19 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
         return result;
     }
 
+    protected Map<Long, Ternary<Long, Long, Long>> countVmsByHost(long zoneId, Long podId, Long clusterId) {
+        return vmInstanceDao.countVmsByHost(zoneId, podId, clusterId,
+                new Date(System.currentTimeMillis() - RecentStartWindow.value() * 1000L));
+    }
+
     protected Map<Long, Double> score(long zoneId, Long podId, Long clusterId, List<? extends Host> hosts) {
+        return score(zoneId, clusterId, hosts, countVmsByHost(zoneId, podId, clusterId));
+    }
+
+    protected Map<Long, Double> score(long zoneId, Long clusterId, List<? extends Host> hosts,
+            Map<Long, Ternary<Long, Long, Long>> vmCounts) {
         List<CapacityVO> capacities = capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId,
                 List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
-        Map<Long, Pair<Long, Long>> vmCounts = vmInstanceDao.countVmsByHost(zoneId, podId, clusterId,
-                new Date(System.currentTimeMillis() - RecentStartWindow.value() * 1000L));
 
         Map<Long, Double[]> allocated = allocatedFractions(capacities);
 
@@ -202,7 +237,7 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
             if (alloc == null) {
                 continue;
             }
-            Pair<Long, Long> counts = vmCounts.getOrDefault(host.getId(), NO_VMS);
+            Ternary<Long, Long, Long> counts = vmCounts.getOrDefault(host.getId(), NO_VMS);
             scores.put(host.getId(), scoreHost(weights, alloc[0], alloc[1], hostLoadTracker.getLoad(host.getId()),
                     counts.first(), counts.second()));
         }
@@ -331,6 +366,44 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
     }
 
     /**
+     * Moves hosts with too many VMs still in Starting out of {@code healthy} and into
+     * {@code backedUp}, least backed up first.
+     *
+     * This is the one signal in the algorithm that reacts inside a single deployment. Allocation is
+     * not charged until a VM reaches Starting, and a utilisation average is a sample interval and a
+     * half life behind, so neither notices a burst of deployments until it is over. The count of
+     * VMs in Starting is read fresh on every ranking, and a host that is struggling holds that count
+     * up for as long as it struggles - which is the point, since a host whose VMs take minutes
+     * rather than seconds to start is precisely the one that should stop being chosen.
+     *
+     * The fallback order within the held-back group is by starting count rather than by score: if
+     * every host ends up here, the least backed up one is the least bad place to add another.
+     */
+    protected void partitionByStartingVms(Long clusterId, List<Host> healthy,
+            Map<Long, Ternary<Long, Long, Long>> vmCounts, List<Host> backedUp) {
+        int threshold = startingVmsThreshold(clusterId);
+        if (threshold <= 0) {
+            return;
+        }
+        healthy.removeIf(host -> {
+            if (startingVms(vmCounts, host) >= threshold) {
+                backedUp.add(host);
+                return true;
+            }
+            return false;
+        });
+        backedUp.sort(Comparator.comparingLong(h -> startingVms(vmCounts, h)));
+    }
+
+    protected int startingVmsThreshold(Long clusterId) {
+        return (int) valueIn(StartingVmsThreshold, clusterId);
+    }
+
+    private static long startingVms(Map<Long, Ternary<Long, Long, Long>> vmCounts, Host host) {
+        return vmCounts.getOrDefault(host.getId(), NO_VMS).third();
+    }
+
+    /**
      * Shuffles the best few hosts so that deployments made at the same moment do not all pick the
      * same one. Capacity is only charged once a VM starts, so until then every concurrent decision
      * sees the same figures and strict ordering makes them agree.
@@ -411,7 +484,8 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
                 ExpectedVmsPerHost,
                 CpuUtilisationThreshold,
                 MemoryUtilisationThreshold,
-                SelectionSpread
+                SelectionSpread,
+                StartingVmsThreshold
         };
     }
 }

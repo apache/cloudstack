@@ -45,6 +45,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -158,7 +159,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     // %s is the "changed state recently" test, or a constant 0 when no cut-off is given. It is not
     // a bound parameter because there is no timestamp that reliably means "never" - update_time is
     // a TIMESTAMP column, so anything past 2038 is out of range.
-    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(%s, 1, 0)) " +
+    //
+    // The third count is VMs still in Starting. Unlike the recent-state-change count it does not
+    // expire on a clock: a VM that has been starting for ten minutes still counts, which is the
+    // case that matters, since a host that is struggling is exactly the one whose VMs take longest
+    // to leave Starting.
+    private static final String COUNT_VMS_BY_HOST = "SELECT host.id, COUNT(vm.id), SUM(IF(%s, 1, 0)), " +
+            "SUM(IF(vm.state = 'Starting', 1, 0)) " +
             "FROM `cloud`.`host` host LEFT JOIN `cloud`.`vm_instance` vm " +
             "ON vm.host_id = host.id AND vm.state IN ('Running', 'Starting', 'Stopping', 'Migrating') " +
             "AND vm.removed IS NULL WHERE host.type = 'Routing' AND host.removed IS NULL AND host.data_center_id = ? ";
@@ -807,9 +814,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
 
     @Override
-    public Map<Long, Pair<Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter) {
+    public Map<Long, Ternary<Long, Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        Map<Long, Pair<Long, Long>> result = new HashMap<>();
+        Map<Long, Ternary<Long, Long, Long>> result = new HashMap<>();
         String sql = String.format(COUNT_VMS_BY_HOST, changedStateAfter != null ? "vm.update_time > ?" : "0");
         if (podId != null) {
             sql = sql + " AND host.pod_id = ? ";
@@ -833,7 +840,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             }
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                result.put(rs.getLong(1), new Pair<>(rs.getLong(2), rs.getLong(3)));
+                // SUM over no rows is NULL, which getLong reports as 0 - correct for an empty host
+                result.put(rs.getLong(1), new Ternary<>(rs.getLong(2), rs.getLong(3), rs.getLong(4)));
             }
             return result;
         } catch (SQLException e) {

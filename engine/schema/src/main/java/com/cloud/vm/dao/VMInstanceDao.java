@@ -25,6 +25,7 @@ import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
@@ -138,10 +139,10 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      *         cut-off for the second count: VMs whose state last changed after this. Approximates
      *         the VMs still working through their startup load, which neither allocation nor a
      *         utilisation average has caught up with yet.
-     * @return host id to {total VMs, VMs that changed state recently}. Every host in scope appears,
-     *         including hosts with no VMs.
+     * @return host id to {total VMs, VMs that changed state recently, VMs still in Starting}. Every
+     *         host in scope appears, including hosts with no VMs.
      */
-    Map<Long, Pair<Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter);
+    Map<Long, Ternary<Long, Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter);
 
     Long countRunningAndStartingByAccount(long accountId);
 
