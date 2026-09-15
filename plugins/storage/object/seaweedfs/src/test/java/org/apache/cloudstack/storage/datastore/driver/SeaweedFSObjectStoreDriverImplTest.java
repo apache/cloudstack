@@ -357,6 +357,87 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
     }
 
+    /**
+     * Deterministic SigV4 signature-verification test.
+     *
+     * Signs the same request through the AWS SDK v1 AWSS3V4Signer (the same
+     * signer the production code uses) and asserts that the Authorization
+     * header, signed headers, x-amz-content-sha256, and x-amz-date produced
+     * by the driver's request match. This catches signing regressions (e.g.
+     * the query parameter not being in the canonical query string) that a
+     * mere "header exists" check would miss.
+     */
+    @Test
+    public void testSetBucketQuotaSigV4SignatureVerification() throws Exception {
+        String accessKey = "AKIAIOSFODNN7EXAMPLE";
+        String secretKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+        String bucketName = "quota-sig-test";
+        String s3Url = "http://s3.example.com:8333";
+        long quotaGiB = 5;
+
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(bucketName);
+        doReturn(s3Url).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn(accessKey).when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn(secretKey).when(driver).getSecretKey(TEST_STORE_ID);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn("");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        driver.setBucketQuota(bucketTO, TEST_STORE_ID, quotaGiB);
+
+        ArgumentCaptor<HttpRequest> reqCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockHttpClient, times(1)).send(reqCaptor.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        HttpRequest sent = reqCaptor.getValue();
+
+        // Build the expected signed request the same way the production code does
+        String expectedBody = String.format("{\"quota_size\":%d,\"quota_unit\":\"GB\",\"quota_enabled\":true}", quotaGiB);
+        byte[] bodyBytes = expectedBody.getBytes(StandardCharsets.UTF_8);
+
+        com.amazonaws.DefaultRequest<?> expectedRequest = new com.amazonaws.DefaultRequest<>("s3");
+        expectedRequest.setEndpoint(java.net.URI.create(s3Url));
+        expectedRequest.setHttpMethod(com.amazonaws.http.HttpMethodName.PUT);
+        expectedRequest.setResourcePath("/" + bucketName);
+        expectedRequest.addParameter("seaweedfs-quota", "");
+        expectedRequest.setContent(new java.io.ByteArrayInputStream(bodyBytes));
+        expectedRequest.getHeaders().put("Content-Length", String.valueOf(bodyBytes.length));
+        expectedRequest.getHeaders().put("Content-Type", "application/json");
+
+        com.amazonaws.auth.AWSCredentials credentials = new com.amazonaws.auth.BasicAWSCredentials(accessKey, secretKey);
+        com.amazonaws.services.s3.internal.AWSS3V4Signer signer = new com.amazonaws.services.s3.internal.AWSS3V4Signer();
+        signer.setServiceName("s3");
+        signer.setRegionName("us-east-1");
+        signer.sign(expectedRequest, credentials);
+
+        // The Authorization header must match exactly — proves the canonical
+        // query string (including seaweedfs-quota), payload hash, and signed
+        // headers all match the independently signed reference request.
+        String expectedAuth = expectedRequest.getHeaders().get("Authorization");
+        String actualAuth = sent.headers().firstValue("Authorization").orElse(null);
+        assertNotNull("Authorization header must be present", actualAuth);
+        assertEquals("SigV4 Authorization header must match the reference signature", expectedAuth, actualAuth);
+
+        // The payload hash must be present and match
+        String expectedContentSha = expectedRequest.getHeaders().get("x-amz-content-sha256");
+        String actualContentSha = sent.headers().firstValue("x-amz-content-sha256").orElse(null);
+        assertEquals("x-amz-content-sha256 must match", expectedContentSha, actualContentSha);
+
+        // The signed headers list must include the query-signing-relevant headers
+        String expectedDate = expectedRequest.getHeaders().get("x-amz-date");
+        String actualDate = sent.headers().firstValue("x-amz-date").orElse(null);
+        assertEquals("x-amz-date must match", expectedDate, actualDate);
+
+        // The query string must carry the subresource
+        assertNotNull("URI must have a query string", sent.uri().getQuery());
+        assertTrue("query must carry seaweedfs-quota", sent.uri().getQuery().contains("seaweedfs-quota"));
+    }
+
     @Test
     public void testSetBucketQuotaNoS3ConfigThrows() {
         BucketTO bucketTO = mock(BucketTO.class);
