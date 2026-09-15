@@ -376,9 +376,19 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
-        // Refresh the account's IAM policy to drop the deleted bucket
-        AmazonIdentityManagement iamClient = getIAMClient(storeId);
-        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
+        // Best-effort: refresh the account's IAM policy to drop the deleted
+        // bucket. The S3 deletion has already succeeded, so a policy refresh
+        // failure must not cause deleteBucket to throw — that would leave
+        // BucketApiServiceImpl with a BucketVO for a bucket that no longer
+        // exists remotely. The stale policy entry is harmless (it grants
+        // access to a non-existent bucket) and will be corrected on the
+        // next create/delete or manually by an operator.
+        try {
+            AmazonIdentityManagement iamClient = getIAMClient(storeId);
+            updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
+        } catch (Exception e) {
+            logger.warn("Failed to refresh IAM policy after deleting bucket {}: {}", bucketName, e.getMessage());
+        }
         return true;
     }
 
