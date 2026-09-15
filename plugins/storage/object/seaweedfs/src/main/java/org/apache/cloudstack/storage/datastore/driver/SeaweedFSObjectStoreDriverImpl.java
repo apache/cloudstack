@@ -108,6 +108,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      * clustered deployment, not just within a single JVM.
      */
     private static final String IAM_LOCK_PREFIX = "seaweedfs.iam.";
+    private static final String BUCKET_NAME_LOCK_PREFIX = "seaweedfs.bucket.";
 
     private static String getIamLockName(long storeId, long accountId) {
         return IAM_LOCK_PREFIX + storeId + "." + accountId;
@@ -126,6 +127,37 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         GlobalLock lock = GlobalLock.getInternLock(getIamLockName(storeId, accountId));
         if (!lock.lock(300)) {
             logger.warn("Failed to acquire IAM lock for store {} account {}", storeId, accountId);
+            lock.releaseRef();
+            return null;
+        }
+        return lock;
+    }
+
+    private static String getBucketNameLockName(long storeId, String bucketName) {
+        return BUCKET_NAME_LOCK_PREFIX + storeId + "." + bucketName;
+    }
+
+    /**
+     * Acquire a DB-backed global lock covering a bucket <em>name</em> on a store,
+     * independent of the owning account.
+     *
+     * S3 bucket names are globally unique within a store and are reusable after
+     * deletion, while the IAM lock is scoped to (store, account). Without this
+     * lock, once a delete removes the remote bucket but before the old owner's
+     * IAM policy is refreshed, a different account can recreate the same name and
+     * the old owner's credentials would still grant that ARN. Both createBucket
+     * and deleteBucket take this lock so the two never interleave for a name.
+     *
+     * <p>Protected so tests can override with a no-op lock (the DB-backed
+     * {@link GlobalLock} requires a real transaction context).
+     *
+     * @return the held lock, which the caller must {@link GlobalLock#unlock()}
+     *         and {@link GlobalLock#releaseRef()}, or {@code null} on timeout
+     */
+    protected GlobalLock acquireBucketNameLock(long storeId, String bucketName) {
+        GlobalLock lock = GlobalLock.getInternLock(getBucketNameLockName(storeId, bucketName));
+        if (!lock.lock(300)) {
+            logger.warn("Failed to acquire bucket name lock for store {} bucket {}", storeId, bucketName);
             lock.releaseRef();
             return null;
         }
@@ -374,6 +406,26 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     public Bucket createBucket(Bucket bucket, boolean objectLock) {
         String bucketName = bucket.getName();
         long storeId = bucket.getObjectStoreId();
+
+        // Serialize against a concurrent deleteBucket of the same name by any
+        // account on this store. Bucket names are globally unique per store and
+        // reusable, so without this an account could claim a name while the
+        // previous owner's IAM policy still granted that ARN.
+        GlobalLock nameLock = acquireBucketNameLock(storeId, bucketName);
+        if (nameLock == null) {
+            throw new CloudRuntimeException("Failed to acquire bucket name lock for store " + storeId + " bucket " + bucketName);
+        }
+        try {
+            return createBucketLocked(bucket, objectLock);
+        } finally {
+            nameLock.unlock();
+            nameLock.releaseRef();
+        }
+    }
+
+    private Bucket createBucketLocked(Bucket bucket, boolean objectLock) {
+        String bucketName = bucket.getName();
+        long storeId = bucket.getObjectStoreId();
         long accountId = bucket.getAccountId();
 
         // Use the store's admin credentials to create the bucket
@@ -527,14 +579,33 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         String bucketName = bucket.getName();
+
+        // Hold the store-wide bucket name lock across the remote delete and the
+        // IAM policy refresh. The IAM lock below is scoped to (store, account)
+        // and therefore does not serialize against createBucket for a *different*
+        // account: once the S3 delete succeeded, that account could claim the now
+        // free name while this account's policy still granted the ARN, letting the
+        // old credentials reach the new tenant's bucket.
+        GlobalLock nameLock = acquireBucketNameLock(storeId, bucketName);
+        if (nameLock == null) {
+            throw new CloudRuntimeException("Failed to acquire bucket name lock for store " + storeId + " bucket " + bucketName);
+        }
+        try {
+            return deleteBucketLocked(bucket, storeId);
+        } finally {
+            nameLock.unlock();
+            nameLock.releaseRef();
+        }
+    }
+
+    private boolean deleteBucketLocked(BucketTO bucket, long storeId) {
+        String bucketName = bucket.getName();
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
 
         // Acquire the per-store/account IAM lock so the S3 delete and the
         // subsequent policy refresh are atomic with respect to concurrent
-        // createUser/createBucket operations. Without the lock, a concurrent
-        // policy rebuild could re-add the deleted bucket ARN between the
-        // excludeBucket refresh and BucketApiServiceImpl's row removal.
+        // createUser operations for this account.
         GlobalLock iamLock = acquireIamLock(storeId, accountId);
         if (iamLock == null) {
             throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
