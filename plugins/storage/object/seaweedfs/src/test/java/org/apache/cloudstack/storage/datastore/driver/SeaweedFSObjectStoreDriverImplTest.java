@@ -543,6 +543,32 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testCreateUserRotatesInactiveKey() throws Exception {
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
+        when(account.getAccountName()).thenReturn("testaccount");
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+
+        // Stored key exists in IAM but is Inactive -> must rotate, not reuse
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResultInactive(TEST_AK));
+
+        AccessKey accessKey = mock(AccessKey.class);
+        CreateAccessKeyResult accessKeyResult = mock(CreateAccessKeyResult.class);
+        when(accessKey.getAccessKeyId()).thenReturn("new-ak");
+        when(accessKey.getSecretAccessKey()).thenReturn("new-sk");
+        when(accessKeyResult.getAccessKey()).thenReturn(accessKey);
+        when(iamClient.createAccessKey(any(CreateAccessKeyRequest.class))).thenReturn(accessKeyResult);
+
+        boolean created = driver.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID);
+        assertTrue(created);
+
+        // The inactive key must be cleaned up and a new one created
+        verify(iamClient, times(1)).deleteAccessKey(any(DeleteAccessKeyRequest.class));
+        verify(iamClient, times(1)).createAccessKey(any(CreateAccessKeyRequest.class));
+    }
+
+    @Test
     public void testCreateUserStoredKeyMissingCreatesReplacement() throws Exception {
         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
         when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
@@ -607,7 +633,17 @@ public class SeaweedFSObjectStoreDriverImplTest {
         ListAccessKeysResult result = new ListAccessKeysResult();
         List<AccessKeyMetadata> metadata = new ArrayList<>();
         for (String keyId : accessKeyIds) {
-            metadata.add(new AccessKeyMetadata().withAccessKeyId(keyId));
+            metadata.add(new AccessKeyMetadata().withAccessKeyId(keyId).withStatus("Active"));
+        }
+        result.setAccessKeyMetadata(metadata);
+        return result;
+    }
+
+    private static ListAccessKeysResult listAccessKeysResultInactive(String... accessKeyIds) {
+        ListAccessKeysResult result = new ListAccessKeysResult();
+        List<AccessKeyMetadata> metadata = new ArrayList<>();
+        for (String keyId : accessKeyIds) {
+            metadata.add(new AccessKeyMetadata().withAccessKeyId(keyId).withStatus("Inactive"));
         }
         result.setAccessKeyMetadata(metadata);
         return result;

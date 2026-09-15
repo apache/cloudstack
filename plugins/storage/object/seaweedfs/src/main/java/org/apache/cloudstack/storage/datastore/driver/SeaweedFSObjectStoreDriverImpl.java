@@ -146,13 +146,16 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
                 "CloudStackPolicy", SeaweedFSObjectStoreUtil.IAM_USER_POLICY));
 
-        // Reuse the stored access key if it is still present in IAM; only
-        // create a new one when no usable key exists.
+        // Reuse the stored access key only if both the access key id and the
+        // secret key are present and the key is still Active in IAM; otherwise
+        // create a replacement.
         Map<String, String> details = _accountDetailsDao.findDetails(accountId);
         String accessKeyDetailKey = SeaweedFSObjectStoreUtil.keyAccessKey(storeId);
         String secretKeyDetailKey = SeaweedFSObjectStoreUtil.keySecretKey(storeId);
         String storedAccessKeyId = details.get(accessKeyDetailKey);
-        if (storedAccessKeyId != null && iamAccessKeyExists(iamClient, userName, storedAccessKeyId)) {
+        String storedSecretKey = details.get(secretKeyDetailKey);
+        if (storedAccessKeyId != null && storedSecretKey != null
+                && iamAccessKeyExists(iamClient, userName, storedAccessKeyId)) {
             logger.debug("Reusing existing IAM access key {} for user {}", storedAccessKeyId, userName);
             return true;
         }
@@ -196,19 +199,19 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     /**
-     * Check whether the given access key id is still listed in IAM for the user.
+     * Check whether the given access key id is still listed and Active in IAM
+     * for the user. Listing failures are propagated rather than swallowed so
+     * a transient IAM outage does not send createUser into the replacement
+     * path (which would overwrite stored credentials and invalidate bucket
+     * records).
      */
     private boolean iamAccessKeyExists(AmazonIdentityManagement iamClient, String userName, String accessKeyId) {
-        try {
-            for (AccessKeyMetadata metadata :
-                    iamClient.listAccessKeys(new ListAccessKeysRequest()
-                            .withUserName(userName)).getAccessKeyMetadata()) {
-                if (accessKeyId.equals(metadata.getAccessKeyId())) {
-                    return true;
-                }
+        for (AccessKeyMetadata metadata :
+                iamClient.listAccessKeys(new ListAccessKeysRequest()
+                        .withUserName(userName)).getAccessKeyMetadata()) {
+            if (accessKeyId.equals(metadata.getAccessKeyId())) {
+                return "Active".equalsIgnoreCase(metadata.getStatus());
             }
-        } catch (AmazonClientException e) {
-            logger.warn("Failed to list IAM access keys for user {}: {}", userName, e.getMessage());
         }
         return false;
     }
