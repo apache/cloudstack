@@ -89,7 +89,16 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String s3Url = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
         String iamUrl = details.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
 
-        // If s3Url is not provided, default it to the store url
+        // Track whether the endpoints were explicitly supplied. Only
+        // explicitly-supplied values are persisted in the details map; the
+        // driver falls back to ObjectStoreVO.url / getS3Url() when the
+        // details are absent, so updateObjectStore can change the store URL
+        // without a stale persisted s3Url/iamUrl overriding it.
+        boolean s3UrlExplicit = StringUtils.isNotBlank(s3Url);
+        boolean iamUrlExplicit = StringUtils.isNotBlank(iamUrl);
+
+        // Resolve the endpoints for validation, defaulting to the store URL
+        // (and s3Url) as needed.
         if (StringUtils.isBlank(s3Url)) {
             s3Url = url;
         }
@@ -108,9 +117,19 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             throw new CloudRuntimeException("Required SeaweedFS configuration parameters are missing/empty.");
         }
 
-        // Update the details map with the resolved URLs so the driver can read them later
-        details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, s3Url);
-        details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, iamUrl);
+        // Persist only explicitly-supplied endpoint overrides. Defaulted
+        // values are not written so the driver resolves them from the current
+        // store URL at runtime.
+        if (s3UrlExplicit) {
+            details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, s3Url);
+        } else {
+            details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
+        }
+        if (iamUrlExplicit) {
+            details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, iamUrl);
+        } else {
+            details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        }
 
         // Validate S3 and IAM Service URLs.
         logger.info("Validating SeaweedFS S3 endpoint: {}", s3Url);
