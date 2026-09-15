@@ -70,6 +70,11 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.PRESERVE_IP, type = CommandType.BOOLEAN, description = "Use the same IP/MAC addresses as stored in the backup metadata. Works only if the original Instance is deleted and the IP/MAC address is available.")
     private Boolean preserveIp;
 
+    @Parameter(name = ApiConstants.RESET_PASSWORD, type = CommandType.BOOLEAN,
+            description = "For a password enabled template, whether to generate a new password for the created Instance and return it in the response. " +
+                    "If not specified, the zone setting `restore.vm.from.backup.reset.password` decides.", since = "4.22.1.0")
+    private Boolean resetPassword;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -88,6 +93,10 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
 
     public boolean getPreserveIp() {
         return (preserveIp != null) ? preserveIp : false;
+    }
+
+    public Boolean getResetPassword() {
+        return resetPassword;
     }
 
     @Override

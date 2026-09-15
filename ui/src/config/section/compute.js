@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'compute',
@@ -190,6 +191,7 @@ export default {
           api: 'createVMSnapshot',
           icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
+          message: 'message.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: (record, store) => {
@@ -376,7 +378,7 @@ export default {
           show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }

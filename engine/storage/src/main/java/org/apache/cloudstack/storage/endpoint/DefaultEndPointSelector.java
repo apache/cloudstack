@@ -25,7 +25,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -198,12 +197,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 Pair<List<DedicatedResourceVO>, Integer> hostIds = dedicatedResourceDao.searchDedicatedHosts(null, null, account.getId(), null, null);
                 List<DedicatedResourceVO> accountDedicatedHosts = hostIds.first();
                 for (DedicatedResourceVO accountDedicatedResource: accountDedicatedHosts){
-                    Iterator<Long> dedicatedHostsIterator = dedicatedHosts.iterator();
-                    while (dedicatedHostsIterator.hasNext()) {
-                        if (dedicatedHostsIterator.next() == accountDedicatedResource.getHostId()) {
-                            dedicatedHostsIterator.remove();
-                        }
-                    }
+                    dedicatedHosts.removeIf(hostId -> hostId.equals(accountDedicatedResource.getHostId()));
                 }
             }
         }

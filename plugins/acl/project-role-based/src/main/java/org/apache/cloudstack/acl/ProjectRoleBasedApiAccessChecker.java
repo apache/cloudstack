@@ -154,6 +154,11 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         return true;
     }
 
+    @Override
+    public List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        return apiNames;
+    }
+
     public boolean isPermitted(Project project, ProjectAccount projectUser, String ... apiCommandNames) {
         ProjectRole projectRole = null;
         if(projectUser.getProjectRoleId() != null) {

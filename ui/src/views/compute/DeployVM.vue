@@ -2023,6 +2023,18 @@ export default {
       this.formRef.value.resetFields()
       this.fetchData()
     },
+    updateSelectedTemplateHypervisor () {
+      if (!this.form.templateid) {
+        return
+      }
+      for (const entry of Object.values(this.options.templates)) {
+        const template = entry?.template.find(option => option.id === this.form.templateid)
+        if (template?.hypervisor) {
+          this.form.hypervisor = template.hypervisor
+          return
+        }
+      }
+    },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
         this.imageType = 'templateid'
@@ -2055,6 +2067,9 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          if (template.hypervisor) {
+            this.form.hypervisor = template.hypervisor
+          }
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
@@ -2914,11 +2929,12 @@ export default {
         promises.push(this.fetchTemplates(filter, params))
       })
       this.options.templates = templates
-      Promise.all(promises).then((response) => {
+      return Promise.all(promises).then((response) => {
         response.forEach((resItem, idx) => {
           templates[templateFilters[idx]] = _.isEmpty(resItem.listtemplatesresponse) ? { count: 0, template: [] } : resItem.listtemplatesresponse
           this.options.templates = { ...templates }
         })
+        this.updateSelectedTemplateHypervisor()
       }).catch((reason) => {
         console.log(reason)
       }).finally(() => {

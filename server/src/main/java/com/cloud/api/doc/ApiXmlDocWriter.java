@@ -411,7 +411,7 @@ public class ApiXmlDocWriter {
         xs.alias("alert", Alert.class);
         try(ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");) {
             for (Field f : AlertManager.class.getFields()) {
-                if (f.getClass().isAssignableFrom(Number.class)) {
+                if (Number.class.isAssignableFrom(f.getType())) {
                     String name = f.getName().substring(11);
                     Alert alert = new Alert(name, f.getInt(null));
                     out.writeObject(alert);

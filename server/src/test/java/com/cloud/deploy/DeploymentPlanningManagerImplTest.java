@@ -554,9 +554,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passEncRootProvidedHostSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -579,9 +578,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootProvidedHostNotSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -604,9 +602,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passNoEncRootProvidedHostNotSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -628,9 +625,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passNoEncRootProvidedHostSupportingEncryptionTest() {
         HostVO host = new HostVO("host");
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
@@ -652,9 +648,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passEncRootLastHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -682,9 +677,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootLastHostNotSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -708,9 +702,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void passEncRootPlannerHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "true");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -733,9 +726,8 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void failEncRootPlannerHostSupportingEncryptionTest() {
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {{
-            put(Host.HOST_VOLUME_ENCRYPTION, "false");
-        }};
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "false");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -759,11 +751,8 @@ public class DeploymentPlanningManagerImplTest {
     public void findSuitablePoolsForVolumesTest() throws Exception {
         Long diskOfferingId = 1L;
         HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {
-            {
-                put(Host.HOST_VOLUME_ENCRYPTION, "true");
-            }
-        };
+        Map<String, String> hostDetails = new HashMap<>();
+        hostDetails.put(Host.HOST_VOLUME_ENCRYPTION, "true");
         host.setDetails(hostDetails);
         Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
@@ -852,9 +841,8 @@ public class DeploymentPlanningManagerImplTest {
 
         StoragePool pool = new StoragePoolVO();
 
-        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>() {{
-            put(vol1, List.of(pool));
-        }};
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>();
+        suitableVolumeStoragePools.put(vol1, List.of(pool));
 
         Pair<Map<Volume, List<StoragePool>>, List<Volume>> suitable = new Pair<>(suitableVolumeStoragePools, volumes);
 
@@ -882,9 +870,8 @@ public class DeploymentPlanningManagerImplTest {
                 ArgumentMatchers.anyInt()
         );
 
-        Map<Volume, StoragePool> suitableVolumeStoragePoolMap = new HashMap<>() {{
-            put(vol1, pool);
-        }};
+        Map<Volume, StoragePool> suitableVolumeStoragePoolMap = new HashMap<>();
+        suitableVolumeStoragePoolMap.put(vol1, pool);
         Mockito.doReturn(true).when(_dpm).hostCanAccessSPool(ArgumentMatchers.any(Host.class), ArgumentMatchers.any(StoragePool.class));
 
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
