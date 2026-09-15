@@ -127,7 +127,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'Simulator'],
+      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'SeaweedFS', 'Simulator'],
       zones: [],
       loading: false
     }
