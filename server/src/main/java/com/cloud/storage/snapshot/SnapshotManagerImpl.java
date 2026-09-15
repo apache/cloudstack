@@ -1638,7 +1638,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean isKvmAndFileBasedStorage = isHypervisorKvmAndFileBasedStorage(volume, storagePool);
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
-
         StoragePoolType poolType = volume.getStoragePoolType();
 
         updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, poolType, clusterId);
@@ -1647,7 +1646,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // They must not use secondary archive bookkeeping (postSnapshotDirectlyToSecondary) or a physical
         // secondary copy — delete is handled via StorageSystemSnapshotStrategy → driver deleteAsync.
         boolean archiveSnapshotToSecondary = backupSnapToSecondary
-                && !isManagedPrimaryLocationSnapshot(storagePool, payload);
+                && !isOntapManagedPrimaryLocationSnapshot(storagePool, payload);
 
         if (isKvmAndFileBasedStorage && archiveSnapshotToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
@@ -1681,7 +1680,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     postSnapshotDirectlyToSecondary(snapshot, snapshotOnPrimary, snapshotId);
                 }
             } else {
-                if (backupSnapToSecondary && isManagedPrimaryLocationSnapshot(storagePool, payload)) {
+                if (backupSnapToSecondary && isOntapManagedPrimaryLocationSnapshot(storagePool, payload)) {
                     logger.info("takeSnapshot: snapshot [{}] on NetApp ONTAP managed primary pool [{}] with locationType=PRIMARY — "
                             + "keeping snapshot on primary/array storage only; not archiving to secondary "
                             + "(backup.snapshot.after.take is ignored for this snapshot class)",
@@ -1787,7 +1786,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
      *
      * <p>Other managed storage providers are not affected by this check.</p>
      */
-    private boolean isManagedPrimaryLocationSnapshot(StoragePool storagePool, CreateSnapshotPayload payload) {
+    private boolean isOntapManagedPrimaryLocationSnapshot(StoragePool storagePool, CreateSnapshotPayload payload) {
         return storagePool != null && storagePool.isManaged()
                 && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(storagePool.getStorageProviderName())
                 && Snapshot.LocationType.PRIMARY.equals(payload.getLocationType());

@@ -953,4 +953,5 @@ public class UnifiedNASStrategyTest {
         List<ExportRule.ExportClient> clients = existingPolicy.getRules().get(0).getClients();
         assertEquals(1, clients.size());
         assertEquals("192.168.1.10/32", clients.get(0).getMatch());
-    }}
+    }
+}

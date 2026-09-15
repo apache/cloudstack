@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,7 +92,7 @@ public class OntapHostListener implements HypervisorHostListener {
         try {
             // Load storage pool details from database to pass mount options and other config to agent
             Map<String, String> detailsMap = _storagePoolDetailsDao.listDetailsKeyPairs(poolId);
-            if (detailsMap == null || detailsMap.isEmpty()) {
+            if (MapUtils.isEmpty(detailsMap)) {
                 logger.error("hostConnect: Failed to load storage pool details for pool id: {}", poolId);
                 return false;
             }
@@ -247,7 +248,7 @@ public class OntapHostListener implements HypervisorHostListener {
     private void removeHostFromOntapPoolIfNeeded(StoragePoolVO pool, Host host) {
         try {
             Map<String, String> detailsMap = _storagePoolDetailsDao.listDetailsKeyPairs(pool.getId());
-            if (detailsMap == null || detailsMap.isEmpty()) {
+            if (MapUtils.isEmpty(detailsMap)) {
                 logger.debug("hostAboutToBeRemoved: removeHostFromOntapPoolIfNeeded: No pool details found for pool id: {}", pool.getId());
                 return;
             }
