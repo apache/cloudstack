@@ -62,6 +62,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.utils.db.DbUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BucketApiServiceImplTest {
@@ -212,15 +213,18 @@ public class BucketApiServiceImplTest {
         when(bucket.getObjectStoreId()).thenReturn(objectStoreId);
         when(bucket.getQuota()).thenReturn(quota);
         when(bucket.getAccountId()).thenReturn(ACCOUNT_ID);
+        when(bucket.getId()).thenReturn(bucketId);
         when(accountManager.getAccount(ACCOUNT_ID)).thenReturn(mock(AccountVO.class));
         Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
 
         ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
         Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
         Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+        Mockito.when(objectStoreDao.updateAllocatedSize(objectStoreVO, -1L * quota * Resource.ResourceType.bytesToGiB)).thenReturn(true);
         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
         Mockito.when(objectStore.deleteBucket(Mockito.any(BucketTO.class))).thenReturn(true);
+        Mockito.when(bucketDao.remove(bucketId)).thenReturn(true);
 
         bucketApiService.deleteBucket(bucketId, null);
 
@@ -229,6 +233,37 @@ public class BucketApiServiceImplTest {
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCount(ACCOUNT_ID, Resource.ResourceType.object_storage,
                         quota * Resource.ResourceType.bytesToGiB);
+        Mockito.verify(bucketDao, Mockito.times(1)).remove(bucketId);
+    }
+
+    @Test
+    public void testDeleteBucketAllocatedSizeFailureDoesNotRemoveBucket() throws ResourceAllocationException {
+        Long bucketId = 1L;
+        Long objectStoreId = 3L;
+        String bucketName = "bucket1";
+        int quota = 2;
+
+        BucketVO bucket = mock(BucketVO.class);
+        when(bucket.getName()).thenReturn(bucketName);
+        when(bucket.getObjectStoreId()).thenReturn(objectStoreId);
+        when(bucket.getQuota()).thenReturn(quota);
+        when(bucket.getAccountId()).thenReturn(ACCOUNT_ID);
+        when(bucket.getId()).thenReturn(bucketId);
+        when(accountManager.getAccount(ACCOUNT_ID)).thenReturn(mock(AccountVO.class));
+        Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+        Mockito.when(objectStoreVO.getName()).thenReturn("store");
+        Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+        Mockito.when(objectStoreDao.updateAllocatedSize(objectStoreVO, -1L * quota * Resource.ResourceType.bytesToGiB)).thenReturn(false);
+        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+        Mockito.when(objectStore.deleteBucket(Mockito.any(BucketTO.class))).thenReturn(true);
+
+        assertThrows(CloudRuntimeException.class, () -> bucketApiService.deleteBucket(bucketId, null));
+
+        Mockito.verify(bucketDao, Mockito.never()).remove(bucketId);
     }
 
     @Test
@@ -254,12 +289,54 @@ public class BucketApiServiceImplTest {
         Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+        // Both DAO updates report failure by returning false rather than
+        // throwing, so the quota path checks their result explicitly.
+        Mockito.when(objectStoreDao.updateAllocatedSize(objectStoreVO, -1L * Resource.ResourceType.bytesToGiB)).thenReturn(true);
+        Mockito.when(bucketDao.update(Mockito.any(), Mockito.any(BucketVO.class))).thenReturn(true);
 
         bucketApiService.updateBucket(cmd, null);
 
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCount(ACCOUNT_ID, Resource.ResourceType.object_storage,
                         (bucketQuota - cmdQuota) * Resource.ResourceType.bytesToGiB);
+    }
+
+    @Test
+    public void testUpdateBucketQuotaAllocatedSizeFailureRestoresRemoteQuotaAndResourceCount() {
+        Long bucketId = 1L;
+        Long objectStoreId = 2L;
+        Integer bucketQuota = 2;
+        Integer cmdQuota = 1;
+        String bucketName = "bucket1";
+
+        UpdateBucketCmd cmd = Mockito.mock(UpdateBucketCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(bucketId);
+        Mockito.when(cmd.getQuota()).thenReturn(cmdQuota);
+
+        BucketVO bucket = new BucketVO(bucketName);
+        ReflectionTestUtils.setField(bucket, "quota", bucketQuota);
+        ReflectionTestUtils.setField(bucket, "accountId", ACCOUNT_ID);
+        ReflectionTestUtils.setField(bucket, "objectStoreId", objectStoreId);
+        ReflectionTestUtils.setField(bucket, "id", bucketId);
+        Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+        Mockito.when(objectStoreVO.getName()).thenReturn("store");
+        Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+        Mockito.when(objectStoreDao.updateAllocatedSize(objectStoreVO, -1L * Resource.ResourceType.bytesToGiB)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> bucketApiService.updateBucket(cmd, null));
+
+        Mockito.verify(objectStore, Mockito.times(1)).setQuota(Mockito.any(BucketTO.class), Mockito.eq(cmdQuota));
+        Mockito.verify(objectStore, Mockito.times(1)).setQuota(Mockito.any(BucketTO.class), Mockito.eq(bucketQuota));
+        Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCount(ACCOUNT_ID,
+                Resource.ResourceType.object_storage, 1L * Resource.ResourceType.bytesToGiB);
+        Mockito.verify(resourceLimitManager, Mockito.times(1)).incrementResourceCount(ACCOUNT_ID,
+                Resource.ResourceType.object_storage, 1L * Resource.ResourceType.bytesToGiB);
+        Mockito.verify(bucketDao, Mockito.never()).update(Mockito.eq(bucketId), Mockito.any(BucketVO.class));
     }
 
     @Test

@@ -57,6 +57,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class BucketApiServiceImpl extends ManagerBase implements BucketApiService, Configurable {
@@ -261,26 +264,41 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                      -1*(ObjectUtils.defaultIfNull(bucket.getQuota(), 0) * Resource.ResourceType.bytesToGiB), reservationDao, resourceLimitManager)) {
             BucketTO bucketTO = new BucketTO(bucket);
             if (objectStore.deleteBucket(bucketTO)) {
-                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
-                if (bucket.getQuota() != null) {
-                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (bucket.getQuota() * Resource.ResourceType.bytesToGiB));
-                    _objectStoreDao.updateAllocatedSize(objectStoreVO, -(bucket.getQuota() * Resource.ResourceType.bytesToGiB));
-                }
-                _bucketDao.remove(bucket.getId());
-                return true;
+                return removeBucketAndUpdateResourceAccounting(bucket, objectStoreVO);
             }
             return false;
         }
+    }
+
+    private boolean removeBucketAndUpdateResourceAccounting(Bucket bucket, ObjectStoreVO objectStoreVO) {
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
+                Integer quota = bucket.getQuota();
+                if (quota != null) {
+                    long quotaBytes = (long) quota * Resource.ResourceType.bytesToGiB;
+                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, quotaBytes);
+                    if (!Boolean.TRUE.equals(_objectStoreDao.updateAllocatedSize(objectStoreVO, -quotaBytes))) {
+                        throw new CloudRuntimeException("Failed to update allocated size on object store " + objectStoreVO.getName());
+                    }
+                }
+                if (!_bucketDao.remove(bucket.getId())) {
+                    throw new CloudRuntimeException("Failed to remove bucket " + bucket.getName());
+                }
+                return true;
+            }
+        });
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_UPDATE, eventDescription = "updating bucket")
     public boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException {
         BucketVO bucket = _bucketDao.findById(cmd.getId());
-        BucketTO bucketTO = new BucketTO(bucket);
         if (bucket == null) {
             throw new InvalidParameterValueException("Unable to find bucket with ID: " + cmd.getId());
         }
+        BucketTO bucketTO = new BucketTO(bucket);
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
@@ -316,9 +334,11 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 bucket.setPolicy(cmd.getPolicy());
             }
 
-            updateBucketQuota(cmd, bucket, objectStore, objectStoreVO, bucketTO);
+            boolean bucketPersisted = updateBucketQuota(cmd, bucket, objectStore, objectStoreVO, bucketTO);
 
-            _bucketDao.update(bucket.getId(), bucket);
+            if (!bucketPersisted && !_bucketDao.update(bucket.getId(), bucket)) {
+                throw new CloudRuntimeException("Failed to update bucket " + bucket.getName());
+            }
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while updating bucket: " +bucket.getName() +". "+e.getMessage());
         }
@@ -326,67 +346,127 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         return true;
     }
 
-    private void updateBucketQuota(UpdateBucketCmd cmd, BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO, BucketTO bucketTO) throws ResourceAllocationException {
+    private boolean updateBucketQuota(UpdateBucketCmd cmd, BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO, BucketTO bucketTO) throws ResourceAllocationException {
         Integer quota = cmd.getQuota();
         if (quota == null) {
-            return;
+            return false;
         }
 
-        int previousQuota = ObjectUtils.defaultIfNull(bucket.getQuota(), 0);
-        int quotaDelta = quota - previousQuota;
+        Integer previousQuota = bucket.getQuota();
+        int previousQuotaValue = ObjectUtils.defaultIfNull(previousQuota, 0);
+        long quotaDelta = (long) quota - previousQuotaValue;
         long diff = quotaDelta * Resource.ResourceType.bytesToGiB;
 
-        if (quotaDelta < 0) {
-            // A decrease needs no reservation. Apply it remotely first, then
-            // compensate the backend if the accounting update fails so the two
-            // cannot diverge.
-            objectStore.setQuota(bucketTO, quota);
-            try {
-                resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
-                _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
-            } catch (RuntimeException e) {
-                restoreRemoteQuota(objectStore, bucketTO, bucket.getName(), previousQuota, e);
-                throw e;
-            }
-            bucket.setQuota(quota);
-            return;
+        if (diff <= 0) {
+            // A decrease (or no change) cannot exceed a limit, so no reservation
+            // is needed.
+            applyQuotaChange(bucket, objectStore, objectStoreVO, bucketTO, quota, previousQuota, previousQuotaValue, diff);
+            return true;
         }
 
         // Reserve BEFORE mutating the remote quota. Applying it first meant an
         // increase that exceeded the account or store limit left the backend
         // with the new quota while the BucketVO and resource counts kept the
-        // old value. If the remote call or the accounting update fails inside
-        // the reservation, the reservation is rolled back by try-with-resources
-        // and the backend quota is restored.
+        // old value. If anything inside fails, the reservation is released by
+        // try-with-resources and applyQuotaChange unwinds its own mutations.
         Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
         try (CheckedReservation objectStorageReservation = new CheckedReservation(owner, Resource.ResourceType.object_storage, diff, reservationDao, resourceLimitManager)) {
+            applyQuotaChange(bucket, objectStore, objectStoreVO, bucketTO, quota, previousQuota, previousQuotaValue, diff);
+        }
+        return true;
+    }
+
+    /**
+     * Apply a quota change to the storage backend, the account resource count, the
+     * object store allocated size and the BucketVO, unwinding every step that
+     * completed if a later one fails so the four cannot end up disagreeing.
+     *
+     * The BucketVO is persisted here rather than being left to the caller. When a
+     * quota is supplied, the caller skips its final bucket update so there is no
+     * later DAO failure after the backend quota and resource counters have been
+     * committed.
+     */
+    private void applyQuotaChange(BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO,
+            BucketTO bucketTO, int quota, Integer previousQuota, int previousQuotaValue, long diff) {
+        long accountId = bucket.getAccountId();
+        boolean remoteApplied = false;
+        boolean countApplied = false;
+        boolean allocatedApplied = false;
+        try {
             objectStore.setQuota(bucketTO, quota);
-            try {
-                resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
-                _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
-            } catch (RuntimeException e) {
-                restoreRemoteQuota(objectStore, bucketTO, bucket.getName(), previousQuota, e);
-                throw e;
+            remoteApplied = true;
+
+            if (diff != 0) {
+                if (diff > 0) {
+                    resourceLimitManager.incrementResourceCount(accountId, Resource.ResourceType.object_storage, diff);
+                } else {
+                    resourceLimitManager.decrementResourceCount(accountId, Resource.ResourceType.object_storage, Math.abs(diff));
+                }
+                countApplied = true;
+
+                // updateAllocatedSize reports a failed DAO update by returning
+                // false rather than throwing, so the result must be checked or
+                // the failure passes silently.
+                if (!Boolean.TRUE.equals(_objectStoreDao.updateAllocatedSize(objectStoreVO, diff))) {
+                    throw new CloudRuntimeException("Failed to update allocated size on object store " + objectStoreVO.getName());
+                }
+                allocatedApplied = true;
             }
+
             bucket.setQuota(quota);
+            if (!_bucketDao.update(bucket.getId(), bucket)) {
+                bucket.setQuota(previousQuota);
+                throw new CloudRuntimeException("Failed to persist quota on bucket " + bucket.getName());
+            }
+        } catch (RuntimeException e) {
+            rollbackQuotaChange(bucket, objectStore, objectStoreVO, bucketTO, previousQuota, previousQuotaValue, diff,
+                    remoteApplied, countApplied, allocatedApplied, e);
+            throw e;
         }
     }
 
     /**
-     * Best-effort compensation that puts the backend quota back to its previous
-     * value after the accounting update failed, so CloudStack's records and the
-     * storage backend do not diverge. A failure here is logged against the
-     * original exception rather than masking it.
+     * Best-effort compensation for a partially applied quota change, unwinding in
+     * reverse order. Failures are logged and attached to the original exception
+     * rather than masking it.
      */
-    private void restoreRemoteQuota(ObjectStoreEntity objectStore, BucketTO bucketTO, String bucketName,
-            int previousQuota, RuntimeException cause) {
-        try {
-            objectStore.setQuota(bucketTO, previousQuota);
-        } catch (Exception rollbackEx) {
-            logger.error("Failed to restore quota {} on bucket {} after a resource accounting failure; "
-                    + "the backend quota and CloudStack accounting may be inconsistent", previousQuota, bucketName, rollbackEx);
-            cause.addSuppressed(rollbackEx);
+    private void rollbackQuotaChange(BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO,
+            BucketTO bucketTO, Integer previousQuota, int previousQuotaValue, long diff, boolean remoteApplied, boolean countApplied,
+            boolean allocatedApplied, RuntimeException cause) {
+        if (allocatedApplied) {
+            try {
+                if (!Boolean.TRUE.equals(_objectStoreDao.updateAllocatedSize(objectStoreVO, -diff))) {
+                    throw new CloudRuntimeException("Failed to restore allocated size on object store " + objectStoreVO.getName());
+                }
+            } catch (Exception ex) {
+                logger.error("Failed to restore allocated size on object store {} while rolling back a quota change",
+                        objectStoreVO.getName(), ex);
+                cause.addSuppressed(ex);
+            }
         }
+        if (countApplied) {
+            try {
+                if (diff > 0) {
+                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
+                } else {
+                    resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
+                }
+            } catch (Exception ex) {
+                logger.error("Failed to restore the object_storage resource count for account {} while rolling back a quota change",
+                        bucket.getAccountId(), ex);
+                cause.addSuppressed(ex);
+            }
+        }
+        if (remoteApplied) {
+            try {
+                objectStore.setQuota(bucketTO, previousQuotaValue);
+            } catch (Exception ex) {
+                logger.error("Failed to restore quota {} on bucket {} while rolling back a quota change; "
+                        + "the backend quota and CloudStack accounting may be inconsistent", previousQuotaValue, bucket.getName(), ex);
+                cause.addSuppressed(ex);
+            }
+        }
+        bucket.setQuota(previousQuota);
     }
 
     public void getBucketUsage() {

@@ -26,7 +26,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -161,11 +163,14 @@ public class SeaweedFSObjectStoreDriverImplTest {
 
         bucketVo = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, null, false, false, false, null);
 
-        // Stub the DB-backed IAM lock with a no-op mock so tests don't
+        // Stub the DB-backed locks with no-op mocks so tests don't
         // require a real transaction context.
         com.cloud.utils.db.GlobalLock mockIamLock = mock(com.cloud.utils.db.GlobalLock.class);
         lenient().doReturn(mockIamLock).when(driver).acquireIamLock(anyLong(), anyLong());
         lenient().when(mockIamLock.unlock()).thenReturn(true);
+        com.cloud.utils.db.GlobalLock mockNameLock = mock(com.cloud.utils.db.GlobalLock.class);
+        lenient().doReturn(mockNameLock).when(driver).acquireBucketNameLock(anyLong(), anyString());
+        lenient().when(mockNameLock.unlock()).thenReturn(true);
     }
 
     @After
@@ -196,6 +201,23 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertEquals(TEST_BUCKET_URL, updated.getBucketURL());
 
         verify(s3Client, times(1)).createBucket(any(CreateBucketRequest.class));
+    }
+
+    @Test
+    public void testCreateBucketNormalizesTrailingSlashInUrl() throws Exception {
+        // s3Url is operator-supplied and may carry a trailing slash; the stored
+        // bucketURL must not become "...//bucket", which BucketResponse and the
+        // object store browser would both use.
+        doReturn(TEST_S3_URL + "/").when(driver).getS3Url(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
+        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+
+        driver.createBucket(bucketVo, false);
+
+        ArgumentCaptor<BucketVO> captor = ArgumentCaptor.forClass(BucketVO.class);
+        verify(bucketDao, times(1)).update(any(), captor.capture());
+        assertEquals(TEST_BUCKET_URL, captor.getValue().getBucketURL());
     }
 
     @Test
@@ -411,9 +433,17 @@ public class SeaweedFSObjectStoreDriverImplTest {
     public void testSetBucketQuotaZeroTolerates404() throws Exception {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        when(bucketTO.getAccountId()).thenReturn(TEST_ACCOUNT_ID);
         doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
         doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
         doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+
+        // Still Allocated => this is the initial create, the only case allowed
+        // to tolerate a missing quota extension.
+        List<BucketVO> allocated = new ArrayList<>();
+        allocated.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME,
+                null, false, false, false, null));
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(allocated);
 
         HttpClient mockHttpClient = mock(HttpClient.class);
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
@@ -437,12 +467,14 @@ public class SeaweedFSObjectStoreDriverImplTest {
         doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
         doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
 
-        // The bucket already has a positive quota, so a quota 0 request is a
-        // clear of an existing quota. A 404 must NOT be tolerated: reporting
-        // success would lower CloudStack accounting while SeaweedFS keeps the
-        // old quota and read-only state.
+        // The bucket is already Created, so this quota 0 request is an update,
+        // not the initial create. A 404 must NOT be tolerated: reporting success
+        // would lower CloudStack accounting while SeaweedFS keeps the old quota
+        // and read-only state.
+        BucketVO created = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, 100, false, false, false, null);
+        created.setState(Bucket.State.Created);
         List<BucketVO> buckets = new ArrayList<>();
-        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, 100, false, false, false, null));
+        buckets.add(created);
         when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
 
         HttpClient mockHttpClient = mock(HttpClient.class);
@@ -672,11 +704,55 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testCreateUserRollsBackCredentialPairWhenSecretPersistFails() throws Exception {
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
+        when(account.getAccountName()).thenReturn("testaccount");
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+
+        when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
+                .thenReturn(listAccessKeysResult());
+
+        AccessKey accessKey = mock(AccessKey.class);
+        CreateAccessKeyResult accessKeyResult = mock(CreateAccessKeyResult.class);
+        when(accessKey.getAccessKeyId()).thenReturn("new-ak");
+        when(accessKey.getSecretAccessKey()).thenReturn("new-sk");
+        when(accessKeyResult.getAccessKey()).thenReturn(accessKey);
+        when(iamClient.createAccessKey(any(CreateAccessKeyRequest.class))).thenReturn(accessKeyResult);
+
+        doThrow(new CloudRuntimeException("secret persist failed")).when(accountDetailsDao).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), "new-sk", false);
+
+        assertThrows(CloudRuntimeException.class, () -> driver.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID));
+
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID), "new-ak", false);
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), "new-sk", false);
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keyAccessKey(TEST_STORE_ID), TEST_AK, false);
+        verify(accountDetailsDao, times(1)).addDetail(TEST_ACCOUNT_ID,
+                SeaweedFSObjectStoreUtil.keySecretKey(TEST_STORE_ID), TEST_SK, false);
+
+        ArgumentCaptor<DeleteAccessKeyRequest> deleteCaptor = ArgumentCaptor.forClass(DeleteAccessKeyRequest.class);
+        verify(iamClient, times(1)).deleteAccessKey(deleteCaptor.capture());
+        assertEquals("new-ak", deleteCaptor.getValue().getAccessKeyId());
+    }
+
+    @Test
     public void testCreateUserReusesStoredKey() throws Exception {
         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
         when(account.getUuid()).thenReturn(TEST_ACCOUNT_UUID);
         when(account.getAccountName()).thenReturn("testaccount");
         doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+
+        BucketVO staleBucket = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME, null, false, false, false, null);
+        staleBucket.setAccessKey("stale-ak");
+        staleBucket.setSecretKey("stale-sk");
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(staleBucket);
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+        when(bucketDao.update(staleBucket.getId(), staleBucket)).thenReturn(true);
 
         // Stored credential still exists in IAM -> must be reused, not rotated
         when(iamClient.listAccessKeys(any(ListAccessKeysRequest.class)))
@@ -689,6 +765,9 @@ public class SeaweedFSObjectStoreDriverImplTest {
         verify(iamClient, never()).createAccessKey(any(CreateAccessKeyRequest.class));
         verify(iamClient, never()).deleteAccessKey(any(DeleteAccessKeyRequest.class));
         verify(accountDetailsDao, never()).persist(anyLong(), ArgumentMatchers.<Map<String, String>>any());
+        assertEquals(TEST_AK, staleBucket.getAccessKey());
+        assertEquals(TEST_SK, staleBucket.getSecretKey());
+        verify(bucketDao, times(1)).update(staleBucket.getId(), staleBucket);
     }
 
     @Test

@@ -238,6 +238,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         if (storedAccessKeyId != null && storedSecretKey != null
                 && iamAccessKeyExists(iamClient, userName, storedAccessKeyId)) {
             logger.debug("Reusing existing IAM access key {} for user {}", storedAccessKeyId, userName);
+            updateAccountBucketCredentials(storeId, accountId, storedAccessKeyId, storedSecretKey);
             return true;
         }
 
@@ -250,25 +251,21 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 new CreateAccessKeyRequest().withUserName(userName));
         AccessKey key = result.getAccessKey();
 
-        // Update existing bucket records for this account/store with the new
-        // credentials BEFORE persisting the new key in account details. If a
-        // bucket update fails, the stored key remains the old one and a retry
-        // will re-enter the replacement path; if we persisted first, a retry
-        // would see the new stored key and return without repairing the
-        // remaining buckets.
-        updateAccountBucketCredentials(storeId, accountId, key);
+        // Persist the credential pair in account details (namespaced by storeId)
+        // before updating BucketVO rows. The reuse path above reconciles bucket
+        // rows every time, so a later bucket update failure is repairable on
+        // retry. AccountDetailsDao.persist(accountId, map) is deliberately not
+        // used: it expunges every detail for the account and can clobber another
+        // store's namespaced credentials.
+        try {
+            persistAccountCredentialsOrRollback(accountId, accessKeyDetailKey, secretKeyDetailKey,
+                    storedAccessKeyId, storedSecretKey, key);
+        } catch (RuntimeException e) {
+            deleteAccessKeyAfterCredentialPersistenceFailure(iamClient, userName, key.getAccessKeyId(), e);
+            throw e;
+        }
 
-        // Persist the credentials in the account details (namespaced by
-        // storeId) with per-key writes. AccountDetailsDao.persist(accountId,
-        // map) expunges every existing detail for the account before inserting
-        // the supplied map, so it would clobber details this snapshot never saw
-        // — including another object store's namespaced credentials, since the
-        // IAM lock is keyed by storeId+accountId and two pools can provision
-        // the same account concurrently. addDetail touches only the named key.
-        details.put(accessKeyDetailKey, key.getAccessKeyId());
-        details.put(secretKeyDetailKey, key.getSecretAccessKey());
-        _accountDetailsDao.addDetail(accountId, accessKeyDetailKey, key.getAccessKeyId(), false);
-        _accountDetailsDao.addDetail(accountId, secretKeyDetailKey, key.getSecretAccessKey(), false);
+        updateAccountBucketCredentials(storeId, accountId, key);
 
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;
@@ -279,17 +276,70 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     /**
-     * Update the IAM credentials on all BucketVO rows for this store/account
-     * so previously created buckets reflect the new (rotated) key pair.
-     * Mirrors CloudianHyperStoreObjectStoreDriverImpl.updateAccountBucketCredentials.
+     * Persist a SeaweedFS IAM credential pair without using
+     * AccountDetailsDao.persist(accountId, map), and restore the previous pair if
+     * either single-key write fails so callers never observe a half-new pair.
      */
+    private void persistAccountCredentialsOrRollback(long accountId, String accessKeyDetailKey, String secretKeyDetailKey,
+            String previousAccessKey, String previousSecretKey, AccessKey key) {
+        try {
+            _accountDetailsDao.addDetail(accountId, accessKeyDetailKey, key.getAccessKeyId(), false);
+            _accountDetailsDao.addDetail(accountId, secretKeyDetailKey, key.getSecretAccessKey(), false);
+        } catch (RuntimeException e) {
+            CloudRuntimeException wrapped = new CloudRuntimeException("Failed to persist SeaweedFS IAM credential pair for account " + accountId, e);
+            restoreAccountCredentialDetail(accountId, accessKeyDetailKey, previousAccessKey, wrapped);
+            restoreAccountCredentialDetail(accountId, secretKeyDetailKey, previousSecretKey, wrapped);
+            throw wrapped;
+        }
+    }
+
+    private void restoreAccountCredentialDetail(long accountId, String detailKey, String previousValue, RuntimeException cause) {
+        try {
+            if (previousValue == null) {
+                _accountDetailsDao.removeDetail(accountId, detailKey);
+            } else {
+                _accountDetailsDao.addDetail(accountId, detailKey, previousValue, false);
+            }
+        } catch (RuntimeException rollbackEx) {
+            logger.error("Failed to restore account detail {} for account {} after SeaweedFS credential persistence failed",
+                    detailKey, accountId, rollbackEx);
+            cause.addSuppressed(rollbackEx);
+        }
+    }
+
+    private void deleteAccessKeyAfterCredentialPersistenceFailure(AmazonIdentityManagement iamClient, String userName,
+            String accessKeyId, RuntimeException cause) {
+        try {
+            iamClient.deleteAccessKey(new DeleteAccessKeyRequest()
+                    .withUserName(userName)
+                    .withAccessKeyId(accessKeyId));
+        } catch (AmazonClientException cleanupEx) {
+            logger.error("Failed to delete IAM access key {} for user {} after account credential persistence failed",
+                    accessKeyId, userName, cleanupEx);
+            cause.addSuppressed(cleanupEx);
+        }
+    }
+
     private void updateAccountBucketCredentials(long storeId, long accountId, AccessKey iamCredential) {
+        updateAccountBucketCredentials(storeId, accountId, iamCredential.getAccessKeyId(), iamCredential.getSecretAccessKey());
+    }
+
+    /**
+     * Update the IAM credentials on all BucketVO rows for this store/account so
+     * previously created buckets reflect the current key pair.
+     */
+    private void updateAccountBucketCredentials(long storeId, long accountId, String accessKeyId, String secretAccessKey) {
         List<BucketVO> bucketList = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
         for (BucketVO bucketVO : bucketList) {
+            if (accessKeyId.equals(bucketVO.getAccessKey()) && secretAccessKey.equals(bucketVO.getSecretKey())) {
+                continue;
+            }
             logger.info("Updating accountId={} bucket {} with new IAM credentials", accountId, bucketVO.getName());
-            bucketVO.setAccessKey(iamCredential.getAccessKeyId());
-            bucketVO.setSecretKey(iamCredential.getSecretAccessKey());
-            _bucketDao.update(bucketVO.getId(), bucketVO);
+            bucketVO.setAccessKey(accessKeyId);
+            bucketVO.setSecretKey(secretAccessKey);
+            if (!_bucketDao.update(bucketVO.getId(), bucketVO)) {
+                throw new CloudRuntimeException("Failed to update IAM credentials on bucket " + bucketVO.getName());
+            }
         }
     }
 
@@ -631,8 +681,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
             // Mark the row Destroyed inside the lock. The row itself must
             // survive so BucketApiServiceImpl.deleteCheckedBucket can still
-            // decrement the resource counts and allocated size, and so a
-            // failure in that cleanup leaves state a retry can reconcile.
+            // decrement the resource counts, update allocated size, and remove
+            // the row in one transaction after this returns. If that cleanup
+            // fails, the Destroyed marker keeps retries from re-granting a
+            // bucket name whose remote bucket is already gone.
             // Marking it (rather than relying only on excludeBucket) closes the
             // window where a concurrent createUser/createBucket for this
             // account rebuilds the policy from the DB and re-adds this bucket's
@@ -814,14 +866,21 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException("SeaweedFS S3 URL and credentials are required to set bucket quota. " +
                     "Configure 's3Url', 'accesskey', and 'secretkey' in the object store details.");
         }
-        // A 404/405 from the optional quota extension is only tolerable when
-        // setting quota 0 on a bucket that has no quota to clear (the initial
-        // create path, where CreateBucketCmd always calls setQuota). If the
-        // bucket already has a positive quota, a clear must fail loudly so
-        // CloudStack accounting does not diverge from SeaweedFS state.
-        boolean allowMissingExtension = !hasPositiveQuota(storeId, bucket);
+        // A 404/405 from the optional quota extension is only tolerable on the
+        // initial create, where CreateBucketCmd always calls setQuota and there
+        // is no existing quota to clear. Every other call - an update, or the
+        // rollback of a failed update - must propagate the failure so
+        // CloudStack accounting cannot diverge from SeaweedFS state.
+        //
+        // The initial create is identified by the BucketVO still being in the
+        // Allocated state: BucketApiServiceImpl.createBucket only promotes it to
+        // Created after setQuota returns. Keying off the previous quota value
+        // instead would misclassify an update from quota 0, and would wrongly
+        // tolerate a 404 while rolling such an update back even though the
+        // successful positive update had just proved the extension exists.
+        boolean initialCreate = isBucketAllocated(storeId, bucket);
         SeaweedFSObjectStoreUtil.setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucket.getName(), size,
-                getS3ExtensionHttpClient(), allowMissingExtension);
+                getS3ExtensionHttpClient(), initialCreate);
     }
 
     /**
@@ -843,15 +902,16 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     /**
-     * Returns true when the persisted BucketVO for this bucket already has a
-     * positive quota, meaning a subsequent quota 0 request is a clear of an
-     * existing quota rather than the initial no-quota create.
+     * Returns true when the persisted BucketVO for this bucket is still in the
+     * {@link Bucket.State#Allocated} state, i.e. the bucket is being created and
+     * has not yet been promoted to {@link Bucket.State#Created}. Used to
+     * recognise the initial create, which is the only call permitted to tolerate
+     * a missing optional quota extension.
      */
-    protected boolean hasPositiveQuota(long storeId, BucketTO bucket) {
+    protected boolean isBucketAllocated(long storeId, BucketTO bucket) {
         for (BucketVO bvo : _bucketDao.listByObjectStoreIdAndAccountId(storeId, bucket.getAccountId())) {
             if (bucket.getName().equals(bvo.getName())) {
-                Integer quota = bvo.getQuota();
-                return quota != null && quota > 0;
+                return Bucket.State.Allocated.equals(bvo.getState());
             }
         }
         return false;
