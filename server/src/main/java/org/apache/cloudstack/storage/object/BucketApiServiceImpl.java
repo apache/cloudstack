@@ -209,6 +209,15 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 objectStore.setBucketPolicy(bucketTO, cmd.getPolicy());
             }
 
+            // Re-read the row so fields the provider persisted during
+            // createBucket (access key, secret key, bucket URL) are not
+            // clobbered by this state update and are present in the API
+            // response. Providers such as SeaweedFS and Cloudian HyperStore
+            // write the per-account credentials to the BucketVO themselves.
+            BucketVO createdBucket = _bucketDao.findById(bucket.getId());
+            if (createdBucket != null) {
+                bucket = createdBucket;
+            }
             bucket.setState(Bucket.State.Created);
             _bucketDao.update(bucket.getId(), bucket);
             if (cmd.getQuota() != null) {
