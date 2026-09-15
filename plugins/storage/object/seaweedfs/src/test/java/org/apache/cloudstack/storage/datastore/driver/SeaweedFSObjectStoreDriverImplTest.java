@@ -420,6 +420,13 @@ public class SeaweedFSObjectStoreDriverImplTest {
         expectedRequest.getHeaders().put("Content-Length", String.valueOf(bodyBytes.length));
         expectedRequest.getHeaders().put("Content-Type", "application/json");
 
+        // Fix the signing timestamp to match the production request so the
+        // test is deterministic and does not intermittently fail when the two
+        // signings straddle a one-second boundary.
+        String productionDate = sent.headers().firstValue("x-amz-date").orElse(null);
+        assertNotNull("production request must carry x-amz-date", productionDate);
+        expectedRequest.getHeaders().put("x-amz-date", productionDate);
+
         com.amazonaws.auth.AWSCredentials credentials = new com.amazonaws.auth.BasicAWSCredentials(accessKey, secretKey);
         com.amazonaws.services.s3.internal.AWSS3V4Signer signer = new com.amazonaws.services.s3.internal.AWSS3V4Signer();
         signer.setServiceName("s3");
