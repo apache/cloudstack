@@ -160,7 +160,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
                 ConsoleAccessManager.ConsoleSessionCleanupInterval,
-                ConsoleAccessManager.ConsoleSessionCleanupRetentionHours
+                ConsoleAccessManager.ConsoleSessionCleanupRetentionHours,
+                ConsoleAccessManager.KvmMultipleConsoleViewersEnabled
         };
     }
 
@@ -474,6 +475,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return null;
     }
 
+    protected boolean isKvmMultipleConsoleViewersEnabled() {
+        return ConsoleAccessManager.KvmMultipleConsoleViewersEnabled.value();
+    }
+
     protected ConsoleConnectionDetails getConsoleConnectionDetails(VirtualMachine vm, HostVO host) {
         String locale = null;
         String tag = vm.getUuid();
@@ -507,6 +512,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                     .getValue()));
             logger.debug("HyperV RDP port for {} on {} is: {}", vm, host, details.getPort());
         }
+
+        if (Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType()) &&
+                VirtualMachine.Type.User.equals(vm.getType()) &&
+                isKvmMultipleConsoleViewersEnabled()) {
+            details.setSessionRequiresNewViewer(true);
+        }
+
         return details;
     }
 
