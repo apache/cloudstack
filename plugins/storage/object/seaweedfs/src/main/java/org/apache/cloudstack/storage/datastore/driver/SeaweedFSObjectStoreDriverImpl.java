@@ -483,19 +483,12 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
 
-        // Refresh the account's IAM policy to drop the deleted bucket BEFORE
-        // the S3 delete. Bucket names are reusable, so revoking the grant
-        // before the name becomes reusable prevents the old account from
-        // accessing a new tenant's bucket with the same name. If this fails,
-        // the bucket still exists and a retry can proceed. If it succeeds but
-        // the S3 delete fails, the grant is already revoked and a retry only
-        // needs to delete the S3 bucket (the policy refresh is idempotent
-        // because excludeBucket still applies).
-        AmazonIdentityManagement iamClient = getIAMClient(storeId);
-        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
-
+        // Delete the S3 bucket first. If this fails (non-empty bucket,
+        // transient error), the IAM policy is still intact so the user
+        // can empty the bucket and retry.
+        //
         // If the bucket is already gone (e.g. from a previous partial
-        // failure where the policy refresh succeeded but the S3 delete
+        // failure where the S3 delete succeeded but the IAM policy refresh
         // failed), skip the S3 delete so the retry is idempotent.
         try {
             if (s3client.doesBucketExistV2(bucketName)) {
@@ -504,6 +497,15 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
+
+        // Refresh the account's IAM policy to drop the deleted bucket.
+        // Bucket names are reusable, so a stale grant would let the old
+        // account access a new tenant's bucket with the same name. This
+        // must succeed; if it fails, the caller sees the exception and can
+        // retry (the policy refresh is idempotent because the bucket is
+        // already gone from S3 and excludeBucket still applies).
+        AmazonIdentityManagement iamClient = getIAMClient(storeId);
+        updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
     }
 
