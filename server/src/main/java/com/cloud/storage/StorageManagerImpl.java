@@ -4799,6 +4799,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _objectStoreDao.update(id, objectStoreVO);
                 throw new IllegalArgumentException("Unable to access Object Storage with URL: " + cmd.getUrl());
             }
+            updateBucketUrls(id, oldUrl, url);
         }
 
         if(cmd.getName() != null ) {
@@ -4810,6 +4811,30 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _objectStoreDao.update(id, objectStoreVO);
         logger.debug("Successfully updated object store: {}", objectStoreVO);
         return objectStoreVO;
+    }
+
+    /**
+     * Rewrite the stored bucketURL of every bucket on an object store after the
+     * store URL changes.
+     *
+     * BucketVO.bucketURL is written only at bucket creation. BucketResponse
+     * exposes it and the object-store browser builds its S3 client from it, so
+     * without this the browser keeps targeting the old endpoint after a URL
+     * change while the management server uses the new one.
+     */
+    private void updateBucketUrls(Long storeId, String oldUrl, String newUrl) {
+        if (oldUrl == null || oldUrl.equals(newUrl)) {
+            return;
+        }
+        for (BucketVO bucket : _bucketDao.listByObjectStoreId(storeId)) {
+            String bucketUrl = bucket.getBucketURL();
+            if (bucketUrl == null || !bucketUrl.startsWith(oldUrl)) {
+                continue;
+            }
+            bucket.setBucketURL(newUrl + bucketUrl.substring(oldUrl.length()));
+            _bucketDao.update(bucket.getId(), bucket);
+            logger.debug("Updated bucket {} URL to {} after object store URL change", bucket.getName(), bucket.getBucketURL());
+        }
     }
 
     @Override
