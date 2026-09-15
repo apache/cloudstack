@@ -18,6 +18,7 @@ package com.cloud.network;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.regex.Pattern;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
@@ -131,6 +132,23 @@ public class Networks {
                 }
             }
         },
+        /**
+         * Direct Routed (L3) networks: the id is a label naming the per-network bridge on the
+         * hypervisor (brdr-&lt;id&gt;), not an encapsulation — nothing appears on the wire.
+         */
+        Routed("routed", Long.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("routed://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
         UnDecided(null, null),
         OpenDaylight("opendaylight", String.class),
         TUNGSTEN("tf", String.class),
@@ -159,6 +177,32 @@ public class Networks {
          */
         public Class<?> type() {
             return type;
+        }
+
+        /**
+         * A routed id — the value of a routed://&lt;id&gt; broadcast domain — names a bridge on
+         * every hypervisor (brdr-&lt;id&gt;, at most 15 characters) and derives that bridge's MAC
+         * address from five bytes, so it is a positive integer of at most ten digits without
+         * leading zeros.
+         */
+        public static final int ROUTED_ID_MAX_DIGITS = 10;
+        private static final Pattern ROUTED_ID_PATTERN = Pattern.compile("^[1-9][0-9]{0," + (ROUTED_ID_MAX_DIGITS - 1) + "}$");
+
+        /**
+         * Extracts the routed id from a bare number or from a routed://&lt;id&gt; URI string.
+         *
+         * @return the bare id, or null when the candidate is not a valid routed id
+         */
+        public static String getRoutedId(String candidate) {
+            if (StringUtils.isBlank(candidate)) {
+                return null;
+            }
+            String id = candidate.trim();
+            String prefix = Routed.scheme() + "://";
+            if (id.startsWith(prefix)) {
+                id = id.substring(prefix.length());
+            }
+            return ROUTED_ID_PATTERN.matcher(id).matches() ? id : null;
         }
 
         /**
