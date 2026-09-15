@@ -49,6 +49,8 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -213,11 +215,11 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
 
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
-        if (details == null || details.isEmpty()) {
+        if (MapUtils.isEmpty(details)) {
             throw new CloudRuntimeException("No storage pool details found for storagePoolId: " + accessGroup.getStoragePoolId());
         }
         String exportPolicyId = details.get(OntapStorageConstants.EXPORT_POLICY_ID);
-        if (exportPolicyId == null || exportPolicyId.isEmpty()) {
+        if (StringUtils.isBlank(exportPolicyId)) {
             throw new CloudRuntimeException("No export policy found for storagePoolId: " + accessGroup.getStoragePoolId());
         }
 
@@ -446,6 +448,10 @@ public class UnifiedNASStrategy extends NASStrategy {
             String ip = (hostStorageIp != null && !hostStorageIp.isEmpty())
                     ? hostStorageIp
                     : (host.getPrivateIpAddress() != null ? host.getPrivateIpAddress().trim() : null);
+            if (StringUtils.isBlank(ip)) {
+                logger.warn("Skipping host {} while creating export policy because it has no storage or private IP address", host.getId());
+                continue;
+            }
             String ipToUse = ip + "/32";
             ExportRule.ExportClient exportClient = new ExportRule.ExportClient();
             exportClient.setMatch(ipToUse);
