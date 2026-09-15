@@ -824,6 +824,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     private void allocCapacity(long dataCenterId) {
+        if (!allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
+            logger.info("Unable to acquire synchronization lock for console proxy vm allocation, wait for next scan");
+            return;
+        }
+        try {
+            doAllocCapacity(dataCenterId);
+        } finally {
+            allocProxyLock.unlock();
+        }
+    }
+
+    private void doAllocCapacity(long dataCenterId) {
         DataCenterVO zone = dataCenterDao.findById(dataCenterId);
         if (logger.isDebugEnabled()) {
             logger.debug("Allocating console proxy standby capacity for zone [{}].", zone);
@@ -1093,6 +1105,20 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean destroyProxy(long vmId) {
+        boolean locked = allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS);
+        if (!locked) {
+            logger.warn("Unable to acquire synchronization lock for console proxy vm allocation, destroying console proxy [{}] without it", vmId);
+        }
+        try {
+            return doDestroyProxy(vmId);
+        } finally {
+            if (locked) {
+                allocProxyLock.unlock();
+            }
+        }
+    }
+
+    private boolean doDestroyProxy(long vmId) {
         ConsoleProxyVO proxy = consoleProxyDao.findById(vmId);
         try {
             virtualMachineManager.expunge(proxy.getUuid());
