@@ -34,6 +34,13 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.l3')" key="4">
+        <CreateL3NetworkForm
+          :loading="loading"
+          :resource="resource"
+          @close-action="closeAction"
+          @refresh-data="refreshParent"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.shared')" key="2">
         <CreateSharedNetworkForm
           :loading="loading"
@@ -50,6 +57,7 @@
 import { getAPI } from '@/api'
 import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
 import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
+import CreateL3NetworkForm from '@/views/network/CreateL3NetworkForm'
 import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
 
 export default {
@@ -57,6 +65,7 @@ export default {
   components: {
     CreateIsolatedNetworkForm,
     CreateL2NetworkForm,
+    CreateL3NetworkForm,
     CreateSharedNetworkForm
   },
   props: {
