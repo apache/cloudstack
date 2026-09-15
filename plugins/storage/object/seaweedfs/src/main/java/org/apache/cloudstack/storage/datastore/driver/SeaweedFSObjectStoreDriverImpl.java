@@ -551,7 +551,15 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     protected String getIAMUrl(long storeId) {
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        return storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        String iamUrl = storeDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        if (iamUrl == null || iamUrl.isEmpty()) {
+            // iamUrl was not explicitly configured; SeaweedFS serves the IAM
+            // API from the same endpoint as S3 by default, so fall back to
+            // the current S3 endpoint. This also keeps IAM provisioning on the
+            // live endpoint after updateObjectStore changes the store URL.
+            iamUrl = getS3Url(storeId);
+        }
+        return iamUrl;
     }
 
     protected String getAccessKey(long storeId) {
