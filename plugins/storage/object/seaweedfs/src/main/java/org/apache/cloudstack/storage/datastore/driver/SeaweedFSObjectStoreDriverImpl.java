@@ -381,6 +381,13 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         // a stale key pair.
         GlobalLock iamLock = acquireIamLock(storeId, accountId);
         if (iamLock == null) {
+            // The S3 bucket has already been created. Clean it up so a
+            // retry does not find it already existing, then throw.
+            try {
+                s3client.deleteBucket(bucketName);
+            } catch (AmazonClientException cleanupEx) {
+                logger.error("Failed to clean up bucket {} after IAM lock timeout", bucketName, cleanupEx);
+            }
             throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
         }
         try {
