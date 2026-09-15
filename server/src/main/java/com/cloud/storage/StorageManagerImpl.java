@@ -4835,20 +4835,30 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
      * point the browser at an endpoint the driver never uses.
      */
     private void updateBucketUrls(Long storeId, String oldUrl, String newUrl) {
-        if (oldUrl == null || oldUrl.equals(newUrl)) {
+        if (oldUrl == null || newUrl == null || oldUrl.equals(newUrl)) {
             return;
         }
         Map<String, String> storeDetails = _objectStoreDetailsDao.getDetails(storeId);
-        if (storeDetails != null && org.apache.commons.lang3.StringUtils.isNotBlank(storeDetails.get(OBJECT_STORE_DETAIL_S3_URL))) {
+        if (storeDetails != null && StringUtils.isNotBlank(storeDetails.get(OBJECT_STORE_DETAIL_S3_URL))) {
             logger.debug("Object store {} has an explicit s3Url; leaving stored bucket URLs unchanged", storeId);
+            return;
+        }
+        // Both URLs are operator-supplied and may carry a trailing slash. Strip
+        // them so the retained suffix (which starts with '/') is not appended to
+        // a base that already ends in one, which would rewrite every bucket URL
+        // to '...//bucket' and break browser access.
+        String oldBase = StringUtils.stripEnd(oldUrl, "/");
+        String newBase = StringUtils.stripEnd(newUrl, "/");
+        if (oldBase.equals(newBase)) {
             return;
         }
         for (BucketVO bucket : _bucketDao.listByObjectStoreId(storeId)) {
             String bucketUrl = bucket.getBucketURL();
-            if (bucketUrl == null || !bucketUrl.startsWith(oldUrl)) {
+            if (bucketUrl == null || !bucketUrl.startsWith(oldBase)) {
                 continue;
             }
-            bucket.setBucketURL(newUrl + bucketUrl.substring(oldUrl.length()));
+            String suffix = bucketUrl.substring(oldBase.length());
+            bucket.setBucketURL(newBase + (suffix.startsWith("/") ? suffix : "/" + suffix));
             _bucketDao.update(bucket.getId(), bucket);
             logger.debug("Updated bucket {} URL to {} after object store URL change", bucket.getName(), bucket.getBucketURL());
         }

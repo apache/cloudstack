@@ -75,6 +75,26 @@ public class SeaweedFSObjectStoreUtil {
     }
 
     /**
+     * Strip trailing slashes from a configured endpoint URL so callers can
+     * append a {@code "/" + path} suffix without producing a double slash.
+     * The S3 and IAM endpoint URLs are operator-supplied and are accepted with
+     * or without a trailing slash.
+     *
+     * @param url the URL to normalize, may be null
+     * @return the URL without trailing slashes, or the input if null/empty
+     */
+    public static String stripTrailingSlashes(String url) {
+        if (url == null) {
+            return null;
+        }
+        String normalized = url;
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    /**
      * Connect timeout for the S3 extension HTTP client, in seconds.
      */
     public static final int S3_EXTENSION_CONNECT_TIMEOUT_SECONDS = 10;
@@ -590,11 +610,7 @@ public class SeaweedFSObjectStoreUtil {
             // does not request '//metrics', which can redirect or 404 (the
             // HTTP client does not follow redirects here) and would silently
             // force the O(total objects) S3 scan on every usage poll.
-            String base = metricsUrl;
-            while (base.endsWith("/")) {
-                base = base.substring(0, base.length() - 1);
-            }
-            java.net.URI uri = java.net.URI.create(base + "/metrics");
+            java.net.URI uri = java.net.URI.create(stripTrailingSlashes(metricsUrl) + "/metrics");
             java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
                     .uri(uri)
                     .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS))

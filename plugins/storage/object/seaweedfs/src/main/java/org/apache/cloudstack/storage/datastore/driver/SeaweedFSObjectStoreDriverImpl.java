@@ -490,7 +490,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             BucketVO bucketVO = _bucketDao.findById(bucket.getId());
             bucketVO.setAccessKey(accessKey);
             bucketVO.setSecretKey(secretKey);
-            bucketVO.setBucketURL(s3Url + "/" + bucketName);
+            // Normalize the endpoint: s3Url is operator-supplied and may carry a
+            // trailing slash, which would persist a broken "...//bucket" URL
+            // that BucketResponse and the object store browser both use.
+            bucketVO.setBucketURL(SeaweedFSObjectStoreUtil.stripTrailingSlashes(s3Url) + "/" + bucketName);
             _bucketDao.update(bucket.getId(), bucketVO);
 
             // Refresh the account's IAM policy to include the new bucket.
