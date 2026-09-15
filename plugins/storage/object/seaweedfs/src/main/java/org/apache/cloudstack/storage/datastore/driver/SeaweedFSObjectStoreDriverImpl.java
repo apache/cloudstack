@@ -66,6 +66,7 @@ import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -98,15 +99,33 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final String ACS_PREFIX = "acs";
 
     /**
-     * Lock object map for serializing IAM provisioning and policy refreshes
-     * per store+account. Prevents concurrent createUser calls from both
-     * rotating credentials and concurrent policy refreshes from building
-     * different snapshots.
+     * DB-backed global lock name prefix for serializing IAM provisioning and
+     * policy refreshes per store+account. Uses {@link GlobalLock} so the
+     * critical section is serialized across management servers in a
+     * clustered deployment, not just within a single JVM.
      */
-    private static final java.util.Map<String, Object> IAM_LOCKS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final String IAM_LOCK_PREFIX = "seaweedfs.iam.";
 
-    private static Object getIamLock(long storeId, long accountId) {
-        return IAM_LOCKS.computeIfAbsent(storeId + ":" + accountId, k -> new Object());
+    private static String getIamLockName(long storeId, long accountId) {
+        return IAM_LOCK_PREFIX + storeId + "." + accountId;
+    }
+
+    /**
+     * Acquire a DB-backed global lock for IAM operations on the given
+     * store+account. Returns a {@link GlobalLock} that the caller must
+     * {@link GlobalLock#unlock()} in a {@code finally} block, or {@code null}
+     * if the lock could not be acquired within the timeout.
+     *
+     * <p>Protected so tests can override with a no-op lock (the DB-backed
+     * {@link GlobalLock} requires a real transaction context).
+     */
+    protected GlobalLock acquireIamLock(long storeId, long accountId) {
+        GlobalLock lock = GlobalLock.getInternLock(getIamLockName(storeId, accountId));
+        if (!lock.lock(300)) {
+            logger.warn("Failed to acquire IAM lock for store {} account {}", storeId, accountId);
+            return null;
+        }
+        return lock;
     }
 
     @Override
@@ -149,10 +168,14 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String userName = getUserNameForAccount(account, storeId);
         AmazonIdentityManagement iamClient = getIAMClient(storeId);
 
-        // Serialize per store+account so two concurrent bucket requests do
-        // not both rotate credentials and leave bucket rows with mismatched
-        // key pairs.
-        synchronized (getIamLock(storeId, accountId)) {
+        // Serialize per store+account across management servers so two
+        // concurrent bucket requests do not both rotate credentials and leave
+        // bucket rows with mismatched key pairs.
+        GlobalLock lock = acquireIamLock(storeId, accountId);
+        if (lock == null) {
+            return false;
+        }
+        try {
 
         // Create the IAM user if it doesn't already exist
         try {
@@ -205,7 +228,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;
-        } // synchronized
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -236,7 +261,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
      *                      or null to include all of the account's buckets
      */
     protected void updateAccountIAMPolicy(AmazonIdentityManagement iamClient, long storeId, long accountId, String excludeBucket) {
-        synchronized (getIamLock(storeId, accountId)) {
+        GlobalLock lock = acquireIamLock(storeId, accountId);
+        if (lock == null) {
+            return;
+        }
+        try {
             Account account = _accountDao.findById(accountId);
             if (account == null) {
                 return;
@@ -253,6 +282,8 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             String policy = SeaweedFSObjectStoreUtil.buildAccountIAMPolicy(bucketNames);
             iamClient.putUserPolicy(new PutUserPolicyRequest(userName,
                     SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -296,7 +327,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 iamClient.deleteAccessKey(deleteReq);
             }
         } catch (AmazonClientException e) {
-            logger.warn("Failed to clean up IAM access keys for user {}: {}", userName, e.getMessage());
+            // Propagate so the caller does not proceed to create a replacement
+            // key while stale unmanaged keys remain (which could hit IAM key
+            // limits or leave orphaned credentials).
+            throw new CloudRuntimeException("Failed to clean up IAM access keys for user " + userName, e);
         }
     }
 
@@ -362,6 +396,17 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             } catch (AmazonClientException cleanupEx) {
                 logger.error("Cleanup of bucket {} also failed", bucketName, cleanupEx);
             }
+            // Revoke the IAM policy grant for the new bucket so the account's
+            // credentials cannot access a bucket that no longer exists. If the
+            // policy PUT succeeded before the DB update failed, the grant
+            // would otherwise persist and could be reused if another account
+            // later creates the same bucket name.
+            try {
+                AmazonIdentityManagement iamClient = getIAMClient(storeId);
+                updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
+            } catch (Exception policyEx) {
+                logger.warn("Failed to revoke IAM policy for bucket {} after cleanup: {}", bucketName, policyEx.getMessage());
+            }
             throw new CloudRuntimeException(e);
         }
     }
@@ -403,9 +448,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         // Refresh the account's IAM policy to drop the deleted bucket. This
         // must succeed: bucket names are reusable, so a stale grant would
         // let the old account access a new tenant's bucket with the same
-        // name. If the policy refresh fails, throw so the caller knows the
-        // remote bucket is gone but the IAM policy still grants access to
-        // the (now deleted) bucket name — an operator must reconcile.
+        // name. The policy is refreshed after the remote delete so a policy
+        // refresh failure does not leave an orphaned remote bucket; if it
+        // fails, the caller sees the exception and can reconcile the IAM
+        // policy while the CloudStack BucketVO is removed.
         AmazonIdentityManagement iamClient = getIAMClient(storeId);
         updateAccountIAMPolicy(iamClient, storeId, accountId, bucketName);
         return true;
@@ -546,7 +592,9 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     /**
-     * Set the bucket quota via the SeaweedFS admin REST API.
+     * Set the bucket quota via the SeaweedFS S3 extension
+     * ({@code PUT /{bucket}?seaweedfs-quota}), signed with the store admin
+     * S3 credentials.
      *
      * SeaweedFS enforces bucket quota server-side by setting a read-only flag
      * when usage exceeds the configured limit. The quota is configured via the
