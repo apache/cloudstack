@@ -338,6 +338,26 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testSetBucketQuotaRejects3xx() throws Exception {
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        doReturn(TEST_S3_URL).when(driver).getS3Url(TEST_STORE_ID);
+        doReturn("access-key").when(driver).getAccessKey(TEST_STORE_ID);
+        doReturn("secret-key").when(driver).getSecretKey(TEST_STORE_ID);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        // 3xx must NOT be treated as success — the mutation was not applied
+        when(mockResponse.statusCode()).thenReturn(302);
+        when(mockResponse.body()).thenReturn("redirect");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        assertThrows(CloudRuntimeException.class, () -> driver.setBucketQuota(bucketTO, TEST_STORE_ID, 10));
+    }
+
+    @Test
     public void testSetBucketQuotaNoS3ConfigThrows() {
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);

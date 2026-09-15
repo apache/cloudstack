@@ -362,10 +362,11 @@ public class SeaweedFSObjectStoreUtil {
             java.net.http.HttpResponse<String> response = httpClient.send(reqBuilder.build(),
                     java.net.http.HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() >= 400) {
+            int statusCode = response.statusCode();
+            if (statusCode < 200 || statusCode >= 300) {
                 throw new CloudRuntimeException(String.format(
                         "S3 extension request %s %s failed with status %d: %s",
-                        method, fullUri, response.statusCode(), response.body()));
+                        method, fullUri, statusCode, response.body()));
             }
             return response.body();
         } catch (CloudRuntimeException e) {
