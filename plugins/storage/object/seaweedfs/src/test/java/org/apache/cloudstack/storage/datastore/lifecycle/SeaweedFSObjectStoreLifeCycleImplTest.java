@@ -71,6 +71,7 @@ public class SeaweedFSObjectStoreLifeCycleImplTest {
     static String TEST_SECRET_KEY = "admin-secret-key";
     static String TEST_S3_URL_OVERRIDE = "http://s3-override:8333";
     static String TEST_IAM_URL_OVERRIDE = "http://iam-override:8111";
+    static String TEST_METRICS_URL = "http://seaweedfs-s3:9327";
 
     Map<String, String> detailsMap;
     Map<String, Object> dsInfos;
@@ -155,6 +156,44 @@ public class SeaweedFSObjectStoreLifeCycleImplTest {
         Map<String, String> persistedDetails = detailsArg.getValue();
         assertEquals(TEST_S3_URL_OVERRIDE, persistedDetails.get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL));
         assertFalse(persistedDetails.containsKey(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL));
+    }
+
+    @Test
+    public void testInitializeMetricsUrlPersisted() {
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL, TEST_METRICS_URL);
+
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        ArgumentCaptor<Map<String, String>> detailsArg = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(objectStoreHelper).createObjectStore(anyMap(), detailsArg.capture());
+        // The metrics endpoint must survive initialization, otherwise
+        // getMetricsUrl() returns null and usage reporting always falls back to
+        // the O(total objects) ListObjectsV2 scan.
+        assertEquals(TEST_METRICS_URL, detailsArg.getValue().get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL));
+    }
+
+    @Test
+    public void testInitializeMetricsUrlOmittedNotPersisted() {
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        ArgumentCaptor<Map<String, String>> detailsArg = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(objectStoreHelper).createObjectStore(anyMap(), detailsArg.capture());
+        assertFalse(detailsArg.getValue().containsKey(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_METRICS_URL));
+    }
+
+    @Test
+    public void testInitializeValidatesSuppliedCredentials() {
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        // validateS3Url/validateIAMUrl only probe that the endpoint behaves
+        // like the service (using deliberately bad credentials), so the
+        // configured admin credentials must be verified separately or a store
+        // with bad credentials is accepted and only fails later.
+        mockStatic.verify(() -> SeaweedFSObjectStoreUtil.validateCredentials(
+                TEST_URL, TEST_URL, TEST_ACCESS_KEY, TEST_SECRET_KEY));
     }
 
     @Test

@@ -233,7 +233,7 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
-    public void testDeleteBucketRemovesRowInsideLock() throws Exception {
+    public void testDeleteBucketMarksRowDestroyedInsideLock() throws Exception {
         doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
@@ -247,10 +247,37 @@ public class SeaweedFSObjectStoreDriverImplTest {
         when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
 
         assertTrue(driver.deleteBucket(bucketTO, TEST_STORE_ID));
-        // The row must be removed by the driver (inside the IAM lock, after the
-        // policy refresh) so a concurrent policy rebuild cannot observe the
-        // stale row and re-add the deleted bucket ARN.
-        verify(bucketDao, times(1)).remove(existing.getId());
+        // The row must be marked Destroyed inside the IAM lock so a concurrent
+        // policy rebuild cannot re-add the deleted bucket ARN, but must NOT be
+        // removed: BucketApiServiceImpl still needs it to decrement the
+        // resource counts and allocated size.
+        assertEquals(Bucket.State.Destroyed, existing.getState());
+        verify(bucketDao, times(1)).update(existing.getId(), existing);
+        verify(bucketDao, never()).remove(existing.getId());
+    }
+
+    @Test
+    public void testBuildPolicySkipsDestroyedBuckets() throws Exception {
+        BucketVO live = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "live-bucket",
+                null, false, false, false, null);
+        BucketVO destroyed = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "destroyed-bucket",
+                null, false, false, false, null);
+        destroyed.setState(Bucket.State.Destroyed);
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(live);
+        buckets.add(destroyed);
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+
+        driver.updateAccountIAMPolicyLocked(iamClient, TEST_STORE_ID, TEST_ACCOUNT_ID, null);
+
+        ArgumentCaptor<PutUserPolicyRequest> captor = ArgumentCaptor.forClass(PutUserPolicyRequest.class);
+        verify(iamClient, times(1)).putUserPolicy(captor.capture());
+        String policy = captor.getValue().getPolicyDocument();
+        // A bucket whose remote counterpart is gone must not be granted: the
+        // name is reusable and another account could claim it.
+        assertTrue(policy.contains("live-bucket"));
+        assertFalse(policy.contains("destroyed-bucket"));
     }
 
     @Test
