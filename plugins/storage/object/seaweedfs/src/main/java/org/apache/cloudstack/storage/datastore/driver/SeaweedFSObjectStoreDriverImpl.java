@@ -52,11 +52,14 @@ import com.amazonaws.services.s3.model.BucketPolicy;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteBucketPolicyRequest;
+import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
+import com.amazonaws.services.s3.model.CORSRule;
 import com.amazonaws.services.s3.model.GetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.SSEAlgorithm;
 import com.amazonaws.services.s3.model.ServerSideEncryptionByDefault;
 import com.amazonaws.services.s3.model.ServerSideEncryptionConfiguration;
 import com.amazonaws.services.s3.model.ServerSideEncryptionRule;
+import com.amazonaws.services.s3.model.SetBucketCrossOriginConfigurationRequest;
 import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import com.cloud.agent.api.to.BucketTO;
@@ -123,6 +126,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         GlobalLock lock = GlobalLock.getInternLock(getIamLockName(storeId, accountId));
         if (!lock.lock(300)) {
             logger.warn("Failed to acquire IAM lock for store {} account {}", storeId, accountId);
+            lock.releaseRef();
             return null;
         }
         return lock;
@@ -230,6 +234,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return true;
         } finally {
             lock.unlock();
+            lock.releaseRef();
         }
     }
 
@@ -263,7 +268,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     protected void updateAccountIAMPolicy(AmazonIdentityManagement iamClient, long storeId, long accountId, String excludeBucket) {
         GlobalLock lock = acquireIamLock(storeId, accountId);
         if (lock == null) {
-            return;
+            throw new CloudRuntimeException("Failed to acquire IAM lock for store " + storeId + " account " + accountId);
         }
         try {
             Account account = _accountDao.findById(accountId);
@@ -284,6 +289,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                     SeaweedFSObjectStoreUtil.IAM_USER_POLICY_NAME, policy));
         } finally {
             lock.unlock();
+            lock.releaseRef();
         }
     }
 
@@ -364,6 +370,11 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
+        // Configure permissive CORS so the CloudStack S3 bucket browser
+        // (which performs list/upload/delete from the browser) can function.
+        // SeaweedFS supports the standard PutBucketCors operation.
+        configureBucketCORS(s3client, bucketName);
+
         // Step 2: update the bucket record with the account's IAM credentials.
         // If this fails, clean up the remote bucket so a retry does not find
         // it already existing — mirroring the Cloudian createBucket pattern.
@@ -411,6 +422,31 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         }
     }
 
+    /**
+     * Configure a permissive CORS policy on the bucket so the CloudStack
+     * S3 bucket browser (which performs list/upload/delete from the
+     * browser) can function. Mirrors the Cloudian configureBucketCORS.
+     */
+    private void configureBucketCORS(AmazonS3 s3client, String bucketName) {
+        logger.debug("Configuring CORS for bucket {}", bucketName);
+        List<CORSRule> corsRules = new ArrayList<>();
+        CORSRule allowAnyRule = new CORSRule().withId("AllowAny");
+        allowAnyRule.setAllowedOrigins("*");
+        allowAnyRule.setAllowedHeaders("*");
+        allowAnyRule.setAllowedMethods(
+            CORSRule.AllowedMethods.HEAD,
+            CORSRule.AllowedMethods.GET,
+            CORSRule.AllowedMethods.PUT,
+            CORSRule.AllowedMethods.POST,
+            CORSRule.AllowedMethods.DELETE);
+        corsRules.add(allowAnyRule);
+        BucketCrossOriginConfiguration corsConfig = new BucketCrossOriginConfiguration();
+        corsConfig.setRules(corsRules);
+        SetBucketCrossOriginConfigurationRequest corsRequest = new SetBucketCrossOriginConfigurationRequest(bucketName, corsConfig);
+        s3client.setBucketCrossOriginConfiguration(corsRequest);
+        logger.info("Successfully configured CORS for bucket {}", bucketName);
+    }
+
     @Override
     public List<Bucket> listBuckets(long storeId) {
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
@@ -433,15 +469,14 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String bucketName = bucket.getName();
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
+        // If the bucket is already gone (e.g. from a previous partial
+        // failure where the S3 delete succeeded but the IAM policy refresh
+        // failed), skip the S3 delete and proceed to policy reconciliation
+        // so the retry is idempotent.
         try {
-            if (! s3client.doesBucketExistV2(bucketName)) {
-                throw new CloudRuntimeException("Bucket doesn't exist: " + bucketName);
+            if (s3client.doesBucketExistV2(bucketName)) {
+                s3client.deleteBucket(bucketName);
             }
-        } catch (AmazonClientException e) {
-            throw new CloudRuntimeException(e);
-        }
-        try {
-            s3client.deleteBucket(bucketName);
         } catch (AmazonClientException e) {
             throw new CloudRuntimeException(e);
         }
