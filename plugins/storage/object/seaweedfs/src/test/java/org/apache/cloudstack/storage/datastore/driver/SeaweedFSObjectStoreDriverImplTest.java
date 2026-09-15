@@ -767,4 +767,70 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertEquals(300L, usage.get("b1").longValue());
         assertEquals(500L, usage.get("b2").longValue());
     }
+
+    @Test
+    public void testGetAllBucketsUsageFromMetrics() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b2", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // Mock the HTTP client to return a Prometheus text exposition response
+        String metricsBody = "# HELP seaweed_s3_bucket_size_bytes Current size\n" +
+                "seaweed_s3_bucket_size_bytes{bucket=\"b1\"} 12345678\n" +
+                "seaweed_s3_bucket_size_bytes{bucket=\"b2\"} 87654321\n" +
+                "seaweed_s3_bucket_size_bytes{bucket=\"other\"} 999\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertNotNull(usage);
+        assertEquals(2, usage.size());
+        assertEquals(12345678L, usage.get("b1").longValue());
+        assertEquals(87654321L, usage.get("b2").longValue());
+        // "other" bucket is not managed by CloudStack and must be filtered out
+        assertFalse(usage.containsKey("other"));
+        // S3 ListObjectsV2 must not be called when metricsUrl is configured
+        verify(s3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMetricsFailureFallsBackToList() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "b1", null, false, false, false, null));
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // Metrics scrape returns HTTP 503 -> fallback to ListObjectsV2
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(503);
+        when(mockResponse.body()).thenReturn("Service Unavailable");
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        ListObjectsV2Result b1Result = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(42L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(b1Result.getObjectSummaries()).thenReturn(summaries);
+        when(b1Result.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(b1Result);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertNotNull(usage);
+        assertEquals(1, usage.size());
+        assertEquals(42L, usage.get("b1").longValue());
+    }
 }
