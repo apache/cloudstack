@@ -333,11 +333,25 @@ public class SeaweedFSObjectStoreUtil {
                 queryString = resourcePath.substring(q + 1);
             }
 
+            // Prepend the endpoint's path prefix (e.g. /object-s3) to the
+            // resource path so the SigV4 canonical URI matches the outgoing
+            // request URI. Without this, a path-prefixed endpoint behind a
+            // reverse proxy would sign /bucket but send /object-s3/bucket,
+            // causing SignatureDoesNotMatch.
+            String endpointPath = endpointUri.getPath();
+            if (endpointPath == null) {
+                endpointPath = "";
+            }
+            if (endpointPath.endsWith("/")) {
+                endpointPath = endpointPath.substring(0, endpointPath.length() - 1);
+            }
+            String signedResourcePath = endpointPath + path;
+
             // Build AWS SDK v1 Request for SigV4 signing
             com.amazonaws.DefaultRequest<?> request = new com.amazonaws.DefaultRequest<>("s3");
             request.setEndpoint(endpointUri);
             request.setHttpMethod(com.amazonaws.http.HttpMethodName.valueOf(method));
-            request.setResourcePath(path);
+            request.setResourcePath(signedResourcePath);
             if (! queryString.isEmpty()) {
                 for (String pair : queryString.split("&")) {
                     if (pair.isEmpty()) {
@@ -371,20 +385,9 @@ public class SeaweedFSObjectStoreUtil {
             // headers (e.g. Content-Length, Host) are set by the HTTP client /
             // URI itself and cannot be added via HttpRequest.Builder.header(),
             // so they are skipped here.
-            // Build the outgoing URI preserving any path prefix in the
-            // endpoint URL (e.g. https://host/object-s3). URI.resolve(path)
-            // would replace that prefix because path starts with '/', sending
-            // the request to the wrong route and breaking signature
-            // verification. Instead, concatenate the endpoint path and the
-            // resource path explicitly.
-            String endpointPath = endpointUri.getPath();
-            if (endpointPath == null) {
-                endpointPath = "";
-            }
-            // Strip a trailing slash from the endpoint path to avoid doubles
-            if (endpointPath.endsWith("/")) {
-                endpointPath = endpointPath.substring(0, endpointPath.length() - 1);
-            }
+            // Build the outgoing URI preserving the endpoint path prefix (e.g.
+            // https://host/object-s3) by concatenating it with the resource
+            // path. This matches the signed resource path so SigV4 verifies.
             java.net.URI fullUri = java.net.URI.create(
                     endpointUri.getScheme() + "://" + endpointUri.getRawAuthority()
                     + endpointPath + path);
