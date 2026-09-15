@@ -25,7 +25,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -238,9 +237,13 @@ public class SeaweedFSObjectStoreDriverImplTest {
         doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
         BucketTO bucketTO = mock(BucketTO.class);
         when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        when(bucketTO.getAccountId()).thenReturn(TEST_ACCOUNT_ID);
         when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
 
-        assertThrows(CloudRuntimeException.class, () -> driver.deleteBucket(bucketTO, TEST_STORE_ID));
+        // Idempotent: if the bucket is already gone (e.g. from a previous
+        // partial failure), skip the S3 delete and proceed to policy refresh.
+        assertTrue(driver.deleteBucket(bucketTO, TEST_STORE_ID));
+        verify(s3Client, never()).deleteBucket(TEST_BUCKET_NAME);
     }
 
     @Test
