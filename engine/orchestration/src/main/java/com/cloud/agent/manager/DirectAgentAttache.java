@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -36,7 +38,6 @@ import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.resource.ServerResource;
-import org.apache.logging.log4j.ThreadContext;
 
 public class DirectAgentAttache extends AgentAttache {
 
@@ -44,12 +45,19 @@ public class DirectAgentAttache extends AgentAttache {
             "Number of times retrying a host ping while waiting for check results", true);
     protected final ConfigKey<Integer> _HostPingRetryTimer = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.timer", "5",
             "Interval to wait before retrying a host ping while waiting for check results", true);
-    ServerResource _resource;
-    List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
-    long _seq = 0;
-    LinkedList<Task> tasks = new LinkedList<Task>();
-    AtomicInteger _outstandingTaskCount;
-    AtomicInteger _outstandingCronTaskCount;
+    // volatile so that isClosed() and PingTask/CronTask can read it without a lock.
+    // All writes go through _futuresLock to stay atomic with futures management.
+    private volatile ServerResource _resource;
+    private final List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
+    // Separate lock for futures and _resource state. We intentionally do NOT use
+    // synchronized(this) here because disconnect() calls resource.disconnected() which
+    // can be slow (hypervisor roundtrip). A dedicated lock keeps that slow call outside
+    // the critical section so process() and send() are not blocked by it.
+    private final Object _futuresLock = new Object();
+    private final AtomicLong _seq = new AtomicLong(0);
+    private final LinkedList<Task> tasks = new LinkedList<Task>();
+    private final AtomicInteger _outstandingTaskCount;
+    private final AtomicInteger _outstandingCronTaskCount;
 
     public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid,String name, ServerResource resource, boolean maintenance) {
         super(agentMgr, id, uuid, name, maintenance);
@@ -62,15 +70,21 @@ public class DirectAgentAttache extends AgentAttache {
     public void disconnect(Status state) {
         logger.debug("Processing disconnect [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
 
-        for (ScheduledFuture<?> future : _futures) {
-            future.cancel(false);
-        }
-
-        synchronized (this) {
-            if (_resource != null) {
-                _resource.disconnected();
-                _resource = null;
+        // Capture the resource reference and null it out atomically with futures cleanup,
+        // so that process() and send() cannot sneak in a new scheduled task after we clear.
+        // We call resource.disconnected() outside the lock intentionally - it can be slow
+        // (calls into the hypervisor driver), and we don't want to hold _futuresLock during that.
+        ServerResource resource;
+        synchronized (_futuresLock) {
+            for (ScheduledFuture<?> future : _futures) {
+                future.cancel(false);
             }
+            _futures.clear();
+            resource = _resource;
+            _resource = null;
+        }
+        if (resource != null) {
+            resource.disconnected();
         }
     }
 
@@ -83,7 +97,7 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     @Override
-    public synchronized boolean isClosed() {
+    public boolean isClosed() {
         return _resource == null;
     }
 
@@ -96,7 +110,14 @@ public class DirectAgentAttache extends AgentAttache {
             if (answers != null && answers[0] instanceof StartupAnswer) {
                 StartupAnswer startup = (StartupAnswer)answers[0];
                 int interval = startup.getPingInterval();
-                _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+                synchronized (_futuresLock) {
+                    if (!isClosed()) {
+                        // scheduleWithFixedDelay - next ping starts only after the previous one
+                        // finishes. scheduleAtFixedRate would pile up concurrent pings if the
+                        // hypervisor is slow, eventually exhausting the cron thread pool.
+                        _futures.add(_agentMgr.getCronJobPool().scheduleWithFixedDelay(new PingTask(), interval, interval, TimeUnit.SECONDS));
+                    }
+                }
             }
         } else {
             Command[] cmds = req.getCommands();
@@ -105,7 +126,11 @@ public class DirectAgentAttache extends AgentAttache {
                 scheduleFromQueue();
             } else {
                 CronCommand cmd = (CronCommand)cmds[0];
-                _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new CronTask(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
+                synchronized (_futuresLock) {
+                    if (!isClosed()) {
+                        _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new CronTask(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
+                    }
+                }
             }
         }
     }
@@ -115,8 +140,17 @@ public class DirectAgentAttache extends AgentAttache {
         if (answers != null && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
-            logger.info("StartupAnswer received [id: {}, uuid: {}, name: {}, interval: {}]", startup.getHostId(), startup.getHostUuid(), startup.getHostName(), interval);
-            _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
+            logger.info(String.format(
+                    "StartupAnswer received [id: %d, uuid: %s, name: %s, interval: %d]",
+                    startup.getHostId(), startup.getHostUuid(), startup.getHostName(), interval));
+            synchronized (_futuresLock) {
+                if (!isClosed()) {
+                    // scheduleWithFixedDelay - next ping starts only after the previous one
+                    // finishes. scheduleAtFixedRate would pile up concurrent pings if the
+                    // hypervisor is slow, eventually exhausting the cron thread pool.
+                    _futures.add(_agentMgr.getCronJobPool().scheduleWithFixedDelay(new PingTask(), interval, interval, TimeUnit.SECONDS));
+                }
+            }
         }
     }
 
@@ -124,11 +158,9 @@ public class DirectAgentAttache extends AgentAttache {
     protected void finalize() throws Throwable {
         try {
             assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources. Ever considered why there's a method called disconnect()?";
-            synchronized (this) {
-                if (_resource != null) {
-                    logger.warn("Lost attache for [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
-                    disconnect(Status.Alert);
-                }
+            if (_resource != null) {
+                logger.warn(String.format("Lost attache for [id: %d, uuid: %s, name: %s]", _id, _uuid, _name));
+                disconnect(Status.Alert);
             }
         } finally {
             super.finalize();
@@ -143,8 +175,19 @@ public class DirectAgentAttache extends AgentAttache {
         logger.trace("Agent attache [id: {}, uuid: {}, name: {}], task queue size={}, outstanding tasks={}",
                 _id, _uuid, _name, tasks.size(), _outstandingTaskCount.get());
         while (!tasks.isEmpty() && _outstandingTaskCount.get() < _agentMgr.getDirectAgentThreadCap()) {
+            Task task = tasks.removeFirst();
             _outstandingTaskCount.incrementAndGet();
-            _agentMgr.getDirectAgentPool().execute(tasks.remove());
+            try {
+                _agentMgr.getDirectAgentPool().execute(task);
+            } catch (RuntimeException e) {
+                // The thread pool rejected the task (likely full or shutting down).
+                // Roll back: return the slot and put the task back at the head of the queue
+                // so it gets a chance to run on the next scheduleFromQueue() call.
+                _outstandingTaskCount.decrementAndGet();
+                tasks.addFirst(task);
+                logger.warn("Failed to submit direct agent task, will retry on next schedule", e);
+                break;
+            }
         }
     }
 
@@ -155,12 +198,12 @@ public class DirectAgentAttache extends AgentAttache {
 
     protected class PingTask extends ManagedContextRunnable {
         @Override
-        protected synchronized void runInContext() {
+        protected void runInContext() {
             try {
-                if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn(
-                            "PingTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
-                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
+                if (_outstandingCronTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
+                    logger.warn(String.format(
+                            "PingTask execution for direct attache [id: %d, uuid: %s, name: %s] has reached maximum outstanding limit(%d), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap()));
                     return;
                 }
 
@@ -183,7 +226,7 @@ public class DirectAgentAttache extends AgentAttache {
                         ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
                     logger.debug("Ping from [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
-                    long seq = _seq++;
+                    long seq = _seq.getAndIncrement();
 
                     logger.trace("SeqA {}-{}: {}", _id, seq, new Request(_id, -1, cmd, false).toString());
 
@@ -200,8 +243,7 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     protected class CronTask extends ManagedContextRunnable {
-        Request _req;
-
+        private final Request _req;
         public CronTask(Request req) {
             _req = req;
         }
@@ -226,10 +268,10 @@ public class DirectAgentAttache extends AgentAttache {
         protected void runInContext() {
             long seq = _req.getSequence();
             try {
-                if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn(
-                            "CronTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
-                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
+                if (_outstandingCronTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
+                    logger.warn(String.format(
+                            "CronTask execution for direct attache [id: %d, uuid: %s, name: %s] has reached maximum outstanding limit(%d), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap()));
                     bailout();
                     return;
                 }
@@ -282,8 +324,7 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     protected class Task extends ManagedContextRunnable {
-        Request _req;
-
+        private final Request _req;
         public Task(Request req) {
             _req = req;
         }
