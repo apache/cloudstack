@@ -171,8 +171,28 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         details.put(secretKeyDetailKey, key.getSecretAccessKey());
         _accountDetailsDao.persist(accountId, details);
 
+        // Update existing bucket records for this account/store with the new
+        // credentials so previously created buckets don't keep handing out
+        // the old (now invalid) key pair.
+        updateAccountBucketCredentials(storeId, accountId, key);
+
         logger.info("Created IAM credentials {} for user {}", key.getAccessKeyId(), userName);
         return true;
+    }
+
+    /**
+     * Update the IAM credentials on all BucketVO rows for this store/account
+     * so previously created buckets reflect the new (rotated) key pair.
+     * Mirrors CloudianHyperStoreObjectStoreDriverImpl.updateAccountBucketCredentials.
+     */
+    private void updateAccountBucketCredentials(long storeId, long accountId, AccessKey iamCredential) {
+        List<BucketVO> bucketList = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
+        for (BucketVO bucketVO : bucketList) {
+            logger.info("Updating accountId={} bucket {} with new IAM credentials", accountId, bucketVO.getName());
+            bucketVO.setAccessKey(iamCredential.getAccessKeyId());
+            bucketVO.setSecretKey(iamCredential.getSecretAccessKey());
+            _bucketDao.update(bucketVO.getId(), bucketVO);
+        }
     }
 
     /**
