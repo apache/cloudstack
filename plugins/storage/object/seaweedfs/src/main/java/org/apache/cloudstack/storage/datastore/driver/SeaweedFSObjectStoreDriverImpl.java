@@ -272,22 +272,34 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
-        // Update the bucket record with the account's IAM credentials
-        Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
-        String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.keyAccessKey(storeId));
-        String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.keySecretKey(storeId));
-        if (accessKey == null || secretKey == null) {
-            logger.warn("No IAM credentials found for account {}. Bucket will be created without per-account credentials.", accountId);
-        }
+        // Step 2: update the bucket record with the account's IAM credentials.
+        // If this fails, clean up the remote bucket so a retry does not find
+        // it already existing — mirroring the Cloudian createBucket pattern.
+        try {
+            Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
+            String accessKey = accountDetails.get(SeaweedFSObjectStoreUtil.keyAccessKey(storeId));
+            String secretKey = accountDetails.get(SeaweedFSObjectStoreUtil.keySecretKey(storeId));
+            if (accessKey == null || secretKey == null) {
+                logger.warn("No IAM credentials found for account {}. Bucket will be created without per-account credentials.", accountId);
+            }
 
-        ObjectStoreVO store = _storeDao.findById(storeId);
-        String s3Url = getS3Url(storeId);
-        BucketVO bucketVO = _bucketDao.findById(bucket.getId());
-        bucketVO.setAccessKey(accessKey);
-        bucketVO.setSecretKey(secretKey);
-        bucketVO.setBucketURL(s3Url + "/" + bucketName);
-        _bucketDao.update(bucket.getId(), bucketVO);
-        return bucket;
+            String s3Url = getS3Url(storeId);
+            BucketVO bucketVO = _bucketDao.findById(bucket.getId());
+            bucketVO.setAccessKey(accessKey);
+            bucketVO.setSecretKey(secretKey);
+            bucketVO.setBucketURL(s3Url + "/" + bucketName);
+            _bucketDao.update(bucket.getId(), bucketVO);
+            return bucket;
+        } catch (Exception e) {
+            logger.error("Post-create bucket record update failed for {}; cleaning up remote bucket", bucketName, e);
+            try {
+                s3client.deleteBucket(bucketName);
+                logger.info("Cleanup of bucket {} succeeded", bucketName);
+            } catch (AmazonClientException cleanupEx) {
+                logger.error("Cleanup of bucket {} also failed", bucketName, cleanupEx);
+            }
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override
