@@ -7964,11 +7964,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
-        logger.trace("Verifying if the provided domain ID [{}] is valid.", domainId);
-        if (projectId != null && domainId == null) {
-            throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
-        }
-
         validateIfVmHasNoRules(vm, vmId);
 
         final List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
@@ -7979,10 +7974,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         validateIfNewOwnerHasAccessToTemplate(vm, newAccount, template);
 
-        DomainVO domain = _domainDao.findById(domainId);
-        logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
-        _accountMgr.checkAccess(newAccount, domain);
-
         List<Reserver> reservations = new ArrayList<>();
         try {
         verifyResourceLimitsForAccountAndStorage(newAccount, vm, offering, volumes, template, reservations);
@@ -7992,7 +7983,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
+                    executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template);
                 }
             });
         } catch (Exception e) {
@@ -8190,10 +8181,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param offering The service offering which will be used to decrement and increment resource counts.
      * @param volumes The volumes of the VM which will be assigned to another user.
      * @param template The template of the VM which will be assigned to another user.
-     * @param domainId The ID of the domain where the VM which will be assigned to another user is.
      */
     protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
-                                                     List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
+                                                     List<VolumeVO> volumes, VirtualMachineTemplate template) {
 
         logger.trace("Generating destroy event for VM [{}].", vm);
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
@@ -8206,7 +8196,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         removeInstanceFromInstanceGroup(vm.getId());
 
         Long newAccountId = newAccount.getAccountId();
-        updateVmOwner(newAccount, vm, domainId, newAccountId);
+        updateVmOwner(newAccount, vm);
 
         updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
 
@@ -8229,11 +8219,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
     }
 
-    protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
+    protected void updateVmOwner(Account newAccount, UserVmVO vm) {
         logger.debug("Updating VM [{}] owner to [{}].", vm, newAccount);
 
-        vm.setAccountId(newAccountId);
-        vm.setDomainId(domainId);
+        vm.setAccountId(newAccount.getId());
+        vm.setDomainId(newAccount.getDomainId());
 
         _vmDao.persist(vm);
     }
@@ -9215,7 +9205,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     resizedVolume.setMinIops(Long.parseLong(minIops));
                 }
                 if (StringUtils.isNumeric(maxIops)) {
-                    resizedVolume.setMinIops(Long.parseLong(maxIops));
+                    resizedVolume.setMaxIops(Long.parseLong(maxIops));
                 }
             }
         }
@@ -9613,6 +9603,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (host == null && hypervisorType == HypervisorType.VMware) {
                 throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
             }
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to import virtual machine without a template");
+            }
+
+            // Ensure template details are loaded so that commitUserVm can copy them into the VM's details map
+            VMTemplateVO vmTemplateVO = _templateDao.findById(template.getId());
+            if (vmTemplateVO == null) {
+                throw new InvalidParameterValueException("Unable to find template with id " + template.getId() + " for virtual machine import");
+            }
+            _templateDao.loadDetails(vmTemplateVO);
 
             final long id = _vmDao.getNextInSequence(Long.class, "id");
             String instanceName = StringUtils.isBlank(instanceNameInternal) ?
@@ -9626,8 +9626,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
             final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-            final boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
-            return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
+            final boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, vmTemplateVO, zone.getId());
+            return commitUserVm(true, zone, host, lastHost, vmTemplateVO, hostName, displayName, owner,
                     null, null, userData, null, null, isDisplayVm, keyboard,
                     accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), guestOsId, sshPublicKeys, networkNicMap,
                     id, instanceName, uuidName, hypervisorType, customParameters,
