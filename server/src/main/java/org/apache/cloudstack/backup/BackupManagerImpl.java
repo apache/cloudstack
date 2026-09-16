@@ -842,7 +842,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         validateQuiesceAndIsolated(offering, quiesceVm, isolated);
 
         validateMaxScheduleForIntervalType(offering, intervalType, vm);
-        validateDifferentScheduleFromExistingSchedules(vm, intervalType, scheduleString);
+        validateDifferentScheduleFromExistingSchedules(vm, intervalType, scheduleString, null);
 
         final String timezoneId = timeZone.getID();
         if (!timezoneId.equals(cmd.getTimezone())) {
@@ -894,10 +894,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean isolated = ObjectUtils.defaultIfNull(cmd.isIsolated(), schedule.isIsolated());
         validateQuiesceAndIsolated(offering, quiesceVm, isolated);
 
+        String scheduleString = ObjectUtils.defaultIfNull(cmd.getSchedule(), schedule.getSchedule());
+        validateDifferentScheduleFromExistingSchedules(vm, intervalType, scheduleString, schedule);
+
         String timeZoneString = ObjectUtils.defaultIfNull(cmd.getTimezone(), schedule.getTimezone());
         TimeZone timeZone = TimeZone.getTimeZone(timeZoneString);
         intervalType = ObjectUtils.defaultIfNull(intervalType, schedule.getScheduleType());
-        String scheduleString = ObjectUtils.defaultIfNull(cmd.getSchedule(), schedule.getSchedule());
 
         Date nextDateTime;
         try {
@@ -2708,8 +2710,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
     }
 
-    private void validateDifferentScheduleFromExistingSchedules(VMInstanceVO vm, DateUtil.IntervalType intervalType, String schedule) {
+    private void validateDifferentScheduleFromExistingSchedules(VMInstanceVO vm, DateUtil.IntervalType intervalType, String schedule, BackupScheduleVO scheduleBeingValidated) {
         List<BackupScheduleVO> existingBackupSchedules = backupScheduleDao.listByVMAndIntervalType(vm.getId(), intervalType);
+        if (scheduleBeingValidated != null) {
+            existingBackupSchedules.removeIf(sched -> sched.getId() == scheduleBeingValidated.getId());
+        }
         if (existingBackupSchedules.stream().anyMatch(existingSchedule -> existingSchedule.getSchedule().equals(schedule))) {
             throw new CloudRuntimeException(String.format("VM [%s] already has a [%s] schedule at [%s]. Cannot have multiple schedules of the same type at the same time.",
                     vm.getUuid(), intervalType.name(), schedule));

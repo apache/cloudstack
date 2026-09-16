@@ -288,7 +288,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        intervaltype: 'hourly',
+        intervaltype: this.scheduleToEdit?.intervaltype?.toLowerCase() ?? 'hourly',
         isolated: false
       })
       this.rules = reactive({
