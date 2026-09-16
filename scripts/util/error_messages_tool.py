@@ -69,19 +69,19 @@ OPTIONS
 EXAMPLES
 --------
   # Check for structural errors
-  error_messages_tool.py errors -f client/conf/error-messages.json.in
+  error_messages_tool.py errors -f client/conf/messages/error-messages.json.in
 
   # Find keys with no code references (run from the repository root)
-  error_messages_tool.py unused -f client/conf/error-messages.json.in
+  error_messages_tool.py unused -f client/conf/messages/error-messages.json.in
 
   # Preview what 'fix' would produce without writing
-  error_messages_tool.py fix -f client/conf/error-messages.json.in --dry-run
+  error_messages_tool.py fix -f client/conf/messages/error-messages.json.in --dry-run
 
   # Fix and write to a separate file
-  error_messages_tool.py fix -f client/conf/error-messages.json.in -o /tmp/fixed.json
+  error_messages_tool.py fix -f client/conf/messages/error-messages.json.in -o /tmp/fixed.json
 
   # Sort keys alphabetically and overwrite in place
-  error_messages_tool.py sort -f client/conf/error-messages.json.in
+  error_messages_tool.py sort -f client/conf/messages/error-messages.json.in
 
 EXIT STATUS
 -----------

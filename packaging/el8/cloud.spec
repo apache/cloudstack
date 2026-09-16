@@ -255,6 +255,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/messages
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel
@@ -291,10 +292,14 @@ cp client/target/lib/*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties server.properties log4j-cloud.xml environment.properties java.security.ciphers error-messages.json
+for name in db.properties server.properties log4j-cloud.xml environment.properties java.security.ciphers
 do
   cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
+
+# Plugin-specific error-messages-*.json files are runtime/environment-specific only and are never
+# bundled here; an operator or plugin drops them alongside error-messages.json after install.
+cp client/target/conf/messages/error-messages.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/messages/error-messages.json
 
 ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j2.xml
 
@@ -620,7 +625,8 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j2.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
-%config(noreplace) %{_sysconfdir}/%{name}/management/error-messages.json
+%dir %{_sysconfdir}/%{name}/management/messages
+%config(noreplace) %{_sysconfdir}/%{name}/management/messages/error-messages.json
 %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-management
 %attr(0644,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid

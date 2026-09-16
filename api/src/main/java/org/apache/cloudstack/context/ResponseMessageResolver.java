@@ -25,9 +25,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,7 +53,10 @@ public class ResponseMessageResolver {
     private static final Logger LOG =
             LogManager.getLogger(ResponseMessageResolver.class);
 
-    protected static final String ERROR_MESSAGES_FILENAME = "error-messages.json";
+    protected static final String MESSAGES_DIRNAME = "messages";
+    protected static final String ERROR_MESSAGES_FILENAME = MESSAGES_DIRNAME + "/error-messages.json";
+    protected static final String PLUGIN_ERROR_MESSAGES_PREFIX = "error-messages-";
+    protected static final String PLUGIN_ERROR_MESSAGES_SUFFIX = ".json";
     protected static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
     protected static final boolean USE_RESOURCE_TO_STRING_IN_METADATA = false;
     protected static final boolean INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA = true;
@@ -65,7 +71,14 @@ public class ResponseMessageResolver {
     private static volatile Map<String, String> templates =
             Collections.emptyMap();
 
-    private static volatile long lastModified = -1;
+    /**
+     * Snapshot of every source file that fed into {@link #templates} (the main file plus any
+     * plugin-specific {@code error-messages-*.json} files found alongside it), keyed by filename
+     * with the value being that file's last-modified time. Reloading is skipped unless this
+     * snapshot differs from the last one taken, so both content edits AND files being added or
+     * removed are detected.
+     */
+    private static volatile Map<String, Long> loadedFileSnapshot = Collections.emptyMap();
 
     private ResponseMessageResolver() {
     }
@@ -76,7 +89,7 @@ public class ResponseMessageResolver {
      */
     protected static synchronized void clearCache() {
         templates = Collections.emptyMap();
-        lastModified = -1;
+        loadedFileSnapshot = Collections.emptyMap();
     }
 
     protected static List<String> getVariableNamesInErrorKey(String template) {
@@ -267,7 +280,6 @@ public class ResponseMessageResolver {
         }
         String result = obj.toString();
         if (StringUtils.isNotEmpty(result)) {
-            // Remove id: DBID pattern for non-root admins
             if (!isAdmin) {
                 result = result.replaceAll("\\bid:\\s*\\d+", "").trim();
             }
@@ -289,6 +301,26 @@ public class ResponseMessageResolver {
         }
     }
 
+    /**
+     * Lists any plugin-contributed {@code error-messages-*.json} files sitting alongside the main
+     * error-messages file, sorted alphabetically so merge order (and therefore which file wins on
+     * a key collision between two plugin files) is deterministic. These are never bundled with any
+     * package; an operator or plugin author drops them into the same directory as the main file at
+     * runtime, conventionally named after the contributing artifact, e.g. {@code
+     * error-messages-cloud-plugin-mom-webhook.json}. The resolver does not otherwise attach any
+     * meaning to the suffix.
+     */
+    private static List<File> listPluginErrorMessageFiles(File configDir) {
+        File[] files = configDir.listFiles((dir, name) ->
+                name.startsWith(PLUGIN_ERROR_MESSAGES_PREFIX) && name.endsWith(PLUGIN_ERROR_MESSAGES_SUFFIX));
+        if (files == null || files.length == 0) {
+            return Collections.emptyList();
+        }
+        List<File> pluginFiles = new ArrayList<>(Arrays.asList(files));
+        pluginFiles.sort(Comparator.comparing(File::getName));
+        return pluginFiles;
+    }
+
     protected static synchronized void reloadIfRequired() {
         try {
             // log current directory for debugging purposes
@@ -300,30 +332,56 @@ public class ResponseMessageResolver {
                     LOG.warn("Error messages file disappeared: {}",
                             errorMessagesFile != null ? errorMessagesFile.getAbsolutePath() : ERROR_MESSAGES_FILENAME);
                     templates = Collections.emptyMap();
+                    loadedFileSnapshot = Collections.emptyMap();
                 }
                 return;
             }
 
-            long modified =
-                    Files.getLastModifiedTime(errorMessagesFile.toPath()).toMillis();
+            List<File> pluginFiles = listPluginErrorMessageFiles(errorMessagesFile.getParentFile());
 
-            if (modified == lastModified) {
+            Map<String, Long> currentSnapshot = new LinkedHashMap<>();
+            currentSnapshot.put(errorMessagesFile.getName(), Files.getLastModifiedTime(errorMessagesFile.toPath()).toMillis());
+            for (File pluginFile : pluginFiles) {
+                currentSnapshot.put(pluginFile.getName(), pluginFile.lastModified());
+            }
+
+            if (currentSnapshot.equals(loadedFileSnapshot)) {
                 return;
             }
 
-            try (InputStream is =
-                         Files.newInputStream(errorMessagesFile.toPath())) {
-
-                templates = MAPPER.readValue(
-                        is,
-                        new TypeReference<>() {
-                        }
-                );
-                lastModified = modified;
-
-                LOG.info("Reloaded {} error message templates from {}",
-                        templates.size(), errorMessagesFile.toPath());
+            Map<String, String> mainTemplates;
+            try (InputStream is = Files.newInputStream(errorMessagesFile.toPath())) {
+                mainTemplates = MAPPER.readValue(is, new TypeReference<>() {
+                });
             }
+            Map<String, String> merged = new LinkedHashMap<>(mainTemplates);
+
+            // keys contributed so far by plugin files specifically, to warn on plugin-vs-plugin
+            // collisions without also warning every time a plugin (as designed) overrides the main file
+            Set<String> pluginContributedKeys = new HashSet<>();
+            for (File pluginFile : pluginFiles) {
+                try (InputStream is = Files.newInputStream(pluginFile.toPath())) {
+                    Map<String, String> pluginTemplates = MAPPER.readValue(is, new TypeReference<>() {
+                    });
+                    for (String key : pluginTemplates.keySet()) {
+                        if (pluginContributedKeys.contains(key)) {
+                            LOG.warn("Error message key '{}' from {} was already defined by another plugin " +
+                                    "error-messages file; the later file (alphabetically) takes precedence",
+                                    key, pluginFile.getName());
+                        }
+                    }
+                    merged.putAll(pluginTemplates);
+                    pluginContributedKeys.addAll(pluginTemplates.keySet());
+                } catch (Exception e) {
+                    LOG.warn("Failed to load plugin error messages from {}, skipping this file", pluginFile, e);
+                }
+            }
+
+            templates = merged;
+            loadedFileSnapshot = currentSnapshot;
+
+            LOG.info("Reloaded {} error message templates from {} (+{} plugin file(s): {})",
+                    templates.size(), errorMessagesFile.toPath(), pluginFiles.size(), pluginFiles);
 
         } catch (Exception e) {
             LOG.warn("Failed to reload error messages from {}",

@@ -19,12 +19,15 @@ package org.apache.cloudstack.context;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.response.ExceptionResponse;
@@ -42,6 +45,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResponseMessageResolverTest {
@@ -53,6 +57,9 @@ public class ResponseMessageResolverTest {
     MockedStatic<PropertiesUtil> propertiesUtilMocked;
 
     Path tmpFile;
+    Path tempDir;
+
+    private static final ObjectMapper TEST_MAPPER = new ObjectMapper();
 
     @Before
     public void setup() {
@@ -73,6 +80,43 @@ public class ResponseMessageResolverTest {
             } catch (Exception ignored) {
             }
         }
+        if (tempDir != null) {
+            try (Stream<Path> walk = Files.walk(tempDir)) {
+                walk.sorted(Comparator.reverseOrder()).forEach(p -> {
+                    try {
+                        Files.deleteIfExists(p);
+                    } catch (Exception ignored) {
+                    }
+                });
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /**
+     * Creates a dedicated temp directory holding a main error-messages.json (with the given
+     * templates) and points the mocked {@code PropertiesUtil.findConfigFile} at it, mirroring the
+     * real deployment layout where plugin-contributed error-messages-*.json files live alongside
+     * the main file in the same directory.
+     */
+    private File createMainErrorMessagesFile(Map<String, String> templates) throws IOException {
+        tempDir = Files.createTempDirectory("response-message-resolver-test-");
+        File mainFile = tempDir.resolve("error-messages.json").toFile();
+        TEST_MAPPER.writeValue(mainFile, templates);
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(anyString())).thenReturn(mainFile);
+        return mainFile;
+    }
+
+    private File writePluginErrorMessagesFile(String filename, Map<String, String> templates) throws IOException {
+        Assert.assertNotNull("createMainErrorMessagesFile must be called first", tempDir);
+        File pluginFile = tempDir.resolve(filename).toFile();
+        TEST_MAPPER.writeValue(pluginFile, templates);
+        return pluginFile;
+    }
+
+    private void writeRawFile(String filename, String content) throws IOException {
+        Assert.assertNotNull("createMainErrorMessagesFile must be called first", tempDir);
+        Files.writeString(tempDir.resolve(filename), content);
     }
 
     @Test
@@ -519,5 +563,85 @@ public class ResponseMessageResolverTest {
         Assert.assertEquals(key, response.getErrorTextKey());
         Assert.assertEquals("Error occurred.", response.getErrorText());
         Assert.assertTrue(response.getErrorMetadata().isEmpty());
+    }
+
+    @Test
+    public void reload_pluginFileOverridesMainFileForSharedKey() throws IOException {
+        createMainErrorMessagesFile(Map.of("shared.key", "from main"));
+        writePluginErrorMessagesFile("error-messages-my-plugin.json", Map.of("shared.key", "from plugin"));
+
+        String result = ResponseMessageResolver.getMessage("shared.key", Map.of());
+
+        Assert.assertEquals("from plugin", result);
+    }
+
+    @Test
+    public void reload_pluginFileDoesNotShadowMainFileKeysItDoesNotDefine() throws IOException {
+        createMainErrorMessagesFile(Map.of(
+                "main.only.key", "only in main",
+                "shared.key", "main's shared value"));
+        writePluginErrorMessagesFile("error-messages-my-plugin.json", Map.of("shared.key", "plugin's shared value"));
+
+        Assert.assertEquals("only in main", ResponseMessageResolver.getMessage("main.only.key", Map.of()));
+        Assert.assertEquals("plugin's shared value", ResponseMessageResolver.getMessage("shared.key", Map.of()));
+    }
+
+    @Test
+    public void reload_pluginFileOverridingOnlyBaseKeyLeavesMainFileAdminVariantIntact() throws IOException {
+        // main defines both the base key and its .admin variant; the plugin only overrides the
+        // base key. Because the merge happens at flat-key granularity (not "whole file wins"),
+        // the un-overridden .admin key must still resolve from the main file.
+        createMainErrorMessagesFile(Map.of(
+                "webhook.delivery.failed", "base message from main",
+                "webhook.delivery.failed.admin", "admin message from main"));
+        writePluginErrorMessagesFile("error-messages-webhook-plugin.json",
+                Map.of("webhook.delivery.failed", "base message from plugin"));
+
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
+        Assert.assertEquals("base message from plugin",
+                ResponseMessageResolver.getMessage("webhook.delivery.failed", Map.of()));
+
+        when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
+        Assert.assertEquals("admin message from main",
+                ResponseMessageResolver.getMessage("webhook.delivery.failed", Map.of()));
+    }
+
+    @Test
+    public void reload_laterPluginFileAlphabeticallyWinsOnCollisionBetweenTwoPluginFiles() throws IOException {
+        createMainErrorMessagesFile(Map.of());
+        writePluginErrorMessagesFile("error-messages-aaa-plugin.json", Map.of("shared.key", "from aaa"));
+        writePluginErrorMessagesFile("error-messages-zzz-plugin.json", Map.of("shared.key", "from zzz"));
+
+        Assert.assertEquals("from zzz", ResponseMessageResolver.getMessage("shared.key", Map.of()));
+    }
+
+    @Test
+    public void reload_detectsPluginFileAddedAfterInitialLoadWithoutMainFileChanging() throws IOException {
+        createMainErrorMessagesFile(Map.of("main.key", "main value"));
+
+        // trigger the initial load, with no plugin file present yet
+        Assert.assertEquals("plugin.key", ResponseMessageResolver.getMessage("plugin.key", Map.of()));
+
+        writePluginErrorMessagesFile("error-messages-late-plugin.json", Map.of("plugin.key", "late plugin value"));
+
+        // the new file must be picked up even though the main file's own mtime never changed
+        Assert.assertEquals("late plugin value", ResponseMessageResolver.getMessage("plugin.key", Map.of()));
+    }
+
+    @Test
+    public void reload_ignoresFilesNotMatchingThePluginNamingPattern() throws IOException {
+        createMainErrorMessagesFile(Map.of("main.key", "main value"));
+        writeRawFile("notes.txt", "{ \"main.key\": \"should be ignored\" }");
+        writeRawFile("error-messages-backup.json.bak", "{ \"main.key\": \"should also be ignored\" }");
+
+        Assert.assertEquals("main value", ResponseMessageResolver.getMessage("main.key", Map.of()));
+    }
+
+    @Test
+    public void reload_skipsMalformedPluginFileWithoutBreakingMainFileLoad() throws IOException {
+        createMainErrorMessagesFile(Map.of("main.key", "main value"));
+        writeRawFile("error-messages-broken-plugin.json", "{ not valid json ");
+
+        Assert.assertEquals("main value", ResponseMessageResolver.getMessage("main.key", Map.of()));
     }
 }
