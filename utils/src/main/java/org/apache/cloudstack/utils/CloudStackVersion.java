@@ -41,20 +41,30 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
 
     private final static Pattern NUMBER_VERSION_FORMAT = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?");
     private final static Pattern FULL_VERSION_FORMAT = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?(?:-[a-zA-Z]+)?(?:-\\d+)?(?:-SNAPSHOT)?");
+    // Kept in sync with the same constant in engine/schema/templateConfig.sh and
+    // scripts/installer/export-templates.sh, which independently generate/consume
+    // system VM template metadata using this same versioning cutover rule.
     private final static int NEW_VERSIONING_CUTOVER_MAJOR_VERSION = 24;
 
     private final int majorRelease;
     private final int minorRelease;
-    private final Integer patchRelease;
+    private final int patchRelease;
     private final Integer securityRelease;
+    // Whether this instance was parsed via parse(value, true) — a version scheme other than
+    // CloudStack's own. Deliberately excluded from equals()/hashCode(): two instances with the same
+    // component values represent the same version regardless of which parsing mode produced them.
+    // It only gates whether the new-versioning cutover rule's *interpretation* (toString()'s
+    // canonicalization, usesNewVersioning()) applies, since that rule is specific to CloudStack's own
+    // release numbering.
+    private final boolean external;
 
-    private CloudStackVersion(final int majorRelease, final int minorRelease, final Integer patchRelease, final Integer securityRelease) {
+    private CloudStackVersion(final int majorRelease, final int minorRelease, final int patchRelease, final Integer securityRelease, final boolean external) {
 
         super();
 
         checkArgument(majorRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a majorRelease greater than 0.");
         checkArgument(minorRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a minorRelease greater than 0.");
-        checkArgument(patchRelease == null || patchRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a patchRelease greater than 0.");
+        checkArgument(patchRelease >= 0, CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a patchRelease greater than 0.");
         checkArgument(securityRelease == null || securityRelease >= 0,
                 CloudStackVersion.class.getName() + "(int, int, int, Integer) requires a null securityRelease or a non-null value greater than 0.");
 
@@ -62,6 +72,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
         this.minorRelease = minorRelease;
         this.patchRelease = patchRelease;
         this.securityRelease = securityRelease;
+        this.external = external;
 
     }
 
@@ -90,6 +101,26 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      *
      */
     public static CloudStackVersion parse(final String value) {
+        return parse(value, false);
+    }
+
+    /**
+     * Parses a version string the same way as {@link #parse(String)}, but with {@code external} set to
+     * <code>true</code>, always applies the legacy major.minor.patch(.security) component mapping and
+     * never the major-24-and-above new-versioning cutover rule.
+     * <p>
+     * CloudStack's own versioning cutover (see {@link #NEW_VERSIONING_CUTOVER_MAJOR_VERSION}) is a fact
+     * about CloudStack's own release numbering. It has no bearing on unrelated version schemes, such as a
+     * VMware/ESXi hypervisor version, that may coincidentally reach the same major version number. Callers
+     * parsing such external version strings must pass <code>external = true</code> so a value like
+     * <code>24.0.1</code> is not misread as a CloudStack security release.
+     *
+     * @param value The value to parse which must be non-blank and conform the formats listed above
+     * @param external whether {@code value} comes from a version scheme other than CloudStack's own
+     *
+     * @return <code>value</code> parsed into a <code>CloudStackVersion</code> instance
+     */
+    public static CloudStackVersion parse(final String value, final boolean external) {
 
         // Strip out any legacy patch information from the version string ...
         final String trimmedValue = StringUtils.substringBefore(value, "-");
@@ -111,12 +142,12 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
         final Integer securityRelease;
 
         if (components.length == 4) {
-            checkArgument(isLegacyVersioning(majorRelease), CloudStackVersion.class.getName() + ".parse(String) passed " + value +
+            checkArgument(external || isLegacyVersioning(majorRelease), CloudStackVersion.class.getName() + ".parse(String) passed " + value +
                     ", but major versions at or above 24 do not support legacy int.int.int.int format");
             // Deprecated legacy format: major.minor.patch.security
             patchRelease = thirdComponent;
             securityRelease = Integer.valueOf(components[3]);
-        } else if (isNewVersioning(majorRelease)) {
+        } else if (!external && isNewVersioning(majorRelease)) {
             // New format: major.minor.securityRelease (patch dropped)
             patchRelease = 0;
             securityRelease = thirdComponent;
@@ -126,7 +157,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
             securityRelease = null;
         }
 
-        return new CloudStackVersion(majorRelease, minorRelease, patchRelease, securityRelease);
+        return new CloudStackVersion(majorRelease, minorRelease, patchRelease, securityRelease, external);
 
     }
 
@@ -143,7 +174,26 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      * @since 4.12.0.0
      */
     public static int compare(String version1, String version2) {
-        return parse(version1).compareTo(parse(version2));
+        return compare(version1, version2, false);
+    }
+
+    /**
+     * Shortcut method to {@link #parse(String, boolean)} and {@link #compareTo(CloudStackVersion)} two versions.
+     * Pass <code>external = true</code> when comparing version strings from a scheme other than CloudStack's
+     * own (e.g. a VMware/ESXi or NSX/Nicira NVP version), so CloudStack's own new-versioning cutover rule is
+     * not applied to them.
+     *
+     * @param version1 the first value to be parsed and compared
+     * @param version2 the second value to be parsed and compared
+     * @param external whether <code>version1</code>/<code>version2</code> come from a version scheme other
+     *                 than CloudStack's own
+     *
+     * @return A value less than zero (0) indicates <code>version1</code> is less than <code>version2</code>.  A value
+     *         equal to zero (0) indicates <code>version1</code> equals <code>version2</code>.  A value greater than zero (0)
+     *         indicates <code>version1</code> is greater than <code>version2</code>.
+     */
+    public static int compare(String version1, String version2, boolean external) {
+        return parse(version1, external).compareTo(parse(version2, external));
     }
 
     /**
@@ -214,7 +264,11 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
             return tokens[2];
         }
 
-        return "0";
+        // A sentinel that sorts lower than any real version, so callers that feed this straight into
+        // parse()/compare() (as the router-version-check call sites do, with no try/catch) get a
+        // "definitely needs upgrading" result instead of an uncaught parse failure. Must itself be a
+        // value parse() accepts.
+        return "0.0.0";
     }
 
     /**
@@ -289,7 +343,18 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     }
 
     public boolean usesNewVersioning() {
-        return isNewVersioning(majorRelease);
+        return !external && isNewVersioning(majorRelease);
+    }
+
+    /**
+     * The release component that identifies this version's "tiny"/build release: the security
+     * release for a new-versioning (post-cutover) CloudStack version, or the patch release otherwise.
+     * Consolidates a mapping that callers (e.g. system VM template version resolution, the Veeam
+     * integration's version reporting) would otherwise have to re-derive from
+     * {@link #usesNewVersioning()} themselves.
+     */
+    public int getTinyRelease() {
+        return usesNewVersioning() ? securityRelease : patchRelease;
     }
 
     @Override
@@ -319,7 +384,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
     @Override
     public String toString() {
         // Canonicalize cutover-and-later versions to major.minor.securityRelease.
-        if (securityRelease != null && patchRelease == 0 && isNewVersioning(majorRelease)) {
+        if (securityRelease != null && patchRelease == 0 && usesNewVersioning()) {
             return Joiner.on(".").join(ImmutableList.of(majorRelease, minorRelease, securityRelease));
         }
 
@@ -332,7 +397,7 @@ public final class CloudStackVersion implements Comparable<CloudStackVersion> {
      */
     public static String getVMwareParentVersion(String hypervisorVersion) {
         try {
-            CloudStackVersion version = CloudStackVersion.parse(hypervisorVersion);
+            CloudStackVersion version = CloudStackVersion.parse(hypervisorVersion, true);
             String parentVersion = String.format("%s.%s", version.getMajorRelease(), version.getMinorRelease());
             if (version.getPatchRelease() != 0) {
                 parentVersion = String.format("%s.%s", parentVersion, version.getPatchRelease());
