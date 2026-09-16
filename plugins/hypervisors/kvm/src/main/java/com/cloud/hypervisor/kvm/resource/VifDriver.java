@@ -46,4 +46,8 @@ public interface VifDriver {
 
     void deleteBr(NicTO nic);
 
+    // applies manual VLAN trunk membership to a trunk nic's live tap on hosts whose libvirt can't do it via <vlan> XML; no-op otherwise
+    default void ensureVlanTrunkMembership(LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException {
+    }
+
 }

@@ -30,6 +30,7 @@ import java.util.Map;
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -1602,6 +1603,8 @@ public class LibvirtVMDef {
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
+        private boolean _vlanTrunk = false;
+        private List<Integer> _vlanTrunkTags;
         private boolean _pxeDisable = false;
         private boolean _linkStateUp = true;
         private Integer _slot;
@@ -1762,6 +1765,19 @@ public class LibvirtVMDef {
             return _vlanTag;
         }
 
+        public void setTrunkVlanTags(List<Integer> vlanTags) {
+            _vlanTrunk = true;
+            _vlanTrunkTags = vlanTags;
+        }
+
+        public List<Integer> getTrunkVlanTags() {
+            return _vlanTrunkTags;
+        }
+
+        public boolean isVlanTrunk() {
+            return _vlanTrunk;
+        }
+
         public void setSlot(Integer slot) {
             _slot = slot;
         }
@@ -1865,7 +1881,13 @@ public class LibvirtVMDef {
                 }
                 netBuilder.append("</virtualport>\n");
             }
-            if (_vlanTag > 0 && _vlanTag < 4095) {
+            if (_vlanTrunk && CollectionUtils.isNotEmpty(_vlanTrunkTags)) {
+                netBuilder.append("<vlan trunk='yes'>\n");
+                for (Integer tag : _vlanTrunkTags) {
+                    netBuilder.append("<tag id='" + tag + "'/>\n");
+                }
+                netBuilder.append("</vlan>");
+            } else if (_vlanTag > 0 && _vlanTag < 4095) {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
 

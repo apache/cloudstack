@@ -141,6 +141,57 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testInterfaceLegacySingleVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(123);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='no'>\n<tag id='123'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertFalse(ifDef.isVlanTrunk());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTags() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300));
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='cloudbr1'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='yes'>\n<tag id='100'/>\n<tag id='200'/>\n<tag id='300'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertTrue(ifDef.isVlanTrunk());
+        assertEquals(Arrays.asList(100, 200, 300), ifDef.getTrunkVlanTags());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsTakesPrecedenceOverLegacyVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(50);
+        ifDef.setTrunkVlanTags(Arrays.asList(50, 60));
+
+        String content = ifDef.toString();
+        assertTrue(content.contains("<vlan trunk='yes'>"));
+        assertFalse(content.contains("trunk='no'"));
+    }
+
+    @Test
     public void testInterfaceWithMultiQueueAndPacked() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
