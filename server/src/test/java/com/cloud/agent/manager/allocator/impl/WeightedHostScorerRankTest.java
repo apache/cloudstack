@@ -141,6 +141,22 @@ public class WeightedHostScorerRankTest {
     }
 
     @Test
+    public void testARepeatedHostIsRankedOnce() {
+        // listAllUpAndEnabledNonHAHosts returns a host once per tag it carries, so the same host
+        // reaches the allocator more than once whenever a VM has no tag to filter the list by.
+        // A repeat would take an extra slot in the selection spread and bias the shuffle to it.
+        Host light = host(1L, "light", 0.10, 0.10, new HostLoad(0.10, 0.10, 10), 10);
+        Host middle = host(2L, "middle", 0.40, 0.40, new HostLoad(0.40, 0.40, 10), 40);
+        Host heavy = host(3L, "heavy", 0.70, 0.70, new HostLoad(0.70, 0.60, 10), 70);
+
+        List<String> ranked = rankedNames(Arrays.asList(middle, light, middle, heavy, light));
+
+        assertEquals("each host must be offered exactly once", 3, ranked.size());
+        assertEquals("no host may appear twice", new HashSet<>(ranked).size(), ranked.size());
+        assertTrue("no host may be dropped", ranked.containsAll(Arrays.asList("light", "middle", "heavy")));
+    }
+
+    @Test
     public void testBusyHostRanksBehindQuietOneAtEqualAllocation() {
         Host quiet = host(1L, "quiet", 0.30, 0.30, new HostLoad(0.05, 0.05, 10), 30);
         Host busy = host(2L, "busy", 0.30, 0.30, new HostLoad(0.70, 0.30, 10), 30);
