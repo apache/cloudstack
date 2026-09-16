@@ -19,6 +19,7 @@ package com.cloud.upgrade.dao;
 import java.io.InputStream;
 import java.sql.Connection;
 
+import com.cloud.upgrade.NetworkRateBackfill;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42300to42400 extends DbUpgradeAbstractImpl implements DbUpgrade {
@@ -45,6 +46,7 @@ public class Upgrade42300to42400 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void performDataMigration(Connection conn) {
+        new NetworkRateBackfill().backfillNetworkRates();
     }
 
     @Override
