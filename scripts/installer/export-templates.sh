@@ -16,11 +16,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
+NEW_VERSIONING_CUTOVER_MAJOR_VERSION=24
+
 METADATA_FILE="metadata.ini"
 IMAGE_PATH=${3:-"/usr/share/cloudstack-management/templates/systemvm/"}
 TEMPLATE_VERSION=$(awk -F "=" '/version/ {print $2}' ${IMAGE_PATH}${METADATA_FILE} | xargs)
 TEMPLATE_PATH="/usr/share/cloudstack-management/templates/systemvm/"
-VERSION="${TEMPLATE_VERSION%.*}"
+TEMPLATE_MAJOR_VERSION="$(cut -d'.' -f1 <<<"$TEMPLATE_VERSION")"
+if [[ "$TEMPLATE_MAJOR_VERSION" -ge "$NEW_VERSIONING_CUTOVER_MAJOR_VERSION" ]]; then
+  # New versioning (major.minor.security): the generated template files use the full version as-is.
+  VERSION="${TEMPLATE_VERSION}"
+else
+  # Legacy versioning (major.minor.patch.security): the generated template files drop the trailing
+  # security component.
+  VERSION="${TEMPLATE_VERSION%.*}"
+fi
 PREFIX=${4:-"systemvmtemplate-$VERSION"}
 CLEANUP=${2:-1}
 TEMP_IMAGE_PATH="/tmp/sysvm_convert/"
