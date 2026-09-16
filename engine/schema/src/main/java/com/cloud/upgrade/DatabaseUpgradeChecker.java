@@ -550,7 +550,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     @VisibleForTesting
     protected static void updateSystemVmTemplateVersion(CloudStackVersion sysVmVersion) {
         SystemVmTemplateRegistration.CS_MAJOR_VERSION = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
-        SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.usesNewVersioning() ? sysVmVersion.getSecurityRelease() : sysVmVersion.getPatchRelease());
+        SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getTinyRelease());
     }
 
     /**

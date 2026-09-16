@@ -16,6 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Kept in sync with CloudStackVersion.NEW_VERSIONING_CUTOVER_MAJOR_VERSION (utils module) and the
+# same constant in engine/schema/templateConfig.sh.
 NEW_VERSIONING_CUTOVER_MAJOR_VERSION=24
 
 METADATA_FILE="metadata.ini"

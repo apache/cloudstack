@@ -54,6 +54,11 @@ getTemplateVersion "4.23.0.1-SNAPSHOT"
 assert_eq "legacy with -SNAPSHOT suffix: VERSION" "4.23.0" "$VERSION"
 assert_eq "legacy with -SNAPSHOT suffix: FULL_VERSION" "4.23.0.1" "$FULL_VERSION"
 
+# A legacy 3-component major.minor.patch value (no security component) is a documented, valid
+# CloudStackVersion.parse() format below the cutover and must not get a dangling trailing dot.
+getTemplateVersion "4.23.1"
+assert_eq "legacy 3-component (no security): FULL_VERSION has no trailing dot" "4.23.1" "$FULL_VERSION"
+
 # --- getTemplateVersion: new versioning (major >= 24, post-cutover) ---
 
 getTemplateVersion "24.0.0"
@@ -68,6 +73,13 @@ assert_eq "cutover with -SNAPSHOT suffix: FULL_VERSION" "24.1.2" "$FULL_VERSION"
 getTemplateVersion "99.9.9"
 assert_eq "future major: VERSION" "99.9.9" "$VERSION"
 assert_eq "future major: FULL_VERSION" "99.9.9" "$FULL_VERSION"
+
+# A 4-component major.minor.patch.security value is invalid at/after the cutover (matches
+# CloudStackVersion.parse()) and must fail the build rather than silently drop the 4th component.
+# Run in a subshell since getTemplateVersion calls `exit` on this input.
+( getTemplateVersion "24.0.0.1" ) >/dev/null 2>&1
+cutover_4component_exit_code="$?"
+assert_eq "cutover: 4-component version is rejected instead of silently normalized" "1" "$cutover_4component_exit_code"
 
 # --- createMetadataFile: end-to-end metadata.ini "version" line ---
 

@@ -17,6 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Kept in sync with CloudStackVersion.NEW_VERSIONING_CUTOVER_MAJOR_VERSION (utils module) and the
+# same constant in scripts/installer/export-templates.sh.
 NEW_VERSIONING_CUTOVER_MAJOR_VERSION=24
 
 function getTemplateVersion() {
@@ -25,17 +27,29 @@ function getTemplateVersion() {
   subversion1="$(cut -d'.' -f1 <<<"$version")"
   subversion2="$(cut -d'.' -f2 <<<"$version")"
   minorversion="$(cut -d'.' -f3 <<<"$version")"
+  fourthversion="$(cut -d'.' -f4 <<<"$version")"
   export CS_VERSION="${subversion1}"."${subversion2}"
   export CS_MINOR_VERSION="${minorversion}"
   export VERSION="${CS_VERSION}.${CS_MINOR_VERSION}"
   if [[ "$subversion1" -ge "$NEW_VERSIONING_CUTOVER_MAJOR_VERSION" ]]; then
     # New versioning (major.minor.security): the third component is the
-    # security release itself, there is no separate patch component.
+    # security release itself, there is no separate patch component. A
+    # 4th component is invalid in this scheme (matches CloudStackVersion.parse())
+    # and must not be silently dropped.
+    if [[ -n "$fourthversion" ]]; then
+      echo "Invalid version '${projVersion}': major versions at or above ${NEW_VERSIONING_CUTOVER_MAJOR_VERSION} do not support a 4-component major.minor.patch.security format" >&2
+      exit 1
+    fi
     export FULL_VERSION="${VERSION}"
   else
-    # Legacy versioning (major.minor.patch.security)
-    securityversion="$(cut -d'.' -f4 <<<"$version")"
-    export FULL_VERSION="${VERSION}.${securityversion}"
+    # Legacy versioning: major.minor.patch, or major.minor.patch.security when a 4th
+    # component is present. Without a 4th component, VERSION is already correct as-is;
+    # appending an empty security component would leave a dangling trailing dot.
+    if [[ -n "$fourthversion" ]]; then
+      export FULL_VERSION="${VERSION}.${fourthversion}"
+    else
+      export FULL_VERSION="${VERSION}"
+    fi
   fi
   export CS_SYSTEMTEMPLATE_REPO="https://download.cloudstack.org/systemvm/"
 }
