@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -31,6 +32,8 @@ import java.util.stream.Stream;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,6 +64,11 @@ public class ResponseMessageResolverTest {
 
     private static final ObjectMapper TEST_MAPPER = new ObjectMapper();
 
+    // ConfigKey defaults are shared static singletons (no ConfigDepot in this unit test, so
+    // .value() always resolves to the current default); any test that overrides one via
+    // overrideConfigDefaultValue() must be undone in tearDown so it doesn't leak into other tests.
+    private final Map<ConfigKey<?>, String> originalConfigDefaults = new LinkedHashMap<>();
+
     @Before
     public void setup() {
         callContextMocked = Mockito.mockStatic(CallContext.class);
@@ -74,6 +82,9 @@ public class ResponseMessageResolverTest {
         callContextMocked.close();
         propertiesUtilMocked.close();
         ResponseMessageResolver.clearCache();
+        for (Map.Entry<ConfigKey<?>, String> entry : originalConfigDefaults.entrySet()) {
+            setConfigDefaultValue(entry.getKey(), entry.getValue());
+        }
         if (tmpFile != null) {
             try {
                 Files.deleteIfExists(tmpFile);
@@ -91,6 +102,28 @@ public class ResponseMessageResolverTest {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    /**
+     * Temporarily overrides a ConfigKey's default value for the duration of this test; the
+     * original default is captured on first use and restored automatically in tearDown.
+     */
+    private void overrideConfigDefaultValue(ConfigKey<?> configKey, String newDefaultValue) throws Exception {
+        originalConfigDefaults.putIfAbsent(configKey, configKey.defaultValue());
+        setConfigDefaultValue(configKey, newDefaultValue);
+    }
+
+    private void setConfigDefaultValue(ConfigKey<?> configKey, String value) throws Exception {
+        Field defaultValueField = ConfigKey.class.getDeclaredField("_defaultValue");
+        defaultValueField.setAccessible(true);
+        defaultValueField.set(configKey, value);
+
+        // non-dynamic ConfigKeys cache their resolved value after the first .value() call, so the
+        // cache must be cleared too, otherwise a value already resolved by an earlier test would
+        // keep being returned regardless of the new default set above.
+        Field cachedValueField = ConfigKey.class.getDeclaredField("_value");
+        cachedValueField.setAccessible(true);
+        cachedValueField.set(configKey, null);
     }
 
     /**
@@ -271,17 +304,25 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
-    public void getMetadataObjectStringValue_shouldIncludeIdAndUuidForRootAdmin() {
+    public void getMetadataObjectStringValue_shouldIncludeIdAndUuidForRootAdminWhenConfigEnabled() throws Exception {
+        overrideConfigDefaultValue(ApiServiceConfiguration.ErrorMessageMetadataIncludeIdForAdmins, "true");
         DataCenter dc = Mockito.mock(DataCenter.class);
         when(dc.getUuid()).thenReturn("uuid-5678");
-        if (ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA) {
-            when(dc.getId()).thenReturn(42L);
-        }
+        when(dc.getId()).thenReturn(42L);
         when(dc.getName()).thenReturn("Zone");
-        String expected = ResponseMessageResolver.INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA ?
-                "Zone (ID: 42, UUID: uuid-5678)" :
-                "Zone (ID: uuid-5678)";
-        Assert.assertEquals(expected, ResponseMessageResolver.getMetadataObjectStringValue(dc, true));
+
+        Assert.assertEquals("Zone (ID: 42, UUID: uuid-5678)", ResponseMessageResolver.getMetadataObjectStringValue(dc, true));
+    }
+
+    @Test
+    public void getMetadataObjectStringValue_shouldOmitIdForRootAdminWhenConfigDisabled() throws Exception {
+        overrideConfigDefaultValue(ApiServiceConfiguration.ErrorMessageMetadataIncludeIdForAdmins, "false");
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        when(dc.getUuid()).thenReturn("uuid-5678");
+        when(dc.getName()).thenReturn("Zone");
+
+        Assert.assertEquals("Zone (ID: uuid-5678)", ResponseMessageResolver.getMetadataObjectStringValue(dc, true));
+        Mockito.verify(dc, Mockito.never()).getId();
     }
 
     @Test
@@ -487,64 +528,64 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldReturnNullWhenObjectIsNull() {
-        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValueAlt(null, false));
+    public void getMetadataObjectStringValuePreferringToString_shouldReturnNullWhenObjectIsNull() {
+        Assert.assertNull(ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(null, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldReturnToStringWhenNonEmptyForRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldReturnToStringWhenNonEmptyForRootAdmin() {
         Object obj = new Object() {
             @Override public String toString() { return "SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject id: 42", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, true));
+        Assert.assertEquals("SomeObject id: 42", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, true));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldStripIdPatternForNonRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldStripIdPatternForNonRootAdmin() {
         Object obj = new Object() {
             @Override public String toString() { return "SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldStripMultipleIdPatternsForNonRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldStripMultipleIdPatternsForNonRootAdmin() {
         Object obj = new Object() {
             @Override public String toString() { return "id: 1 SomeObject id: 42"; }
         };
-        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
+        Assert.assertEquals("SomeObject", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldReturnToStringUnchangedWhenNoIdPatternForNonRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldReturnToStringUnchangedWhenNoIdPatternForNonRootAdmin() {
         Object obj = new Object() {
             @Override public String toString() { return "SomeObjectWithoutId"; }
         };
-        Assert.assertEquals("SomeObjectWithoutId", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, false));
+        Assert.assertEquals("SomeObjectWithoutId", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldFallbackToGetMetadataObjectStringValueWhenToStringIsEmpty() {
+    public void getMetadataObjectStringValuePreferringToString_shouldFallbackToGetMetadataObjectStringValueWhenToStringIsEmpty() {
         Identity identityMock = Mockito.mock(Identity.class);
         when(identityMock.toString()).thenReturn("");
         when(identityMock.getUuid()).thenReturn("uuid-fallback");
-        Assert.assertEquals("uuid-fallback", ResponseMessageResolver.getMetadataObjectStringValueAlt(identityMock, false));
+        Assert.assertEquals("uuid-fallback", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(identityMock, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldFallbackWhenToStringBecomesBlankAfterStrippingIdForNonRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldFallbackWhenToStringBecomesBlankAfterStrippingIdForNonRootAdmin() {
         DataCenter dataCenterMock = Mockito.mock(DataCenter.class);
         when(dataCenterMock.toString()).thenReturn("id: 99");
         when(dataCenterMock.getName()).thenReturn("FallbackName");
-        Assert.assertEquals("FallbackName", ResponseMessageResolver.getMetadataObjectStringValueAlt(dataCenterMock, false));
+        Assert.assertEquals("FallbackName", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(dataCenterMock, false));
     }
 
     @Test
-    public void getMetadataObjectStringValueAlt_shouldPreserveIdInToStringForRootAdmin() {
+    public void getMetadataObjectStringValuePreferringToString_shouldPreserveIdInToStringForRootAdmin() {
         Object obj = new Object() {
             @Override public String toString() { return "Zone [id: 7, name: TestZone]"; }
         };
-        Assert.assertEquals("Zone [id: 7, name: TestZone]", ResponseMessageResolver.getMetadataObjectStringValueAlt(obj, true));
+        Assert.assertEquals("Zone [id: 7, name: TestZone]", ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, true));
     }
 
     @Test

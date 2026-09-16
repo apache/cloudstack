@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,8 +59,6 @@ public class ResponseMessageResolver {
     protected static final String PLUGIN_ERROR_MESSAGES_PREFIX = "error-messages-";
     protected static final String PLUGIN_ERROR_MESSAGES_SUFFIX = ".json";
     protected static final String ERROR_KEY_ADMIN_SUFFIX = ".admin";
-    protected static final boolean USE_RESOURCE_TO_STRING_IN_METADATA = false;
-    protected static final boolean INCLUDE_RESOURCE_ID_FOR_ADMINS_IN_METADATA = true;
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_]+)\\s*}}");
     private static final List<String> RESOURCE_NAME_GETTERS =
@@ -152,8 +151,7 @@ public class ResponseMessageResolver {
     }
 
     protected static boolean useResourceToStringInMetadata() {
-        // ToDo: Add a global config
-        return USE_RESOURCE_TO_STRING_IN_METADATA;
+        return ApiServiceConfiguration.ErrorMessageMetadataPreferToString.value();
     }
 
     protected static Map<String, String> getStringMap(Map<String, Object> metadata) {
@@ -170,7 +168,7 @@ public class ResponseMessageResolver {
             Object value = entry.getValue();
             stringMap.put(entry.getKey(),
                     useResourceToStringInMetadata() ?
-                            getMetadataObjectStringValueAlt(value, isAdmin) :
+                            getMetadataObjectStringValuePreferringToString(value, isAdmin) :
                             getMetadataObjectStringValue(value, isAdmin));
         }
         return stringMap;
@@ -194,9 +192,9 @@ public class ResponseMessageResolver {
      *       If a name is found, returns it quoted as {@code 'NAME'}.</li>
      *   <li>When the current calling account is a root admin, the returned value will include
      *       an identifier suffix in the form {@code (ID: id, UUID: uuid)} when available.
-     *       The ID is included only if {@code INCLUDE_METADATA_ID_IN_MESSAGE} is {@code true}
-     *       and {@code obj} implements {@link InternalIdentity}. The UUID is included when
-     *       {@code obj} implements {@link org.apache.cloudstack.api.Identity}.</li>
+     *       The ID is included only if the {@code ApiServiceConfiguration.ErrorMessageMetadataIncludeIdForAdmins}
+     *       global setting is {@code true} and {@code obj} implements {@link InternalIdentity}. The UUID is
+     *       included when {@code obj} implements {@link org.apache.cloudstack.api.Identity}.</li>
      *   <li>If no display name is available, returns the UUID (if {@code obj} implements
      *       {@code Identity}); otherwise returns {@code obj.toString()}.</li>
      * </ul>
@@ -235,7 +233,7 @@ public class ResponseMessageResolver {
         sb.append(name);
 
         Long id = null;
-        if (obj instanceof InternalIdentity && isAdmin) {
+        if (obj instanceof InternalIdentity && isAdmin && ApiServiceConfiguration.ErrorMessageMetadataIncludeIdForAdmins.value()) {
             id = ((InternalIdentity) obj).getId();
         }
 
@@ -274,7 +272,7 @@ public class ResponseMessageResolver {
      * @return formatted metadata string suitable for inclusion in error messages, or {@code null}
      *         if {@code obj} is {@code null}
      */
-    protected static String getMetadataObjectStringValueAlt(Object obj, boolean isAdmin) {
+    protected static String getMetadataObjectStringValuePreferringToString(Object obj, boolean isAdmin) {
         if (obj == null) {
             return null;
         }
