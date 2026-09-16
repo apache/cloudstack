@@ -29,10 +29,13 @@ if [[ "$TEMPLATE_MAJOR_VERSION" -ge "$NEW_VERSIONING_CUTOVER_MAJOR_VERSION" ]]; 
   # New versioning (major.minor.security): the generated template files use the full version as-is.
   VERSION="${TEMPLATE_VERSION}"
 else
-  # Legacy versioning (major.minor.patch.security): the generated template files drop the trailing
-  # security component.
-  VERSION="${TEMPLATE_VERSION%.*}"
-fi
+  # Legacy versioning drops the trailing security component only for four-component metadata;
+  # a valid three-component major.minor.patch value is already the filename version.
+  if [[ "$TEMPLATE_VERSION" == *.*.*.* ]]; then
+    VERSION="${TEMPLATE_VERSION%.*}"
+  else
+    VERSION="${TEMPLATE_VERSION}"
+  fi
 PREFIX=${4:-"systemvmtemplate-$VERSION"}
 CLEANUP=${2:-1}
 TEMP_IMAGE_PATH="/tmp/sysvm_convert/"
