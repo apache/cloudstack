@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.security.cert.X509Certificate;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -79,6 +81,30 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
         cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
         Mockito.verify(session, Mockito.atLeastOnce()).getAttribute(Mockito.anyString());
+    }
+
+    @Test
+    public void testAuthenticateClearsSessionCookiesBeforeRedirect() throws Exception {
+        SAML2LogoutAPIAuthenticatorCmd cmd = new SAML2LogoutAPIAuthenticatorCmd();
+
+        Field apiServerField = SAML2LogoutAPIAuthenticatorCmd.class.getDeclaredField("_apiServer");
+        apiServerField.setAccessible(true);
+        apiServerField.set(cmd, apiServer);
+
+        Field managerField = SAML2LogoutAPIAuthenticatorCmd.class.getDeclaredField("_samlAuthManager");
+        managerField.setAccessible(true);
+        managerField.set(cmd, samlAuthManager);
+
+        Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
+        Cookie sessionKeyCookie = new Cookie("sessionkey", "someKey");
+        Mockito.when(req.getCookies()).thenReturn(new Cookie[]{sessionKeyCookie});
+
+        cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
+
+        ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(resp, Mockito.times(1)).addCookie(cookieCaptor.capture());
+        Assert.assertEquals(0, cookieCaptor.getValue().getMaxAge());
+        Assert.assertEquals("", cookieCaptor.getValue().getValue());
     }
 
     @Test

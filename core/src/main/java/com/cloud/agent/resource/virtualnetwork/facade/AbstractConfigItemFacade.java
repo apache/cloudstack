@@ -106,7 +106,7 @@ public abstract class AbstractConfigItemFacade {
 
     public static AbstractConfigItemFacade getInstance(final Class<? extends NetworkElementCommand> key) {
         if (!flyweight.containsKey(key)) {
-            throw new CloudRuntimeException("Unable to process the configuration for " + key.getClass().getName());
+            throw new CloudRuntimeException("Unable to process the configuration for " + key.getName());
         }
 
         final AbstractConfigItemFacade instance = flyweight.get(key);

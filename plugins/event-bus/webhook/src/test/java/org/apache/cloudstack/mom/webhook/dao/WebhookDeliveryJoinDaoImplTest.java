@@ -72,7 +72,7 @@ public class WebhookDeliveryJoinDaoImplTest {
 
         Pair<List<WebhookDeliveryJoinVO>, Integer> result =
                 webhookDeliveryJoinDao.searchAndCountByListApiParameters(id, null, null,
-                        null, null, null, null,null);
+                        null, null, null, null, null, true);
 
         assertNotNull(result);
         assertTrue(result.second() > 0);
@@ -90,7 +90,7 @@ public class WebhookDeliveryJoinDaoImplTest {
 
         Pair<List<WebhookDeliveryJoinVO>, Integer> result =
                 webhookDeliveryJoinDao.searchAndCountByListApiParameters(null, List.of(webhookId),
-                        null, null, null, null, null, null);
+                        null, null, null, null, null, null, true);
 
         assertNotNull(result);
         assertTrue(result.second() > 0);
@@ -112,7 +112,7 @@ public class WebhookDeliveryJoinDaoImplTest {
 
         Pair<List<WebhookDeliveryJoinVO>, Integer> result =
                 webhookDeliveryJoinDao.searchAndCountByListApiParameters(null, null,
-                        managementServerId, keyword, start, end, null, searchFilter);
+                        managementServerId, keyword, start, end, null, searchFilter, true);
 
         assertNotNull(result);
         assertTrue(result.second() > 0);

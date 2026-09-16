@@ -1039,39 +1039,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 throw new InvalidParameterValueException("Could not find the requested backup schedule.");
             }
             checkCallerAccessToBackupScheduleVm(schedule.getVmId());
-            finalizeBackupScheduleIfNeeded(schedule);
             return backupScheduleDao.remove(schedule.getId());
         }
 
         checkCallerAccessToBackupScheduleVm(vmId);
         return deleteAllVmBackupSchedules(vmId);
-    }
-
-    /**
-     * Terminates the backup schedule if necessary.
-     *
-     * @param backupSchedule the backup schedule to be processed for termination.
-     * @throws CloudRuntimeException if the backup offering associated with the
-     * virtual machine was not found or if the backup provider could not finalize
-     * the backup schedule.
-     */
-    protected void finalizeBackupScheduleIfNeeded(BackupSchedule backupSchedule) {
-        VMInstanceVO vm = findVmById(backupSchedule.getVmId());
-
-        if (vm.getBackupOfferingId() == null) {
-            logger.debug("The virtual machine {} backup offering has already been removed; therefore, it is not necessary to finalize the backup schedule.", vm.getUuid());
-            return;
-        }
-
-        BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
-        if (backupOffering == null) {
-            throw new CloudRuntimeException("Could not find the backup offering of the backup schedule virtual machine.");
-        }
-
-        BackupProvider backupProvider = getBackupProvider(backupOffering.getProvider());
-        if (!backupProvider.removeVMBackupSchedule(vm, backupSchedule)) {
-            throw new CloudRuntimeException(String.format("Failed to finalize VM backup schedule with ID [%s].", backupSchedule.getUuid()));
-        }
     }
 
     /**
@@ -1098,7 +1070,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
         boolean success = true;
         for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
-            finalizeBackupScheduleIfNeeded(vmBackupSchedule);
             success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
         }
         return success;
@@ -1164,7 +1135,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
              CheckedReservation backupStorageReservation = new CheckedReservation(owner,
                      Resource.ResourceType.backup_storage, backupSize, reservationDao, resourceLimitMgr)) {
 
-            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated(), backupScheduleId);
+            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated());
             if (!result.first()) {
                 throw new CloudRuntimeException("Failed to create Instance Backup");
             }
@@ -1300,6 +1271,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Long zoneId = cmd.getZoneId();
         final Long backupOfferingId = cmd.getBackupOfferingId();
         final Backup.Status backupStatus = validateBackupStatus(cmd.getBackupStatus());
+        final String backupType = cmd.getBackupType();
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1332,6 +1304,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         // incremental chain GC can sweep them once their last descendant is deleted.
         sb.and("statusNeq", sb.entity().getStatus(), SearchCriteria.Op.NEQ);
         sb.and("backupStatus", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("backupType", sb.entity().getType(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1366,6 +1339,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         sc.setParametersIfNotNull("backupStatus", backupStatus);
+
+        sc.setParametersIfNotNull("backupType", backupType);
 
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
@@ -1855,10 +1830,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find Instance Backup Offering");
-        }
-
-        if (!StringUtils.equals(KBOSS_BACKUP_PROVIDER, offering.getProvider()) && !VirtualMachine.PowerState.PowerOff.equals(vm.getPowerState())) {
-            throw new CloudRuntimeException(String.format("VM [%s] needs to be powered off to restore the volume [%s].", vm.getUuid(), backedUpVolumeUuid));
         }
 
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
@@ -2775,11 +2746,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
         response.setIntervalType("MANUAL");
-        response.setCompressionStatus(backup.getCompressionStatus());
-        if (backup.getUncompressedSize() != null && backup.getUncompressedSize() > 0) {
-            response.setUncompressedSize(backup.getUncompressedSize());
+        if (backup.getCompressionStatus() != null) {
+            response.setCompressionStatus(backup.getCompressionStatus());
+            if (backup.getUncompressedSize() != null && backup.getUncompressedSize() > 0) {
+                response.setUncompressedSize(backup.getUncompressedSize());
+            }
         }
-        response.setValidationStatus(backup.getValidationStatus());
+        if (backup.getValidationStatus() != null) {
+            response.setValidationStatus(backup.getValidationStatus());
+        }
         if (backup.getBackupScheduleId() != null) {
             BackupScheduleVO scheduleVO = backupScheduleDao.findById(backup.getBackupScheduleId());
             if (scheduleVO != null) {

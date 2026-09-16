@@ -24,6 +24,7 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.springframework.stereotype.Component;
 
@@ -227,7 +228,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
      * {@inheritDoc}
      */
     @Override
-    public boolean moveUser(MoveUserCmd cmd) {
+    public boolean moveUser(MoveUserCmd cmd) throws ResourceAllocationException {
         return _accountMgr.moveUser(cmd);
     }
 

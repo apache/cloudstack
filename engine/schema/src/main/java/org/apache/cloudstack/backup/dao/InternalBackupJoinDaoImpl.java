@@ -39,8 +39,6 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
     private static final String ISOLATED = "isolated";
     private static final String PARENT_ID = "parent_id";
     private static final String IMAGE_STORE_ID = "image_store_id";
-    private static final String SCHEDULE_ID = "schedule_id";
-    private static final String VOLUME_ID = "volume_id";
     private SearchBuilder<InternalBackupJoinVO> backupSearch;
     private SearchBuilder<InternalBackupJoinVO> allBackupsSearch;
 
@@ -54,7 +52,6 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
         backupSearch.and(CURRENT, backupSearch.entity().getCurrent(), SearchCriteria.Op.EQ);
         backupSearch.and(PARENT_ID, backupSearch.entity().getParentId(), SearchCriteria.Op.EQ);
         backupSearch.and(ISOLATED, backupSearch.entity().getIsolated(), SearchCriteria.Op.EQ);
-        backupSearch.and(SCHEDULE_ID, backupSearch.entity().getScheduleId(), SearchCriteria.Op.EQ);
         backupSearch.groupBy(backupSearch.entity().getId());
         backupSearch.done();
 
@@ -63,14 +60,11 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
         allBackupsSearch.and(STATUS, allBackupsSearch.entity().getStatus(), SearchCriteria.Op.IN);
         allBackupsSearch.and(PARENT_ID, allBackupsSearch.entity().getParentId(), SearchCriteria.Op.EQ);
         allBackupsSearch.and(IMAGE_STORE_ID, allBackupsSearch.entity().getImageStoreId(), SearchCriteria.Op.EQ);
-        allBackupsSearch.and(VM_ID, allBackupsSearch.entity().getVmId(), SearchCriteria.Op.EQ);
-        allBackupsSearch.and(VOLUME_ID, allBackupsSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        allBackupsSearch.and(CURRENT, allBackupsSearch.entity().getCurrent(), SearchCriteria.Op.EQ);
         allBackupsSearch.done();
     }
 
     @Override
-    public List<InternalBackupJoinVO> listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(long vmId, Long scheduleId, Date date, boolean before, boolean ascending) {
+    public List<InternalBackupJoinVO> listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(long vmId, Date date, boolean before, boolean ascending) {
         SearchCriteria<InternalBackupJoinVO> sc = backupSearch.create();
         sc.setParameters(VM_ID, vmId);
         sc.setParameters(STATUS, Backup.Status.BackedUp);
@@ -80,29 +74,26 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
             sc.setParameters(CREATED_AFTER, date);
         }
         sc.setParameters(ISOLATED, Boolean.FALSE.toString());
-        sc.setParameters(SCHEDULE_ID, scheduleId);
         Filter filter = new Filter(InternalBackupJoinVO.class, "date", ascending);
         return new ArrayList<>(listBy(sc, filter));
     }
 
     @Override
-    public List<InternalBackupJoinVO> listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(long vmId, Long scheduleId, Date beforeDate) {
+    public List<InternalBackupJoinVO> listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(long vmId, Date beforeDate) {
         SearchCriteria<InternalBackupJoinVO> sc = backupSearch.create();
         sc.setParameters(VM_ID, vmId);
         sc.setParameters(STATUS, Backup.Status.BackedUp, Backup.Status.Removed);
         sc.setParameters(CREATED_BEFORE, beforeDate);
         sc.setParameters(ISOLATED, Boolean.FALSE.toString());
-        sc.setParameters(SCHEDULE_ID, scheduleId);
         Filter filter = new Filter(InternalBackupJoinVO.class, "date", false);
         return new ArrayList<>(listIncludingRemovedBy(sc, filter));
     }
 
     @Override
-    public InternalBackupJoinVO findCurrent(long vmId, Long scheduleId) {
+    public InternalBackupJoinVO findCurrent(long vmId) {
         SearchCriteria<InternalBackupJoinVO> sc = backupSearch.create();
         sc.setParameters(VM_ID, vmId);
         sc.setParameters(CURRENT, Boolean.TRUE.toString());
-        sc.setParameters(SCHEDULE_ID, scheduleId);
         return findOneBy(sc);
     }
 
@@ -135,24 +126,5 @@ public class InternalBackupJoinDaoImpl extends GenericDaoBase<InternalBackupJoin
         sc.setParameters(PARENT_ID, parentId);
         sc.setParameters(STATUS, Backup.Status.BackedUp);
         return listBy(sc);
-    }
-
-    @Override
-    public List<InternalBackupJoinVO> listCurrents(long vmId, boolean descending) {
-        SearchCriteria<InternalBackupJoinVO> sc = allBackupsSearch.create();
-        sc.setParameters(VM_ID, vmId);
-        sc.setParameters(CURRENT, Boolean.TRUE.toString());
-        Filter filter = new Filter(InternalBackupJoinVO.class, "date", !descending);
-
-        return listBy(sc, filter);
-    }
-
-    @Override
-    public List<InternalBackupJoinVO> listCurrentsByVolumeIdDesc(long volumeId) {
-        SearchCriteria<InternalBackupJoinVO> sc = allBackupsSearch.create();
-        sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(CURRENT, Boolean.TRUE.toString());
-        Filter filter = new Filter(InternalBackupJoinVO.class, "date", false);
-        return listBy(sc, filter);
     }
 }

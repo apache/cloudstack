@@ -251,7 +251,7 @@ public class NASBackupProviderTest {
         Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
 
-        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false, null);
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false);
 
         Assert.assertTrue(result.first());
         Assert.assertNotNull(result.second());

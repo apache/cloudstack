@@ -226,6 +226,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    @SuppressWarnings("BanJNDI")
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
         String attributeName = LdapConfiguration.getGroupUniqueMemberAttribute(domainId);
         final SearchControls controls = new SearchControls();
@@ -255,6 +256,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return users;
     }
 
+    @SuppressWarnings("BanJNDI")
     private LdapUser getUserForDn(String userdn, LdapContext context, Long domainId) throws NamingException {
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
@@ -277,6 +279,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return false;
     }
 
+    @SuppressWarnings("BanJNDI")
     public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context, Long domainId) throws NamingException {
         final SearchControls searchControls = new SearchControls();
 
@@ -299,6 +302,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    @SuppressWarnings("BanJNDI")
     public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
 
         final SearchControls searchControls = new SearchControls();

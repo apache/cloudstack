@@ -57,7 +57,6 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.commons.collections4.CollectionUtils;
 import org.libvirt.LibvirtException;
 
 import static com.cloud.hypervisor.kvm.storage.KVMStorageProcessor.poolTypesToDeleteChainInfo;
@@ -182,12 +181,10 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
 
         try {
             replaceVolumeWithSnapshot(volumePath, snapshotPath);
-            if (CollectionUtils.isNotEmpty(volumeObjectTo.getDeltasToRemove()) && poolTypesToDeleteChainInfo.contains(kvmStoragePoolPrimary.getType()) &&
+            if (volumeObjectTo.getChainInfo() != null && poolTypesToDeleteChainInfo.contains(kvmStoragePoolPrimary.getType()) &&
                     volumeObjectTo.getFormat() == Storage.ImageFormat.QCOW2 && deleteChain) {
-                for (String deltaPath : volumeObjectTo.getDeltasToRemove()) {
-                    logger.debug("Deleting leftover backup delta at [{}].", deltaPath);
-                    kvmStoragePoolPrimary.deletePhysicalDisk(deltaPath, volumeObjectTo.getFormat());
-                }
+                logger.debug("Deleting leftover backup delta at [{}].", volumeObjectTo.getChainInfo());
+                kvmStoragePoolPrimary.deletePhysicalDisk(volumeObjectTo.getChainInfo(), volumeObjectTo.getFormat());
             }
             logger.debug(String.format("Successfully reverted volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
         } catch (LibvirtException | QemuImgException ex) {

@@ -428,7 +428,8 @@
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'serviceofferingname'">
-        <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
+        <router-link v-if="$route.path === '/networkoffering'" :to="{ path: '/systemoffering/' + record.serviceofferingid, query:{issystem:'true'} }">{{ text }}</router-link>
+        <router-link v-else :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
@@ -484,10 +485,10 @@
         />
       </template>
       <template v-if="column.key === 'compressionstatus'">
-        <status :text="text ? text : ''" displayText />
+        <status :text="text ? text : $t('label.unknown')" displayText />
       </template>
       <template v-if="column.key === 'validationstatus'">
-        <status :text="text ? text : ''" displayText />
+        <status :text="text ? text : $t('label.unknown')" displayText />
       </template>
       <template v-if="column.key === 'allocationstate'">
         <status
@@ -693,15 +694,20 @@
         <template v-if="text">
           <template v-if="!text.startsWith('PrjAcct-')">
             <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
+              v-if="$route.path.startsWith('/quotasummary')"
               :to="{ path: `${$route.path}/${record.accountid}` }">{{ text }}</router-link>
+            <router-link v-else-if="record.accountid" :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
+            <router-link
+              v-else-if="$store.getters.userInfo.roletype !== 'User'"
+              :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }">
+              {{ text }}
+            </router-link>
             <span v-else>{{ text }}</span>
           </template>
-          <template v-else>
-            <router-link
-              v-if="$route.path.startsWith('/quotasummary') && $router.resolve(`${$route.path}/${record.accountid}`).matched[0].redirect !== '/exception/404'"
-              :to="{ path: `${$route.path}/${record.accountid}` }">{{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}</router-link>
-            <span v-else>{{ text }}</span>
+          <template v-else-if="$route.path.startsWith('/quotasummary')">
+            <router-link :to="{ path: `${$route.path}/${record.accountid}` }">
+              {{ (record.projectname || record.account).concat(' (').concat($t('label.project')).concat(')') }}
+            </router-link>
           </template>
         </template>
       </template>
@@ -809,9 +815,10 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template
-        v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)"
-      >
+      <template v-if="column.key === 'egressdefaultpolicy'">
+        <span> {{ record.egressdefaultpolicy ? 'Allow' : 'Deny' }} </span>
+      </template>
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated', 'startdate', 'enddate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
         {{ text && $toLocaleDate(text) }}
       </template>
       <template

@@ -334,7 +334,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid',
+          'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
           'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'hsmprofileid', 'kmskeyid', 'status'].includes(item)
