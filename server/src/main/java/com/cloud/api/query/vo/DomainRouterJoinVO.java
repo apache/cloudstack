@@ -210,6 +210,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name = "isolation_uri")
     private URI isolationUri;
 
+    @Column(name = "nic_network_rate")
+    private Integer nicNetworkRate;
+
     @Column(name = "network_id")
     private long networkId;
 
@@ -448,6 +451,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public URI getIsolationUri() {
         return isolationUri;
+    }
+
+    public Integer getNicNetworkRate() {
+        return nicNetworkRate;
     }
 
     public long getNetworkId() {

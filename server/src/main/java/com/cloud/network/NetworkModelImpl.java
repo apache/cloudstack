@@ -123,6 +123,8 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -172,6 +174,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     ConfigurationDao _configDao;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
@@ -1202,9 +1206,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final Network network = getNetwork(networkId);
         final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        // For user VM: For default nic use network rate from the service/compute offering,
+        // For user VM: Use network rate from the service/compute offering for every nic (default or not),
         //              or on NULL from vm.network.throttling.rate global setting
-        // For router: Get network rate for guest and public networks from the guest network offering
+        // For router: For guest networks, use network rate from the router's own system offering first,
+        //              falling back to the guest network offering, or on NULL from network.throttling.rate
+        //              For public networks, use network rate from the router's guest network offering,
         //              or on NULL from network.throttling.rate
         // For others: Use network rate from their network offering,
         //              or on NULL from network.throttling.rate setting at zone > global level
@@ -1213,7 +1219,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             switch (vm.getType()) {
                 case User:
                     final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-                    if (nic != null && nic.isDefaultNic()) {
+                    if (nic != null) {
                         return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
                     }
                     break;
@@ -1221,6 +1227,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     if (TrafficType.Guest.equals(network.getTrafficType())) {
                         final Nic routerNic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
                         if (routerNic != null) {
+                            final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+                            if (routerOffering != null && routerOffering.getRateMbps() != null) {
+                                final int systemOfferingRate = routerOffering.getRateMbps();
+                                return systemOfferingRate > 0 ? systemOfferingRate : -1;
+                            }
                             return _configMgr.getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
                         }
                     } else if (TrafficType.Public.equals(network.getTrafficType())) {

@@ -2307,6 +2307,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setState(Nic.State.Reserved);
         }
 
+        nic.setNetworkRate(networkRate != null && networkRate > 0 ? networkRate : null);
+
         if (vmProfile.getType() == Type.DomainRouter) {
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
             setMtuDetailsInVRNic(networks, network, nic);
