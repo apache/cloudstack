@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -133,16 +134,17 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
      * order at the end of the list rather than being dropped.
      */
     public List<Host> rank(long zoneId, Long podId, Long clusterId, List<? extends Host> hosts) {
-        if (hosts == null || hosts.size() <= 1) {
-            return hosts == null ? new ArrayList<>() : new ArrayList<>(hosts);
+        List<Host> candidates = distinctHosts(hosts);
+        if (candidates.size() <= 1) {
+            return candidates;
         }
 
-        Map<Long, Double> scores = score(zoneId, podId, clusterId, hosts);
+        Map<Long, Double> scores = score(zoneId, podId, clusterId, candidates);
 
         List<Host> unscored = new ArrayList<>();
         List<Host> measured = new ArrayList<>();
         List<Host> unmeasured = new ArrayList<>();
-        for (Host host : hosts) {
+        for (Host host : candidates) {
             if (!scores.containsKey(host.getId())) {
                 unscored.add(host);
             } else if (hostLoadTracker.getLoad(host.getId()).isUsable()) {
@@ -186,6 +188,24 @@ public class WeightedHostScorer extends AdapterBase implements Configurable {
 
         result.addAll(unscored);
         return result;
+    }
+
+    /**
+     * The candidate list can hold the same host twice. listAllUpAndEnabledNonHAHosts joins host_tags
+     * without collapsing the rows, so a host carrying two tags arrives once per tag, and that path is
+     * taken whenever a VM has no host tag to filter on - system VMs, most commonly. Ranking is a set
+     * operation: a repeat is harmless to the score, which is keyed by host, but it costs a slot in
+     * the selection spread and would bias the shuffle towards whichever host happens to be repeated.
+     */
+    protected List<Host> distinctHosts(List<? extends Host> hosts) {
+        if (hosts == null) {
+            return new ArrayList<>();
+        }
+        Map<Long, Host> distinct = new LinkedHashMap<>();
+        for (Host host : hosts) {
+            distinct.putIfAbsent(host.getId(), host);
+        }
+        return new ArrayList<>(distinct.values());
     }
 
     protected Map<Long, Double> score(long zoneId, Long podId, Long clusterId, List<? extends Host> hosts) {
