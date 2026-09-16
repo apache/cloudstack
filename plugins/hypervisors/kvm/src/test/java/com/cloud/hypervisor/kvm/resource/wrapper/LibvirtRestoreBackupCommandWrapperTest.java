@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -622,8 +623,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
-                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
-                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
                 filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
 
@@ -632,19 +632,19 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(((BackupAnswer) result).getResult());
 
                 // each backup file has to land in the volume it was taken from
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/root.root-vol.qcow2", "/var/lib/libvirt/images/root-vol"}));
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/data-vol-a"}));
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-b"}));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.root-vol.qcow2", "/var/lib/libvirt/images/root-vol"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/data-vol-a"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-b"})));
 
                 // and must never be written into the other data disk
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/data-vol-b"}),
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/data-vol-b"})),
                         Mockito.never());
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-a"}),
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-a"})),
                         Mockito.never());
             }
         }
@@ -683,8 +683,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
-                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
-                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
                 filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
 
@@ -694,8 +693,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(result.getDetails().contains("data-vol-z"));
 
                 // nothing may be written into the surviving data disk
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-z.qcow2", "/var/lib/libvirt/images/data-vol-a"}),
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-z.qcow2", "/var/lib/libvirt/images/data-vol-a"})),
                         Mockito.never());
             }
         }
@@ -735,8 +734,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
-                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
-                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
                 filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
 
@@ -745,10 +743,10 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(((BackupAnswer) result).getResult());
 
                 // each backup file lands in the new volume holding the same device id position
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/root.old-root-vol.qcow2", "/var/lib/libvirt/images/new-root-vol"}));
-                scriptMock.verify(() -> Script.executeCommandForExitValue(new String[] {"rsync", "-az",
-                        "/tmp/csbackup.abc123/backup/path/datadisk.old-data-vol.qcow2", "/var/lib/libvirt/images/new-data-vol"}));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.old-root-vol.qcow2", "/var/lib/libvirt/images/new-root-vol"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.old-data-vol.qcow2", "/var/lib/libvirt/images/new-data-vol"})));
             }
         }
     }
