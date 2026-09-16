@@ -18,13 +18,11 @@ package com.cloud.upgrade.dao;
 
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+
     @Override
     public String[] getUpgradableVersionRange() {
         return new String[]{"4.20.2.0", "4.20.3.0"};
