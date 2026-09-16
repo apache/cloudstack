@@ -96,6 +96,8 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
 
     private final List<Backup.Status> aliveBackupStates = List.of(Backup.Status.BackedUp, Backup.Status.Restoring);
     private final List<Backup.Status> errorBackupStates = List.of(Backup.Status.Error, Backup.Status.Failed);
+    private final List<Backup.Status> removedBackupStates = List.of(Backup.Status.Removed, Backup.Status.Expunged, Backup.Status.Hidden);
+    private final List<Backup.Status> creatingBackupStates = List.of(Backup.Status.BackingUp, Backup.Status.ReadyForImageTransfer, Backup.Status.FinalizingImageTransfer);
 
     private ScheduledExecutorService scheduledExecutor;
 
@@ -265,13 +267,13 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
                 logger.debug("Adding reports for account [{}].", currentAccountResponse.getAccountId());
             }
 
-            addBackupReport(backupReportResponse, backupInfo, currentDomainResponse, currentAccountResponse);
+            addBackupReport(backupReportResponse, backupInfo, currentDomainResponse, currentAccountResponse, endDate);
         }
     }
 
     private void addBackupReport(BackupReportResponse backupReportResponse, BackupReportJoinVO backupInfo, BackupReportDomainResponse currentDomainResponse,
-            BackupReportAccountResponse currentAccountResponse) {
-        if (backupInfo.getStatus() == Backup.Status.BackingUp) {
+            BackupReportAccountResponse currentAccountResponse, Date endDate) {
+        if (creatingBackupStates.contains(backupInfo.getStatus())) {
             return;
         }
         logger.trace("Adding report for backup [{}].", backupInfo.getBackupUuid());
@@ -285,19 +287,19 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
         backupResponse.setZone(backupInfo.getZoneName());
         backupResponse.setZoneId(backupInfo.getZoneUuid());
 
-        if (aliveBackupStates.contains(backupInfo.getStatus()) && backupInfo.getRemoved() == null) {
+        if (removedBackupStates.contains(backupInfo.getStatus()) && backupInfo.getRemoved().before(endDate)) {
+            backupResponse.setRemoved(backupInfo.getRemoved());
+            currentAccountResponse.addDeletedBackup(backupResponse);
+        } else if (aliveBackupStates.contains(backupInfo.getStatus()) || backupInfo.getFailureReason() == null) {
             double backupSizeInGib = backupInfo.getSize() / GIB;
             backupReportResponse.addStorageUsage(backupSizeInGib);
             currentDomainResponse.addStorageUsage(backupSizeInGib);
             currentAccountResponse.addStorageUsage(backupSizeInGib);
             currentAccountResponse.addSuccessfulBackup(backupResponse);
-        } else if (errorBackupStates.contains(backupInfo.getStatus()) && backupInfo.getRemoved() == null) {
+        } else if (errorBackupStates.contains(backupInfo.getStatus()) || backupInfo.getFailureReason() != null) {
             backupResponse.setFailureReason(backupInfo.getFailureReason());
             backupResponse.setLogid(backupInfo.getLogid());
             currentAccountResponse.addFailedBackup(backupResponse);
-        } else {
-            backupResponse.setRemoved(backupInfo.getRemoved());
-            currentAccountResponse.addDeletedBackup(backupResponse);
         }
     }
 
