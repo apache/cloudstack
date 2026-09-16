@@ -41,7 +41,7 @@ import java.util.Date;
 
 @APICommand(name = "getBackupReport",
         description = "Get the backup report for the given period",
-        responseObject = BackupReportResponse.class, since = "4.24.0.0", authorized = {RoleType.Admin})
+        responseObject = BackupReportResponse.class, since = "24.0.0", authorized = {RoleType.Admin})
 public class GetBackupReportCmd extends BaseCmd {
 
     @Inject

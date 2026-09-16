@@ -29,7 +29,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    // This must be moved to the new upgrade class when 4.23 is released
+    // This must be moved to the new upgrade class when 4.23 is released and the class is actually created. Waiting for https://github.com/apache/cloudstack/pull/14033
     private static String SELECT_TEMPLATE = "SELECT `name` FROM `cloud`.`email_template` WHERE `name`=\"backup_report_template\";";
     private static String INSERT_TEMPLATE = "INSERT INTO `cloud`.`email_template` (name, template) VALUES (\"backup_report_template\", \'<h1>Backup report</h1>\n" +
             "<p>Backup storage usage increase for the environment during the period is ${storageUsage} GiB.</p>\n" +

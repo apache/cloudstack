@@ -168,7 +168,7 @@ public class BackupReportServiceImpl extends ManagerBase implements Configurable
 
     protected void run() {
         ThreadContext.put(LOGCONTEXTID, UuidUtils.first(UUID.randomUUID().toString()));
-        logger.info("Starting backup report task.");
+        logger.debug("Starting backup report task.");
 
         try {
             Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallbackNoReturn() {
