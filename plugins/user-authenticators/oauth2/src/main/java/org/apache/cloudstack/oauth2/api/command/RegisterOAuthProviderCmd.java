@@ -32,6 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.keycloak.KeycloakOAuth2Provider;
+import org.apache.cloudstack.oauth2.oidc.GenericOIDCOAuth2Provider;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -75,6 +76,16 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)", since = "4.23.0")
     private String tokenUrl;
+
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
+            description = "Type of the provider implementation serving this registration, for example oidc for any OpenID Connect compliant provider. "
+                    + "When set, the name in provider is a label chosen by the administrator rather than a built in provider name.", since = "4.24.0")
+    private String type;
+
+    @Parameter(name = ApiConstants.ISSUER_URL, type = CommandType.STRING,
+            description = "Issuer URL of the OpenID Connect provider, required for type oidc. The token endpoint and the keys that sign "
+                    + "its tokens are read from the issuer's discovery document", since = "4.24.0")
+    private String issuerUrl;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
@@ -121,6 +132,14 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return tokenUrl;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public String getIssuerUrl() {
+        return issuerUrl;
+    }
+
     public Map getDetails() {
         if (MapUtils.isEmpty(details)) {
             return null;
@@ -143,12 +162,18 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
             }
         }
 
+        if (StringUtils.equalsIgnoreCase(GenericOIDCOAuth2Provider.OIDC_PROVIDER_TYPE, getType()) && StringUtils.isBlank(getIssuerUrl())) {
+            throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter issuerurl is mandatory for an oidc OAuth provider");
+        }
+
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
         Domain domain = provider.getDomainId() != null ? ApiDBUtils.findDomainById(provider.getDomainId()) : null;
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
                 provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(),
                 provider.getAuthorizeUrl(), provider.getTokenUrl(), domain);
+        response.setType(provider.getType());
+        response.setIssuerUrl(provider.getIssuerUrl());
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);
