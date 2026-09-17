@@ -49,6 +49,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
@@ -96,6 +97,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
             libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
             performAgentStartHook(vmName, libvirtComputingResource);
+            applyManualVlanTrunkMembership(conn, vmName, nics, libvirtComputingResource);
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
@@ -175,6 +177,21 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                 for (KVMStoragePool secondaryStorage : secondaryStorages) {
                     libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
                 }
+            }
+        }
+    }
+
+    private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
+            throws InternalErrorException {
+        for (NicTO nic : nics) {
+            if (!nic.isTrunkVlan()) {
+                continue;
+            }
+            try {
+                LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
+            } catch (CloudRuntimeException e) {
+                throw new InternalErrorException("Failed to locate live tap for trunk nic " + nic.getMac() + ": " + e.getMessage());
             }
         }
     }

@@ -318,6 +318,8 @@ public class ApiConstants {
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
+    public static final String VLAN_FILTERING_ENABLED = "vlanfilteringenabled";
+    public static final String VLAN_TRUNK_XML_SUPPORTED = "vlantrunkxmlsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";

@@ -16,20 +16,25 @@
 // under the License.
 package com.cloud.upgrade;
 
-import java.sql.SQLException;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.junit.Test;
-import org.junit.Before;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -55,14 +60,7 @@ import com.cloud.upgrade.dao.Upgrade470to471;
 import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
 import com.cloud.upgrade.dao.Upgrade490to4910;
-
 import com.cloud.utils.db.TransactionLegacy;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -214,10 +212,10 @@ public class DatabaseUpgradeCheckerTest {
     @Test
     public void testCalculateUpgradePathUnknownDbVersion() {
 
-        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.99.0.0");
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("99.0.0");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("99.1.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -234,7 +232,7 @@ public class DatabaseUpgradeCheckerTest {
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.0.0");
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("99.1.0");
         assertNotNull(currentVersion);
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -268,10 +266,7 @@ public class DatabaseUpgradeCheckerTest {
         final CloudStackVersion dbVersion = checker.getLatestVersion();
         assertNotNull(dbVersion);
 
-        final CloudStackVersion currentVersion = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
-                + dbVersion.getMinorRelease() + "."
-                + dbVersion.getPatchRelease() + "."
-                + (dbVersion.getSecurityRelease() + 1));
+        final CloudStackVersion currentVersion = getNextSecurityRelease(dbVersion);
         assertNotNull(currentVersion);
 
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
@@ -293,10 +288,7 @@ public class DatabaseUpgradeCheckerTest {
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
         assertNotNull(upgrades);
 
-        final CloudStackVersion nextSecurityRelease = CloudStackVersion.parse(currentVersion.getMajorRelease() + "."
-                + currentVersion.getMinorRelease() + "."
-                + currentVersion.getPatchRelease() + "."
-                + (currentVersion.getSecurityRelease() + 1));
+        final CloudStackVersion nextSecurityRelease = getNextSecurityRelease(currentVersion);
         assertNotNull(nextSecurityRelease);
 
         final DbUpgrade[] upgradesToNext = checker.calculateUpgradePath(dbVersion, nextSecurityRelease);
@@ -306,16 +298,26 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgradesToNext[upgradesToNext.length - 1] instanceof NoopDbUpgrade);
     }
 
+    private static CloudStackVersion getNextSecurityRelease(CloudStackVersion version, int increment) {
+        String nextSecurityReleaseVersionStr = version.getMajorRelease() + "."
+                + version.getMinorRelease() + "."
+                + (version.usesNewVersioning() ? "" : version.getPatchRelease() + ".")
+                + (version.getSecurityRelease() + increment);
+
+        return CloudStackVersion.parse(nextSecurityReleaseVersionStr);
+    }
+
+    private static CloudStackVersion getNextSecurityRelease(CloudStackVersion version) {
+        return getNextSecurityRelease(version, 1);
+    }
+
     @Test
     public void testCalculateUpgradePathFromSecurityReleaseToLatest() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.2.0");    // a EOL version
         assertNotNull(dbVersion);
 
-        final CloudStackVersion oldSecurityRelease = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
-                + dbVersion.getMinorRelease() + "."
-                + dbVersion.getPatchRelease() + "."
-                + (dbVersion.getSecurityRelease() + 100));
+        final CloudStackVersion oldSecurityRelease = getNextSecurityRelease(dbVersion, 100);
         assertNotNull(oldSecurityRelease);      // fake security release 4.17.2.100
 
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
@@ -347,10 +349,7 @@ public class DatabaseUpgradeCheckerTest {
         final CloudStackVersion currentVersion = checker.getLatestVersion();
         assertNotNull(currentVersion);
 
-        final CloudStackVersion nextSecurityRelease = CloudStackVersion.parse(currentVersion.getMajorRelease() + "."
-                + currentVersion.getMinorRelease() + "."
-                + currentVersion.getPatchRelease() + "."
-                + (currentVersion.getSecurityRelease() + 1));
+        final CloudStackVersion nextSecurityRelease = getNextSecurityRelease(currentVersion);
         assertNotNull(nextSecurityRelease);     // fake security release
 
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
