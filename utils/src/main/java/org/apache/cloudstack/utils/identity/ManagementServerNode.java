@@ -47,12 +47,10 @@ import com.cloud.utils.net.MacAddress;
  */
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 
-    private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_FQDN";
-    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.fqdn";
-    private static final String IDENTITY_ENV_VAR = "CLOUDSTACK_MSID_IDENTITY";
-    private static final String IDENTITY_SYS_PROP = "cloudstack.msid.identity";
+    private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
+    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.id";
     private static final String HOSTNAME_ENV_VAR = "HOSTNAME";
-    private static final String POD_NAMESPACE_ENV_VAR = "POD_NAMESPACE";
+    
 
     // op_lock.mac is varchar(17) and holds the msid, so the id must stay within the 48-bit MAC address range.
     private static final int MSID_BYTES = 6;
@@ -63,34 +61,33 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
     private static final long s_nodeId = initNodeId();
 
     private static long initNodeId() {
-        if (isTruthy(System.getenv(FQDN_ENV_VAR)) || isTruthy(System.getProperty(FQDN_SYS_PROP))) {
-            return generateIdFromStableIdentity();
+
+        s_logger.info("Initializing management server node ID");
+        // Check if FQDN_ENV_VAR or FQDN_SYS_PROP has a value
+        String fqdnEnv = System.getenv(FQDN_ENV_VAR);
+        String fqdnSysProp = System.getProperty(FQDN_SYS_PROP);
+
+        String identity = null;
+        if (fqdnEnv != null) {
+            identity = trimToNull(fqdnEnv);
+            s_logger.info("FQDN environment variable: {}", fqdnEnv);
+        }
+        if (fqdnSysProp != null) {
+            identity = trimToNull(fqdnSysProp);
+            s_logger.info("FQDN system property: {}", fqdnSysProp);
         }
 
+        if (identity != null) {
+            s_nodeIdSource = "fqdn";
+            s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, identity);
+            return hashNodeIdentity(identity);
+        }
+
+        // Use mac address
         s_nodeIdSource = "mac-address";
-        return MacAddress.getMacAddress().toLong();
-    }
-
-    static String resolveNodeIdentity(String explicitIdentity, String hostnameEnv, String podNamespaceEnv,
-            String detectedHostName, String canonicalHostName) {
-        String configuredIdentity = trimToNull(explicitIdentity);
-        if (configuredIdentity != null) {
-            return configuredIdentity;
-        }
-
-        String hostName = trimToNull(hostnameEnv);
-        if (hostName != null) {
-            String podNamespace = trimToNull(podNamespaceEnv);
-            return podNamespace == null ? hostName : hostName + "." + podNamespace;
-        }
-
-        String detected = trimToNull(detectedHostName);
-        String canonical = trimToNull(canonicalHostName);
-        if (detected != null && canonical != null && !detected.equals(canonical)) {
-            return detected + "|" + canonical;
-        }
-
-        return canonical != null ? canonical : detected;
+        long macAddress = MacAddress.getMacAddress().toLong();
+        s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, macAddress);
+        return macAddress;
     }
 
     static long hashNodeIdentity(String nodeIdentity) {
@@ -106,59 +103,6 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
         } catch (NoSuchAlgorithmException e) {
             throw new CloudRuntimeException("SHA-256 algorithm not available for management server ID generation", e);
         }
-    }
-
-    private static long generateIdFromStableIdentity() {
-        try {
-
-            // Get variables
-            InetAddress localHost = InetAddress.getLocalHost();
-            String identitySysProp = System.getProperty(IDENTITY_SYS_PROP);
-            String identityEnvVar = System.getenv(IDENTITY_ENV_VAR);
-            String explicitIdentity = firstNonBlank(identitySysProp, identityEnvVar);
-            String hostnameEnv = System.getenv(HOSTNAME_ENV_VAR);
-            String podNamespaceEnv = System.getenv(POD_NAMESPACE_ENV_VAR);
-
-            // Resolve node identity
-            String nodeIdentity = resolveNodeIdentity(
-                    explicitIdentity,
-                    hostnameEnv,
-                    podNamespaceEnv,
-                    localHost.getHostName(),
-                    localHost.getCanonicalHostName());
-
-            // Validate node identity
-            if (nodeIdentity == null) {
-                throw new CloudRuntimeException("Unable to resolve a stable management server identity");
-            }
-
-            // Identity source is used for logging and debugging purposes, so we can see where the identity came from
-            s_nodeIdSource = "identity:" + nodeIdentity;
-
-            // Log variables and identify source
-            s_logger.info("Management server node identity variables: source={}, explicitIdentity={}, hostnameEnv={}, podNamespaceEnv={}, detectedHostName={}, canonicalHostName={}",
-                    s_nodeIdSource, explicitIdentity, hostnameEnv, podNamespaceEnv, localHost.getHostName(), localHost.getCanonicalHostName());
-
-            return hashNodeIdentity(nodeIdentity);
-        } catch (CloudRuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to generate management server ID from host identity", e);
-        }
-    }
-
-    private static String firstNonBlank(String first, String second) {
-        String value = trimToNull(first);
-        return value != null ? value : trimToNull(second);
-    }
-
-    private static boolean isTruthy(String value) {
-        if (value == null) {
-            return false;
-        }
-
-        String trimmed = value.trim();
-        return "true".equalsIgnoreCase(trimmed) || "1".equals(trimmed) || "yes".equalsIgnoreCase(trimmed);
     }
 
     private static String trimToNull(String value) {
