@@ -22,11 +22,20 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -175,5 +184,54 @@ public class LibvirtStorageAdaptorTest {
         libvirtStorageAdaptor.updateLocalPoolIops(mockPool);
 
         Mockito.verify(mockPool, never()).setUsedIops(anyLong());
+    }
+
+    @Test(timeout = 120000)
+    public void testStoragePoolRefCountCountsEveryConcurrentIncrement() throws Exception {
+        final LibvirtStorageAdaptor adaptor = new LibvirtStorageAdaptor(null);
+        final int threads = 16;
+        final int rounds = 500;
+        final CyclicBarrier barrier = new CyclicBarrier(threads);
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        try {
+            for (int round = 0; round < rounds; round++) {
+                // A fresh uuid each round, so every round starts with no entry for the pool.
+                final String uuid = String.valueOf(UUID.randomUUID());
+                final List<Future<?>> futures = new ArrayList<>();
+
+                for (int i = 0; i < threads; i++) {
+                    futures.add(executor.submit(() -> {
+                        /*
+                         * Every caller arrives with its own String instance, the way the
+                         * agent does when the uuid is parsed out of a separate command
+                         * payload for each request. The instances are equal but they are
+                         * not the same object.
+                         */
+                        final String ownInstance = new String(uuid);
+                        try {
+                            barrier.await();
+                        } catch (InterruptedException | BrokenBarrierException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(e);
+                        }
+                        adaptor.incStoragePoolRefCount(ownInstance);
+                    }));
+                }
+                for (Future<?> future : futures) {
+                    future.get(60, TimeUnit.SECONDS);
+                }
+
+                // Every increment must be counted, so the pool stays in use until the last release.
+                for (int i = 1; i < threads; i++) {
+                    Assert.assertTrue("Round " + round + ": pool should still be in use after " + i
+                            + " of " + threads + " releases", adaptor.decStoragePoolRefCount(uuid));
+                }
+                Assert.assertFalse("Round " + round + ": pool should no longer be in use after the last release",
+                        adaptor.decStoragePoolRefCount(uuid));
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 }

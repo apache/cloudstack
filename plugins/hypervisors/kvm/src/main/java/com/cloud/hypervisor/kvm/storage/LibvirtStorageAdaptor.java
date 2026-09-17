@@ -700,27 +700,22 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * adjust refcount
      */
     private int adjustStoragePoolRefCount(String uuid, int adjustment) {
-        final String mutexKey = storagePoolRefCounts.keySet().stream()
-                .filter(k -> k.equals(uuid))
-                .findFirst()
-                .orElse(uuid);
-        synchronized (mutexKey) {
-            // some access on the storagePoolRefCounts.key(mutexKey) element
-            int refCount = storagePoolRefCounts.computeIfAbsent(mutexKey, k -> 0);
-            refCount += adjustment;
-            if (refCount < 1) {
-                storagePoolRefCounts.remove(mutexKey);
-            } else {
-                storagePoolRefCounts.put(mutexKey, refCount);
-            }
-            return refCount;
-        }
+        /*
+         * compute() is atomic for the key, so concurrent callers cannot lose an
+         * update. Returning null from the remapping function removes the entry,
+         * which keeps the map free of pools that are no longer in use.
+         */
+        Integer refCount = storagePoolRefCounts.compute(uuid, (key, count) -> {
+            int adjusted = (count == null ? 0 : count) + adjustment;
+            return adjusted < 1 ? null : adjusted;
+        });
+        return refCount == null ? 0 : refCount;
     }
     /**
      * Thread-safe increment storage pool usage refcount
      * @param uuid UUID of the storage pool to increment the count
      */
-    private void incStoragePoolRefCount(String uuid) {
+    protected void incStoragePoolRefCount(String uuid) {
         adjustStoragePoolRefCount(uuid, 1);
     }
     /**
@@ -728,7 +723,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * @param uuid UUID of the storage pool to decrement the count
      * @return true if the storage pool is still used, else false.
      */
-    private boolean decStoragePoolRefCount(String uuid) {
+    protected boolean decStoragePoolRefCount(String uuid) {
         return adjustStoragePoolRefCount(uuid, -1) > 0;
     }
 
@@ -948,13 +943,29 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String targetPath = _mountPoint + File.separator + uuid;
                     logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
                         " again in a few seconds");
-                String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
-                if (result == null) {
+                /*
+                 * runSimpleBashScript() returns null both when the command fails,
+                 * because runScript() discards the output on a non-zero exit, and
+                 * when it succeeds without printing anything. Its result therefore
+                 * cannot say whether the umount worked. It is still used to run the
+                 * umount, because it logs the failure reason, which is the useful
+                 * diagnostic, but the outcome is taken from whether the path is
+                 * still a mount point. That also covers the pool having been
+                 * unmounted by something else in the meantime.
+                 */
+                Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
+                if (Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath) != 0) {
                     logger.info("Succeeded in unmounting " + targetPath);
                     destroyStoragePoolHandleException(conn, uuid);
                     return true;
                 }
-                logger.error("Failed to unmount " + targetPath);
+                /*
+                 * Do not throw here. deleteStoragePool() is called from finally
+                 * blocks, where a throw would discard the result of an operation
+                 * that has already succeeded.
+                 */
+                logger.error("Failed to unmount " + targetPath + ", it is still a mount point");
+                return false;
             }
             throw new CloudRuntimeException(e.toString(), e);
         }
