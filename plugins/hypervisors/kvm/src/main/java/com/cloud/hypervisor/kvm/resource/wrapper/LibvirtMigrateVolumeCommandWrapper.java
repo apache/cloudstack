@@ -25,7 +25,6 @@ import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.disconnecthook.VolumeMigrationCancelHook;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -38,7 +37,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -76,78 +74,16 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
-        PrimaryDataStoreTO srcPrimaryDataStore = srcVolumeObjectTO != null ? (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore() : null;
-        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
-        PrimaryDataStoreTO destPrimaryDataStore = destVolumeObjectTO != null ? (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore() : null;
+        PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
 
         MigrateVolumeAnswer answer;
-        if (srcPrimaryDataStore != null && srcPrimaryDataStore.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if (srcPrimaryDataStore.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             answer = migratePowerFlexVolume(command, libvirtComputingResource);
-        } else if (shouldAttemptFiberChannelLiveMigration(command, srcPrimaryDataStore, destPrimaryDataStore)) {
-            answer = migrateFiberChannelVolume(command, libvirtComputingResource);
         } else {
             answer = migrateRegularVolume(command, libvirtComputingResource);
         }
 
         return answer;
-    }
-
-    private String resolveVolumeIdentifier(VolumeObjectTO volumeObjectTO, Map<String, String> details) {
-        if (details != null && details.get(DiskTO.IQN) != null) {
-            return details.get(DiskTO.IQN);
-        }
-        return volumeObjectTO != null ? volumeObjectTO.getPath() : null;
-    }
-
-    private DiskDef locateSourceDiskDefinition(List<DiskDef> disks, KVMPhysicalDisk srcPhysicalDisk, Map<String, String> srcDetails) {
-        String expectedPath = srcPhysicalDisk != null ? srcPhysicalDisk.getPath() : null;
-        String expectedSerial = srcDetails != null ? srcDetails.get(DiskTO.SCSI_NAA_DEVICE_ID) : null;
-
-        if (StringUtils.isNotBlank(expectedPath)) {
-            for (DiskDef disk : disks) {
-                if (StringUtils.isNotBlank(disk.getDiskPath()) && pathsReferToSameDevice(expectedPath, disk.getDiskPath())) {
-                    return disk;
-                }
-            }
-        }
-
-        if (StringUtils.isNotBlank(expectedSerial)) {
-            for (DiskDef disk : disks) {
-                if (expectedSerial.equalsIgnoreCase(disk.getSerial())) {
-                    return disk;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private boolean pathsReferToSameDevice(String expectedPath, String candidatePath) {
-        if (StringUtils.equals(expectedPath, candidatePath)) {
-            return true;
-        }
-        String expectedToken = extractLastToken(expectedPath);
-        String candidateToken = extractLastToken(candidatePath);
-        return StringUtils.isNotBlank(expectedToken) && StringUtils.equalsIgnoreCase(expectedToken, candidateToken);
-    }
-
-    private String extractLastToken(String path) {
-        if (StringUtils.isBlank(path)) {
-            return null;
-        }
-        int idx = path.lastIndexOf('/');
-        return idx >= 0 ? path.substring(idx + 1) : path;
-    }
-
-    private String buildFiberChannelDestinationDiskXml(DiskDef sourceDiskDef, String destDevicePath) {
-        StringBuilder diskXml = new StringBuilder();
-        diskXml.append("<disk type='block'>");
-        diskXml.append("<driver name='qemu' type='raw' cache='none'/>");
-        diskXml.append("<source dev='").append(destDevicePath).append("'/>");
-        diskXml.append("<target dev='").append(sourceDiskDef.getDiskLabel()).append("' bus='")
-                .append(sourceDiskDef.getBusType().toString()).append("'/>");
-        diskXml.append("</disk>");
-        return diskXml.toString();
     }
 
     protected MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -243,152 +179,6 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 } catch (LibvirtException l) {
                     logger.trace("Ignoring libvirt error.", l);
                 };
-            }
-        }
-    }
-
-    protected boolean shouldAttemptFiberChannelLiveMigration(MigrateVolumeCommand command, PrimaryDataStoreTO srcPrimaryDataStore, PrimaryDataStoreTO destPrimaryDataStore) {
-        if (srcPrimaryDataStore == null || destPrimaryDataStore == null) {
-            return false;
-        }
-
-        if (!Storage.StoragePoolType.FiberChannel.equals(srcPrimaryDataStore.getPoolType()) ||
-                !Storage.StoragePoolType.FiberChannel.equals(destPrimaryDataStore.getPoolType())) {
-            return false;
-        }
-
-        VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
-
-        return srcVolumeObjectTO != null && StringUtils.isNotBlank(srcVolumeObjectTO.getVmName());
-    }
-
-    protected MigrateVolumeAnswer migrateFiberChannelVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
-        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
-        if (srcVolumeObjectTO == null || destVolumeObjectTO == null || StringUtils.isBlank(srcVolumeObjectTO.getVmName())) {
-            return migrateRegularVolume(command, libvirtComputingResource);
-        }
-
-        String vmName = srcVolumeObjectTO.getVmName();
-        Map<String, String> srcDetails = command.getSrcDetails();
-        Map<String, String> destDetails = command.getDestDetails();
-
-        PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
-        PrimaryDataStoreTO destPrimaryDataStore = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
-
-        KVMStoragePoolManager storagePoolManager = libvirtComputingResource.getStoragePoolMgr();
-        KVMStoragePool sourceStoragePool = null;
-        KVMStoragePool destStoragePool = null;
-        Domain dm = null;
-        VolumeMigrationCancelHook cancelHook = null;
-        boolean migrationSucceeded = false;
-
-        String srcIdentifier = resolveVolumeIdentifier(srcVolumeObjectTO, srcDetails);
-        String destIdentifier = resolveVolumeIdentifier(destVolumeObjectTO, destDetails);
-
-        if (StringUtils.isBlank(srcIdentifier) || StringUtils.isBlank(destIdentifier)) {
-            return migrateRegularVolume(command, libvirtComputingResource);
-        }
-
-        try {
-            sourceStoragePool = storagePoolManager.getStoragePool(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid());
-            if (!sourceStoragePool.connectPhysicalDisk(srcIdentifier, srcDetails)) {
-                return new MigrateVolumeAnswer(command, false, "Unable to connect source Fibre Channel volume on hypervisor", srcIdentifier);
-            }
-            KVMPhysicalDisk srcPhysicalDisk = storagePoolManager.getPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcIdentifier);
-            if (srcPhysicalDisk == null) {
-                return new MigrateVolumeAnswer(command, false, "Unable to obtain source Fibre Channel disk handle", srcIdentifier);
-            }
-
-            destStoragePool = storagePoolManager.getStoragePool(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid());
-            if (!destStoragePool.connectPhysicalDisk(destIdentifier, destDetails)) {
-                return new MigrateVolumeAnswer(command, false, "Unable to connect destination Fibre Channel volume on hypervisor", destIdentifier);
-            }
-
-            if (destVolumeObjectTO.getPath() == null) {
-                destVolumeObjectTO.setPath(destIdentifier);
-            }
-
-            KVMPhysicalDisk destPhysicalDisk = storagePoolManager.getPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destIdentifier);
-            if (destPhysicalDisk == null) {
-                return new MigrateVolumeAnswer(command, false, "Unable to obtain destination Fibre Channel disk handle", destIdentifier);
-            }
-            String destDevicePath = destPhysicalDisk.getPath();
-
-            LibvirtUtilitiesHelper helper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-            Connect conn = helper.getConnection();
-            dm = libvirtComputingResource.getDomain(conn, vmName);
-            if (dm == null) {
-                return new MigrateVolumeAnswer(command, false, "Unable to locate libvirt domain for VM " + vmName, null);
-            }
-
-            DomainInfo.DomainState domainState = dm.getInfo().state;
-            if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
-                return migrateRegularVolume(command, libvirtComputingResource);
-            }
-
-            List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
-            DiskDef srcDiskDef = locateSourceDiskDefinition(disks, srcPhysicalDisk, srcDetails);
-            if (srcDiskDef == null) {
-                return new MigrateVolumeAnswer(command, false, "Unable to match Fibre Channel disk within VM definition", null);
-            }
-
-            String diskLabel = srcDiskDef.getDiskLabel();
-            String destinationDiskXml = buildFiberChannelDestinationDiskXml(srcDiskDef, destDevicePath);
-
-            TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
-            TypedParameter[] parameters = new TypedParameter[] { parameter };
-
-            cancelHook = new VolumeMigrationCancelHook(dm, diskLabel);
-            libvirtComputingResource.addDisconnectHook(cancelHook);
-
-            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING_IN_BACKEND);
-
-            dm.blockCopy(diskLabel, destinationDiskXml, parameters, Domain.BlockCopyFlags.REUSE_EXT);
-
-            MigrateVolumeAnswer answer = checkBlockJobStatus(command, dm, diskLabel, srcPhysicalDisk.getPath(), destDevicePath, libvirtComputingResource, conn, null);
-            migrationSucceeded = answer != null && answer.getResult();
-
-            if (answer != null) {
-                libvirtComputingResource.createOrUpdateLogFileForCommand(command, migrationSucceeded ? Command.State.COMPLETED : Command.State.FAILED);
-                return answer;
-            }
-
-            migrationSucceeded = true;
-            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
-            return new MigrateVolumeAnswer(command, true, null, destIdentifier);
-        } catch (LibvirtException e) {
-            logger.warn("Fibre Channel live volume migration failed due to libvirt error", e);
-            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
-            return new MigrateVolumeAnswer(command, false, "Libvirt error during Fibre Channel migration: " + e.getMessage(), null);
-        } catch (Exception e) {
-            logger.warn("Fibre Channel live volume migration failed", e);
-            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
-            return new MigrateVolumeAnswer(command, false, "Fibre Channel migration failed: " + e.getMessage(), null);
-        } finally {
-            if (cancelHook != null) {
-                libvirtComputingResource.removeDisconnectHook(cancelHook);
-            }
-            if (dm != null) {
-                try {
-                    dm.free();
-                } catch (LibvirtException e) {
-                    logger.trace("Ignoring libvirt error while freeing domain", e);
-                }
-            }
-            if (!migrationSucceeded && destStoragePool != null) {
-                try {
-                    destStoragePool.disconnectPhysicalDisk(destIdentifier);
-                } catch (Exception e) {
-                    logger.warn("Unable to disconnect destination Fibre Channel disk after failed migration", e);
-                }
-            }
-            if (sourceStoragePool != null) {
-                try {
-                    sourceStoragePool.disconnectPhysicalDisk(srcIdentifier);
-                } catch (Exception e) {
-                    logger.warn("Unable to disconnect source Fibre Channel disk after migration", e);
-                }
             }
         }
     }

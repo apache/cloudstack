@@ -60,7 +60,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
@@ -95,10 +94,6 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.dc.dao.DataCenterDao;
 
 import junit.framework.TestCase;
 
@@ -149,33 +144,10 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     @Inject
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
-    private UsageEventDao usageEventDao;
-    private AccountDao accountDao;
-    private DataCenterDao dataCenterDao;
-
     @Override
     @Before
     public void setUp() throws Exception {
         ComponentContext.initComponentsLifeCycle();
-        initialiseUsageEventUtils();
-    }
-
-    private void initialiseUsageEventUtils() {
-        usageEventDao = Mockito.mock(UsageEventDao.class);
-        accountDao = Mockito.mock(AccountDao.class);
-        dataCenterDao = Mockito.mock(DataCenterDao.class);
-        ConfigurationDao configDao = Mockito.mock(ConfigurationDao.class);
-
-        UsageEventUtils usageEventUtils = new UsageEventUtils();
-        ReflectionTestUtils.setField(usageEventUtils, "usageEventDao", usageEventDao);
-        ReflectionTestUtils.setField(usageEventUtils, "accountDao", accountDao);
-        ReflectionTestUtils.setField(usageEventUtils, "dcDao", dataCenterDao);
-        ReflectionTestUtils.setField(usageEventUtils, "configDao", configDao);
-        ReflectionTestUtils.invokeMethod(usageEventUtils, "init");
-
-        Mockito.lenient().when(usageEventDao.persist(Mockito.any())).thenAnswer(invocation -> invocation.getArgument(0));
-        Mockito.lenient().doNothing().when(usageEventDao).saveDetails(Mockito.anyLong(), Mockito.anyMap());
-        Mockito.lenient().when(configDao.getValue("publish.usage.events")).thenReturn("false");
     }
 
     @Test

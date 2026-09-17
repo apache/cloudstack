@@ -166,6 +166,7 @@ export default {
       this.updateProjectApi = this.$store.getters.apis.updateProject
       if (!this.resource.id) return
       this.fetchUsers()
+      this.checkCurrentUserProjectAdmin()
       this.fetchProjectAccounts(params)
       if (this.isProjectRolesSupported()) {
         this.fetchProjectRoles()
@@ -192,6 +193,25 @@ export default {
         return true
       }
       return false
+    },
+    checkCurrentUserProjectAdmin () {
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)) {
+        this.imProjectAdmin = true
+        return
+      }
+      getAPI('listProjectAccounts', {
+        projectId: this.resource.id,
+        account: this.$store.getters.userInfo.account,
+        userid: this.$store.getters.userInfo.id
+      }).then(json => {
+        const accounts = json.listprojectaccountsresponse.projectaccount || []
+        for (const account of accounts) {
+          if (this.isLoggedInUserProjectAdmin(account)) {
+            this.imProjectAdmin = true
+            return
+          }
+        }
+      }).catch(() => {})
     },
     isProjectRolesSupported () {
       return ('listProjectRoles' in this.$store.getters.apis)
@@ -229,13 +249,6 @@ export default {
           this.dataSource = []
           return
         }
-        for (const projectAccount of listProjectAccount) {
-          this.imProjectAdmin = this.isLoggedInUserProjectAdmin(projectAccount)
-          if (this.imProjectAdmin) {
-            break
-          }
-        }
-
         this.itemCount = itemCount
         this.dataSource = listProjectAccount
       }).catch(error => {

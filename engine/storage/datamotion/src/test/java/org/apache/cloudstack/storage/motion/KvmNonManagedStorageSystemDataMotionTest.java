@@ -124,8 +124,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     Host host1;
     @Mock
     Host host2;
-    @Mock
-    com.cloud.vm.VirtualMachine attachedVm;
 
     Map<VolumeInfo, DataStore> migrationMap;
 
@@ -478,23 +476,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     @Test
     public void testVerifyLiveMigrationMapForKVM() {
         kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
-    }
-
-    @Test
-    public void testVerifyLiveMigrationMapForKVMManagedFiberChannelAllowed() {
-        lenient().when(pool1.isManaged()).thenReturn(true);
-        lenient().when(pool2.isManaged()).thenReturn(true);
-        lenient().when(pool1.getPoolType()).thenReturn(Storage.StoragePoolType.FiberChannel);
-        lenient().when(pool2.getPoolType()).thenReturn(Storage.StoragePoolType.FiberChannel);
-        lenient().when(pool1.getId()).thenReturn(POOL_1_ID);
-        lenient().when(pool2.getId()).thenReturn(POOL_2_ID);
-        lenient().when(volumeInfo1.getAttachedVM()).thenReturn(attachedVm);
-        when(attachedVm.getState()).thenReturn(com.cloud.vm.VirtualMachine.State.Running);
-
-        Map<VolumeInfo, DataStore> fiberChannelMigrationMap = new HashMap<>();
-        fiberChannelMigrationMap.put(volumeInfo1, dataStore2);
-
-        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(fiberChannelMigrationMap);
     }
 
     @Test(expected = CloudRuntimeException.class)

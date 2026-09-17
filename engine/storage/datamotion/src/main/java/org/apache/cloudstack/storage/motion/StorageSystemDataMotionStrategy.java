@@ -2566,10 +2566,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             boolean isSrcAndDestPoolPowerFlexStorage = srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && destStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex);
-            boolean isSrcAndDestPoolFiberChannelStorage = srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.FiberChannel) && destStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.FiberChannel);
-            boolean fiberChannelVmOnline = isSrcAndDestPoolFiberChannelStorage && volumeInfo.getAttachedVM() != null && volumeInfo.getAttachedVM().getState() == VirtualMachine.State.Running;
-
-            if (srcStoragePoolVO.isManaged() && !isSrcAndDestPoolPowerFlexStorage && !fiberChannelVmOnline && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
+            if (srcStoragePoolVO.isManaged() && !isSrcAndDestPoolPowerFlexStorage && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
                 throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
             }
 
@@ -2767,27 +2764,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
 
         return volumeDetails;
-    }
-
-    private boolean shouldAttemptLiveFiberChannelMigration(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
-        if (srcVolumeInfo == null || destVolumeInfo == null) {
-            return false;
-        }
-
-        StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-        StoragePoolVO destPool = _storagePoolDao.findById(destVolumeInfo.getPoolId());
-
-        if (srcPool == null || destPool == null) {
-            return false;
-        }
-
-        if (srcPool.getPoolType() != StoragePoolType.FiberChannel || destPool.getPoolType() != StoragePoolType.FiberChannel) {
-            return false;
-        }
-
-        VirtualMachine attachedVm = srcVolumeInfo.getAttachedVM();
-
-        return attachedVm != null && attachedVm.getState() == VirtualMachine.State.Running;
     }
 
     private Map<String, String> getSnapshotDetails(SnapshotInfo snapshotInfo) {
@@ -3045,11 +3021,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             _volumeService.grantAccess(srcVolumeInfo, hostVO, srcVolumeInfo.getDataStore());
 
-            boolean fiberChannelOnline = shouldAttemptLiveFiberChannelMigration(srcVolumeInfo, destVolumeInfo);
-            int waitTimeout = fiberChannelOnline ? StorageManager.KvmStorageOnlineMigrationWait.value() : StorageManager.KvmStorageOfflineMigrationWait.value();
-
             MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcVolumeInfo.getTO(), destVolumeInfo.getTO(),
-                    srcDetails, destDetails, waitTimeout);
+                    srcDetails, destDetails, StorageManager.KvmStorageOfflineMigrationWait.value());
 
             _volumeService.grantAccess(srcVolumeInfo, hostVO, srcVolumeInfo.getDataStore());
             handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.MIGRATION);
