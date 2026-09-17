@@ -70,6 +70,14 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "path of the domain the provider belongs to (empty for global)", since = "4.23.0")
     private String domainPath;
 
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "Type of the provider, for example oidc for a generic OpenID Connect provider. Empty for the built in providers", since = "4.24.0")
+    private String type;
+
+    @SerializedName(ApiConstants.ISSUER_URL)
+    @Param(description = "Issuer URL of the OpenID Connect provider, used for discovery", since = "4.24.0")
+    private String issuerUrl;
+
     @SerializedName(ApiConstants.AUTHORIZE_URL)
     @Param(description = "Authorize URL registered in the OAuth provider")
     private String authorizeUrl;
@@ -178,6 +186,22 @@ public class OauthProviderResponse extends BaseResponse {
 
     public void setDomainPath(String domainPath) {
         this.domainPath = domainPath;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getIssuerUrl() {
+        return issuerUrl;
+    }
+
+    public void setIssuerUrl(String issuerUrl) {
+        this.issuerUrl = issuerUrl;
     }
 
     public String getAuthorizeUrl() {
