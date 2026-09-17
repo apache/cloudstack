@@ -143,6 +143,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -150,6 +151,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -194,6 +196,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     VpcDao vpcDao;
     @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
+    @Inject
+    DomainRouterDao _routerDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1235,16 +1239,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                             return _configMgr.getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
                         }
                     } else if (TrafficType.Public.equals(network.getTrafficType())) {
+                        // Use the router's own vpc_id: the guest NIC isn't persisted yet when this runs for the public NIC during initial VR deployment.
+                        final DomainRouterVO routerVO = _routerDao.findById(vmId);
+                        final Long vpcId = routerVO != null ? routerVO.getVpcId() : null;
+                        if (vpcId != null) {
+                            final Vpc vpc = vpcDao.findById(vpcId);
+                            if (vpc != null) {
+                                return _configMgr.getVpcOfferingNetworkRate(vpc.getVpcOfferingId(), network.getDataCenterId());
+                            }
+                        }
                         List<NicVO> routerNics = _nicDao.listByVmId(vmId);
                         for (final Nic routerNic : routerNics) {
                             final NetworkVO nw = _networksDao.findById(routerNic.getNetworkId());
                             if (TrafficType.Guest.equals(nw.getTrafficType())) {
-                                if (nw.getVpcId() != null) {
-                                    final Vpc vpc = vpcDao.findById(nw.getVpcId());
-                                    if (vpc != null) {
-                                        return _configMgr.getVpcOfferingNetworkRate(vpc.getVpcOfferingId(), network.getDataCenterId());
-                                    }
-                                }
                                 return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
                             }
                         }

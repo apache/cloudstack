@@ -3602,10 +3602,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
         VpcDetailVO publicNetworkRateDetail = vpcDetailsDao.findDetail(vpc.getId(), ApiConstants.PUBLIC_NETWORK_RATE);
-        if (publicNetworkRateDetail != null) {
-            int publicNetworkRate = NumberUtils.toInt(publicNetworkRateDetail.getValue(), -1);
-            response.setPublicNetworkRate(publicNetworkRate > 0 ? publicNetworkRate : -1);
-        }
+        Integer publicNetworkRate = publicNetworkRateDetail != null ? NumberUtils.toInt(publicNetworkRateDetail.getValue(), -1) : null;
+        response.setPublicNetworkRate((publicNetworkRate == null || publicNetworkRate <= 0) ? -1 : publicNetworkRate);
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());

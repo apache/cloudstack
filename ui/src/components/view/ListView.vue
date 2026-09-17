@@ -427,6 +427,9 @@
       <template v-if="column.key === 'networkrate'">
         <span>{{ String(text) === '-1' ? $t('label.unlimited') : text }}</span>
       </template>
+      <template v-if="column.key === 'publicnetworkrate'">
+        <span>{{ ['-1', '0'].includes(String(text)) ? $t('label.unlimited') : text }}</span>
+      </template>
       <template v-if="column.key === 'physicalnetworkname'">
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
       </template>
