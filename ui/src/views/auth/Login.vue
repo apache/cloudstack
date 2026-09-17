@@ -174,11 +174,11 @@
           </a-input>
         </a-form-item>
         <div
-          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider) && !form.oauthDomain"
+          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthGenericProviders.length) && !form.oauthDomain"
           style="text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;">
           Enter your domain to see domain-specific providers
         </div>
-        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthGenericProviders.length">
           <div class="social-auth" v-if="oauthGithubProvider">
             <a-button
               @click="handleGithubProviderAndDomain"
@@ -213,6 +213,16 @@
               style="height: 38px; width: 185px; padding: 0" >
               <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
               <a-typography-text>Sign in with Keycloak</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-for="provider in oauthGenericProviders" :key="provider.provider">
+            <a-button
+              @click="loginWithGenericOidc(provider)"
+              color="primary"
+              class="auth-btn"
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+              <img src="/assets/oidc.svg" alt="OpenID Connect" style="width: 32px; padding: 5px" />
+              <a-typography-text>{{ $t('label.login.with', { provider: provider.provider }) }}</a-typography-text>
             </a-button>
           </div>
         </div>
@@ -294,6 +304,7 @@ export default {
       oauthGithubRedirectUri: '',
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
+      oauthGenericProviders: [],
       oauthLoading: false,
       oauthDomainQueried: false,
       loginType: 0,
@@ -393,6 +404,7 @@ export default {
       getAPI('listOauthProvider', params).then(response => {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+          this.oauthGenericProviders = oauthproviders.filter(item => item.type === 'oidc' && (item.enabled === true || item.enabled === 'true'))
           if (!domain) {
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
@@ -509,6 +521,26 @@ export default {
     handleKeycloakProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
+    loginWithGenericOidc (provider) {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', provider.provider)
+      const discoveryUrl = provider.issuerurl.replace(/\/$/, '') + '/.well-known/openid-configuration'
+      return fetch(discoveryUrl).then(response => response.json()).then(config => {
+        const options = {
+          client_id: provider.clientid,
+          redirect_uri: provider.redirecturi,
+          response_type: 'code',
+          scope: 'openid email',
+          state: this.from || 'cloudstack'
+        }
+        window.location.href = `${config.authorization_endpoint}?${new URLSearchParams(options).toString()}`
+      }).catch(() => {
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.oauth.provider.unreachable')
+        })
+      })
     },
     handleDomain () {
       const values = toRaw(this.form)
