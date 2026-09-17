@@ -119,10 +119,6 @@ public class OntapStorageUtils {
         }
     }
 
-    public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details) {
-        return getStrategyByStoragePoolDetails(details, false);
-    }
-
     /**
      * Same as {@link #getStrategyByStoragePoolDetails(Map)} but does not call
      * {@link StorageStrategy#connect}. ASUP uses this for cluster GET and EMS POST only.
@@ -139,10 +135,9 @@ public class OntapStorageUtils {
         return StorageProviderFactory.getStrategy(ontapStorage);
     }
 
-    public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details,
-            boolean validateAggregatesForVolumeCreation) {
+    public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details) {
         StorageStrategy storageStrategy = resolveStrategyFromPoolDetails(details);
-        boolean isValid = storageStrategy.connect(validateAggregatesForVolumeCreation);
+        boolean isValid = storageStrategy.connect();
         if (isValid) {
             logger.info("Connection to Ontap SVM [{}] successful", details.get(OntapStorageConstants.SVM_NAME));
             return storageStrategy;
