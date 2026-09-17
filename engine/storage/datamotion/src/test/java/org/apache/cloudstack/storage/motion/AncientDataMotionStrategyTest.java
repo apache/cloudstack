@@ -143,6 +143,7 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageForUnsupportedDataObject() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
 
         TemplateObject destTemplateInfo = Mockito.spy(new TemplateObject());
 
@@ -156,12 +157,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageForUnsupportedSrcPoolType() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.PowerFlex).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -177,12 +180,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageForUnsupportedDestPoolType() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -198,12 +203,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageWithZoneWideNFSPoolsInSameZone() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -219,12 +226,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageWithClusterWideNFSPoolsInSameCluster() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -240,12 +249,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageWithLocalAndClusterWideNFSPoolsInSameCluster() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new HostScope(1L, 1L, 1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ClusterScope(1L, 1L, 1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -264,12 +275,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageWithLocalAndZoneWideNFSPoolsInSameZone() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new HostScope(1L, 1L, 1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.Filesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
@@ -288,12 +301,14 @@ public class AncientDataMotionStrategyTest {
     @Test
     public void testCanBypassSecondaryStorageWithClusterWideNFSAndZoneWideNFSPoolsInSameZone() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
         DataStore srcDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(srcDataStore).getScope();
         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
 
         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
         DataStore destDataStore = Mockito.mock(DataStore.class);
         Mockito.doReturn(new ZoneScope(1L)).when(destDataStore).getScope();
         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
