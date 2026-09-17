@@ -36,6 +36,7 @@ else
   else
     VERSION="${TEMPLATE_VERSION}"
   fi
+fi
 PREFIX=${4:-"systemvmtemplate-$VERSION"}
 CLEANUP=${2:-1}
 TEMP_IMAGE_PATH="/tmp/sysvm_convert/"
