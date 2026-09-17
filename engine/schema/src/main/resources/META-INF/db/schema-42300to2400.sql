@@ -268,3 +268,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VARCHAR(16) DEFAULT ''report'' COMMENT ''disk error policy (report/stop/ignore/enospace) used by KVM hypervisor''');
+
+-- Generic OIDC OAuth2 provider: a type to select the implementation, and the issuer URL for discovery
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'type', 'VARCHAR(40) DEFAULT NULL COMMENT ''Provider implementation serving this registration, for example oidc; NULL means the provider name selects the implementation'' AFTER `token_url` ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'issuer_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Issuer URL of the OpenID Connect provider, used to read its discovery document'' AFTER `type` ');
