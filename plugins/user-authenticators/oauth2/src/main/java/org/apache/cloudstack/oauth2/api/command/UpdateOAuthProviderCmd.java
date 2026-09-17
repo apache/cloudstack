@@ -34,6 +34,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.domain.Domain;
@@ -66,6 +67,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL pre-registered in the specific OAuth provider", since = "4.23.0")
     private String tokenUrl;
+
+    @Parameter(name = ApiConstants.ISSUER_URL, type = CommandType.STRING,
+            description = "Issuer URL of the OpenID Connect provider, used to read its discovery document", since = "4.24.0")
+    private String issuerUrl;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
     private Boolean enabled;
@@ -113,6 +118,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         return tokenUrl;
     }
 
+    public String getIssuerUrl() {
+        return issuerUrl;
+    }
+
     public Boolean getEnabled() {
         return enabled;
     }
@@ -152,6 +161,8 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(),
                     result.getAuthorizeUrl(), result.getTokenUrl(), domain);
+            r.setType(result.getType());
+            r.setIssuerUrl(result.getIssuerUrl());
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();
@@ -159,8 +170,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
                 String name = authenticator.getName();
                 authenticatorPluginNames.add(name);
             }
+            boolean servedByPlugin = authenticatorPluginNames.contains(result.getProvider())
+                    || (StringUtils.isNotBlank(result.getType()) && authenticatorPluginNames.contains(result.getType()));
             boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
-            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            if (oauthEnabled && servedByPlugin && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
