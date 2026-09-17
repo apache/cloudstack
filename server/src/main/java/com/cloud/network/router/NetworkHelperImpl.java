@@ -44,6 +44,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -211,6 +212,8 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         if (answers == null || answers.length != cmds.size()) {
+            logger.error(String.format("VIRTUAL_ROUTER_COMMUNICATION_ERROR: Received %s answers for %s commands from router [%s] (ID: %s, HostId: %s)",
+                    (answers == null ? 0 : answers.length), cmds.size(), router.getInstanceName(), router.getId(), router.getHostId()));
             return false;
         }
 
@@ -219,6 +222,15 @@ public class NetworkHelperImpl implements NetworkHelper {
         for (final Answer answer : answers) {
             if (!answer.getResult()) {
                 result = false;
+                String errorDetails = answer.getDetails();
+                if (answer instanceof GroupAnswer) {
+                    GroupAnswer groupAnswer = (GroupAnswer) answer;
+                    if (groupAnswer.getResults() != null) {
+                        errorDetails = String.join(" | ", groupAnswer.getResults());
+                    }
+                }
+                logger.error(String.format("VIRTUAL_ROUTER_COMMAND_FAILED: Router [%s] (ID: %s, HostId: %s) failed executing command [%s]. Error details: %s",
+                        router.getInstanceName(), router.getId(), router.getHostId(), answer.getClass().getSimpleName(), errorDetails));
                 break;
             }
         }
