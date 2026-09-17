@@ -601,6 +601,7 @@ public class NetworkModelImplTest {
         when(nicDao.listByVmId(vmId)).thenReturn(List.of(guestNic));
         NetworkVO guestNetwork = mock(NetworkVO.class);
         when(guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(guestNetwork.getVpcId()).thenReturn(null);
         when(guestNetwork.getNetworkOfferingId()).thenReturn(guestOfferingId);
         when(_networksDao.findById(guestNetworkId)).thenReturn(guestNetwork);
         when(configMgr.getNetworkOfferingNetworkRate(guestOfferingId, dataCenterId)).thenReturn(80);
@@ -620,6 +621,51 @@ public class NetworkModelImplTest {
         when(configMgr.getNetworkOfferingNetworkRate(networkOfferingId, dataCenterId)).thenReturn(33);
 
         assertEquals(Integer.valueOf(33), networkModel.getNetworkRate(networkId, vmId));
+    }
+
+    @Test
+    public void getNetworkRate_routerPublicWithVpcGuestSibling_returnsVpcOfferingRate() {
+        long networkId = 1L, vmId = 12L, dataCenterId = 2L, guestNetworkId = 5L, vpcId = 7L, vpcOfferingId = 70L;
+        mockNetwork(networkId, 99L, dataCenterId, TrafficType.Public);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        NicVO guestNic = mock(NicVO.class);
+        when(guestNic.getNetworkId()).thenReturn(guestNetworkId);
+        when(nicDao.listByVmId(vmId)).thenReturn(List.of(guestNic));
+        NetworkVO guestNetwork = mock(NetworkVO.class);
+        when(guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(guestNetwork.getVpcId()).thenReturn(vpcId);
+        when(_networksDao.findById(guestNetworkId)).thenReturn(guestNetwork);
+        VpcVO vpc = mock(VpcVO.class);
+        when(vpc.getVpcOfferingId()).thenReturn(vpcOfferingId);
+        when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        when(configMgr.getVpcOfferingNetworkRate(vpcOfferingId, dataCenterId)).thenReturn(120);
+
+        assertEquals(Integer.valueOf(120), networkModel.getNetworkRate(networkId, vmId));
+        Mockito.verify(configMgr, Mockito.never()).getNetworkOfferingNetworkRate(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    public void getNetworkRate_routerPublicWithVpcGuestSiblingButMissingVpc_fallsBackToNetworkOfferingRate() {
+        long networkId = 1L, vmId = 12L, dataCenterId = 2L, guestNetworkId = 5L, vpcId = 7L, guestOfferingId = 55L;
+        mockNetwork(networkId, 99L, dataCenterId, TrafficType.Public);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        NicVO guestNic = mock(NicVO.class);
+        when(guestNic.getNetworkId()).thenReturn(guestNetworkId);
+        when(nicDao.listByVmId(vmId)).thenReturn(List.of(guestNic));
+        NetworkVO guestNetwork = mock(NetworkVO.class);
+        when(guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(guestNetwork.getVpcId()).thenReturn(vpcId);
+        when(guestNetwork.getNetworkOfferingId()).thenReturn(guestOfferingId);
+        when(_networksDao.findById(guestNetworkId)).thenReturn(guestNetwork);
+        when(vpcDao.findById(vpcId)).thenReturn(null);
+        when(configMgr.getNetworkOfferingNetworkRate(guestOfferingId, dataCenterId)).thenReturn(90);
+
+        assertEquals(Integer.valueOf(90), networkModel.getNetworkRate(networkId, vmId));
+        Mockito.verify(configMgr, Mockito.never()).getVpcOfferingNetworkRate(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test

@@ -225,6 +225,8 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
@@ -500,6 +502,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private IPAddressDao userIpAddressDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    VpcDetailsDao vpcDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
     @Inject
@@ -3596,6 +3600,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
             response.setVpcOfferingConserveMode(voff.isConserveMode());
+        }
+        VpcDetailVO publicNetworkRateDetail = vpcDetailsDao.findDetail(vpc.getId(), ApiConstants.PUBLIC_NETWORK_RATE);
+        if (publicNetworkRateDetail != null) {
+            int publicNetworkRate = NumberUtils.toInt(publicNetworkRateDetail.getValue(), -1);
+            response.setPublicNetworkRate(publicNetworkRate > 0 ? publicNetworkRate : -1);
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());

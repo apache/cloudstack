@@ -77,6 +77,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "true if VPC offering is ip conserve mode enabled", since = "4.23")
     private Boolean vpcOfferingConserveMode;
 
+    @SerializedName(ApiConstants.PUBLIC_NETWORK_RATE)
+    @Param(description = "Data transfer rate in megabits per second allowed for this VPC's public gateway (internet-facing network); -1 if unlimited", since = "4.24.0")
+    private Integer publicNetworkRate;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The date this VPC was created")
     private Date created;
@@ -207,6 +211,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setVpcOfferingConserveMode(Boolean vpcOfferingConserveMode) {
         this.vpcOfferingConserveMode = vpcOfferingConserveMode;
+    }
+
+    public void setPublicNetworkRate(Integer publicNetworkRate) {
+        this.publicNetworkRate = publicNetworkRate;
     }
 
     public void setCreated(final Date created) {

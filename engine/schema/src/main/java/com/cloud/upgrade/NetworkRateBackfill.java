@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDaoImpl;
 
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
@@ -49,9 +51,12 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 /**
  * Backfills {@code nics.network_rate} and the {@code network_details} "networkrate" entry for
- * pre-existing NICs/networks. Deliberately frozen to the pre-feature precedence of
+ * pre-existing NICs/networks, deliberately frozen to the pre-feature precedence of
  * {@link com.cloud.network.NetworkModelImpl#getNetworkRate} - do not redirect this to call the
- * live method, whose precedence will keep evolving.
+ * live method, whose precedence will keep evolving. Also backfills the {@code vpc_details}
+ * "publicnetworkrate" entry for pre-existing VPCs with a fixed "unlimited" value, since both
+ * {@code vpc_offerings.public_nw_rate} and the "vpc.public.network.throttling.rate" config are
+ * introduced by this same release and can't yet hold a pre-existing value.
  */
 public class NetworkRateBackfill {
     protected static Logger LOGGER = LogManager.getLogger(NetworkRateBackfill.class);
@@ -59,12 +64,15 @@ public class NetworkRateBackfill {
     private static final String CONFIG_NETWORK_THROTTLING_RATE = "network.throttling.rate";
     private static final String CONFIG_VM_NETWORK_THROTTLING_RATE = "vm.network.throttling.rate";
     private static final String NETWORKRATE_DETAIL_NAME = "networkrate";
+    private static final String PUBLIC_NETWORK_RATE_DETAIL_NAME = "publicnetworkrate";
     private static final int DEFAULT_THROTTLING_RATE = 200;
+    private static final int UNLIMITED_RATE = -1;
 
     private final NicDao nicDao = new NicDaoImpl();
     private final VMInstanceDao vmInstanceDao = new VMInstanceDaoImpl();
     private final NetworkDao networkDao = new NetworkDaoImpl();
     private final NetworkDetailsDao networkDetailsDao = new NetworkDetailsDaoImpl();
+    private final VpcDetailsDao vpcDetailsDao = new VpcDetailsDaoImpl();
     private final ServiceOfferingDao serviceOfferingDao = new ServiceOfferingDaoImpl();
     private final DataCenterDetailsDaoImpl dataCenterDetailsDao = new DataCenterDetailsDaoImpl();
     private final ConfigurationDao configurationDao = new ConfigurationDaoImpl();
@@ -72,6 +80,7 @@ public class NetworkRateBackfill {
     public void backfillNetworkRates() {
         backfillNicNetworkRates();
         backfillNetworkDetailsRates();
+        backfillVpcPublicNetworkRates();
     }
 
     private void backfillNicNetworkRates() {
@@ -166,6 +175,30 @@ public class NetworkRateBackfill {
             }
         } catch (SQLException e) {
             LOGGER.warn("Failed to backfill network details rates: " + e.getMessage());
+        }
+    }
+
+    // vpc_offerings.public_nw_rate and the "vpc.public.network.throttling.rate" config are both introduced
+    // by this same release, so no pre-existing VPC offering or config value can be set at backfill
+    // time - every pre-existing VPC's effective public network rate is unconditionally unlimited.
+    private void backfillVpcPublicNetworkRates() {
+        final String sql = "SELECT v.id FROM vpc v " +
+                "WHERE v.removed IS NULL AND NOT EXISTS " +
+                "(SELECT 1 FROM vpc_details d WHERE d.vpc_id = v.id AND d.name = ?)";
+        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql)) {
+            pstmt.setString(1, PUBLIC_NETWORK_RATE_DETAIL_NAME);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    final long vpcId = rs.getLong("id");
+                    try {
+                        vpcDetailsDao.addDetail(vpcId, PUBLIC_NETWORK_RATE_DETAIL_NAME, String.valueOf(UNLIMITED_RATE), true);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to backfill vpc_details public network rate for vpc id=" + vpcId + ": " + e.getMessage());
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.warn("Failed to backfill vpc public network rates: " + e.getMessage());
         }
     }
 

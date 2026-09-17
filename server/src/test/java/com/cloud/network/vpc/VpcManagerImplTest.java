@@ -23,6 +23,7 @@ import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -70,6 +71,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -78,6 +80,7 @@ import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -171,6 +174,10 @@ public class VpcManagerImplTest {
     NetworkACLVO networkACLVOMock;
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
+    @Mock
+    ConfigurationManager configMgr;
+    @Mock
+    VpcDetailsDao vpcDetailsDao;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -230,6 +237,8 @@ public class VpcManagerImplTest {
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
         manager._networkAclDao = networkACLDaoMock;
+        manager._configMgr = configMgr;
+        manager.vpcDetailsDao = vpcDetailsDao;
         manager.routedIpv4Manager = routedIpv4Manager;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
@@ -484,6 +493,21 @@ public class VpcManagerImplTest {
         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
         doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
         manager.createVpcOffering(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateVpcOfferingRejectsNegativeNetworkRate() {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(-5);
+        manager.createVpcOffering(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateVpcOfferingRejectsNegativeNetworkRate() {
+        UpdateVPCOfferingCmd cmd = Mockito.mock(UpdateVPCOfferingCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(1L);
+        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(-5);
+        manager.updateVpcOffering(cmd);
     }
 
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {

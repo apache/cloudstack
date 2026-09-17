@@ -1239,6 +1239,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                         for (final Nic routerNic : routerNics) {
                             final NetworkVO nw = _networksDao.findById(routerNic.getNetworkId());
                             if (TrafficType.Guest.equals(nw.getTrafficType())) {
+                                if (nw.getVpcId() != null) {
+                                    final Vpc vpc = vpcDao.findById(nw.getVpcId());
+                                    if (vpc != null) {
+                                        return _configMgr.getVpcOfferingNetworkRate(vpc.getVpcOfferingId(), network.getDataCenterId());
+                                    }
+                                }
                                 return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
                             }
                         }

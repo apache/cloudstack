@@ -566,7 +566,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'conservemode', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'conservemode', 'publicnetworkrate', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',
@@ -597,7 +597,7 @@ export default {
         icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'publicnetworkrate']
       }, {
         api: 'updateVPCOffering',
         icon: 'play-circle-outlined',
