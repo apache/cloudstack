@@ -1363,6 +1363,7 @@ public class ApiConstants {
     public static final String CLIENT_ID = "clientid";
     public static final String REDIRECT_URI = "redirecturi";
     public static final String TOKEN_URL = "tokenurl";
+    public static final String ISSUER_URL = "issuerurl";
 
     public static final String IS_TAG_A_RULE = "istagarule";
 
