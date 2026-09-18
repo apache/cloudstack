@@ -65,7 +65,7 @@ The NetApp ONTAP Storage Plugin provides integration between Apache CloudStack a
 
 ### Minimum Volume Size
 
-ONTAP requires a minimum volume size of **1.56 GB** (1,677,721,600 bytes). The plugin will automatically adjust requested sizes below this threshold.
+ONTAP requires a minimum volume size of **20 MB** (20,971,520 bytes). Requests below this threshold are rejected.
 
 ## Configuration
 
@@ -116,7 +116,7 @@ username=admin;password=secretpass;svmName=svm1;protocol=ISCSI;managementLIF=192
 
 3. **Capacity Errors**
     - Check aggregate space availability
-    - Ensure requested volume size meets minimum requirements (1.56 GB)
+    - Ensure requested volume size meets minimum requirements (20 MB)
 
 4. **Host Connection Issues**
     - For iSCSI: Verify host IQN is properly configured in host's storage URL
