@@ -267,6 +267,11 @@ public class NetUtils {
                 return null;
             }
 
+            if (nic == null) {
+                LOGGER.warn("Unable to find a network interface named [{}], cannot determine the default host IP.", pubNic);
+                return null;
+            }
+
             String[] info = null;
             try {
                 info = NetUtils.getNetworkParams(nic);
@@ -295,6 +300,11 @@ public class NetUtils {
             return addrs;
         }
 
+        if (nic == null) {
+            LOGGER.warn("Unable to find a network interface named [{}], no default NIC IPs will be returned.", pubNic);
+            return addrs;
+        }
+
         for (InterfaceAddress address : nic.getInterfaceAddresses()) {
             addrs.add(address.getAddress().getHostAddress().split("%")[0]);
         }
@@ -306,7 +316,25 @@ public class NetUtils {
             final String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
-        return Script.runSimpleBashScript("ip route show default 0.0.0.0/0 | head -1 | awk '{print $5}'");
+        final String defaultIp4Device = getDefaultEthDevice(false);
+        if (defaultIp4Device != null) {
+            return defaultIp4Device;
+        }
+        LOGGER.debug("No IPv4 default route found, falling back to the IPv6 default route to determine the default network device.");
+        return getDefaultEthDevice(true);
+    }
+
+    /**
+     * Returns the name of the network device used by the IPv4 or IPv6 default route, or null when there is no such
+     * default route.
+     *
+     * An IPv4 default route is not a requirement, a host can be IPv6-only or have IPv4 connectivity without a default
+     * route, therefore both address families are looked up separately.
+     */
+    protected static String getDefaultEthDevice(final boolean ipv6) {
+        final String command = String.format("ip -%d route show default | awk '{for (i = 1; i < NF; i++) if ($i == \"dev\") {print $(i + 1); exit}}'",
+                ipv6 ? 6 : 4);
+        return Script.runSimpleBashScript(command);
     }
 
     public static String getLocalIPString() {
