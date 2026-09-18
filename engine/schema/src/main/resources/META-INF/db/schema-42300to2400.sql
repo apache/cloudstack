@@ -145,3 +145,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration_cycle` (
     UNIQUE KEY `uc_vmware_cbt_migration_cycle__migration_id__cycle_number` (`migration_id`, `cycle_number`),
     INDEX `i_vmware_cbt_migration_cycle__migration_id` (`migration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Custom DHCP (guest IP allocation) range for isolated guest networks
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_start_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''start of the custom DHCP range for an isolated network, within its CIDR'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_end_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''end of the custom DHCP range for an isolated network, within its CIDR'' ');
