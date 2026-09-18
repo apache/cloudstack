@@ -107,11 +107,7 @@ router.beforeEach((to, from, next) => {
                 router.addRoute(route)
               })
               const redirect = decodeURIComponent(from.query.redirect || to.path)
-              if (to.path === redirect) {
-                next({ ...to, replace: true })
-              } else {
-                next({ path: redirect })
-              }
+              next({ path: redirect, replace: true, query: to.query, hash: to.hash })
               var project = vueProps.$localStorage.get(CURRENT_PROJECT)
               if (project == null) {
                 project = {}
