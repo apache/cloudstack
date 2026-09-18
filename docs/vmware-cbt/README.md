@@ -209,12 +209,15 @@ does not inspect the guest filesystem to decide which files are in use; it reads
 the disk image exposed by VDDK/NBD and writes the target replica.
 
 The amount of data transferred depends on what VDDK exposes for the source disk
-and datastore. In lab testing, an NFS-backed VMware datastore exposed the initial
-baseline as one fully allocated logical range, so a mostly empty disk still
-transferred close to its full capacity. A VMFS6 datastore, after guest free-space
-reclamation, exposed sparse `hole,zero` extents through the same VDDK/NBD path,
-so the transfer was lower while the resulting target remained thin/sparse on
-the destination backend.
+and datastore. Some source paths expose the baseline as one allocated logical
+range, while others expose sparse `hole,zero` extents. The destination can remain
+thin or sparse when the source and copy path expose zero ranges correctly, but
+operators must size the initial-copy window for the full logical disk capacity.
+
+The KVM agent uses `qemu-img convert` for the general full-copy path. When
+`nbdcopy` is installed, it can accelerate supported pre-created raw targets and
+RBD targets served through a local `qemu-nbd` bridge. `nbdcopy` is optional;
+capability and correctness do not depend on it.
 
 ```text
 Example VMware disk capacity: 5 GiB
@@ -226,21 +229,8 @@ During initial sync:
   CloudStack reads the ranges that qemu sees through that NBD export.
   qemu-img writes a qcow2 target and can preserve thin/sparse output.
 
-Observed NFS-style outcome:   approximately 5 GiB transfer
-Observed VMFS6/reclaim case:  sparse data/hole map, lower transfer
-Target qcow2 file:            sparse/thin when zero/hole ranges are preserved
-```
-
-Example VMFS6/reclaimed extent probe:
-
-```text
-export-size: 5242880000 (5000M)
-         0     4194304    0  data
-   4194304     1048576    3  hole,zero
-   5242880     3145728    0  data
-   8388608     1048576    3  hole,zero
-   9437184     1048576    0  data
-  10485760     7340032    3  hole,zero
+Possible outcome:             full logical transfer or sparse-aware transfer
+Target allocation:            backend- and extent-dependent
 ```
 
 ### Linked Clone And Full Clone Baselines
@@ -560,15 +550,21 @@ images, never arbitrary RBD images.
 The feature deliberately separates replication from final conversion.
 
 Initial full sync does not run `virt-v2v`. The KVM agent opens the VMware source
-snapshot through `nbdkit` with the VDDK plugin and runs `qemu-img convert`
-against the NBD URI. Filesystem-like primary storage writes QCOW2:
+snapshot through `nbdkit` with the VDDK plugin. Filesystem-like primary storage
+writes QCOW2 with `qemu-img convert`:
 
 ```text
 nbdkit -r -U - vddk ... --run \
   'qemu-img convert -f raw -O qcow2 "$uri" "<targetPath>"'
 ```
 
-Ceph/RBD primary storage writes a raw RBD image directly:
+Ceph/RBD primary storage is a raw RBD image. When `nbdcopy` is available, the
+agent pre-creates the image, exposes it through a temporary local `qemu-nbd`
+bridge, and copies NBD to NBD. Otherwise it uses `qemu-img convert` directly
+against the qemu RBD URL. LINSTOR similarly uses `nbdcopy` when available for
+its pre-created raw DRBD device and falls back to `qemu-img convert`.
+
+Example RBD fallback path:
 
 ```text
 nbdkit -r -U - vddk ... --run \
@@ -605,16 +601,11 @@ So there is not a second full VMware read during finalization. The final
 still require local storage reads and writes, especially in fallback mode, but
 it is not another VDDK full copy from vCenter.
 
-Important caveat: the current initial full sync exposes the VMware snapshot as a
-raw NBD source and lets `qemu-img convert` read it. In practice the initial
-baseline reads the full logical VMware disk range: a linked clone, a full clone,
-or even a mostly empty 5 GiB disk can still transfer roughly 5 GiB from VMware
-during the first sync. This is expected VMware/VDDK baseline behavior and does
-not mean the resulting target disk is thick. QCOW2 file targets and raw RBD
-targets can still stay sparse or thin on the destination backend when zeroed
-regions are written efficiently. Delta cycles are CBT-range based and copy only
-changed ranges; the baseline copy is the part that still needs sparse/extent
-optimization.
+The initial baseline may read up to the full logical VMware disk range,
+regardless of guest filesystem usage. This does not imply thick allocation on
+the destination: QCOW2, RBD, and LINSTOR can remain sparse or thin when the
+source and copy path expose zero ranges correctly. Delta cycles are CBT-range
+based and copy only changed ranges.
 
 This design avoids applying future CBT raw block deltas to a disk that has
 already been modified by `virt-v2v`. Applying VMware CBT ranges to a converted
@@ -844,7 +835,7 @@ timeout_seconds >= source_bytes / expected_bytes_per_second * safety_factor
 
 For example, a 1 TiB initial sync at 100 MiB/s is roughly 3 hours before
 overhead; at 25 MiB/s it is roughly 12 hours. The default 24-hour timeout is
-intended to be safe for large lab and production migrations while still
+intended to be safe for large migrations while still
 protecting the agent from permanently stuck child processes.
 
 Related import settings that operators often notice are:
@@ -1011,16 +1002,18 @@ against the already finalized disk paths.
 - `NetworkFilesystem`, `Filesystem`, and `SharedMountPoint` use `QCOW2_FILE`.
 - No explicit pool also uses a filesystem QCOW2 target under the default local
   CBT path.
-- `RBD` maps to `RBD_RAW`. Initial sync writes a raw RBD image directly with
-  `qemu-img convert -O raw`, delta sync writes changed ranges with `qemu-io -f
+- `RBD` maps to `RBD_RAW`. Initial sync writes a raw RBD image with `nbdcopy`
+  through a local NBD bridge when available, otherwise with
+  `qemu-img convert -O raw`. Delta sync writes changed ranges with `qemu-io -f
   raw`, and cutover finalization is in-place only.
 - `Linstor` maps to `RAW_BLOCK_DEVICE`. The agent pre-creates each target
   volume at source capacity through the Linstor storage adaptor (qemu cannot
   create DRBD devices the way it creates RBD images), then the initial sync
-  writes the local DRBD device with `qemu-img convert -n -O raw`, delta sync
-  patches changed ranges with `qemu-io -f raw` against the device path, and
-  cutover finalization is in-place only, using a plain `<disk type='block'>`
-  libvirt XML (no qemu-nbd bridges are needed for local block devices).
+  writes the local DRBD device with `nbdcopy` when available or
+  `qemu-img convert -n -O raw` otherwise. Delta sync patches changed ranges
+  with `qemu-io -f raw` against the device path, and cutover finalization is
+  in-place only, using a plain `<disk type='block'>` libvirt XML (no qemu-nbd
+  bridges are needed for local block devices).
   Target names are `cbt-<mig8>-<disk-id>` where `mig8` is the first eight
   characters of the migration UUID: LINSTOR resource names ("cs-" + name) are
   capped at 48 characters, so the RBD-style naming with the full migration
@@ -1056,8 +1049,8 @@ reconstructs the qemu RBD URL from the selected storage pool when writing
 initial and delta data. During in-place `virt-v2v` finalization, the agent
 starts a temporary localhost `qemu-nbd` bridge for each RBD image and gives
 `virt-v2v` a libvirt XML disk that points to that local NBD endpoint. This keeps
-RBD credentials and monitor options in the qemu layer while avoiding the
-libguestfs/RBD XML path that failed to expose usable disks in testing.
+RBD credentials and monitor options in the qemu layer and presents a local NBD
+endpoint to the conversion appliance.
 
 The preferred cutover finalization is in-place:
 
@@ -1288,9 +1281,9 @@ If a value is not provided by the API, the agent uses its configured or detected
 value. If `vddk.thumbprint` is not provided, the agent attempts to fetch the
 vCenter SHA1 certificate thumbprint with `openssl`.
 
-Lab note: the OL8 validation environment required the Linux VDDK package and a
-VDDK build compatible with the host OpenSSL libraries. The implementation does
-not hard-code one VDDK version; it relies on the agent capability check.
+The implementation does not hard-code one VDDK version. The installed VDDK
+build must be compatible with the host libraries and pass the agent capability
+check.
 
 ## Credential Handling
 
@@ -1520,7 +1513,7 @@ The tests cover:
 - Cleanup scoping to migration-owned RBD image names.
 - Nested relative KVM volume path resolution under filesystem pools.
 
-## Operational Notes For Lab Validation
+## Operational Verification
 
 Useful host capability check:
 
@@ -1539,7 +1532,7 @@ nbdkit vddk --dump-plugin libdir=/opt/vmware-vix-disklib-distrib | \
 Useful process check during initial sync:
 
 ```bash
-pgrep -af 'nbdkit|qemu-img'
+pgrep -af 'nbdkit|qemu-img|qemu-nbd|nbdcopy'
 ```
 
 Useful target disk inspection:
@@ -1548,278 +1541,10 @@ Useful target disk inspection:
 qemu-img info /mnt/<pool-uuid>/cloudstack-cbt/<migration-uuid>/<disk>.qcow2
 ```
 
-Manual SQL for labs that do not run the 24.0.0 upgrade path:
-
-```sql
-INSERT INTO `cloud`.`configuration`
-    (`category`, `instance`, `component`, `name`, `value`, `description`,
-     `default_value`, `updated`, `scope`, `is_dynamic`)
-VALUES
-    ('Advanced', 'DEFAULT', 'VmwareCbtMigrationManagerImpl',
-     'vmware.cbt.allow.non.inplace.finalization', 'false',
-     'If true, VMware CBT cutover may fall back to regular virt-v2v finalization for qcow2 file targets when true in-place finalization is unavailable. The fallback stages temporary data on the selected primary storage and requires additional free space.',
-     'false', NOW(), 1, 1)
-ON DUPLICATE KEY UPDATE
-    `category` = VALUES(`category`),
-    `component` = VALUES(`component`),
-    `description` = VALUES(`description`),
-    `default_value` = VALUES(`default_value`),
-    `updated` = NOW(),
-    `scope` = VALUES(`scope`),
-    `is_dynamic` = VALUES(`is_dynamic`);
-
-INSERT INTO `cloud`.`configuration`
-    (`category`, `instance`, `component`, `name`, `value`, `description`,
-     `default_value`, `updated`, `scope`, `is_dynamic`)
-VALUES
-    ('Advanced', 'DEFAULT', 'VmwareCbtMigrationManagerImpl',
-     'vmware.cbt.migration.agent.command.timeout', '86400',
-     'Timeout in seconds for long-running VMware CBT data-plane commands dispatched to the KVM agent, including initial full sync, delta sync, final delta sync, and cutover finalization.',
-     '86400', NOW(), 1, 1)
-ON DUPLICATE KEY UPDATE
-    `category` = VALUES(`category`),
-    `component` = VALUES(`component`),
-    `description` = VALUES(`description`),
-    `default_value` = VALUES(`default_value`),
-    `updated` = NOW(),
-    `scope` = VALUES(`scope`),
-    `is_dynamic` = VALUES(`is_dynamic`);
-```
-
-To allow regular `virt-v2v` fallback for QCOW2 file targets where in-place
-finalization is unavailable:
-
-```sql
-UPDATE `cloud`.`configuration`
-SET `value` = 'true'
-WHERE `name` = 'vmware.cbt.allow.non.inplace.finalization';
-```
-
-## Next Phase Manifest
-
-This section is the proposed follow-up roadmap for the next development cycle.
-It is intentionally written as a working manifest so implementation decisions can
-be checked against it during review.
-
-### Non-Negotiable Guardrails
-
-- Source VM shutdown remains operator-controlled by default.
-- Any CloudStack-initiated source shutdown must be explicit, audited, and
-  opt-in per cutover request or per migration policy.
-- Deleting a completed CBT migration record must remain record-only and must
-  never delete the imported VM, CloudStack volumes, finalized target disks, or
-  primary-storage files.
-- Raw VMware CBT deltas must only be applied to a source-equivalent replica.
-  They must not be applied after `virt-v2v` has transformed the disk.
-- Credential handling must continue to avoid clear-text passwords in command
-  arguments, persisted logs, and returned API errors.
-- In-place finalization remains preferred. Non-in-place `virt-v2v` fallback must
-  stay explicitly gated by configuration because it needs more temporary storage.
-
-### P0: Operator-Grade Progress Reporting
-
-Add a real progress model for long-running CBT work.
-
-Planned behavior:
-
-- Track `currentsteppercent` when the agent can derive it.
-- Track `currentstepbytesdone` and `currentstepbytestotal` where byte totals are
-  known.
-- Track `lastprogressupdated` so the UI can distinguish "still running" from
-  "possibly stalled".
-- Parse or capture progress from:
-  - `qemu-img convert -p` during initial full sync.
-  - Delta sync range execution, using completed changed ranges and copied bytes.
-  - `virt-v2v` and `virt-v2v-in-place` output during finalization.
-- Show progress consistently in the VMware CBT Migrations table and expanded
-  row, similar to Import VM Tasks but with CBT-specific byte/range context.
-
-Expected API/data model additions:
-
-- `currentsteppercent`
-- `currentstepbytesdone`
-- `currentstepbytestotal`
-- `lastprogressupdated`
-- optional per-disk progress fields for multi-disk migrations
-
-### P0: Automated Delta Sync Policies
-
-Add server-side policy support so operators do not have to manually click Sync
-delta for every migration.
-
-Planned behavior:
-
-- Per-migration mode:
-  - `manual`
-  - `auto-until-ready`
-  - `scheduled`
-- Configurable interval, for example every 5, 15, or 30 minutes.
-- Optional quiet-window behavior: keep syncing until the existing cutover policy
-  marks the migration `ReadyForCutover`.
-- Pause and resume automatic sync without deleting migration state.
-- Respect per-host, per-cluster, and per-vCenter concurrency limits.
-
-Guardrail:
-
-- Automatic sync must not automatically perform final cutover unless a later
-  explicit cutover policy is added and enabled.
-
-### P0: Cutover Controls And Optional Graceful Shutdown
-
-Keep the current safe default, but offer an explicit controlled shutdown option.
-
-Planned behavior:
-
-- Default cutover behavior remains unchanged: reject cutover when the VMware
-  source VM is still powered on.
-- Add an explicit cutover option such as:
-  - `shutdownsource=true`
-  - `shutdownmode=guest`
-  - `shutdownwaitseconds=<n>`
-- Guest shutdown uses VMware Tools / vCenter guest shutdown where available.
-- If graceful shutdown fails or times out, cutover fails cleanly unless an
-  explicit future force-off option is added.
-- All CloudStack-initiated source shutdown attempts are logged and visible in the
-  migration event/audit trail.
-
-Non-goal for the next phase:
-
-- Silent source VM shutdown.
-- Default force power-off.
-
-### P1: Bulk Operations And Retention
-
-Make CBT usable for tens or hundreds of migrations.
-
-Planned behavior:
-
-- Bulk actions:
-  - sync selected migrations
-  - pause/resume automatic sync
-  - cancel selected migrations
-  - delete completed records
-- Completed migration retention policy:
-  - keep forever
-  - delete records after N days
-  - delete records immediately after successful import, if configured
-- Retention cleanup for completed migrations remains record-only.
-- Failed/cancelled cleanup continues to remove only CloudStack-owned
-  `cloudstack-cbt/<migration-uuid>` working directories.
-
-### P1: Preflight And UI Guardrails
-
-Make unsafe choices visible before an operator starts a long migration.
-
-Planned behavior:
-
-- Host capability matrix in the UI:
-  - VDDK support and version
-  - `qemu-img`, `qemu-nbd`, `qemu-io`, and `nbdkit` versions
-  - `virt-v2v` availability
-  - `virt-v2v-in-place` / `--in-place` support
-  - `virtio-win` availability for Windows guest conversion
-- Grey out incompatible compute offerings in the migration form when CPU cores,
-  CPU speed, or memory are below source requirements.
-- Keep server-side offering validation as the source of truth.
-- Warn when VMware configured guest OS differs from VMware Tools runtime guest
-  OS, when both values are available.
-- Require or strongly prompt for explicit target Guest OS selection when source
-  mapping is generic, such as `Other (64-bit)` or `ubuntu64Guest`.
-
-### P1: Failure Taxonomy And Retry Semantics
-
-Make retries predictable and explainable.
-
-Planned behavior:
-
-- Classify failures by phase:
-  - preflight
-  - initial sync
-  - delta sync
-  - final delta
-  - finalization
-  - import
-  - cleanup
-- Preserve the current `ReadyForImport` retry behavior.
-- Make retry affordances explicit in the UI.
-- Return the last useful sanitized agent output line in API/UI errors.
-- Track whether a retry will repeat VMware reads, local finalization, or import
-  only.
-
-### P2: Baseline Transfer Optimization Research
-
-Investigate whether the initial full logical VMware read can be reduced.
-
-Research questions:
-
-- Validate VDDK allocation/extents for VMware snapshots in a way usable by the
-  current NBD/qemu path.
-- Can `qemu-img map`, NBD allocation metadata, or VDDK APIs distinguish
-  genuinely unallocated regions from allocated-zero regions for linked clones
-  and full clones?
-- Can a safe sparse baseline mode skip network transfer of known-zero or
-  unallocated ranges without corrupting guest-visible disk contents?
-- Is behavior different across OL8, OL9, Ubuntu 24.04, qemu versions, VDDK
-  versions, VMFS/NFS/vSAN datastore types, linked clones, and full clones?
-- Specifically compare NFS-backed VMware datastores with VMFS6-backed
-  datastores. NFS testing showed the initial baseline can appear fully
-  allocated to the NBD/qemu path, causing a full logical disk read. VMFS6
-  testing after guest space reclamation showed sparse `data` and `hole,zero`
-  extents through `nbdinfo --map`, and observed lower transfer on the KVM host.
-- Keep the manual probe aligned with the production CBT path: pass `vm=moref`,
-  the exact datastore VMDK path, VDDK `libdir`, `transports`, and the vCenter
-  SHA1 `thumbprint`. Missing `thumbprint` can make the probe fail before any
-  useful extent map is returned.
-- Test whether VDDK transport choice changes extent behavior. In particular,
-  compare `nbd`, `nbdssl`, and any available SAN/hotadd-compatible path where
-  the lab environment can support it.
-
-Possible outcomes:
-
-- Implement sparse/extent-aware baseline copy.
-- Keep the current full-logical-baseline behavior and document it as a VMware
-  VDDK/NBD limitation.
-- Offer an experimental mode only when the source stack proves allocation
-  metadata is trustworthy.
-
-### P2: Scheduling And Cutover Windows
-
-Add change-window-aware workflows for production migrations.
-
-Planned behavior:
-
-- Allow migrations to sync automatically during business hours but cut over only
-  inside an approved window.
-- Add policy fields such as:
-  - sync interval
-  - cutover window start/end
-  - timezone
-  - maximum concurrent cutovers
-- The UI should explain why a migration is waiting: not quiet yet, outside the
-  cutover window, source VM still powered on, or host concurrency limit reached.
-
-### P2: API And Documentation Hardening
-
-Keep public surfaces coherent as features are added.
-
-Planned behavior:
-
-- Add API documentation for policy fields and progress fields.
-- Add cloudmonkey examples for:
-  - manual mode
-  - automatic sync mode
-  - scheduled mode
-  - explicit graceful shutdown cutover
-  - record-only completed migration deletion
-- Add upgrade notes for new configuration keys and schema changes.
-- Keep CWIKI, Markdown README, UI labels, and API descriptions aligned.
-
 ## References
 
-- Apache CloudStack 24.0.0 Design Documents CWIKI page.
-- Multiple CD-ROM / ISO Support Per VM design page.
-- CloudStack Veeam KVM Integration design page.
-- DNS Framework and Plugins design page.
-- Error Message Consistency, Customization, and Localization Framework design
-  page.
-- KVM Backup on Secondary Storage (KBOSS) design page.
+- [Apache CloudStack: Importing VMware VMs into KVM](https://docs.cloudstack.apache.org/en/latest/adminguide/virtual_machines/importing_vmware_vms_into_kvm.html)
+- [Broadcom vSphere `QueryChangedDiskAreas` API](https://developer.broadcom.com/xapis/virtual-infrastructure-json-api/latest/sdk/vim25/release/VirtualMachine/moId/QueryChangedDiskAreas/post/)
+- [Broadcom Virtual Disk API disk operations](https://developer.broadcom.com/xapis/virtual-disk-api/latest/vddkFunctions.6.4.html)
+- [Broadcom VDDK CBT notes and limitations](https://developer.broadcom.com/xapis/virtual-disk-api/latest/vddkBkupVadp.9.5.html)
+- [nbdkit VDDK plugin](https://libguestfs.org/nbdkit-vddk-plugin.1.html)
