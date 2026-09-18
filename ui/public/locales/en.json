@@ -3942,6 +3942,7 @@
 "message.recover.vm": "Please confirm that you would like to recover this Instance.",
 "message.reinstall.vm": "NOTE: Proceed with caution. This will cause the Instance to be reinstalled from the Template; data on the root disk will be lost. Extra data volumes, if any, will not be touched.",
 "message.related.settings.changed": "'%x' has been changed. Would you like to review or update any related settings below?",
+"message.related.settings.may.not.be.exhaustive": "This list of related settings may not be exhaustive. Please check the documentation for other settings that may need to be updated.",
 "message.release.ip.failed": "Failed to release IP",
 "message.releasing.dedicated.cluster": "Releasing dedicated Cluster...",
 "message.releasing.dedicated.host": "Releasing dedicated host...",
