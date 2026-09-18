@@ -1085,11 +1085,7 @@ export default {
         }
         getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
-          // Keep selected pool state aligned when the value is auto-populated by v-model.
-          if (this.form.convertstoragepoolid) {
-            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
-            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
-          }
+          this.syncSelectedStoragePoolForConversion()
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
@@ -1099,11 +1095,23 @@ export default {
           status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
-          if (this.form.convertstoragepoolid) {
-            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
-            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
-          }
+          this.syncSelectedStoragePoolForConversion()
         })
+      }
+    },
+    syncSelectedStoragePoolForConversion () {
+      if (this.form.convertstoragepoolid) {
+        const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+        if (poolExists) {
+          this.selectedStoragePoolForConversion = this.form.convertstoragepoolid
+          return
+        }
+        this.form.convertstoragepoolid = null
+        this.selectedStoragePoolForConversion = null
+      }
+      if (this.storagePoolsForConversion.length === 1) {
+        this.form.convertstoragepoolid = this.storagePoolsForConversion[0].id
+        this.selectedStoragePoolForConversion = this.form.convertstoragepoolid
       }
     },
     updateSelectedKvmHostForImporting (clusterid, checked, value) {
@@ -1162,6 +1170,9 @@ export default {
       this.selectedStoragePoolForConversion = null
       this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
+      if (val) {
+        this.selectPrimaryStorageForForcedConversion()
+      }
     },
     onUseVddkChange (val, isUserChange = true) {
       if (isUserChange) {
@@ -1186,6 +1197,14 @@ export default {
         this.fetchKvmHostsForConversion()
       }
       this.resetStorageOptionsForConversion()
+      if (val) {
+        this.selectPrimaryStorageForForcedConversion()
+      }
+    },
+    selectPrimaryStorageForForcedConversion () {
+      this.selectedStorageOptionForConversion = 'primary'
+      this.showStoragePoolsForConversion = true
+      this.fetchStoragePoolsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
