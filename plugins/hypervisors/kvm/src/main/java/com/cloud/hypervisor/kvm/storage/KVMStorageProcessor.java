@@ -2364,6 +2364,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             closeRbdImage(rbd, image, disk.getName());
             destroyRadosIoCtx(r, io, disk.getName());
+            shutDownRados(r);
         }
         return snapshotSize;
     }
@@ -2656,13 +2657,12 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
-        Rados r = new Rados(primaryPool.getAuthUserName());
-        r.confSet(CEPH_MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-        r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
-        r.confSet(CEPH_CLIENT_MOUNT_TIMEOUT, CEPH_DEFAULT_MOUNT_TIMEOUT);
-        r.connect();
-        logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
-        return r;
+        return CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
+    }
+
+    /** Releases a RADOS cluster handle if it was opened; never throws. */
+    protected void shutDownRados(Rados r) {
+        CephUtil.shutDownQuietly(r);
     }
 
     /**
@@ -2867,11 +2867,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         try {
 
-            r = new Rados(srcPool.getAuthUserName());
-            r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
-            r.confSet("key", srcPool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
+            r = radosConnect(srcPool);
 
             io = r.ioCtxCreate(srcPool.getSourceDir());
             rbd = new Rbd(io);
@@ -2911,6 +2907,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             unprotectRbdSnapshot(srcImage, snapshotName, snapProtected);
             closeRbdImage(rbd, srcImage, volume.getName());
             destroyRadosIoCtx(r, io, snapshotName);
+            shutDownRados(r);
         }
 
         return disk;
@@ -2930,11 +2927,16 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
                 snapshotFullName = disk.getName() + "@" + snapshotName;
-                Rados r = radosConnect(primaryPool);
-                IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                Rbd rbd = new Rbd(io);
-                RbdImage image = rbd.open(disk.getName());
+                Rados r = null;
+                IoCTX io = null;
+                Rbd rbd = null;
+                RbdImage image = null;
                 try {
+                    r = radosConnect(primaryPool);
+                    io = r.ioCtxCreate(primaryPool.getSourceDir());
+                    rbd = new Rbd(io);
+                    image = rbd.open(disk.getName());
+
                     logger.info("Attempting to remove RBD snapshot " + snapshotFullName);
                     if (image.snapIsProtected(snapshotName)) {
                         logger.debug("Unprotecting RBD snapshot " + snapshotFullName);
@@ -2947,8 +2949,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                     logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
                         ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 } finally {
-                    rbd.close(image);
-                    r.ioCtxDestroy(io);
+                    closeRbdImage(rbd, image, disk.getName());
+                    destroyRadosIoCtx(r, io, snapshotFullName);
+                    shutDownRados(r);
                 }
 
             } else if (storagePoolTypesToDeleteSnapshotFile.contains(primaryPool.getType())) {

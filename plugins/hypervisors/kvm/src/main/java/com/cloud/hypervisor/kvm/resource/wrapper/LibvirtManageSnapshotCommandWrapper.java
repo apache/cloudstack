@@ -37,6 +37,7 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.CephUtil;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -113,17 +114,16 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                  * cord out of a running machine.
                  */
                 if (primaryPool.getType() == StoragePoolType.RBD) {
+                    Rados r = null;
+                    IoCTX io = null;
+                    Rbd rbd = null;
+                    RbdImage image = null;
                     try {
-                        final Rados r = new Rados(primaryPool.getAuthUserName());
-                        r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                        r.confSet("key", primaryPool.getAuthSecret());
-                        r.confSet("client_mount_timeout", "30");
-                        r.connect();
-                        logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                        r = CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
 
-                        final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                        final Rbd rbd = new Rbd(io);
-                        final RbdImage image = rbd.open(disk.getName());
+                        io = r.ioCtxCreate(primaryPool.getSourceDir());
+                        rbd = new Rbd(io);
+                        image = rbd.open(disk.getName());
 
                         if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
                             logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
@@ -132,11 +132,12 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                             logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
                             image.snapRemove(snapshotName);
                         }
-
-                        rbd.close(image);
-                        r.ioCtxDestroy(io);
                     } catch (final Exception e) {
                         logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                    } finally {
+                        CephUtil.closeQuietly(rbd, image, disk.getName());
+                        CephUtil.ioCtxDestroyQuietly(r, io);
+                        CephUtil.shutDownQuietly(r);
                     }
                 } else {
                     /* VM is not running, create a snapshot by ourself */

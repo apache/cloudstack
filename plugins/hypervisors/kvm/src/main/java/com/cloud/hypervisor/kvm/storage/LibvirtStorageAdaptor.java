@@ -1174,19 +1174,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          * We have to remove those snapshots first
          */
         if (pool.getType() == StoragePoolType.RBD) {
+            Rados r = null;
+            IoCTX io = null;
+            Rbd rbd = null;
+            RbdImage image = null;
             try {
                 logger.info("Unprotecting and Removing RBD snapshots of image " + pool.getSourceDir() + "/" + uuid + " prior to removing the image");
 
-                Rados r = new Rados(pool.getAuthUserName());
-                r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-                r.confSet("key", pool.getAuthSecret());
-                r.confSet("client_mount_timeout", "30");
-                r.connect();
-                logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                r = CephUtil.connect(pool.getAuthUserName(), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthSecret());
 
-                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-                Rbd rbd = new Rbd(io);
-                RbdImage image = rbd.open(uuid);
+                io = r.ioCtxCreate(pool.getSourceDir());
+                rbd = new Rbd(io);
+                image = rbd.open(uuid);
                 logger.debug("Fetching list of snapshots of RBD image " + pool.getSourceDir() + "/" + uuid);
                 List<RbdSnapInfo> snaps = image.snapList();
                 try {
@@ -1206,10 +1205,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.error("Failed to remove snapshot with exception: " + e.toString() +
                         ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                     throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
-                } finally {
-                    logger.debug("Closing image and destroying context");
-                    rbd.close(image);
-                    r.ioCtxDestroy(io);
                 }
             } catch (RadosException e) {
                 logger.error("Failed to remove snapshot with exception: " + e.toString() +
@@ -1219,6 +1214,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 logger.error("Failed to remove snapshot with exception: " + e.toString() +
                     ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 throw new CloudRuntimeException(e.toString() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+            } finally {
+                logger.debug("Closing image and destroying context");
+                CephUtil.closeQuietly(rbd, image, uuid);
+                CephUtil.ioCtxDestroyQuietly(r, io);
+                CephUtil.shutDownQuietly(r);
             }
         }
 
@@ -1394,121 +1394,120 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     /* We are on the same Ceph cluster, but we require RBD format 2 on the source image */
                     logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
 
-                    Rados r = new Rados(srcPool.getAuthUserName());
-                    r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
-                    r.confSet("key", srcPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    if (dataPool != null) {
-                        logger.debug("Setting RBD data pool to " + dataPool + " for the new image " + disk.getName());
-                        r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
-                    }
-                    r.connect();
-                    logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    Rados r = null;
+                    IoCTX io = null;
+                    Rbd rbd = null;
+                    RbdImage srcImage = null;
+                    try {
+                        r = CephUtil.connect(srcPool.getAuthUserName(), srcPool.getSourceHost(), srcPool.getSourcePort(), srcPool.getAuthSecret(), dataPool);
 
-                    IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
-                    Rbd rbd = new Rbd(io);
-                    RbdImage srcImage = rbd.open(template.getName());
+                        io = r.ioCtxCreate(srcPool.getSourceDir());
+                        rbd = new Rbd(io);
+                        srcImage = rbd.open(template.getName());
 
-                    if (srcImage.isOldFormat()) {
-                        /* The source image is RBD format 1, we have to do a regular copy */
-                        logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                " is RBD format 1. We have to perform a regular copy (" + toHumanReadableSize(disk.getVirtualSize()) + " bytes)");
+                        if (srcImage.isOldFormat()) {
+                            /* The source image is RBD format 1, we have to do a regular copy */
+                            logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
+                                    " is RBD format 1. We have to perform a regular copy (" + toHumanReadableSize(disk.getVirtualSize()) + " bytes)");
 
-                        rbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
-                        RbdImage destImage = rbd.open(disk.getName());
+                            rbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
+                            RbdImage destImage = rbd.open(disk.getName());
+                            try {
+                                logger.debug("Starting to copy " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
+                                rbd.copy(srcImage, destImage);
 
-                        logger.debug("Starting to copy " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
-                        rbd.copy(srcImage, destImage);
-
-                        logger.debug("Finished copying " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
-                        rbd.close(destImage);
-                    } else {
-                        logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName()
-                                + " is RBD format 2. We will perform a RBD clone using snapshot "
-                                + rbdTemplateSnapName);
-                        /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
-
-
-                        logger.debug("Checking if RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
-                                + "@" + rbdTemplateSnapName + " exists prior to attempting a clone operation.");
-
-                        List<RbdSnapInfo> snaps = srcImage.snapList();
-                        logger.debug("Found " + snaps.size() +  " snapshots on RBD image " + srcPool.getSourceDir() + "/" + template.getName());
-                        boolean snapFound = false;
-                        for (RbdSnapInfo snap : snaps) {
-                            if (rbdTemplateSnapName.equals(snap.name)) {
-                                logger.debug("RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
-                                        + "@" + rbdTemplateSnapName + " already exists.");
-                                snapFound = true;
-                                break;
+                                logger.debug("Finished copying " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
+                            } finally {
+                                CephUtil.closeQuietly(rbd, destImage, disk.getName());
                             }
-                        }
+                        } else {
+                            logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName()
+                                    + " is RBD format 2. We will perform a RBD clone using snapshot "
+                                    + rbdTemplateSnapName);
+                            /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
 
-                        if (!snapFound) {
-                            logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
-                            srcImage.snapCreate(rbdTemplateSnapName);
-                            logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
-                            srcImage.snapProtect(rbdTemplateSnapName);
-                        }
 
-                        rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), RBD_FEATURES, rbdOrder);
-                        logger.debug("Successfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
-                        /* We also need to resize the image if the VM was deployed with a larger root disk size */
-                        if (disk.getVirtualSize() > template.getVirtualSize()) {
-                            RbdImage diskImage = rbd.open(disk.getName());
-                            diskImage.resize(disk.getVirtualSize());
-                            rbd.close(diskImage);
-                            logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize()));
-                        }
+                            logger.debug("Checking if RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
+                                    + "@" + rbdTemplateSnapName + " exists prior to attempting a clone operation.");
 
+                            List<RbdSnapInfo> snaps = srcImage.snapList();
+                            logger.debug("Found " + snaps.size() +  " snapshots on RBD image " + srcPool.getSourceDir() + "/" + template.getName());
+                            boolean snapFound = false;
+                            for (RbdSnapInfo snap : snaps) {
+                                if (rbdTemplateSnapName.equals(snap.name)) {
+                                    logger.debug("RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
+                                            + "@" + rbdTemplateSnapName + " already exists.");
+                                    snapFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (!snapFound) {
+                                logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                                srcImage.snapCreate(rbdTemplateSnapName);
+                                logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
+                                srcImage.snapProtect(rbdTemplateSnapName);
+                            }
+
+                            rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), RBD_FEATURES, rbdOrder);
+                            logger.debug("Successfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
+                            /* We also need to resize the image if the VM was deployed with a larger root disk size */
+                            if (disk.getVirtualSize() > template.getVirtualSize()) {
+                                RbdImage diskImage = rbd.open(disk.getName());
+                                try {
+                                    diskImage.resize(disk.getVirtualSize());
+                                    logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize()));
+                                } finally {
+                                    CephUtil.closeQuietly(rbd, diskImage, disk.getName());
+                                }
+                            }
+
+                        }
+                    } finally {
+                        CephUtil.closeQuietly(rbd, srcImage, template.getName());
+                        CephUtil.ioCtxDestroyQuietly(r, io);
+                        CephUtil.shutDownQuietly(r);
                     }
-
-                    rbd.close(srcImage);
-                    r.ioCtxDestroy(io);
                 } else {
                     /* The source pool or host is not the same Ceph cluster, we do a simple copy with Qemu-Img */
                     logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
 
-                    Rados rSrc = new Rados(srcPool.getAuthUserName());
-                    rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
-                    rSrc.confSet("key", srcPool.getAuthSecret());
-                    rSrc.confSet("client_mount_timeout", "30");
-                    rSrc.connect();
-                    logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
+                    Rados rSrc = null;
+                    Rados rDest = null;
+                    IoCTX sIO = null;
+                    IoCTX dIO = null;
+                    Rbd sRbd = null;
+                    Rbd dRbd = null;
+                    RbdImage srcImage = null;
+                    RbdImage destImage = null;
+                    try {
+                        rSrc = CephUtil.connect(srcPool.getAuthUserName(), srcPool.getSourceHost(), srcPool.getSourcePort(), srcPool.getAuthSecret());
+                        rDest = CephUtil.connect(destPool.getAuthUserName(), destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthSecret(), dataPool);
 
-                    Rados rDest = new Rados(destPool.getAuthUserName());
-                    rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-                    rDest.confSet("key", destPool.getAuthSecret());
-                    rDest.confSet("client_mount_timeout", "30");
-                    if (dataPool != null) {
-                        logger.debug("Setting RBD data pool to " + dataPool + " on the destination cluster for the new image " + disk.getName());
-                        rDest.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+                        sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
+                        sRbd = new Rbd(sIO);
+
+                        dIO = rDest.ioCtxCreate(destPool.getSourceDir());
+                        dRbd = new Rbd(dIO);
+
+                        logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
+                                destPool.getSourceDir());
+                        dRbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
+
+                        srcImage = sRbd.open(template.getName());
+                        destImage = dRbd.open(disk.getName());
+
+                        logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName()
+                                + " on cluster " + rDest.confGet("mon_host"));
+                        sRbd.copy(srcImage, destImage);
+                    } finally {
+                        CephUtil.closeQuietly(sRbd, srcImage, template.getName());
+                        CephUtil.closeQuietly(dRbd, destImage, disk.getName());
+                        CephUtil.ioCtxDestroyQuietly(rSrc, sIO);
+                        CephUtil.ioCtxDestroyQuietly(rDest, dIO);
+                        CephUtil.shutDownQuietly(rSrc);
+                        CephUtil.shutDownQuietly(rDest);
                     }
-                    rDest.connect();
-                    logger.debug("Successfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
-
-                    IoCTX sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
-                    Rbd sRbd = new Rbd(sIO);
-
-                    IoCTX dIO = rDest.ioCtxCreate(destPool.getSourceDir());
-                    Rbd dRbd = new Rbd(dIO);
-
-                    logger.debug("Creating " + disk.getName() + " on the destination cluster " + rDest.confGet("mon_host") + " in pool " +
-                            destPool.getSourceDir());
-                    dRbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
-
-                    RbdImage srcImage = sRbd.open(template.getName());
-                    RbdImage destImage = dRbd.open(disk.getName());
-
-                    logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName()
-                            + " on cluster " + rDest.confGet("mon_host"));
-                    sRbd.copy(srcImage, destImage);
-
-                    sRbd.close(srcImage);
-                    dRbd.close(destImage);
-
-                    rSrc.ioCtxDestroy(sIO);
-                    rDest.ioCtxDestroy(dIO);
                 }
             } catch (RadosException e) {
                 logger.error("Failed to perform a RADOS action on the Ceph cluster, the error was: " + e.getMessage());
@@ -1649,6 +1648,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
              * To do so it's mandatory that librbd on the system is at least 0.67.7 (Ceph Dumpling)
              */
             logger.debug("The source image is not RBD, but the destination is. We will convert into RBD format 2");
+            Rados r = null;
+            IoCTX io = null;
+            Rbd rbd = null;
+            RbdImage image = null;
             try {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 String rbdDestPath = destPool.getSourceDir() + "/" + name;
@@ -1660,24 +1663,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 logger.debug("Successfully converted source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
 
                 /* We have to stat the RBD image to see how big it became afterwards */
-                Rados r = new Rados(destPool.getAuthUserName());
-                r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
-                r.confSet("key", destPool.getAuthSecret());
-                r.confSet("client_mount_timeout", "30");
-                r.connect();
-                logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                r = CephUtil.connect(destPool.getAuthUserName(), destPool.getSourceHost(), destPool.getSourcePort(), destPool.getAuthSecret());
 
-                IoCTX io = r.ioCtxCreate(destPool.getSourceDir());
-                Rbd rbd = new Rbd(io);
+                io = r.ioCtxCreate(destPool.getSourceDir());
+                rbd = new Rbd(io);
 
-                RbdImage image = rbd.open(name);
+                image = rbd.open(name);
                 RbdImageInfo rbdInfo = image.stat();
                 newDisk.setSize(rbdInfo.size);
                 newDisk.setVirtualSize(rbdInfo.size);
                 logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + toHumanReadableSize(rbdInfo.size) + " bytes long");
-                rbd.close(image);
-
-                r.ioCtxDestroy(io);
             } catch (QemuImgException | LibvirtException e) {
                 String srcFilename = srcFile != null ? srcFile.getFileName() : null;
                 String destFilename = destFile != null ? destFile.getFileName() : null;
@@ -1689,6 +1684,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } catch (RbdException e) {
                 logger.error("A Ceph RBD operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
                 newDisk = null;
+            } finally {
+                CephUtil.closeQuietly(rbd, image, name);
+                CephUtil.ioCtxDestroyQuietly(r, io);
+                CephUtil.shutDownQuietly(r);
             }
         } else {
             /**

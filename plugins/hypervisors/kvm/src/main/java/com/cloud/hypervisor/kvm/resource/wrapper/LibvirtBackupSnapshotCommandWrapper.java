@@ -41,6 +41,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.CephUtil;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -96,17 +97,16 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
              * cmds.timeout
              */
             if (primaryPool.getType() == StoragePoolType.RBD) {
+                Rados r = null;
+                IoCTX io = null;
+                Rbd rbd = null;
+                RbdImage image = null;
                 try {
-                    final Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    r = CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
 
-                    final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                    final Rbd rbd = new Rbd(io);
-                    final RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+                    io = r.ioCtxCreate(primaryPool.getSourceDir());
+                    rbd = new Rbd(io);
+                    image = rbd.open(snapshotDisk.getName(), snapshotName);
                     final File fh = new File(snapshotDestPath);
                     try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
                         final int chunkSize = 4194304;
@@ -126,13 +126,16 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                     {
                         logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
                     }
-                    r.ioCtxDestroy(io);
                 } catch (final RadosException e) {
                     logger.error("A RADOS operation failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
                 } catch (final RbdException e) {
                     logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
+                } finally {
+                    CephUtil.closeQuietly(rbd, image, snapshotDisk.getName());
+                    CephUtil.ioCtxDestroyQuietly(r, io);
+                    CephUtil.shutDownQuietly(r);
                 }
             } else {
                 final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, logger);
