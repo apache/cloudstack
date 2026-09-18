@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.utils.identity;
 
-import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -49,7 +48,6 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
 
     private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
     private static final String FQDN_SYS_PROP = "cloudstack.msid.from.id";
-    
 
     // op_lock.mac is varchar(17) and holds the msid, so the id must stay within the 48-bit MAC address range.
     private static final int MSID_BYTES = 6;
