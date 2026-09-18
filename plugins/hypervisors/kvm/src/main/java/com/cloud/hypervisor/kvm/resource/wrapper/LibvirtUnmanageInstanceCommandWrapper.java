@@ -67,6 +67,9 @@ public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<
     public Answer execute(final UnmanageInstanceCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String instanceName = command.getInstanceName();
         VirtualMachineTO vmSpec = command.getVm();
+        if (command.isLibvirtMetadataCleanupEnabled()) {
+            vmSpec.setExcludeMetadata(true);
+        }
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
         logger.debug("Attempting to unmanage KVM instance: {}", instanceName);
         Domain dom = null;
