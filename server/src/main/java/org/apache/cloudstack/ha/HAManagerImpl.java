@@ -221,13 +221,16 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         return resource;
     }
 
-    private HAProvider<HAResource> validateAndFindHAProvider(final HAConfig haConfig, final HAResource resource) {
+    HAProvider<HAResource> validateAndFindHAProvider(final HAConfig haConfig, final HAResource resource) {
         if (haConfig == null) {
             return null;
         }
         final HAProvider<HAResource> haProvider = haProviderMap.get(haConfig.getHaProvider());
         if (haProvider != null && !haProvider.isEligible(resource)) {
-            if (haConfig.getState() != HAConfig.HAState.Ineligible) {
+            // A fenced host is expected to be ineligible as fencing puts it in maintenance mode;
+            // it must remain Fenced until a health check passes (Fenced -> HealthCheckPassed -> Ineligible),
+            // so there is no Fenced -> Ineligible transition to attempt here.
+            if (haConfig.getState() != HAConfig.HAState.Ineligible && haConfig.getState() != HAConfig.HAState.Fenced) {
                 transitionHAState(HAConfig.Event.Ineligible, haConfig);
             }
             return null;
