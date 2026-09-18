@@ -2214,8 +2214,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumesToDisconnect;
     }
 
-    protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
-        final VirtualMachine vm = profile.getVirtualMachine();
+    /**
+     * Build a StopCommand carrying everything the host needs to tear an instance down: the external hypervisor
+     * details, the VLAN persistence map that decides whether a bridge may be deleted, the control NIC address used
+     * for system VMs, and the volumes to disconnect. Callers that build a StopCommand without these will make the
+     * host delete bridges belonging to persistent networks and leave volumes connected.
+     */
+    protected StopCommand buildStopCommand(final VirtualMachine vm, final VirtualMachineProfile profile, final boolean checkBeforeCleanup) {
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stpCmd);
@@ -2224,7 +2229,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         stpCmd.setControlIp(getControlNicIpForVM(vm));
         stpCmd.setVolumesToDisconnect(getVolumesToDisconnect(vm));
-        final StopCommand stop = stpCmd;
+        return stpCmd;
+    }
+
+    protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
+        final VirtualMachine vm = profile.getVirtualMachine();
+        final StopCommand stop = buildStopCommand(vm, profile, checkBeforeCleanup);
         try {
             Answer answer = null;
             if(vm.getHostId() != null) {
@@ -5467,17 +5477,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * The host reports an instance as powered on that the database considers destroyed or expunged. It will never be
-     * managed again, and its addresses and storage have already been handed back, so stop it on the host that
-     * reported it instead of leaving it running unmanaged.
-     */
-    /**
      * Send a StopCommand for an instance to the last host it is known to have run on, whatever the database state
      * says. Used before expunging, where the instance's addresses and volumes are about to be released and a domain
      * left running on the host would keep using them.
+     *
+     * External instances are skipped: their teardown is done by their extension in finalizeExpunge, and a
+     * StopCommand issued from here would not carry the details that path needs.
      */
     protected void ensureInstanceIsStoppedOnLastKnownHost(final VMInstanceVO vm) {
-        if (vm == null) {
+        if (vm == null || HypervisorType.External.equals(vm.getHypervisorType())) {
             return;
         }
         final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
@@ -5486,7 +5494,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         try {
             // checkBeforeCleanup is false on purpose: a running domain is what has to be removed here.
-            final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
             final Answer answer = _agentMgr.send(hostId, stop);
             if (answer != null && answer.getResult()) {
                 return;
@@ -5498,7 +5506,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    /**
+     * The host reports an instance as powered on that the database considers destroyed or expunged. It will never be
+     * managed again, and its addresses and storage have already been handed back, so stop it on the host that
+     * reported it instead of leaving it running unmanaged.
+     *
+     * External instances are skipped, as in ensureInstanceIsStoppedOnLastKnownHost().
+     */
     protected void stopUnmanagedInstanceOnReportingHost(final VMInstanceVO vm) {
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            return;
+        }
         final Long powerHostId = vm.getPowerHostId();
         if (powerHostId == null) {
             logger.warn("Instance {} is reported powered on but no reporting host is recorded, cannot stop it.", vm);
@@ -5507,7 +5525,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             // checkBeforeCleanup must be false: the instance is known to be running, and that is exactly what
             // has to be stopped. With it set, the host would refuse and answer "vm is still running on host".
-            final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
             final Answer answer = _agentMgr.send(powerHostId, stop);
             if (answer != null && answer.getResult()) {
                 logger.info("Stopped unmanaged instance {} on host {}.", vm, powerHostId);
