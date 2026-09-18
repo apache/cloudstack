@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -279,6 +280,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     DataCenterDao _dcDao;
     @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    VpcDetailsDao vpcDetailsDao;
+    @Inject
     NetworkACLDao _networkAclDao;
     @Inject
     NetworkACLManager _networkAclMgr;
@@ -395,7 +400,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                     createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
                             true, State.Enabled, null, false,
-                            false, false, null, null, false, false);
+                            false, false, null, null, false, false, null);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -415,7 +420,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
-                            svcProviderMap, false, State.Enabled, null, false, false, false, null, null, false, false);
+                            svcProviderMap, false, State.Enabled, null, false, false, false, null, null, false, false, null);
 
                 }
 
@@ -436,7 +441,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
-                            null, false, false, true, null, null, false, false);
+                            null, false, false, true, null, null, false, false, null);
                 }
 
                 // configure default vpc offering with NSX as network service provider in NAT mode
@@ -453,7 +458,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false, null);
 
                 }
 
@@ -471,7 +476,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false, null);
 
                 }
 
@@ -489,7 +494,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false, null);
 
                 }
 
@@ -507,7 +512,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false, null);
 
                 }
             }
@@ -594,6 +599,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
         boolean conserveMode = cmd.isConserveMode();
+        Integer publicNetworkRate = cmd.getPublicNetworkRate();
+        if (publicNetworkRate != null && publicNetworkRate < 0) {
+            throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as 0 or more");
+        }
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
@@ -632,7 +641,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, provider, networkMode,
-                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber, conserveMode);
+                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber, conserveMode, publicNetworkRate);
     }
 
     @Override
@@ -640,7 +649,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
                                          final String externalProvider, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
-                                         NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode) {
+                                         NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode, Integer publicNetworkRate) {
 
         boolean isExternalProvider = externalProvider != null &&
                 Arrays.asList("NSX", "Netris").stream().anyMatch(s -> s.equalsIgnoreCase(externalProvider));
@@ -741,7 +750,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList, redundantRouterService);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, networkMode, routingMode, specifyAsNumber, conserveMode);
+                redundantRouter, networkMode, routingMode, specifyAsNumber, conserveMode, publicNetworkRate);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -769,7 +778,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Service, Set<Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode) {
+                                              final boolean redundantRouter, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode,
+                                              Integer publicNetworkRate) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -786,6 +796,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     offering.setRoutingMode(routingMode);
                 }
                 offering.setConserveMode(conserveMode);
+                offering.setPublicNetworkRate(publicNetworkRate);
 
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
@@ -1092,6 +1103,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             if (cmd.getRoutingMode() == null && sourceOffering.getRoutingMode() != null) {
                 ConfigurationManagerImpl.setField(cmd, "routingMode", sourceOffering.getRoutingMode().toString());
+            }
+
+            if (cmd.getPublicNetworkRate() == null && sourceOffering.getPublicNetworkRate() != null) {
+                ConfigurationManagerImpl.setField(cmd, "publicNetworkRate", sourceOffering.getPublicNetworkRate());
             }
 
             if (cmd.getDomainIds() == null || cmd.getDomainIds().isEmpty()) {
@@ -1433,7 +1448,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
     public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
-        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null);
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null, null);
     }
 
     @Override
@@ -1446,6 +1461,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final Integer sortKey = cmd.getSortKey();
+        final Integer publicNetworkRate = cmd.getPublicNetworkRate();
+        if (publicNetworkRate != null && publicNetworkRate < 0) {
+            throw new InvalidParameterValueException("Failed to update VPC offering " + offeringId + ": specify the public network rate value as 0 or more");
+        }
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -1464,10 +1483,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds);
+        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds, publicNetworkRate);
     }
 
-    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
+    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds,
+                                                   Integer publicNetworkRate) {
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
         if (offeringToUpdate == null) {
@@ -1492,7 +1512,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         Collections.sort(filteredZoneIds);
 
-        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null;
+        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null || publicNetworkRate != null;
 
         final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
 
@@ -1517,6 +1537,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
             if (sortKey != null) {
                 offering.setSortKey(sortKey);
+            }
+            if (publicNetworkRate != null) {
+                offering.setPublicNetworkRate(publicNetworkRate);
             }
 
             if (!_vpcOffDao.update(vpcOffId, offering)) {
@@ -1841,8 +1864,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
         if (vpcVO != null) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPC_CREATE, vpcVO.getAccountId(), vpcVO.getZoneId(), vpcVO.getId(), vpcVO.getName(), Vpc.class.getName(), vpcVO.getUuid(), vpcVO.isDisplay());
+            saveVpcNetworkRateInDetails(vpcVO);
         }
         return vpcVO;
+    }
+
+    private void saveVpcNetworkRateInDetails(Vpc vpc) {
+        final Integer rate = _configMgr.getVpcOfferingNetworkRate(vpc.getVpcOfferingId(), vpc.getZoneId());
+        vpcDetailsDao.addDetail(vpc.getId(), ApiConstants.PUBLIC_NETWORK_RATE, String.valueOf(rate), true);
     }
 
     private Map<String, List<String>> finalizeServicesAndProvidersForVpc(final long zoneId, final long offeringId) {
@@ -2810,6 +2839,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // the restart procedure.
                 if (vpcDao.update(vpc.getId(), entity)) {
                     vpc = entity;
+                    saveVpcNetworkRateInDetails(vpc);
                 }
 
                 // If the offering and redundant column are changing, force the

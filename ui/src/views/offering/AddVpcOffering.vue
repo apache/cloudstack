@@ -202,6 +202,14 @@
           </template>
           <a-switch v-model:checked="form.conservemode" />
         </a-form-item>
+        <a-form-item name="publicnetworkrate" ref="publicnetworkrate">
+          <template #label>
+            <tooltip-label :title="$t('label.publicnetworkrate')" :tooltip="apiParams.publicnetworkrate.description"/>
+          </template>
+          <a-input
+            v-model:value="form.publicnetworkrate"
+            :placeholder="apiParams.publicnetworkrate.description"/>
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -366,6 +374,7 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
+        publicnetworkrate: [{ type: 'number', validator: this.validateNetworkRate }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
           type: 'array',
@@ -721,6 +730,9 @@ export default {
         }
         params.networkmode = values.networkmode
         params.conservemode = values.conservemode
+        if (values.publicnetworkrate) {
+          params.publicnetworkrate = values.publicnetworkrate
+        }
         if (!values.forVpc) {
           params.specifyasnumber = values.specifyasnumber
         }
@@ -755,6 +767,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    async validateNetworkRate (rule, value) {
+      if (value && (isNaN(value) || value < 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

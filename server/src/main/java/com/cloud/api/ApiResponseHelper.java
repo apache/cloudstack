@@ -225,6 +225,8 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
@@ -243,6 +245,7 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -499,6 +502,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private IPAddressDao userIpAddressDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    VpcDetailsDao vpcDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
     @Inject
@@ -2715,6 +2720,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setNetworkDomain(network.getNetworkDomain());
         response.setPublicMtu(network.getPublicMtu());
         response.setPrivateMtu(network.getPrivateMtu());
+        NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
+        if (networkRateDetail != null) {
+            int networkRate = NumberUtils.toInt(networkRateDetail.getValue(), -1);
+            response.setNetworkRate(networkRate > 0 ? networkRate : -1);
+        }
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());
@@ -3591,6 +3601,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcOfferingName(voff.getName());
             response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
+        VpcDetailVO publicNetworkRateDetail = vpcDetailsDao.findDetail(vpc.getId(), ApiConstants.PUBLIC_NETWORK_RATE);
+        Integer publicNetworkRate = publicNetworkRateDetail != null ? NumberUtils.toInt(publicNetworkRateDetail.getValue(), -1) : null;
+        response.setPublicNetworkRate((publicNetworkRate == null || publicNetworkRate <= 0) ? -1 : publicNetworkRate);
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
@@ -4905,6 +4918,10 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         response.setEnabled(result.isEnabled());
+
+        Integer nicNetworkRate = result.getNetworkRate();
+        response.setNetworkRate(nicNetworkRate != null && nicNetworkRate > 0 ? nicNetworkRate : -1);
+
         return response;
     }
 

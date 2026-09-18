@@ -777,6 +777,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
+    private void saveNetworkRateInDetails(long networkId, NetworkOffering offering, long dataCenterId) {
+        Integer rate = _configMgr.getNetworkOfferingNetworkRate(offering.getId(), dataCenterId);
+        networkDetailsDao.addDetail(networkId, ApiConstants.NETWORKRATE, String.valueOf(rate), true);
+    }
+
     @Override
     public List<? extends Network> setupNetwork(final Account owner, final NetworkOffering offering, final DeploymentPlan plan, final String name, final String displayText, final boolean isDefault)
             throws ConcurrentOperationException {
@@ -852,6 +857,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         updateRouterIpInNetworkDetails(networkPersisted.getId(), network.getRouterIp(), network.getRouterIpv6());
+                        saveNetworkRateInDetails(networkPersisted.getId(), offering, plan.getDataCenterId());
 
                         if (predefined instanceof NetworkVO && guru instanceof NetworkGuruAdditionalFunctions) {
                             final NetworkGuruAdditionalFunctions functions = (NetworkGuruAdditionalFunctions) guru;
@@ -1227,14 +1233,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         NicVO vo = checkForRaceAndAllocateNic(requested, network, isDefaultNic, deviceId, vm);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+        vo.setNetworkRate(networkRate);
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
         if (vm.getType() == Type.DomainRouter) {
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vm.getId());
             setMtuDetailsInVRNic(networks, network, vo);
-            _nicDao.update(vo.getId(), vo);
             setMtuInVRNicProfile(networks, network.getTrafficType(), vmNic);
         }
+        _nicDao.update(vo.getId(), vo);
         return new Pair<>(vmNic, Integer.valueOf(deviceId));
     }
 
@@ -2299,6 +2306,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             guru.updateNicProfile(profile, network);
             nic.setState(Nic.State.Reserved);
         }
+
+        nic.setNetworkRate(networkRate);
 
         if (vmProfile.getType() == Type.DomainRouter) {
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
@@ -5066,7 +5075,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, DeniedRoutes,
-                GuestDomainSuffix, NetworkThrottlingRate, VmNetworkThrottlingRate, MinVRVersion, DhcpLeaseTimeout,
+                GuestDomainSuffix, NetworkThrottlingRate, VmNetworkThrottlingRate, VpcPublicNetworkThrottlingRate, MinVRVersion, DhcpLeaseTimeout,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
                 TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN,
                 NETWORK_LB_HAPROXY_IDLE_TIMEOUT};

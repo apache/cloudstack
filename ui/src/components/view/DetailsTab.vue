@@ -147,6 +147,12 @@
           <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
             {{ dataResource[item].join(', ') }}
           </div>
+          <div v-else-if="item === 'networkrate'">
+            {{ String(dataResource[item]) === '-1' ? $t('label.unlimited') : dataResource[item] }}
+          </div>
+          <div v-else-if="item === 'publicnetworkrate'">
+            {{ ['-1', '0'].includes(String(dataResource[item])) ? $t('label.unlimited') : dataResource[item] }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
