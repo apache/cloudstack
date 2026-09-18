@@ -669,6 +669,7 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_EDIT = "BACKUP.OFFERING.EDIT";
     public static final String EVENT_VM_CREATE_FROM_BACKUP = "VM.CREATE.FROM.BACKUP";
     public static final String EVENT_SCREENSHOT_DOWNLOAD = "BACKUP.VALIDATION.SCREENSHOT.DOWNLOAD";
+    public static final String EVENT_BACKUP_FILE_DOWNLOAD = "BACKUP.FILE.DOWNLOAD";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
