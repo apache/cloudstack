@@ -5437,6 +5437,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Destroyed:
         case Expunging:
             logger.info("Receive power on report when Instance is in destroyed or expunging state. Instance: {}, state: {}.", vm, vm.getState());
+            stopUnmanagedInstanceOnReportingHost(vm);
             break;
 
         case Migrating:
@@ -5452,8 +5453,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Error:
         default:
             logger.info("Receive power on report when Instance is in error or unexpected state. Instance: {}, state: {}.", vm, vm.getState());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                    VM_SYNC_ALERT_SUBJECT, String.format("Instance %s is reported running by host %s but is in %s state. "
+                            + "It is not managed by CloudStack and may need to be stopped on the host.",
+                            vm.getInstanceName(), vm.getPowerHostId(), vm.getState()));
             break;
         }
+    }
+
+    /**
+     * The host reports an instance as powered on that the database considers destroyed or expunged. It will never be
+     * managed again, and its addresses and storage have already been handed back, so stop it on the host that
+     * reported it instead of leaving it running unmanaged.
+     */
+    protected void stopUnmanagedInstanceOnReportingHost(final VMInstanceVO vm) {
+        final Long powerHostId = vm.getPowerHostId();
+        if (powerHostId == null) {
+            logger.warn("Instance {} is reported powered on but no reporting host is recorded, cannot stop it.", vm);
+            return;
+        }
+        try {
+            // checkBeforeCleanup must be false: the instance is known to be running, and that is exactly what
+            // has to be stopped. With it set, the host would refuse and answer "vm is still running on host".
+            final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+            final Answer answer = _agentMgr.send(powerHostId, stop);
+            if (answer != null && answer.getResult()) {
+                logger.info("Stopped unmanaged instance {} on host {}.", vm, powerHostId);
+                return;
+            }
+            logger.warn("Unable to stop unmanaged instance {} on host {}: {}", vm, powerHostId,
+                    answer == null ? "no answer from host" : answer.getDetails());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Unable to stop unmanaged instance {} on host {}.", vm, powerHostId, e);
+        }
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                VM_SYNC_ALERT_SUBJECT, String.format("Instance %s is reported running by host %s but is in %s state, "
+                        + "and could not be stopped. It may need to be stopped on the host.",
+                        vm.getInstanceName(), powerHostId, vm.getState()));
     }
 
     private void handlePowerOffReportWithNoPendingJobsOnVM(final VMInstanceVO vm) {
