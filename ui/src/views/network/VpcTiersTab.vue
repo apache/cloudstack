@@ -34,7 +34,14 @@
                 {{ $t('label.name') }}
               </div>
               <div>
-                <router-link :to="{ path: '/guestnetwork/' + network.id }">{{ network.name }} </router-link>
+                <router-link
+                  v-if="network.projectid"
+                  :to="{ path: '/guestnetwork/' + network.id, query: {projectid: -1 }}">
+                  {{ network.name }}
+                </router-link>
+                <router-link v-else :to="{ path: '/guestnetwork/' + network.id }">
+                  {{ network.name }}
+                </router-link>
                 <a-tag v-if="network.broadcasturi">{{ network.broadcasturi }}</a-tag>
               </div>
             </div>
@@ -55,6 +62,32 @@
               <div>
                 <router-link :to="{ path: '/acllist/' + network.aclid }">
                   {{ network.aclname }}
+                </router-link>
+              </div>
+            </div>
+            <div
+              class="list__col"
+              v-if="(network.projectid && resource.account) || (network.projectid !== resource.projectid)"
+            >
+              <div class="list__label">
+                {{ $t('label.project') }}
+              </div>
+              <div>
+                <router-link :to="{ path: '/project/' + network.projectid }">
+                  {{ network.project }}
+                </router-link>
+              </div>
+            </div>
+            <div
+              class="list__col"
+              v-else-if="(network.account && resource.projectid) || network.account !== resource.account || network.domainid !== resource.domainid"
+            >
+              <div class="list__label">
+                {{ $t('label.account') }}
+              </div>
+              <div>
+                <router-link :to="{ path: '/account', query: { name: network.account, domainid: network.domainid, dataView: true } }">
+                  {{ network.account }}
                 </router-link>
               </div>
             </div>
@@ -166,6 +199,9 @@
       :footer="null"
       @cancel="showCreateNetworkModal = false">
       <a-spin :spinning="modalLoading" v-ctrl-enter="handleAddNetworkSubmit">
+        <div v-if="!isNormalUserOrProject()">
+          <ownership-selection @fetch-owner="fetchOwnerOptions"/>
+        </div>
         <a-form
           layout="vertical"
           :ref="formRef"
@@ -370,11 +406,13 @@ import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getNetmaskFromCidr } from '@/utils/network'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'VpcTiersTab',
   mixins: [mixinForm],
   components: {
+    OwnershipSelection,
     Status,
     TooltipLabel
   },
@@ -506,6 +544,9 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || this.$store.getters.project?.id
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -531,10 +572,27 @@ export default {
       }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
-        this.fetchVMs(network.id)
+        this.fetchVMs(network)
         this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {}
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          this.owner = undefined
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          this.owner = undefined
+          return
+        }
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
     },
     fetchMtuForZone () {
       getAPI('listZones', {
@@ -675,17 +733,21 @@ export default {
         this.fetchLoading = false
       })
     },
-    fetchVMs (id) {
+    fetchVMs (network) {
       this.fetchLoading = true
-      getAPI('listVirtualMachines', {
+      var params = {
         listAll: true,
         vpcid: this.resource.id,
-        networkid: id,
+        networkid: network.id,
         page: this.page,
         pagesize: this.pageSize
-      }).then(json => {
-        this.vms[id] = json.listvirtualmachinesresponse.virtualmachine || []
-        this.itemCounts.vms[id] = json.listvirtualmachinesresponse.count || 0
+      }
+      if (network.projectid) {
+        params.projectid = -1
+      }
+      getAPI('listVirtualMachines', params).then(json => {
+        this.vms[network.id] = json.listvirtualmachinesresponse.virtualmachine || []
+        this.itemCounts.vms[network.id] = json.listvirtualmachinesresponse.count || 0
       }).finally(() => {
         this.fetchLoading = false
       })
@@ -748,8 +810,9 @@ export default {
         this.showCreateNetworkModal = false
         var params = {
           vpcid: this.resource.id,
-          domainid: this.resource.domainid,
-          account: this.resource.account,
+          domainid: this.owner?.domainid || this.resource.domainid,
+          account: this.owner?.projectid ? null : (this.owner?.account || this.resource.account),
+          projectid: this.owner?.projectid || null,
           networkOfferingId: values.networkOffering,
           name: values.name,
           displayText: values.name,
