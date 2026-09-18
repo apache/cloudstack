@@ -90,7 +90,7 @@ public class NetworkRateBackfill {
                 final boolean defaultNic = rs.getBoolean("default_nic");
                 try {
                     final Integer rate = computeLegacyNicNetworkRate(networkId, instanceId, defaultNic);
-                    if (rate != null && rate > 0) {
+                    if (rate != null && rate != 0) {
                         updateNicNetworkRate(nicId, rate);
                     }
                 } catch (Exception e) {

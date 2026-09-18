@@ -1233,7 +1233,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         NicVO vo = checkForRaceAndAllocateNic(requested, network, isDefaultNic, deviceId, vm);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
-        vo.setNetworkRate(networkRate != null && networkRate > 0 ? networkRate : null);
+        vo.setNetworkRate(networkRate);
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
         if (vm.getType() == Type.DomainRouter) {
@@ -2307,7 +2307,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setState(Nic.State.Reserved);
         }
 
-        nic.setNetworkRate(networkRate != null && networkRate > 0 ? networkRate : null);
+        nic.setNetworkRate(networkRate);
 
         if (vmProfile.getType() == Type.DomainRouter) {
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
