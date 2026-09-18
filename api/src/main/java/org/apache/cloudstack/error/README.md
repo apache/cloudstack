@@ -102,16 +102,22 @@ matched on by API clients that care about the specific error condition.
 
 `error-messages.json` is a server-side concern; the UI has a separate, independent localization
 path built on the same `errortextkey`. `ui/src/utils/plugins.js`'s `localeErrorUtilPlugin`
-(`$toLocaleError(msg, key, params)`) looks up `key` (the `errortextkey`) in the current locale's
-i18n bundle (`ui/public/locales/<locale>.json`, e.g. `hi.json`, `fr_FR.json`: flat key/value
-maps, same ones used for every other UI string). If a matching entry exists, it's used instead of
-the server-rendered `errortext`, with `{{placeholder}}` tokens substituted from `errormetadata`;
-otherwise it falls back to `errortext` unchanged. See `ui/src/utils/plugins.js:230` for the call
-site (`plugins.js:627` for the implementation).
+(`$toLocaleError(msg, key, params)`, called from both `$pollJob`'s async job failure handling and
+`$notifyError`) looks up `key` (the `errortextkey`) in the current locale's i18n bundle
+(`ui/public/locales/<locale>.json`, e.g. `hi.json`, `fr_FR.json`: flat key/value maps, same ones
+used for every other UI string). If a matching entry exists, it's used instead of the
+server-rendered `errortext`, with `{{placeholder}}` tokens substituted from `errormetadata`;
+otherwise it falls back to `errortext` unchanged.
+
+**Admin variant**: like the server, before trying the base key, `$toLocaleError` first tries
+`<key>.admin` when the current user is a root admin (`roletype === 'Admin'`), falling back to the
+base key if no such entry exists. Only this root-admin case is special-cased, matching
+`error-messages.json`'s own `.admin`-suffix behavior; there's no equivalent variant for resource
+admins, domain admins, or regular users.
 
 Practically: to ship a UI-side translation for a specific error, add a key equal to its
-`errortextkey` to the relevant locale file (e.g. `ui/public/locales/hi.json` for Hindi). No
-server-side change is needed.
+`errortextkey` (optionally suffixed `.admin` for a root-admin-specific variant) to the relevant
+locale file (e.g. `ui/public/locales/hi.json` for Hindi). No server-side change is needed.
 
 ## Global settings
 
