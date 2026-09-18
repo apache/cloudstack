@@ -18,6 +18,7 @@ package com.cloud.cluster;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -98,9 +99,10 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            logger.error("Failed to encode request POST parameters", e);
+            String msg = "Failed to encode request POST parameters: " + postParameters;
+            logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
-            throw new RemoteException("Failed to encode request POST parameters", e);
+            throw new RemoteException(msg, e);
         }
 
         return executePostMethod(client, method);
@@ -126,9 +128,10 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            logger.error("Failed to encode ping request POST parameters", e);
+            String msg = "Failed to encode ping request POST parameters: " + postParameters;
+            logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
-            throw new RemoteException("Failed to encode ping request POST parameters", e);
+            throw new RemoteException(msg, e);
         }
 
         final String returnVal = executePostMethod(client, method);
@@ -137,6 +140,16 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     private String executePostMethod(final CloseableHttpClient client, final HttpPost method) {
         String result = null;
+        String request = null;
+
+        if (logger.isDebugEnabled()) {
+            try {
+                request = EntityUtils.toString(method.getEntity(), Charset.defaultCharset());
+            } catch (Exception e) {
+                logger.warn("Failed to retrieve request entity for POST {}", serviceUrl, e);
+            }
+        }
+
         try {
             final Profiler profiler = new Profiler();
             profiler.start();
@@ -146,15 +159,14 @@ public class ClusterServiceServletImpl implements ClusterService {
                 result = EntityUtils.toString(httpResponse.getEntity());
                 profiler.stop();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("POST " + serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
+                    logger.debug("POST {} request: {}, response :{}, responding time: {} ms", serviceUrl, request, result, profiler.getDurationInMillis());
                 }
             } else {
                 profiler.stop();
-                logger.error("Invalid response code : " + response + ", from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + " responding time: " +
-                        profiler.getDurationInMillis());
+                logger.error("Invalid response code : {}, from : {} request: {}, method : {} responding time: {}", response, serviceUrl, request, method.getParams().getParameter("method"), profiler.getDurationInMillis());
             }
         } catch (IOException e) {
-            logger.error("Exception from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + ", exception :", e);
+            logger.error("Exception from : {} request: {}, method : {}, exception :", serviceUrl, request, method.getParams().getParameter("method"), e);
         } finally {
             method.releaseConnection();
         }

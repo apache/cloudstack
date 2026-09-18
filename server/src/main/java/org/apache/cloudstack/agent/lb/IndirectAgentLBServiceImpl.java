@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.dc.ClusterVO;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBRoundRobinAlgorithm;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBShuffleAlgorithm;
@@ -331,7 +332,9 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 zoneHostIds.addAll(hostIds);
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
-            final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+
+            final List<String> avoidMsList = agentManager.getAvoidMsList();
+
             for (Long nonRoutingHostId : nonRoutingHostIds) {
                 setupMSListExecutorService.submit(new SetupMSListTask(nonRoutingHostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, globalLbCheckInterval, triggerHostLB));
             }
@@ -377,7 +380,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         final String lbAlgorithm = getLBAlgorithmName();
         List<Long> clusterHostIds = getAllAgentBasedRoutingHostsFromDB(zone.getId(), clusterId, null, false);
         clusterHostIds.sort(Comparator.comparingLong(x -> x));
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
         final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
         for (Long hostId : clusterHostIds) {
             setupMSListInClusterExecutorService.submit(new SetupMSListTask(hostId, zone.getId(), clusterHostIds, avoidMsList, lbAlgorithm, clusterLbCheckInterval, false));
@@ -446,6 +449,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 break;
             }
 
+            // FIXME: it is fire and forget, Management Server will never know if task failed
             migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged));
         }
 
@@ -465,6 +469,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             logger.debug(String.format("Force shutdown migrate non-routing agents service as it did not shutdown in the desired time due to: %s", e.getMessage()));
         }
 
+        // FIXME: This task can fail only if it is timed out, otherwise it is always succeeds no matter what is the migration result.
         return true;
     }
 
@@ -531,10 +536,16 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             lbAlgorithmChanged = true;
         }
 
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
+
+        // Add the source management server in the same format as the config
         ManagementServerHostVO ms = mshostDao.findByMsid(fromMsId);
-        if (ms != null && !avoidMsList.contains(ms.getServiceIP())) {
-            avoidMsList.add(ms.getServiceIP());
+        if (ms != null) {
+            final boolean usingHostnames = ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames();
+            final String msAddress = usingHostnames ? ms.getName() : ms.getServiceIP();
+            if (msAddress != null && !avoidMsList.contains(msAddress)) {
+                avoidMsList.add(msAddress);
+            }
         }
 
         List<DataCenterVO> dataCenterList = dcDao.listAll();
@@ -595,7 +606,9 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                     msList = getManagementServerList(hostId, dcId, orderedHostIdList, lbAlgorithm);
                 }
 
+                // ask Host to reconnect to another Management Server
                 final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
+                // timeout 1 minute (FIXME: should it be configurable?)
                 cmd.setWait(60);
                 final Answer answer = agentManager.easySend(hostId, cmd); //may not receive answer when the agent disconnects immediately and try reconnecting to other ms host
                 if (answer == null) {
