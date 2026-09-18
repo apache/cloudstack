@@ -1082,7 +1082,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (userVm.getState() != State.Stopped) {
             logger.error(String.format("vm (%s) is not in the stopped state. current state: %s", userVm, userVm.getState()));
-            throw Exceptions.invalidParameterValueException("vm.resetsshkey.vm.no.stopped", Map.of(
+            throw Exceptions.invalidParameterValueException("vm.resetsshkey.vm.not.stopped", Map.of(
                     "instance", userVm,
                     "instanceState", userVm.getState()
             ));
