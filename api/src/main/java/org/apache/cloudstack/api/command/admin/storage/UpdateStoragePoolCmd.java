@@ -131,7 +131,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return ApiCommandResourceType.StoragePool;
     }
 
-    public Map<String,String> getDetails() {
+    public Map<String,Object> getDetails() {
         return details;
     }
 

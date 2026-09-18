@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 
@@ -31,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
@@ -79,11 +77,10 @@ public class AddImageStoreCmd extends BaseCmd {
     public Map<String, String> getDetails() {
         Map<String, String> detailsMap = null;
         if (details != null && !details.isEmpty()) {
-            detailsMap = new HashMap<String, String>();
+            detailsMap = new HashMap<>();
             Collection<?> props = details.values();
-            Iterator<?> iter = props.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> detail = (HashMap<String, String>)iter.next();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
                 String key = detail.get("key");
                 String value = detail.get("value");
                 detailsMap.put(key, value);
@@ -123,20 +120,15 @@ public class AddImageStoreCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        try{
-            ImageStore result = _storageService.discoverImageStore(getName(), getUrl(), getProviderName(), getZoneId(), getDetails());
-            ImageStoreResponse storeResponse = null;
-            if (result != null) {
-                storeResponse = _responseGenerator.createImageStoreResponse(result);
-                storeResponse.setResponseName(getCommandName());
-                storeResponse.setObjectName("imagestore");
-                setResponseObject(storeResponse);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
-            }
-        } catch (DiscoveryException ex) {
-            logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        ImageStore result = _storageService.discoverImageStore(getName(), getUrl(), getProviderName(), getZoneId(), getDetails());
+        ImageStoreResponse storeResponse;
+        if (result != null) {
+            storeResponse = _responseGenerator.createImageStoreResponse(result);
+            storeResponse.setResponseName(getCommandName());
+            storeResponse.setObjectName("imagestore");
+            setResponseObject(storeResponse);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
         }
     }
 }
