@@ -332,15 +332,7 @@ public class ApiServlet extends HttpServlet {
                             apiServer.logoutUser(userId);
                         }
                         invalidateHttpSession(session, "invalidating session after logout call");
-
-                        final Cookie[] cookies = req.getCookies();
-                        if (cookies != null) {
-                            for (final Cookie cookie : cookies) {
-                                cookie.setValue("");
-                                cookie.setMaxAge(0);
-                                resp.addCookie(cookie);
-                            }
-                        }
+                        clearRequestCookies(req, resp);
                     }
                     HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONContentType.value());
                     return;
@@ -630,6 +622,22 @@ public class ApiServlet extends HttpServlet {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Echoes back every cookie on the request with Max-Age=0 so the browser drops them. Must be
+     * called before the response is committed (e.g. before HttpServletResponse#sendRedirect),
+     * otherwise the Set-Cookie headers are silently dropped by the servlet container.
+     */
+    public static void clearRequestCookies(HttpServletRequest req, HttpServletResponse resp) {
+        final Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (final Cookie cookie : cookies) {
+                cookie.setValue("");
+                cookie.setMaxAge(0);
+                resp.addCookie(cookie);
+            }
+        }
     }
 
     public static void invalidateHttpSession(HttpSession session, String msg) {
