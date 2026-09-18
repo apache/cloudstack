@@ -45,7 +45,7 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
  */
 public final class CephUtil {
 
-    protected static Logger logger = LogManager.getLogger(CephUtil.class);
+    private static final Logger logger = LogManager.getLogger(CephUtil.class);
 
     private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
     private static final String RADOS_OSD_OP_TIMEOUT = "rados_osd_op_timeout";
@@ -106,7 +106,8 @@ public final class CephUtil {
 
     /**
      * Applies the connect and operation timeouts from the agent properties. A timeout configured as 0 is
-     * left unset, which keeps the librados default of waiting forever.
+     * left unset, so librados uses its own default: waiting forever for the two operation timeouts, and
+     * 300 seconds for the connect timeout.
      */
     private static void applyTimeouts(Rados r) throws RadosException {
         int mountTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RADOS_CLIENT_MOUNT_TIMEOUT);

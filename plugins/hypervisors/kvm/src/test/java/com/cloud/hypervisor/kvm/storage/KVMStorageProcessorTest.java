@@ -50,6 +50,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -549,9 +550,15 @@ public class KVMStorageProcessorTest {
 
             Assert.assertEquals(Long.valueOf(SNAPSHOT_SIZE), result);
             Mockito.verify(rbdImageMock, Mockito.times(1)).snapCreate(SNAPSHOT_NAME);
-            Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
-            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
-            Mockito.verify(radosMock).shutDown();
+
+            /*
+             * Order matters: Rados.shutDown() releases the native cluster handle, so destroying the IO
+             * context after it would be a use after free.
+             */
+            InOrder unwind = Mockito.inOrder(rbd.constructed().get(0), radosMock);
+            unwind.verify(rbd.constructed().get(0)).close(rbdImageMock);
+            unwind.verify(radosMock).ioCtxDestroy(ioCtxMock);
+            unwind.verify(radosMock).shutDown();
         }
     }
 

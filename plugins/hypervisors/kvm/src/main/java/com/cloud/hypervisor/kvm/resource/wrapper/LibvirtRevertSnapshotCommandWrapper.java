@@ -62,7 +62,6 @@ import org.libvirt.LibvirtException;
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
 
-
     protected Set<StoragePoolType> storagePoolTypesThatSupportRevertSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD, StoragePoolType.Filesystem,
             StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint));
 

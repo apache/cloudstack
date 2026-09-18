@@ -31,6 +31,7 @@ import org.libvirt.LibvirtException;
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
 import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -49,6 +50,8 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ManageSnapshotCommand.class)
 public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<ManageSnapshotCommand, Answer, LibvirtComputingResource> {
 
+    /** librados reports a missing object as -ENOENT. */
+    private static final int RBD_ENOENT = -2;
 
     @Override
     public Answer execute(final ManageSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -132,11 +135,22 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                             logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
                             image.snapRemove(snapshotName);
                         }
+                    } catch (final RbdException e) {
+                        if (ManageSnapshotCommand.DESTROY_SNAPSHOT.equalsIgnoreCase(command.getCommandSwitch()) && e.getReturnValue() == RBD_ENOENT) {
+                            /*
+                             * Already gone. A delete whose end state is "the snapshot is not there" has
+                             * succeeded, and failing here would break a retried delete.
+                             */
+                            logger.info("RBD snapshot " + disk.getName() + "@" + snapshotName + " was already gone.");
+                        } else {
+                            /*
+                             * Reporting success here would record a snapshot in CloudStack that does not
+                             * exist on the cluster, or drop one that is still there.
+                             */
+                            logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage(), e);
+                            return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
+                        }
                     } catch (final Exception e) {
-                        /*
-                         * Reporting success here would record a snapshot in CloudStack that does not exist
-                         * on the cluster.
-                         */
                         logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage(), e);
                         return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
                     } finally {

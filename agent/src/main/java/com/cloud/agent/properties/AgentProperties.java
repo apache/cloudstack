@@ -942,7 +942,6 @@ public class AgentProperties{
      */
     public static final Property<Integer> RADOS_CLIENT_MOUNT_TIMEOUT = new Property<>("rados.client.mount.timeout", 30);
 
-
     public static class Property <T>{
         private String name;
         private T defaultValue;

@@ -1420,6 +1420,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 rbd.copy(srcImage, destImage);
 
                                 logger.debug("Finished copying " + srcImage.getName() +  " to " + destImage.getName() + " in Ceph pool " + srcPool.getSourceDir());
+
+                                /*
+                                 * rbd_close is where librbd flushes, so closing an image that was just
+                                 * written is the last point a lost write can surface. It has to fail the
+                                 * copy rather than be logged and forgotten.
+                                 */
+                                rbd.close(destImage);
+                                destImage = null;
                             } finally {
                                 CephUtil.closeQuietly(rbd, destImage, disk.getName());
                             }
@@ -1517,6 +1525,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName()
                                 + " on cluster " + rDest.confGet("mon_host"));
                         sRbd.copy(srcImage, destImage);
+
+                        /*
+                         * rbd_close is where librbd flushes, so closing the destination is the last point
+                         * a lost write can surface. It has to fail the copy rather than be logged.
+                         */
+                        dRbd.close(destImage);
+                        destImage = null;
                     } finally {
                         CephUtil.closeQuietly(sRbd, srcImage, template.getName());
                         CephUtil.closeQuietly(dRbd, destImage, disk.getName());

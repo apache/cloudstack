@@ -172,6 +172,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     private String _manageSnapshotPath;
     private int _cmdsTimeout;
 
+    /** librados reports a missing object as -ENOENT. */
+    private static final int RBD_ENOENT = -2;
+
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
     private static final String NAME_OPTION = "-n";
     /**
@@ -2948,8 +2951,22 @@ public class KVMStorageProcessor implements StorageProcessor {
                         logger.info("Snapshot " + snapshotFullName + " successfully removed from " +
                                 primaryPool.getType().toString() + "  pool.");
                     } catch (RbdException e) {
-                        logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
-                            ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                        if (e.getReturnValue() == RBD_ENOENT) {
+                            /*
+                             * Already gone. A delete whose end state is "the snapshot is not there" has
+                             * succeeded, and failing here would break a retried delete.
+                             */
+                            logger.info("RBD snapshot " + snapshotFullName + " was already gone.");
+                        } else {
+                            /*
+                             * Anything else means the snapshot is still on the cluster. Reporting success
+                             * would drop the record while it keeps pinning space, and one left protected
+                             * also blocks removal of its parent volume.
+                             */
+                            logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
+                                ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
+                            throw e;
+                        }
                     }
                 } finally {
                     closeRbdImage(rbd, image, disk.getName());
