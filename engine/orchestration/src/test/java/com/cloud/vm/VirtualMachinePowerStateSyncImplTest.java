@@ -36,6 +36,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -51,6 +52,8 @@ public class VirtualMachinePowerStateSyncImplTest {
     HostDao hostDao;
     @Mock
     ManagementServiceConfiguration mgmtServiceConf;
+    @Mock
+    AlertManager alertManager;
 
     @InjectMocks
     VirtualMachinePowerStateSyncImpl virtualMachinePowerStateSync = new VirtualMachinePowerStateSyncImpl();
