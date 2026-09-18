@@ -1228,12 +1228,7 @@ export default {
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (checked) {
-        const correctProvider = this.serviceProviderMap[service]
-        if (correctProvider && provider !== correctProvider) {
-          this.selectedServiceProviderMap[service] = correctProvider
-        } else {
-          this.selectedServiceProviderMap[service] = provider
-        }
+        this.selectedServiceProviderMap[service] = provider
       } else {
         delete this.selectedServiceProviderMap[service]
       }
@@ -1292,6 +1287,10 @@ export default {
 
         if (values.guestiptype) {
           params.guestiptype = values.guestiptype
+        }
+
+        if (values.forvpc === true) {
+          params.forvpc = true
         }
 
         // Use composable for service capability params
