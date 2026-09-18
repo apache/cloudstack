@@ -203,6 +203,40 @@ export default {
       ]
     },
     {
+      name: 'serviceofferingcategory',
+      title: 'label.service.offering.categories',
+      icon: 'shopping-outlined',
+      permission: ['listServiceOfferingCategories'],
+      columns: ['name', 'order'],
+      details: ['name', 'id'],
+      actions: [
+        {
+          api: 'createServiceOfferingCategory',
+          icon: 'plus-outlined',
+          label: 'label.add.service.offering.category',
+          listView: true,
+          dataView: false,
+          args: ['name']
+        },
+        {
+          api: 'updateServiceOfferingCategory',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['name']
+        },
+        {
+          api: 'deleteServiceOfferingCategory',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.service.offering.category',
+          message: 'message.action.delete.service.offering.category',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
       name: 'guestos',
       title: 'label.guest.os',
       docHelp: 'adminguide/guest_os.html#guest-os',
