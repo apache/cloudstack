@@ -162,18 +162,18 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     vmStateUpdateTime = instance.getCreated();
                 }
             }
-            logger.debug("Detected missing VM. host: {}, vm id: {}({}), power state: {}, last state update: {}",
-                    hostId,
-                    instance.getId(),
-                    instance.getUuid(),
-                    VirtualMachine.PowerState.PowerReportMissing,
-                    DateUtil.getOutputString(vmStateUpdateTime));
             if (hasRecentStateChange(instance, currentTime, milliSecondsGracefulPeriod)) {
                 logger.debug("vm id: {} - state changed at {}, which is within the graceful period ({} ms); " +
                                 "the report may have been collected before that change, skipping missing report",
                         instance.getId(), DateUtil.getOutputString(instance.getUpdateTime()), milliSecondsGracefulPeriod);
                 continue;
             }
+            logger.debug("Detected missing VM. host: {}, vm id: {}({}), power state: {}, last state update: {}",
+                    hostId,
+                    instance.getId(),
+                    instance.getUuid(),
+                    VirtualMachine.PowerState.PowerReportMissing,
+                    DateUtil.getOutputString(vmStateUpdateTime));
             long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
             if (force || (milliSecondsSinceLastStateUpdate > milliSecondsGracefulPeriod)) {
                 logger.debug("vm id: {} - reporting missing (time since last state update: {} ms, graceful period: {} ms, forced: {})",
