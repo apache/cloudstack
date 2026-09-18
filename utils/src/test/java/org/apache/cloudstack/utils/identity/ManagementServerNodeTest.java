@@ -17,39 +17,20 @@
 package org.apache.cloudstack.utils.identity;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
-import org.junit.After;
 import org.junit.Test;
 
 public class ManagementServerNodeTest {
 
-    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.fqdn";
-
-    @After
-    public void tearDown() {
-        System.clearProperty(FQDN_SYS_PROP);
-    }
-
-    private static boolean invokeIsTruthy(String value) throws Exception {
-        Method m = ManagementServerNode.class.getDeclaredMethod("isTruthy", String.class);
+    private static String invokeTrimToNull(String value) throws Exception {
+        Method m = ManagementServerNode.class.getDeclaredMethod("trimToNull", String.class);
         m.setAccessible(true);
-        return (boolean) m.invoke(null, value);
-    }
-
-    private static boolean invokeIsFqdnModeEnabled() throws Exception {
-        Method m = ManagementServerNode.class.getDeclaredMethod("isFqdnModeEnabled");
-        m.setAccessible(true);
-        return (boolean) m.invoke(null);
-    }
-
-    private static long invokeGenerateIdFromFqdn() throws Exception {
-        Method m = ManagementServerNode.class.getDeclaredMethod("generateIdFromFqdn");
-        m.setAccessible(true);
-        return (long) m.invoke(null);
+        return (String) m.invoke(null, value);
     }
 
     @Test
@@ -70,68 +51,35 @@ public class ManagementServerNodeTest {
     }
 
     @Test
-    public void testIsTruthyRecognizesTrueValues() throws Exception {
-        assertTrue(invokeIsTruthy("true"));
-        assertTrue(invokeIsTruthy("TRUE"));
-        assertTrue(invokeIsTruthy("True"));
-        assertTrue(invokeIsTruthy("1"));
-        assertTrue(invokeIsTruthy("yes"));
-        assertTrue(invokeIsTruthy("YES"));
+    public void testHashNodeIdentityIsDeterministicAndFitsInMacAddressRange() {
+        long first = ManagementServerNode.hashNodeIdentity("management.example.test");
+        long second = ManagementServerNode.hashNodeIdentity("management.example.test");
+
+        assertEquals(first, second);
+        assertTrue(first > 0);
+        assertTrue(first <= 0xFFFFFFFFFFFFL);
     }
 
     @Test
-    public void testIsTruthyTrimsWhitespace() throws Exception {
-        assertTrue(invokeIsTruthy("  true  "));
-        assertTrue(invokeIsTruthy("\t1\n"));
-        assertTrue(invokeIsTruthy(" yes "));
+    public void testHashNodeIdentityUsesFirstSixSha256Bytes() throws Exception {
+        String identity = "management.example.test";
+        byte[] hash = MessageDigest.getInstance("SHA-256").digest(identity.getBytes(StandardCharsets.UTF_8));
+        long expected = 0;
+        for (int i = 0; i < 6; i++) {
+            expected = (expected << 8) | (hash[i] & 0xFFL);
+        }
+
+        assertEquals(expected, ManagementServerNode.hashNodeIdentity(identity));
     }
 
     @Test
-    public void testIsTruthyRejectsFalseValues() throws Exception {
-        assertFalse(invokeIsTruthy(null));
-        assertFalse(invokeIsTruthy(""));
-        assertFalse(invokeIsTruthy("   "));
-        assertFalse(invokeIsTruthy("false"));
-        assertFalse(invokeIsTruthy("0"));
-        assertFalse(invokeIsTruthy("no"));
-        assertFalse(invokeIsTruthy("enabled"));
-        assertFalse(invokeIsTruthy("2"));
+    public void testTrimToNullReturnsTrimmedValue() throws Exception {
+        assertEquals("management.example.test", invokeTrimToNull("  management.example.test \n"));
     }
 
     @Test
-    public void testIsFqdnModeEnabledDefaultsFalse() throws Exception {
-        System.clearProperty(FQDN_SYS_PROP);
-        assertFalse(invokeIsFqdnModeEnabled());
-    }
-
-    @Test
-    public void testIsFqdnModeEnabledWhenSystemPropertyTruthy() throws Exception {
-        System.setProperty(FQDN_SYS_PROP, "true");
-        assertTrue(invokeIsFqdnModeEnabled());
-    }
-
-    @Test
-    public void testIsFqdnModeEnabledWhenSystemPropertyFalsy() throws Exception {
-        System.setProperty(FQDN_SYS_PROP, "false");
-        assertFalse(invokeIsFqdnModeEnabled());
-    }
-
-    @Test
-    public void testGenerateIdFromFqdnIsPositiveAndNonZero() throws Exception {
-        long id = invokeGenerateIdFromFqdn();
-        assertTrue("Generated id must be positive and non-zero", id > 0);
-    }
-
-    @Test
-    public void testGenerateIdFromFqdnFitsIn48Bits() throws Exception {
-        long id = invokeGenerateIdFromFqdn();
-        assertTrue("Generated id must fit within 48 bits", id <= 0xFFFFFFFFFFFFL);
-    }
-
-    @Test
-    public void testGenerateIdFromFqdnIsDeterministic() throws Exception {
-        long first = invokeGenerateIdFromFqdn();
-        long second = invokeGenerateIdFromFqdn();
-        assertEquals("Generated id must be stable across calls for the same FQDN", first, second);
+    public void testTrimToNullReturnsNullForNullAndBlankValues() throws Exception {
+        assertEquals(null, invokeTrimToNull(null));
+        assertEquals(null, invokeTrimToNull(" \t\n "));
     }
 }

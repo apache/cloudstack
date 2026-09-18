@@ -22,6 +22,9 @@ package org.apache.cloudstack.utils.identity;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -44,64 +47,70 @@ import com.cloud.utils.net.MacAddress;
  */
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 
-    private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_FQDN";
-    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.fqdn";
+    private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
+    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.id";
+    
+
+    // op_lock.mac is varchar(17) and holds the msid, so the id must stay within the 48-bit MAC address range.
+    private static final int MSID_BYTES = 6;
+
+    private static final Logger s_logger = LogManager.getLogger(ManagementServerNode.class);
 
     private static String s_nodeIdSource;
-    private static Exception s_initError;
     private static final long s_nodeId = initNodeId();
 
     private static long initNodeId() {
-        if (isFqdnModeEnabled()) {
-            return generateIdFromFqdn();
+
+        s_logger.info("Initializing management server node ID");
+        // Check if FQDN_ENV_VAR or FQDN_SYS_PROP has a value
+        String fqdnEnv = System.getenv(FQDN_ENV_VAR);
+        String fqdnSysProp = System.getProperty(FQDN_SYS_PROP);
+
+        String identity = null;
+        if (fqdnEnv != null) {
+            identity = trimToNull(fqdnEnv);
+            s_logger.info("FQDN environment variable: {}", fqdnEnv);
         }
+        if (fqdnSysProp != null) {
+            identity = trimToNull(fqdnSysProp);
+            s_logger.info("FQDN system property: {}", fqdnSysProp);
+        }
+
+        if (identity != null) {
+            s_nodeIdSource = "fqdn";
+            s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, identity);
+            return hashNodeIdentity(identity);
+        }
+
+        // Use mac address
         s_nodeIdSource = "mac-address";
-        return MacAddress.getMacAddress().toLong();
+        long macAddress = MacAddress.getMacAddress().toLong();
+        s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, macAddress);
+        return macAddress;
     }
 
-    private static boolean isFqdnModeEnabled() {
-        return isTruthy(System.getenv(FQDN_ENV_VAR)) || isTruthy(System.getProperty(FQDN_SYS_PROP));
-    }
-
-    private static boolean isTruthy(String value) {
-        if (value == null) {
-            return false;
-        }
-        String trimmed = value.trim();
-        return "true".equalsIgnoreCase(trimmed) || "1".equals(trimmed) || "yes".equalsIgnoreCase(trimmed);
-    }
-
-    /**
-     * Derives a stable node id from a SHA-256 hash of the local FQDN.
-     *
-     * <p>On failure it records the cause and returns {@code 0} (an invalid id) rather than
-     * silently reverting to an unstable MAC-based id. The invalid id makes {@link #check()}
-     * fail the system-integrity check, which stops startup cleanly via {@link #start()}
-     * instead of raising an {@code ExceptionInInitializerError} from static initialization.
-     *
-     * @return a positive, non-zero 48-bit id, or {@code 0} if it cannot be derived
-     */
-    private static long generateIdFromFqdn() {
+    static long hashNodeIdentity(String nodeIdentity) {
         try {
-            String fqdn = InetAddress.getLocalHost().getCanonicalHostName();
-            s_nodeIdSource = "fqdn:" + fqdn;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(fqdn.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(nodeIdentity.getBytes(StandardCharsets.UTF_8));
             long id = 0;
-            for (int i = 0; i < 6; i++) {
-                id = (id << 8) | (hash[i] & 0xFF);
+            for (int i = 0; i < MSID_BYTES; i++) {
+                id = (id << 8) | (hash[i] & 0xFFL);
             }
-            // Ensure positive and non-zero
-            id = id & 0x7FFFFFFFFFFFFFFFL;
-            if (id == 0) {
-                id = 1;
-            }
-            return id;
-        } catch (Exception e) {
-            s_nodeIdSource = "fqdn-error";
-            s_initError = e;
-            return 0;
+
+            return id == 0 ? 1 : id;
+        } catch (NoSuchAlgorithmException e) {
+            throw new CloudRuntimeException("SHA-256 algorithm not available for management server ID generation", e);
         }
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public ManagementServerNode() {
@@ -111,8 +120,7 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
     @Override
     public void check() {
         if (s_nodeId <= 0) {
-            throw new CloudRuntimeException(
-                    "Unable to derive the management server node id (source: " + s_nodeIdSource + ")", s_initError);
+            throw new CloudRuntimeException("Unable to get the management server node id");
         }
     }
 
@@ -124,10 +132,11 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
     public boolean start() {
         try {
             check();
-        } catch (CloudRuntimeException e) {
-            logger.error("System integrity check failed for the management server node id", e);
-            throw e;
+        } catch (Exception e) {
+            logger.error("System integrity check exception", e);
+            System.exit(1);
         }
+
         logger.info("Management server node id: {} (source: {})", s_nodeId, s_nodeIdSource);
         return true;
     }
