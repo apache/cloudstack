@@ -5480,20 +5480,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
 
-            if (PowerState.PowerOff.equals(vm.getPowerState())) {
+            // A missing report is not proof that the instance is gone, only that the host did not list it. Stop it
+            // on the host before giving up its resources, otherwise a still-running instance keeps its NICs and IP
+            // addresses while the database says they are free and they get handed to another instance.
+            if (PowerState.PowerOff.equals(vm.getPowerState()) || PowerState.PowerReportMissing.equals(vm.getPowerState())) {
                 final VirtualMachineGuru vmGuru = getVmGuru(vm);
                 final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
                 Pair<Boolean, String> result = sendStop(vmGuru, profile, true, true);
                 if (!result.first()) {
+                    logger.warn("Unable to stop VM {} on its host, not releasing its resources: {}", vm, result.second());
                     return;
                 } else {
                     // Release resources on StopCommand success
                     releaseVmResources(profile, true);
                 }
-            } else if (PowerState.PowerReportMissing.equals(vm.getPowerState())) {
-                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                // VM will be sync-ed to Stopped state, release the resources
-                releaseVmResources(profile, true);
             }
 
             try {
