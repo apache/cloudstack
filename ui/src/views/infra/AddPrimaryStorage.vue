@@ -360,7 +360,7 @@
             <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
           </a-form-item>
         </div>
-        <div v-if="form.provider === 'Flash Array'">
+        <div v-if="form.provider === 'FlashArray'">
           <a-form-item name="flashArrayURL" ref="flashArrayURL">
             <template #label>
               <tooltip-label :title="$t('label.url')" :tooltip="$t('label.flashArray.url.tooltip')"/>
@@ -829,7 +829,7 @@ export default {
       if (value === 'PowerFlex') {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
-      } else if (value === 'Flash Array' || value === 'Primera') {
+      } else if (value === 'FlashArray' || value === 'Primera') {
         this.protocols = ['FiberChannel']
         this.form.protocol = 'FiberChannel'
       } else if (value === 'NetApp ONTAP') {
@@ -956,7 +956,7 @@ export default {
           params['details[0].api_username'] = values.primeraUsername
           params['details[0].api_password'] = values.primeraPassword
           url = values.primeraURL
-        } else if (values.provider === 'Flash Array') {
+        } else if (values.provider === 'FlashArray') {
           params['details[0].api_username'] = values.flashArrayUsername
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
