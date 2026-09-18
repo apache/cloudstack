@@ -398,6 +398,8 @@ public class BasicNetworkTopology implements NetworkTopology {
             // If rules fail to apply on one domR and not due to
             // disconnection, no need to proceed with the rest
             if (!result) {
+                logger.error(String.format("VIRTUAL_ROUTER_RULE_FAILURE: Failed to apply [%s] on Virtual Router [%s] (ID: %s, HostId: %s, NetworkId: %s). Router requires restart/bounce.",
+                        typeString, router.getInstanceName(), router.getId(), router.getHostId(), network.getId()));
                 if (isZoneBasic && isPodLevelException) {
                     throw new ResourceUnavailableException("Unable to apply " + typeString + " on router ", Pod.class, podId);
                 }
