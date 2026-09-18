@@ -696,6 +696,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm.getUuid(), VmDestroyForcestop.value());
         vm = _vmDao.findByUuid(vm.getUuid());
 
+        // advanceStop() returns without contacting the host when the database already has the instance as Stopped,
+        // Error, Destroyed or Expunging. The host may still be running it. Expunging is about to release its
+        // addresses and delete its volumes, so make sure no domain is left behind for it.
+        ensureInstanceIsStoppedOnLastKnownHost(vm);
+
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
                 logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
@@ -5466,6 +5471,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * managed again, and its addresses and storage have already been handed back, so stop it on the host that
      * reported it instead of leaving it running unmanaged.
      */
+    /**
+     * Send a StopCommand for an instance to the last host it is known to have run on, whatever the database state
+     * says. Used before expunging, where the instance's addresses and volumes are about to be released and a domain
+     * left running on the host would keep using them.
+     */
+    protected void ensureInstanceIsStoppedOnLastKnownHost(final VMInstanceVO vm) {
+        if (vm == null) {
+            return;
+        }
+        final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null) {
+            return;
+        }
+        try {
+            // checkBeforeCleanup is false on purpose: a running domain is what has to be removed here.
+            final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
+            final Answer answer = _agentMgr.send(hostId, stop);
+            if (answer != null && answer.getResult()) {
+                return;
+            }
+            logger.warn("Unable to confirm instance {} is stopped on host {} before expunging: {}", vm, hostId,
+                    answer == null ? "no answer from host" : answer.getDetails());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Unable to confirm instance {} is stopped on host {} before expunging.", vm, hostId, e);
+        }
+    }
+
     protected void stopUnmanagedInstanceOnReportingHost(final VMInstanceVO vm) {
         final Long powerHostId = vm.getPowerHostId();
         if (powerHostId == null) {
