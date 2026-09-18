@@ -20,7 +20,6 @@
     "vm.assign.applicable.network.not.found": "Could not find an applicable network to create virtual machine for {{account}}.",
     "vm.assign.basic.zone.network.ids.not.allowed": "Cannot move Instance with Network IDs; this is a basic zone Instance.",
     "vm.assign.default.network.not.found": "Unable to find a default network to start the Instance.",
-    "vm.assign.domain.id.null": "Please provide a valid domain ID. Cannot assign VM to a project if domain ID is null.",
     "vm.assign.loadbalancer.rules.exist": "Remove all Load Balancing rules for {{instance}} before assigning it to another user.",
     "vm.assign.multiple.default.networks": "More than one default isolated network found for {{account}}. Please specify networkIDs.",
     "vm.assign.network.implement.failed": "Failed to implement {{network}} elements and resources as part of network provision.",
