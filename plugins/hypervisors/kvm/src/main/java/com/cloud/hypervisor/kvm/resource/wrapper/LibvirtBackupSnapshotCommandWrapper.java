@@ -106,7 +106,8 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
 
                     io = r.ioCtxCreate(primaryPool.getSourceDir());
                     rbd = new Rbd(io);
-                    image = rbd.open(snapshotDisk.getName(), snapshotName);
+                    // The snapshot is only read from here, so it is opened read only.
+                    image = rbd.openReadOnly(snapshotDisk.getName(), snapshotName);
                     final File fh = new File(snapshotDestPath);
                     try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
                         final int chunkSize = 4194304;

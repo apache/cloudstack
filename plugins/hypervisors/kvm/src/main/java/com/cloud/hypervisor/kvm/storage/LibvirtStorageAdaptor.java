@@ -1403,7 +1403,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                         io = r.ioCtxCreate(srcPool.getSourceDir());
                         rbd = new Rbd(io);
-                        srcImage = rbd.open(template.getName());
+                        // The template is the parent of the clone and is not written to on this path, so it
+                        // is opened read only. A read write open registers a watcher on the image header and
+                        // lets the image take the exclusive lock, neither of which a clone needs.
+                        srcImage = rbd.openReadOnly(template.getName());
 
                         if (srcImage.isOldFormat()) {
                             /* The source image is RBD format 1, we have to do a regular copy */
@@ -1443,6 +1446,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             }
 
                             if (!snapFound) {
+                                /*
+                                 * Creating and protecting the base snapshot are writes, so they need a
+                                 * writable handle. Only the first clone of a template comes through here;
+                                 * every later clone finds the snapshot and keeps the read only handle.
+                                 */
+                                CephUtil.closeQuietly(rbd, srcImage, template.getName());
+                                srcImage = rbd.open(template.getName());
+
                                 logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);
                                 srcImage.snapCreate(rbdTemplateSnapName);
                                 logger.debug("Protecting RBD snapshot " + rbdTemplateSnapName + " on image " + name);
@@ -1494,7 +1505,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 destPool.getSourceDir());
                         dRbd.create(disk.getName(), disk.getVirtualSize(), RBD_FEATURES, rbdOrder);
 
-                        srcImage = sRbd.open(template.getName());
+                        // The template is only read from on this path, so it is opened read only.
+                        srcImage = sRbd.openReadOnly(template.getName());
                         destImage = dRbd.open(disk.getName());
 
                         logger.debug("Copying " + template.getName() + " from Ceph cluster " + rSrc.confGet("mon_host") + " to " + disk.getName()
