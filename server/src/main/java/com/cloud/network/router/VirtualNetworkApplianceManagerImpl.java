@@ -252,7 +252,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
@@ -367,7 +366,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private int _routerExtraPublicNics = 2;
     private int _usageAggregationRange = 1440;
     private String _usageTimeZone = "GMT";
-    private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+    private final long mgmtSrvrId = ManagementServerNode.getManagementServerId();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5; // 5 seconds
     private boolean _dailyOrHourly = false;
 
