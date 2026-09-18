@@ -256,7 +256,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             volumeUpdate.setNas(nas);
 
             try {
-                JobResponse jobResponse = volumeFeignClient.updateVolumeRebalancing(authHeader, volumeUuid, volumeUpdate);
+                JobResponse jobResponse = volumeFeignClient.updateVolume(authHeader, volumeUuid, volumeUpdate);
                 if (jobResponse == null || jobResponse.getJob() == null) {
                     throw new CloudRuntimeException("Failed to attach policy " + policyName + "to volume " + volumeUuid);
                 }
