@@ -618,7 +618,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import { ref, reactive, toRaw, h } from 'vue'
 import { Button } from 'ant-design-vue'
 import { getAPI, postAPI, callAPI } from '@/api'

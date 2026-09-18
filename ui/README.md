@@ -63,10 +63,6 @@ To use the community Simulator QA server you can do this:
 
     echo "CS_URL=https://qa.cloudstack.cloud" > .env.local
 
-This may be required for newer npm versions:
-
-    export NODE_OPTIONS=--openssl-legacy-provider
-
 Build and run:
 
     npm run serve
