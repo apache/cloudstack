@@ -114,6 +114,21 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 .collect(Collectors.toList());
     }
 
+    /**
+     * A host report only lists the instances that were running on the host when the report was collected. When the
+     * management server changes an instance's state around that moment, an in-flight report may have been collected
+     * before the change and therefore says nothing about it. Treating such an instance as missing would undo the
+     * change that just happened, so instances whose state changed within the graceful period are left alone and
+     * judged by a later report instead.
+     */
+    protected boolean hasRecentStateChange(VMInstanceVO instance, Date currentTime, long milliSecondsGracefulPeriod) {
+        Date lastStateChange = instance.getUpdateTime();
+        if (lastStateChange == null) {
+            return false;
+        }
+        return currentTime.getTime() - lastStateChange.getTime() < milliSecondsGracefulPeriod;
+    }
+
     private void processMissingVmReport(long hostId, Set<Long> vmIds, boolean force) {
         // any state outdates should be checked against the time before this list was retrieved
         Date startTime = DateUtil.currentGMTTime();
@@ -149,10 +164,16 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     instance.getUuid(),
                     VirtualMachine.PowerState.PowerReportMissing,
                     DateUtil.getOutputString(vmStateUpdateTime));
+            if (hasRecentStateChange(instance, currentTime, milliSecondsGracefulPeriod)) {
+                logger.debug("vm id: {} - state changed at {}, which is within the graceful period ({} ms); " +
+                                "the report may have been collected before that change, skipping missing report",
+                        instance.getId(), DateUtil.getOutputString(instance.getUpdateTime()), milliSecondsGracefulPeriod);
+                continue;
+            }
             long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
             if (force || (milliSecondsSinceLastStateUpdate > milliSecondsGracefulPeriod)) {
-                logger.debug("vm id: {} - time since last state update({} ms) has passed graceful period",
-                        instance.getId(), milliSecondsSinceLastStateUpdate);
+                logger.debug("vm id: {} - reporting missing (time since last state update: {} ms, graceful period: {} ms, forced: {})",
+                        instance.getId(), milliSecondsSinceLastStateUpdate, milliSecondsGracefulPeriod, force);
                 // this is where a race condition might have happened if we don't re-fetch the instance;
                 // between the startime of this job and the currentTime of this missing-branch
                 // an update might have occurred that we should not override in case of out of band migration
