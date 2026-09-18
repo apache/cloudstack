@@ -49,7 +49,6 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
 
     private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
     private static final String FQDN_SYS_PROP = "cloudstack.msid.from.id";
-    private static final String HOSTNAME_ENV_VAR = "HOSTNAME";
     
 
     // op_lock.mac is varchar(17) and holds the msid, so the id must stay within the 48-bit MAC address range.
