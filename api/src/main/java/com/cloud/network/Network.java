@@ -461,6 +461,16 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     void setCidr(String cidr);
 
+    // For an isolated guest network, an optional custom DHCP range within the CIDR that guest IPs
+    // are allocated from; null means the whole CIDR is used, which is the default.
+    String getDhcpStartIp();
+
+    void setDhcpStartIp(String dhcpStartIp);
+
+    String getDhcpEndIp();
+
+    void setDhcpEndIp(String dhcpEndIp);
+
     // "networkcidr" is the network CIDR of the guest network which uses IP reservation.
     // It is the summation of "cidr" and the reservedIPrange(the address space used for non CloudStack purposes).
     // For networks not configured with IP reservation, "networkcidr" is always null
