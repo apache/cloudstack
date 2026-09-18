@@ -1452,6 +1452,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                  * every later clone finds the snapshot and keeps the read only handle.
                                  */
                                 CephUtil.closeQuietly(rbd, srcImage, template.getName());
+                                /*
+                                 * The handle is dead once it is closed, and closing it twice frees the same
+                                 * native pointer twice. Clear it before the reopen, which can throw.
+                                 */
+                                srcImage = null;
                                 srcImage = rbd.open(template.getName());
 
                                 logger.debug("Creating RBD snapshot " + rbdTemplateSnapName + " on image " + name);

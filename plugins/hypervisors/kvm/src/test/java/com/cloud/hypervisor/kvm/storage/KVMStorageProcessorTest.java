@@ -551,6 +551,7 @@ public class KVMStorageProcessorTest {
             Mockito.verify(rbdImageMock, Mockito.times(1)).snapCreate(SNAPSHOT_NAME);
             Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
             Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+            Mockito.verify(radosMock).shutDown();
         }
     }
 
@@ -574,6 +575,28 @@ public class KVMStorageProcessorTest {
             Assert.assertNull(result);
             Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
             Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+            Mockito.verify(radosMock).shutDown();
+        }
+    }
+
+    /**
+     * The cluster handle is only released from Rados.finalize() otherwise, so a path that opens one and
+     * fails has to shut it down itself rather than leave it for the garbage collector.
+     */
+    @Test
+    public void takeRbdVolumeSnapshotOfStoppedVmTestReleasesClusterHandleWhenOpenFails() throws Exception {
+        Rados radosMock = Mockito.mock(Rados.class);
+        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
+
+        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                Mockito.doThrow(new RbdException("Failed to open image")).when(mock).open(RBD_IMAGE_NAME)))) {
+
+            Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
+
+            Assert.assertNull(result);
+            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+            Mockito.verify(radosMock).shutDown();
         }
     }
 }

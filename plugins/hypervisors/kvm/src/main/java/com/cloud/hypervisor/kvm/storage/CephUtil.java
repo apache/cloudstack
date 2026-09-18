@@ -75,24 +75,44 @@ public final class CephUtil {
      */
     public static Rados connect(String authUserName, String monHost, int monPort, String authSecret, String dataPool) throws RadosException {
         Rados r = new Rados(authUserName);
-        r.confSet("mon_host", monHost + ":" + monPort);
-        r.confSet("key", authSecret);
-        applyTimeouts(r);
-        if (dataPool != null) {
-            logger.debug("Setting RBD data pool to [{}] for images created on this connection.", dataPool);
-            r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+        try {
+            r.confSet("mon_host", monHost + ":" + monPort);
+            /*
+             * The secret is null when the pool has no cephx user, and librados aborts the process rather
+             * than returning an error if it is handed a null value here.
+             */
+            if (authUserName != null) {
+                r.confSet("key", authSecret);
+            } else {
+                r.confSet("auth_client_required", "none");
+            }
+            applyTimeouts(r);
+            if (dataPool != null) {
+                logger.debug("Setting RBD data pool to [{}] for images created on this connection.", dataPool);
+                r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+            }
+            r.connect();
+            logger.debug("Successfully connected to Ceph cluster at [{}].", r.confGet("mon_host"));
+            return r;
+        } catch (Exception e) {
+            /*
+             * The handle never reaches the caller, so nothing else can release it. rados_create() has
+             * already run by this point, so without this it would survive until finalize().
+             */
+            shutDownQuietly(r);
+            throw e;
         }
-        r.connect();
-        logger.debug("Successfully connected to Ceph cluster at [{}].", r.confGet("mon_host"));
-        return r;
     }
 
     /**
      * Applies the connect and operation timeouts from the agent properties. A timeout configured as 0 is
      * left unset, which keeps the librados default of waiting forever.
      */
-    public static void applyTimeouts(Rados r) throws RadosException {
-        r.confSet(CLIENT_MOUNT_TIMEOUT, String.valueOf(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RADOS_CLIENT_MOUNT_TIMEOUT)));
+    private static void applyTimeouts(Rados r) throws RadosException {
+        int mountTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RADOS_CLIENT_MOUNT_TIMEOUT);
+        if (mountTimeout > 0) {
+            r.confSet(CLIENT_MOUNT_TIMEOUT, String.valueOf(mountTimeout));
+        }
 
         int osdOpTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RADOS_OSD_OP_TIMEOUT);
         if (osdOpTimeout > 0) {
@@ -124,7 +144,11 @@ public final class CephUtil {
      * Destroys an IO context. Safe to call with nulls so it can be used from a finally block.
      */
     public static void ioCtxDestroyQuietly(Rados r, IoCTX io) {
-        if (r == null || io == null) {
+        if (io == null) {
+            return;
+        }
+        if (r == null) {
+            logger.warn("Cannot destroy the Ceph IO context without its cluster handle.");
             return;
         }
         try {

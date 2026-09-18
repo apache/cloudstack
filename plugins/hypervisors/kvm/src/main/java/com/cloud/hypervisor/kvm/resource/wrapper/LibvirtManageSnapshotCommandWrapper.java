@@ -133,7 +133,12 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                             image.snapRemove(snapshotName);
                         }
                     } catch (final Exception e) {
-                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                        /*
+                         * Reporting success here would record a snapshot in CloudStack that does not exist
+                         * on the cluster.
+                         */
+                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage(), e);
+                        return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
                     } finally {
                         CephUtil.closeQuietly(rbd, image, disk.getName());
                         CephUtil.ioCtxDestroyQuietly(r, io);

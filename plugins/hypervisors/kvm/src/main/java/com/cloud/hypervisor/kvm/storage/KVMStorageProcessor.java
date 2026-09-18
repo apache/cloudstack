@@ -174,10 +174,6 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
     private static final String NAME_OPTION = "-n";
-    private static final String CEPH_MON_HOST = "mon_host";
-    private static final String CEPH_AUTH_KEY = "key";
-    private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
     /**
      * Time interval before rechecking virsh commands
      */
@@ -2932,22 +2928,29 @@ public class KVMStorageProcessor implements StorageProcessor {
                 Rbd rbd = null;
                 RbdImage image = null;
                 try {
+                    /*
+                     * Opening the image stays outside the inner catch. A failure here means the snapshot was
+                     * not removed, and it has to reach the caller rather than be logged and reported as a
+                     * successful delete.
+                     */
                     r = radosConnect(primaryPool);
                     io = r.ioCtxCreate(primaryPool.getSourceDir());
                     rbd = new Rbd(io);
                     image = rbd.open(disk.getName());
 
-                    logger.info("Attempting to remove RBD snapshot " + snapshotFullName);
-                    if (image.snapIsProtected(snapshotName)) {
-                        logger.debug("Unprotecting RBD snapshot " + snapshotFullName);
-                        image.snapUnprotect(snapshotName);
+                    try {
+                        logger.info("Attempting to remove RBD snapshot " + snapshotFullName);
+                        if (image.snapIsProtected(snapshotName)) {
+                            logger.debug("Unprotecting RBD snapshot " + snapshotFullName);
+                            image.snapUnprotect(snapshotName);
+                        }
+                        image.snapRemove(snapshotName);
+                        logger.info("Snapshot " + snapshotFullName + " successfully removed from " +
+                                primaryPool.getType().toString() + "  pool.");
+                    } catch (RbdException e) {
+                        logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
+                            ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                     }
-                    image.snapRemove(snapshotName);
-                    logger.info("Snapshot " + snapshotFullName + " successfully removed from " +
-                            primaryPool.getType().toString() + "  pool.");
-                } catch (RbdException e) {
-                    logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
-                        ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 } finally {
                     closeRbdImage(rbd, image, disk.getName());
                     destroyRadosIoCtx(r, io, snapshotFullName);

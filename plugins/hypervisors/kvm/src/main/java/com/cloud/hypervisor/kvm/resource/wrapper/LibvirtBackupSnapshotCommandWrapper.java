@@ -116,16 +116,27 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                         while (true) {
                             final byte[] buf = new byte[chunkSize];
                             final int bytes = image.read(offset, buf, chunkSize);
-                            if (bytes <= 0) {
+                            if (bytes < 0) {
+                                /*
+                                 * rbd_read returns a negative errno rather than throwing. Treating that as
+                                 * end of image would store a short backup and report it as a success.
+                                 */
+                                throw new RbdException("Failed to read " + snapshotDisk.getName() + " at offset " + offset, bytes);
+                            }
+                            if (bytes == 0) {
                                 break;
                             }
                             bos.write(buf, 0, bytes);
                             offset += bytes;
                         }
                         logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
-                    }catch(final IOException ex)
-                    {
-                        logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
+                    } catch (final IOException ex) {
+                        /*
+                         * A failed read or write leaves a short file on secondary storage. Reporting success
+                         * here would record a backup that cannot be restored from.
+                         */
+                        logger.error("Failed to back up " + snapshotDisk.getName() + " to " + snapshotDestPath + ". The error was: " + ex.getMessage(), ex);
+                        return new BackupSnapshotAnswer(command, false, ex.toString(), null, true);
                     }
                 } catch (final RadosException e) {
                     logger.error("A RADOS operation failed. The error was: " + e.getMessage());

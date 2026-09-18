@@ -62,10 +62,6 @@ import org.libvirt.LibvirtException;
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final String MON_HOST = "mon_host";
-    private static final String KEY = "key";
-    private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String RADOS_CONNECTION_TIMEOUT = "30";
 
     protected Set<StoragePoolType> storagePoolTypesThatSupportRevertSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD, StoragePoolType.Filesystem,
             StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint));
