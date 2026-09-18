@@ -19,7 +19,6 @@ package com.cloud.upgrade;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,11 +40,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
@@ -68,7 +64,6 @@ public class NetworkRateBackfill {
     private static final int DEFAULT_THROTTLING_RATE = 200;
     private static final int UNLIMITED_RATE = -1;
 
-    private final NicDao nicDao = new NicDaoImpl();
     private final VMInstanceDao vmInstanceDao = new VMInstanceDaoImpl();
     private final NetworkDao networkDao = new NetworkDaoImpl();
     private final NetworkDetailsDao networkDetailsDao = new NetworkDetailsDaoImpl();
@@ -95,7 +90,7 @@ public class NetworkRateBackfill {
                 final boolean defaultNic = rs.getBoolean("default_nic");
                 try {
                     final Integer rate = computeLegacyNicNetworkRate(networkId, instanceId, defaultNic);
-                    if (rate != null && rate > 0) {
+                    if (rate != null && rate != 0) {
                         updateNicNetworkRate(nicId, rate);
                     }
                 } catch (Exception e) {
@@ -143,13 +138,19 @@ public class NetworkRateBackfill {
         return getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
     }
 
+    // Raw SQL instead of NicDao.listByVmId(): its SearchBuilder isn't safe to use on a DAO built outside Spring here.
     private Integer findRouterGuestNetworkRate(long routerInstanceId, long dataCenterId) {
-        final List<NicVO> routerNics = nicDao.listByVmId(routerInstanceId);
-        for (final NicVO routerNic : routerNics) {
-            final NetworkVO nw = networkDao.findById(routerNic.getNetworkId());
-            if (nw != null && TrafficType.Guest.equals(nw.getTrafficType())) {
-                return getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), dataCenterId);
+        final String sql = "SELECT n.network_offering_id FROM nics ni JOIN networks n ON ni.network_id = n.id " +
+                "WHERE ni.instance_id = ? AND ni.removed IS NULL AND n.traffic_type = 'Guest' LIMIT 1";
+        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql)) {
+            pstmt.setLong(1, routerInstanceId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return getNetworkOfferingNetworkRate(rs.getLong(1), dataCenterId);
+                }
             }
+        } catch (SQLException e) {
+            LOGGER.warn("Failed to find router's guest network for instance id=" + routerInstanceId + ": " + e.getMessage());
         }
         return null;
     }
