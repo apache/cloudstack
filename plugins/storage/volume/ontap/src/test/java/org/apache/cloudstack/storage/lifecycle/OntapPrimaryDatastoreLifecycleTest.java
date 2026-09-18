@@ -23,6 +23,7 @@ import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -36,10 +37,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.HostVO;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -54,6 +57,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.withSettings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -181,6 +185,50 @@ public class OntapPrimaryDatastoreLifecycleTest {
             storageProviderFactory.when(() -> StorageProviderFactory.getStrategy(any())).thenReturn(storageStrategy);
             ontapPrimaryDatastoreLifecycle.initialize(dsInfos);
         }
+    }
+
+    private Map<String, Object> buildDsInfosForProtocol(String protocol) {
+        HashMap<String, String> detailsMap = new HashMap<String, String>();
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, protocol);
+
+        Map<String, Object> dsInfos = new HashMap<>();
+        dsInfos.put("zoneId", 1L);
+        dsInfos.put("podId", 1L);
+        dsInfos.put("clusterId", 1L);
+        dsInfos.put("name", "testStoragePool");
+        dsInfos.put("providerName", "testProvider");
+        dsInfos.put("capacityBytes", 1073741824L);
+        dsInfos.put("managed", true);
+        dsInfos.put("tags", "testTag");
+        dsInfos.put("isTagARule", false);
+        dsInfos.put("details", detailsMap);
+        return dsInfos;
+    }
+
+    private Storage.StoragePoolType initializeAndCapturePoolType(String protocol) {
+        try (MockedStatic<StorageProviderFactory> storageProviderFactory = Mockito.mockStatic(StorageProviderFactory.class)) {
+            storageProviderFactory.when(() -> StorageProviderFactory.getStrategy(any())).thenReturn(storageStrategy);
+            ontapPrimaryDatastoreLifecycle.initialize(buildDsInfosForProtocol(protocol));
+        }
+        ArgumentCaptor<PrimaryDataStoreParameters> captor = ArgumentCaptor.forClass(PrimaryDataStoreParameters.class);
+        verify(_dataStoreHelper).createPrimaryDataStore(captor.capture());
+        return captor.getValue().getType();
+    }
+
+    @Test
+    public void testInitialize_iscsiPoolUsesOntapIscsiType() {
+        when(storageStrategy.getStoragePath()).thenReturn("iqn.1992-08.com.netapp:sn.abc123");
+
+        assertEquals(Storage.StoragePoolType.OntapiSCSI, initializeAndCapturePoolType("ISCSI"));
+    }
+
+    @Test
+    public void testInitialize_nfsPoolKeepsNetworkFilesystemType() {
+        assertEquals(Storage.StoragePoolType.NetworkFilesystem, initializeAndCapturePoolType("NFS3"));
     }
 
     @Test
