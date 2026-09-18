@@ -18,11 +18,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
+import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
@@ -102,6 +104,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -329,6 +332,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
+    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
@@ -3358,6 +3363,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
+        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+            // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
+            // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
+            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            if (videoRam == 0) {
+                videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
+            }
+        }
         return new VideoDef(videoHw, videoRam);
     }
 
@@ -3508,6 +3521,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
+    }
+
+    protected boolean isGuestX86(VirtualMachineTO vmTO) {
+        String arch = guestCpuArch != null ? guestCpuArch : vmTO.getArch();
+        return arch == null || arch.equals("x86_64") || arch.equals("i686");
     }
 
     private boolean isGuestS390x() {
@@ -3910,7 +3928,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
-                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                    String encryptEngine = (pool.getType() == StoragePoolType.RBD) ? "librbd" : null;
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()), encryptEngine);
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
             }
@@ -4433,11 +4453,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
@@ -4552,12 +4574,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         LOGGER.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            LOGGER.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            LOGGER.info("Setting host CPU max capacity: {} to 0, as it uses cgroup v1.", getHostCpuMaxCapacity());
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        LOGGER.info(String.format("Calculating the max shares of the host."));
+        LOGGER.info("Calculating the max shares of the host.");
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
         LOGGER.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
@@ -6171,7 +6193,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         for (String snapshotName: snapshotNames) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+                LOGGER.debug("Cleaning snapshot {} of VM {} metadata.", Arrays.toString(snapshotNames), dm.getName());
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
@@ -6245,7 +6267,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Test host for volume encryption support
+     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup),
+     * reported as {@code host.volume.encryption}. RBD/librbd encryption support is a separate
+     * capability, reported as {@code host.volume.encryption.rbd}
+     * (see {@link #hostSupportsRbdVolumeEncryption()}).
      * @return boolean
      */
     public boolean hostSupportsVolumeEncryption() {
@@ -6268,6 +6293,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    /**
+     * Test host for librbd native LUKS encryption support (rbd CLI with the encryption subcommand).
+     */
+    public boolean hostSupportsRbdVolumeEncryption() {
+        return new RbdEncryption().isSupported();
     }
 
     public boolean isSecureMode(String bootMode) {
@@ -6830,6 +6862,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] diskPathSplitted = diskPath.split(File.separator);
         diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
         return String.join(File.separator, diskPathSplitted);
+    }
+
+    public String getUefiNvramPath(String vmUuid) {
+        String nvramDirectory = uefiProperties.getProperty(LibvirtVMDef.GuestDef.GUEST_NVRAM_PATH);
+        if (StringUtils.isBlank(nvramDirectory) || StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+
+        return nvramDirectory + vmUuid + ".fd";
     }
 
     public static String generateSecretUUIDFromString(String seed) {

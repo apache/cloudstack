@@ -316,38 +316,35 @@ public class SystemVmTemplateRegistration {
 
     protected static final List<MetadataTemplateDetails> METADATA_TEMPLATE_LIST = new ArrayList<>();
 
-    protected static final Map<Hypervisor.HypervisorType, String> ROUTER_TEMPLATE_CONFIGURATION_NAMES = new HashMap<>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
-            put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
-            put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-            put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
-            put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
-            put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
-        }
-    };
+    protected static final Map<Hypervisor.HypervisorType, String> ROUTER_TEMPLATE_CONFIGURATION_NAMES = new HashMap<>();
+    static {
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
+        ROUTER_TEMPLATE_CONFIGURATION_NAMES.put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
+    }
 
-    protected static final Map<Hypervisor.HypervisorType, ImageFormat> HYPERVISOR_IMAGE_FORMAT_MAP = new HashMap<>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2);
-            put(Hypervisor.HypervisorType.XenServer, ImageFormat.VHD);
-            put(Hypervisor.HypervisorType.VMware, ImageFormat.OVA);
-            put(Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD);
-            put(Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2);
-            put(Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW);
-        }
-    };
+    protected static final Map<Hypervisor.HypervisorType, ImageFormat> HYPERVISOR_IMAGE_FORMAT_MAP = new HashMap<>();
+    static {
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.KVM, ImageFormat.QCOW2);
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.XenServer, ImageFormat.VHD);
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.VMware, ImageFormat.OVA);
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.Hyperv, ImageFormat.VHD);
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.LXC, ImageFormat.QCOW2);
+        HYPERVISOR_IMAGE_FORMAT_MAP.put(Hypervisor.HypervisorType.Ovm3, ImageFormat.RAW);
+    }
 
-    protected static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
-        }
-    };
+    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>();
+    static {
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
+        hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
+    }
 
     private static boolean isRunningInTest() {
         return "true".equalsIgnoreCase(System.getProperty("test.mode"));

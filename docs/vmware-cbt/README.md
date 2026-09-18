@@ -22,7 +22,7 @@ under the License.
 ## Introduction
 
 This document describes the VMware Changed Block Tracking (CBT) migration design
-and implementation for Apache CloudStack 4.24.0.0. It is written as source material
+and implementation for Apache CloudStack 24.0.0. It is written as source material
 for an Apache CloudStack CWIKI architecture page and should be treated as an
 implementation guide, not only as a design sketch.
 
@@ -861,15 +861,11 @@ remove CloudStack-owned `cloudstack-cbt/<migration-uuid>` working files.
 
 ## Database Changes
 
-The feature targets the Apache CloudStack 4.24.0.0 release, so the schema changes
-are delivered through the 4.24.0.0 upgrade path:
+The feature targets the Apache CloudStack 24.0.0 release, so the schema changes
+are delivered through the canonical 4.23.0.0 to 24.0.0 upgrade path:
 
-- `engine/schema/src/main/resources/META-INF/db/schema-42300to42400.sql`
-- `engine/schema/src/main/java/com/cloud/upgrade/dao/Upgrade42300to42400.java`
-
-> Until `main` opens `4.24.0.0-SNAPSHOT`, the DDL rides in the current
-> in-development `schema-42210to42300.sql`; it is moved to the 4.24.0.0 upgrade
-> file before merge.
+- `engine/schema/src/main/resources/META-INF/db/schema-42300to2400.sql`
+- `engine/schema/src/main/java/com/cloud/upgrade/dao/Upgrade42300to2400.java`
 
 ### `cloud.vmware_cbt_migration`
 
@@ -1552,7 +1548,7 @@ Useful target disk inspection:
 qemu-img info /mnt/<pool-uuid>/cloudstack-cbt/<migration-uuid>/<disk>.qcow2
 ```
 
-Manual SQL for labs that do not run the 4.24.0.0 upgrade path:
+Manual SQL for labs that do not run the 24.0.0 upgrade path:
 
 ```sql
 INSERT INTO `cloud`.`configuration`
@@ -1820,7 +1816,7 @@ Planned behavior:
 
 ## References
 
-- Apache CloudStack 4.24.0.0 Design Documents CWIKI page.
+- Apache CloudStack 24.0.0 Design Documents CWIKI page.
 - Multiple CD-ROM / ISO Support Per VM design page.
 - CloudStack Veeam KVM Integration design page.
 - DNS Framework and Plugins design page.

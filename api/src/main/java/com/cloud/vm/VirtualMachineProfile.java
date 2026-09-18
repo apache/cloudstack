@@ -79,6 +79,7 @@ public interface VirtualMachineProfile {
         public static final Param PreserveNics = new Param("PreserveNics");
         public static final Param ConsiderLastHost = new Param("ConsiderLastHost");
         public static final Param ReturnAfterVolumePrepare = new Param("ReturnAfterVolumePrepare");
+        public static final Param ResetPasswordOnRestore = new Param("ResetPasswordOnRestore");
 
         private String name;
 

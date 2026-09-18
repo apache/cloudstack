@@ -86,8 +86,17 @@ public class QemuImageOptions {
                 return new String[] { params.get(FILENAME_PARAM_KEY) };
             }
         }
+        return toCommandFlag(QemuImg.IMAGE_OPTS_FLAG);
+    }
+
+    /**
+     * Converts QemuImageOptions into the command strings under the given qemu-img flag,
+     * e.g. {@link QemuImg#TARGET_IMAGE_OPTS_FLAG} for a convert destination.
+     * @return array of strings representing the flag and its options value
+     */
+    public String[] toCommandFlag(String flagName) {
         Map<String, String> sorted = new TreeMap<>(params);
         String paramString = Joiner.on(",").withKeyValueSeparator("=").join(sorted);
-        return new String[] {"--image-opts", paramString};
+        return new String[] {flagName, paramString};
     }
 }

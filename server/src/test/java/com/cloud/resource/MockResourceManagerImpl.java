@@ -205,7 +205,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#getSupportedHypervisorTypes(long, boolean, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forVirtualRouter, final Long podId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forSystemVm, final Long podId) {
         // TODO Auto-generated method stub
         return null;
     }

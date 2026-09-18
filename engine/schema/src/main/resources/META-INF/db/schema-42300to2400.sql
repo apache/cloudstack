@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.23.0.0 to 4.24.0.0
+-- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
 -- VMware CBT warm migration session state
