@@ -55,7 +55,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
@@ -88,7 +87,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
@@ -187,9 +185,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        Map<String, String> configs = _configDao.getConfiguration(params);
-        _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
-        _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
+        _connLimit = Site2SiteVpnConnectionPerVpnGatewayLimit.value();
+        _subnetsLimit = Site2SiteVpnSubnetsPerCustomerGatewayLimit.value();
         assert (_s2sProviders.iterator().hasNext()) : "Did not get injected with a list of S2S providers!";
         _vpnCheckExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpnCustomerGateway-ExcludedAndObsoleteCheck"));
         return true;
@@ -1184,7 +1181,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return new ConfigKey<?>[] { VpnCustomerGatewayExcludedEncryptionAlgorithms, VpnCustomerGatewayExcludedHashingAlgorithms,
                 VpnCustomerGatewayExcludedIkeVersions, VpnCustomerGatewayExcludedDhGroup, VpnCustomerGatewayObsoleteEncryptionAlgorithms,
                 VpnCustomerGatewayObsoleteHashingAlgorithms, VpnCustomerGatewayObsoleteIkeVersions, VpnCustomerGatewayObsoleteDhGroup,
-                VpnCustomerGatewayObsoleteCheckInterval};
+                VpnCustomerGatewayObsoleteCheckInterval, Site2SiteVpnConnectionPerVpnGatewayLimit, Site2SiteVpnSubnetsPerCustomerGatewayLimit};
     }
 
     protected class CheckVpnCustomerGatewayObsoleteParametersTask extends ManagedContextRunnable {

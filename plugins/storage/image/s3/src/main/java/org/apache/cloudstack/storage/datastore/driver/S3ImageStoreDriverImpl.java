@@ -35,9 +35,9 @@ import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
-import com.cloud.configuration.Config;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.utils.NumbersUtil;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.storage.S3.S3Utils;
 
 public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
@@ -64,7 +64,7 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
                         details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)),
                         details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)),
                         imgStore.getCreated(),
-                        _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())),
+                        ManagementServer.S3EnableRRS.value(),
                         getMaxSingleUploadSizeInBytes(),
                         details.get(ApiConstants.S3_CONNECTION_TTL) == null ? null : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TTL)),
                         details.get(ApiConstants.S3_USE_TCP_KEEPALIVE) == null ? null : Boolean.parseBoolean(details.get(ApiConstants.S3_USE_TCP_KEEPALIVE)));
@@ -72,7 +72,7 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     private long getMaxSingleUploadSizeInBytes() {
         try {
-            return Long.parseLong(_configDao.getValue(Config.S3MaxSingleUploadSize.toString())) * 1024L * 1024L * 1024L;
+            return ManagementServer.S3MaxSingleUploadSize.value() * 1024L * 1024L * 1024L;
         } catch (NumberFormatException e) {
             // use default 1TB
             return 1024L * 1024L * 1024L * 1024L;
@@ -93,10 +93,8 @@ public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         long milliSeconds = expiration.getTime();
 
         // Get extract url expiration interval set in global configuration (in seconds)
-        String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
-
         // Expired after configured interval (in milliseconds), default 14400 seconds
-        milliSeconds += 1000 * NumbersUtil.parseInt(urlExpirationInterval, 14400);
+        milliSeconds += 1000 * SecondaryStorageVmManager.ExtractURLExpirationInterval.value();
         expiration.setTime(milliSeconds);
 
         URL s3url = S3Utils.generatePresignedUrl(s3, s3.getBucketName(), key, expiration);

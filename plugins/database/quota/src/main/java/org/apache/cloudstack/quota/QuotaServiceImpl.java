@@ -59,11 +59,11 @@ import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
+import org.apache.cloudstack.usage.UsageService;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -103,7 +103,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
+        String timeZoneStr = ObjectUtils.defaultIfNull(UsageService.UsageAggregationTimezone.value(), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
 
         return true;

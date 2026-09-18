@@ -132,7 +132,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCountVO;
@@ -199,6 +198,7 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -564,10 +564,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         Map<String, String> configs = _configDao.getConfiguration(params);
 
-        String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
+        String loginAttempts = configs.get(IncorrectLoginAttemptsAllowed.key());
         _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
 
-        String value = configs.get(Config.AccountCleanupInterval.key());
+        String value = configs.get(AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         return true;
@@ -3184,7 +3184,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     private UserAccount getUserAccountForSSO(String username, Long domainId, Map<String, Object[]> requestParameters) {
-        String key = _configDao.getValue("security.singlesignon.key");
+        String key = SSOKey.value();
         if (key == null) {
             // the SSO key is gone, don't authenticate
             return null;
@@ -3507,7 +3507,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if ((BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM)
-                && Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
+                && ManagementServer.BaremetalProvisionDoneNotificationEnabled.value()) {
             throw new PermissionDeniedException(String.format("User ID [%s] is a system account and the global setting " +
                     "baremetal.provision.done.notification is enabled. Therefore, it is not possible to delete API key pairs. If you wish to delete " +
                     "the baremetal user/account or their API Key, please disable the baremetal.provision.done.notification configuration.", user.getUuid()));
@@ -4205,7 +4205,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
                 userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer, apiKeyAccess,
-                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount};
+                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount, SSOKey,
+                AccountCleanupInterval, IncorrectLoginAttemptsAllowed, SSOAuthTolerance};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {

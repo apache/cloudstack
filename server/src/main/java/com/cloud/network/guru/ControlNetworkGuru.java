@@ -24,7 +24,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -43,6 +42,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -225,12 +225,12 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
 
-        _cidr = dbParams.get(Config.ControlCidr.toString());
+        _cidr = dbParams.get(ManagementServer.ControlCidr.key());
         if (_cidr == null) {
             _cidr = NetUtils.getLinkLocalCIDR();
         }
 
-        _gateway = dbParams.get(Config.ControlGateway.toString());
+        _gateway = dbParams.get(ManagementServer.ControlGateway.key());
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }

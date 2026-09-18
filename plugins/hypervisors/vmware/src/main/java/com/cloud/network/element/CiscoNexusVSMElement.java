@@ -29,7 +29,6 @@ import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
-import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -52,6 +51,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Cluster;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
@@ -303,7 +303,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
 
         } else {
             String msg;
-            msg = "The global parameter " + Config.VmwareUseNexusVSwitch.toString() + " is set to \"true\". Following mandatory parameters are not specified. ";
+            msg = "The global parameter " + ManagementServer.VmwareUseNexusVSwitch.key() + " is set to \"true\". Following mandatory parameters are not specified. ";
             if (vsmIp == null) {
                 msg += "vsmipaddress: Management IP address of Cisco Nexus 1000v dvSwitch. ";
             }

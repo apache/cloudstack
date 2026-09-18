@@ -28,10 +28,11 @@ import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
-import com.cloud.configuration.Config;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.NumbersUtil;
@@ -40,7 +41,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 @Component
-public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager {
+public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthCheckManager, Manager, Configurable {
 
     @Inject
     ConfigurationDao _configDao;
@@ -60,7 +61,7 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
             logger.info(format("Configuring LBHealthCheck Manager %1$s", name));
         }
         this.name = name;
-        _interval = NumbersUtil.parseLong(_configs.get(Config.LBHealthCheck.key()), 600);
+        _interval = NumbersUtil.parseLong(_configs.get(LBHealthCheck.key()), 600);
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("LBHealthCheck"));
         return true;
     }
@@ -104,6 +105,16 @@ public class LBHealthCheckManagerImpl extends ManagerBase implements LBHealthChe
             logger.debug("Error while updating the LB HealtCheck ", e);
         }
         logger.debug("LB HealthCheck Manager is running and getting the updates from LB providers and updating service status");
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return LBHealthCheckManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {LBHealthCheck};
     }
 
 }

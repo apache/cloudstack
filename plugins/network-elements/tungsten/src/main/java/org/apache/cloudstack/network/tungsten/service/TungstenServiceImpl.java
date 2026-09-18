@@ -20,7 +20,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -118,7 +117,7 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
@@ -241,8 +240,6 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     protected AccountDao accountDao;
     @Inject
     protected NetworkDao networkDao;
-    @Inject
-    protected ConfigurationDao configDao;
     @Inject
     protected AccountManager accountMgr;
     @Inject
@@ -1126,11 +1123,11 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     private boolean updateHaproxyStats(List<HostVO> hostList, String lbUuid) {
         // update haproxy stats
-        String lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
         if (!lbStatsVisibility.equals("disabled")) {
-            String lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-            String lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-            String lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+            String lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+            String lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+            String lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
             UpdateTungstenLoadbalancerStatsCommand updateTungstenLoadbalancerStatsCommand =
                     new UpdateTungstenLoadbalancerStatsCommand(lbUuid, lbStatsPort, lbStatsUri, lbStatsAuth);
             for (HostVO host : hostList) {

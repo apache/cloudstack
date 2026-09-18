@@ -138,6 +138,23 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
             "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<String> NetworkLBHaproxyStatsVisbility = new ConfigKey<>("Network", String.class,
+            "network.loadbalancer.haproxy.stats.visibility", "global",
+            "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
+            true, ConfigKey.Kind.Select, "global,guest-network,link-local,disabled,all,default");
+
+    ConfigKey<String> NetworkLBHaproxyStatsUri = new ConfigKey<>("Network", String.class,
+            "network.loadbalancer.haproxy.stats.uri", "/admin?stats",
+            "Load Balancer(haproxy) uri.", true);
+
+    ConfigKey<String> NetworkLBHaproxyStatsAuth = new ConfigKey<>("Secure", String.class,
+            "network.loadbalancer.haproxy.stats.auth", "admin1:AdMiN123",
+            "Load Balancer(haproxy) authentication string in the format username:password", true);
+
+    ConfigKey<String> NetworkLBHaproxyStatsPort = new ConfigKey<>("Network", String.class,
+            "network.loadbalancer.haproxy.stats.port", "8081",
+            "Load Balancer(haproxy) stats port number.", true);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 

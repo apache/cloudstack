@@ -136,7 +136,6 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
@@ -190,6 +189,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -530,7 +530,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                     GetUploadParamsResponse response = new GetUploadParamsResponse();
 
-                    String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+                    String ssvmUrlDomain = SecondaryStorageVmManager.SecStorageSecureCopyCert.value();
                     String protocol = UseHttpsToUpload.value() ? "https" : "http";
 
                     String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
@@ -549,7 +549,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     String expires = currentDateTime.plusMinutes(timeout).toString();
                     response.setTimeout(expires);
 
-                    String key = _configDao.getValue(Config.SSVMPSK.key());
+                    String key = TemplateManager.SSVMPSK.value();
                     /*
                      * encoded metadata using the post upload config key
                      */
@@ -560,7 +560,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     command.setLocalPath(volumeStore.getLocalDownloadPath());
                     //using the existing max upload size configuration
                     command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
-                    command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
+                    command.setMaxUploadSize(String.valueOf(MaxUploadVolumeSize.value()));
 
                     long accountId = vol.getAccountId();
                     Account account = _accountDao.findById(accountId);
@@ -4873,9 +4873,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (secStore == null) {
             throw new InvalidParameterValueException(String.format("Secondary storage to satisfy storage needs cannot be found for zone: %d", zoneId));
         }
-        String value = _configDao.getValue(Config.CopyVolumeWait.toString());
-        NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
-
         // Copy volume from primary to secondary storage
         VolumeInfo srcVol = volFactory.getVolume(volumeId);
         VolumeInfo destVol = volFactory.getVolume(volumeId, DataStoreRole.Image);
@@ -5786,7 +5783,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 MatchStoragePoolTagsWithDiskOffering,
                 UseHttpsToUpload,
                 WaitDetachDevice,
-                AllowCheckAndRepairVolume
+                AllowCheckAndRepairVolume,
+                CopyVolumeWait,
+                CreateVolumeFromSnapshotWait,
+                MaxUploadVolumeSize,
+                StoragePoolMaxWaitSeconds
         };
     }
 }

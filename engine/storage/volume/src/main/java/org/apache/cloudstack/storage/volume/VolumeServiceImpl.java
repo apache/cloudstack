@@ -106,7 +106,6 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventTypes;
@@ -138,6 +137,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeDetailVO;
@@ -155,7 +155,6 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -669,7 +668,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     private TemplateInfo waitForTemplateDownloaded(PrimaryDataStore store, TemplateInfo template) {
-        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
         int sleepTime = 120;
         int tries = storagePoolMaxWaitSeconds / sleepTime;
         while (tries > 0) {
@@ -705,7 +704,7 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null)).setContext(context);
 
-        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
         if (logger.isDebugEnabled()) {
             logger.debug("Acquire lock on VMTemplateStoragePool " + templatePoolRefId + " with timeout " + storagePoolMaxWaitSeconds + " seconds");
         }
@@ -980,7 +979,7 @@ public class VolumeServiceImpl implements VolumeService {
         // At this point, we have an entry in the DB that points to our cached template.
         // We need to lock it as there may be other VMs that may get started using the same template.
         // We want to avoid having to create multiple cache copies of the same template.
-        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
         long templatePoolRefId = templatePoolRef.getId();
 
         templatePoolRef = _tmpltPoolDao.acquireInLockTable(templatePoolRefId, storagePoolMaxWaitSeconds);
@@ -1045,7 +1044,7 @@ public class VolumeServiceImpl implements VolumeService {
     private void copyTemplateToManagedTemplateVolume(TemplateInfo srcTemplateInfo, TemplateInfo templateOnPrimary, VMTemplateStoragePoolVO templatePoolRef, PrimaryDataStore destPrimaryDataStore,
             Host destHost) throws StorageAccessException {
         AsyncCallFuture<VolumeApiResult> copyTemplateFuture = new AsyncCallFuture<>();
-        int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+        int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
         long templatePoolRefId = templatePoolRef.getId();
 
         try {
@@ -1432,7 +1431,7 @@ public class VolumeServiceImpl implements VolumeService {
                 throw new CloudRuntimeException("Unable to create managed storage template, couldn't get global lock on " + templateIdManagedPoolIdLockString);
             }
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
             if (!lock.lock(storagePoolMaxWaitSeconds)) {
                 logger.debug("Unable to create managed storage template, couldn't lock on " + templateIdManagedPoolIdLockString);
                 throw new CloudRuntimeException("Unable to create managed storage template, couldn't lock on " + templateIdManagedPoolIdLockString);
@@ -1539,7 +1538,7 @@ public class VolumeServiceImpl implements VolumeService {
                     throw new CloudRuntimeException("Unable to create managed storage template/volume, couldn't get global lock on " + tmplIdManagedPoolIdLockString);
                 }
 
-                int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+                int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
                 if (!lock.lock(storagePoolMaxWaitSeconds)) {
                     logger.debug("Unable to create managed storage template/volume, couldn't lock on " + tmplIdManagedPoolIdLockString);
                     throw new CloudRuntimeException("Unable to create managed storage template/volume, couldn't lock on " + tmplIdManagedPoolIdLockString);
@@ -1611,7 +1610,7 @@ public class VolumeServiceImpl implements VolumeService {
                 throw new CloudRuntimeException("Unable to create volume from template, couldn't get global lock on " + tmplIdManagedPoolIdDestinationHostLockString);
             }
 
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            int storagePoolMaxWaitSeconds = VolumeApiService.StoragePoolMaxWaitSeconds.value();
             if (!lock.lock(storagePoolMaxWaitSeconds)) {
                 logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
                 throw new CloudRuntimeException("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);

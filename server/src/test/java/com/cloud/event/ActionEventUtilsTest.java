@@ -43,10 +43,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.IpAddress;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -148,7 +148,7 @@ public class ActionEventUtilsTest {
      */
     public void setupCommonMocks() throws Exception {
         //Some basic mocks.
-        Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
+        Mockito.when(configDao.getValue(ManagementServer.PublishActionEvent.key())).thenReturn("true");
         componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         componentContextMocked.when(() -> ComponentContext.getComponent(EventDistributor.class)).thenReturn(eventDistributor);
 

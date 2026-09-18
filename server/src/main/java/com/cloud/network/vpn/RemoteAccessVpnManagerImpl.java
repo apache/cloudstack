@@ -35,7 +35,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -75,7 +74,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
@@ -810,11 +808,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        Map<String, String> configs = _configDao.getConfiguration(params);
+        _userLimit = RemoteAccessVpnUserLimit.value();
 
-        _userLimit = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnUserLimit.key()), 8);
-
-        _pskLength = NumbersUtil.parseInt(configs.get(Config.RemoteAccessVpnPskLength.key()), 24);
+        _pskLength = RemoteAccessVpnPskLength.value();
 
         validateRemoteAccessVpnConfiguration();
 
@@ -859,7 +855,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange};
+        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange, RemoteAccessVpnPskLength, RemoteAccessVpnUserLimit};
     }
 
     public List<RemoteAccessVPNServiceProvider> getVpnServiceProviders() {

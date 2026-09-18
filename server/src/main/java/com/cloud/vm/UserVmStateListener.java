@@ -30,13 +30,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentContext;
@@ -122,7 +122,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
 
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
 
-        String configKey = Config.PublishResourceStateEvent.key();
+        String configKey = ManagementServer.PublishResourceStateEvent.key();
         String value = _configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)

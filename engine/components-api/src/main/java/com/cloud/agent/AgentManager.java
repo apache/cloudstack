@@ -58,6 +58,33 @@ public interface AgentManager {
             "kvm.host.discovery.ssh.port", String.valueOf(Host.DEFAULT_SSH_PORT), "SSH port used for KVM host discovery and any other operations on host (using SSH)." +
                 " Please note that this is applicable when port is not defined through host url while adding the KVM host.", true, ConfigKey.Scope.Cluster);
 
+    ConfigKey<String> InstanceName = new ConfigKey<>("Advanced", String.class, "instance.name", "VM",
+            "Name of the deployment instance.", false);
+
+    ConfigKey<Integer> XapiWait = new ConfigKey<>("Advanced", Integer.class, "xapiwait", "60",
+            "Time (in seconds) to wait for XAPI to return", true);
+
+    ConfigKey<Integer> MigrateWait = new ConfigKey<>("Advanced", Integer.class, "migratewait", "3600",
+            "Time (in seconds) to wait for VM migrate finish", true);
+
+    ConfigKey<Integer> SecStorageVmMTUSize = new ConfigKey<>("Advanced", Integer.class, "secstorage.vm.mtu.size", "1500",
+            "MTU size (in Byte) of storage network in secondary storage vms", true);
+
+    ConfigKey<Integer> SecStorageCapacityStandby = new ConfigKey<>("Advanced", Integer.class, "secstorage.capacity.standby", "10",
+            "The minimal number of command execution sessions that system is able to serve immediately(standby capacity)", true);
+
+    ConfigKey<Integer> SecStorageSessionMax = new ConfigKey<>("Advanced", Integer.class, "secstorage.session.max", "50",
+            "The max number of command execution sessions that a SSVM can handle", true);
+
+    ConfigKey<Integer> SecStorageCmdExecutionTimeMax = new ConfigKey<>("Advanced", Integer.class, "secstorage.cmd.execution.time.max", "30",
+            "The max command execution time in minute", true);
+
+    ConfigKey<String> SecStorageProxy = new ConfigKey<>("Advanced", String.class, "secstorage.proxy", null,
+            "http proxy used by ssvm, in http://username:password@proxyserver:port format", true);
+
+    ConfigKey<Integer> XenServerMaxNics = new ConfigKey<>("Advanced", Integer.class, "xenserver.nics.max", "7",
+            "Maximum allowed nics for Vms created on XenServer", true);
+
     enum TapAgentsAction {
         Add, Del, Contains,
     }

@@ -72,6 +72,15 @@ public interface SnapshotManager extends Configurable {
             "For snapshot copy to another primary storage in a different zone. This is supported only for StorPool storage for now.",
             true, ConfigKey.Scope.StoragePool, null);
 
+    ConfigKey<Integer> BackupSnapshotWait = new ConfigKey<>("Storage", Integer.class, "backup.snapshot.wait", "21600",
+            "In second, timeout for BackupSnapshotCommand", true);
+
+    ConfigKey<Integer> TotalRetries = new ConfigKey<>("Storage", Integer.class, "total.retries", "4",
+            "The number of times each command sent to a host should be retried in case of failure.", true);
+
+    ConfigKey<Integer> SnapshotPollInterval = new ConfigKey<>("Snapshots", Integer.class, "snapshot.poll.interval", "300",
+            "The time interval in seconds when the management server polls for snapshots to be scheduled.", true);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**

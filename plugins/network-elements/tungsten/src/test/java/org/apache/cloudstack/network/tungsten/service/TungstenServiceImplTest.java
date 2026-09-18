@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -123,7 +122,6 @@ import net.juniper.tungsten.api.types.TagType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
@@ -228,8 +226,6 @@ public class TungstenServiceImplTest {
     @Mock
     NetworkDao networkDao;
     @Mock
-    ConfigurationDao configDao;
-    @Mock
     IPAddressDao ipAddressDao;
     @Mock
     EntityManager entityMgr;
@@ -293,7 +289,6 @@ public class TungstenServiceImplTest {
         tungstenService.networkDetailsDao = networkDetailsDao;
         tungstenService.agentMgr = agentMgr;
         tungstenService.hostDao = hostDao;
-        tungstenService.configDao = configDao;
         tungstenService.fwRulesDao = fwRulesDao;
         tungstenService.lbCertMapDao = lbCertMapDao;
         tungstenService.entityMgr = entityMgr;
@@ -665,7 +660,6 @@ public class TungstenServiceImplTest {
         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerSslCommand.class))).thenReturn(updateTungstenLoadbalancerSslAnswer);
         when(updateTungstenLoadbalancerStatsAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadbalancerSslAnswer.getResult()).thenReturn(true);
-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
         when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
         when(entityMgr.findById(eq(SslCertVO.class), anyLong())).thenReturn(sslCertVO);
