@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
+
+-- Custom DHCP (guest IP allocation) range for isolated guest networks
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_start_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''start of the custom DHCP range for an isolated network, within its CIDR'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_end_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''end of the custom DHCP range for an isolated network, within its CIDR'' ');
