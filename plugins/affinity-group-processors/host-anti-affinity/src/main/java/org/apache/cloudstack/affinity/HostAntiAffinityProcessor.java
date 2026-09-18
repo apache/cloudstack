@@ -17,6 +17,7 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,7 +60,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected AffinityGroupDao _affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
-    private int _vmCapacityReleaseInterval;
+    protected int _vmCapacityReleaseInterval;
     @Inject
     protected ConfigurationDao _configDao;
 
@@ -82,7 +83,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                     _affinityGroupDao.listByIds(affinityGroupIds, true);
                 }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-                    processAffinityGroup(vmGroupMapping, avoid, vm);
+                    processAffinityGroup(vmGroupMapping, avoid, vm, vmList);
                 }
             }
         });
@@ -90,6 +91,18 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     }
 
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, ExcludeList avoid, VirtualMachine vm) {
+        processAffinityGroup(vmGroupMapping, avoid, vm, Collections.emptyList());
+    }
+
+    /**
+     * Applies anti-affinity for one group.
+     *
+     * @param vmList
+     *         placements to honour in preference to what the database says. DRS builds a plan of
+     *         several migrations in memory and only persists it later, so during plan generation
+     *         the database still shows the old host for every VM the plan has already moved.
+     */
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, ExcludeList avoid, VirtualMachine vm, List<VirtualMachine> vmList) {
         if (vmGroupMapping != null) {
             AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
@@ -100,24 +113,35 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
             List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
             groupVMIds.remove(vm.getId());
 
+            Map<Long, VirtualMachine> plannedVms = getVmIdVmMap(vmList);
+
             for (Long groupVMId : groupVMIds) {
-                VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-                if (groupVM != null && !groupVM.isRemoved()) {
-                    if (groupVM.getHostId() != null) {
-                        avoid.addHost(groupVM.getHostId());
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Added host {} to avoid set, since VM {} is present on the host", groupVM.getHostId(), groupVM);
-                        }
-                    }
-                } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
-                    long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
-                    if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                        avoid.addHost(groupVM.getLastHostId());
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Added host {} to avoid set, since VM {} is present on the host, in Stopped state but has reserved capacity", groupVM.getLastHostId(), groupVM);
-                        }
-                    }
+                VirtualMachine plannedVm = plannedVms.get(groupVMId);
+                if (plannedVm != null && plannedVm.getHostId() != null) {
+                    avoid.addHost(plannedVm.getHostId());
+                    logger.debug("Added host {} to avoid set, since VM {} is placed on the host by the plan being built",
+                            plannedVm.getHostId(), plannedVm);
+                    continue;
                 }
+                VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
+                if (groupVM == null || groupVM.isRemoved()) {
+                    continue;
+                }
+                avoidHostOfVmInAffinityGroup(avoid, groupVM);
+            }
+        }
+    }
+
+    protected void avoidHostOfVmInAffinityGroup(ExcludeList avoid, VMInstanceVO groupVM) {
+        if (groupVM.getHostId() != null) {
+            avoid.addHost(groupVM.getHostId());
+            logger.debug("Added host {} to avoid set, since VM {} is present on the host", groupVM.getHostId(), groupVM);
+        } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
+            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
+            if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
+                avoid.addHost(groupVM.getLastHostId());
+                logger.debug("Added host {} to avoid set, since VM {} is in {} state on the host but still has reserved capacity",
+                        groupVM.getLastHostId(), groupVM, groupVM.getState());
             }
         }
     }
