@@ -53,6 +53,8 @@
   "label.account.id": "アカウントID",
   "label.account.name": "アカウント名",
   "label.account.specific": "アカウント固有",
+  "label.account.type.domain.admin": "ドメイン管理者",
+  "label.account.type.normal": "通常 (ユーザー)",
   "label.accounts": "アカウント",
   "label.accounttype": "アカウントタイプ",
   "label.access.kubernetes.nodes": "Kubernetesノードに接続",

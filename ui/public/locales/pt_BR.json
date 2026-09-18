@@ -36,6 +36,8 @@
 "label.account.id": "ID da conta",
 "label.account.name": "Nome da conta",
 "label.account.specific": "Espec\u00edfico da conta",
+"label.account.type.domain.admin": "Administrador de domínio",
+"label.account.type.normal": "Normal (Usuário)",
 "label.accounts": "Contas",
 "label.accountstate": "Estado da conta",
 "label.accounttype": "Tipo de conta",
