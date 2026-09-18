@@ -29,6 +29,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
+
     @Override
     public String[] getUpgradableVersionRange() {
         return new String[]{"4.22.1.0", "4.23.0.0"};
@@ -99,4 +100,5 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         indexList.add("vm_instance_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud_usage.usage_vm_instance", indexList, false);
     }
+
 }
