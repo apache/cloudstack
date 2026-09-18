@@ -187,16 +187,6 @@
             </a-select>
           </a-form-item>
           <a-form-item
-            ref="externalid"
-            name="externalid">
-            <template #label>
-              <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
-            </template>
-            <a-input
-             v-model:value="form.externalid"
-              :placeholder="apiParams.externalid.description"/>
-          </a-form-item>
-          <a-form-item
             v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="gateway"
             name="gateway">
@@ -628,7 +618,7 @@ export default {
           networkOfferingId: this.selectedNetworkOffering.id,
           keepmacaddressonpublicnic: values.keepMacAddressOnPublicNic
         }
-        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'vpcid', 'vlan', 'networkdomain']
         for (const field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
