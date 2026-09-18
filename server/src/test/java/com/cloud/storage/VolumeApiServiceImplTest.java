@@ -1042,6 +1042,16 @@ public class VolumeApiServiceImplTest {
         Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
     }
 
+    @Test
+    public void destroyVolumeIfPossibleTestVolumeStateAllocated() {
+        Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
+        configureMocksForTestDestroyVolumeWhenVolume();
+
+        volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
+
+        Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
+    }
+
     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);

@@ -1741,8 +1741,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
     /**
-     * Executes the removal of the volume. If the volume is only allocated we do not try to remove it from primary and secondary storage.
-     * Otherwise, after the removal in the database, we will try to remove the volume from both primary and secondary storage.
+     * Executes the removal of the volume. After the removal in the database, we will try to remove the volume from both primary and secondary storage.
+     * Volumes in the {@link Volume.State#Allocated} state are routed through the same destroy/expunge flow; storage cleanup is skipped only when the volume has no backing storage pool
      */
     public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
         Volume volume = destroyVolume(volumeId, caller, true, true, null);
