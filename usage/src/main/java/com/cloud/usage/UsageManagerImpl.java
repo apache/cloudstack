@@ -103,6 +103,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private static final int HOURLY_TIME = 60;
     private static final int DAILY_TIME = 60 * 24;
     private static final int THREE_DAYS_IN_MINUTES = 60 * 24 * 3;
+    private static final long MAX_EVENT_REWIND_MILLIS = 24L * 60 * 60 * 1000;
 
     @Inject
     private AccountDao _accountDao;
@@ -699,7 +700,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 if ((events != null) && (events.size() > 0)) {
                     Date oldestEventDate = events.get(0).getCreateDate();
                     if (oldestEventDate.getTime() < startDateMillis) {
-                        startDateMillis = oldestEventDate.getTime();
+                        // Bound the rewind so a single un-processable event cannot pin the
+                        // aggregation window to an arbitrarily old date and cause unbounded
+                        // re-aggregation of the entire history on every run.
+                        startDateMillis = Math.max(oldestEventDate.getTime(), startDateMillis - MAX_EVENT_REWIND_MILLIS);
                         startDate = new Date(startDateMillis);
                     }
 
