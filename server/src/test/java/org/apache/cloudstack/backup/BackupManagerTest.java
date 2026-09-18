@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
@@ -609,13 +610,14 @@ public class BackupManagerTest {
         Long domainId = 4L;
         Long backupOfferingId = 5L;
 
-        CreateBackupScheduleCmd cmd = Mockito.mock(CreateBackupScheduleCmd.class);
+        UpdateBackupScheduleCmd cmd = Mockito.mock(UpdateBackupScheduleCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getTimezone()).thenReturn("GMT");
         when(cmd.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
         when(cmd.getMaxBackups()).thenReturn(8);
         when(cmd.getSchedule()).thenReturn("00:00:00");
-        when(cmd.getQuiesceVM()).thenReturn(null);
+        when(cmd.isQuiesceVm()).thenReturn(null);
+        doReturn(null).when(cmd).getId();
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
@@ -635,11 +637,11 @@ public class BackupManagerTest {
 
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
-        when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
         when(offering.getProvider()).thenReturn("test");
 
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
-        when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
+        doReturn(vmId).when(schedule).getVmId();
+        when(backupScheduleDao.listByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(List.of(schedule));
 
         backupManager.configureBackupSchedule(cmd);
 

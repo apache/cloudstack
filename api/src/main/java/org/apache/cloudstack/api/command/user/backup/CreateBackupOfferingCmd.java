@@ -34,10 +34,11 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
-
+import org.apache.commons.collections4.MapUtils;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "createBackupOffering", description = "Creates a backup offering", responseObject = BackupOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin}, since = "4.23.0")
@@ -91,6 +92,11 @@ public class CreateBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = DomainResponse.class,
             description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.MAX_SCHEDULES, type = CommandType.MAP,
+            description = "Maximum number of schedules, values lower than 0 disable the limit. By default, all allowed schedule types have a limit of 1. Accepts a map of " +
+                    "schedule type to maximum amount. Example: maxschedules[0].DAILY=2&maxschedules[0].WEEKLY=5. Please note that all values should be on the same index ('0').")
+    private Map maxSchedules;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -164,6 +170,13 @@ public class CreateBackupOfferingCmd extends BaseCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups;
+    }
+
+    public Map<String, String> getMaxSchedules() {
+        if (MapUtils.isEmpty(maxSchedules)) {
+            return null;
+        }
+        return (Map<String, String>)maxSchedules.values().iterator().next();
     }
 
     /////////////////////////////////////////////////////

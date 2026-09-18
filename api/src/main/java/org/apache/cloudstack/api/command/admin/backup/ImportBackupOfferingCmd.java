@@ -42,9 +42,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @APICommand(name = "importBackupOffering",
@@ -90,6 +92,11 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             since = "4.23.0")
     private List<Long> domainIds;
 
+    @Parameter(name = ApiConstants.MAX_SCHEDULES, type = CommandType.MAP,
+            description = "Maximum number of schedules, values lower than 0 disable the limit. By default, all allowed schedule types have a limit of 1. Accepts a map of " +
+                    "schedule type to maximum amount. Example: maxschedules[0].DAILY=2&maxschedules[0].WEEKLY=5. Please note that all values should be on the same index ('0').")
+    private Map maxSchedules;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -121,6 +128,13 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
             domainIds.addAll(set);
         }
         return domainIds;
+    }
+
+    public Map<String, String> getMaxSchedules() {
+        if (MapUtils.isEmpty(maxSchedules)) {
+            return null;
+        }
+        return (Map<String, String>)maxSchedules.values().iterator().next();
     }
 
     /////////////////////////////////////////////////////
