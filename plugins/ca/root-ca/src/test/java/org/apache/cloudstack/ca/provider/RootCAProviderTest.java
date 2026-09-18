@@ -77,6 +77,10 @@ public class RootCAProviderTest {
         addField(provider, "caKeyPair", caKeyPair);
         addField(provider, "caCertificate", caCertificate);
         addField(provider, "caCertificates", Collections.singletonList(caCertificate));
+
+        // Signature verification is off by default; individual tests enable it as needed
+        provider.rootCACertSignatureVerification = Mockito.mock(ConfigKey.class);
+        Mockito.lenient().when(provider.rootCACertSignatureVerification.value()).thenReturn(Boolean.FALSE);
     }
 
     @After
@@ -248,6 +252,66 @@ public class RootCAProviderTest {
         } catch (CertificateParsingException e) {
             Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
         }
+    }
+
+    @Test
+    public void testIsManagementCertificateSignatureVerificationRejectsForeignCert() throws Exception {
+        String customSAN = "cloudstack.internal";
+        addField(provider, "managementCertificateCustomSAN", customSAN);
+        Mockito.when(provider.rootCACertSignatureVerification.value()).thenReturn(Boolean.TRUE);
+
+        // Cert with the management SAN but signed by a rogue CA must be rejected
+        KeyPair rogueCaKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate rogueCa = CertUtils.generateV3Certificate(null, rogueCaKeyPair, rogueCaKeyPair.getPublic(), "CN=rogue", "SHA256withRSA", 365, null, null);
+        KeyPair clientKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate foreignCert = CertUtils.generateV3Certificate(rogueCa, rogueCaKeyPair, clientKeyPair.getPublic(),
+                "CN=" + customSAN, "SHA256withRSA", 365, List.of(customSAN), null);
+
+        Assert.assertFalse(provider.isManagementCertificate(foreignCert));
+    }
+
+    @Test
+    public void testIsManagementCertificateSignatureVerificationAcceptsCaSignedCert() throws Exception {
+        String customSAN = "cloudstack.internal";
+        addField(provider, "managementCertificateCustomSAN", customSAN);
+        Mockito.when(provider.rootCACertSignatureVerification.value()).thenReturn(Boolean.TRUE);
+
+        KeyPair clientKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate caSignedCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair, clientKeyPair.getPublic(),
+                "CN=" + customSAN, "SHA256withRSA", 365, List.of(customSAN), null);
+
+        Assert.assertTrue(provider.isManagementCertificate(caSignedCert));
+    }
+
+    @Test
+    public void testIsManagementCertificateSignatureVerificationAcceptsCertSignedByRotatedCA() throws Exception {
+        String customSAN = "cloudstack.internal";
+        addField(provider, "managementCertificateCustomSAN", customSAN);
+        Mockito.when(provider.rootCACertSignatureVerification.value()).thenReturn(Boolean.TRUE);
+
+        KeyPair otherCaKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate otherCaCertificate = CertUtils.generateV3Certificate(null, otherCaKeyPair, otherCaKeyPair.getPublic(), "CN=other-ca", "SHA256withRSA", 365, null, null);
+        addField(provider, "caCertificates", Arrays.asList(otherCaCertificate, caCertificate));
+
+        KeyPair clientKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate caSignedCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair, clientKeyPair.getPublic(),
+                "CN=" + customSAN, "SHA256withRSA", 365, List.of(customSAN), null);
+
+        Assert.assertTrue(provider.isManagementCertificate(caSignedCert));
+    }
+
+    @Test
+    public void testIsManagementCertificateSignatureVerificationRejectsWhenNoCaCertificates() throws Exception {
+        String customSAN = "cloudstack.internal";
+        addField(provider, "managementCertificateCustomSAN", customSAN);
+        Mockito.when(provider.rootCACertSignatureVerification.value()).thenReturn(Boolean.TRUE);
+        addField(provider, "caCertificates", null);
+
+        KeyPair clientKeyPair = CertUtils.generateRandomKeyPair(1024);
+        X509Certificate caSignedCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair, clientKeyPair.getPublic(),
+                "CN=" + customSAN, "SHA256withRSA", 365, List.of(customSAN), null);
+
+        Assert.assertFalse(provider.isManagementCertificate(caSignedCert));
     }
 
     @Test
