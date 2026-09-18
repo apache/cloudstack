@@ -1,0 +1,92 @@
+iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w cloudbr0|awk '{print $9}' | head -1
+iptables -N i-2-7-VM
+ip6tables -N i-2-7-VM
+iptables -N i-2-7-VM-eg
+ip6tables -N i-2-7-VM-eg
+iptables -N i-2-7-def
+ip6tables -N i-2-7-def
+ipset -F i-2-7-VM
+ipset -X i-2-7-VM
+ipset -N i-2-7-VM iphash family inet
+ipset -F i-2-7-VM-6
+ipset -X i-2-7-VM-6
+ipset -N i-2-7-VM-6 hash:net family inet6
+ipset -! -A i-2-7-VM 10.1.1.55
+ipset -! -A i-2-7-VM 10.1.1.55
+ipset -! -A i-2-7-VM-6 fd00::55
+ipset -! -A i-2-7-VM-6 fe80::4cff:fe5f:1
+iptables -A BF-cloudbr0-OUT -m physdev --physdev-is-bridged --physdev-out vnet3 -j i-2-7-def
+iptables -A BF-cloudbr0-IN -m physdev --physdev-in vnet3 -j i-2-7-def
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --dport 67 --sport 68 -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p udp --dport 68 --sport 67  -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --sport 67 -j DROP
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set ! --match-set i-2-7-VM src -j DROP
+iptables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -m set ! --match-set i-2-7-VM dst -j DROP
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -p udp --dport 53  -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -p tcp --dport 53  -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM src -j i-2-7-VM-eg
+iptables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -j i-2-7-VM
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A i-2-7-def -m physdev --physdev-in vnet3 -j DROP
+iptables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -j DROP
+iptables -A i-2-7-VM -j RETURN
+ebtables -t nat -N i-2-7-VM-in
+ebtables -t nat -N i-2-7-VM-out
+ebtables -t nat -N i-2-7-VM-in-ips
+ebtables -t nat -N i-2-7-VM-out-ips
+ebtables -t nat -N i-2-7-VM-in-src
+ebtables -t nat -N i-2-7-VM-out-dst
+ebtables -t nat -A PREROUTING -i vnet3 -j i-2-7-VM-in
+ebtables -t nat -A POSTROUTING -o vnet3 -j i-2-7-VM-out
+ebtables -t nat -A i-2-7-VM-in-ips -j DROP
+ebtables -t nat -A i-2-7-VM-out-ips -j DROP
+ebtables -t nat -A i-2-7-VM-in-src -j DROP
+ebtables -t nat -A i-2-7-VM-out-dst -p ARP --arp-op Reply -j DROP
+ebtables -t nat -A i-2-7-VM-in -j i-2-7-VM-in-src
+ebtables -t nat -I i-2-7-VM-in-src -s 02:00:4c:5f:00:01 -j RETURN
+ebtables -t nat -A i-2-7-VM-in -p ARP -j i-2-7-VM-in-ips
+ebtables -t nat -I i-2-7-VM-in-ips -p ARP -s 02:00:4c:5f:00:01 --arp-mac-src 02:00:4c:5f:00:01 --arp-ip-src 10.1.1.55 -j RETURN
+ebtables -t nat -A i-2-7-VM-in -p ARP --arp-op Request -j ACCEPT
+ebtables -t nat -A i-2-7-VM-in -p ARP --arp-op Reply -j ACCEPT
+ebtables -t nat -A i-2-7-VM-in -p ARP -j DROP
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Reply -j i-2-7-VM-out-dst
+ebtables -t nat -I i-2-7-VM-out-dst -p ARP --arp-op Reply --arp-mac-dst 02:00:4c:5f:00:01 -j RETURN
+ebtables -t nat -A i-2-7-VM-out -p ARP -j i-2-7-VM-out-ips
+ebtables -t nat -I i-2-7-VM-out-ips -p ARP --arp-ip-dst 10.1.1.55 -j RETURN
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Request -j ACCEPT
+ebtables -t nat -A i-2-7-VM-out -p ARP --arp-op Reply -j ACCEPT
+ebtables -t nat -A i-2-7-VM-out -p ARP -j DROP
+ebtables -t nat -I i-2-7-VM-in-ips -p ARP -s 02:00:4c:5f:00:01 --arp-mac-src 02:00:4c:5f:00:01 --arp-ip-src 10.1.1.55 -j RETURN
+ebtables -t nat -I i-2-7-VM-out-ips -p ARP --arp-ip-dst 10.1.1.55 -j RETURN
+ip6tables -A BF-cloudbr0-OUT -m physdev --physdev-is-bridged --physdev-out vnet3 -j i-2-7-def
+ip6tables -A BF-cloudbr0-IN -m physdev --physdev-in vnet3 -j i-2-7-def
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 --src fe80::/64 --dst ff02::1 -p icmpv6 --icmpv6-type router-advertisement -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 --dst ff02::2 -p icmpv6 --icmpv6-type router-solicitation -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type router-advertisement -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type neighbor-advertisement -m set --match-set i-2-7-VM-6 src -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type neighbor-advertisement -m hl --hl-eq 255 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type packet-too-big -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type destination-unreachable -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type time-exceeded -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --icmpv6-type parameter-problem -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p icmpv6 --dst ff02::16 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --sport 546 --dst ff02::1:2 --src fe80::4cff:fe5f:1 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -p udp --src fe80::/64 --dport 546 --dst fe80::4cff:fe5f:1 -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --sport 547 ! --dst fe80::/64 -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p udp --dport 53 -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -p tcp --dport 53 -m set --match-set i-2-7-VM-6 src -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m set ! --match-set i-2-7-VM-6 src -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m set --match-set i-2-7-VM-6 src -j i-2-7-VM-eg
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -j i-2-7-VM
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -m state --state ESTABLISHED,RELATED -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -m state --state ESTABLISHED,RELATED -j ACCEPT
+ip6tables -A i-2-7-def -m physdev --physdev-in vnet3 -j DROP
+ip6tables -A i-2-7-def -m physdev --physdev-is-bridged --physdev-out vnet3 -j DROP
+ip6tables -A i-2-7-VM -j RETURN
