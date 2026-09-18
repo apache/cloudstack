@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
+
+-- Generic OIDC OAuth2 provider: a type to select the implementation, and the issuer URL for discovery
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'type', 'VARCHAR(40) DEFAULT NULL COMMENT ''Provider implementation serving this registration, for example oidc; NULL means the provider name selects the implementation'' AFTER `token_url` ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'issuer_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Issuer URL of the OpenID Connect provider, used to read its discovery document'' AFTER `type` ');

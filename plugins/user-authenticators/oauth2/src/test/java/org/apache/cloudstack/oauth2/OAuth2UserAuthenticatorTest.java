@@ -92,8 +92,8 @@ public class OAuth2UserAuthenticatorTest {
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
-        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(true);
+        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0], domainId)).thenReturn(userOAuth2Authenticator);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId, provider[0])).thenReturn(true);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -107,8 +107,8 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
-        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
+        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0], domainId);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId, provider[0]);
     }
 
     @Test
@@ -125,8 +125,8 @@ public class OAuth2UserAuthenticatorTest {
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
-        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(false);
+        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0], domainId)).thenReturn(userOAuth2Authenticator);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId, provider[0])).thenReturn(false);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -140,8 +140,8 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
-        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
+        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0], domainId);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId, provider[0]);
     }
 
     @Test
@@ -166,7 +166,7 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao, never()).getUser(anyLong());
-        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString(), anyLong());
     }
 
     @Test
@@ -210,6 +210,6 @@ public class OAuth2UserAuthenticatorTest {
 
         assertFalse(result.first());
         assertNull(result.second());
-        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString(), anyLong());
     }
 }
