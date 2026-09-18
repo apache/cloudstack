@@ -36,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -50,6 +51,9 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject VMInstanceDao _instanceDao;
     @Inject HostDao hostDao;
     @Inject ManagementServiceConfiguration mgmtServiceConf;
+    @Inject AlertManager _alertMgr;
+
+    protected static final String UNKNOWN_INSTANCES_ALERT_SUBJECT = "Instances running on a host that CloudStack has no record of";
 
     private final Map<Long, Set<String>> unknownInstancesByHost = new ConcurrentHashMap<>();
 
@@ -245,9 +249,18 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             return true;
         }
         unknownInstancesByHost.put(hostId, unknownInstanceNames);
+        HostVO host = hostCache.get(hostId);
+        String names = String.join(", ", unknownInstanceNames);
         logger.warn("Host reports {} instance(s) that do not exist in CloudStack DB, they are running unmanaged. " +
                         "host: {}, instances: [{}]",
-                unknownInstanceNames.size(), hostCache.get(hostId), String.join(", ", unknownInstanceNames));
+                unknownInstanceNames.size(), host, names);
+        if (host != null) {
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, host.getDataCenterId(), host.getPodId(),
+                    UNKNOWN_INSTANCES_ALERT_SUBJECT,
+                    String.format("Host %s reports %d instance(s) that do not exist in CloudStack: %s. They are "
+                                    + "running unmanaged and may still be holding addresses and storage.",
+                            host.getName(), unknownInstanceNames.size(), names));
+        }
         return true;
     }
 
