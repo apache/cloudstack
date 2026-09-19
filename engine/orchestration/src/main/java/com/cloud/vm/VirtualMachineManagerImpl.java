@@ -696,6 +696,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm.getUuid(), VmDestroyForcestop.value());
         vm = _vmDao.findByUuid(vm.getUuid());
 
+        // advanceStop() returns without contacting the host when the database already has the instance as Stopped,
+        // Error, Destroyed or Expunging. The host may still be running it. Expunging is about to release its
+        // addresses and delete its volumes, so make sure no domain is left behind for it.
+        ensureInstanceIsStoppedOnLastKnownHost(vm);
+
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
                 logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
@@ -2209,8 +2214,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumesToDisconnect;
     }
 
-    protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
-        final VirtualMachine vm = profile.getVirtualMachine();
+    /**
+     * Build a StopCommand carrying everything the host needs to tear an instance down: the external hypervisor
+     * details, the VLAN persistence map that decides whether a bridge may be deleted, the control NIC address used
+     * for system VMs, and the volumes to disconnect. Callers that build a StopCommand without these will make the
+     * host delete bridges belonging to persistent networks and leave volumes connected.
+     */
+    protected StopCommand buildStopCommand(final VirtualMachine vm, final VirtualMachineProfile profile, final boolean checkBeforeCleanup) {
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stpCmd);
@@ -2219,7 +2229,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         stpCmd.setControlIp(getControlNicIpForVM(vm));
         stpCmd.setVolumesToDisconnect(getVolumesToDisconnect(vm));
-        final StopCommand stop = stpCmd;
+        return stpCmd;
+    }
+
+    protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
+        final VirtualMachine vm = profile.getVirtualMachine();
+        final StopCommand stop = buildStopCommand(vm, profile, checkBeforeCleanup);
         try {
             Answer answer = null;
             if(vm.getHostId() != null) {
@@ -5437,6 +5452,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Destroyed:
         case Expunging:
             logger.info("Receive power on report when Instance is in destroyed or expunging state. Instance: {}, state: {}.", vm, vm.getState());
+            stopUnmanagedInstanceOnReportingHost(vm);
             break;
 
         case Migrating:
@@ -5452,11 +5468,81 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Error:
         default:
             logger.info("Receive power on report when Instance is in error or unexpected state. Instance: {}, state: {}.", vm, vm.getState());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                    VM_SYNC_ALERT_SUBJECT, String.format("Instance %s is reported running by host %s but is in %s state. "
+                            + "It is not managed by CloudStack and may need to be stopped on the host.",
+                            vm.getInstanceName(), vm.getPowerHostId(), vm.getState()));
             break;
         }
     }
 
-    private void handlePowerOffReportWithNoPendingJobsOnVM(final VMInstanceVO vm) {
+    /**
+     * Send a StopCommand for an instance to the last host it is known to have run on, whatever the database state
+     * says. Used before expunging, where the instance's addresses and volumes are about to be released and a domain
+     * left running on the host would keep using them.
+     *
+     * External instances are skipped: their teardown is done by their extension in finalizeExpunge, and a
+     * StopCommand issued from here would not carry the details that path needs.
+     */
+    protected void ensureInstanceIsStoppedOnLastKnownHost(final VMInstanceVO vm) {
+        if (vm == null || HypervisorType.External.equals(vm.getHypervisorType())) {
+            return;
+        }
+        final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null) {
+            return;
+        }
+        try {
+            // checkBeforeCleanup is false on purpose: a running domain is what has to be removed here.
+            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
+            final Answer answer = _agentMgr.send(hostId, stop);
+            if (answer != null && answer.getResult()) {
+                return;
+            }
+            logger.warn("Unable to confirm instance {} is stopped on host {} before expunging: {}", vm, hostId,
+                    answer == null ? "no answer from host" : answer.getDetails());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Unable to confirm instance {} is stopped on host {} before expunging.", vm, hostId, e);
+        }
+    }
+
+    /**
+     * The host reports an instance as powered on that the database considers destroyed or expunged. It will never be
+     * managed again, and its addresses and storage have already been handed back, so stop it on the host that
+     * reported it instead of leaving it running unmanaged.
+     *
+     * External instances are skipped, as in ensureInstanceIsStoppedOnLastKnownHost().
+     */
+    protected void stopUnmanagedInstanceOnReportingHost(final VMInstanceVO vm) {
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            return;
+        }
+        final Long powerHostId = vm.getPowerHostId();
+        if (powerHostId == null) {
+            logger.warn("Instance {} is reported powered on but no reporting host is recorded, cannot stop it.", vm);
+            return;
+        }
+        try {
+            // checkBeforeCleanup must be false: the instance is known to be running, and that is exactly what
+            // has to be stopped. With it set, the host would refuse and answer "vm is still running on host".
+            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
+            final Answer answer = _agentMgr.send(powerHostId, stop);
+            if (answer != null && answer.getResult()) {
+                logger.info("Stopped unmanaged instance {} on host {}.", vm, powerHostId);
+                return;
+            }
+            logger.warn("Unable to stop unmanaged instance {} on host {}: {}", vm, powerHostId,
+                    answer == null ? "no answer from host" : answer.getDetails());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Unable to stop unmanaged instance {} on host {}.", vm, powerHostId, e);
+        }
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                VM_SYNC_ALERT_SUBJECT, String.format("Instance %s is reported running by host %s but is in %s state, "
+                        + "and could not be stopped. It may need to be stopped on the host.",
+                        vm.getInstanceName(), powerHostId, vm.getState()));
+    }
+
+    protected void handlePowerOffReportWithNoPendingJobsOnVM(final VMInstanceVO vm) {
         switch (vm.getState()) {
         case Starting:
         case Stopping:
@@ -5480,20 +5566,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
 
-            if (PowerState.PowerOff.equals(vm.getPowerState())) {
+            // A missing report is not proof that the instance is gone, only that the host did not list it. Stop it
+            // on the host before giving up its resources, otherwise a still-running instance keeps its NICs and IP
+            // addresses while the database says they are free and they get handed to another instance.
+            if (PowerState.PowerOff.equals(vm.getPowerState()) || PowerState.PowerReportMissing.equals(vm.getPowerState())) {
+                // force is false for a missing report. sendStop() swallows AgentUnavailableException and
+                // OperationTimedoutException and answers success when forced, and a host too busy to answer is
+                // exactly the condition that produced the stale report in the first place. Backing off and letting a
+                // later report decide is better than freeing an address on no evidence. A PowerOff report is the
+                // host stating the instance is down, so that path keeps its previous behaviour.
+                final boolean forceStop = PowerState.PowerOff.equals(vm.getPowerState());
                 final VirtualMachineGuru vmGuru = getVmGuru(vm);
                 final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                Pair<Boolean, String> result = sendStop(vmGuru, profile, true, true);
+                Pair<Boolean, String> result = sendStop(vmGuru, profile, forceStop, true);
                 if (!result.first()) {
+                    logger.warn("Unable to stop VM {} on its host, not releasing its resources: {}", vm, result.second());
                     return;
                 } else {
                     // Release resources on StopCommand success
                     releaseVmResources(profile, true);
                 }
-            } else if (PowerState.PowerReportMissing.equals(vm.getPowerState())) {
-                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                // VM will be sync-ed to Stopped state, release the resources
-                releaseVmResources(profile, true);
             }
 
             try {

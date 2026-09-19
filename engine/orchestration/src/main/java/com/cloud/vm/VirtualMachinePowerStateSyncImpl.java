@@ -18,9 +18,11 @@ package com.cloud.vm;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -34,6 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -48,6 +51,11 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject VMInstanceDao _instanceDao;
     @Inject HostDao hostDao;
     @Inject ManagementServiceConfiguration mgmtServiceConf;
+    @Inject AlertManager _alertMgr;
+
+    protected static final String UNKNOWN_INSTANCES_ALERT_SUBJECT = "Instances running on a host that CloudStack has no record of";
+
+    private final Map<Long, Set<String>> unknownInstancesByHost = new ConcurrentHashMap<>();
 
     private LazyCache<Long, VMInstanceVO> vmCache;
     private LazyCache<Long, HostVO> hostCache;
@@ -66,14 +74,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Override
     public void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report) {
         logger.debug("Process host VM state report. host: {}", hostCache.get(hostId));
-        Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
+        Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(hostId, report);
         processReport(hostId, translatedInfo, false);
     }
 
     @Override
     public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force) {
         logger.debug("Process host VM state report from ping process. host: {}", hostCache.get(hostId));
-        Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
+        Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(hostId, report);
         processReport(hostId, translatedInfo, force);
     }
 
@@ -114,6 +122,21 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 .collect(Collectors.toList());
     }
 
+    /**
+     * A host report only lists the instances that were running on the host when the report was collected. When the
+     * management server changes an instance's state around that moment, an in-flight report may have been collected
+     * before the change and therefore says nothing about it. Treating such an instance as missing would undo the
+     * change that just happened, so instances whose state changed within the graceful period are left alone and
+     * judged by a later report instead.
+     */
+    protected boolean hasRecentStateChange(VMInstanceVO instance, Date currentTime, long milliSecondsGracefulPeriod) {
+        Date lastStateChange = instance.getUpdateTime();
+        if (lastStateChange == null) {
+            return false;
+        }
+        return currentTime.getTime() - lastStateChange.getTime() < milliSecondsGracefulPeriod;
+    }
+
     private void processMissingVmReport(long hostId, Set<Long> vmIds, boolean force) {
         // any state outdates should be checked against the time before this list was retrieved
         Date startTime = DateUtil.currentGMTTime();
@@ -143,6 +166,12 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     vmStateUpdateTime = instance.getCreated();
                 }
             }
+            if (hasRecentStateChange(instance, currentTime, milliSecondsGracefulPeriod)) {
+                logger.debug("vm id: {} - state changed at {}, which is within the graceful period ({} ms); " +
+                                "the report may have been collected before that change, skipping missing report",
+                        instance.getId(), DateUtil.getOutputString(instance.getUpdateTime()), milliSecondsGracefulPeriod);
+                continue;
+            }
             logger.debug("Detected missing VM. host: {}, vm id: {}({}), power state: {}, last state update: {}",
                     hostId,
                     instance.getId(),
@@ -151,8 +180,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     DateUtil.getOutputString(vmStateUpdateTime));
             long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
             if (force || (milliSecondsSinceLastStateUpdate > milliSecondsGracefulPeriod)) {
-                logger.debug("vm id: {} - time since last state update({} ms) has passed graceful period",
-                        instance.getId(), milliSecondsSinceLastStateUpdate);
+                logger.debug("vm id: {} - reporting missing (time since last state update: {} ms, graceful period: {} ms, forced: {})",
+                        instance.getId(), milliSecondsSinceLastStateUpdate, milliSecondsGracefulPeriod, force);
                 // this is where a race condition might have happened if we don't re-fetch the instance;
                 // between the startime of this job and the currentTime of this missing-branch
                 // an update might have occurred that we should not override in case of out of band migration
@@ -178,21 +207,61 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         logger.debug("Done with process of VM state report. host: {}", () -> hostCache.get(hostId));
     }
 
-    public Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states) {
+    public Map<Long, VirtualMachine.PowerState> convertVmStateReport(long hostId, Map<String, HostVmStateReportEntry> states) {
         final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<>();
         if (MapUtils.isEmpty(states)) {
+            reportUnknownInstances(hostId, new HashSet<>());
             return map;
         }
+        Set<String> unknownInstanceNames = new HashSet<>();
         Map<String, Long> nameIdMap = _instanceDao.getNameIdMapForVmInstanceNames(states.keySet());
         for (Map.Entry<String, HostVmStateReportEntry> entry : states.entrySet()) {
             Long id = nameIdMap.get(entry.getKey());
             if (id != null) {
                 map.put(id, entry.getValue().getState());
             } else {
+                unknownInstanceNames.add(entry.getKey());
                 logger.debug("Unable to find matched VM in CloudStack DB. name: {} powerstate: {}", entry.getKey(), entry.getValue());
             }
         }
+        reportUnknownInstances(hostId, unknownInstanceNames);
         return map;
+    }
+
+    /**
+     * A host reporting an instance that CloudStack has no record of means something is running there unmanaged,
+     * usually left behind by a deploy or an expunge that did not reach the host. Previously this produced one debug
+     * line per instance per report and nothing else, so it could go unnoticed indefinitely.
+     *
+     * Logged at warn level, and only when the set of unknown instances on a host changes, so a standing condition
+     * does not repeat on every report.
+     *
+     * @return true when the set changed and was reported, false when there was nothing new to say.
+     */
+    protected boolean reportUnknownInstances(long hostId, Set<String> unknownInstanceNames) {
+        Set<String> previous = unknownInstancesByHost.get(hostId);
+        if (unknownInstanceNames.equals(previous) || (CollectionUtils.isEmpty(unknownInstanceNames) && previous == null)) {
+            return false;
+        }
+        if (unknownInstanceNames.isEmpty()) {
+            unknownInstancesByHost.remove(hostId);
+            logger.info("No unknown instances are reported anymore. host: {}", () -> hostCache.get(hostId));
+            return true;
+        }
+        unknownInstancesByHost.put(hostId, unknownInstanceNames);
+        HostVO host = hostCache.get(hostId);
+        String names = String.join(", ", unknownInstanceNames);
+        logger.warn("Host reports {} instance(s) that do not exist in CloudStack DB, they are running unmanaged. " +
+                        "host: {}, instances: [{}]",
+                unknownInstanceNames.size(), host, names);
+        if (host != null) {
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, host.getDataCenterId(), host.getPodId(),
+                    UNKNOWN_INSTANCES_ALERT_SUBJECT,
+                    String.format("Host %s reports %d instance(s) that do not exist in CloudStack: %s. They are "
+                                    + "running unmanaged and may still be holding addresses and storage.",
+                            host.getName(), unknownInstanceNames.size(), names));
+        }
+        return true;
     }
 
     protected VMInstanceVO getVmFromId(long vmId) {
