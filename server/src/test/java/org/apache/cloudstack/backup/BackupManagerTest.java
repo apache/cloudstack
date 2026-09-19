@@ -1217,6 +1217,14 @@ public class BackupManagerTest {
         when(vm.getDataCenterId()).thenReturn(1L);
         when(vm.getBackupOfferingId()).thenReturn(null);
         when(offering.getProvider()).thenReturn("testbackupprovider");
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+        when(volume.getPassphraseId()).thenReturn(null);
+        Long diskOfferingId = 5L;
+        when(volume.getDiskOfferingId()).thenReturn(diskOfferingId);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOffering.getUuid()).thenReturn("disk-offering-uuid");
+        Mockito.when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
         when(backupProvider.assignVMToBackupOffering(vm, offering)).thenReturn(true);
         when(vmInstanceDao.update(1L, vm)).thenReturn(true);
 
@@ -1225,8 +1233,29 @@ public class BackupManagerTest {
 
             assertTrue(result);
             verify(vmInstanceDao, times(1)).findById(vmId);
+            verify(volumeDao, times(2)).findByInstance(vmId);
             verify(backupOfferingDao, times(1)).findById(offeringId);
             verify(backupManager, times(1)).getBackupProvider("testbackupprovider");
+        }
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void testAssignVMToBackupOfferingForVMWithEncryptedVolumes() {
+        Long vmId = 1L;
+        Long offeringId = 2L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        overrideBackupFrameworkConfigValue();
+
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+        when(volume.getPassphraseId()).thenReturn(42L);
+
+        try (MockedStatic<UsageEventUtils> ignored2 = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.assignVMToBackupOffering(vmId, offeringId);
+            verify(vmInstanceDao, times(1)).findById(vmId);
         }
     }
 

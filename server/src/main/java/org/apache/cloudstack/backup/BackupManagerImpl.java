@@ -441,6 +441,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM is not in running or stopped state");
         }
 
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        for (VolumeVO volume : volumes) {
+            if (volume != null && volume.getPassphraseId() != null) {
+                throw new CloudRuntimeException("VM has encrypted volumes, backup offering assignment is not allowed");
+            }
+        }
+
         validateBackupForZone(vm.getDataCenterId());
 
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
