@@ -310,6 +310,19 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             throw new InvalidParameterValueException("Bucket quota cannot be negative: " + cmd.getQuota());
         }
 
+        // Capture the pre-update remote state so a failure after a partial
+        // update can roll back the remote mutations that already succeeded.
+        // Without this, a quota reservation rejection (or any later failure)
+        // would leave encryption/versioning/policy changes applied remotely
+        // while the BucketVO retains the old values and the API returns an
+        // error, leaving CloudStack and the backend out of sync.
+        Boolean previousEncryption = bucket.isEncryption();
+        Boolean previousVersioning = bucket.isVersioning();
+        String previousPolicy = bucket.getPolicy();
+        boolean encryptionApplied = false;
+        boolean versioningApplied = false;
+        boolean policyApplied = false;
+
         try {
             if (cmd.getEncryption() != null) {
                 if (cmd.getEncryption()) {
@@ -318,6 +331,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                     objectStore.deleteBucketEncryption(bucketTO);
                 }
                 bucket.setEncryption(cmd.getEncryption());
+                encryptionApplied = true;
             }
 
             if (cmd.getVersioning() != null) {
@@ -327,11 +341,13 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                     objectStore.deleteBucketVersioning(bucketTO);
                 }
                 bucket.setVersioning(cmd.getVersioning());
+                versioningApplied = true;
             }
 
             if (cmd.getPolicy() != null) {
                 objectStore.setBucketPolicy(bucketTO, cmd.getPolicy());
                 bucket.setPolicy(cmd.getPolicy());
+                policyApplied = true;
             }
 
             boolean bucketPersisted = updateBucketQuota(cmd, bucket, objectStore, objectStoreVO, bucketTO);
@@ -340,10 +356,77 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 throw new CloudRuntimeException("Failed to update bucket " + bucket.getName());
             }
         } catch (Exception e) {
-            throw new CloudRuntimeException("Error while updating bucket: " +bucket.getName() +". "+e.getMessage());
+            // Roll back the remote encryption/versioning/policy mutations that
+            // were applied before the failure (e.g. a quota reservation
+            // rejection) so the remote bucket and the BucketVO stay consistent.
+            // The quota path unwinds its own mutations internally.
+            rollbackBucketUpdateMutations(objectStore, bucketTO, bucket,
+                    previousEncryption, encryptionApplied,
+                    previousVersioning, versioningApplied,
+                    previousPolicy, policyApplied, e);
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Error while updating bucket: " + bucket.getName() + ". " + e.getMessage(), e);
         }
 
         return true;
+    }
+
+    /**
+     * Best-effort compensation for the remote encryption, versioning, and
+     * policy mutations applied during {@link #updateBucket} when a later step
+     * fails. Each remote mutation is reverted to its pre-update value in
+     * reverse order; the in-memory {@link BucketVO} fields are restored too so
+     * a retry starts from the same state the backend is in. Failures are
+     * logged and attached to the original exception rather than masking it.
+     */
+    private void rollbackBucketUpdateMutations(ObjectStoreEntity objectStore, BucketTO bucketTO, BucketVO bucket,
+            Boolean previousEncryption, boolean encryptionApplied,
+            Boolean previousVersioning, boolean versioningApplied,
+            String previousPolicy, boolean policyApplied, Exception cause) {
+        if (policyApplied) {
+            try {
+                if (previousPolicy == null || "private".equalsIgnoreCase(previousPolicy)) {
+                    objectStore.setBucketPolicy(bucketTO, "private");
+                } else {
+                    objectStore.setBucketPolicy(bucketTO, previousPolicy);
+                }
+                bucket.setPolicy(previousPolicy);
+            } catch (Exception ex) {
+                logger.error("Failed to roll back bucket policy for {} while compensating a failed update",
+                        bucket.getName(), ex);
+                cause.addSuppressed(ex);
+            }
+        }
+        if (versioningApplied) {
+            try {
+                if (Boolean.TRUE.equals(previousVersioning)) {
+                    objectStore.setBucketVersioning(bucketTO);
+                } else {
+                    objectStore.deleteBucketVersioning(bucketTO);
+                }
+                bucket.setVersioning(previousVersioning);
+            } catch (Exception ex) {
+                logger.error("Failed to roll back bucket versioning for {} while compensating a failed update",
+                        bucket.getName(), ex);
+                cause.addSuppressed(ex);
+            }
+        }
+        if (encryptionApplied) {
+            try {
+                if (Boolean.TRUE.equals(previousEncryption)) {
+                    objectStore.setBucketEncryption(bucketTO);
+                } else {
+                    objectStore.deleteBucketEncryption(bucketTO);
+                }
+                bucket.setEncryption(previousEncryption);
+            } catch (Exception ex) {
+                logger.error("Failed to roll back bucket encryption for {} while compensating a failed update",
+                        bucket.getName(), ex);
+                cause.addSuppressed(ex);
+            }
+        }
     }
 
     private boolean updateBucketQuota(UpdateBucketCmd cmd, BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO, BucketTO bucketTO) throws ResourceAllocationException {

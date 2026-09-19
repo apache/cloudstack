@@ -4799,7 +4799,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _objectStoreDao.update(id, objectStoreVO);
                 throw new IllegalArgumentException("Unable to access Object Storage with URL: " + cmd.getUrl());
             }
-            updateBucketUrls(id, oldUrl, url);
+            try {
+                updateBucketUrls(id, oldUrl, url);
+            } catch (RuntimeException e) {
+                // A bucket URL rewrite could not be persisted; revert the
+                // store URL so it stays consistent with the bucketURL values
+                // the object-store browser uses (updateBucketUrls already
+                // restored any rows it rewrote before throwing).
+                objectStoreVO.setUrl(oldUrl);
+                _objectStoreDao.update(id, objectStoreVO);
+                throw e;
+            }
         }
 
         if(cmd.getName() != null ) {
@@ -4852,14 +4862,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (oldBase.equals(newBase)) {
             return;
         }
+        List<BucketVO> rewritten = new ArrayList<>();
         for (BucketVO bucket : _bucketDao.listByObjectStoreId(storeId)) {
             String bucketUrl = bucket.getBucketURL();
-            if (bucketUrl == null || !bucketUrl.startsWith(oldBase)) {
+            // Require the old base followed by '/' so a bucket URL that merely
+            // shares the same text prefix (e.g. http://s3:83330/... when
+            // oldBase is http://s3:8333) is not corrupted by the rewrite.
+            if (bucketUrl == null || !bucketUrl.startsWith(oldBase + "/")) {
                 continue;
             }
             String suffix = bucketUrl.substring(oldBase.length());
             bucket.setBucketURL(newBase + (suffix.startsWith("/") ? suffix : "/" + suffix));
-            _bucketDao.update(bucket.getId(), bucket);
+            if (!_bucketDao.update(bucket.getId(), bucket)) {
+                // Restore the rows rewritten so far so no bucket is left
+                // pointing at the new endpoint while the store URL reverts
+                // to the old one in updateObjectStore.
+                for (BucketVO prior : rewritten) {
+                    prior.setBucketURL(oldBase + prior.getBucketURL().substring(newBase.length()));
+                    if (!_bucketDao.update(prior.getId(), prior)) {
+                        logger.warn("Failed to restore bucket {} URL while rolling back an object store URL change",
+                                prior.getName());
+                    }
+                }
+                throw new CloudRuntimeException("Failed to persist updated URL for bucket " + bucket.getName()
+                        + " after object store URL change");
+            }
+            rewritten.add(bucket);
             logger.debug("Updated bucket {} URL to {} after object store URL change", bucket.getName(), bucket.getBucketURL());
         }
     }

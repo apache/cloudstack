@@ -386,4 +386,62 @@ public class BucketApiServiceImplTest {
         // Verify no encryption/versioning/policy/quota side effects occurred
         Mockito.verifyNoInteractions(objectStore);
     }
+
+    @Test
+    public void testUpdateBucketRollsBackRemoteMutationsOnQuotaFailure() {
+        // Encryption, versioning, and policy are applied remotely before the
+        // quota change is attempted. If the quota change fails (here, the
+        // allocated-size DAO update reports failure), the remote mutations
+        // must be reverted so the backend and the BucketVO stay consistent.
+        Long bucketId = 1L;
+        Long objectStoreId = 2L;
+        Integer bucketQuota = 10;
+        Integer cmdQuota = 2;
+        String bucketName = "bucket1";
+
+        UpdateBucketCmd cmd = Mockito.mock(UpdateBucketCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(bucketId);
+        Mockito.when(cmd.getQuota()).thenReturn(cmdQuota);
+        Mockito.when(cmd.getEncryption()).thenReturn(true);
+        Mockito.when(cmd.getVersioning()).thenReturn(true);
+        Mockito.when(cmd.getPolicy()).thenReturn("public");
+
+        BucketVO bucket = new BucketVO(bucketName);
+        ReflectionTestUtils.setField(bucket, "id", bucketId);
+        ReflectionTestUtils.setField(bucket, "quota", bucketQuota);
+        ReflectionTestUtils.setField(bucket, "accountId", ACCOUNT_ID);
+        ReflectionTestUtils.setField(bucket, "objectStoreId", objectStoreId);
+        Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+        Mockito.when(objectStoreVO.getName()).thenReturn("store");
+        Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+
+        // The remote quota is applied, the resource count is decremented, but
+        // the allocated-size DAO update reports failure, so applyQuotaChange
+        // throws and unwinds its own mutations; the outer catch must then
+        // revert the remote encryption/versioning/policy mutations.
+        Mockito.when(objectStoreDao.updateAllocatedSize(objectStoreVO,
+                -1L * (bucketQuota - cmdQuota) * Resource.ResourceType.bytesToGiB)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> bucketApiService.updateBucket(cmd, null));
+
+        // Each remote mutation must be reverted to its pre-update value, in
+        // reverse order: policy, then versioning, then encryption.
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(objectStore);
+        inOrder.verify(objectStore).setBucketEncryption(any());
+        inOrder.verify(objectStore).setBucketVersioning(any());
+        inOrder.verify(objectStore).setBucketPolicy(any(), org.mockito.ArgumentMatchers.eq("public"));
+        inOrder.verify(objectStore).setBucketPolicy(any(), org.mockito.ArgumentMatchers.eq("private"));
+        inOrder.verify(objectStore).deleteBucketVersioning(any());
+        inOrder.verify(objectStore).deleteBucketEncryption(any());
+        // The BucketVO fields must be restored to their pre-update values so a
+        // retry starts from the same state as the backend.
+        Assert.assertFalse(bucket.isEncryption());
+        Assert.assertFalse(bucket.isVersioning());
+        Assert.assertNull(bucket.getPolicy());
+    }
 }

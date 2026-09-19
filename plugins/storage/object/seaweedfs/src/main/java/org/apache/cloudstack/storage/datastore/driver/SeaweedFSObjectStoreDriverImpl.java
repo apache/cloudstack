@@ -544,7 +544,14 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             // trailing slash, which would persist a broken "...//bucket" URL
             // that BucketResponse and the object store browser both use.
             bucketVO.setBucketURL(SeaweedFSObjectStoreUtil.stripTrailingSlashes(s3Url) + "/" + bucketName);
-            _bucketDao.update(bucket.getId(), bucketVO);
+            if (!_bucketDao.update(bucket.getId(), bucketVO)) {
+                // A failed row update must fail the create: otherwise the IAM
+                // refresh below would grant the new bucket ARN while the
+                // returned BucketVO carries credentials/URL that were never
+                // persisted. The catch block revokes the policy grant and
+                // removes the remote bucket.
+                throw new CloudRuntimeException("Failed to persist credentials and URL for bucket " + bucketName);
+            }
 
             // Refresh the account's IAM policy to include the new bucket.
             // Use the lock-free variant since createBucket already holds the
@@ -557,28 +564,39 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             // persisted credentials with the stale values.
             return bucketVO;
         } catch (Exception e) {
-            logger.error("Post-create bucket record update failed for {}; cleaning up remote bucket", bucketName, e);
+            logger.error("Post-create bucket record update failed for {}; cleaning up", bucketName, e);
             CloudRuntimeException primary = new CloudRuntimeException(e);
+            // Revoke the IAM policy grant for the new bucket BEFORE deleting
+            // the remote S3 bucket. If the policy PUT succeeded before the DB
+            // update failed, the grant would otherwise persist and could be
+            // reused if another account later creates the same bucket name.
+            // Use the lock-free variant since createBucket already holds the
+            // IAM lock.
+            //
+            // If the policy revocation fails, the remote S3 bucket is LEFT IN
+            // PLACE: deleting it would free the bucket name for another account
+            // to claim while this account's policy still grants the ARN,
+            // letting the old credentials reach the new tenant's bucket. The
+            // leftover remote bucket keeps the name occupied until an operator
+            // reconciles; the row is removed by the caller so a retry reports
+            // "bucket already exists" rather than silently re-granting access.
+            try {
+                AmazonIdentityManagement iamClient = getIAMClient(storeId);
+                updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
+            } catch (Exception policyEx) {
+                logger.error("Failed to revoke IAM policy for bucket {} after create failure; "
+                        + "leaving the remote bucket in place to prevent name reuse", bucketName, policyEx);
+                primary.addSuppressed(policyEx);
+                throw primary;
+            }
+            // Policy revocation succeeded: the stale grant is gone, so it is
+            // safe to delete the remote bucket and free the name.
             try {
                 s3client.deleteBucket(bucketName);
                 logger.info("Cleanup of bucket {} succeeded", bucketName);
             } catch (AmazonClientException cleanupEx) {
                 logger.error("Cleanup of bucket {} also failed", bucketName, cleanupEx);
                 primary.addSuppressed(cleanupEx);
-            }
-            // Revoke the IAM policy grant for the new bucket so the account's
-            // credentials cannot access a bucket that no longer exists. If the
-            // policy PUT succeeded before the DB update failed, the grant
-            // would otherwise persist and could be reused if another account
-            // later creates the same bucket name. Use the lock-free variant
-            // since createBucket already holds the IAM lock. Propagate
-            // failures as suppressed exceptions so they are not silently lost.
-            try {
-                AmazonIdentityManagement iamClient = getIAMClient(storeId);
-                updateAccountIAMPolicyLocked(iamClient, storeId, accountId, bucketName);
-            } catch (Exception policyEx) {
-                logger.warn("Failed to revoke IAM policy for bucket {} after cleanup: {}", bucketName, policyEx.getMessage());
-                primary.addSuppressed(policyEx);
             }
             throw primary;
         } finally {
@@ -894,7 +912,15 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             if (bucketName.equals(bvo.getName())) {
                 if (!Bucket.State.Destroyed.equals(bvo.getState())) {
                     bvo.setState(Bucket.State.Destroyed);
-                    _bucketDao.update(bvo.getId(), bvo);
+                    // Propagate the DAO failure before the IAM policy refresh
+                    // runs. A silently-ignored update would leave the persisted
+                    // row looking live, so a later createUser/createBucket
+                    // rebuilds the policy from the DB and re-grants this ARN
+                    // even though the remote bucket is gone and the name may
+                    // have been reused by another account.
+                    if (!_bucketDao.update(bvo.getId(), bvo)) {
+                        throw new CloudRuntimeException("Failed to mark bucket " + bucketName + " as Destroyed");
+                    }
                 }
                 return;
             }

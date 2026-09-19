@@ -87,6 +87,10 @@ public class SeaweedFSObjectStoreLifeCycleImplTest {
         mockStatic = Mockito.mockStatic(SeaweedFSObjectStoreUtil.class);
         mockStatic.when(() -> SeaweedFSObjectStoreUtil.validateS3Url(org.mockito.ArgumentMatchers.anyString())).thenAnswer(i -> null);
         mockStatic.when(() -> SeaweedFSObjectStoreUtil.validateIAMUrl(org.mockito.ArgumentMatchers.anyString())).thenAnswer(i -> null);
+        // hasPathPrefix is a pure function over java.net.URI; run the real
+        // implementation so the path-prefix rejection tests exercise the
+        // actual validation rather than the mocked default (false).
+        mockStatic.when(() -> SeaweedFSObjectStoreUtil.hasPathPrefix(org.mockito.ArgumentMatchers.anyString())).thenCallRealMethod();
 
         lifecycle.objectStoreHelper = objectStoreHelper;
         lifecycle.objectStoreMgr = objectStoreMgr;
@@ -219,5 +223,36 @@ public class SeaweedFSObjectStoreLifeCycleImplTest {
 
         CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> lifecycle.initialize(dsInfos));
         assertTrue(thrown.getMessage().contains("details"));
+    }
+
+    @Test
+    public void testInitializeRejectsPathPrefixedS3Url() {
+        // The object-store browser builds its MinIO client from only the host
+        // and port of the stored bucket URL and drops any path prefix, so a
+        // path-prefixed s3Url (e.g. behind a reverse proxy at /s3) would work
+        // server-side but break the browser. Reject it at registration.
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, "http://s3-endpoint/s3");
+
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> lifecycle.initialize(dsInfos));
+        assertTrue(thrown.getMessage().contains("path prefix"));
+    }
+
+    @Test
+    public void testInitializeRejectsPathPrefixedStoreUrl() {
+        // No explicit s3Url: the store URL itself carries the path prefix, so
+        // the same rejection must apply to the resolved S3 endpoint.
+        dsInfos.put(SeaweedFSObjectStoreUtil.STORE_KEY_URL, "http://s3-endpoint/s3");
+
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> lifecycle.initialize(dsInfos));
+        assertTrue(thrown.getMessage().contains("path prefix"));
+    }
+
+    @Test
+    public void testInitializeAcceptsRootOnlyS3Url() {
+        // A URL with no path (or just "/") must be accepted.
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, "http://s3-endpoint:8333/");
+
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
     }
 }

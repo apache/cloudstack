@@ -95,6 +95,35 @@ public class SeaweedFSObjectStoreUtil {
     }
 
     /**
+     * Returns true when the URL carries a non-empty path component beyond the
+     * authority (e.g. {@code http://host:8333/s3} has the path {@code /s3}).
+     *
+     * The CloudStack object-store browser builds its MinIO client from only the
+     * host and port of the stored bucket URL and drops any path prefix (see
+     * {@code ObjectStoreBrowser.vue#initMinioClient}). The MinIO JS client has
+     * no basePath option, so a SeaweedFS deployment behind a path-prefixed
+     * reverse proxy (e.g. {@code /s3}) works for server-side calls but the
+     * browser's list/upload requests target the wrong endpoint. Rejecting
+     * path-prefixed endpoints at registration prevents a configuration that
+     * would silently break the browser.
+     *
+     * @param url the endpoint URL to check, may be null
+     * @return true if the URL has a path component other than empty or "/"
+     */
+    public static boolean hasPathPrefix(String url) {
+        if (url == null) {
+            return false;
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(url);
+            String path = uri.getPath();
+            return path != null && !path.isEmpty() && !"/".equals(path);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
      * Connect timeout for the S3 extension HTTP client, in seconds.
      */
     public static final int S3_EXTENSION_CONNECT_TIMEOUT_SECONDS = 10;

@@ -188,6 +188,7 @@ public class SeaweedFSObjectStoreDriverImplTest {
         doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
         when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
         when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+        when(bucketDao.update(anyLong(), any(BucketVO.class))).thenReturn(true);
 
         Bucket result = driver.createBucket(bucketVo, false);
 
@@ -212,6 +213,7 @@ public class SeaweedFSObjectStoreDriverImplTest {
         doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
         when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
         when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+        when(bucketDao.update(anyLong(), any(BucketVO.class))).thenReturn(true);
 
         driver.createBucket(bucketVo, false);
 
@@ -227,6 +229,69 @@ public class SeaweedFSObjectStoreDriverImplTest {
 
         assertThrows(CloudRuntimeException.class, () -> driver.createBucket(bucketVo, false));
         verify(s3Client, never()).createBucket(any(CreateBucketRequest.class));
+    }
+
+    @Test
+    public void testCreateBucketCleanupRevokesPolicyBeforeDeletingBucket() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
+        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+        // Force a post-create failure by making the account detail lookup fail
+        // so the catch block runs after the S3 bucket is created.
+        when(accountDetailsDao.findDetails(TEST_ACCOUNT_ID))
+                .thenThrow(new CloudRuntimeException("detail lookup failed"));
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+
+        assertThrows(CloudRuntimeException.class, () -> driver.createBucket(bucketVo, false));
+
+        // The IAM policy revocation must run BEFORE the S3 bucket delete so a
+        // stale grant cannot outlive the remote bucket and be reused on the
+        // same name by another account. Use an in-order verifier to assert
+        // the relative ordering of the two calls.
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(iamClient, s3Client);
+        inOrder.verify(iamClient).putUserPolicy(any(PutUserPolicyRequest.class));
+        inOrder.verify(s3Client).deleteBucket(TEST_BUCKET_NAME);
+    }
+
+    @Test
+    public void testCreateBucketCleanupLeavesBucketWhenPolicyRevokeFails() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
+        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+        when(accountDetailsDao.findDetails(TEST_ACCOUNT_ID))
+                .thenThrow(new CloudRuntimeException("detail lookup failed"));
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        // The IAM policy revocation fails: the remote bucket must be LEFT IN
+        // PLACE so the name stays occupied and cannot be claimed by another
+        // account while this account's policy still grants the ARN.
+        doThrow(new com.amazonaws.AmazonClientException("iam policy put failed"))
+                .when(iamClient).putUserPolicy(any(PutUserPolicyRequest.class));
+
+        assertThrows(CloudRuntimeException.class, () -> driver.createBucket(bucketVo, false));
+
+        verify(s3Client, never()).deleteBucket(TEST_BUCKET_NAME);
+    }
+
+    @Test
+    public void testCreateBucketCleansUpWhenRecordUpdateFails() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
+        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        // The post-create row update affects no rows: the create must fail so
+        // the returned bucket cannot carry credentials/URL that were never
+        // persisted, and the cleanup path must revoke the policy grant before
+        // freeing the remote bucket name.
+        when(bucketDao.update(anyLong(), any(BucketVO.class))).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> driver.createBucket(bucketVo, false));
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(iamClient, s3Client);
+        inOrder.verify(iamClient).putUserPolicy(any(PutUserPolicyRequest.class));
+        inOrder.verify(s3Client).deleteBucket(TEST_BUCKET_NAME);
     }
 
     @Test
@@ -268,6 +333,7 @@ public class SeaweedFSObjectStoreDriverImplTest {
         List<BucketVO> buckets = new ArrayList<>();
         buckets.add(existing);
         when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+        when(bucketDao.update(existing.getId(), existing)).thenReturn(true);
 
         assertTrue(driver.deleteBucket(bucketTO, TEST_STORE_ID));
         // The row must be marked Destroyed inside the IAM lock so a concurrent
@@ -277,6 +343,27 @@ public class SeaweedFSObjectStoreDriverImplTest {
         assertEquals(Bucket.State.Destroyed, existing.getState());
         verify(bucketDao, times(1)).update(existing.getId(), existing);
         verify(bucketDao, never()).remove(existing.getId());
+    }
+
+    @Test
+    public void testDeleteBucketPropagatesMarkDestroyedDaoFailure() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        BucketTO bucketTO = mock(BucketTO.class);
+        when(bucketTO.getName()).thenReturn(TEST_BUCKET_NAME);
+        when(bucketTO.getAccountId()).thenReturn(TEST_ACCOUNT_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(true);
+
+        BucketVO existing = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, TEST_BUCKET_NAME,
+                null, false, false, false, null);
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(existing);
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(buckets);
+        // The DAO update fails: the row must not be left looking live while
+        // the remote bucket is gone, or a later policy rebuild re-grants the
+        // ARN on a reusable name.
+        when(bucketDao.update(existing.getId(), existing)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> driver.deleteBucket(bucketTO, TEST_STORE_ID));
     }
 
     @Test

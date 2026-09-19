@@ -148,6 +148,16 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         // store with bad credentials is rejected here rather than failing on
         // the first bucket or IAM operation.
         logger.info("Validating SeaweedFS S3 endpoint: {}", s3Url);
+        // The object-store browser builds its MinIO client from only the host
+        // and port of the stored bucket URL and drops any path prefix, so a
+        // path-prefixed s3Url (e.g. behind a reverse proxy at /s3) would work
+        // server-side but break the browser. Reject it at registration rather
+        // than silently accepting a half-working configuration.
+        if (SeaweedFSObjectStoreUtil.hasPathPrefix(s3Url)) {
+            throw new CloudRuntimeException("SeaweedFS s3Url '" + s3Url + "' must not contain a path prefix "
+                    + "(e.g. '/s3'); the CloudStack object-store browser only uses the host and port and "
+                    + "cannot reach a path-prefixed endpoint. Expose SeaweedFS at the URL root.");
+        }
         SeaweedFSObjectStoreUtil.validateS3Url(s3Url);
         logger.info("Validating SeaweedFS IAM endpoint: {}", iamUrl);
         SeaweedFSObjectStoreUtil.validateIAMUrl(iamUrl);
