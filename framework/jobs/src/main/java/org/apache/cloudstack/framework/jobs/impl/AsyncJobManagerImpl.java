@@ -125,6 +125,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             Integer.class, "vm.job.lock.timeout", "1800",
             "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
     private static final ConfigKey<Boolean> HidePassword = new ConfigKey<Boolean>("Advanced", Boolean.class, "log.hide.password", "true", "If set to true, the password is hidden", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> ApiJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "api.job.pool.size", "50",
+        "Minimum size of the API job executor thread pool. Actual size is the max of this value and db.cloud.maxActive / 2.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<Integer> WorkJobPoolSize = new ConfigKey<>("Advanced", Integer.class, "work.job.pool.size", "50",
+        "Minimum size of the Worker job executor thread pool. Actual size is the max of this value and db.cloud.maxActive * 2 / 3.", false, ConfigKey.Scope.Global);
 
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
@@ -198,7 +202,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, ApiJobPoolSize, WorkJobPoolSize};
     }
 
     @Override
@@ -1100,13 +1104,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final Properties dbProps = DbProperties.getDbProperties();
             final int cloudMaxActive = Integer.parseInt(dbProps.getProperty("db.cloud.maxActive"));
 
-            int apiPoolSize = cloudMaxActive / 2;
-            int workPoolSize = (cloudMaxActive * 2) / 3;
+            int defaultApiPoolSize = cloudMaxActive / 2;
+            int defaultWorkPoolSize = (cloudMaxActive * 2) / 3;
 
-            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize);
+            int apiPoolSize = Math.max(ApiJobPoolSize.value(), defaultApiPoolSize);
+            int workPoolSize = Math.max(WorkJobPoolSize.value(), defaultWorkPoolSize);
+
+            logger.info("Start AsyncJobManager API executor thread pool in size " + apiPoolSize +
+                " (configured=" + ApiJobPoolSize.value() + ", db.derived=" + defaultApiPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _apiJobExecutor = Executors.newFixedThreadPool(apiPoolSize, new NamedThreadFactory(AsyncJobManager.API_JOB_POOL_THREAD_PREFIX));
 
-            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize);
+            logger.info("Start AsyncJobManager Work executor thread pool in size " + workPoolSize +
+                " (configured=" + WorkJobPoolSize.value() + ", db.derived=" + defaultWorkPoolSize + ", db.cloud.maxActive=" + cloudMaxActive + ")");
             _workerJobExecutor = Executors.newFixedThreadPool(workPoolSize, new NamedThreadFactory(AsyncJobManager.WORK_JOB_POOL_THREAD_PREFIX));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to load db.properties to configure AsyncJobManagerImpl");
