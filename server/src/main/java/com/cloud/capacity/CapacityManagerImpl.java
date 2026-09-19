@@ -19,6 +19,8 @@ package com.cloud.capacity;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -668,13 +670,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return serviceOfferingVO;
     }
 
+    private static final List<String> VM_DETAIL_KEYS_FOR_CAPACITY = List.of(
+            VmDetailConstants.CPU_OVER_COMMIT_RATIO,
+            VmDetailConstants.MEMORY_OVER_COMMIT_RATIO,
+            UsageEventVO.DynamicParameters.memory.name(),
+            UsageEventVO.DynamicParameters.cpuNumber.name(),
+            UsageEventVO.DynamicParameters.cpuSpeed.name());
+
     protected Map<String, String> getVmDetailsForCapacityCalculation(long vmId) {
-        return _vmInstanceDetailsDao.listDetailsKeyPairs(vmId,
-                List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO,
-                        VmDetailConstants.MEMORY_OVER_COMMIT_RATIO,
-                        UsageEventVO.DynamicParameters.memory.name(),
-                        UsageEventVO.DynamicParameters.cpuNumber.name(),
-                        UsageEventVO.DynamicParameters.cpuSpeed.name()));
+        return _vmInstanceDetailsDao.listDetailsKeyPairs(vmId, VM_DETAIL_KEYS_FOR_CAPACITY);
+    }
+
+    protected Map<Long, Map<String, String>> batchGetVmDetailsForCapacityCalculation(List<Long> vmIds) {
+        return _vmInstanceDetailsDao.listDetailsKeyPairs(vmIds, VM_DETAIL_KEYS_FOR_CAPACITY);
     }
 
     @DB
@@ -698,6 +706,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         logger.debug("Found {} VMs are Migrating from {}", vosMigrating.size(), host);
         vms.addAll(vosMigrating);
 
+
+        List<VMInstanceVO> vmsByLastHostId = _vmDao.listByLastHostId(host.getId());
+        logger.debug("Found {} VM, not running on {}", vmsByLastHostId.size(), host);
+
+        List<Long> allVmIds = new ArrayList<>(vms.size() + vmsByLastHostId.size());
+        for (VMInstanceVO vm : vms) {
+            allVmIds.add(vm.getId());
+        }
+        for (VMInstanceVO vm : vmsByLastHostId) {
+            allVmIds.add(vm.getId());
+        }
+        Map<Long, Map<String, String>> allVmDetails = allVmIds.isEmpty()
+                ? Collections.emptyMap()
+                : batchGetVmDetailsForCapacityCalculation(allVmIds);
+
         Pair<String, String> clusterValues =
                 clusterValuesCache.get(host.getClusterId());
         Float clusterCpuOvercommitRatio = Float.parseFloat(clusterValues.first());
@@ -705,7 +728,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VMInstanceVO vm : vms) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
-            Map<String, String> vmDetails = getVmDetailsForCapacityCalculation(vm.getId());
+            Map<String, String> vmDetails = allVmDetails.getOrDefault(vm.getId(), Collections.emptyMap());
             String vmDetailCpu = vmDetails.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO);
             String vmDetailRam = vmDetails.get(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
             // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
@@ -736,16 +759,13 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
         }
 
-        List<VMInstanceVO> vmsByLastHostId = _vmDao.listByLastHostId(host.getId());
-        logger.debug("Found {} VM, not running on {}", vmsByLastHostId.size(), host);
-
         for (VMInstanceVO vm : vmsByLastHostId) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
             long lastModificationTime = Optional.ofNullable(vm.getUpdateTime()).orElse(vm.getCreated()).getTime();
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - lastModificationTime) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                Map<String, String> vmDetails = getVmDetailsForCapacityCalculation(vm.getId());
+                Map<String, String> vmDetails = allVmDetails.getOrDefault(vm.getId(), Collections.emptyMap());
                 String vmDetailCpu = vmDetails.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO);
                 String vmDetailRam = vmDetails.get(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
                 if (vmDetailCpu != null) {
