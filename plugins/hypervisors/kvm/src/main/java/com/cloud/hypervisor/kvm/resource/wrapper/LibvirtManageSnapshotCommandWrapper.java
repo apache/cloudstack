@@ -31,12 +31,14 @@ import org.libvirt.LibvirtException;
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
 import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.CephUtil;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -48,6 +50,8 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ManageSnapshotCommand.class)
 public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<ManageSnapshotCommand, Answer, LibvirtComputingResource> {
 
+    /** librados reports a missing object as -ENOENT. */
+    private static final int RBD_ENOENT = -2;
 
     @Override
     public Answer execute(final ManageSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -113,17 +117,16 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                  * cord out of a running machine.
                  */
                 if (primaryPool.getType() == StoragePoolType.RBD) {
+                    Rados r = null;
+                    IoCTX io = null;
+                    Rbd rbd = null;
+                    RbdImage image = null;
                     try {
-                        final Rados r = new Rados(primaryPool.getAuthUserName());
-                        r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                        r.confSet("key", primaryPool.getAuthSecret());
-                        r.confSet("client_mount_timeout", "30");
-                        r.connect();
-                        logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                        r = CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
 
-                        final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                        final Rbd rbd = new Rbd(io);
-                        final RbdImage image = rbd.open(disk.getName());
+                        io = r.ioCtxCreate(primaryPool.getSourceDir());
+                        rbd = new Rbd(io);
+                        image = rbd.open(disk.getName());
 
                         if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
                             logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
@@ -132,11 +135,28 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                             logger.debug("Attempting to remove RBD snapshot " + disk.getName() + "@" + snapshotName);
                             image.snapRemove(snapshotName);
                         }
-
-                        rbd.close(image);
-                        r.ioCtxDestroy(io);
+                    } catch (final RbdException e) {
+                        if (ManageSnapshotCommand.DESTROY_SNAPSHOT.equalsIgnoreCase(command.getCommandSwitch()) && e.getReturnValue() == RBD_ENOENT) {
+                            /*
+                             * Already gone. A delete whose end state is "the snapshot is not there" has
+                             * succeeded, and failing here would break a retried delete.
+                             */
+                            logger.info("RBD snapshot " + disk.getName() + "@" + snapshotName + " was already gone.");
+                        } else {
+                            /*
+                             * Reporting success here would record a snapshot in CloudStack that does not
+                             * exist on the cluster, or drop one that is still there.
+                             */
+                            logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage(), e);
+                            return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
+                        }
                     } catch (final Exception e) {
-                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
+                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage(), e);
+                        return new ManageSnapshotAnswer(command, false, "Failed to manage snapshot: " + e.toString());
+                    } finally {
+                        CephUtil.closeQuietly(rbd, image, disk.getName());
+                        CephUtil.ioCtxDestroyQuietly(r, io);
+                        CephUtil.shutDownQuietly(r);
                     }
                 } else {
                     /* VM is not running, create a snapshot by ourself */
