@@ -83,6 +83,10 @@ public class LibvirtStorageVolumeDef {
         return this._volFormat;
     }
 
+    public Long getVolSize() {
+        return _volSize;
+    }
+
     @Override
     public String toString() {
         StringBuilder storageVolBuilder = new StringBuilder();
