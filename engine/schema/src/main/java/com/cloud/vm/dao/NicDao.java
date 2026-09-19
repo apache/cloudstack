@@ -105,6 +105,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findByIpAddressAndVmType(String ip, VirtualMachine.Type vmType);
 
-    List<NicVO> listByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
+    List<NicVO> listNonPlaceholderNicsByNetworkIdAndType(long networkId, VirtualMachine.Type vmType);
     List<NicVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
 }
