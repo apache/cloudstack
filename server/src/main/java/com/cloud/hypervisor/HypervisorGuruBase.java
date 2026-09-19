@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +74,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -85,6 +87,8 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
+
+    private static final int MAX_TAP_QUEUES = 256;
 
     @Inject
     protected
@@ -265,6 +269,34 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
     }
 
+    /**
+     * Gives a system VM one NIC queue per CPU. The guest only ever uses as many queues as it has
+     * CPUs, so this is what the CPU count already implies, and a system VM is only given more CPUs
+     * to move more packets.
+     *
+     * A user VM sets this per VM with deployVirtualMachine or updateVirtualMachine. A system VM
+     * goes through neither, so there is otherwise no way for it to get a queue at all.
+     *
+     * The default offering is a single CPU, so nothing changes until an operator resizes.
+     */
+    protected void addDefaultNicQueuesForSystemVm(VirtualMachineTO to) {
+        if (to.getType() == null || !to.getType().isUsedBySystem()) {
+            return;
+        }
+        Map<String, String> details = to.getDetails();
+        if (details != null && details.containsKey(VmDetailConstants.NIC_MULTIQUEUE_NUMBER)) {
+            return;
+        }
+        // A tap device stops at 256 queues, and the host refuses the VM rather than trimming.
+        int queues = Math.min(to.getCpus(), MAX_TAP_QUEUES);
+        if (queues < 2) {
+            return;
+        }
+        Map<String, String> updated = details == null ? new HashMap<>() : new HashMap<>(details);
+        updated.put(VmDetailConstants.NIC_MULTIQUEUE_NUMBER, String.valueOf(queues));
+        to.setDetails(updated);
+    }
+
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         ServiceOffering offering = serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -331,6 +363,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             to.setDetails(detailsInVm);
             addExtraConfig(detailsInVm, to, vm.getAccountId(), vm.getHypervisorType());
         }
+
+        addDefaultNicQueuesForSystemVm(to);
 
         addServiceOfferingExtraConfiguration(offering, to);
 
