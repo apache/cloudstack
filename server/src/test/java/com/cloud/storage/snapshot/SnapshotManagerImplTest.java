@@ -20,6 +20,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -609,5 +610,84 @@ public class SnapshotManagerImplTest {
         Mockito.when(cmd.getIds()).thenReturn(null);
 
         snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test
+    public void testIsIncrementalChainRefNonKvmHypervisor() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Assert.assertFalse(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.XenServer));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmWithCheckpointPath() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn("checkpoints/2/5/uuid");
+        Assert.assertTrue(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmWithParentLinkOnly() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn(null);
+        Mockito.when(ref.getParentSnapshotId()).thenReturn(2L);
+        Assert.assertTrue(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
+    }
+
+    @Test
+    public void testIsIncrementalChainRefKvmStandalone() {
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getKvmCheckpointPath()).thenReturn(null);
+        Mockito.when(ref.getParentSnapshotId()).thenReturn(0L);
+        Assert.assertFalse(snapshotManager.isIncrementalChainRef(ref, Hypervisor.HypervisorType.KVM));
+    }
+
+    private void mockParentLinkedChain(long chainLength, long zoneId) {
+        // snapshot i is a delta on snapshot i - 1, snapshot 1 is the full chain start (parent 0)
+        for (long i = 1; i <= chainLength; i++) {
+            SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+            Mockito.when(ref.getParentSnapshotId()).thenReturn(i - 1);
+            Mockito.when(snapshotStoreDao.findOneBySnapshotId(i, zoneId)).thenReturn(ref);
+        }
+    }
+
+    @Test
+    public void testEndCurrentChainIfNeededMarksEndOfChainAtDeltaMax() {
+        final long zoneId = 1L;
+        final long deltaMax = SnapshotManager.snapshotDeltaMax.value();
+        mockParentLinkedChain(deltaMax, zoneId);
+        SnapshotDataStoreVO leafPrimaryRef = Mockito.mock(SnapshotDataStoreVO.class);
+        SnapshotDataStoreVO leafImageRef = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStoreDao.listBySnapshotId(deltaMax)).thenReturn(List.of(leafPrimaryRef, leafImageRef));
+
+        snapshotManager.endCurrentChainIfNeeded(deltaMax, zoneId);
+
+        Mockito.verify(leafPrimaryRef).setEndOfChain(true);
+        Mockito.verify(leafImageRef).setEndOfChain(true);
+        Mockito.verify(snapshotStoreDao, Mockito.times(2)).update(Mockito.anyLong(), Mockito.any(SnapshotDataStoreVO.class));
+    }
+
+    @Test
+    public void testEndCurrentChainIfNeededKeepsChainBelowDeltaMax() {
+        final long zoneId = 1L;
+        final long chainLength = SnapshotManager.snapshotDeltaMax.value() - 1;
+        mockParentLinkedChain(chainLength, zoneId);
+
+        snapshotManager.endCurrentChainIfNeeded(chainLength, zoneId);
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).listBySnapshotId(Mockito.anyLong());
+        Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotDataStoreVO.class));
+    }
+
+    @Test
+    public void testEndCurrentChainIfNeededStopsOnMissingParentRef() {
+        final long zoneId = 1L;
+        SnapshotDataStoreVO leafRef = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(leafRef.getParentSnapshotId()).thenReturn(5L);
+        Mockito.when(snapshotStoreDao.findOneBySnapshotId(6L, zoneId)).thenReturn(leafRef);
+        Mockito.when(snapshotStoreDao.findOneBySnapshotId(5L, zoneId)).thenReturn(null);
+
+        snapshotManager.endCurrentChainIfNeeded(6L, zoneId);
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotDataStoreVO.class));
     }
 }
