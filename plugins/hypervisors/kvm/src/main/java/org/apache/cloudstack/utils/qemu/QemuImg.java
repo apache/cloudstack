@@ -392,7 +392,7 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
-        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+        convert(srcFile, destFile, null, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
     }
 
     protected Map<String, String> getResizeOptionsFromConvertOptions(final Map<String, String> options) {
@@ -415,6 +415,8 @@ public class QemuImg {
      *            The source file.
      * @param destFile
      *            The destination file.
+     * @param backingFile
+     *         The destination's backing file.
      * @param options
      *            Options for the conversion. Takes a Map<String, String> with key value
      *            pairs which are passed on to qemu-img without validation.
@@ -430,7 +432,7 @@ public class QemuImg {
      *            If true, copies the bitmaps to the destination image.
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, QemuImgFile backingFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
                         boolean keepBitmaps) throws QemuImgException {
         Script script = new Script(_qemuImgPath, timeout);
@@ -455,6 +457,7 @@ public class QemuImg {
         script.add("-O");
         script.add(destFile.getFormat().toString());
 
+        addBackingFileToConvertCommand(script, backingFile);
         addScriptOptionsFromMap(options, script);
         addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
 
@@ -498,6 +501,22 @@ public class QemuImg {
         if (srcFile.getSize() < destFile.getSize()) {
             this.resize(destFile, destFile.getSize(), getResizeOptionsFromConvertOptions(options));
         }
+    }
+
+    private void addBackingFileToConvertCommand(Script script, QemuImgFile backingFile) {
+        if (backingFile == null) {
+            return;
+        }
+
+        script.add("-o");
+
+        String opts;
+        if (backingFile.getFormat() == null) {
+            opts = String.format("backing_file=%s", backingFile.getFileName());
+        } else {
+            opts = String.format("backing_file=%s,backing_fmt=%s", backingFile.getFileName(), backingFile.getFormat().toString());
+        }
+        script.add(opts);
     }
 
     /**
