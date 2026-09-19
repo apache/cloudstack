@@ -4347,7 +4347,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 if (network.getUuid() != null){
                     builder.append(" (").append(network.getUuid()).append(") ");
                 }
-                builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
+                if (usageRecord.getRawUsage()!= null) {
+                    builder.append(" " + toHumanReadableSize(usageRecord.getRawUsage().longValue())  + " ");
+                }
             }
             if (vm != null) {
                 builder.append("using router ").append(vm.getInstanceName()).append(" (").append(vm.getUuid()).append(")");
