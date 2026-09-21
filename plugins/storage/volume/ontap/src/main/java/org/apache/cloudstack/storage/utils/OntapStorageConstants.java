@@ -57,6 +57,18 @@ public class OntapStorageConstants {
     public static final String JOB_FAILURE = "failure";
     public static final String JOB_SUCCESS = "success";
 
+    /** Consistency-group / generic async job polling defaults. */
+    public static final int ONTAP_CG_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_CG_JOB_POLL_INTERVAL_MS = 2000;
+
+    /** Single-file SnapRestore (SFSR) CLI job polling defaults. */
+    public static final int ONTAP_SFSR_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
+
+    /** FlexVol snapshot delete job polling defaults. */
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+
     public static final String TRUE = "true";
     public static final String FALSE = "false";
 

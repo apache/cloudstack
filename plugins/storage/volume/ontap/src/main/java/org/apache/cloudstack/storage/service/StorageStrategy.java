@@ -83,6 +83,9 @@ public abstract class StorageStrategy {
      */
     private List<Aggregate> aggregates;
 
+    /** ONTAP SVM UUID resolved during the last successful {@link #connect(boolean)} call. */
+    private String resolvedSvmUuid;
+
     private static final Logger logger = LogManager.getLogger(StorageStrategy.class);
 
     public StorageStrategy(OntapStorage ontapStorage) {
@@ -102,9 +105,26 @@ public abstract class StorageStrategy {
     }
 
     // Connect method to validate ONTAP cluster, credentials, protocol, and SVM
+    /**
+     * Validates ONTAP cluster reachability, credentials, SVM state, protocol, and aggregate capacity
+     * for new FlexVol creation (primary pool provisioning).
+     */
     public boolean connect() {
+        return connect(true);
+    }
+
+    /**
+     * Validates ONTAP cluster reachability and SVM/protocol settings.
+     *
+     * <p>Aggregate free-space checks apply only when {@code validateAggregatesForVolumeCreation} is
+     * {@code true} (pool provisioning). Snapshot, delete, revert, and grant/revoke paths must use
+     * {@code false} — they operate on an existing FlexVol and must not compare aggregate space to
+     * the full pool capacity stored in pool details.</p>
+     */
+    public boolean connect(boolean validateAggregatesForVolumeCreation) {
         logger.info("Attempting to connect to ONTAP cluster at " + storage.getStorageIP() + " and validate SVM " +
-                storage.getSvmName() + ", protocol " + storage.getProtocol());
+                storage.getSvmName() + ", protocol " + storage.getProtocol()
+                + (validateAggregatesForVolumeCreation ? " (with aggregate validation)" : " (operations only)"));
         String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         String svmName = storage.getSvmName();
         try {
@@ -134,6 +154,14 @@ public abstract class StorageStrategy {
                 logger.error("ISCSI protocol is not enabled on SVM " + svmName);
                 throw new CloudRuntimeException("ISCSI protocol is not enabled on SVM " + svmName);
             }
+            this.resolvedSvmUuid = svm.getUuid();
+
+            if (!validateAggregatesForVolumeCreation) {
+                logger.debug("Skipping aggregate capacity validation — not required for existing-volume operations");
+                logger.info("Successfully connected to ONTAP cluster and validated ONTAP details provided");
+                return true;
+            }
+
             List<Aggregate> aggrs = svm.getAggregates();
             if (aggrs == null || aggrs.isEmpty()) {
                 logger.error("No aggregates are assigned to SVM " + svmName);
@@ -180,6 +208,13 @@ public abstract class StorageStrategy {
             throw new CloudRuntimeException("Failed to connect to ONTAP cluster: " + e.getMessage(), e);
         }
         return true;
+    }
+
+    /**
+     * ONTAP SVM UUID resolved during the last successful {@link #connect(boolean)} call.
+     */
+    public String getResolvedSvmUuid() {
+        return resolvedSvmUuid;
     }
 
     // Common methods like create/delete etc., should be here
@@ -697,7 +732,13 @@ public abstract class StorageStrategy {
      * @return true if the job completed successfully
      */
     public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInMilliSecs) {
-        //Create URI for GET Job API
+        return jobPollUntilSuccess(jobUUID, maxRetries, sleepTimeInMilliSecs) != null;
+    }
+
+    /**
+     * Polls an ONTAP async job until it succeeds and returns the completed job record.
+     */
+    public Job jobPollUntilSuccess(String jobUUID, int maxRetries, int sleepTimeInMilliSecs) {
         int jobRetryCount = 0;
         Job jobResp = null;
         try {
@@ -722,14 +763,112 @@ public abstract class StorageStrategy {
                 jobRetryCount++;
                 Thread.sleep(sleepTimeInMilliSecs);
             }
-            if (jobResp == null || !jobResp.getState().equals(OntapStorageConstants.JOB_SUCCESS)) {
-                return false;
-            }
+            return jobResp;
         } catch (FeignException.FeignClientException e) {
             throw new CloudRuntimeException("Failed to fetch job status: " + e.getMessage());
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException("Interrupted while polling ONTAP job " + jobUUID, e);
         }
-        return true;
+    }
+
+    /**
+     * Polls an ONTAP async job when the API response includes a job reference.
+     *
+     * <p>When no job is returned (common for CLI passthrough SFSR on synchronous completion),
+     * the operation is treated as successful after HTTP 2xx.</p>
+     */
+    public void pollJobIfPresent(JobResponse response, String operationName) {
+        pollJobIfPresent(response, operationName,
+                OntapStorageConstants.ONTAP_CG_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_CG_JOB_POLL_INTERVAL_MS);
+    }
+
+    /**
+     * Polls an ONTAP async job when present, using caller-supplied retry settings.
+     */
+    public void pollJobIfPresent(JobResponse response, String operationName,
+                                 int maxRetries, int pollIntervalMs) {
+        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
+            logger.debug("pollJobIfPresent: No async job returned for operation [{}], continuing without polling",
+                    operationName);
+            return;
+        }
+        jobPollForSuccess(response.getJob().getUuid(), maxRetries, pollIntervalMs);
+    }
+
+    /**
+     * Polls an ONTAP async job when present and returns the completed job.
+     */
+    public Job pollJobIfPresentAndGetCompletedJob(JobResponse response, String operationName) {
+        return pollJobIfPresentAndGetCompletedJob(response, operationName,
+                OntapStorageConstants.ONTAP_CG_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_CG_JOB_POLL_INTERVAL_MS);
+    }
+
+    public Job pollJobIfPresentAndGetCompletedJob(JobResponse response, String operationName,
+                                                  int maxRetries, int pollIntervalMs) {
+        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
+            logger.debug("pollJobIfPresentAndGetCompletedJob: No async job for operation [{}]", operationName);
+            return null;
+        }
+        return jobPollUntilSuccess(response.getJob().getUuid(), maxRetries, pollIntervalMs);
+    }
+
+    /**
+     * Completes CLI-based SFSR ({@code restore-file}) orchestration: poll job when returned,
+     * otherwise accept synchronous success.
+     */
+    public void executeCliSfsrRestore(JobResponse response, String operationName) {
+        pollJobIfPresent(response, operationName,
+                OntapStorageConstants.ONTAP_SFSR_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_SFSR_JOB_POLL_INTERVAL_MS);
+    }
+
+    /**
+     * Deletes a FlexVolume snapshot on ONTAP for a CloudStack volume snapshot.
+     *
+     * @param flexVolUuid   ONTAP FlexVolume UUID
+     * @param snapshotUuid  ONTAP FlexVolume snapshot UUID
+     * @param snapshotName  ONTAP FlexVolume snapshot name (for logging)
+     */
+    public void deleteFlexVolSnapshotForCloudStackVolume(String flexVolUuid, String snapshotUuid, String snapshotName) {
+        if (flexVolUuid == null || flexVolUuid.isEmpty() || snapshotUuid == null || snapshotUuid.isEmpty()) {
+            throw new CloudRuntimeException("FlexVolume UUID and snapshot UUID are required to delete an ONTAP snapshot");
+        }
+
+        logger.info("deleteFlexVolSnapshotForCloudStackVolume: issuing ONTAP REST delete for snapshot [{}] "
+                + "(uuid={}) on FlexVol [{}]", snapshotName, snapshotUuid, flexVolUuid);
+
+        try {
+            JobResponse jobResponse = snapshotFeignClient.deleteSnapshot(getAuthHeader(), flexVolUuid, snapshotUuid);
+
+            if (jobResponse == null || jobResponse.getJob() == null) {
+                logger.debug("deleteFlexVolSnapshotForCloudStackVolume: no async job returned for snapshot [{}] "
+                        + "(uuid={}); treating HTTP success as completion", snapshotName, snapshotUuid);
+            } else {
+                logger.debug("deleteFlexVolSnapshotForCloudStackVolume: polling ONTAP delete job [{}] for snapshot [{}]",
+                        jobResponse.getJob().getUuid(), snapshotName);
+            }
+
+            pollJobIfPresent(jobResponse, "delete FlexVol snapshot [" + snapshotName + "] uuid [" + snapshotUuid + "]",
+                    OntapStorageConstants.ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES,
+                    OntapStorageConstants.ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS);
+
+            logger.info("deleteFlexVolSnapshotForCloudStackVolume: ONTAP FlexVol snapshot [{}] (uuid={}) removed from [{}]",
+                    snapshotName, snapshotUuid, flexVolUuid);
+        } catch (Exception e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("deleteFlexVolSnapshotForCloudStackVolume: ONTAP snapshot [{}] (uuid={}) on FlexVol [{}] "
+                        + "already absent; treating delete as success: {}", snapshotName, snapshotUuid, flexVolUuid,
+                        e.getMessage());
+                return;
+            }
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to delete ONTAP FlexVol snapshot [" + snapshotName + "]: "
+                    + e.getMessage(), e);
+        }
     }
 }
