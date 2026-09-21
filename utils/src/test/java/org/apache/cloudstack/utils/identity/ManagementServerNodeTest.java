@@ -52,8 +52,11 @@ public class ManagementServerNodeTest {
 
     @Test
     public void testHashNodeIdentityIsDeterministicAndFitsInMacAddressRange() {
-        long first = ManagementServerNode.hashNodeIdentity("management.example.test");
-        long second = ManagementServerNode.hashNodeIdentity("management.example.test");
+        long first = ManagementServerNode.hashNodeIdentity("cloudstack-mgmt-0.cloudstack-mgmt.cloudstack-mgmt.svc.cluster.local");
+        long second = ManagementServerNode.hashNodeIdentity("cloudstack-mgmt-0.cloudstack-mgmt.cloudstack-mgmt.svc.cluster.local");
+
+        System.out.println("First hash: " + first);
+        System.out.println("Second hash: " + second);
 
         assertEquals(first, second);
         assertTrue(first > 0);
@@ -62,7 +65,7 @@ public class ManagementServerNodeTest {
 
     @Test
     public void testHashNodeIdentityUsesFirstSixSha256Bytes() throws Exception {
-        String identity = "management.example.test";
+        String identity = "cloudstack-mgmt-0.cloudstack-mgmt.cloudstack-mgmt.svc.cluster.local";
         byte[] hash = MessageDigest.getInstance("SHA-256").digest(identity.getBytes(StandardCharsets.UTF_8));
         long expected = 0;
         for (int i = 0; i < 6; i++) {
