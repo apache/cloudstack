@@ -296,7 +296,7 @@ export default {
           icon: 'user-add-outlined',
           label: 'label.assign.volume.another',
           dataView: true,
-          show: (record) => { return !('virtualmachineid' in record) },
+show: (record) => { return !record.virtualmachineid },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/AssignVolume.vue')))
         },
