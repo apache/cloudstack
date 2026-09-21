@@ -239,7 +239,11 @@ export default {
       if (selected) {
         this.selectedAccount = selected.name
         this.selectedAccountId = selected.id
+      } else {
+        this.selectedAccount = null
+        this.selectedAccountId = null
       }
+
       this.emitChangeEvent()
     },
     fetchProjects () {
