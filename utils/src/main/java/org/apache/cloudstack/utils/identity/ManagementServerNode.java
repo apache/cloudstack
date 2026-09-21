@@ -46,8 +46,9 @@ import com.cloud.utils.net.MacAddress;
  */
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
 
-    private static final String FQDN_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
-    private static final String FQDN_SYS_PROP = "cloudstack.msid.from.id";
+    private static final String CS_MSID_FROM_ID_ENV_VAR = "CLOUDSTACK_MSID_FROM_ID";
+    private static final String CS_MSID_FROM_ID_SYS_PROP = "cloudstack.msid.from.id";
+    
 
     // op_lock.mac is varchar(17) and holds the msid, so the id must stay within the 48-bit MAC address range.
     private static final int MSID_BYTES = 6;
@@ -55,35 +56,40 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
     private static final Logger s_logger = LogManager.getLogger(ManagementServerNode.class);
 
     private static String s_nodeIdSource;
-    private static final long s_nodeId = initNodeId();
+    private static long s_nodeId = initNodeId();
 
     private static long initNodeId() {
 
         s_logger.info("Initializing management server node ID");
-        // Check if FQDN_ENV_VAR or FQDN_SYS_PROP has a value
-        String fqdnEnv = System.getenv(FQDN_ENV_VAR);
-        String fqdnSysProp = System.getProperty(FQDN_SYS_PROP);
+        // Check if CS_MSID_FROM_ID_ENV_VAR or CS_MSID_FROM_ID_SYS_PROP has a value
+        String msidFromEnvVal = System.getenv(CS_MSID_FROM_ID_ENV_VAR);
+        String msidFromPropVal = System.getProperty(CS_MSID_FROM_ID_SYS_PROP);
 
         String identity = null;
-        if (fqdnEnv != null) {
-            identity = trimToNull(fqdnEnv);
-            s_logger.info("FQDN environment variable: {}", fqdnEnv);
+        String identifyValue = null;
+        if (msidFromEnvVal != null) {
+            identifyValue = msidFromEnvVal;
+            identity = trimToNull(msidFromEnvVal);
+            s_nodeIdSource = "CS_MSID_FROM_ID_ENV_VAR";
         }
-        if (fqdnSysProp != null) {
-            identity = trimToNull(fqdnSysProp);
-            s_logger.info("FQDN system property: {}", fqdnSysProp);
+
+        if (msidFromPropVal != null) {
+            identifyValue = msidFromPropVal;
+            identity = trimToNull(msidFromPropVal);
+            s_nodeIdSource = "CS_MSID_FROM_ID_SYS_PROP";
         }
 
         if (identity != null) {
-            s_nodeIdSource = "fqdn";
-            s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, identity);
-            return hashNodeIdentity(identity);
+            long identityHash = hashNodeIdentity(identity);
+            s_logger.info("Using {} for management server node ID: {} (identity: {}, hash: {})", s_nodeIdSource, identifyValue, identity, identityHash);
+            return identityHash;
         }
 
         // Use mac address
         s_nodeIdSource = "mac-address";
         long macAddress = MacAddress.getMacAddress().toLong();
         s_logger.info("Using {} for management server node ID: {}", s_nodeIdSource, macAddress);
+
         return macAddress;
     }
 
