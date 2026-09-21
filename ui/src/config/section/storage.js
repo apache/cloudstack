@@ -292,6 +292,15 @@ export default {
           }
         },
         {
+          api: 'assignVolume',
+          icon: 'user-add-outlined',
+          label: 'label.assign.volume.another',
+          dataView: true,
+          show: (record) => { return !('virtualmachineid' in record) },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/AssignVolume.vue')))
+        },
+        {
           api: 'deleteVolume',
           icon: 'delete-outlined',
           label: 'label.action.delete.volume',
