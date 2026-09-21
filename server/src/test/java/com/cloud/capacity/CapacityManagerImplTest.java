@@ -26,6 +26,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -216,6 +217,43 @@ public class CapacityManagerImplTest {
         capacityManager.postStateTransitionEvent(transition, vm, true, opaque);
 
         verify(capacityManager).releaseVmCapacity(vm, true, false, h);
+        verify(capacityManager).allocateVmCapacity(vm);
+    }
+
+    @Test
+    public void testPostStateTransitionKeepsReservedCapacityWhenMigratingFromRunning() {
+        assertNoReservedCapacityDrainedOnTransition(State.Running, Event.MigrationRequested, State.Migrating);
+    }
+
+    @Test
+    public void testPostStateTransitionKeepsReservedCapacityWhenRetryingStart() {
+        assertNoReservedCapacityDrainedOnTransition(State.Starting, Event.OperationRetry, State.Starting);
+    }
+
+    /**
+     * Only a VM leaving {@link State#Stopped} owns a reservation on its last host. On every other transition
+     * reaching the allocation block, the last host's reserved pool belongs to other, genuinely stopped VMs.
+     */
+    private void assertNoReservedCapacityDrainedOnTransition(State from, Event event, State to) {
+        final Long srcHostId = 1L;
+        final Long dstHostId = 2L;
+        HostVO srcHost = mock(HostVO.class);
+        when(hostDao.findById(srcHostId)).thenReturn(srcHost);
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getHostId()).thenReturn(dstHostId);
+        when(vm.getLastHostId()).thenReturn(srcHostId);
+
+        doNothing().when(capacityManager).allocateVmCapacity(any(VirtualMachine.class));
+        doReturn(true).when(capacityManager).releaseVmCapacity(
+                any(VirtualMachine.class), anyBoolean(), anyBoolean(), any(Host.class));
+
+        StateMachine2.Transition<State, Event> transition = new StateMachine2.Transition<>(
+                from, event, to, Collections.emptyList());
+
+        capacityManager.postStateTransitionEvent(transition, vm, true, new Pair<>(srcHostId, dstHostId));
+
+        verify(capacityManager, never()).releaseVmCapacity(any(VirtualMachine.class), eq(true), anyBoolean(), any(Host.class));
         verify(capacityManager).allocateVmCapacity(vm);
     }
 

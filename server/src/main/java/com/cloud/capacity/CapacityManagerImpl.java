@@ -972,7 +972,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
           releaseVmCapacity(vm, false, false, oldHost);
         }
       } else if (oldState == State.Stopped) {
-        if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
+        if (event == Event.DestroyRequested || event == Event.ExpungeOperation || event == Event.StartRequested) {
           releaseVmCapacity(vm, true, false, lastHost);
         } else if (event == Event.AgentReportMigrated) {
           releaseVmCapacity(vm, false, false, oldHost);
@@ -980,7 +980,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       }
 
       if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
-        releaseVmCapacity(vm, true, false, lastHost);
         allocateVmCapacity(vm);
       }
 
