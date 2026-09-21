@@ -967,7 +967,11 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         lenient().when(storagePool.getName()).thenReturn("vol1");
-        lenient().when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
+        // Upstream has no OntapiSCSI; match lifecycle mapping (ISCSI->Iscsi, NFS->NetworkFilesystem).
+        boolean nfs = ProtocolType.NFS3.name().equalsIgnoreCase(
+                storagePoolDetails.get(OntapStorageConstants.PROTOCOL));
+        lenient().when(storagePool.getPoolType()).thenReturn(
+                nfs ? Storage.StoragePoolType.NetworkFilesystem : Storage.StoragePoolType.Iscsi);
         lenient().when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
 
