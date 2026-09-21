@@ -469,7 +469,6 @@ public class HypervisorTemplateAdapterTest {
         boolean isTemplatePrivate = false;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
-        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(false);
@@ -490,7 +489,6 @@ public class HypervisorTemplateAdapterTest {
         boolean isTemplatePrivate = false;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
-        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
@@ -511,7 +509,6 @@ public class HypervisorTemplateAdapterTest {
         boolean isTemplatePrivate = true;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
-        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(ImageStoreVOMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
@@ -532,7 +529,6 @@ public class HypervisorTemplateAdapterTest {
         boolean isTemplatePrivate = true;
         DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
 
-        Mockito.when(_imgStoreDao.findById(Mockito.anyLong())).thenReturn(imageStoreVoMock);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
