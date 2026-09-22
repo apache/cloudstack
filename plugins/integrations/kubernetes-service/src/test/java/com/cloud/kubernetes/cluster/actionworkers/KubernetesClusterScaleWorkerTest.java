@@ -219,5 +219,8 @@ public class KubernetesClusterScaleWorkerTest {
         Mockito.when(managedNode.isExternalNode()).thenReturn(false);
         Mockito.when(kvmNode.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
         Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
+
+        Mockito.when(runningManagedCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+        Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
     }
 }
