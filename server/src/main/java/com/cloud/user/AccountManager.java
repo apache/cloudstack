@@ -192,6 +192,8 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
+    ConfigKey<Boolean> DisableDefaultView = new ConfigKey<>("Advanced", Boolean.class, "disable.default.view", "false", "This defines if the account will have access to the default view, or only to the projects it is associated to. In the GUI, if the account does not have access to any project, the Default View will be rendered.", true, ConfigKey.Scope.Account);
+
     boolean moveUser(long id, Long domainId, Account newAccount) throws ResourceAllocationException;
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
