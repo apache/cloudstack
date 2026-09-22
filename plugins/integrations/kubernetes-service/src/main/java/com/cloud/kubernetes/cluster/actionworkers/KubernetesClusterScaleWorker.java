@@ -421,7 +421,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                         logger.warn("Unable to restore schedulability for CKS node {} after a pre-resize failure", userVM.getUuid(), cleanupException);
                     }
                 }
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, unable to scale cluster VM : %s due to %s", kubernetesCluster.getName(), userVM.getDisplayName(), e.getMessage()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+                String recovery = resizeSucceeded
+                        ? "The node remains cordoned; check kubelet on the VM and retry the CKS scale operation."
+                        : "The VM was not resized; CKS attempted to restore its temporary cordon.";
+                String message = String.format("Scaling Kubernetes cluster %s (UUID %s) failed for %s node VM %s (UUID %s), " +
+                                "offering %s to %s: %s %s", kubernetesCluster.getName(), kubernetesCluster.getUuid(), nodeType,
+                        userVM.getDisplayName(), userVM.getUuid(), oldOffering == null ? null : oldOffering.getId(),
+                        serviceOffering.getId(), e.getMessage(), recovery);
+                logTransitStateAndThrow(Level.ERROR, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
             }
             if (System.currentTimeMillis() > scaleTimeoutTime) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
