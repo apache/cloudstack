@@ -456,7 +456,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (sshRule == null) {
             throw new CloudRuntimeException(String.format("Unable to resolve SSH port-forwarding rule for VM %s", userVM.getUuid()));
         }
-        return new NodeAccess(controlAccess.first(), controlAccess.second(), controlAccess.first(), sshRule.getSourcePortStart(),
+        IpAddress targetPublicIp = network.getVpcId() == null ? getNetworkSourceNatIp(network) : getVpcTierKubernetesPublicIp(network);
+        if (targetPublicIp == null) {
+            throw new CloudRuntimeException(String.format("Unable to resolve target-node public IP for VM %s", userVM.getUuid()));
+        }
+        return new NodeAccess(controlAccess.first(), controlAccess.second(), targetPublicIp.getAddress().addr(), sshRule.getSourcePortStart(),
                 getControlNodeLoginUser(), getManagementServerSshPublicKeyFile());
     }
 
