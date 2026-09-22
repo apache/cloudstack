@@ -176,8 +176,8 @@ public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesCl
                 && (observed.getGuestMemoryKiB() <= before.getGuestMemoryKiB() || observed.getAllocatableMemoryBytes() > before.getAllocatableMemoryBytes());
     }
 
-    private String executeControl(NodeAccess access, String command) throws Exception { return execute(access.getControlAddress(), access.getControlPort(), access, command); }
-    private String executeNode(NodeAccess access, String command) throws Exception { return execute(access.getNodeAddress(), access.getNodePort(), access, command); }
+    protected String executeControl(NodeAccess access, String command) throws Exception { return execute(access.getControlAddress(), access.getControlPort(), access, command); }
+    protected String executeNode(NodeAccess access, String command) throws Exception { return execute(access.getNodeAddress(), access.getNodePort(), access, command); }
     private String execute(String address, int port, NodeAccess access, String command) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(address, port, access.getUser(), access.getSshKeyFile(), null, command, 10000, 10000, COMMAND_TIMEOUT_MS);
         if (Boolean.TRUE.equals(result.first())) return StringUtils.defaultString(result.second());

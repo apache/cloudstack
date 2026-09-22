@@ -16,9 +16,13 @@
 // under the License.
 package com.cloud.kubernetes.cluster.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.uservm.UserVm;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -62,10 +66,88 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         Assert.assertFalse(reconciler.isKubernetesResourcesCurrent(stale, offering(4, 4096)));
     }
 
+    @Test
+    public void testCaptureBeforeReadsStructuredNodeState() throws Exception {
+        FakeReconciler fakeReconciler = new FakeReconciler(nodeJson(false));
+        KubernetesCluster cluster = cluster("cluster-uuid");
+        UserVm vm = vm("worker-1");
+
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot snapshot = fakeReconciler.captureBefore(cluster, vm, access());
+
+        Assert.assertFalse(snapshot.isUnschedulable());
+        Assert.assertTrue(snapshot.isReady());
+        Assert.assertEquals(2L, snapshot.getGuestOnlineCpuCount());
+        Assert.assertEquals(2097152L, snapshot.getGuestMemoryKiB());
+        Assert.assertEquals(3900L, snapshot.getCapacityCpuMillis());
+        Assert.assertEquals(4L * 1024L * 1024L * 1024L, snapshot.getCapacityMemoryBytes());
+    }
+
+    @Test
+    public void testCordonAndRestoreOnlyNodesOwnedByCks() throws Exception {
+        KubernetesCluster cluster = cluster("cluster-uuid");
+        UserVm vm = vm("worker-1");
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot previouslyCordon =
+                new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(true, false, 0, 0, 0, 0, 0, 0, true);
+        FakeReconciler operatorCordon = new FakeReconciler(nodeJson(true));
+
+        operatorCordon.cordonIfNeeded(cluster, vm, previouslyCordon, access(), System.currentTimeMillis() + 1000L);
+        operatorCordon.restoreSchedulability(cluster, vm, previouslyCordon, access(), System.currentTimeMillis() + 1000L);
+        Assert.assertTrue(operatorCordon.controlCommands.isEmpty());
+
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot cksCordon =
+                new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(true, true, 0, 0, 0, 0, 0, 0, true);
+        FakeReconciler cleanup = new FakeReconciler(nodeJson(false));
+        cleanup.restoreSchedulability(cluster, vm, cksCordon, access(), System.currentTimeMillis() + 1000L);
+
+        Assert.assertEquals("sudo /opt/bin/kubectl uncordon worker-1", cleanup.controlCommands.get(0));
+        Assert.assertEquals("sudo /opt/bin/kubectl annotate node worker-1 cloudstack.apache.org/cks-live-resize-", cleanup.controlCommands.get(1));
+    }
+
     private ServiceOffering offering(int cpu, int memory) {
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Mockito.when(offering.getCpu()).thenReturn(cpu);
         Mockito.when(offering.getRamSize()).thenReturn(memory);
         return offering;
+    }
+
+    private KubernetesCluster cluster(String uuid) {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getUuid()).thenReturn(uuid);
+        return cluster;
+    }
+
+    private UserVm vm(String hostname) {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getHostName()).thenReturn(hostname);
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        return vm;
+    }
+
+    private KubernetesClusterNodeCapacityReconciler.NodeAccess access() {
+        return new KubernetesClusterNodeCapacityReconciler.NodeAccess("control", 22, "node", 22, "root", null);
+    }
+
+    private String nodeJson(boolean unschedulable) {
+        return String.format("{\"metadata\":{\"annotations\":{}},\"spec\":{\"unschedulable\":%s},\"status\":{\"capacity\":{\"cpu\":\"3900m\",\"memory\":\"4Gi\"},\"allocatable\":{\"cpu\":\"3700m\",\"memory\":\"3900Mi\"},\"conditions\":[{\"type\":\"Ready\",\"status\":\"True\"}]}}", unschedulable);
+    }
+
+    private static class FakeReconciler extends KubernetesClusterNodeCapacityReconcilerImpl {
+        private final String nodeJson;
+        private final List<String> controlCommands = new ArrayList<>();
+
+        FakeReconciler(String nodeJson) {
+            this.nodeJson = nodeJson;
+        }
+
+        @Override
+        protected String executeControl(KubernetesClusterNodeCapacityReconciler.NodeAccess access, String command) {
+            controlCommands.add(command);
+            return command.contains(" get node ") ? nodeJson : "";
+        }
+
+        @Override
+        protected String executeNode(KubernetesClusterNodeCapacityReconciler.NodeAccess access, String command) {
+            return "2\n2097152\n";
+        }
     }
 }
