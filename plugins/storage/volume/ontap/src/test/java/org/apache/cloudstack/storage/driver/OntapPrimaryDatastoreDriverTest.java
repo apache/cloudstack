@@ -915,6 +915,7 @@ class OntapPrimaryDatastoreDriverTest {
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+            stubExistingIscsiTemplateCacheLun();
             when(sanStrategy.cloneCloudStackVolume(any())).thenReturn(cloned);
 
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -945,6 +946,7 @@ class OntapPrimaryDatastoreDriverTest {
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+            stubExistingIscsiTemplateCacheLun();
             when(sanStrategy.cloneCloudStackVolume(any())).thenReturn(cloned);
 
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -983,6 +985,17 @@ class OntapPrimaryDatastoreDriverTest {
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
         lenient().when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
         lenient().when(templatePoolRef.getTemplateSize()).thenReturn(templateSize);
+        lenient().when(templatePoolRef.getId()).thenReturn(7L);
+    }
+
+    /** Stub ONTAP lookup used by {@code ensureTemplateCachePresentForClone} (iSCSI only). */
+    private void stubExistingIscsiTemplateCacheLun() {
+        Lun templateLun = new Lun();
+        templateLun.setName("/vol/vol1/cs_tmpl_50");
+        templateLun.setUuid("template-lun-uuid");
+        CloudStackVolume cachedTemplate = new CloudStackVolume();
+        cachedTemplate.setLun(templateLun);
+        when(sanStrategy.getCloudStackVolume(any())).thenReturn(cachedTemplate);
     }
 
     @Test
@@ -1120,7 +1133,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
         when(templatePoolRef.getId()).thenReturn(7L);
-        when(templatePoolRef.getLocalDownloadPath()).thenReturn(null);
 
         when(host.getName()).thenReturn("host1");
         when(host.getUuid()).thenReturn("host-uuid-1");
@@ -1369,6 +1381,7 @@ class OntapPrimaryDatastoreDriverTest {
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+            stubExistingIscsiTemplateCacheLun();
             when(sanStrategy.cloneCloudStackVolume(any())).thenReturn(null);
 
             driver.createAsync(dataStore, volumeInfo, createCallback);

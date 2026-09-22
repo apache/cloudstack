@@ -291,7 +291,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         if (iscsi) {
             // Ready + DOWNLOADED spool_ref skips copy; if the cache LUN is gone, invalidate so the
             // next deploy recopies into a recreated LUN instead of cloning an empty/missing source.
-            ensureTemplateCachePresentForClone(storagePool, details, templatePoolRef, templateId);
+            ensureTemplateCachePresentForClone(storageStrategy, storagePool, details, templatePoolRef, templateId);
         }
 
         CloudStackVolume request = iscsi
@@ -784,13 +784,13 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      * this attempt so the next deploy enters {@code copyTemplateToManagedTemplateVolume},
      * which recreates the LUN via {@link #ensureTemplateCacheLunExists}.
      */
-    private void ensureTemplateCachePresentForClone(StoragePoolVO storagePool, Map<String, String> details,
+    private void ensureTemplateCachePresentForClone(StorageStrategy storageStrategy, StoragePoolVO storagePool,
+                                                    Map<String, String> details,
                                                     VMTemplateStoragePoolVO templatePoolRef, long templateId) {
         String svmName = details.get(OntapStorageConstants.SVM_NAME);
         String lunName = getTemplateLunName(storagePool, templateId);
-        UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
 
-        CloudStackVolume existing = getCloudStackVolumeByName(sanStrategy, svmName, lunName);
+        CloudStackVolume existing = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
         if (existing != null && existing.getLun() != null) {
             return;
         }
