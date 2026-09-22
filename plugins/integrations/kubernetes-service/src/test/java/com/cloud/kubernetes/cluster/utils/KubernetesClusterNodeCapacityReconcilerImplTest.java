@@ -103,6 +103,21 @@ public class KubernetesClusterNodeCapacityReconcilerImplTest {
         Assert.assertEquals("sudo /opt/bin/kubectl annotate node worker-1 cloudstack.apache.org/cks-live-resize-", cleanup.controlCommands.get(1));
     }
 
+    @Test
+    public void testCordonAddsOwnershipAnnotationBeforeCordoning() throws Exception {
+        KubernetesCluster cluster = cluster("cluster-uuid");
+        UserVm vm = vm("worker-1");
+        KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot schedulable =
+                new KubernetesClusterNodeCapacityReconciler.NodeCapacitySnapshot(false, false, 0, 0, 0, 0, 0, 0, true);
+        FakeReconciler fakeReconciler = new FakeReconciler(nodeJson(true));
+
+        fakeReconciler.cordonIfNeeded(cluster, vm, schedulable, access(), System.currentTimeMillis() + 1000L);
+
+        Assert.assertEquals("sudo /opt/bin/kubectl annotate node worker-1 cloudstack.apache.org/cks-live-resize=cluster-uuid --overwrite",
+                fakeReconciler.controlCommands.get(0));
+        Assert.assertEquals("sudo /opt/bin/kubectl cordon worker-1", fakeReconciler.controlCommands.get(1));
+    }
+
     private ServiceOffering offering(int cpu, int memory) {
         ServiceOffering offering = Mockito.mock(ServiceOffering.class);
         Mockito.when(offering.getCpu()).thenReturn(cpu);
