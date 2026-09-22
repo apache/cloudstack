@@ -159,6 +159,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
             logger.debug("VM {} will be migrated to host {} with the following XML configuration retrieved with flag [{}]: {} .", vmName, target, xmlFlag, maskSensitiveInfoInXML(xmlDesc));
+
+            // Limit the VNC password in case the length is greater than 8 characters
+            // Since libvirt version 8 VNC passwords are limited to 8 characters
+            String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
             xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword, vmName);
 
             // Replace Config Drive ISO path
