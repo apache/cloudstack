@@ -35,6 +35,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -286,6 +287,12 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateId);
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
         boolean iscsi = isIscsi(details);
+
+        if (iscsi) {
+            // Ready + DOWNLOADED spool_ref skips copy; if the cache LUN is gone, invalidate so the
+            // next deploy recopies into a recreated LUN instead of cloning an empty/missing source.
+            ensureTemplateCachePresentForClone(storagePool, details, templatePoolRef, templateId);
+        }
 
         CloudStackVolume request = iscsi
                 ? createCloneLunRequest(storagePool, details, volumeInfo, templatePoolRef, templateId)
@@ -704,6 +711,10 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
         String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
 
+        // Framework may skip createAsync when template_spool_ref is already Ready (e.g. after a
+        // failed copy left Ready + NOT_DOWNLOADED). Recreate the LUN if it is missing on ONTAP.
+        ensureTemplateCacheLunExists(sanStrategy, storagePool, templateInfo, templatePoolRef, details, svmName, lunName);
+
         ensureAccessGroupForHost(sanStrategy, host, storagePool, svmName, accessGroupName);
 
         boolean lunMapped = false;
@@ -730,6 +741,86 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             }
             throw e;
         }
+    }
+
+    /**
+     * Ensures the template-cache LUN exists on ONTAP before mapping it to a host igroup.
+     *
+     * <p>{@code VolumeServiceImpl} skips {@code createAsync} when {@code template_spool_ref} is
+     * already {@code Ready}. A prior failed copy can leave that Ready row while the LUN was
+     * deleted or never persisted, which makes {@code ensureLunMapped} fail with ONTAP error
+     * 5374876 (LUN not found). Recreate the LUN in that case and refresh spool-ref identity.
+     * Download state is forced back to {@code NOT_DOWNLOADED} so a stale {@code DOWNLOADED}
+     * marker cannot skip the copy into the new empty LUN.</p>
+     */
+    private void ensureTemplateCacheLunExists(UnifiedSANStrategy sanStrategy, StoragePoolVO storagePool,
+                                              TemplateInfo templateInfo, VMTemplateStoragePoolVO templatePoolRef,
+                                              Map<String, String> details, String svmName, String lunName) {
+        CloudStackVolume existing = getCloudStackVolumeByName(sanStrategy, svmName, lunName);
+        if (existing != null && existing.getLun() != null) {
+            if (templatePoolRef.getLocalDownloadPath() == null || templatePoolRef.getLocalDownloadPath().isEmpty()) {
+                templatePoolRef.setLocalDownloadPath(existing.getLun().getUuid());
+                vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+            }
+            return;
+        }
+
+        logger.warn("ensureTemplateCacheLunExists: Template cache LUN [{}] missing on SVM [{}] for template [{}] "
+                        + "on pool [{}]; recreating before grantAccess",
+                lunName, svmName, templateInfo.getId(), storagePool.getId());
+
+        long sizeInBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
+        CloudStackVolume created = sanStrategy.createTemplateCache(storagePool, templateInfo, details, sizeInBytes);
+        if (created == null || created.getLun() == null) {
+            throw new CloudRuntimeException("Failed to recreate missing template cache LUN [" + lunName
+                    + "] for template [" + templateInfo.getId() + "]");
+        }
+        markTemplateCacheNeedsRecopy(templatePoolRef, created.getLun().getUuid(), sizeInBytes);
+    }
+
+    /**
+     * Before cloning from a cached template, verify the iSCSI cache LUN still exists.
+     * If the spool_ref is stale (Ready/DOWNLOADED but LUN gone), mark it for recopy and fail
+     * this attempt so the next deploy enters {@code copyTemplateToManagedTemplateVolume},
+     * which recreates the LUN via {@link #ensureTemplateCacheLunExists}.
+     */
+    private void ensureTemplateCachePresentForClone(StoragePoolVO storagePool, Map<String, String> details,
+                                                    VMTemplateStoragePoolVO templatePoolRef, long templateId) {
+        String svmName = details.get(OntapStorageConstants.SVM_NAME);
+        String lunName = getTemplateLunName(storagePool, templateId);
+        UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+
+        CloudStackVolume existing = getCloudStackVolumeByName(sanStrategy, svmName, lunName);
+        if (existing != null && existing.getLun() != null) {
+            return;
+        }
+
+        logger.warn("ensureTemplateCachePresentForClone: Cache LUN [{}] missing for template [{}] on pool [{}]; "
+                        + "resetting template_spool_ref to NOT_DOWNLOADED so the next deploy recopies",
+                lunName, templateId, storagePool.getId());
+        markTemplateCacheNeedsRecopy(templatePoolRef, null, templatePoolRef.getTemplateSize());
+        throw new CloudRuntimeException("Template cache LUN [" + lunName + "] for template [" + templateId
+                + "] is missing on ONTAP; template_spool_ref was reset to NOT_DOWNLOADED — retry the deploy");
+    }
+
+    /**
+     * Updates {@code template_spool_ref} after recreating a missing cache LUN (or when invalidating
+     * a stale DOWNLOADED row). Keeps the row {@code Ready} so {@code getTemplate} still finds it,
+     * but forces {@code NOT_DOWNLOADED} so {@code VolumeServiceImpl} will copy the image again.
+     */
+    private void markTemplateCacheNeedsRecopy(VMTemplateStoragePoolVO templatePoolRef, String lunUuid, long sizeInBytes) {
+        if (lunUuid != null && !lunUuid.isEmpty()) {
+            templatePoolRef.setLocalDownloadPath(lunUuid);
+        } else {
+            templatePoolRef.setLocalDownloadPath(null);
+        }
+        if (sizeInBytes > 0) {
+            templatePoolRef.setTemplateSize(sizeInBytes);
+        }
+        templatePoolRef.setDownloadPercent(0);
+        templatePoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+        templatePoolRef.setInstallPath(null);
+        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
     }
 
     /**

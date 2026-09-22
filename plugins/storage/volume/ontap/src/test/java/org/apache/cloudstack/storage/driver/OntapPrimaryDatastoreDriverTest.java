@@ -1017,6 +1017,14 @@ class OntapPrimaryDatastoreDriverTest {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(sanStrategy);
             utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString())).thenReturn("igroup1");
 
+            Lun templateLun = new Lun();
+            templateLun.setName("/vol/vol1/cs_tmpl_50");
+            templateLun.setUuid("template-lun-uuid");
+            CloudStackVolume cachedTemplate = new CloudStackVolume();
+            cachedTemplate.setLun(templateLun);
+            when(sanStrategy.getCloudStackVolume(any())).thenReturn(cachedTemplate);
+            when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
+
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
 
@@ -1025,6 +1033,7 @@ class OntapPrimaryDatastoreDriverTest {
             String expectedPath = "/iqn.1992-08.com.netapp:sn.123456/3";
             verify(templatePoolRef).setInstallPath(expectedPath);
             verify(vmTemplatePoolDao).update(eq(7L), any(VMTemplateStoragePoolVO.class));
+            verify(sanStrategy, never()).createTemplateCache(any(), any(), any(), anyLong());
 
             ArgumentCaptor<Map<String, String>> detailsCaptor = ArgumentCaptor.forClass(Map.class);
             verify(primaryDataStore).setDetails(detailsCaptor.capture());
@@ -1077,6 +1086,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getCloudStackVolume(argThat(map ->
                     map != null && "/vol/vol1/cs_tmpl_50".equals(map.get("name")))))
                     .thenReturn(cachedTemplate);
+            when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
             when(sanStrategy.validateInitiatorInAccessGroup(anyString(), anyString(), any(Igroup.class))).thenReturn(true);
             doNothing().when(sanStrategy).disableLogicalAccess(any());
 
@@ -1086,6 +1096,63 @@ class OntapPrimaryDatastoreDriverTest {
             verify(sanStrategy).disableLogicalAccess(argThat(map ->
                     map != null && "template-lun-uuid".equals(map.get("lun.uuid"))
                             && "igroup-uuid-123".equals(map.get("igroup.uuid"))));
+            verify(sanStrategy, never()).createTemplateCache(any(), any(), any(), anyLong());
+        }
+    }
+
+    @Test
+    void testGrantAccess_Template_RecreatesMissingCacheLunBeforeMap() {
+        PrimaryDataStore primaryDataStore = mock(PrimaryDataStore.class);
+        Map<String, String> dataStoreDetails = new HashMap<>();
+        dataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET, "stale-value");
+
+        when(primaryDataStore.getId()).thenReturn(1L);
+        when(primaryDataStore.getDetails()).thenReturn(dataStoreDetails);
+        when(templateInfo.getType()).thenReturn(TEMPLATE);
+        when(templateInfo.getId()).thenReturn(50L);
+        when(templateInfo.getSize()).thenReturn(5L * 1024 * 1024 * 1024);
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getName()).thenReturn("vol1");
+        when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(storagePool.getPath()).thenReturn("iqn.1992-08.com.netapp:sn.123456");
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(vmTemplatePoolDao.findByPoolTemplate(1L, 50L, null)).thenReturn(templatePoolRef);
+        when(templatePoolRef.getId()).thenReturn(7L);
+        when(templatePoolRef.getLocalDownloadPath()).thenReturn(null);
+
+        when(host.getName()).thenReturn("host1");
+        when(host.getUuid()).thenReturn("host-uuid-1");
+
+        AccessGroup existingAccessGroup = new AccessGroup();
+        Igroup existingIgroup = new Igroup();
+        existingIgroup.setName("igroup1");
+        existingAccessGroup.setIgroup(existingIgroup);
+
+        Lun createdLun = new Lun();
+        createdLun.setName("/vol/vol1/cs_tmpl_50");
+        createdLun.setUuid("recreated-lun-uuid");
+        CloudStackVolume created = new CloudStackVolume();
+        created.setLun(createdLun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(sanStrategy);
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString())).thenReturn("igroup1");
+
+            when(sanStrategy.getCloudStackVolume(any())).thenReturn(null);
+            when(sanStrategy.createTemplateCache(eq(storagePool), eq(templateInfo), eq(storagePoolDetails), anyLong()))
+                    .thenReturn(created);
+            when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
+            when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
+
+            assertTrue(driver.grantAccess(templateInfo, host, primaryDataStore));
+
+            verify(sanStrategy).createTemplateCache(eq(storagePool), eq(templateInfo), eq(storagePoolDetails), anyLong());
+            verify(templatePoolRef).setLocalDownloadPath("recreated-lun-uuid");
+            verify(templatePoolRef).setDownloadState(com.cloud.storage.VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
+            verify(templatePoolRef).setInstallPath("/iqn.1992-08.com.netapp:sn.123456/3");
+            verify(sanStrategy).ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"));
         }
     }
 
@@ -1386,6 +1453,14 @@ class OntapPrimaryDatastoreDriverTest {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails)).thenReturn(sanStrategy);
             utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString())).thenReturn("igroup1");
 
+            Lun templateLun = new Lun();
+            templateLun.setName("/vol/vol1/cs_tmpl_50");
+            templateLun.setUuid("template-lun-uuid");
+            CloudStackVolume cachedTemplate = new CloudStackVolume();
+            cachedTemplate.setLun(templateLun);
+            when(sanStrategy.getCloudStackVolume(any())).thenReturn(cachedTemplate);
+            when(templatePoolRef.getLocalDownloadPath()).thenReturn("template-lun-uuid");
+
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
@@ -1394,6 +1469,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             verify(sanStrategy).createAccessGroup(any());
             verify(templatePoolRef).setInstallPath("/iqn.1992-08.com.netapp:sn.123456/3");
+            verify(sanStrategy, never()).createTemplateCache(any(), any(), any(), anyLong());
         }
     }
 
