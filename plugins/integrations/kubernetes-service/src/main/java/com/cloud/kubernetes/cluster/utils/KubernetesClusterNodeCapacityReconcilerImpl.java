@@ -32,8 +32,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
-/** SSH-backed implementation for a rolling CKS live-resize reconciliation. */
+/**
+ * SSH-backed implementation for a rolling CKS live-resize reconciliation.
+ *
+ * Component scanning makes this implementation available to the scale worker, which obtains it
+ * through {@code ComponentContext}.
+ */
+@Component
 public class KubernetesClusterNodeCapacityReconcilerImpl implements KubernetesClusterNodeCapacityReconciler {
     static final long MINIMUM_MEMORY_OVERHEAD_BYTES = 128L * 1024L * 1024L;
     static final long KUBERNETES_MEMORY_REPORTING_TOLERANCE_BYTES = 16L * 1024L * 1024L;
