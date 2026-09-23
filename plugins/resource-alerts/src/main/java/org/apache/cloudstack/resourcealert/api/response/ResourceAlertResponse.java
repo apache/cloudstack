@@ -34,11 +34,11 @@ public class ResourceAlertResponse extends BaseResponse {
     @Param(description = "the ID of the fired alert")
     private String id;
 
-    @SerializedName("alertruleid")
+    @SerializedName(ApiConstants.ALERT_RULE_ID)
     @Param(description = "the ID of the rule that triggered this alert")
     private String alertRuleId;
 
-    @SerializedName("resourceid")
+    @SerializedName(ApiConstants.RESOURCE_ID)
     @Param(description = "the ID of the resource that triggered this alert")
     private String resourceId;
 
@@ -50,7 +50,7 @@ public class ResourceAlertResponse extends BaseResponse {
     @Param(description = "the observed metric value at the time of firing")
     private double metricValue;
 
-    @SerializedName("severity")
+    @SerializedName(ApiConstants.SEVERITY)
     @Param(description = "the severity of the alert")
     private String severity;
 
