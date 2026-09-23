@@ -25,4 +25,10 @@ public interface WebhookHelper {
     void deleteWebhooksForAccount(long accountId);
 
     List<? extends ControlledEntity> listWebhooksByAccount(long accountId);
+
+    ControlledEntity findWebhookByUuid(String uuid);
+
+    String getWebhookUuid(long webhookId);
+
+    void deliverToWebhooks(List<Long> webhookIds, long accountId, String eventType, String payload);
 }
