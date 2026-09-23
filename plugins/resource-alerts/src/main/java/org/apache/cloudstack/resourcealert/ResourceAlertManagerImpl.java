@@ -96,6 +96,10 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             "resourcealert.per.user.limit", "20",
             "Maximum number of resource alert rules an account can own; 0 = unlimited", true, ConfigKey.Scope.Account);
 
+    static final ConfigKey<Integer> HISTORY_RETENTION_DAYS = new ConfigKey<>("Advanced", Integer.class,
+            "resourcealert.history.retention.days", "30",
+            "Number of days to keep fired resource alerts; 0 keeps them forever", true);
+
     public static final ConfigKey<Integer> DEFAULT_RESET_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
             "resourcealert.repeat.interval.default", "600",
             "Default minimum seconds between repeat firings of a resource alert rule, used when a rule does not set one", true);
@@ -181,6 +185,17 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return msHost != null && msHost.getMsid() == ManagementServerNode.getManagementServerId();
     }
 
+    void removeExpiredAlerts() {
+        int days = HISTORY_RETENTION_DAYS.value();
+        if (days <= 0) {
+            return;
+        }
+        int removed = alertDao.removeOlderThan(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days)));
+        if (removed > 0) {
+            logger.debug("Removed {} resource alerts older than {} days", removed, days);
+        }
+    }
+
     class EvaluationTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -192,6 +207,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 try {
                     if (isEvaluatingServer()) {
                         evaluateRules();
+                        removeExpiredAlerts();
                     }
                 } finally {
                     lock.unlock();
@@ -563,6 +579,6 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{EVAL_INTERVAL, RULES_PER_ACCOUNT_LIMIT, DEFAULT_RESET_INTERVAL};
+        return new ConfigKey<?>[]{EVAL_INTERVAL, RULES_PER_ACCOUNT_LIMIT, DEFAULT_RESET_INTERVAL, HISTORY_RETENTION_DAYS};
     }
 }
