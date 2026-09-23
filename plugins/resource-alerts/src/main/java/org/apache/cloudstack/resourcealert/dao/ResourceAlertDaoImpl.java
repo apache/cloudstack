@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,11 +32,23 @@ import com.cloud.utils.db.SearchCriteria;
 public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> implements ResourceAlertDao {
 
     private final SearchBuilder<ResourceAlertVO> alertRuleIdSearch;
+    private final SearchBuilder<ResourceAlertVO> olderThanSearch;
 
     public ResourceAlertDaoImpl() {
         alertRuleIdSearch = createSearchBuilder();
         alertRuleIdSearch.and("alertRuleId", alertRuleIdSearch.entity().getAlertRuleId(), SearchCriteria.Op.EQ);
         alertRuleIdSearch.done();
+
+        olderThanSearch = createSearchBuilder();
+        olderThanSearch.and("alertTimestamp", olderThanSearch.entity().getAlertTimestamp(), SearchCriteria.Op.LT);
+        olderThanSearch.done();
+    }
+
+    @Override
+    public int removeOlderThan(Date date) {
+        SearchCriteria<ResourceAlertVO> sc = olderThanSearch.create();
+        sc.setParameters("alertTimestamp", date);
+        return expunge(sc);
     }
 
     @Override
@@ -63,7 +76,8 @@ public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> 
     }
 
     @Override
-    public List<ResourceAlertVO> listByFilters(List<Long> alertRuleIds, Long resourceId, String severity, Date startDate, Date endDate) {
+    public Pair<List<ResourceAlertVO>, Integer> searchAndCountByFilters(List<Long> alertRuleIds, Long resourceId, String severity,
+            Date startDate, Date endDate, Long startIndex, Long pageSize) {
         SearchBuilder<ResourceAlertVO> sb = createSearchBuilder();
         if (alertRuleIds != null) {
             sb.and("alertRuleIds", sb.entity().getAlertRuleId(), SearchCriteria.Op.IN);
@@ -86,6 +100,7 @@ public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> 
         if (StringUtils.isNotBlank(severity)) sc.setParameters("severity", severity);
         if (startDate != null) sc.setParameters("startDate", startDate);
         if (endDate != null) sc.setParameters("endDate", endDate);
-        return listBy(sc);
+        Filter filter = new Filter(ResourceAlertVO.class, "alertTimestamp", false, startIndex, pageSize);
+        return searchAndCount(sc, filter);
     }
 }

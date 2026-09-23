@@ -19,7 +19,9 @@ package org.apache.cloudstack.resourcealert;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -230,16 +232,17 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             empty.setResponses(new ArrayList<>(), 0);
             return empty;
         }
-        List<ResourceAlertVO> alerts = alertDao.listByFilters(
-                alertRuleIds, resourceId,
-                cmd.getSeverity(), cmd.getStartDate(), cmd.getEndDate());
+        Pair<List<ResourceAlertVO>, Integer> alerts = alertDao.searchAndCountByFilters(
+                alertRuleIds, resourceId, cmd.getSeverity(), cmd.getStartDate(), cmd.getEndDate(),
+                cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        List<ResourceAlertResponse> responses = alerts.stream()
-                .map(this::toAlertResponse)
+        Map<Long, ResourceAlertRuleVO> rules = new HashMap<>();
+        List<ResourceAlertResponse> responses = alerts.first().stream()
+                .map(alert -> toAlertResponse(alert, rules.computeIfAbsent(alert.getAlertRuleId(), ruleDao::findByIdIncludingRemoved)))
                 .collect(Collectors.toList());
 
         ListResponse<ResourceAlertResponse> response = new ListResponse<>();
-        response.setResponses(responses, responses.size());
+        response.setResponses(responses, alerts.second());
         return response;
     }
 
@@ -277,11 +280,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         return r;
     }
 
-    private ResourceAlertResponse toAlertResponse(ResourceAlertVO vo) {
+    private ResourceAlertResponse toAlertResponse(ResourceAlertVO vo, ResourceAlertRuleVO rule) {
         ResourceAlertResponse r = new ResourceAlertResponse();
         r.setObjectName("resourcealert");
         r.setId(vo.getUuid());
-        ResourceAlertRuleVO rule = ruleDao.findByIdIncludingRemoved(vo.getAlertRuleId());
         r.setAlertRuleId(rule != null ? rule.getUuid() : null);
         r.setResourceId(rule != null ? getResourceUuid(rule.getResourceType(), vo.getResourceId()) : null);
         r.setMetricType(vo.getMetricType());

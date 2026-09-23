@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceAlertDao extends GenericDao<ResourceAlertVO, Long> {
@@ -31,5 +32,8 @@ public interface ResourceAlertDao extends GenericDao<ResourceAlertVO, Long> {
     // Returns the most recent firing of a rule for a specific resource; used for reset-interval enforcement.
     ResourceAlertVO findLastFiredForRule(long alertRuleId, Long resourceId);
 
-    List<ResourceAlertVO> listByFilters(List<Long> alertRuleIds, Long resourceId, String severity, Date startDate, Date endDate);
+    Pair<List<ResourceAlertVO>, Integer> searchAndCountByFilters(List<Long> alertRuleIds, Long resourceId, String severity,
+            Date startDate, Date endDate, Long startIndex, Long pageSize);
+
+    int removeOlderThan(Date date);
 }

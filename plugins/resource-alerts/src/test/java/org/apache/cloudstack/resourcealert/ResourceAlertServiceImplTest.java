@@ -41,7 +41,10 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
+import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.junit.After;
@@ -62,6 +65,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -394,5 +398,21 @@ public class ResourceAlertServiceImplTest {
         service.updateResourceAlertRule(cmd);
 
         verify(ruleWebhookDao).replaceWebhooksForRule(1L, new ArrayList<>());
+    }
+
+    @Test
+    public void testListAlertsPassesPagingAndReturnsTotalCount() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getStartIndex()).thenReturn(20L);
+        when(cmd.getPageSizeVal()).thenReturn(10L);
+        ResourceAlertVO alert = mock(ResourceAlertVO.class);
+        when(alertDao.searchAndCountByFilters(null, null, null, null, null, 20L, 10L))
+                .thenReturn(new Pair<>(List.of(alert), 57));
+
+        ListResponse<ResourceAlertResponse> response = service.listResourceAlerts(cmd);
+
+        assertEquals(Integer.valueOf(57), response.getCount());
+        assertEquals(1, response.getResponses().size());
     }
 }
