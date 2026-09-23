@@ -65,11 +65,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
@@ -319,8 +315,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
             cmd.setContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key(), String.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.value()));
 
-            if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand || cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand || cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand
-                    || cmd instanceof CreateVolumeFromSnapshotCommand) {
+            if (cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand || cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand) {
                 String workerName = _vmwareMgr.composeWorkerName();
                 long checkPointId = 1;
                 // FIXME: Fix                    long checkPointId = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName));

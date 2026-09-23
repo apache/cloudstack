@@ -3478,7 +3478,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
         when(primary.getPhysicalDisk(command.getVolumePath())).thenReturn(disk);
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL)).thenReturn(secondary);
-        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getType()).thenReturn(StoragePoolType.NetworkFilesystem);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(secondary.createFolder(volumeDestPath)).thenReturn(true);
         when(storagePoolMgr.deleteStoragePool(secondary.getType(), secondary.getUuid())).thenReturn(true);
@@ -3521,7 +3521,7 @@ public class LibvirtComputingResourceTest {
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
-        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getType()).thenReturn(StoragePoolType.NetworkFilesystem);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
 
@@ -3562,7 +3562,7 @@ public class LibvirtComputingResourceTest {
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
-        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getType()).thenReturn(StoragePoolType.NetworkFilesystem);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
         when(secondary.getPhysicalDisk(command.getVolumePath() + ".qcow2")).thenThrow(CloudRuntimeException.class);
@@ -3636,7 +3636,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(destVolumeName);
-        when(secondary.getType()).thenReturn(StoragePoolType.ManagedNFS);
+        when(secondary.getType()).thenReturn(StoragePoolType.NetworkFilesystem);
         when(secondary.getUuid()).thenReturn("60d979d8-d132-4181-8eca-8dfde50d7df6");
         when(storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolURL + volumeDestPath)).thenReturn(secondary);
 

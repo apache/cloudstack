@@ -16,16 +16,11 @@
 // under the License.
 package com.cloud.agent.resource.consoleproxy;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -49,10 +44,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -94,11 +86,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     @Override
     public Answer executeRequest(final Command cmd) {
-        if (cmd instanceof CheckConsoleProxyLoadCommand) {
-            return execute((CheckConsoleProxyLoadCommand)cmd);
-        } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
-            return execute((WatchConsoleProxyLoadCommand)cmd);
-        } else if (cmd instanceof ReadyCommand) {
+        if (cmd instanceof ReadyCommand) {
             logger.info("Receive ReadyCommand, response with ReadyAnswer");
             return new ReadyAnswer((ReadyCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
@@ -140,51 +128,6 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         } catch (IOException e) {
             logger.warn("Unable to disable rp_filter");
         }
-    }
-
-    protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
-    }
-
-    protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
-        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
-    }
-
-    private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
-        String result = null;
-
-        final StringBuffer sb = new StringBuffer();
-        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
-
-        boolean success = true;
-        try {
-            final URL url = new URL(sb.toString());
-            final URLConnection conn = url.openConnection();
-
-            final InputStream is = conn.getInputStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(is,"UTF-8"));
-            final StringBuilder sb2 = new StringBuilder();
-            String line = null;
-            try {
-                while ((line = reader.readLine()) != null)
-                    sb2.append(line + "\n");
-                result = sb2.toString();
-            } catch (final IOException e) {
-                success = false;
-            } finally {
-                try {
-                    is.close();
-                } catch (final IOException e) {
-                    logger.warn("Exception when closing , console proxy address: {}", proxyManagementIp);
-                    success = false;
-                }
-            }
-        } catch (final IOException e) {
-            logger.warn("Unable to open console proxy command port url, console proxy address: {}", proxyManagementIp);
-            success = false;
-        }
-
-        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
     @Override

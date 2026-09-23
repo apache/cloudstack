@@ -48,7 +48,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -88,9 +87,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -100,17 +97,11 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -126,11 +117,9 @@ import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.utils.Pair;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -149,10 +138,6 @@ public class CitrixRequestWrapperTest {
 
     @Mock
     private CitrixResourceBase citrixResourceBase;
-    @Mock
-    private RebootAnswer rebootAnswer;
-    @Mock
-    private CreateAnswer createAnswer;
 
     @Test
     public void testWrapperInstance() {
@@ -170,60 +155,6 @@ public class CitrixRequestWrapperTest {
         } catch (final Exception e) {
             assertTrue(e instanceof NullPointerException);
         }
-    }
-
-    @Test
-    public void testExecuteRebootRouterCommand() {
-        final RebootRouterCommand rebootRouterCommand = new RebootRouterCommand("Test", "127.0.0.1");
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(rebootRouterCommand, citrixResourceBase);
-
-        verify(citrixResourceBase, times(2)).getConnection();
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testExecuteCreateCommand() {
-        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-        final DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
-        final CreateCommand createCommand = new CreateCommand(diskProfile, "", poolVO, false);
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(createCommand, citrixResourceBase);
-
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testCheckConsoleProxyLoadCommand() {
-        final CheckConsoleProxyLoadCommand consoleProxyCommand = new CheckConsoleProxyLoadCommand();
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(consoleProxyCommand, citrixResourceBase);
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testWatchConsoleProxyLoadCommand() {
-        final WatchConsoleProxyLoadCommand watchConsoleProxyCommand = new WatchConsoleProxyLoadCommand(0, 0, "", "", 0);
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(watchConsoleProxyCommand, citrixResourceBase);
-
-        assertFalse(answer.getResult());
     }
 
     @Test
@@ -436,51 +367,6 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testAttachIsoCommand() {
-        final AttachIsoCommand attachCommand = new AttachIsoCommand("Test", "/", true);
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(attachCommand, citrixResourceBase);
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testUpgradeSnapshotCommand() {
-        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-
-        final UpgradeSnapshotCommand upgradeSnapshotCommand = new UpgradeSnapshotCommand(poolVO, "http", 1l, 1l, 1l, 1l, 1l, "/", "58c5778b-7dd1-47cc-a7b5-f768541bf278", "Test",
-                        "2.1");
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(upgradeSnapshotCommand, citrixResourceBase);
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void testUpgradeSnapshotCommandNo21() {
-        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-
-        final UpgradeSnapshotCommand upgradeSnapshotCommand = new UpgradeSnapshotCommand(poolVO, "http", 1l, 1l, 1l, 1l, 1l, "/", "58c5778b-7dd1-47cc-a7b5-f768541bf278", "Test",
-                        "3.1");
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(upgradeSnapshotCommand, citrixResourceBase);
-        verify(citrixResourceBase, times(0)).getConnection();
-
-        assertTrue(answer.getResult());
-    }
-
-    @Test
     public void testGetStorageStatsCommand() {
         final XsHost xsHost = Mockito.mock(XsHost.class);
         final DataStoreTO store = Mockito.mock(DataStoreTO.class);
@@ -493,24 +379,6 @@ public class CitrixRequestWrapperTest {
         when(citrixResourceBase.getHost()).thenReturn(xsHost);
 
         final Answer answer = wrapper.execute(storageStatsCommand, citrixResourceBase);
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testPrimaryStorageDownloadCommand() {
-        final XsHost xsHost = Mockito.mock(XsHost.class);
-        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-
-        final PrimaryStorageDownloadCommand storageDownloadCommand = new PrimaryStorageDownloadCommand("Test", "http://127.0.0.1", ImageFormat.VHD, 1l, poolVO, 200);
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
-
-        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());

@@ -2536,7 +2536,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return Storage.StorageResourceType.STORAGE_POOL;
     }
 
-    // this is much like PrimaryStorageDownloadCommand, but keeping it separate
+    // copies a template from secondary storage to a primary pool
     public KVMPhysicalDisk templateToPrimaryDownload(final String templateUrl, final KVMStoragePool primaryPool, final String volUuid) {
         final int index = templateUrl.lastIndexOf("/");
         final String mountpoint = templateUrl.substring(0, index);
