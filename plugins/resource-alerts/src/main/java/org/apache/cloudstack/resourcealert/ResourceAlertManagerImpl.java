@@ -163,7 +163,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     private void safeEvaluateRules() {
         try {
             evaluateRules();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.warn("Failed to evaluate resource alert rules", e);
         }
     }
 
@@ -184,7 +185,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                         && canFire(rule.getId(), resourceId, rule.getResetInterval())) {
                     fireAlert(rule, resourceId, value);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                logger.warn("Failed to evaluate resource alert rule {} for resource {}", rule.getUuid(), resourceId, e);
             }
         }
     }
@@ -468,7 +470,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     void publishAlertEvent(long dcId, String subject, String body) {
         try {
             AlertGenerator.publishAlertOnEventBus(ALERT_EVENT_TYPE, dcId, null, subject, body);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            logger.warn("Failed to publish resource alert on the event bus", e);
         }
     }
 
