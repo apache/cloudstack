@@ -171,9 +171,10 @@ public interface VirtualMachineManager extends Manager {
     void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     /**
-     * Stop an instance ahead of destroying it. The stop is forced according to vm.destroy.forcestop, but when the
-     * host does not answer, the instance's resources are only released if the host is Down or Removed. Otherwise the
-     * stop fails as an unforced one does and the instance stays Running.
+     * Stop an instance ahead of destroying it. The stop is forced according to vm.destroy.forcestop, but the
+     * instance's resources are only released without the host confirming the stop if the host is gone (no host,
+     * no host record, Down or Removed). Otherwise the stop fails as an unforced one does and the instance is left
+     * in the state it was in.
      */
     void advanceStopForDestroy(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 

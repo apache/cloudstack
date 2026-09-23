@@ -1744,18 +1744,20 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(_accountDao.findById(42L)).thenReturn(account);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
         Mockito.when(_accountDao.remove(42L)).thenReturn(true);
-        Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(account)).thenReturn(true);
         Mockito.when(_userVmDao.listByAccountId(42L)).thenReturn(Arrays.asList(vm));
         Mockito.when(_vmMgr.destroyVm(7L, false)).thenThrow(new CloudRuntimeException("host is Disconnected"));
         Mockito.doReturn(true).when(accountManagerImpl).isStillOnItsHost(7L);
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
-        Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42L));
 
         Mockito.verify(_vmMgr, Mockito.never()).expunge(vm);
+        // the rest of the account is left alone while the instance may still be running
+        Mockito.verify(_volumeDao, Mockito.never()).findDetachedByAccount(42L);
+        Mockito.verify(_configMgr, Mockito.never()).releaseAccountSpecificVirtualRanges(account);
+        Mockito.verify(accountManagerImpl, Mockito.never()).deleteWebhooksForAccount(42L);
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(Mockito.eq(42L));
     }
 
