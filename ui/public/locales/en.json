@@ -2327,6 +2327,8 @@
 "label.severity": "Severity",
 "label.message": "Message",
 "label.resetinterval": "Cooldown (seconds)",
+"label.webhookids": "Webhooks",
+"label.cleanupwebhooks": "Remove all webhooks",
 "label.alerttimestamp": "Alert Time",
 "label.metrictype": "Metric",
 "label.metricvalue": "Value",

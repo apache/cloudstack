@@ -49,7 +49,7 @@ export default {
       label: 'label.edit',
       dataView: true,
       args: (record, store) => {
-        const args = ['name', 'condition', 'threshold', 'severity', 'message', 'resetinterval']
+        const args = ['name', 'condition', 'threshold', 'severity', 'message', 'resetinterval', 'webhookids', 'cleanupwebhooks']
         if (store.userInfo.roletype === 'Admin') args.push('email')
         return args
       },
