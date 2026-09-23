@@ -274,6 +274,55 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return job;
     }
 
+    protected List<Runnable> getDirectDeliveryJobs(List<Long> webhookIds, long accountId, String eventType,
+            String payload) {
+        List<Runnable> jobs = new ArrayList<>();
+        if (CollectionUtils.isEmpty(webhookIds)) {
+            return jobs;
+        }
+        Account account = accountManager.getAccount(accountId);
+        Event event = new Event(ManagementService.Name, EventCategory.ALERT_EVENT.getName(), eventType, null, null);
+        event.setEventUuid(UUID.randomUUID().toString());
+        event.setDescription(payload);
+        event.setResourceAccountUuid(account != null ? account.getUuid() : null);
+        for (Long webhookId : webhookIds) {
+            WebhookVO webhook = webhookDao.findById(webhookId);
+            if (webhook == null || !Webhook.State.Enabled.equals(webhook.getState())) {
+                logger.debug("Skipping delivering {} to webhook ID: {} as it is missing or disabled", event, webhookId);
+                continue;
+            }
+            if (!isEventMatchingFilters(event, webhookFiltersCache.get(webhook.getId()))) {
+                logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
+                continue;
+            }
+            WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
+                    new WebhookDeliveryThread.WebhookDeliveryContext<>(null, null, webhook.getId());
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
+                    AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().directDeliveryCompleteCallback(null, null))
+                    .setContext(context);
+            WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
+            job = ComponentContext.inject(job);
+            job.setDeliveryTries(WebhookDeliveryTries.valueIn(webhook.getDomainId()));
+            job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(webhook.getDomainId()));
+            jobs.add(job);
+        }
+        return jobs;
+    }
+
+    // Not persisted: webhook_delivery.event_id must reference a row in the event table.
+    protected Void directDeliveryCompleteCallback(
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
+            WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
+        WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
+        if (result.isSuccess()) {
+            logger.debug("Delivered alert to webhook ID: {}", context.getRuleId());
+        } else {
+            logger.warn("Failed to deliver alert to webhook ID: {} due to: {}", context.getRuleId(), result.getResult());
+        }
+        return null;
+    }
+
     protected Void deliveryCompleteCallback(
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
             WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
@@ -384,6 +433,24 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Override
     public List<? extends ControlledEntity> listWebhooksByAccount(long accountId) {
         return webhookDao.listByAccount(accountId);
+    }
+
+    @Override
+    public ControlledEntity findWebhookByUuid(String uuid) {
+        return webhookDao.findByUuid(uuid);
+    }
+
+    @Override
+    public String getWebhookUuid(long webhookId) {
+        WebhookVO webhook = webhookDao.findByIdIncludingRemoved(webhookId);
+        return webhook != null ? webhook.getUuid() : null;
+    }
+
+    @Override
+    public void deliverToWebhooks(List<Long> webhookIds, long accountId, String eventType, String payload) {
+        for (Runnable job : getDirectDeliveryJobs(webhookIds, accountId, eventType, payload)) {
+            webhookJobExecutor.submit(job);
+        }
     }
 
     @Override
