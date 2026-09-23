@@ -34,11 +34,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -46,8 +48,10 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
@@ -60,13 +64,17 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.JsonObject;
 
 public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAlertManager, Configurable {
+
+    static final String ALERT_EVENT_TYPE = "RESOURCE.ALERT";
 
     static final ConfigKey<Integer> EVAL_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
             "resourcealert.evaluation.interval", "60",
@@ -82,6 +90,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Inject ResourceAlertRuleDao ruleDao;
     @Inject ResourceAlertDao alertDao;
+    @Inject ResourceAlertRuleWebhookDao ruleWebhookDao;
     @Inject UserVmDao userVmDao;
     @Inject HostDao hostDao;
     @Inject PrimaryDataStoreDao storagePoolDao;
@@ -307,6 +316,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         String body = buildBody(rule, resourceId, value);
         long dcId = getDataCenterId(rule.getResourceType(), resourceId);
         publishAlertEvent(dcId, subject, body);
+        deliverToWebhooks(rule, alert, resourceId, value);
 
         if (rule.isEmail()) {
             sendEmail(subject, body);
@@ -314,6 +324,70 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
         logger.warn("Alert fired: rule={} metric={} resource={} value={} threshold={}",
                 rule.getUuid(), rule.getMetric(), resourceId, value, rule.getThreshold());
+    }
+
+    protected WebhookHelper getWebhookHelper() {
+        try {
+            return ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            return null;
+        }
+    }
+
+    private void deliverToWebhooks(ResourceAlertRuleVO rule, ResourceAlertVO alert, Long resourceId, double value) {
+        List<Long> webhookIds = ruleWebhookDao.listWebhookIdsByRule(rule.getId());
+        if (webhookIds.isEmpty()) {
+            return;
+        }
+        WebhookHelper webhookHelper = getWebhookHelper();
+        if (webhookHelper == null) {
+            logger.warn("Unable to deliver alert for rule {} to webhooks as the webhook plugin is not enabled", rule.getUuid());
+            return;
+        }
+        webhookHelper.deliverToWebhooks(webhookIds, rule.getAccountId(), ALERT_EVENT_TYPE,
+                buildWebhookPayload(rule, alert, resourceId, value));
+    }
+
+    String buildWebhookPayload(ResourceAlertRuleVO rule, ResourceAlertVO alert, Long resourceId, double value) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("event", ALERT_EVENT_TYPE);
+        payload.addProperty("id", alert.getUuid());
+        payload.addProperty("ruleid", rule.getUuid());
+        payload.addProperty("rulename", rule.getName());
+        payload.addProperty("resourcetype", rule.getResourceType().name());
+        payload.addProperty("resourceid", getResourceUuid(rule.getResourceType(), resourceId));
+        payload.addProperty("metric", rule.getMetric());
+        payload.addProperty("condition", rule.getCondition().name());
+        payload.addProperty("threshold", rule.getThreshold());
+        payload.addProperty("value", value);
+        payload.addProperty("severity", rule.getSeverity().name());
+        payload.addProperty("message", rule.getMessage());
+        payload.addProperty("timestamp", alert.getAlertTimestamp().toInstant().toString());
+        return payload.toString();
+    }
+
+    private String getResourceUuid(ResourceAlertRule.ResourceType type, Long resourceId) {
+        if (resourceId == null) {
+            return null;
+        }
+        Identity resource;
+        switch (type) {
+            case VirtualMachine:
+                resource = userVmDao.findByIdIncludingRemoved(resourceId);
+                break;
+            case Volume:
+                resource = volumeDao.findByIdIncludingRemoved(resourceId);
+                break;
+            case Host:
+                resource = hostDao.findByIdIncludingRemoved(resourceId);
+                break;
+            case StoragePool:
+                resource = storagePoolDao.findByIdIncludingRemoved(resourceId);
+                break;
+            default:
+                resource = null;
+        }
+        return resource != null ? resource.getUuid() : null;
     }
 
     private String buildSubject(ResourceAlertRuleVO rule, Long resourceId, double value) {
@@ -393,7 +467,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     // package-private so tests can stub it without needing a Spring context
     void publishAlertEvent(long dcId, String subject, String body) {
         try {
-            AlertGenerator.publishAlertOnEventBus("RESOURCE.ALERT", dcId, null, subject, body);
+            AlertGenerator.publishAlertOnEventBus(ALERT_EVENT_TYPE, dcId, null, subject, body);
         } catch (Exception ignored) {
         }
     }
