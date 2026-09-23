@@ -86,4 +86,12 @@ public class ResourceAlertMetricTest {
         assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.Host));
         assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
     }
+
+    @Test
+    public void testStorageUsedIopsAppliesToStoragePoolOnly() {
+        assertTrue(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
+        assertFalse(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.Volume));
+        assertFalse(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.Host));
+        assertFalse(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
+    }
 }

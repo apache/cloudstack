@@ -106,7 +106,7 @@ const METRICS_BY_TYPE = {
   VirtualMachine: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
   Host: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'LOAD_AVERAGE', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
   Volume: ['DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'VOLUME_SIZE_GB'],
-  StoragePool: ['STORAGE_UTILIZATION']
+  StoragePool: ['STORAGE_UTILIZATION', 'STORAGE_USED_IOPS']
 }
 
 export default {
@@ -156,7 +156,8 @@ export default {
         NETWORK_WRITE_KBPS: 'Network Out KB/s',
         STORAGE_UTILIZATION: 'Storage Utilization %',
         LOAD_AVERAGE: 'Load Average',
-        VOLUME_SIZE_GB: 'Volume Size (GB)'
+        VOLUME_SIZE_GB: 'Volume Size (GB)',
+        STORAGE_USED_IOPS: 'Storage Used IOPS'
       },
       conditionLabels: {
         GT: 'Is above',
