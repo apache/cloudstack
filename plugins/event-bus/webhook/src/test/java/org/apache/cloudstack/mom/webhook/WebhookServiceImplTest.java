@@ -34,6 +34,7 @@ import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookFilterDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookFilterVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
 import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.commons.lang3.StringUtils;
@@ -669,5 +670,90 @@ public class WebhookServiceImplTest {
         webhookServiceImpl.invalidateWebhookFiltersCache(123L);
 
         Mockito.verify(cache, Mockito.times(1)).invalidate(123L);
+    }
+
+    @Test
+    public void getDirectDeliveryJobsReturnsEmptyForNoWebhooks() {
+        Assert.assertTrue(webhookServiceImpl.getDirectDeliveryJobs(new ArrayList<>(), 1L, "RESOURCE.ALERT", "{}").isEmpty());
+    }
+
+    @Test
+    public void getDirectDeliveryJobsSkipsMissingAndDisabledWebhooks() {
+        WebhookVO disabled = Mockito.mock(WebhookVO.class);
+        Mockito.when(disabled.getState()).thenReturn(Webhook.State.Disabled);
+        Mockito.when(webhookDao.findById(1L)).thenReturn(disabled);
+        Mockito.when(webhookDao.findById(2L)).thenReturn(null);
+
+        List<Runnable> jobs = webhookServiceImpl.getDirectDeliveryJobs(List.of(1L, 2L), 1L, "RESOURCE.ALERT", "{}");
+
+        Assert.assertTrue(jobs.isEmpty());
+    }
+
+    @Test
+    public void getDirectDeliveryJobsBuildsAlertEventForEnabledWebhook() {
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        Mockito.when(webhook.getId()).thenReturn(1L);
+        Mockito.when(webhook.getState()).thenReturn(Webhook.State.Enabled);
+        Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getUuid()).thenReturn("account-uuid");
+        Mockito.when(accountManager.getAccount(5L)).thenReturn(account);
+
+        List<Runnable> jobs = webhookServiceImpl.getDirectDeliveryJobs(List.of(1L), 5L, "RESOURCE.ALERT", "{\"a\":1}");
+
+        Assert.assertEquals(1, jobs.size());
+        Event event = (Event) ReflectionTestUtils.getField(jobs.get(0), "event");
+        Assert.assertEquals(EventCategory.ALERT_EVENT.getName(), event.getEventCategory());
+        Assert.assertEquals("RESOURCE.ALERT", event.getEventType());
+        Assert.assertEquals("{\"a\":1}", event.getDescription());
+        Assert.assertEquals("account-uuid", event.getResourceAccountUuid());
+    }
+
+    @Test
+    public void getDirectDeliveryJobsSkipsWebhookWhenFilterExcludesEvent() {
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        Mockito.when(webhook.getId()).thenReturn(1L);
+        Mockito.when(webhook.getState()).thenReturn(Webhook.State.Enabled);
+        Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+        WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+        Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+        Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+        Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+        Mockito.when(filter.getValue()).thenReturn("RESOURCE.ALERT");
+        Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+
+        List<Runnable> jobs = webhookServiceImpl.getDirectDeliveryJobs(List.of(1L), 5L, "RESOURCE.ALERT", "{}");
+
+        Assert.assertTrue(jobs.isEmpty());
+    }
+
+    @Test
+    public void getDirectDeliveryJobsAppliesDeliverySecuritySettings() {
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        Mockito.when(webhook.getId()).thenReturn(1L);
+        Mockito.when(webhook.getDomainId()).thenReturn(3L);
+        Mockito.when(webhook.getState()).thenReturn(Webhook.State.Enabled);
+        Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+        WebhookServiceImpl.DeliveryConfig config = new WebhookServiceImpl.DeliveryConfig(2, 7, "10.0.0.0/8", true, false, true);
+        Mockito.doReturn(config).when(webhookServiceImpl).getDeliveryConfig(3L);
+
+        List<Runnable> jobs = webhookServiceImpl.getDirectDeliveryJobs(List.of(1L), 5L, "RESOURCE.ALERT", "{}");
+
+        Assert.assertEquals(1, jobs.size());
+        Object job = jobs.get(0);
+        Assert.assertEquals(2, ReflectionTestUtils.getField(job, "deliveryTries"));
+        Assert.assertEquals(7, ReflectionTestUtils.getField(job, "deliveryTimeout"));
+        Assert.assertEquals("10.0.0.0/8", ReflectionTestUtils.getField(job, "destinationBlocklist"));
+        Assert.assertEquals(true, ReflectionTestUtils.getField(job, "blockLocalAddresses"));
+        Assert.assertEquals(true, ReflectionTestUtils.getField(job, "allowHttp"));
+    }
+
+    @Test
+    public void loggingFailuresSwallowsAndDoesNotRethrow() {
+        Runnable failing = () -> {
+            throw new com.cloud.exception.InvalidParameterValueException("blocked IP address");
+        };
+
+        webhookServiceImpl.loggingFailures(failing, "RESOURCE.ALERT").run();
     }
 }
