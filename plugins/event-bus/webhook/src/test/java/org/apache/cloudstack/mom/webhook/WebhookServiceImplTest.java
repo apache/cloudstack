@@ -747,4 +747,13 @@ public class WebhookServiceImplTest {
         Assert.assertEquals(true, ReflectionTestUtils.getField(job, "blockLocalAddresses"));
         Assert.assertEquals(true, ReflectionTestUtils.getField(job, "allowHttp"));
     }
+
+    @Test
+    public void loggingFailuresSwallowsAndDoesNotRethrow() {
+        Runnable failing = () -> {
+            throw new com.cloud.exception.InvalidParameterValueException("blocked IP address");
+        };
+
+        webhookServiceImpl.loggingFailures(failing, "RESOURCE.ALERT").run();
+    }
 }

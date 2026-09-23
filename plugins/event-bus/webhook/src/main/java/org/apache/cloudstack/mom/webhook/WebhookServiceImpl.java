@@ -452,8 +452,19 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Override
     public void deliverToWebhooks(List<Long> webhookIds, long accountId, String eventType, String payload) {
         for (Runnable job : getDirectDeliveryJobs(webhookIds, accountId, eventType, payload)) {
-            webhookJobExecutor.submit(job);
+            webhookJobExecutor.submit(loggingFailures(job, eventType));
         }
+    }
+
+    // The executor swallows exceptions, e.g. a payload URL rejected by the blocklist at delivery time.
+    protected Runnable loggingFailures(Runnable job, String eventType) {
+        return () -> {
+            try {
+                job.run();
+            } catch (Exception e) {
+                logger.warn("Failed to deliver {} to webhook: {}", eventType, e.getMessage());
+            }
+        };
     }
 
     @Override
