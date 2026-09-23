@@ -726,4 +726,25 @@ public class WebhookServiceImplTest {
 
         Assert.assertTrue(jobs.isEmpty());
     }
+
+    @Test
+    public void getDirectDeliveryJobsAppliesDeliverySecuritySettings() {
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        Mockito.when(webhook.getId()).thenReturn(1L);
+        Mockito.when(webhook.getDomainId()).thenReturn(3L);
+        Mockito.when(webhook.getState()).thenReturn(Webhook.State.Enabled);
+        Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+        WebhookServiceImpl.DeliveryConfig config = new WebhookServiceImpl.DeliveryConfig(2, 7, "10.0.0.0/8", true, false, true);
+        Mockito.doReturn(config).when(webhookServiceImpl).getDeliveryConfig(3L);
+
+        List<Runnable> jobs = webhookServiceImpl.getDirectDeliveryJobs(List.of(1L), 5L, "RESOURCE.ALERT", "{}");
+
+        Assert.assertEquals(1, jobs.size());
+        Object job = jobs.get(0);
+        Assert.assertEquals(2, ReflectionTestUtils.getField(job, "deliveryTries"));
+        Assert.assertEquals(7, ReflectionTestUtils.getField(job, "deliveryTimeout"));
+        Assert.assertEquals("10.0.0.0/8", ReflectionTestUtils.getField(job, "destinationBlocklist"));
+        Assert.assertEquals(true, ReflectionTestUtils.getField(job, "blockLocalAddresses"));
+        Assert.assertEquals(true, ReflectionTestUtils.getField(job, "allowHttp"));
+    }
 }

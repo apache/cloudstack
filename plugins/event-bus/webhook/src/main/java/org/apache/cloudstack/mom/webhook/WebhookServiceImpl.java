@@ -121,13 +121,27 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 .setContext(context);
         WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
         job = ComponentContext.inject(job);
+        applyDeliveryConfig(job, config);
+        return job;
+    }
+
+    protected DeliveryConfig getDeliveryConfig(long domainId) {
+        return new DeliveryConfig(
+                WebhookDeliveryTries.valueIn(domainId),
+                WebhookDeliveryTimeout.valueIn(domainId),
+                WebhookDeliveryBlocklist.valueIn(domainId),
+                WebhookDeliveryBlockLocalAddresses.value(),
+                WebhookDeliveryAllowRedirects.valueIn(domainId),
+                WebhookDeliveryAllowHttp.valueIn(domainId));
+    }
+
+    protected void applyDeliveryConfig(WebhookDeliveryThread job, DeliveryConfig config) {
         job.setDeliveryTries(config.tries);
         job.setDeliveryTimeout(config.timeout);
         job.setDestinationBlocklist(config.blocklist);
         job.setBlockLocalAddresses(config.blockLocalAddresses);
         job.setAllowRedirects(config.allowRedirects);
         job.setAllowHttp(config.allowHttp);
-        return job;
     }
 
     protected String getEventValueByFilterType(Event event, WebhookFilter.Type filterType) {
@@ -214,17 +228,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
                 continue;
             }
-            if (!domainConfigs.containsKey(webhook.getDomainId())) {
-                domainConfigs.put(webhook.getDomainId(),
-                        new DeliveryConfig(
-                                WebhookDeliveryTries.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryTimeout.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryBlocklist.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryBlockLocalAddresses.value(),
-                                WebhookDeliveryAllowRedirects.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryAllowHttp.valueIn(webhook.getDomainId())));
-            }
-            DeliveryConfig config = domainConfigs.get(webhook.getDomainId());
+            DeliveryConfig config = domainConfigs.computeIfAbsent(webhook.getDomainId(), this::getDeliveryConfig);
             WebhookDeliveryThread job = getDeliveryJob(event, webhook, config);
             jobs.add(job);
         }
@@ -303,8 +307,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                     .setContext(context);
             WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
             job = ComponentContext.inject(job);
-            job.setDeliveryTries(WebhookDeliveryTries.valueIn(webhook.getDomainId()));
-            job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(webhook.getDomainId()));
+            applyDeliveryConfig(job, getDeliveryConfig(webhook.getDomainId()));
             jobs.add(job);
         }
         return jobs;
