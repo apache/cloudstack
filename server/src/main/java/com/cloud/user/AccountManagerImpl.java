@@ -911,6 +911,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+    /**
+     * @return true when the instance still has a host and is not stopped, so its domain may be running there.
+     */
+    protected boolean isStillOnItsHost(long vmId) {
+        UserVmVO vm = _userVmDao.findById(vmId);
+        return vm != null && vm.getHostId() != null && vm.getState() != VirtualMachine.State.Stopped
+                && vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging
+                && vm.getState() != VirtualMachine.State.Error;
+    }
+
     protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
@@ -1006,6 +1016,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {
                         logger.warn("Failed destroying instance {} as part of account deletion.", vm, e);
+                        if (isStillOnItsHost(vm.getId())) {
+                            // Expunging releases the instance's addresses before it stops it, so a stop that fails
+                            // there leaves a running domain without them. Leave it for the next cleanup of this account.
+                            logger.warn("Not expunging instance {}, it may still be running on its host.", vm);
+                            accountCleanupNeeded = true;
+                            continue;
+                        }
                     }
                 }
                 // no need to catch exception at this place as expunging vm
