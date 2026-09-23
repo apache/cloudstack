@@ -38,5 +38,10 @@
             <artifactId>cloud-framework-config</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${cs.opentelemetry.version}</version>
+        </dependency>
     </dependencies>
 </project>

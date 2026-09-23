@@ -40,7 +40,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) (traceid:%X{traceid}) %m%ex%n"/>
       </RollingFile>
 
 

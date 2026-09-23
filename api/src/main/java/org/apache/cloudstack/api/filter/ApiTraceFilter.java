@@ -32,6 +32,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 public class ApiTraceFilter implements Filter {
+
+    // Cap the accepted trace id length to avoid log/DB bloat from a crafted header.
+    private static final int MAX_TRACE_ID_LENGTH = 128;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     }
@@ -41,16 +45,37 @@ public class ApiTraceFilter implements Filter {
             throws IOException, ServletException {
         try {
             HttpServletRequest httpReq = (HttpServletRequest) request;
-            String traceId = httpReq.getHeader(LogContext.X_B3_TRACEID_KEY);
+            String traceId = sanitizeTraceId(httpReq.getHeader(LogContext.TRACEID_KEY));
             if (StringUtils.isBlank(traceId)) {
                 traceId = UUID.randomUUID().toString();
             }
 
-            LogContext.current().putContextParameter(LogContext.X_B3_TRACEID_KEY, traceId);
+            LogContext.current().putContextParameter(LogContext.TRACEID_KEY, traceId);
             chain.doFilter(request, response);
         } finally {
-            LogContext.current().removeContextParameter(LogContext.X_B3_TRACEID_KEY);
+            LogContext.current().removeContextParameter(LogContext.TRACEID_KEY);
         }
+    }
+
+    /**
+     * Returns the caller-supplied trace id only if it is safe to log and store: no control
+     * characters (prevents log forging) and within a bounded length. Otherwise returns null so a
+     * fresh id is generated.
+     */
+    private String sanitizeTraceId(String traceId) {
+        if (traceId == null) {
+            return null;
+        }
+        String trimmed = traceId.trim();
+        if (trimmed.isEmpty() || trimmed.length() > MAX_TRACE_ID_LENGTH) {
+            return null;
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            if (Character.isISOControl(trimmed.charAt(i))) {
+                return null;
+            }
+        }
+        return trimmed;
     }
 
     @Override

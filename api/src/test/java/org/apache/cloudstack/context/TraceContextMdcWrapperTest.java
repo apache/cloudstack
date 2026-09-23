@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.context;
 
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,8 +53,8 @@ public class TraceContextMdcWrapperTest {
 
     @After
     public void tearDown() {
-        MDC.remove(LogContext.MOSAIC_TRACE_ID_KEY);
-        MDC.remove(LogContext.MOSAIC_SPAN_ID_KEY);
+        ThreadContext.remove(LogContext.TRACE_ID_KEY);
+        ThreadContext.remove(LogContext.SPAN_ID_KEY);
     }
 
     private static Context contextWithSpan(String traceId, String spanId) {
@@ -65,19 +65,19 @@ public class TraceContextMdcWrapperTest {
     @Test
     public void putsTraceContextOnMdcWhileScopeOpenAndRestoresOnClose() {
         Scope scope = wrapper.attach(contextWithSpan(TRACE_ID, SPAN_ID));
-        Assert.assertEquals(TRACE_ID, MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
-        Assert.assertEquals(SPAN_ID, MDC.get(LogContext.MOSAIC_SPAN_ID_KEY));
+        Assert.assertEquals(TRACE_ID, ThreadContext.get(LogContext.TRACE_ID_KEY));
+        Assert.assertEquals(SPAN_ID, ThreadContext.get(LogContext.SPAN_ID_KEY));
 
         scope.close();
-        Assert.assertNull(MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
-        Assert.assertNull(MDC.get(LogContext.MOSAIC_SPAN_ID_KEY));
+        Assert.assertNull(ThreadContext.get(LogContext.TRACE_ID_KEY));
+        Assert.assertNull(ThreadContext.get(LogContext.SPAN_ID_KEY));
     }
 
     @Test
     public void leavesMdcUnsetWhenNoActiveSpan() {
         Scope scope = wrapper.attach(Context.root());
-        Assert.assertNull(MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
-        Assert.assertNull(MDC.get(LogContext.MOSAIC_SPAN_ID_KEY));
+        Assert.assertNull(ThreadContext.get(LogContext.TRACE_ID_KEY));
+        Assert.assertNull(ThreadContext.get(LogContext.SPAN_ID_KEY));
         scope.close();
     }
 
@@ -85,12 +85,12 @@ public class TraceContextMdcWrapperTest {
     public void restoresOuterSpanWhenNestedScopeCloses() {
         Scope outer = wrapper.attach(contextWithSpan(TRACE_ID, SPAN_ID));
         Scope inner = wrapper.attach(contextWithSpan(OTHER_TRACE_ID, OTHER_SPAN_ID));
-        Assert.assertEquals(OTHER_TRACE_ID, MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
+        Assert.assertEquals(OTHER_TRACE_ID, ThreadContext.get(LogContext.TRACE_ID_KEY));
 
         inner.close();
-        Assert.assertEquals(TRACE_ID, MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
+        Assert.assertEquals(TRACE_ID, ThreadContext.get(LogContext.TRACE_ID_KEY));
 
         outer.close();
-        Assert.assertNull(MDC.get(LogContext.MOSAIC_TRACE_ID_KEY));
+        Assert.assertNull(ThreadContext.get(LogContext.TRACE_ID_KEY));
     }
 }

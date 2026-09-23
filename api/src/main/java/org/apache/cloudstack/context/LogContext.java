@@ -16,11 +16,16 @@
 // under the License.
 package org.apache.cloudstack.context;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -54,9 +59,43 @@ public class LogContext {
     private long userId;
     private final Map<String, String> context = new HashMap<String, String>();
 
-    public final static String X_B3_TRACEID_KEY = "traceid";
-    public final static String MOSAIC_TRACE_ID_KEY = "mosaic_trace_id";
-    public final static String MOSAIC_SPAN_ID_KEY = "mosaic_span_id";
+    public final static String TRACEID_KEY = "traceid";
+
+    /**
+     * MDC keys under which the active OpenTelemetry ids are published. The names are
+     * deployment specific, so they are read from server.properties and fall back to a
+     * neutral default when the property is absent or blank.
+     */
+    public final static String TRACE_ID_KEY_PROPERTY = "otel.trace.id.mdc.key";
+    public final static String SPAN_ID_KEY_PROPERTY = "otel.span.id.mdc.key";
+
+    public final static String DEFAULT_TRACE_ID_KEY = "otel_trace_id";
+    public final static String DEFAULT_SPAN_ID_KEY = "otel_span_id";
+
+    private final static Properties SERVER_PROPERTIES = loadServerProperties();
+
+    public final static String TRACE_ID_KEY = traceKeyFromProperties();
+    public final static String SPAN_ID_KEY = spanKeyFromProperties();
+
+    private static Properties loadServerProperties() {
+        try {
+            File file = PropertiesUtil.findConfigFile("server.properties");
+            return file == null ? new Properties() : PropertiesUtil.loadFromFile(file);
+        } catch (IOException e) {
+            LOGGER.warn("Could not read server.properties, using the default MDC key names", e);
+            return new Properties();
+        }
+    }
+
+    private static String traceKeyFromProperties() {
+        String value = SERVER_PROPERTIES.getProperty(TRACE_ID_KEY_PROPERTY);
+        return StringUtils.isBlank(value) ? DEFAULT_TRACE_ID_KEY : value.trim();
+    }
+
+    private static String spanKeyFromProperties() {
+        String value = SERVER_PROPERTIES.getProperty(SPAN_ID_KEY_PROPERTY);
+        return StringUtils.isBlank(value) ? DEFAULT_SPAN_ID_KEY : value.trim();
+    }
 
     static EntityManager s_entityMgr;
 
@@ -83,12 +122,17 @@ public class LogContext {
 
     public void putContextParameter(String key, String value) {
         context.put(key, value);
-        MDC.put(key, value);
+        ThreadContext.put(key, value);
+        if (value == null) {
+            ThreadContext.remove(key);
+        } else {
+            ThreadContext.put(key, value);
+        }
     }
 
     public void removeContextParameter(String key) {
         context.remove(key);
-        MDC.remove(key);
+        ThreadContext.remove(key);
     }
 
     public void removeContextParameters() {

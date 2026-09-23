@@ -36,9 +36,13 @@ import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.command.ReconcileAnswer;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.trace.TracingLabels;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -409,7 +413,9 @@ public abstract class AgentAttache {
         }
     }
 
+    @WithSpan(kind = SpanKind.CLIENT)
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
+        setSpanAttributes(req);
         SynchronousListener sl = new SynchronousListener(null);
 
         long seq = req.getSequence();
@@ -475,6 +481,20 @@ public abstract class AgentAttache {
         } finally {
             unregisterListener(seq);
         }
+    }
+
+    private void setSpanAttributes(final Request req) {
+        final Command[] spanCmds = req.getCommands();
+        final String commandName = (spanCmds != null && spanCmds.length > 0 && spanCmds[0] != null)
+                ? spanCmds[0].getClass().getSimpleName()
+                : "UNKNOWN";
+
+        final Span span = Span.current();
+        span.updateName("agent.out." + commandName);
+        span.setAttribute(TracingLabels.TRAFFIC, TracingLabels.TRAFFIC_HYPERVISOR);
+        span.setAttribute(TracingLabels.AGENT_COMMAND, commandName);
+        span.setAttribute(TracingLabels.HOST_ID, _id);
+        span.setAttribute(TracingLabels.AGENT_CALL, true);
     }
 
     private Answer[] waitForAnswerOfReconcileCommand(SynchronousListener sl, final long seq, final Command command, final int wait) {

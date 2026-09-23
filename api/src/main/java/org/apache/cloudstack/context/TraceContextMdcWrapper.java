@@ -16,18 +16,19 @@
 // under the License.
 package org.apache.cloudstack.context;
 
-import org.apache.log4j.MDC;
-
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.Scope;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Mirrors the active OpenTelemetry span onto the Log4j MDC so management-server log
- * lines carry mosaic_trace_id and mosaic_span_id on every thread that has an active
+ * lines carry trace and span ids on every thread that has an active
  * span (API requests, agent-command dispatch, async jobs), not just the servlet path.
+ * The MDC key names come from {@link LogContext#TRACE_ID_KEY} and
+ * {@link LogContext#SPAN_ID_KEY}, which are environment driven.
  *
  * The OpenTelemetry agent populates the log MDC automatically for Log4j2 and Logback,
  * but not for Log4j 1.2 (reload4j), which the management server uses. This wrapper
@@ -53,29 +54,29 @@ public class TraceContextMdcWrapper implements ContextStorage {
 
     @Override
     public Scope attach(Context toAttach) {
-        Object previousTraceId = MDC.get(LogContext.MOSAIC_TRACE_ID_KEY);
-        Object previousSpanId = MDC.get(LogContext.MOSAIC_SPAN_ID_KEY);
+        String previousTraceId = ThreadContext.get(LogContext.TRACE_ID_KEY);
+        String previousSpanId = ThreadContext.get(LogContext.SPAN_ID_KEY);
         SpanContext spanContext = Span.fromContext(toAttach).getSpanContext();
         if (spanContext.isValid()) {
-            MDC.put(LogContext.MOSAIC_TRACE_ID_KEY, spanContext.getTraceId());
-            MDC.put(LogContext.MOSAIC_SPAN_ID_KEY, spanContext.getSpanId());
+            ThreadContext.put(LogContext.TRACE_ID_KEY, spanContext.getTraceId());
+            ThreadContext.put(LogContext.SPAN_ID_KEY, spanContext.getSpanId());
         } else {
-            MDC.remove(LogContext.MOSAIC_TRACE_ID_KEY);
-            MDC.remove(LogContext.MOSAIC_SPAN_ID_KEY);
+            ThreadContext.remove(LogContext.TRACE_ID_KEY);
+            ThreadContext.remove(LogContext.SPAN_ID_KEY);
         }
         Scope delegateScope = delegate.attach(toAttach);
         return () -> {
             delegateScope.close();
-            restore(LogContext.MOSAIC_TRACE_ID_KEY, previousTraceId);
-            restore(LogContext.MOSAIC_SPAN_ID_KEY, previousSpanId);
+            restore(LogContext.TRACE_ID_KEY, previousTraceId);
+            restore(LogContext.SPAN_ID_KEY, previousSpanId);
         };
     }
 
-    private static void restore(String key, Object previous) {
+    private static void restore(String key, String previous) {
         if (previous != null) {
-            MDC.put(key, previous);
+            ThreadContext.put(key, previous);
         } else {
-            MDC.remove(key);
+            ThreadContext.remove(key);
         }
     }
 
