@@ -822,6 +822,11 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
+    // Resource alert rules
+    public static final String EVENT_RESOURCE_ALERT_RULE_CREATE = "RESOURCE.ALERT.RULE.CREATE";
+    public static final String EVENT_RESOURCE_ALERT_RULE_UPDATE = "RESOURCE.ALERT.RULE.UPDATE";
+    public static final String EVENT_RESOURCE_ALERT_RULE_DELETE = "RESOURCE.ALERT.RULE.DELETE";
+
     // Routing
     public static final String EVENT_ZONE_IP4_SUBNET_CREATE = "ZONE.IP4.SUBNET.CREATE";
     public static final String EVENT_ZONE_IP4_SUBNET_UPDATE = "ZONE.IP4.SUBNET.UPDATE";

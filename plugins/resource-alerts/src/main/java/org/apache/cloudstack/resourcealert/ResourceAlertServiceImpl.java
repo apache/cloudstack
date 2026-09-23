@@ -51,6 +51,8 @@ import org.apache.commons.lang3.EnumUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.dao.HostDao;
@@ -91,6 +93,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     PrimaryDataStoreDao storagePoolDao;
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ALERT_RULE_CREATE, eventDescription = "creating resource alert rule")
     public ResourceAlertRuleResponse createResourceAlertRule(CreateResourceAlertRuleCmd cmd) {
         ResourceAlertRule.ResourceType resourceType = parseResourceType(cmd.getResourceType());
         AlertCondition condition = parseCondition(cmd.getCondition());
@@ -126,6 +129,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
         List<Long> webhookIds = resolveWebhookIds(owner, cmd.getWebhookIds());
         ruleDao.persist(rule);
+        CallContext.current().setEventResourceId(rule.getId());
+        CallContext.current().setEventDetails("Rule: " + rule.getName());
         if (!webhookIds.isEmpty()) {
             ruleWebhookDao.replaceWebhooksForRule(rule.getId(), webhookIds);
         }
@@ -170,6 +175,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ALERT_RULE_UPDATE, eventDescription = "updating resource alert rule")
     public ResourceAlertRuleResponse updateResourceAlertRule(UpdateResourceAlertRuleCmd cmd) {
         ResourceAlertRuleVO rule = findRuleForCaller(cmd.getId());
         checkEmailAccess(CallContext.current().getCallingAccount(), Boolean.TRUE.equals(cmd.getEmail()));
@@ -194,6 +200,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ALERT_RULE_DELETE, eventDescription = "deleting resource alert rule")
     public boolean deleteResourceAlertRule(DeleteResourceAlertRuleCmd cmd) {
         findRuleForCaller(cmd.getId());
         return ruleDao.remove(cmd.getId());
@@ -414,6 +421,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             throw new InvalidParameterValueException("Alert rule not found");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, rule);
+        CallContext.current().setEventResourceId(rule.getId());
+        CallContext.current().setEventDetails("Rule: " + rule.getName());
         return rule;
     }
 
