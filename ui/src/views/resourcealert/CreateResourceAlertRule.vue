@@ -79,6 +79,18 @@
         <a-input-number v-model:value="form.resetinterval" :min="0" style="width: 100%" />
       </a-form-item>
 
+      <a-form-item name="webhookids" ref="webhookids" v-if="'listWebhooks' in $store.getters.apis">
+        <template #label>{{ $t('label.webhooks') }}</template>
+        <a-select
+          v-model:value="form.webhookids"
+          mode="multiple"
+          :loading="webhooksLoading"
+          optionFilterProp="label"
+          :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0">
+          <a-select-option v-for="wh in webhooks" :key="wh.id" :value="wh.id" :label="wh.name">{{ wh.name }}</a-select-option>
+        </a-select>
+      </a-form-item>
+
       <div :span="24" class="action-button">
         <a-button @click="() => { this.$emit('close-action') }">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" ref="submit" :loading="loading" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -88,7 +100,7 @@
 </template>
 
 <script>
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 const METRICS_BY_TYPE = {
   VirtualMachine: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
@@ -102,6 +114,8 @@ export default {
   data () {
     return {
       loading: false,
+      webhooks: [],
+      webhooksLoading: false,
       form: {
         name: '',
         resourcetype: undefined,
@@ -111,7 +125,8 @@ export default {
         severity: undefined,
         message: '',
         email: false,
-        resetinterval: undefined
+        resetinterval: undefined,
+        webhookids: []
       },
       rules: {
         name: [{ required: true, message: this.$t('label.required') }],
@@ -167,7 +182,19 @@ export default {
       return METRICS_BY_TYPE[this.form.resourcetype] || []
     }
   },
+  created () {
+    this.fetchWebhooks()
+  },
   methods: {
+    fetchWebhooks () {
+      if (!('listWebhooks' in this.$store.getters.apis)) return
+      this.webhooksLoading = true
+      getAPI('listWebhooks', { listall: true }).then(json => {
+        this.webhooks = json?.listwebhooksresponse?.webhook || []
+      }).finally(() => {
+        this.webhooksLoading = false
+      })
+    },
     onResourceTypeChange () {
       this.form.metric = undefined
     },
@@ -184,6 +211,7 @@ export default {
         if (this.isRootAdmin) params.email = this.form.email
         if (this.form.message) params.message = this.form.message
         if (this.form.resetinterval) params.resetinterval = this.form.resetinterval
+        if (this.form.webhookids.length > 0) params.webhookids = this.form.webhookids.join(',')
         this.loading = true
         postAPI('createResourceAlertRule', params).then(() => {
           this.$emit('close-action')
