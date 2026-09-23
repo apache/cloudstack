@@ -624,4 +624,49 @@ public class ResourceAlertManagerImplTest {
         verify(alertDao).persist(any());
         verify(manager, never()).getWebhookHelper();
     }
+
+    private ResourceAlertRuleVO hostRule(String metric, double threshold) {
+        return new ResourceAlertRuleVO("host", ResourceAlertRule.ResourceType.Host,
+                HOST_ID, 1L, 1L, metric, AlertCondition.GT, threshold,
+                AlertSeverity.HIGH, null, false, 600);
+    }
+
+    @Test
+    public void testHostLoadAverageRuleFires() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(hostRule("LOAD_AVERAGE", 4.0)));
+        HostStats stats = mock(HostStats.class);
+        when(stats.getLoadAverage()).thenReturn(6.5);
+        when(statsCollector.getHostStats(HOST_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(6.5, alertCaptor.getValue().getMetricValue(), 0.001);
+    }
+
+    @Test
+    public void testHostNetworkReadRuleUsesHostStats() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(hostRule("NETWORK_READ_KBPS", 1000.0)));
+        HostStats stats = mock(HostStats.class);
+        when(stats.getNetworkReadKBs()).thenReturn(2500.0);
+        when(statsCollector.getHostStats(HOST_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(2500.0, alertCaptor.getValue().getMetricValue(), 0.001);
+        verify(statsCollector, never()).getVmStats(anyLong(), any(Boolean.class));
+    }
+
+    @Test
+    public void testHostNetworkWriteRuleDoesNotFireBelowThreshold() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(hostRule("NETWORK_WRITE_KBPS", 1000.0)));
+        HostStats stats = mock(HostStats.class);
+        when(stats.getNetworkWriteKBs()).thenReturn(10.0);
+        when(statsCollector.getHostStats(HOST_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
 }

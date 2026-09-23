@@ -29,8 +29,9 @@ public enum ResourceAlertMetric {
     DISK_READ_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Volume),
     DISK_WRITE_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Volume),
     STORAGE_UTILIZATION(ResourceAlertRule.ResourceType.StoragePool),
-    NETWORK_READ_KBPS(ResourceAlertRule.ResourceType.VirtualMachine),
-    NETWORK_WRITE_KBPS(ResourceAlertRule.ResourceType.VirtualMachine);
+    NETWORK_READ_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
+    NETWORK_WRITE_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
+    LOAD_AVERAGE(ResourceAlertRule.ResourceType.Host);
 
     private final Set<ResourceAlertRule.ResourceType> applicableTypes;
 
