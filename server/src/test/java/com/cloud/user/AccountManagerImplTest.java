@@ -75,6 +75,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 
 public class AccountManagerImplTest extends AccountManagentImplTestBase {
@@ -1730,5 +1731,48 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
 
         accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void deleteUserAccountDoesNotExpungeAnInstanceStillOnItsHost() throws Exception {
+        AccountVO account = new AccountVO();
+        account.setId(42L);
+        DomainVO domain = new DomainVO();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(7L);
+        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(_accountDao.findById(42L)).thenReturn(account);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
+        Mockito.when(_accountDao.remove(42L)).thenReturn(true);
+        Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(account)).thenReturn(true);
+        Mockito.when(_userVmDao.listByAccountId(42L)).thenReturn(Arrays.asList(vm));
+        Mockito.when(_vmMgr.destroyVm(7L, false)).thenThrow(new CloudRuntimeException("host is Disconnected"));
+        Mockito.doReturn(true).when(accountManagerImpl).isStillOnItsHost(7L);
+        Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
+        Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
+        Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
+
+        Assert.assertTrue(accountManagerImpl.deleteUserAccount(42L));
+
+        Mockito.verify(_vmMgr, Mockito.never()).expunge(vm);
+        Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(Mockito.eq(42L));
+    }
+
+    @Test
+    public void isStillOnItsHostOnlyForAnInstanceWithAHostThatIsNotStopped() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(_userVmDao.findById(7L)).thenReturn(vm);
+        Mockito.when(vm.getHostId()).thenReturn(3L);
+        for (VirtualMachine.State state : VirtualMachine.State.values()) {
+            Mockito.when(vm.getState()).thenReturn(state);
+            boolean stopped = state == VirtualMachine.State.Stopped || state == VirtualMachine.State.Destroyed
+                    || state == VirtualMachine.State.Expunging || state == VirtualMachine.State.Error;
+            Assert.assertEquals(state.toString(), !stopped, accountManagerImpl.isStillOnItsHost(7L));
+        }
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Assert.assertFalse(accountManagerImpl.isStillOnItsHost(7L));
+        Mockito.when(_userVmDao.findById(7L)).thenReturn(null);
+        Assert.assertFalse(accountManagerImpl.isStillOnItsHost(7L));
     }
 }
