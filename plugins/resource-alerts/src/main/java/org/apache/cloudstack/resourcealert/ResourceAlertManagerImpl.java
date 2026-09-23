@@ -60,7 +60,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -286,6 +288,10 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 VmStats s = statsCollector.getVmStats(resourceId, false);
                 return s != null ? s.getNetworkWriteKBs() : null;
             }
+            case VOLUME_SIZE_GB: {
+                VolumeStats s = getVolumeStats(resourceId);
+                return s != null ? s.getPhysicalSize() / (1024.0 * 1024.0 * 1024.0) : null;
+            }
             case LOAD_AVERAGE: {
                 HostStats s = statsCollector.getHostStats(resourceId);
                 return s != null ? s.getLoadAverage() : null;
@@ -299,6 +305,14 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 break;
         }
         return null;
+    }
+
+    // Stats are keyed by path, except OVA volumes which are keyed by chain info.
+    private VolumeStats getVolumeStats(long volumeId) {
+        VolumeVO vol = volumeDao.findById(volumeId);
+        if (vol == null) return null;
+        String locator = Storage.ImageFormat.OVA.equals(vol.getFormat()) ? vol.getChainInfo() : vol.getPath();
+        return locator != null ? statsCollector.getVolumeStats(locator) : null;
     }
 
     // For volume rules, resolve the attached VM and use its aggregate disk stats.

@@ -63,7 +63,10 @@ import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.VolumeStats;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.vm.UserVmVO;
@@ -667,6 +670,45 @@ public class ResourceAlertManagerImplTest {
 
         manager.evaluateRules();
 
+        verify(alertDao, never()).persist(any());
+    }
+
+    private static final long VOLUME_ID = 401L;
+
+    private ResourceAlertRuleVO volumeSizeRule(double thresholdGb) {
+        return new ResourceAlertRuleVO("vol", ResourceAlertRule.ResourceType.Volume,
+                VOLUME_ID, 1L, 1L, "VOLUME_SIZE_GB", AlertCondition.GT, thresholdGb,
+                AlertSeverity.MEDIUM, null, false, 600);
+    }
+
+    @Test
+    public void testVolumeSizeRuleUsesPhysicalSizeByPath() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
+        VolumeVO vol = mock(VolumeVO.class);
+        when(vol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(vol.getPath()).thenReturn("vol-path");
+        when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
+        VolumeStats stats = mock(VolumeStats.class);
+        when(stats.getPhysicalSize()).thenReturn(20L * 1024 * 1024 * 1024);
+        when(statsCollector.getVolumeStats("vol-path")).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(20.0, alertCaptor.getValue().getMetricValue(), 0.001);
+    }
+
+    @Test
+    public void testVolumeSizeRuleUsesChainInfoForOva() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
+        VolumeVO vol = mock(VolumeVO.class);
+        when(vol.getFormat()).thenReturn(Storage.ImageFormat.OVA);
+        when(vol.getChainInfo()).thenReturn("chain-info");
+        when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
+
+        manager.evaluateRules();
+
+        verify(statsCollector).getVolumeStats("chain-info");
         verify(alertDao, never()).persist(any());
     }
 }
