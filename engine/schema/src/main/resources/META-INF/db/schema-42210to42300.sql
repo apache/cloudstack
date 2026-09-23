@@ -694,3 +694,14 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_alerts` (
     INDEX `i_resource_alerts__alert_timestamp`(`alert_timestamp`),
     CONSTRAINT `fk_resource_alerts__alert_rule_id` FOREIGN KEY (`alert_rule_id`) REFERENCES `resource_alert_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- resource_alert_rules_webhook: webhooks a rule delivers its alerts to
+CREATE TABLE IF NOT EXISTS `cloud`.`resource_alert_rules_webhook` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `resource_alert_rule_id` bigint unsigned NOT NULL,
+    `webhook_id` bigint unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_resource_alert_rules_webhook__rule_webhook`(`resource_alert_rule_id`, `webhook_id`),
+    CONSTRAINT `fk_resource_alert_rules_webhook__rule_id` FOREIGN KEY (`resource_alert_rule_id`) REFERENCES `resource_alert_rules`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_resource_alert_rules_webhook__webhook_id` FOREIGN KEY (`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
