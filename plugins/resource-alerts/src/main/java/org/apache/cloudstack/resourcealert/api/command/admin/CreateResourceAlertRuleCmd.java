@@ -52,9 +52,9 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
             description = "type of resource to monitor: VirtualMachine, Volume, Host, StoragePool")
     private String resourceType;
 
-    @Parameter(name = "resourceid", type = CommandType.LONG,
-            description = "ID of the specific resource to monitor; omit for a generic rule covering all resources of this type")
-    private Long resourceId;
+    @Parameter(name = "resourceid", type = CommandType.STRING,
+            description = "UUID of the specific resource to monitor; omit for a generic rule covering all resources of this type")
+    private String resourceId;
 
     @Parameter(name = "metric", type = CommandType.STRING, required = true,
             description = "metric to monitor (e.g. CPU_UTILIZATION, MEMORY_UTILIZATION)")
@@ -95,7 +95,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
 
     public String getName() { return name; }
     public String getResourceType() { return resourceType; }
-    public Long getResourceId() { return resourceId; }
+    public String getResourceId() { return resourceId; }
     public String getMetric() { return metric; }
     public String getCondition() { return condition; }
     public Double getThreshold() { return threshold; }

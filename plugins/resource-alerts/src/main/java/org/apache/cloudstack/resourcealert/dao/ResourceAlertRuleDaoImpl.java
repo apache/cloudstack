@@ -18,6 +18,7 @@
 package org.apache.cloudstack.resourcealert.dao;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.resourcealert.ResourceAlertRule;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
@@ -33,6 +34,7 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeAndIdSearch;
     private final SearchBuilder<ResourceAlertRuleVO> activeByAccountSearch;
     private final SearchBuilder<ResourceAlertRuleVO> specificRuleSearch;
+    private final SearchBuilder<ResourceAlertRuleVO> resourceTypeSearch;
 
     public ResourceAlertRuleDaoImpl() {
         activeSearch = createSearchBuilder();
@@ -59,6 +61,10 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         specificRuleSearch.and("resourceId", specificRuleSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         specificRuleSearch.and("removed", specificRuleSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         specificRuleSearch.done();
+
+        resourceTypeSearch = createSearchBuilder();
+        resourceTypeSearch.and("resourceType", resourceTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        resourceTypeSearch.done();
     }
 
     @Override
@@ -109,5 +115,12 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         sc.setParameters("metric", metric);
         sc.setParameters("resourceId", resourceId);
         return getCount(sc) > 0;
+    }
+
+    @Override
+    public List<Long> listIdsByResourceType(ResourceAlertRule.ResourceType resourceType) {
+        SearchCriteria<ResourceAlertRuleVO> sc = resourceTypeSearch.create();
+        sc.setParameters("resourceType", resourceType);
+        return listIncludingRemovedBy(sc).stream().map(ResourceAlertRuleVO::getId).collect(Collectors.toList());
     }
 }
