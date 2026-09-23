@@ -53,6 +53,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -62,10 +63,14 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.UserVmVO;
@@ -100,6 +105,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject StatsCollector statsCollector;
     @Inject ConfigurationDao configDao;
     @Inject ResourceTagDao resourceTagDao;
+    @Inject AccountDao accountDao;
+    @Inject DomainDao domainDao;
 
     private ScheduledExecutorService executor;
     ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
@@ -210,15 +217,16 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             return Collections.singletonList(rule.getResourceId());
         }
         switch (rule.getResourceType()) {
-            case VirtualMachine:
-                return userVmDao.listByAccountId(rule.getAccountId()).stream()
-                        .filter(vm -> VirtualMachine.State.Running.equals(vm.getState()))
-                        .map(vm -> vm.getId())
-                        .collect(Collectors.toList());
-            case Volume:
-                return volumeDao.findByAccount(rule.getAccountId()).stream()
-                        .map(v -> v.getId())
-                        .collect(Collectors.toList());
+            case VirtualMachine: {
+                Pair<Long, List<Long>> scope = getGenericRuleScope(rule);
+                return scope == null ? Collections.emptyList() : userVmDao.listIdsByAccountOrDomainsAndState(
+                        scope.first(), scope.second(), VirtualMachine.State.Running);
+            }
+            case Volume: {
+                Pair<Long, List<Long>> scope = getGenericRuleScope(rule);
+                return scope == null ? Collections.emptyList() : volumeDao.listIdsByAccountOrDomainsAndState(
+                        scope.first(), scope.second(), Volume.State.Ready);
+            }
             case Host:
                 return hostDao.listAll().stream()
                         .filter(h -> Host.Type.Routing.equals(h.getType()))
@@ -231,6 +239,21 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             default:
                 return Collections.emptyList();
         }
+    }
+
+    // Root admin rules cover the whole cloud, domain admin rules their domain tree, other rules their own account.
+    Pair<Long, List<Long>> getGenericRuleScope(ResourceAlertRule rule) {
+        Account owner = accountDao.findById(rule.getAccountId());
+        if (owner == null) {
+            return null;
+        }
+        if (Account.Type.ADMIN.equals(owner.getType())) {
+            return new Pair<>(null, null);
+        }
+        if (Account.Type.DOMAIN_ADMIN.equals(owner.getType()) || Account.Type.RESOURCE_DOMAIN_ADMIN.equals(owner.getType())) {
+            return new Pair<>(null, domainDao.getDomainAndChildrenIds(owner.getDomainId()));
+        }
+        return new Pair<>(owner.getId(), null);
     }
 
     private Double getMetricValue(ResourceAlertRule.ResourceType type, ResourceAlertMetric metric, long resourceId) {
