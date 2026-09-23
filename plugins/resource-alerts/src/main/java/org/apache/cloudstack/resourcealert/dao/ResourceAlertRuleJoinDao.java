@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.resourcealert.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
 
 import com.cloud.utils.db.GenericDao;
@@ -26,10 +24,4 @@ import com.cloud.utils.db.GenericDao;
 public interface ResourceAlertRuleJoinDao extends GenericDao<ResourceAlertRuleJoinVO, Long> {
 
     ResourceAlertRuleJoinVO findByUuid(String uuid);
-
-    List<ResourceAlertRuleJoinVO> searchByFilters(Long id, String name, String resourceType, Long resourceId,
-            String accountName, Long domainId, Long offset, Long limit);
-
-    int countByFilters(Long id, String name, String resourceType, Long resourceId,
-            String accountName, Long domainId);
 }

@@ -69,7 +69,7 @@
         <a-input v-model:value="form.message" />
       </a-form-item>
 
-      <a-form-item name="email" ref="email">
+      <a-form-item name="email" ref="email" v-if="isRootAdmin">
         <template #label>{{ $t('label.email') }}</template>
         <a-switch v-model:checked="form.email" />
       </a-form-item>
@@ -121,7 +121,7 @@ export default {
         threshold: [{ required: true, message: this.$t('label.required') }],
         severity: [{ required: true, message: this.$t('label.required') }]
       },
-      resourceTypes: ['VirtualMachine', 'Host', 'Volume', 'StoragePool'],
+
       conditions: ['GT', 'GTE', 'LT', 'LTE', 'EQ'],
       severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
       resourceTypeLabels: {
@@ -157,6 +157,12 @@ export default {
     }
   },
   computed: {
+    isRootAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    },
+    resourceTypes () {
+      return this.isRootAdmin ? ['VirtualMachine', 'Host', 'Volume', 'StoragePool'] : ['VirtualMachine', 'Volume']
+    },
     availableMetrics () {
       return METRICS_BY_TYPE[this.form.resourcetype] || []
     }
@@ -173,9 +179,9 @@ export default {
           metric: this.form.metric,
           condition: this.form.condition,
           threshold: this.form.threshold,
-          severity: this.form.severity,
-          email: this.form.email
+          severity: this.form.severity
         }
+        if (this.isRootAdmin) params.email = this.form.email
         if (this.form.message) params.message = this.form.message
         if (this.form.resetinterval) params.resetinterval = this.form.resetinterval
         this.loading = true

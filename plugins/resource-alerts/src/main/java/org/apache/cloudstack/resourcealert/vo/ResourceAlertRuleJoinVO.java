@@ -28,6 +28,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.resourcealert.AlertCondition;
 import org.apache.cloudstack.resourcealert.AlertSeverity;
 import org.apache.cloudstack.resourcealert.ResourceAlertRule;
@@ -36,7 +37,7 @@ import com.cloud.user.Account;
 
 @Entity
 @Table(name = "resource_alert_rule_view")
-public class ResourceAlertRuleJoinVO {
+public class ResourceAlertRuleJoinVO implements ControlledEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -138,4 +139,9 @@ public class ResourceAlertRuleJoinVO {
     public String getDomainUuid() { return domainUuid; }
     public String getDomainName() { return domainName; }
     public String getDomainPath() { return domainPath; }
+
+    @Override
+    public Class<?> getEntityType() {
+        return ResourceAlertRule.class;
+    }
 }

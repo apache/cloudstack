@@ -22,7 +22,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -34,9 +34,9 @@ import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleRespons
         description = "Lists resource alert rules",
         responseObject = ResourceAlertRuleResponse.class,
         entityType = {ResourceAlertRule.class},
-        authorized = {RoleType.Admin},
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.23.0")
-public class ListResourceAlertRulesCmd extends BaseListCmd {
+public class ListResourceAlertRulesCmd extends BaseListAccountResourcesCmd {
 
     @Inject
     ResourceAlertService resourceAlertService;
@@ -58,21 +58,10 @@ public class ListResourceAlertRulesCmd extends BaseListCmd {
             description = "filter by rule name")
     private String name;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "filter by account name")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID,
-            entityType = org.apache.cloudstack.api.response.DomainResponse.class,
-            description = "filter by domain")
-    private Long domainId;
-
     public Long getId() { return id; }
     public String getResourceType() { return resourceType; }
     public String getResourceId() { return resourceId; }
     public String getRuleName() { return name; }
-    public String getAccountName() { return accountName; }
-    public Long getDomainId() { return domainId; }
 
     @Override
     public void execute() throws ServerApiException {

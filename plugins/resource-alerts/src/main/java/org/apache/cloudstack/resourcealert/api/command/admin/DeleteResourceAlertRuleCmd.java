@@ -38,7 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Deletes a resource alert rule",
         responseObject = SuccessResponse.class,
         entityType = {ResourceAlertRule.class},
-        authorized = {RoleType.Admin},
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.23.0")
 public class DeleteResourceAlertRuleCmd extends BaseCmd {
 
