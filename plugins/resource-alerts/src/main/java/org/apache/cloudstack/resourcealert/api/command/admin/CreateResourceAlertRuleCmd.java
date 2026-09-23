@@ -40,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseObject = ResourceAlertRuleResponse.class,
         entityType = {ResourceAlertRule.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        since = "4.23.0")
+        since = "24.0.0")
 public class CreateResourceAlertRuleCmd extends BaseCmd {
 
     @Inject
