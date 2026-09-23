@@ -100,6 +100,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         AlertSeverity severity = parseSeverity(cmd.getSeverity());
         ResourceAlertMetric metric = parseMetric(cmd.getMetric(), resourceType);
 
+        validateThreshold(metric, cmd.getThreshold());
+        validateResetInterval(cmd.getResetInterval());
         int resetInterval = cmd.getResetInterval() != null ? cmd.getResetInterval() : ResourceAlertManagerImpl.DEFAULT_RESET_INTERVAL.value();
         boolean email = cmd.getEmail() != null && cmd.getEmail();
 
@@ -182,11 +184,17 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
         if (StringUtils.isNotBlank(cmd.getName())) rule.setName(cmd.getName());
         if (StringUtils.isNotBlank(cmd.getCondition())) rule.setCondition(parseCondition(cmd.getCondition()));
-        if (cmd.getThreshold() != null) rule.setThreshold(cmd.getThreshold());
+        if (cmd.getThreshold() != null) {
+            validateThreshold(ResourceAlertMetric.valueOf(rule.getMetric()), cmd.getThreshold());
+            rule.setThreshold(cmd.getThreshold());
+        }
         if (StringUtils.isNotBlank(cmd.getSeverity())) rule.setSeverity(parseSeverity(cmd.getSeverity()));
         if (cmd.getMessage() != null) rule.setMessage(cmd.getMessage());
         if (cmd.getEmail() != null) rule.setEmail(cmd.getEmail());
-        if (cmd.getResetInterval() != null) rule.setResetInterval(cmd.getResetInterval());
+        if (cmd.getResetInterval() != null) {
+            validateResetInterval(cmd.getResetInterval());
+            rule.setResetInterval(cmd.getResetInterval());
+        }
         rule.setUpdated(new Date());
 
         if (cmd.isCleanupWebhooks()) {
@@ -399,6 +407,21 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             return new ArrayList<>();
         }
         return ids.stream().map(webhookHelper::getWebhookUuid).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    private void validateThreshold(ResourceAlertMetric metric, Double threshold) {
+        if (threshold == null || threshold < 0) {
+            throw new InvalidParameterValueException("threshold must be zero or more");
+        }
+        if (metric.isPercentage() && threshold > 100) {
+            throw new InvalidParameterValueException("threshold for " + metric.name() + " is a percentage and must be 100 or less");
+        }
+    }
+
+    private void validateResetInterval(Integer resetInterval) {
+        if (resetInterval != null && resetInterval < 0) {
+            throw new InvalidParameterValueException("resetinterval must be zero or more");
+        }
     }
 
     private void checkInfrastructureAccess(Account caller, ResourceAlertRule.ResourceType resourceType) {

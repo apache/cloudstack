@@ -391,6 +391,8 @@ public class ResourceAlertServiceImplTest {
         UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
         when(cmd.getId()).thenReturn(1L);
         when(cmd.isCleanupWebhooks()).thenReturn(true);
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
         ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
         when(rule.getId()).thenReturn(1L);
         when(ruleDao.findById(1L)).thenReturn(rule);
@@ -414,5 +416,53 @@ public class ResourceAlertServiceImplTest {
 
         assertEquals(Integer.valueOf(57), response.getCount());
         assertEquals(1, response.getResponses().size());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnPercentageThresholdAbove100() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getThreshold()).thenReturn(150.0);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnNegativeThreshold() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getMetric()).thenReturn("NETWORK_READ_KBPS");
+        when(cmd.getThreshold()).thenReturn(-1.0);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateAllowsNonPercentageThresholdAbove100() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getMetric()).thenReturn("NETWORK_READ_KBPS");
+        when(cmd.getThreshold()).thenReturn(5000.0);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(ruleDao).persist(any(ResourceAlertRuleVO.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnNegativeResetInterval() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResetInterval()).thenReturn(-5);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnPercentageThresholdAbove100() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getThreshold()).thenReturn(101.0);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getMetric()).thenReturn("CPU_UTILIZATION");
+        when(ruleDao.findById(1L)).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
     }
 }

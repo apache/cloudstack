@@ -94,4 +94,13 @@ public class ResourceAlertMetricTest {
         assertFalse(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.Host));
         assertFalse(ResourceAlertMetric.STORAGE_USED_IOPS.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
     }
+
+    @Test
+    public void testPercentageMetrics() {
+        assertTrue(ResourceAlertMetric.CPU_UTILIZATION.isPercentage());
+        assertTrue(ResourceAlertMetric.MEMORY_UTILIZATION.isPercentage());
+        assertTrue(ResourceAlertMetric.STORAGE_UTILIZATION.isPercentage());
+        assertFalse(ResourceAlertMetric.DISK_READ_IOPS.isPercentage());
+        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.isPercentage());
+    }
 }
