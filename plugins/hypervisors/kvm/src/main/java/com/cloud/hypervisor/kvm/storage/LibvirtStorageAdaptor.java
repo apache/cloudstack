@@ -282,16 +282,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return pool.storageVolCreateXML(volDef.toString(), 0);
     }
 
-    public void storagePoolRefresh(StoragePool pool) {
-        try {
-            synchronized (getStoragePool(pool.getUUIDString())) {
-                refreshPool(pool);
-            }
-        } catch (LibvirtException e) {
-            logger.debug("refresh storage pool failed: " + e.toString());
-        }
-    }
-
     private void checkNetfsStoragePoolMounted(String uuid) {
         String targetPath = _mountPoint + File.separator + uuid;
         int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);

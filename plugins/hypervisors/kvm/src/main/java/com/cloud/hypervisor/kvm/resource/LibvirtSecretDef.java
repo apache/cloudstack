@@ -51,10 +51,6 @@ public class LibvirtSecretDef {
         _description = description;
     }
 
-    public boolean getEphemeral() {
-        return _ephemeral;
-    }
-
     public void setEphemeral(boolean ephemeral) { _ephemeral = ephemeral; }
 
     public boolean getPrivate() {
@@ -69,14 +65,6 @@ public class LibvirtSecretDef {
 
     public String getDescription() {
         return _description;
-    }
-
-    public String getVolumeVolume() {
-        return _volumeVolume;
-    }
-
-    public String getCephName() {
-        return _cephName;
     }
 
     public void setVolumeVolume(String volume) {
