@@ -17,7 +17,9 @@
 
 package org.apache.cloudstack.resourcealert;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cloud.domain.DomainVO;
@@ -33,6 +35,7 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -150,5 +153,29 @@ public class ResourceAlertServiceImplTest {
         when(ruleDao.findByUuid("no-such-uuid")).thenReturn(null);
 
         service.listResourceAlerts(cmd);
+    }
+
+    @Test
+    public void testCreateUsesDefaultResetIntervalWhenNotSet() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getName()).thenReturn("cpu-high");
+        when(cmd.getResourceType()).thenReturn("VirtualMachine");
+        when(cmd.getCondition()).thenReturn("GT");
+        when(cmd.getSeverity()).thenReturn("HIGH");
+        when(cmd.getMetric()).thenReturn("CPU_UTILIZATION");
+        when(cmd.getThreshold()).thenReturn(80.0);
+        when(cmd.getResetInterval()).thenReturn(null);
+        when(cmd.getAccountName()).thenReturn("testuser");
+        when(cmd.getDomainId()).thenReturn(1L);
+        when(domainDao.findById(1L)).thenReturn(mock(DomainVO.class));
+        Account account = mock(Account.class);
+        when(account.getId()).thenReturn(42L);
+        when(accountManager.getActiveAccountByName("testuser", 1L)).thenReturn(account);
+
+        service.createResourceAlertRule(cmd);
+
+        ArgumentCaptor<ResourceAlertRuleVO> captor = ArgumentCaptor.forClass(ResourceAlertRuleVO.class);
+        verify(ruleDao).persist(captor.capture());
+        assertEquals(600, captor.getValue().getResetInterval());
     }
 }

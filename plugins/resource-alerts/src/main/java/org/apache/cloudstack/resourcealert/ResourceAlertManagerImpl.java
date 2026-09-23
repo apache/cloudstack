@@ -69,12 +69,16 @@ import com.cloud.vm.dao.UserVmDao;
 public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAlertManager, Configurable {
 
     static final ConfigKey<Integer> EVAL_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
-            "resource.alert.evaluation.interval", "60",
-            "Interval in seconds between resource alert rule evaluations", true);
+            "resourcealert.evaluation.interval", "60",
+            "Interval in seconds between resource alert rule evaluations", false);
 
     public static final ConfigKey<Integer> RULES_PER_ACCOUNT_LIMIT = new ConfigKey<>("Advanced", Integer.class,
-            "resource.alert.rules.per.account", "20",
-            "Maximum number of resource alert rules per account; 0 = unlimited", true);
+            "resourcealert.per.user.limit", "20",
+            "Maximum number of resource alert rules an account can own; 0 = unlimited", true, ConfigKey.Scope.Account);
+
+    public static final ConfigKey<Integer> DEFAULT_RESET_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
+            "resourcealert.repeat.interval.default", "600",
+            "Default minimum seconds between repeat firings of a resource alert rule, used when a rule does not set one", true);
 
     @Inject ResourceAlertRuleDao ruleDao;
     @Inject ResourceAlertDao alertDao;
@@ -401,6 +405,6 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{EVAL_INTERVAL, RULES_PER_ACCOUNT_LIMIT};
+        return new ConfigKey<?>[]{EVAL_INTERVAL, RULES_PER_ACCOUNT_LIMIT, DEFAULT_RESET_INTERVAL};
     }
 }

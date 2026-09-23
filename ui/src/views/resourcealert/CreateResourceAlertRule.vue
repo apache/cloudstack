@@ -111,7 +111,7 @@ export default {
         severity: undefined,
         message: '',
         email: false,
-        resetinterval: 600
+        resetinterval: undefined
       },
       rules: {
         name: [{ required: true, message: this.$t('label.required') }],

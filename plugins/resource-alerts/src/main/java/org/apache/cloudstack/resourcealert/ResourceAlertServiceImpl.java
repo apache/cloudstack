@@ -70,12 +70,12 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         AlertSeverity severity = parseSeverity(cmd.getSeverity());
         ResourceAlertMetric metric = parseMetric(cmd.getMetric(), resourceType);
 
-        int resetInterval = cmd.getResetInterval() != null ? cmd.getResetInterval() : 600;
+        int resetInterval = cmd.getResetInterval() != null ? cmd.getResetInterval() : ResourceAlertManagerImpl.DEFAULT_RESET_INTERVAL.value();
         boolean email = cmd.getEmail() != null && cmd.getEmail();
 
         Account owner = resolveOwner(cmd.getAccountName(), cmd.getDomainId());
 
-        int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.value();
+        int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
         if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
             throw new InvalidParameterValueException(
                     "Account has reached the maximum of " + limit + " resource alert rules");
