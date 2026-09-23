@@ -1082,13 +1082,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 "$1*****$3");
     }
 
-    private boolean isClvmBlockDevice(MigrateCommand.MigrateDiskInfo diskInfo) {
-        if (diskInfo == null ||diskInfo.getDestPoolType() == null) {
-            return false;
-        }
-        return (Storage.StoragePoolType.CLVM.equals(diskInfo.getDestPoolType()) || Storage.StoragePoolType.CLVM_NG.equals(diskInfo.getDestPoolType()));
-    }
-
     /**
      * Determines if the driver type should be updated during migration based on CLVM involvement.
      * The driver type needs to be updated when:

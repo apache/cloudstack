@@ -255,7 +255,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -439,7 +438,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String setupTungstenVrouterPath;
     private String updateTungstenLoadbalancerStatsPath;
     private String updateTungstenLoadbalancerSslPath;
-    private String host;
 
     private String dcId;
     private String clusterId;
@@ -599,7 +597,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean isReconcileCommandsEnabled = false;
 
-    private static Gson gson = new Gson();
 
     /**
      * Virsh command to set the memory balloon stats period.<br><br>
@@ -2747,7 +2744,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
             Pair<Map<String, Integer>, Integer> macAddressToNicNumPair = getMacAddressToNicNumPair(conn, routerName);
             final Map<String, Integer> macAddressToNicNum = macAddressToNicNumPair.first();
-            Integer devNum = macAddressToNicNumPair.second();
 
             final IpAddressTO[] ips = cmd.getIpAddresses();
             for (final IpAddressTO ip : ips) {
@@ -5080,10 +5076,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String executeBashScript(final String script) {
-        return createScript(script).execute();
-    }
-
     private Script createScript(final String script) {
         final Script command = new Script("/bin/bash", timeout, LOGGER);
         command.add("-c");
@@ -5606,7 +5598,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final InterfaceDef intf = intfs.get(nic.getDeviceId());
-        final String brname = intf.getBrName();
         final String vif = intf.getDevName();
 
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);

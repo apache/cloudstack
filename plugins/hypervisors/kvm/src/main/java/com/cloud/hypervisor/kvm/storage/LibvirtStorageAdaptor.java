@@ -85,7 +85,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
-    private String _manageSnapshotPath;
     private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
@@ -106,7 +105,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
         _storageLayer = storage;
-        _manageSnapshotPath = Script.findScript("scripts/storage/qcow2/", "managesnapshot.sh");
     }
 
     @Override
