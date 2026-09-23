@@ -153,7 +153,7 @@ public class KVMHostInfo {
         }
 
         try {
-             command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
             if(isHostS390x()) {
                 command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
             }
