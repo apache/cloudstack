@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -481,7 +482,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Long> VmOpCancelInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.op.cancel.interval", "3600",
             "Time (in seconds) to wait before cancelling a operation", false);
     static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
-            "On destroy, force-stop takes this value ", true);
+            "On destroy, force-stop takes this value. The stop is not forced while the instance's host is Connecting, " +
+                    "Disconnected, Alert or Rebalancing: the destroy fails instead and can be retried once the host is back.", true);
+
+    /**
+     * Host states from which the host may come back with its instances still running. A forced stop releases an
+     * instance's addresses and storage when the host cannot be reached, which is only safe when the host is known to
+     * be gone (Down, Removed, Error) or is Up and answers.
+     */
+    protected static final Set<Status> HOST_STATES_THAT_MAY_RECONNECT = EnumSet.of(Status.Connecting, Status.Disconnected,
+            Status.Alert, Status.Rebalancing);
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60",
             "Cluster Delta sync interval in seconds",
             false);
@@ -693,7 +703,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _userVmDao.saveDetails(userVM);
         }
 
-        advanceStop(vm.getUuid(), VmDestroyForcestop.value());
+        advanceStop(vm.getUuid(), shouldForceStopOnDestroy(vm));
         vm = _vmDao.findByUuid(vm.getUuid());
 
         try {
@@ -2689,6 +2699,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
 
+    /**
+     * vm.destroy.forcestop makes the stop that precedes a destroy a forced one, and a forced stop releases the
+     * instance's NICs, addresses and storage even when the host cannot be reached. That is right for a host that is
+     * gone, and wrong for one that is briefly disconnected, for example while its agent or the management server
+     * restarts: the domain keeps running, its address is handed to another instance and its volume is stranded.
+     *
+     * So the stop is not forced while the host is in a state it may come back from. The stop then fails, the instance
+     * stays Running and the destroy can be retried once the host has reconnected, or is Down and can be forced.
+     */
+    @Override
+    public boolean shouldForceStopOnDestroy(final VirtualMachine vm) {
+        if (!VmDestroyForcestop.value()) {
+            return false;
+        }
+        final Long hostId = vm.getHostId();
+        if (hostId == null) {
+            return true;
+        }
+        final HostVO host = _hostDao.findById(hostId);
+        if (host == null || !HOST_STATES_THAT_MAY_RECONNECT.contains(host.getStatus())) {
+            return true;
+        }
+        logger.warn("Not forcing the stop of {} for destroy: its host {} is {} and may still be running it. "
+                + "The destroy will fail if the host cannot be reached; retry once the host is Up or Down.", vm, host, host.getStatus());
+        return false;
+    }
+
     @Override
     public void destroy(final String vmUuid, final boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -2699,7 +2736,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         logger.debug("Destroying vm {}, expunge flag {}", vm, (expunge ? "on" : "off"));
 
-        advanceStop(vmUuid, VmDestroyForcestop.value());
+        advanceStop(vmUuid, shouldForceStopOnDestroy(vm));
 
         deleteVMSnapshots(vm, expunge);
 
