@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -41,11 +42,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,6 +70,8 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceAlertManagerImplTest {
@@ -76,6 +81,8 @@ public class ResourceAlertManagerImplTest {
 
     @Mock ResourceAlertRuleDao ruleDao;
     @Mock ResourceAlertDao alertDao;
+    @Mock ResourceAlertRuleWebhookDao ruleWebhookDao;
+    @Mock WebhookHelper webhookHelper;
     @Mock UserVmDao userVmDao;
     @Mock HostDao hostDao;
     @Mock PrimaryDataStoreDao storagePoolDao;
@@ -575,5 +582,46 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(manager).publishAlertEvent(eq(0L), anyString(), anyString());
+    }
+
+    private void stubFiringVmCpuRule(ResourceAlertRuleVO rule) {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        VmStats stats = mock(VmStats.class);
+        when(stats.getCPUUtilization()).thenReturn(85.0);
+        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+    }
+
+    @Test
+    public void testFiredAlertIsDeliveredToMappedWebhooks() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        stubFiringVmCpuRule(rule);
+        when(ruleWebhookDao.listWebhookIdsByRule(rule.getId())).thenReturn(Arrays.asList(11L, 12L));
+        doReturn(webhookHelper).when(manager).getWebhookHelper();
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(userVmDao.findByIdIncludingRemoved(VM_ID)).thenReturn(vm);
+
+        manager.evaluateRules();
+
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(webhookHelper).deliverToWebhooks(eq(Arrays.asList(11L, 12L)), eq(1L),
+                eq(ResourceAlertManagerImpl.ALERT_EVENT_TYPE), payloadCaptor.capture());
+        JsonObject payload = JsonParser.parseString(payloadCaptor.getValue()).getAsJsonObject();
+        assertEquals(rule.getUuid(), payload.get("ruleid").getAsString());
+        assertEquals("VirtualMachine", payload.get("resourcetype").getAsString());
+        assertEquals("vm-uuid", payload.get("resourceid").getAsString());
+        assertEquals("CPU_UTILIZATION", payload.get("metric").getAsString());
+        assertEquals(85.0, payload.get("value").getAsDouble(), 0.001);
+        assertEquals("HIGH", payload.get("severity").getAsString());
+    }
+
+    @Test
+    public void testFiredAlertWithoutMappedWebhooksSkipsDelivery() {
+        stubFiringVmCpuRule(vmCpuRule(VM_ID));
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(any());
+        verify(manager, never()).getWebhookHelper();
     }
 }
