@@ -35,7 +35,7 @@ import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleRespons
         responseObject = ResourceAlertRuleResponse.class,
         entityType = {ResourceAlertRule.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        since = "4.23.0")
+        since = "24.0.0")
 public class ListResourceAlertRulesCmd extends BaseListAccountResourcesCmd {
 
     @Inject
