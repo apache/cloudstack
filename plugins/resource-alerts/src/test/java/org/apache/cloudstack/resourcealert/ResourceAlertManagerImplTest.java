@@ -18,6 +18,7 @@
 package org.apache.cloudstack.resourcealert;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -25,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -59,16 +61,22 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
@@ -93,6 +101,8 @@ public class ResourceAlertManagerImplTest {
     @Mock StatsCollector statsCollector;
     @Mock ConfigurationDao configDao;
     @Mock ResourceTagDao resourceTagDao;
+    @Mock AccountDao accountDao;
+    @Mock DomainDao domainDao;
     @Mock SMTPMailSender mailSender;
 
     @Captor ArgumentCaptor<ResourceAlertVO> alertCaptor;
@@ -283,15 +293,9 @@ public class ResourceAlertManagerImplTest {
         ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
 
-        UserVmVO vm1 = mock(UserVmVO.class);
-        when(vm1.getId()).thenReturn(101L);
-        when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
-
-        UserVmVO vm2 = mock(UserVmVO.class);
-        when(vm2.getId()).thenReturn(102L);
-        when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
-
-        when(userVmDao.listByAccountId(1L)).thenReturn(Arrays.asList(vm1, vm2));
+        stubOwner(Account.Type.NORMAL);
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Arrays.asList(101L, 102L));
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
@@ -305,16 +309,14 @@ public class ResourceAlertManagerImplTest {
     }
 
     @Test
-    public void testGenericVmRuleSkipsStoppedVms() {
+    public void testGenericVmRuleOnlyListsRunningVms() {
         ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
-
-        UserVmVO stopped = mock(UserVmVO.class);
-        when(stopped.getState()).thenReturn(VirtualMachine.State.Stopped);
-        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(stopped));
+        stubOwner(Account.Type.NORMAL);
 
         manager.evaluateRules();
 
+        verify(userVmDao).listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running);
         verify(alertDao, never()).persist(any());
     }
 
@@ -491,10 +493,9 @@ public class ResourceAlertManagerImplTest {
         ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
 
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(VM_ID);
-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+        stubOwner(Account.Type.NORMAL);
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Collections.singletonList(VM_ID));
 
         ResourceTag optOutTag = mock(ResourceTag.class);
         when(optOutTag.getValue()).thenReturn("true");
@@ -511,10 +512,9 @@ public class ResourceAlertManagerImplTest {
         ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
 
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(VM_ID);
-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+        stubOwner(Account.Type.NORMAL);
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Collections.singletonList(VM_ID));
 
         ResourceTag tag = mock(ResourceTag.class);
         when(tag.getValue()).thenReturn("false");
@@ -538,10 +538,9 @@ public class ResourceAlertManagerImplTest {
         ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
 
-        UserVmVO vm = mock(UserVmVO.class);
-        when(vm.getId()).thenReturn(VM_ID);
-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-        when(userVmDao.listByAccountId(1L)).thenReturn(Collections.singletonList(vm));
+        stubOwner(Account.Type.NORMAL);
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Collections.singletonList(VM_ID));
 
         when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
                 .thenReturn(null);
@@ -741,5 +740,66 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(alertDao, never()).persist(any());
+    }
+
+    private AccountVO stubOwner(Account.Type type) {
+        AccountVO owner = mock(AccountVO.class);
+        when(owner.getType()).thenReturn(type);
+        lenient().when(owner.getId()).thenReturn(1L);
+        lenient().when(owner.getDomainId()).thenReturn(5L);
+        when(accountDao.findById(1L)).thenReturn(owner);
+        return owner;
+    }
+
+    @Test
+    public void testGenericRuleScopeForRootAdminIsWholeCloud() {
+        stubOwner(Account.Type.ADMIN);
+
+        Pair<Long, List<Long>> scope = manager.getGenericRuleScope(vmCpuRule(null));
+
+        assertNull(scope.first());
+        assertNull(scope.second());
+    }
+
+    @Test
+    public void testGenericRuleScopeForDomainAdminIsDomainTree() {
+        stubOwner(Account.Type.DOMAIN_ADMIN);
+        when(domainDao.getDomainAndChildrenIds(5L)).thenReturn(Arrays.asList(5L, 6L));
+
+        Pair<Long, List<Long>> scope = manager.getGenericRuleScope(vmCpuRule(null));
+
+        assertNull(scope.first());
+        assertEquals(Arrays.asList(5L, 6L), scope.second());
+    }
+
+    @Test
+    public void testGenericRuleScopeForUserIsOwnAccount() {
+        stubOwner(Account.Type.NORMAL);
+
+        Pair<Long, List<Long>> scope = manager.getGenericRuleScope(vmCpuRule(null));
+
+        assertEquals(Long.valueOf(1L), scope.first());
+        assertNull(scope.second());
+    }
+
+    @Test
+    public void testGenericVolumeRuleForRootAdminListsReadyVolumesCloudWide() {
+        ResourceAlertRuleVO rule = new ResourceAlertRuleVO("vol", ResourceAlertRule.ResourceType.Volume,
+                null, 1L, 1L, "VOLUME_SIZE_GB", AlertCondition.GT, 10.0, AlertSeverity.LOW, null, false, 600);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        stubOwner(Account.Type.ADMIN);
+
+        manager.evaluateRules();
+
+        verify(volumeDao).listIdsByAccountOrDomainsAndState(null, null, Volume.State.Ready);
+    }
+
+    @Test
+    public void testGenericRuleSkippedWhenOwnerMissing() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmCpuRule(null)));
+
+        manager.evaluateRules();
+
+        verify(userVmDao, never()).listIdsByAccountOrDomainsAndState(any(), any(), any());
     }
 }

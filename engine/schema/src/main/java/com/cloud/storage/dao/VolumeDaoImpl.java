@@ -75,6 +75,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
+    protected final GenericSearchBuilder<VolumeVO, Long> IdsByAccountOrDomainsAndStateSearch;
     protected final SearchBuilder<VolumeVO> ExternalUuidSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -116,6 +117,21 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state) {
+        SearchCriteria<Long> sc = IdsByAccountOrDomainsAndStateSearch.create();
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainIds != null) {
+            sc.setParameters("domainIds", domainIds.toArray());
+        }
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+        return customSearch(sc, null);
     }
 
     @Override
@@ -419,6 +435,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
         AllFieldsSearch.and("kmsWrappedKeyId", AllFieldsSearch.entity().getKmsWrappedKeyId(), Op.EQ);
         AllFieldsSearch.done();
+
+        IdsByAccountOrDomainsAndStateSearch = createSearchBuilder(Long.class);
+        IdsByAccountOrDomainsAndStateSearch.selectFields(IdsByAccountOrDomainsAndStateSearch.entity().getId());
+        IdsByAccountOrDomainsAndStateSearch.and("accountId", IdsByAccountOrDomainsAndStateSearch.entity().getAccountId(), Op.EQ);
+        IdsByAccountOrDomainsAndStateSearch.and("domainIds", IdsByAccountOrDomainsAndStateSearch.entity().getDomainId(), Op.IN);
+        IdsByAccountOrDomainsAndStateSearch.and("state", IdsByAccountOrDomainsAndStateSearch.entity().getState(), Op.EQ);
+        IdsByAccountOrDomainsAndStateSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
         RootDiskStateSearch.and("state", RootDiskStateSearch.entity().getState(), Op.IN);
