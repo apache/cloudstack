@@ -288,6 +288,11 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 VmStats s = statsCollector.getVmStats(resourceId, false);
                 return s != null ? s.getNetworkWriteKBs() : null;
             }
+            case STORAGE_USED_IOPS: {
+                // only reported by storage drivers that track IOPS
+                StorageStats pool = statsCollector.getStoragePoolStats(resourceId);
+                return pool != null && pool.getUsedIops() != null ? pool.getUsedIops().doubleValue() : null;
+            }
             case VOLUME_SIZE_GB: {
                 VolumeStats s = getVolumeStats(resourceId);
                 return s != null ? s.getPhysicalSize() / (1024.0 * 1024.0 * 1024.0) : null;
