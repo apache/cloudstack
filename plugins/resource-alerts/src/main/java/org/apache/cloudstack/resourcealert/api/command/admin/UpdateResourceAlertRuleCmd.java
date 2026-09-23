@@ -37,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Updates a resource alert rule",
         responseObject = ResourceAlertRuleResponse.class,
         entityType = {ResourceAlertRule.class},
-        authorized = {RoleType.Admin},
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.23.0")
 public class UpdateResourceAlertRuleCmd extends BaseCmd {
 

@@ -17,12 +17,8 @@
 
 package org.apache.cloudstack.resourcealert.dao;
 
-import java.util.List;
-
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
-import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -36,42 +32,5 @@ public class ResourceAlertRuleJoinDaoImpl extends GenericDaoBase<ResourceAlertRu
         SearchCriteria<ResourceAlertRuleJoinVO> sc = sb.create();
         sc.setParameters("uuid", uuid);
         return findOneBy(sc);
-    }
-
-    @Override
-    public List<ResourceAlertRuleJoinVO> searchByFilters(Long id, String name, String resourceType, Long resourceId,
-            String accountName, Long domainId, Long offset, Long limit) {
-        SearchCriteria<ResourceAlertRuleJoinVO> sc = buildFilterCriteria(id, name, resourceType, resourceId, accountName, domainId);
-        Filter filter = new Filter(ResourceAlertRuleJoinVO.class, "id", true, offset, limit);
-        return listBy(sc, filter);
-    }
-
-    @Override
-    public int countByFilters(Long id, String name, String resourceType, Long resourceId,
-            String accountName, Long domainId) {
-        SearchCriteria<ResourceAlertRuleJoinVO> sc = buildFilterCriteria(id, name, resourceType, resourceId, accountName, domainId);
-        return getCount(sc);
-    }
-
-    private SearchCriteria<ResourceAlertRuleJoinVO> buildFilterCriteria(Long id, String name, String resourceType,
-            Long resourceId, String accountName, Long domainId) {
-        SearchBuilder<ResourceAlertRuleJoinVO> sb = createSearchBuilder();
-        if (id != null) sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        if (StringUtils.isNotBlank(name)) sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        if (StringUtils.isNotBlank(resourceType)) sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
-        if (resourceId != null) sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-        if (StringUtils.isNotBlank(accountName)) sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        if (domainId != null) sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        // exclude soft-deleted rules
-        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NULL);
-
-        SearchCriteria<ResourceAlertRuleJoinVO> sc = sb.create();
-        if (id != null) sc.setParameters("id", id);
-        if (StringUtils.isNotBlank(name)) sc.setParameters("name", name);
-        if (StringUtils.isNotBlank(resourceType)) sc.setParameters("resourceType", resourceType);
-        if (resourceId != null) sc.setParameters("resourceId", resourceId);
-        if (StringUtils.isNotBlank(accountName)) sc.setParameters("accountName", accountName);
-        if (domainId != null) sc.setParameters("domainId", domainId);
-        return sc;
     }
 }
