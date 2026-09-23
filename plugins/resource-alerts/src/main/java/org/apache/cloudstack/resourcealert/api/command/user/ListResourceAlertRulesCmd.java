@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.resourcealert.api.command.admin;
-
-import java.util.Date;
+package org.apache.cloudstack.resourcealert.api.command.user;
 
 import javax.inject.Inject;
 
@@ -28,55 +26,46 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.resourcealert.ResourceAlert;
+import org.apache.cloudstack.resourcealert.ResourceAlertRule;
 import org.apache.cloudstack.resourcealert.ResourceAlertService;
-import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
+import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
 
-@APICommand(name = "listResourceAlerts",
-        description = "Lists fired resource alerts",
-        responseObject = ResourceAlertResponse.class,
-        entityType = {ResourceAlert.class},
+@APICommand(name = "listResourceAlertRules",
+        description = "Lists resource alert rules",
+        responseObject = ResourceAlertRuleResponse.class,
+        entityType = {ResourceAlertRule.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "24.0.0")
-public class ListResourceAlertsCmd extends BaseListAccountResourcesCmd {
+public class ListResourceAlertRulesCmd extends BaseListAccountResourcesCmd {
 
     @Inject
     ResourceAlertService resourceAlertService;
 
-    @Parameter(name = "alertruleid", type = CommandType.STRING,
-            description = "UUID of the alert rule to filter by")
-    private String alertRuleId;
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+            entityType = ResourceAlertRuleResponse.class,
+            description = "the ID of the alert rule")
+    private Long id;
 
-    @Parameter(name = "resourcetype", type = CommandType.STRING,
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING,
             description = "filter by resource type: VirtualMachine, Volume, Host, StoragePool")
     private String resourceType;
 
-    @Parameter(name = "resourceid", type = CommandType.STRING,
-            description = "filter by UUID of the resource that triggered the alert; requires resourcetype")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
+            description = "filter by UUID of a specific resource; requires resourcetype")
     private String resourceId;
 
-    @Parameter(name = "severity", type = CommandType.STRING,
-            description = "filter by severity: CRITICAL, HIGH, MEDIUM, LOW")
-    private String severity;
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
+            description = "filter by rule name")
+    private String name;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE,
-            description = "filter alerts fired on or after this date")
-    private Date startDate;
-
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE,
-            description = "filter alerts fired on or before this date")
-    private Date endDate;
-
-    public String getAlertRuleId() { return alertRuleId; }
+    public Long getId() { return id; }
     public String getResourceType() { return resourceType; }
     public String getResourceId() { return resourceId; }
-    public String getSeverity() { return severity; }
-    public Date getStartDate() { return startDate; }
-    public Date getEndDate() { return endDate; }
+    public String getRuleName() { return name; }
 
     @Override
     public void execute() throws ServerApiException {
-        ListResponse<ResourceAlertResponse> response = resourceAlertService.listResourceAlerts(this);
+        ListResponse<ResourceAlertRuleResponse> response = resourceAlertService.listResourceAlertRules(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

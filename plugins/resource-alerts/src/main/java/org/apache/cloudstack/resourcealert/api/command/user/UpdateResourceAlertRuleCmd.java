@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.resourcealert.api.command.admin;
+package org.apache.cloudstack.resourcealert.api.command.user;
 
 import java.util.List;
 
@@ -35,74 +35,61 @@ import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleRespons
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "createResourceAlertRule",
-        description = "Creates a resource alert rule",
+@APICommand(name = "updateResourceAlertRule",
+        description = "Updates a resource alert rule",
         responseObject = ResourceAlertRuleResponse.class,
         entityType = {ResourceAlertRule.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "24.0.0")
-public class CreateResourceAlertRuleCmd extends BaseCmd {
+public class UpdateResourceAlertRuleCmd extends BaseCmd {
 
     @Inject
     ResourceAlertService resourceAlertService;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "name of the alert rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+            entityType = ResourceAlertRuleResponse.class,
+            required = true,
+            description = "the ID of the alert rule to update")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
+            description = "new name for the rule")
     private String name;
 
-    @Parameter(name = "resourcetype", type = CommandType.STRING, required = true,
-            description = "type of resource to monitor: VirtualMachine, Volume, Host, StoragePool")
-    private String resourceType;
-
-    @Parameter(name = "resourceid", type = CommandType.STRING,
-            description = "UUID of the specific resource to monitor; omit for a generic rule covering all resources of this type")
-    private String resourceId;
-
-    @Parameter(name = "metric", type = CommandType.STRING, required = true,
-            description = "metric to monitor (e.g. CPU_UTILIZATION, MEMORY_UTILIZATION)")
-    private String metric;
-
-    @Parameter(name = "condition", type = CommandType.STRING, required = true,
-            description = "comparison operator: GT, GTE, LT, LTE, EQ")
+    @Parameter(name = ApiConstants.CONDITION, type = CommandType.STRING,
+            description = "new comparison operator: GT, GTE, LT, LTE, EQ")
     private String condition;
 
-    @Parameter(name = "threshold", type = CommandType.DOUBLE, required = true,
-            description = "threshold value that triggers the alert")
+    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.DOUBLE,
+            description = "new threshold value")
     private Double threshold;
 
-    @Parameter(name = "severity", type = CommandType.STRING, required = true,
-            description = "alert severity: CRITICAL, HIGH, MEDIUM, LOW")
+    @Parameter(name = ApiConstants.SEVERITY, type = CommandType.STRING,
+            description = "new severity: CRITICAL, HIGH, MEDIUM, LOW")
     private String severity;
 
     @Parameter(name = ApiConstants.MESSAGE, type = CommandType.STRING,
-            description = "custom message to include in the alert")
+            description = "new alert message")
     private String message;
 
-    @Parameter(name = "email", type = CommandType.BOOLEAN,
-            description = "true to send email notification when this rule fires (admin SMTP must be configured)")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.BOOLEAN,
+            description = "enable or disable email notification")
     private Boolean email;
 
-    @Parameter(name = "resetinterval", type = CommandType.INTEGER,
-            description = "minimum seconds between repeat firings of this rule; defaults to resourcealert.repeat.interval.default")
+    @Parameter(name = ApiConstants.RESET_INTERVAL, type = CommandType.INTEGER,
+            description = "new minimum seconds between repeat firings")
     private Integer resetInterval;
 
-    @Parameter(name = "webhookids", type = CommandType.LIST, collectionType = CommandType.STRING,
-            description = "UUIDs of webhooks to deliver alerts of this rule to; the rule owner must have access to them")
+    @Parameter(name = ApiConstants.WEBHOOK_IDS, type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "UUIDs of webhooks to deliver alerts of this rule to; replaces the current list")
     private List<String> webhookIds;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "account to associate this rule with (defaults to caller)")
-    private String accountName;
+    @Parameter(name = ApiConstants.CLEANUP_WEBHOOKS, type = CommandType.BOOLEAN,
+            description = "true to stop delivering alerts of this rule to any webhook")
+    private Boolean cleanupWebhooks;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID,
-            entityType = org.apache.cloudstack.api.response.DomainResponse.class,
-            description = "domain to associate this rule with")
-    private Long domainId;
-
+    public Long getId() { return id; }
     public String getName() { return name; }
-    public String getResourceType() { return resourceType; }
-    public String getResourceId() { return resourceId; }
-    public String getMetric() { return metric; }
     public String getCondition() { return condition; }
     public Double getThreshold() { return threshold; }
     public String getSeverity() { return severity; }
@@ -110,8 +97,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     public Boolean getEmail() { return email; }
     public Integer getResetInterval() { return resetInterval; }
     public List<String> getWebhookIds() { return webhookIds; }
-    public String getAccountName() { return accountName; }
-    public Long getDomainId() { return domainId; }
+    public boolean isCleanupWebhooks() { return Boolean.TRUE.equals(cleanupWebhooks); }
 
     @Override
     public long getEntityOwnerId() {
@@ -121,9 +107,9 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            ResourceAlertRuleResponse response = resourceAlertService.createResourceAlertRule(this);
+            ResourceAlertRuleResponse response = resourceAlertService.updateResourceAlertRule(this);
             if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create resource alert rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update resource alert rule");
             }
             response.setResponseName(getCommandName());
             setResponseObject(response);

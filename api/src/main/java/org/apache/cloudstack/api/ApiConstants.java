@@ -1089,6 +1089,13 @@ public class ApiConstants {
     public static final String AGGR_FUNCTION = "aggrfunction";
     public static final String AGGR_VALUE = "aggrvalue";
     public static final String THRESHOLD = "threshold";
+    public static final String METRIC = "metric";
+    public static final String CONDITION = "condition";
+    public static final String SEVERITY = "severity";
+    public static final String RESET_INTERVAL = "resetinterval";
+    public static final String WEBHOOK_IDS = "webhookids";
+    public static final String CLEANUP_WEBHOOKS = "cleanupwebhooks";
+    public static final String ALERT_RULE_ID = "alertruleid";
     public static final String RELATIONAL_OPERATOR = "relationaloperator";
     public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
     public static final String MIN_MEMBERS = "minmembers";

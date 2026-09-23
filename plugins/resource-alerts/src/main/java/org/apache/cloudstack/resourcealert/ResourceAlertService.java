@@ -18,11 +18,11 @@
 package org.apache.cloudstack.resourcealert;
 
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.resourcealert.api.command.admin.CreateResourceAlertRuleCmd;
-import org.apache.cloudstack.resourcealert.api.command.admin.DeleteResourceAlertRuleCmd;
-import org.apache.cloudstack.resourcealert.api.command.admin.ListResourceAlertRulesCmd;
-import org.apache.cloudstack.resourcealert.api.command.admin.ListResourceAlertsCmd;
-import org.apache.cloudstack.resourcealert.api.command.admin.UpdateResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.CreateResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.DeleteResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.ListResourceAlertRulesCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.ListResourceAlertsCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.UpdateResourceAlertRuleCmd;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
 

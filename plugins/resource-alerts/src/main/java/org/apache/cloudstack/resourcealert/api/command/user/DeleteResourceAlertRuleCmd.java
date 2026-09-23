@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.resourcealert.api.command.admin;
+package org.apache.cloudstack.resourcealert.api.command.user;
 
 import javax.inject.Inject;
 

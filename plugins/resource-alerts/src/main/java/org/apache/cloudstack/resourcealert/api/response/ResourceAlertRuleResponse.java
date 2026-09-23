@@ -39,27 +39,27 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "the name of the alert rule")
     private String name;
 
-    @SerializedName("resourcetype")
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
     @Param(description = "the type of resource this rule monitors")
     private String resourceType;
 
-    @SerializedName("resourceid")
+    @SerializedName(ApiConstants.RESOURCE_ID)
     @Param(description = "the specific resource ID; absent for generic rules")
     private String resourceId;
 
-    @SerializedName("metric")
+    @SerializedName(ApiConstants.METRIC)
     @Param(description = "the metric being monitored")
     private String metric;
 
-    @SerializedName("condition")
+    @SerializedName(ApiConstants.CONDITION)
     @Param(description = "the comparison operator (GT, GTE, LT, LTE, EQ)")
     private String condition;
 
-    @SerializedName("threshold")
+    @SerializedName(ApiConstants.THRESHOLD)
     @Param(description = "the threshold value that triggers this rule")
     private double threshold;
 
-    @SerializedName("severity")
+    @SerializedName(ApiConstants.SEVERITY)
     @Param(description = "the severity of the alert (CRITICAL, HIGH, MEDIUM, LOW)")
     private String severity;
 
@@ -67,15 +67,15 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "the message sent with the alert")
     private String message;
 
-    @SerializedName("email")
+    @SerializedName(ApiConstants.EMAIL)
     @Param(description = "whether email notification is enabled for this rule")
     private boolean email;
 
-    @SerializedName("resetinterval")
+    @SerializedName(ApiConstants.RESET_INTERVAL)
     @Param(description = "minimum seconds between repeat firings of this rule")
     private int resetInterval;
 
-    @SerializedName("webhookids")
+    @SerializedName(ApiConstants.WEBHOOK_IDS)
     @Param(description = "UUIDs of webhooks the rule delivers alerts to")
     private List<String> webhookIds;
 
