@@ -78,4 +78,12 @@ public class ResourceAlertMetricTest {
         assertFalse(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.Volume));
         assertFalse(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
     }
+
+    @Test
+    public void testVolumeSizeAppliesToVolumeOnly() {
+        assertTrue(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.Volume));
+        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
+        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.Host));
+        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
+    }
 }

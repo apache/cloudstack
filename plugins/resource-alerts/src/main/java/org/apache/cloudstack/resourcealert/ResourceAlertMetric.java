@@ -31,7 +31,8 @@ public enum ResourceAlertMetric {
     STORAGE_UTILIZATION(ResourceAlertRule.ResourceType.StoragePool),
     NETWORK_READ_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
     NETWORK_WRITE_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
-    LOAD_AVERAGE(ResourceAlertRule.ResourceType.Host);
+    LOAD_AVERAGE(ResourceAlertRule.ResourceType.Host),
+    VOLUME_SIZE_GB(ResourceAlertRule.ResourceType.Volume);
 
     private final Set<ResourceAlertRule.ResourceType> applicableTypes;
 
