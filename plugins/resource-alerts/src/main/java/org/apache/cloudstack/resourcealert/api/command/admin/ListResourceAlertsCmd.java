@@ -47,9 +47,13 @@ public class ListResourceAlertsCmd extends BaseListCmd {
             description = "UUID of the alert rule to filter by")
     private String alertRuleId;
 
-    @Parameter(name = "resourceid", type = CommandType.LONG,
-            description = "filter by the resource that triggered the alert")
-    private Long resourceId;
+    @Parameter(name = "resourcetype", type = CommandType.STRING,
+            description = "filter by resource type: VirtualMachine, Volume, Host, StoragePool")
+    private String resourceType;
+
+    @Parameter(name = "resourceid", type = CommandType.STRING,
+            description = "filter by UUID of the resource that triggered the alert; requires resourcetype")
+    private String resourceId;
 
     @Parameter(name = "severity", type = CommandType.STRING,
             description = "filter by severity: CRITICAL, HIGH, MEDIUM, LOW")
@@ -64,7 +68,8 @@ public class ListResourceAlertsCmd extends BaseListCmd {
     private Date endDate;
 
     public String getAlertRuleId() { return alertRuleId; }
-    public Long getResourceId() { return resourceId; }
+    public String getResourceType() { return resourceType; }
+    public String getResourceId() { return resourceId; }
     public String getSeverity() { return severity; }
     public Date getStartDate() { return startDate; }
     public Date getEndDate() { return endDate; }

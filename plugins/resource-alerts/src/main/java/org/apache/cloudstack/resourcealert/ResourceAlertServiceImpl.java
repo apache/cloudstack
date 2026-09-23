@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.resourcealert.api.command.admin.CreateResourceAlertRuleCmd;
 import org.apache.cloudstack.resourcealert.api.command.admin.DeleteResourceAlertRuleCmd;
@@ -38,15 +40,19 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.context.CallContext;
 
@@ -62,6 +68,14 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     ResourceAlertRuleJoinDao ruleJoinDao;
     @Inject
     ResourceAlertDao alertDao;
+    @Inject
+    UserVmDao userVmDao;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
 
     @Override
     public ResourceAlertRuleResponse createResourceAlertRule(CreateResourceAlertRuleCmd cmd) {
@@ -82,8 +96,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         }
         long domainId = owner.getDomainId();
 
+        Long resourceId = resolveResourceId(resourceType, cmd.getResourceId());
+
         ResourceAlertRuleVO rule = new ResourceAlertRuleVO(
-                cmd.getName(), resourceType, cmd.getResourceId(),
+                cmd.getName(), resourceType, resourceId,
                 owner.getId(), domainId,
                 metric.name(), condition, cmd.getThreshold(), severity,
                 cmd.getMessage(), email, resetInterval);
@@ -96,15 +112,16 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     public ListResponse<ResourceAlertRuleResponse> listResourceAlertRules(ListResourceAlertRulesCmd cmd) {
         Long offset = cmd.getStartIndex();
         Long limit = cmd.getPageSizeVal();
+        Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
 
         List<ResourceAlertRuleJoinVO> rules = ruleJoinDao.searchByFilters(
                 cmd.getId(), cmd.getRuleName(), cmd.getResourceType(),
-                cmd.getResourceId(), cmd.getAccountName(), cmd.getDomainId(),
+                resourceId, cmd.getAccountName(), cmd.getDomainId(),
                 offset, limit);
 
         int count = ruleJoinDao.countByFilters(
                 cmd.getId(), cmd.getRuleName(), cmd.getResourceType(),
-                cmd.getResourceId(), cmd.getAccountName(), cmd.getDomainId());
+                resourceId, cmd.getAccountName(), cmd.getDomainId());
 
         List<ResourceAlertRuleResponse> responses = rules.stream()
                 .map(this::toRuleResponse)
@@ -146,16 +163,30 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ListResponse<ResourceAlertResponse> listResourceAlerts(ListResourceAlertsCmd cmd) {
-        Long alertRuleInternalId = null;
+        List<Long> alertRuleIds = null;
         if (cmd.getAlertRuleId() != null) {
             ResourceAlertRuleVO rule = ruleDao.findByUuid(cmd.getAlertRuleId());
             if (rule == null) {
                 throw new InvalidParameterValueException("Alert rule not found: " + cmd.getAlertRuleId());
             }
-            alertRuleInternalId = rule.getId();
+            alertRuleIds = new ArrayList<>(List.of(rule.getId()));
+        }
+        Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
+        if (StringUtils.isNotBlank(cmd.getResourceType())) {
+            List<Long> typeRuleIds = ruleDao.listIdsByResourceType(parseResourceType(cmd.getResourceType()));
+            if (alertRuleIds == null) {
+                alertRuleIds = new ArrayList<>(typeRuleIds);
+            } else {
+                alertRuleIds.retainAll(typeRuleIds);
+            }
+        }
+        if (alertRuleIds != null && alertRuleIds.isEmpty()) {
+            ListResponse<ResourceAlertResponse> empty = new ListResponse<>();
+            empty.setResponses(new ArrayList<>(), 0);
+            return empty;
         }
         List<ResourceAlertVO> alerts = alertDao.listByFilters(
-                alertRuleInternalId, cmd.getResourceId(),
+                alertRuleIds, resourceId,
                 cmd.getSeverity(), cmd.getStartDate(), cmd.getEndDate());
 
         List<ResourceAlertResponse> responses = alerts.stream()
@@ -185,7 +216,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setId(vo.getUuid());
         r.setName(vo.getName());
         r.setResourceType(vo.getResourceType() != null ? vo.getResourceType().name() : null);
-        r.setResourceId(vo.getResourceId() != null ? String.valueOf(vo.getResourceId()) : null);
+        r.setResourceId(getResourceUuid(vo.getResourceType(), vo.getResourceId()));
         r.setMetric(vo.getMetric());
         r.setCondition(vo.getCondition() != null ? vo.getCondition().name() : null);
         r.setThreshold(vo.getThreshold());
@@ -204,15 +235,75 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         ResourceAlertResponse r = new ResourceAlertResponse();
         r.setObjectName("resourcealert");
         r.setId(vo.getUuid());
-        ResourceAlertRuleVO rule = ruleDao.findById(vo.getAlertRuleId());
+        ResourceAlertRuleVO rule = ruleDao.findByIdIncludingRemoved(vo.getAlertRuleId());
         r.setAlertRuleId(rule != null ? rule.getUuid() : null);
-        r.setResourceId(vo.getResourceId() != null ? String.valueOf(vo.getResourceId()) : null);
+        r.setResourceId(rule != null ? getResourceUuid(rule.getResourceType(), vo.getResourceId()) : null);
         r.setMetricType(vo.getMetricType());
         r.setMetricValue(vo.getMetricValue());
         r.setSeverity(vo.getSeverity() != null ? vo.getSeverity().name() : null);
         r.setMessage(vo.getMessage());
         r.setAlertTimestamp(vo.getAlertTimestamp());
         return r;
+    }
+
+    private InternalIdentity findResource(ResourceAlertRule.ResourceType type, String uuid) {
+        switch (type) {
+            case VirtualMachine:
+                return userVmDao.findByUuid(uuid);
+            case Volume:
+                return volumeDao.findByUuid(uuid);
+            case Host:
+                return hostDao.findByUuid(uuid);
+            case StoragePool:
+                return storagePoolDao.findByUuid(uuid);
+            default:
+                return null;
+        }
+    }
+
+    private Long resolveResourceId(ResourceAlertRule.ResourceType type, String uuid) {
+        if (StringUtils.isBlank(uuid)) {
+            return null;
+        }
+        InternalIdentity resource = findResource(type, uuid);
+        if (resource == null) {
+            throw new InvalidParameterValueException("Unable to find " + type.name() + " with ID " + uuid);
+        }
+        return resource.getId();
+    }
+
+    private Long resolveResourceIdFilter(String resourceType, String uuid) {
+        if (StringUtils.isBlank(uuid)) {
+            return null;
+        }
+        if (StringUtils.isBlank(resourceType)) {
+            throw new InvalidParameterValueException("resourcetype is required when resourceid is specified");
+        }
+        return resolveResourceId(parseResourceType(resourceType), uuid);
+    }
+
+    private String getResourceUuid(ResourceAlertRule.ResourceType type, Long id) {
+        if (type == null || id == null) {
+            return null;
+        }
+        Identity resource;
+        switch (type) {
+            case VirtualMachine:
+                resource = userVmDao.findByIdIncludingRemoved(id);
+                break;
+            case Volume:
+                resource = volumeDao.findByIdIncludingRemoved(id);
+                break;
+            case Host:
+                resource = hostDao.findByIdIncludingRemoved(id);
+                break;
+            case StoragePool:
+                resource = storagePoolDao.findByIdIncludingRemoved(id);
+                break;
+            default:
+                resource = null;
+        }
+        return resource != null ? resource.getUuid() : null;
     }
 
     private Account resolveOwner(String accountName, Long domainId) {

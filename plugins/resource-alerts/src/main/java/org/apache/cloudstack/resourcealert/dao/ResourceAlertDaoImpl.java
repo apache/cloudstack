@@ -63,10 +63,10 @@ public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> 
     }
 
     @Override
-    public List<ResourceAlertVO> listByFilters(Long alertRuleId, Long resourceId, String severity, Date startDate, Date endDate) {
+    public List<ResourceAlertVO> listByFilters(List<Long> alertRuleIds, Long resourceId, String severity, Date startDate, Date endDate) {
         SearchBuilder<ResourceAlertVO> sb = createSearchBuilder();
-        if (alertRuleId != null) {
-            sb.and("alertRuleId", sb.entity().getAlertRuleId(), SearchCriteria.Op.EQ);
+        if (alertRuleIds != null) {
+            sb.and("alertRuleIds", sb.entity().getAlertRuleId(), SearchCriteria.Op.IN);
         }
         if (resourceId != null) {
             sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
@@ -81,7 +81,7 @@ public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> 
             sb.and("endDate", sb.entity().getAlertTimestamp(), SearchCriteria.Op.LTEQ);
         }
         SearchCriteria<ResourceAlertVO> sc = sb.create();
-        if (alertRuleId != null) sc.setParameters("alertRuleId", alertRuleId);
+        if (alertRuleIds != null) sc.setParameters("alertRuleIds", alertRuleIds.toArray());
         if (resourceId != null) sc.setParameters("resourceId", resourceId);
         if (StringUtils.isNotBlank(severity)) sc.setParameters("severity", severity);
         if (startDate != null) sc.setParameters("startDate", startDate);

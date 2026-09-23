@@ -31,5 +31,5 @@ public interface ResourceAlertDao extends GenericDao<ResourceAlertVO, Long> {
     // Returns the most recent firing of a rule for a specific resource; used for reset-interval enforcement.
     ResourceAlertVO findLastFiredForRule(long alertRuleId, Long resourceId);
 
-    List<ResourceAlertVO> listByFilters(Long alertRuleId, Long resourceId, String severity, Date startDate, Date endDate);
+    List<ResourceAlertVO> listByFilters(List<Long> alertRuleIds, Long resourceId, String severity, Date startDate, Date endDate);
 }
