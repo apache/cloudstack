@@ -167,6 +167,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
@@ -2198,5 +2199,123 @@ public class VirtualMachineManagerImplTest {
         CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, false));
 
         assertEquals("released", e.getMessage());
+    }
+
+    /**
+     * An instance in Starting cannot take StopRequested, so advanceStop() goes through the forced cleanup, which
+     * releases the resources whatever the host answers.
+     */
+    private VMInstanceVO startingVmOnHost(final Status hostStatus) throws Exception {
+        VMInstanceVO vm = new VMInstanceVO();
+        ReflectionTestUtils.setField(vm, "id", 1L);
+        ReflectionTestUtils.setField(vm, "uuid", "vm-uuid");
+        ReflectionTestUtils.setField(vm, "instanceName", "i-2-1-VM");
+        ReflectionTestUtils.setField(vm, "hostId", hostMockId);
+        ReflectionTestUtils.setField(vm, "type", VirtualMachine.Type.User);
+        ReflectionTestUtils.setField(vm, "hypervisorType", HypervisorType.KVM);
+        ReflectionTestUtils.setField(vm, "state", State.Starting);
+        when(hostMock.getStatus()).thenReturn(hostStatus);
+        doReturn(guru).when(virtualMachineManagerImpl).getVmGuru(vm);
+        doThrow(new NoTransitionException("no StopRequested from Starting")).when(virtualMachineManagerImpl)
+                .stateTransitTo(vm, VirtualMachine.Event.StopRequested, hostMockId);
+        doThrow(new CloudRuntimeException("cleaned up")).when(virtualMachineManagerImpl)
+                .cleanup(any(), any(), any(), any(), eq(true));
+        return vm;
+    }
+
+    @Test
+    public void destroyStopOfAStalledInstanceFailsWhenTheHostDoesNotConfirm() throws Exception {
+        VMInstanceVO vm = startingVmOnHost(Status.Disconnected);
+        doReturn(new Pair<>(false, "host did not answer")).when(virtualMachineManagerImpl).sendStop(any(), any(), eq(false), eq(false));
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, true));
+
+        assertTrue(e.getMessage().contains("host did not answer"));
+        verify(virtualMachineManagerImpl, never()).cleanup(any(), any(), any(), any(), anyBoolean());
+    }
+
+    @Test
+    public void destroyStopOfAStalledInstanceCleansUpOnceAnUpHostConfirms() throws Exception {
+        VMInstanceVO vm = startingVmOnHost(Status.Up);
+        doReturn(new Pair<>(true, null)).when(virtualMachineManagerImpl).sendStop(any(), any(), eq(false), eq(false));
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, true));
+
+        assertEquals("cleaned up", e.getMessage());
+    }
+
+    @Test
+    public void destroyStopOfAStalledInstanceCleansUpWithoutAskingAHostThatIsDown() throws Exception {
+        VMInstanceVO vm = startingVmOnHost(Status.Down);
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, true));
+
+        assertEquals("cleaned up", e.getMessage());
+        verify(virtualMachineManagerImpl, never()).sendStop(any(), any(), anyBoolean(), anyBoolean());
+    }
+
+    @Test
+    public void advanceStopQueuesTheFlagOnTheStopJob() throws Exception {
+        final AsyncJobExecutionContext jobContext = mock(AsyncJobExecutionContext.class);
+        final VmWorkJobVO workJob = mock(VmWorkJobVO.class);
+        final String commandName = VmWorkStop.class.getName();
+        doReturn(new Pair<VmWorkJobVO, Long>(null, 1L)).when(virtualMachineManagerImpl)
+                .retrievePendingWorkJob(Mockito.<Long>isNull(), eq("vm-uuid"), Mockito.<VirtualMachine.Type>isNull(), eq(commandName));
+        doReturn(new Pair<VmWorkJobVO, VmWork>(workJob, new VmWork(1L, 1L, 1L, "VirtualMachineManagerImpl"))).when(virtualMachineManagerImpl)
+                .createWorkJobAndWorkInfo(commandName, VmWorkJobVO.Step.Prepare, 1L);
+        final ArgumentCaptor<VmWork> queued = ArgumentCaptor.forClass(VmWork.class);
+        doThrow(new CloudRuntimeException("queued")).when(virtualMachineManagerImpl).setCmdInfoAndSubmitAsyncJob(eq(workJob), queued.capture(), eq(1L));
+
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            ignored.when(AsyncJobExecutionContext::getCurrentExecutionContext).thenReturn(jobContext);
+            when(jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)).thenReturn(false);
+
+            assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop("vm-uuid", true, true));
+        }
+
+        final VmWorkStop work = (VmWorkStop) queued.getValue();
+        assertTrue(work.isCleanup());
+        assertTrue(work.isReleaseOnlyIfHostIsGone());
+    }
+
+    @Test
+    public void advanceStopInsideAVmWorkJobPassesTheFlagOn() throws Exception {
+        final AsyncJobExecutionContext jobContext = mock(AsyncJobExecutionContext.class);
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).advanceStop(any(VMInstanceVO.class), anyBoolean(), anyBoolean());
+
+        try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+            ignored.when(AsyncJobExecutionContext::getCurrentExecutionContext).thenReturn(jobContext);
+            when(jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)).thenReturn(true);
+
+            virtualMachineManagerImpl.advanceStop("vm-uuid", true, true);
+        }
+
+        verify(virtualMachineManagerImpl).advanceStop(vmInstanceMock, true, true);
+    }
+
+    @Test
+    public void theStopJobHandlerPassesTheFlagOn() throws Exception {
+        when(_entityMgr.findById(VMInstanceVO.class, 1L)).thenReturn(vmInstanceMock);
+        when(vmInstanceMock.getUuid()).thenReturn("vm-uuid");
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstanceMock);
+        doNothing().when(virtualMachineManagerImpl).advanceStop(any(VMInstanceVO.class), anyBoolean(), anyBoolean());
+
+        ReflectionTestUtils.invokeMethod(virtualMachineManagerImpl, "orchestrateStop",
+                new VmWorkStop(new VmWork(1L, 1L, 1L, "VirtualMachineManagerImpl"), true, true));
+
+        verify(virtualMachineManagerImpl).advanceStop(vmInstanceMock, true, true);
+    }
+
+    @Test
+    public void theFlagSurvivesJobSerialization() {
+        final VmWork base = new VmWork(1L, 1L, 1L, "VirtualMachineManagerImpl");
+        VmWorkStop work = VmWorkSerializer.deserialize(VmWorkStop.class, VmWorkSerializer.serialize(new VmWorkStop(base, true, true)));
+        assertTrue(work.isCleanup());
+        assertTrue(work.isReleaseOnlyIfHostIsGone());
+
+        work = VmWorkSerializer.deserialize(VmWorkStop.class, VmWorkSerializer.serialize(new VmWorkStop(base, true)));
+        assertTrue(work.isCleanup());
+        assertFalse(work.isReleaseOnlyIfHostIsGone());
     }
 }

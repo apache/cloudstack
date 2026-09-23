@@ -483,7 +483,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value. When the host cannot be reached, the instance's resources are only " +
                     "released if the host is Down or Removed; otherwise the destroy fails and can be retried once the host is back.", true);
-
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60",
             "Cluster Delta sync interval in seconds",
             false);
@@ -2424,14 +2423,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     /**
      * @return true when the host an instance was on cannot be running it anymore: there is no host, its record is
-     *         gone, or it is Down or Removed. A host that is Up, Connecting, Disconnected, Alert or Rebalancing may
-     *         still be running it, whether or not it answers right now.
+     *         gone, or it is Down or Removed. In any other status the host may still be running it, whether or not
+     *         it answers right now.
      */
     protected boolean isHostGone(final Long hostId) {
-        if (hostId == null) {
-            return true;
-        }
-        final HostVO host = _hostDao.findById(hostId);
+        return hostId == null || isGone(_hostDao.findById(hostId));
+    }
+
+    private static boolean isGone(final HostVO host) {
         return host == null || host.getStatus() == Status.Down || host.getStatus() == Status.Removed;
     }
 
@@ -2442,12 +2441,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!cleanUpEvenIfUnableToStop) {
             return false;
         }
-        if (!releaseOnlyIfHostIsGone || isHostGone(vm.getHostId())) {
+        if (!releaseOnlyIfHostIsGone || vm.getHostId() == null) {
             return true;
         }
         final HostVO host = _hostDao.findById(vm.getHostId());
-        logger.warn("Not releasing the resources of {}: its host {} is {} and may still be running it. Retry once the host is Up, "
-                + "or stop the instance with forced=true if it is known to be gone.", vm, host, host.getStatus());
+        if (isGone(host)) {
+            return true;
+        }
+        logger.warn("Not releasing the resources of {}: its host {} is {} and did not confirm the instance is stopped. "
+                + "Retry the destroy, or stop the instance with forced=true if it is known to be gone.", vm, host, host.getStatus());
         return false;
     }
 
@@ -2564,9 +2566,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new ConcurrentOperationException(String.format("%s is being operated on.", vm.toString()));
             }
         } catch (final NoTransitionException e1) {
-            // cleanup() releases the resources whether or not the host answers, so check before it runs
-            if (!mayReleaseWithoutHostConfirmation(vm, cleanUpEvenIfUnableToStop, releaseOnlyIfHostIsGone)) {
+            if (!cleanUpEvenIfUnableToStop) {
                 throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
+            }
+            // cleanup() releases the resources whether or not the host answers. For a destroy on a host that is not
+            // gone, go ahead only once the host has confirmed the instance is stopped.
+            if (releaseOnlyIfHostIsGone && !isHostGone(vm.getHostId())) {
+                final Pair<Boolean, String> stopResult = sendStop(vmGuru, profile, false, false);
+                if (!stopResult.first()) {
+                    logger.warn("Not releasing the resources of {} in state {}: its host did not confirm the instance is stopped.", vm, vm.getState());
+                    String errorDetails = stopResult.second() != null ? " due to " + stopResult.second() : "";
+                    throw new CloudRuntimeException("Unable to stop " + vm + " in state " + vm.getState() + errorDetails);
+                }
             }
             final boolean doCleanup = true;
             logger.warn("Unable to transition the state but we're moving on because it's forced stop", e1);

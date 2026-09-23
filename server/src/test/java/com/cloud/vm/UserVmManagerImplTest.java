@@ -4632,4 +4632,31 @@ public class UserVmManagerImplTest {
 
         userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
     }
+
+    private void setDestroyForcestop(String value) throws Exception {
+        java.lang.reflect.Field key = UserVmManagerImpl.class.getDeclaredField("VmDestroyForcestop");
+        key.setAccessible(true);
+        java.lang.reflect.Field defaultValue = ConfigKey.class.getDeclaredField("_defaultValue");
+        defaultValue.setAccessible(true);
+        defaultValue.set(key.get(null), value);
+    }
+
+    @Test
+    public void stopVirtualMachineForDestroyChecksTheForceStopPermissionOnlyWhenForced() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        try {
+            setDestroyForcestop("true");
+            doNothing().when(userVmManagerImpl).checkForceStopVmPermission(callerAccount);
+            userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+            Mockito.verify(userVmManagerImpl).checkForceStopVmPermission(callerAccount);
+
+            Mockito.clearInvocations(userVmManagerImpl);
+            setDestroyForcestop("false");
+            userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+            Mockito.verify(userVmManagerImpl, never()).checkForceStopVmPermission(any());
+        } finally {
+            setDestroyForcestop("false");
+        }
+    }
 }

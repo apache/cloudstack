@@ -1010,6 +1010,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 logger.debug("Expunging # of Instances (Account={}): {}", account, vms.size());
             }
 
+            boolean instanceLeftOnItsHost = false;
             for (UserVmVO vm : vms) {
                 if (vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging) {
                     try {
@@ -1021,6 +1022,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                             // there leaves a running domain without them. Leave it for the next cleanup of this account.
                             logger.warn("Not expunging instance {}, it may still be running on its host.", vm);
                             accountCleanupNeeded = true;
+                            instanceLeftOnItsHost = true;
                             continue;
                         }
                     }
@@ -1031,6 +1033,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     logger.error("Unable to expunge vm: {}", vm);
                     accountCleanupNeeded = true;
                 }
+            }
+
+            if (instanceLeftOnItsHost) {
+                // The rest of the cleanup would take away its security groups, networks and resource counts while it
+                // may still be running. Finish on a later pass, once it is gone.
+                logger.warn("Deferring the rest of the cleanup of account {}: it has instances that may still be running.", account);
+                return true;
             }
 
             // Mark the account's volumes as destroyed
