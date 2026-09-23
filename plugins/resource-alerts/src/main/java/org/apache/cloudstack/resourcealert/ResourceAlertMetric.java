@@ -44,4 +44,8 @@ public enum ResourceAlertMetric {
     public boolean appliesTo(ResourceAlertRule.ResourceType type) {
         return applicableTypes.contains(type);
     }
+
+    public boolean isPercentage() {
+        return this == CPU_UTILIZATION || this == MEMORY_UTILIZATION || this == STORAGE_UTILIZATION;
+    }
 }
