@@ -21,6 +21,10 @@ public class VmWorkStop extends VmWork {
 
     private final boolean cleanup;
 
+    // With cleanup, release the resources without the host's answer only when the host is gone. Absent from jobs
+    // queued before this field existed, which then read false and keep the previous behaviour.
+    private boolean releaseOnlyIfHostIsGone;
+
     public VmWorkStop(long userId, long accountId, long vmId, String handlerName, boolean cleanup) {
         super(userId, accountId, vmId, handlerName);
         this.cleanup = cleanup;
@@ -31,7 +35,16 @@ public class VmWorkStop extends VmWork {
         this.cleanup = cleanup;
     }
 
+    public VmWorkStop(VmWork vmWork, boolean cleanup, boolean releaseOnlyIfHostIsGone) {
+        this(vmWork, cleanup);
+        this.releaseOnlyIfHostIsGone = releaseOnlyIfHostIsGone;
+    }
+
     public boolean isCleanup() {
         return cleanup;
+    }
+
+    public boolean isReleaseOnlyIfHostIsGone() {
+        return releaseOnlyIfHostIsGone;
     }
 }
