@@ -108,7 +108,7 @@
         <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.resource.alerts')" key="resourcealerts" v-if="'listResourceAlerts' in $store.getters.apis">
-        <ResourceAlertsTab :resource="dataResource" :loading="loading" />
+        <ResourceAlertsTab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />

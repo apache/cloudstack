@@ -46,6 +46,10 @@ export default {
       type: Object,
       required: true
     },
+    resourceType: {
+      type: String,
+      required: true
+    },
     loading: {
       type: Boolean,
       default: false
@@ -78,7 +82,7 @@ export default {
     fetchData () {
       if (!this.resource || !this.resource.id) return
       this.tabLoading = true
-      getAPI('listResourceAlerts', { resourceid: this.resource.id, listall: true }).then(json => {
+      getAPI('listResourceAlerts', { resourcetype: this.resourceType, resourceid: this.resource.id, listall: true }).then(json => {
         this.alerts = json?.listresourcealertsresponse?.resourcealert || []
       }).finally(() => {
         this.tabLoading = false

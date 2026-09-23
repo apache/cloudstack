@@ -33,6 +33,7 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -41,6 +42,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.AccountManager;
 
@@ -55,6 +60,10 @@ public class ResourceAlertServiceImplTest {
     @Mock ResourceAlertRuleDao ruleDao;
     @Mock ResourceAlertRuleJoinDao ruleJoinDao;
     @Mock ResourceAlertDao alertDao;
+    @Mock UserVmDao userVmDao;
+    @Mock VolumeDao volumeDao;
+    @Mock HostDao hostDao;
+    @Mock PrimaryDataStoreDao storagePoolDao;
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateFailsOnInvalidCondition() {
@@ -157,6 +166,16 @@ public class ResourceAlertServiceImplTest {
 
     @Test
     public void testCreateUsesDefaultResetIntervalWhenNotSet() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+
+        service.createResourceAlertRule(cmd);
+
+        ArgumentCaptor<ResourceAlertRuleVO> captor = ArgumentCaptor.forClass(ResourceAlertRuleVO.class);
+        verify(ruleDao).persist(captor.capture());
+        assertEquals(600, captor.getValue().getResetInterval());
+    }
+
+    private CreateResourceAlertRuleCmd validVmCreateCmd() {
         CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
         when(cmd.getName()).thenReturn("cpu-high");
         when(cmd.getResourceType()).thenReturn("VirtualMachine");
@@ -171,11 +190,38 @@ public class ResourceAlertServiceImplTest {
         Account account = mock(Account.class);
         when(account.getId()).thenReturn(42L);
         when(accountManager.getActiveAccountByName("testuser", 1L)).thenReturn(account);
+        return cmd;
+    }
+
+    @Test
+    public void testCreateResolvesResourceUuidToInternalId() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(7L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
 
         service.createResourceAlertRule(cmd);
 
         ArgumentCaptor<ResourceAlertRuleVO> captor = ArgumentCaptor.forClass(ResourceAlertRuleVO.class);
         verify(ruleDao).persist(captor.capture());
-        assertEquals(600, captor.getValue().getResetInterval());
+        assertEquals(Long.valueOf(7L), captor.getValue().getResourceId());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnUnknownResourceUuid() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("no-such-vm");
+        when(userVmDao.findByUuid("no-such-vm")).thenReturn(null);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListAlertsFailsWhenResourceIdWithoutType() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+
+        service.listResourceAlerts(cmd);
     }
 }

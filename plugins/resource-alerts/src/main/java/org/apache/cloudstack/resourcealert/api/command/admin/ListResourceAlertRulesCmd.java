@@ -50,9 +50,9 @@ public class ListResourceAlertRulesCmd extends BaseListCmd {
             description = "filter by resource type: VirtualMachine, Volume, Host, StoragePool")
     private String resourceType;
 
-    @Parameter(name = "resourceid", type = CommandType.LONG,
-            description = "filter by specific resource ID")
-    private Long resourceId;
+    @Parameter(name = "resourceid", type = CommandType.STRING,
+            description = "filter by UUID of a specific resource; requires resourcetype")
+    private String resourceId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
             description = "filter by rule name")
@@ -69,7 +69,7 @@ public class ListResourceAlertRulesCmd extends BaseListCmd {
 
     public Long getId() { return id; }
     public String getResourceType() { return resourceType; }
-    public Long getResourceId() { return resourceId; }
+    public String getResourceId() { return resourceId; }
     public String getRuleName() { return name; }
     public String getAccountName() { return accountName; }
     public Long getDomainId() { return domainId; }
