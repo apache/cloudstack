@@ -20,6 +20,7 @@ package org.apache.cloudstack.resourcealert;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -38,11 +39,14 @@ import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleRespons
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.EnumUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -54,6 +58,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -72,6 +77,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     ResourceAlertRuleJoinDao ruleJoinDao;
     @Inject
     ResourceAlertDao alertDao;
+    @Inject
+    ResourceAlertRuleWebhookDao ruleWebhookDao;
     @Inject
     UserVmDao userVmDao;
     @Inject
@@ -115,7 +122,11 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
                 metric.name(), condition, cmd.getThreshold(), severity,
                 cmd.getMessage(), email, resetInterval);
 
+        List<Long> webhookIds = resolveWebhookIds(owner, cmd.getWebhookIds());
         ruleDao.persist(rule);
+        if (!webhookIds.isEmpty()) {
+            ruleWebhookDao.replaceWebhooksForRule(rule.getId(), webhookIds);
+        }
         return toRuleResponse(ruleJoinDao.findById(rule.getId()));
     }
 
@@ -170,6 +181,12 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         if (cmd.getResetInterval() != null) rule.setResetInterval(cmd.getResetInterval());
         rule.setUpdated(new Date());
 
+        if (cmd.isCleanupWebhooks()) {
+            ruleWebhookDao.replaceWebhooksForRule(rule.getId(), new ArrayList<>());
+        } else if (cmd.getWebhookIds() != null) {
+            Account owner = accountManager.getAccount(rule.getAccountId());
+            ruleWebhookDao.replaceWebhooksForRule(rule.getId(), resolveWebhookIds(owner, cmd.getWebhookIds()));
+        }
         ruleDao.update(rule.getId(), rule);
         return toRuleResponse(ruleJoinDao.findById(rule.getId()));
     }
@@ -252,6 +269,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setMessage(vo.getMessage());
         r.setEmail(vo.isEmail());
         r.setResetInterval(vo.getResetInterval());
+        r.setWebhookIds(getWebhookUuids(vo.getId()));
         r.setAccountName(vo.getAccountName());
         r.setDomainId(vo.getDomainUuid());
         r.setDomainName(vo.getDomainName());
@@ -332,6 +350,46 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
                 resource = null;
         }
         return resource != null ? resource.getUuid() : null;
+    }
+
+    protected WebhookHelper getWebhookHelper() {
+        try {
+            return ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            return null;
+        }
+    }
+
+    private List<Long> resolveWebhookIds(Account owner, List<String> webhookUuids) {
+        List<Long> ids = new ArrayList<>();
+        if (webhookUuids == null || webhookUuids.isEmpty()) {
+            return ids;
+        }
+        WebhookHelper webhookHelper = getWebhookHelper();
+        if (webhookHelper == null) {
+            throw new InvalidParameterValueException("Webhooks are not available, the webhook plugin is not enabled");
+        }
+        for (String uuid : webhookUuids) {
+            ControlledEntity webhook = webhookHelper.findWebhookByUuid(uuid);
+            if (!(webhook instanceof InternalIdentity)) {
+                throw new InvalidParameterValueException("Unable to find webhook with ID " + uuid);
+            }
+            accountManager.checkAccess(owner, null, false, webhook);
+            long id = ((InternalIdentity) webhook).getId();
+            if (!ids.contains(id)) {
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
+
+    private List<String> getWebhookUuids(long ruleId) {
+        List<Long> ids = ruleWebhookDao.listWebhookIdsByRule(ruleId);
+        WebhookHelper webhookHelper = ids.isEmpty() ? null : getWebhookHelper();
+        if (webhookHelper == null) {
+            return new ArrayList<>();
+        }
+        return ids.stream().map(webhookHelper::getWebhookUuid).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private void checkInfrastructureAccess(Account caller, ResourceAlertRule.ResourceType resourceType) {

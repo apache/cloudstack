@@ -20,13 +20,18 @@ package org.apache.cloudstack.resourcealert;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcealert.api.command.admin.CreateResourceAlertRuleCmd;
 import org.apache.cloudstack.resourcealert.api.command.admin.DeleteResourceAlertRuleCmd;
@@ -35,8 +40,10 @@ import org.apache.cloudstack.resourcealert.api.command.admin.UpdateResourceAlert
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +53,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -60,6 +68,7 @@ import com.cloud.vm.dao.UserVmDao;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ResourceAlertServiceImplTest {
 
+    @Spy
     @InjectMocks
     ResourceAlertServiceImpl service;
 
@@ -67,6 +76,8 @@ public class ResourceAlertServiceImplTest {
     @Mock ResourceAlertRuleDao ruleDao;
     @Mock ResourceAlertRuleJoinDao ruleJoinDao;
     @Mock ResourceAlertDao alertDao;
+    @Mock ResourceAlertRuleWebhookDao ruleWebhookDao;
+    @Mock WebhookHelper webhookHelper;
     @Mock UserVmDao userVmDao;
     @Mock VolumeDao volumeDao;
     @Mock HostDao hostDao;
@@ -313,5 +324,75 @@ public class ResourceAlertServiceImplTest {
         when(cmd.getResourceId()).thenReturn("vm-uuid");
 
         service.listResourceAlerts(cmd);
+    }
+
+    private ControlledEntity mockWebhook(String uuid, long id) {
+        ControlledEntity webhook = mock(ControlledEntity.class, Mockito.withSettings().extraInterfaces(InternalIdentity.class));
+        when(((InternalIdentity) webhook).getId()).thenReturn(id);
+        when(webhookHelper.findWebhookByUuid(uuid)).thenReturn(webhook);
+        return webhook;
+    }
+
+    @Test
+    public void testCreateMapsWebhooksAfterCheckingOwnerAccess() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1", "wh-1"));
+        ControlledEntity webhook = mockWebhook("wh-1", 11L);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(accountManager, Mockito.times(2)).checkAccess(owner, null, false, webhook);
+        verify(ruleWebhookDao).replaceWebhooksForRule(Mockito.anyLong(), eq(List.of(11L)));
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCreateFailsWhenOwnerCannotAccessWebhook() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1"));
+        ControlledEntity webhook = mockWebhook("wh-1", 11L);
+        doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(owner, null, false, webhook);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnUnknownWebhook() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("no-such-webhook"));
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateWithWebhooksFailsWhenWebhookPluginMissing() {
+        doReturn(null).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1"));
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateWithoutWebhooksDoesNotTouchMapping() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        verify(ruleWebhookDao, never()).replaceWebhooksForRule(Mockito.anyLong(), any());
+    }
+
+    @Test
+    public void testUpdateCleanupWebhooksClearsMapping() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.isCleanupWebhooks()).thenReturn(true);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
+
+        verify(ruleWebhookDao).replaceWebhooksForRule(1L, new ArrayList<>());
     }
 }
