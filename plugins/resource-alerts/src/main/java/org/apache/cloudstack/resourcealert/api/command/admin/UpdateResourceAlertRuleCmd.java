@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.resourcealert.api.command.admin;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -78,6 +80,14 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
             description = "new minimum seconds between repeat firings")
     private Integer resetInterval;
 
+    @Parameter(name = "webhookids", type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "UUIDs of webhooks to deliver alerts of this rule to; replaces the current list")
+    private List<String> webhookIds;
+
+    @Parameter(name = "cleanupwebhooks", type = CommandType.BOOLEAN,
+            description = "true to stop delivering alerts of this rule to any webhook")
+    private Boolean cleanupWebhooks;
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getCondition() { return condition; }
@@ -86,6 +96,8 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
     public String getMessage() { return message; }
     public Boolean getEmail() { return email; }
     public Integer getResetInterval() { return resetInterval; }
+    public List<String> getWebhookIds() { return webhookIds; }
+    public boolean isCleanupWebhooks() { return Boolean.TRUE.equals(cleanupWebhooks); }
 
     @Override
     public long getEntityOwnerId() {
