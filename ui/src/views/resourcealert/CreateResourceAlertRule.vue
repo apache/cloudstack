@@ -104,7 +104,7 @@ import { getAPI, postAPI } from '@/api'
 
 const METRICS_BY_TYPE = {
   VirtualMachine: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
-  Host: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION'],
+  Host: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'LOAD_AVERAGE', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
   Volume: ['DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS'],
   StoragePool: ['STORAGE_UTILIZATION']
 }
@@ -154,7 +154,8 @@ export default {
         DISK_WRITE_KBPS: 'Disk Write KB/s',
         NETWORK_READ_KBPS: 'Network In KB/s',
         NETWORK_WRITE_KBPS: 'Network Out KB/s',
-        STORAGE_UTILIZATION: 'Storage Utilization %'
+        STORAGE_UTILIZATION: 'Storage Utilization %',
+        LOAD_AVERAGE: 'Load Average'
       },
       conditionLabels: {
         GT: 'Is above',

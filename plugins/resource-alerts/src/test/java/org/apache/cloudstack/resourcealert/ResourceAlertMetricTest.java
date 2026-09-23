@@ -53,11 +53,11 @@ public class ResourceAlertMetricTest {
     }
 
     @Test
-    public void testNetworkMetricsApplyToVmOnly() {
+    public void testNetworkMetricsApplyToVmAndHost() {
         for (ResourceAlertMetric m : new ResourceAlertMetric[]{
                 ResourceAlertMetric.NETWORK_READ_KBPS, ResourceAlertMetric.NETWORK_WRITE_KBPS}) {
             assertTrue(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
-            assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Host));
+            assertTrue(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Host));
             assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
             assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Volume));
         }
@@ -69,5 +69,13 @@ public class ResourceAlertMetricTest {
         assertFalse(ResourceAlertMetric.STORAGE_UTILIZATION.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
         assertFalse(ResourceAlertMetric.STORAGE_UTILIZATION.appliesTo(ResourceAlertRule.ResourceType.Host));
         assertFalse(ResourceAlertMetric.STORAGE_UTILIZATION.appliesTo(ResourceAlertRule.ResourceType.Volume));
+    }
+
+    @Test
+    public void testLoadAverageAppliesToHostOnly() {
+        assertTrue(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.Host));
+        assertFalse(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
+        assertFalse(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.Volume));
+        assertFalse(ResourceAlertMetric.LOAD_AVERAGE.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
     }
 }

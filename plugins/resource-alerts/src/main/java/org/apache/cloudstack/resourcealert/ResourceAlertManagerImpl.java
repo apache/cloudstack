@@ -271,12 +271,24 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             case DISK_WRITE_KBPS:
                 return getVmDiskStat(type, resourceId, s -> s.getDiskWriteKBs());
             case NETWORK_READ_KBPS: {
+                if (type == ResourceAlertRule.ResourceType.Host) {
+                    HostStats s = statsCollector.getHostStats(resourceId);
+                    return s != null ? s.getNetworkReadKBs() : null;
+                }
                 VmStats s = statsCollector.getVmStats(resourceId, false);
                 return s != null ? s.getNetworkReadKBs() : null;
             }
             case NETWORK_WRITE_KBPS: {
+                if (type == ResourceAlertRule.ResourceType.Host) {
+                    HostStats s = statsCollector.getHostStats(resourceId);
+                    return s != null ? s.getNetworkWriteKBs() : null;
+                }
                 VmStats s = statsCollector.getVmStats(resourceId, false);
                 return s != null ? s.getNetworkWriteKBs() : null;
+            }
+            case LOAD_AVERAGE: {
+                HostStats s = statsCollector.getHostStats(resourceId);
+                return s != null ? s.getLoadAverage() : null;
             }
             case STORAGE_UTILIZATION: {
                 StorageStats pool = statsCollector.getStoragePoolStats(resourceId);
