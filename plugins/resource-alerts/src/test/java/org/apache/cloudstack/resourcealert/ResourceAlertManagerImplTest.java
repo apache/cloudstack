@@ -830,4 +830,16 @@ public class ResourceAlertManagerImplTest {
     public void testDoesNotEvaluateWhenNoManagementServerFound() {
         assertFalse(manager.isEvaluatingServer());
     }
+
+    @Test
+    public void testRemoveExpiredAlertsUsesRetentionDays() {
+        long before = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30);
+
+        manager.removeExpiredAlerts();
+
+        ArgumentCaptor<Date> cutoff = ArgumentCaptor.forClass(Date.class);
+        verify(alertDao).removeOlderThan(cutoff.capture());
+        long diff = Math.abs(cutoff.getValue().getTime() - before);
+        assertTrue("cutoff should be about 30 days ago", diff < 60_000L);
+    }
 }
