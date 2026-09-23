@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -53,6 +55,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
@@ -73,6 +77,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
@@ -107,6 +112,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject ResourceTagDao resourceTagDao;
     @Inject AccountDao accountDao;
     @Inject DomainDao domainDao;
+    @Inject ManagementServerHostDao managementServerHostDao;
 
     private ScheduledExecutorService executor;
     ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
@@ -148,7 +154,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             t.setDaemon(true);
             return t;
         });
-        executor.scheduleAtFixedRate(this::safeEvaluateRules, interval, interval, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(new EvaluationTask(), interval, interval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -169,11 +175,32 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
     }
 
-    private void safeEvaluateRules() {
-        try {
-            evaluateRules();
-        } catch (Exception e) {
-            logger.warn("Failed to evaluate resource alert rules", e);
+    // Every management server collects stats for all hosts, so only one may evaluate or alerts fire once per server.
+    boolean isEvaluatingServer() {
+        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+        return msHost != null && msHost.getMsid() == ManagementServerNode.getManagementServerId();
+    }
+
+    class EvaluationTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            GlobalLock lock = GlobalLock.getInternLock("ResourceAlertEvaluation");
+            try {
+                if (!lock.lock(5)) {
+                    return;
+                }
+                try {
+                    if (isEvaluatingServer()) {
+                        evaluateRules();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to evaluate resource alert rules", e);
+            } finally {
+                lock.releaseRef();
+            }
         }
     }
 
