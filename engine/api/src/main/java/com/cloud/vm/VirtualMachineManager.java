@@ -170,6 +170,12 @@ public interface VirtualMachineManager extends Manager {
 
     void destroy(String vmUuid, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
+    /**
+     * @return whether the stop that precedes destroying this instance should be forced: the value of
+     *         vm.destroy.forcestop, except while the instance's host is in a state it may come back from.
+     */
+    boolean shouldForceStopOnDestroy(VirtualMachine vm);
+
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;

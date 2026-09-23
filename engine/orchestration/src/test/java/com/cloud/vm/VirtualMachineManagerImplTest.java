@@ -126,6 +126,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
@@ -2049,4 +2050,51 @@ public class VirtualMachineManagerImplTest {
         }
     }
 
+    private void assertForceStopOnDestroy(final boolean configured, final Long hostId, final Status hostStatus, final boolean expected)
+            throws NoSuchFieldException, IllegalAccessException {
+        final String previous = VirtualMachineManagerImpl.VmDestroyForcestop.defaultValue();
+        try {
+            overrideDefaultConfigValue(VirtualMachineManagerImpl.VmDestroyForcestop, String.valueOf(configured));
+            when(vmInstanceMock.getHostId()).thenReturn(hostId);
+            when(hostMock.getStatus()).thenReturn(hostStatus);
+            assertEquals(expected, virtualMachineManagerImpl.shouldForceStopOnDestroy(vmInstanceMock));
+        } finally {
+            overrideDefaultConfigValue(VirtualMachineManagerImpl.VmDestroyForcestop, previous);
+        }
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsFalseWhenNotConfigured() throws Exception {
+        assertForceStopOnDestroy(false, hostMockId, Status.Up, false);
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsTrueWhenHostIsUp() throws Exception {
+        assertForceStopOnDestroy(true, hostMockId, Status.Up, true);
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsTrueWhenHostIsKnownToBeGone() throws Exception {
+        for (Status status : new Status[] {Status.Down, Status.Removed, Status.Error}) {
+            assertForceStopOnDestroy(true, hostMockId, status, true);
+        }
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsFalseWhileHostMayReconnect() throws Exception {
+        for (Status status : new Status[] {Status.Connecting, Status.Disconnected, Status.Alert, Status.Rebalancing}) {
+            assertForceStopOnDestroy(true, hostMockId, status, false);
+        }
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsTrueWithoutHost() throws Exception {
+        assertForceStopOnDestroy(true, null, Status.Disconnected, true);
+    }
+
+    @Test
+    public void shouldForceStopOnDestroyIsTrueWhenHostRecordIsGone() throws Exception {
+        when(hostDaoMock.findById(hostMockId)).thenReturn(null);
+        assertForceStopOnDestroy(true, hostMockId, Status.Disconnected, true);
+    }
 }

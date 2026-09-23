@@ -706,9 +706,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>(String.class,
     "allow.additional.vm.configuration.list.vmware", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
-    private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
-            "On destroy, force-stop takes this value ", true);
-
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -3576,7 +3573,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm);
         }
 
-        stopVirtualMachine(vmId, VmDestroyForcestop.value());
+        stopVirtualMachine(vmId, _itMgr.shouldForceStopOnDestroy(vm));
 
         // Detach all data disks from VM
         List<VolumeVO> dataVols = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
