@@ -711,4 +711,35 @@ public class ResourceAlertManagerImplTest {
         verify(statsCollector).getVolumeStats("chain-info");
         verify(alertDao, never()).persist(any());
     }
+
+    private ResourceAlertRuleVO poolIopsRule(double threshold) {
+        return new ResourceAlertRuleVO("pool-iops", ResourceAlertRule.ResourceType.StoragePool,
+                POOL_ID, 1L, 1L, "STORAGE_USED_IOPS", AlertCondition.GT, threshold,
+                AlertSeverity.HIGH, null, false, 600);
+    }
+
+    @Test
+    public void testStoragePoolIopsRuleFires() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(poolIopsRule(1000.0)));
+        StorageStats stats = mock(StorageStats.class);
+        when(stats.getUsedIops()).thenReturn(5000L);
+        when(statsCollector.getStoragePoolStats(POOL_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(5000.0, alertCaptor.getValue().getMetricValue(), 0.001);
+    }
+
+    @Test
+    public void testStoragePoolIopsRuleSkippedWhenDriverDoesNotReportIops() {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(poolIopsRule(1000.0)));
+        StorageStats stats = mock(StorageStats.class);
+        when(stats.getUsedIops()).thenReturn(null);
+        when(statsCollector.getStoragePoolStats(POOL_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
 }
