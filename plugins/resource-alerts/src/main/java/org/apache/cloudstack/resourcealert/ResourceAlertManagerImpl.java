@@ -175,7 +175,34 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     public void evaluateRules() {
         List<ResourceAlertRuleVO> rules = ruleDao.listActive();
         for (ResourceAlertRuleVO rule : rules) {
+            if (isOrphaned(rule)) {
+                logger.info("Removing resource alert rule {} as its owner or resource no longer exists", rule.getUuid());
+                ruleDao.remove(rule.getId());
+                continue;
+            }
             evaluateRule(rule);
+        }
+    }
+
+    boolean isOrphaned(ResourceAlertRuleVO rule) {
+        if (accountDao.findById(rule.getAccountId()) == null) {
+            return true;
+        }
+        Long resourceId = rule.getResourceId();
+        if (resourceId == null) {
+            return false;
+        }
+        switch (rule.getResourceType()) {
+            case VirtualMachine:
+                return userVmDao.findById(resourceId) == null;
+            case Volume:
+                return volumeDao.findById(resourceId) == null;
+            case Host:
+                return hostDao.findById(resourceId) == null;
+            case StoragePool:
+                return storagePoolDao.findById(resourceId) == null;
+            default:
+                return false;
         }
     }
 

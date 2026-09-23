@@ -49,6 +49,7 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -67,6 +68,7 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -121,6 +123,15 @@ public class ResourceAlertManagerImplTest {
     public void setUp() throws Exception {
         // stub out the AlertGenerator static call (needs Spring context in real env)
         doNothing().when(manager).publishAlertEvent(anyLong(), anyString(), anyString());
+        // owners and resources exist unless a test says otherwise
+        AccountVO defaultOwner = mock(AccountVO.class);
+        lenient().when(defaultOwner.getId()).thenReturn(1L);
+        lenient().when(defaultOwner.getType()).thenReturn(Account.Type.NORMAL);
+        lenient().when(accountDao.findById(anyLong())).thenReturn(defaultOwner);
+        lenient().when(userVmDao.findById(anyLong())).thenReturn(mock(UserVmVO.class));
+        lenient().when(volumeDao.findById(anyLong())).thenReturn(mock(VolumeVO.class));
+        lenient().when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
+        lenient().when(storagePoolDao.findById(anyLong())).thenReturn(mock(StoragePoolVO.class));
     }
 
     private ResourceAlertRuleVO vmCpuRule(Long resourceId) {
@@ -577,8 +588,10 @@ public class ResourceAlertManagerImplTest {
 
     @Test
     public void testGetDataCenterIdFallsBackToZeroWhenVmNotFound() {
-        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        ResourceAlertRuleVO rule = vmCpuRule(null);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Collections.singletonList(VM_ID));
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
@@ -800,12 +813,37 @@ public class ResourceAlertManagerImplTest {
     }
 
     @Test
-    public void testGenericRuleSkippedWhenOwnerMissing() {
-        when(ruleDao.listActive()).thenReturn(Collections.singletonList(vmCpuRule(null)));
+    public void testRuleRemovedWhenOwnerMissing() {
+        ResourceAlertRuleVO rule = vmCpuRule(null);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        when(accountDao.findById(1L)).thenReturn(null);
 
         manager.evaluateRules();
 
+        verify(ruleDao).remove(rule.getId());
         verify(userVmDao, never()).listIdsByAccountOrDomainsAndState(any(), any(), any());
+    }
+
+    @Test
+    public void testSpecificRuleRemovedWhenResourceExpunged() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        when(userVmDao.findById(VM_ID)).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(ruleDao).remove(rule.getId());
+        verify(statsCollector, never()).getVmStats(anyLong(), any(Boolean.class));
+    }
+
+    @Test
+    public void testSpecificHostRuleKeptWhileHostExists() {
+        ResourceAlertRuleVO rule = hostRule("CPU_UTILIZATION", 90.0);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        manager.evaluateRules();
+
+        verify(ruleDao, never()).remove(anyLong());
     }
 
     @Test
