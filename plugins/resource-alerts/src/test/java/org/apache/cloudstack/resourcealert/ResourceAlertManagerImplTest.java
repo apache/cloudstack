@@ -18,6 +18,7 @@
 package org.apache.cloudstack.resourcealert;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.cloudstack.webhook.WebhookHelper;
@@ -61,6 +63,8 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDao;
@@ -103,6 +107,7 @@ public class ResourceAlertManagerImplTest {
     @Mock ResourceTagDao resourceTagDao;
     @Mock AccountDao accountDao;
     @Mock DomainDao domainDao;
+    @Mock ManagementServerHostDao managementServerHostDao;
     @Mock SMTPMailSender mailSender;
 
     @Captor ArgumentCaptor<ResourceAlertVO> alertCaptor;
@@ -801,5 +806,28 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(userVmDao, never()).listIdsByAccountOrDomainsAndState(any(), any(), any());
+    }
+
+    @Test
+    public void testEvaluatesOnLongestRunningManagementServer() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(ManagementServerNode.getManagementServerId());
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+
+        assertTrue(manager.isEvaluatingServer());
+    }
+
+    @Test
+    public void testDoesNotEvaluateOnOtherManagementServers() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(ManagementServerNode.getManagementServerId() + 1);
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+
+        assertFalse(manager.isEvaluatingServer());
+    }
+
+    @Test
+    public void testDoesNotEvaluateWhenNoManagementServerFound() {
+        assertFalse(manager.isEvaluatingServer());
     }
 }
