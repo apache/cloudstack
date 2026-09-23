@@ -18,6 +18,7 @@
 package org.apache.cloudstack.resourcealert.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -74,6 +75,10 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "minimum seconds between repeat firings of this rule")
     private int resetInterval;
 
+    @SerializedName("webhookids")
+    @Param(description = "UUIDs of webhooks the rule delivers alerts to")
+    private List<String> webhookIds;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account that owns this rule")
     private String accountName;
@@ -101,6 +106,7 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     public void setMessage(String message) { this.message = message; }
     public void setEmail(boolean email) { this.email = email; }
     public void setResetInterval(int resetInterval) { this.resetInterval = resetInterval; }
+    public void setWebhookIds(List<String> webhookIds) { this.webhookIds = webhookIds; }
     public void setAccountName(String accountName) { this.accountName = accountName; }
     public void setDomainId(String domainId) { this.domainId = domainId; }
     public void setDomainName(String domainName) { this.domainName = domainName; }

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.resourcealert.api.command.admin;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -84,6 +86,10 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
             description = "minimum seconds between repeat firings of this rule; defaults to resourcealert.repeat.interval.default")
     private Integer resetInterval;
 
+    @Parameter(name = "webhookids", type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "UUIDs of webhooks to deliver alerts of this rule to; the rule owner must have access to them")
+    private List<String> webhookIds;
+
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
             description = "account to associate this rule with (defaults to caller)")
     private String accountName;
@@ -103,6 +109,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     public String getMessage() { return message; }
     public Boolean getEmail() { return email; }
     public Integer getResetInterval() { return resetInterval; }
+    public List<String> getWebhookIds() { return webhookIds; }
     public String getAccountName() { return accountName; }
     public Long getDomainId() { return domainId; }
 
