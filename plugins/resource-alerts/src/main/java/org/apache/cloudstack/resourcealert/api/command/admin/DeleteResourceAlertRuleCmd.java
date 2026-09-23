@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseObject = SuccessResponse.class,
         entityType = {ResourceAlertRule.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        since = "4.23.0")
+        since = "24.0.0")
 public class DeleteResourceAlertRuleCmd extends BaseCmd {
 
     @Inject
