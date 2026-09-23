@@ -48,7 +48,11 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval'],
+      args: (record, store) => {
+        const args = ['name', 'condition', 'threshold', 'severity', 'message', 'resetinterval']
+        if (store.userInfo.roletype === 'Admin') args.push('email')
+        return args
+      },
       mapping: {
         condition: {
           options: ['GT', 'GTE', 'LT', 'LTE', 'EQ']

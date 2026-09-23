@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -44,14 +45,19 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.projects.Project;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.context.CallContext;
@@ -60,8 +66,6 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Inject
     AccountManager accountManager;
-    @Inject
-    DomainDao domainDao;
     @Inject
     ResourceAlertRuleDao ruleDao;
     @Inject
@@ -87,7 +91,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         int resetInterval = cmd.getResetInterval() != null ? cmd.getResetInterval() : ResourceAlertManagerImpl.DEFAULT_RESET_INTERVAL.value();
         boolean email = cmd.getEmail() != null && cmd.getEmail();
 
-        Account owner = resolveOwner(cmd.getAccountName(), cmd.getDomainId());
+        Account caller = CallContext.current().getCallingAccount();
+        checkInfrastructureAccess(caller, resourceType);
+        checkEmailAccess(caller, email);
+        Account owner = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), null);
 
         int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
         if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
@@ -96,7 +103,11 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         }
         long domainId = owner.getDomainId();
 
-        Long resourceId = resolveResourceId(resourceType, cmd.getResourceId());
+        InternalIdentity resource = findResourceOrFail(resourceType, cmd.getResourceId());
+        if (resource instanceof ControlledEntity) {
+            accountManager.checkAccess(owner, null, false, (ControlledEntity) resource);
+        }
+        Long resourceId = resource != null ? resource.getId() : null;
 
         ResourceAlertRuleVO rule = new ResourceAlertRuleVO(
                 cmd.getName(), resourceType, resourceId,
@@ -110,34 +121,45 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Override
     public ListResponse<ResourceAlertRuleResponse> listResourceAlertRules(ListResourceAlertRulesCmd cmd) {
-        Long offset = cmd.getStartIndex();
-        Long limit = cmd.getPageSizeVal();
         Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
+        ResourceAlertRule.ResourceType resourceType = StringUtils.isNotBlank(cmd.getResourceType()) ?
+                parseResourceType(cmd.getResourceType()) : null;
 
-        List<ResourceAlertRuleJoinVO> rules = ruleJoinDao.searchByFilters(
-                cmd.getId(), cmd.getRuleName(), cmd.getResourceType(),
-                resourceId, cmd.getAccountName(), cmd.getDomainId(),
-                offset, limit);
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), null,
+                permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        SearchBuilder<ResourceAlertRuleJoinVO> sb = createAclSearchBuilder(domainIdRecursiveListProject, permittedAccounts);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        SearchCriteria<ResourceAlertRuleJoinVO> sc = createAclSearchCriteria(sb, domainIdRecursiveListProject, permittedAccounts);
+        if (cmd.getId() != null) sc.setParameters("id", cmd.getId());
+        if (StringUtils.isNotBlank(cmd.getRuleName())) sc.setParameters("name", cmd.getRuleName());
+        if (StringUtils.isNotBlank(cmd.getKeyword())) sc.setParameters("keyword", "%" + cmd.getKeyword() + "%");
+        if (resourceType != null) sc.setParameters("resourceType", resourceType);
+        if (resourceId != null) sc.setParameters("resourceId", resourceId);
 
-        int count = ruleJoinDao.countByFilters(
-                cmd.getId(), cmd.getRuleName(), cmd.getResourceType(),
-                resourceId, cmd.getAccountName(), cmd.getDomainId());
+        Filter filter = new Filter(ResourceAlertRuleJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Pair<List<ResourceAlertRuleJoinVO>, Integer> rules = ruleJoinDao.searchAndCount(sc, filter);
 
-        List<ResourceAlertRuleResponse> responses = rules.stream()
+        List<ResourceAlertRuleResponse> responses = rules.first().stream()
                 .map(this::toRuleResponse)
                 .collect(Collectors.toList());
 
         ListResponse<ResourceAlertRuleResponse> response = new ListResponse<>();
-        response.setResponses(responses, count);
+        response.setResponses(responses, rules.second());
         return response;
     }
 
     @Override
     public ResourceAlertRuleResponse updateResourceAlertRule(UpdateResourceAlertRuleCmd cmd) {
-        ResourceAlertRuleVO rule = ruleDao.findById(cmd.getId());
-        if (rule == null || rule.getRemoved() != null) {
-            throw new InvalidParameterValueException("Alert rule not found");
-        }
+        ResourceAlertRuleVO rule = findRuleForCaller(cmd.getId());
+        checkEmailAccess(CallContext.current().getCallingAccount(), Boolean.TRUE.equals(cmd.getEmail()));
 
         if (StringUtils.isNotBlank(cmd.getName())) rule.setName(cmd.getName());
         if (StringUtils.isNotBlank(cmd.getCondition())) rule.setCondition(parseCondition(cmd.getCondition()));
@@ -154,24 +176,30 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
 
     @Override
     public boolean deleteResourceAlertRule(DeleteResourceAlertRuleCmd cmd) {
-        ResourceAlertRuleVO rule = ruleDao.findById(cmd.getId());
-        if (rule == null || rule.getRemoved() != null) {
-            throw new InvalidParameterValueException("Alert rule not found");
-        }
+        findRuleForCaller(cmd.getId());
         return ruleDao.remove(cmd.getId());
     }
 
     @Override
     public ListResponse<ResourceAlertResponse> listResourceAlerts(ListResourceAlertsCmd cmd) {
+        Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
         List<Long> alertRuleIds = null;
         if (cmd.getAlertRuleId() != null) {
             ResourceAlertRuleVO rule = ruleDao.findByUuid(cmd.getAlertRuleId());
             if (rule == null) {
                 throw new InvalidParameterValueException("Alert rule not found: " + cmd.getAlertRuleId());
             }
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, rule);
             alertRuleIds = new ArrayList<>(List.of(rule.getId()));
         }
-        Long resourceId = resolveResourceIdFilter(cmd.getResourceType(), cmd.getResourceId());
+        List<Long> visibleRuleIds = listVisibleRuleIds(cmd);
+        if (visibleRuleIds != null) {
+            if (alertRuleIds == null) {
+                alertRuleIds = visibleRuleIds;
+            } else {
+                alertRuleIds.retainAll(visibleRuleIds);
+            }
+        }
         if (StringUtils.isNotBlank(cmd.getResourceType())) {
             List<Long> typeRuleIds = ruleDao.listIdsByResourceType(parseResourceType(cmd.getResourceType()));
             if (alertRuleIds == null) {
@@ -261,7 +289,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         }
     }
 
-    private Long resolveResourceId(ResourceAlertRule.ResourceType type, String uuid) {
+    private InternalIdentity findResourceOrFail(ResourceAlertRule.ResourceType type, String uuid) {
         if (StringUtils.isBlank(uuid)) {
             return null;
         }
@@ -269,7 +297,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         if (resource == null) {
             throw new InvalidParameterValueException("Unable to find " + type.name() + " with ID " + uuid);
         }
-        return resource.getId();
+        return resource;
     }
 
     private Long resolveResourceIdFilter(String resourceType, String uuid) {
@@ -279,7 +307,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         if (StringUtils.isBlank(resourceType)) {
             throw new InvalidParameterValueException("resourcetype is required when resourceid is specified");
         }
-        return resolveResourceId(parseResourceType(resourceType), uuid);
+        return findResourceOrFail(parseResourceType(resourceType), uuid).getId();
     }
 
     private String getResourceUuid(ResourceAlertRule.ResourceType type, Long id) {
@@ -306,20 +334,61 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         return resource != null ? resource.getUuid() : null;
     }
 
-    private Account resolveOwner(String accountName, Long domainId) {
-        if (StringUtils.isNotBlank(accountName) && domainId != null) {
-            Domain domain = domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain not found");
-            }
-            Account account = accountManager.getActiveAccountByName(accountName, domainId);
-            if (account == null) {
-                throw new InvalidParameterValueException("Account not found in the specified domain");
-            }
-            return account;
+    private void checkInfrastructureAccess(Account caller, ResourceAlertRule.ResourceType resourceType) {
+        boolean infra = resourceType == ResourceAlertRule.ResourceType.Host
+                || resourceType == ResourceAlertRule.ResourceType.StoragePool;
+        if (infra && !accountManager.isRootAdmin(caller.getId())) {
+            throw new PermissionDeniedException("Only root admins can create alert rules for " + resourceType.name());
         }
-        return accountManager.getActiveAccountById(
-                CallContext.current().getCallingAccountId());
+    }
+
+    private void checkEmailAccess(Account caller, boolean email) {
+        if (email && !accountManager.isRootAdmin(caller.getId())) {
+            throw new PermissionDeniedException("Only root admins can enable email for alert rules");
+        }
+    }
+
+    private ResourceAlertRuleVO findRuleForCaller(long id) {
+        ResourceAlertRuleVO rule = ruleDao.findById(id);
+        if (rule == null || rule.getRemoved() != null) {
+            throw new InvalidParameterValueException("Alert rule not found");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, rule);
+        return rule;
+    }
+
+    private SearchBuilder<ResourceAlertRuleJoinVO> createAclSearchBuilder(
+            Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject, List<Long> permittedAccounts) {
+        SearchBuilder<ResourceAlertRuleJoinVO> sb = ruleJoinDao.createSearchBuilder();
+        accountManager.buildACLSearchBuilder(sb, domainIdRecursiveListProject.first(), domainIdRecursiveListProject.second(),
+                permittedAccounts, domainIdRecursiveListProject.third());
+        return sb;
+    }
+
+    private SearchCriteria<ResourceAlertRuleJoinVO> createAclSearchCriteria(SearchBuilder<ResourceAlertRuleJoinVO> sb,
+            Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject, List<Long> permittedAccounts) {
+        SearchCriteria<ResourceAlertRuleJoinVO> sc = sb.create();
+        accountManager.buildACLSearchCriteria(sc, domainIdRecursiveListProject.first(), domainIdRecursiveListProject.second(),
+                permittedAccounts, domainIdRecursiveListProject.third());
+        return sc;
+    }
+
+    // Returns null when the caller can see alerts of every rule.
+    private List<Long> listVisibleRuleIds(ListResourceAlertsCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, null, cmd.getAccountName(), null,
+                permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        if (permittedAccounts.isEmpty() && domainIdRecursiveListProject.first() == null) {
+            return null;
+        }
+        SearchBuilder<ResourceAlertRuleJoinVO> sb = createAclSearchBuilder(domainIdRecursiveListProject, permittedAccounts);
+        SearchCriteria<ResourceAlertRuleJoinVO> sc = createAclSearchCriteria(sb, domainIdRecursiveListProject, permittedAccounts);
+        return ruleJoinDao.searchIncludingRemoved(sc, null, null, false).stream()
+                .map(ResourceAlertRuleJoinVO::getId)
+                .collect(Collectors.toList());
     }
 
     private ResourceAlertRule.ResourceType parseResourceType(String value) {
