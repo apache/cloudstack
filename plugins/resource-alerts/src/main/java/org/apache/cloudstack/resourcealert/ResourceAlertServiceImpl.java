@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.resourcealert.api.command.user.CreateResourceAlertRuleCmd;
@@ -46,6 +45,7 @@ import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -55,8 +55,10 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.projects.Project;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -67,6 +69,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.context.CallContext;
@@ -279,7 +282,9 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setId(vo.getUuid());
         r.setName(vo.getName());
         r.setResourceType(vo.getResourceType() != null ? vo.getResourceType().name() : null);
-        r.setResourceId(getResourceUuid(vo.getResourceType(), vo.getResourceId()));
+        Pair<String, String> resource = describeResource(vo.getResourceType(), vo.getResourceId());
+        r.setResourceId(resource != null ? resource.first() : null);
+        r.setResourceName(resource != null ? resource.second() : null);
         r.setMetric(vo.getMetric());
         r.setCondition(vo.getCondition() != null ? vo.getCondition().name() : null);
         r.setThreshold(vo.getThreshold());
@@ -300,7 +305,11 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setObjectName("resourcealert");
         r.setId(vo.getUuid());
         r.setAlertRuleId(rule != null ? rule.getUuid() : null);
-        r.setResourceId(rule != null ? getResourceUuid(rule.getResourceType(), vo.getResourceId()) : null);
+        Pair<String, String> resource = rule != null ? describeResource(rule.getResourceType(), vo.getResourceId()) : null;
+        r.setResourceId(resource != null ? resource.first() : null);
+        r.setResourceName(resource != null ? resource.second() : null);
+        r.setResourceType(rule != null ? rule.getResourceType().name() : null);
+        r.setAlertRuleName(rule != null ? rule.getName() : null);
         r.setMetricType(vo.getMetricType());
         r.setMetricValue(vo.getMetricValue());
         r.setSeverity(vo.getSeverity() != null ? vo.getSeverity().name() : null);
@@ -345,28 +354,32 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         return findResourceOrFail(parseResourceType(resourceType), uuid).getId();
     }
 
-    private String getResourceUuid(ResourceAlertRule.ResourceType type, Long id) {
+    // Returns the resource's uuid and display name, or null when the type or id is not set.
+    private Pair<String, String> describeResource(ResourceAlertRule.ResourceType type, Long id) {
         if (type == null || id == null) {
             return null;
         }
-        Identity resource;
         switch (type) {
-            case VirtualMachine:
-                resource = userVmDao.findByIdIncludingRemoved(id);
-                break;
-            case Volume:
-                resource = volumeDao.findByIdIncludingRemoved(id);
-                break;
-            case Host:
-                resource = hostDao.findByIdIncludingRemoved(id);
-                break;
-            case StoragePool:
-                resource = storagePoolDao.findByIdIncludingRemoved(id);
-                break;
+            case VirtualMachine: {
+                UserVmVO vm = userVmDao.findByIdIncludingRemoved(id);
+                return vm == null ? null : new Pair<>(vm.getUuid(),
+                        StringUtils.isNotBlank(vm.getDisplayName()) ? vm.getDisplayName() : vm.getHostName());
+            }
+            case Volume: {
+                VolumeVO volume = volumeDao.findByIdIncludingRemoved(id);
+                return volume == null ? null : new Pair<>(volume.getUuid(), volume.getName());
+            }
+            case Host: {
+                HostVO host = hostDao.findByIdIncludingRemoved(id);
+                return host == null ? null : new Pair<>(host.getUuid(), host.getName());
+            }
+            case StoragePool: {
+                StoragePoolVO pool = storagePoolDao.findByIdIncludingRemoved(id);
+                return pool == null ? null : new Pair<>(pool.getUuid(), pool.getName());
+            }
             default:
-                resource = null;
+                return null;
         }
-        return resource != null ? resource.getUuid() : null;
     }
 
     protected WebhookHelper getWebhookHelper() {
