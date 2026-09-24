@@ -45,6 +45,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -86,6 +87,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -166,6 +168,12 @@ public class StorageManagerImplTest {
 
     @Mock
     DataStoreProviderManager dataStoreProviderMgr;
+
+    @Mock
+    BucketDao _bucketDao;
+
+    @Mock
+    ObjectStoreDetailsDao _objectStoreDetailsDao;
 
     @Mock
     DataStoreManager dataStoreMgr;
@@ -1726,5 +1734,79 @@ public class StorageManagerImplTest {
         Boolean result = ReflectionTestUtils.invokeMethod(storageManagerImpl, "checkUsagedSpace", pool);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void updateBucketUrlsRequiresDelimiterAwarePrefixMatch() {
+        // A bucket URL that merely shares a textual prefix with the old
+        // endpoint (e.g. http://s3:8333 vs http://s3:83330) must NOT be
+        // rewritten. Only URLs that equal the old base or begin with the
+        // old base followed by '/' qualify.
+        Long storeId = 1L;
+        String oldUrl = "http://s3:8333";
+        String newUrl = "http://s3:9333";
+
+        Mockito.when(_objectStoreDetailsDao.getDetails(storeId)).thenReturn(new HashMap<>());
+
+        BucketVO matching = new BucketVO("b1");
+        ReflectionTestUtils.setField(matching, "id", 1L);
+        ReflectionTestUtils.setField(matching, "objectStoreId", storeId);
+        matching.setBucketURL("http://s3:8333/b1");
+
+        BucketVO prefixOnly = new BucketVO("b2");
+        ReflectionTestUtils.setField(prefixOnly, "id", 2L);
+        ReflectionTestUtils.setField(prefixOnly, "objectStoreId", storeId);
+        // Shares a textual prefix but a different port — must be left alone.
+        prefixOnly.setBucketURL("http://s3:83330/b2");
+
+        Mockito.when(_bucketDao.listByObjectStoreId(storeId))
+                .thenReturn(Arrays.asList(matching, prefixOnly));
+        Mockito.when(_bucketDao.update(matching.getId(), matching)).thenReturn(true);
+
+        ReflectionTestUtils.invokeMethod(storageManagerImpl, "updateBucketUrls",
+                storeId, oldUrl, newUrl);
+
+        // Only the matching bucket is rewritten to the new base.
+        Assert.assertEquals("http://s3:9333/b1", matching.getBucketURL());
+        // The prefix-only bucket URL is unchanged.
+        Assert.assertEquals("http://s3:83330/b2", prefixOnly.getBucketURL());
+        Mockito.verify(_bucketDao, Mockito.times(1)).update(matching.getId(), matching);
+        Mockito.verify(_bucketDao, Mockito.never()).update(prefixOnly.getId(), prefixOnly);
+    }
+
+    @Test
+    public void updateBucketUrlsRestoresRewrittenRowsOnPersistFailure() {
+        // A bucket URL rewrite that fails to persist must fail the update and
+        // restore the rows already rewritten, so no bucket is left pointing at
+        // the new endpoint while updateObjectStore reverts the store URL.
+        Long storeId = 1L;
+        String oldUrl = "http://s3:8333";
+        String newUrl = "http://s3:9333";
+
+        Mockito.when(_objectStoreDetailsDao.getDetails(storeId)).thenReturn(new HashMap<>());
+
+        BucketVO first = new BucketVO("b1");
+        ReflectionTestUtils.setField(first, "id", 1L);
+        ReflectionTestUtils.setField(first, "objectStoreId", storeId);
+        first.setBucketURL("http://s3:8333/b1");
+
+        BucketVO second = new BucketVO("b2");
+        ReflectionTestUtils.setField(second, "id", 2L);
+        ReflectionTestUtils.setField(second, "objectStoreId", storeId);
+        second.setBucketURL("http://s3:8333/b2");
+
+        Mockito.when(_bucketDao.listByObjectStoreId(storeId))
+                .thenReturn(Arrays.asList(first, second));
+        Mockito.when(_bucketDao.update(first.getId(), first)).thenReturn(true);
+        Mockito.when(_bucketDao.update(second.getId(), second)).thenReturn(false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () ->
+                ReflectionTestUtils.invokeMethod(storageManagerImpl, "updateBucketUrls",
+                        storeId, oldUrl, newUrl));
+
+        // The first bucket's URL is rewritten and then restored to the old
+        // base, for a total of two update calls.
+        Assert.assertEquals("http://s3:8333/b1", first.getBucketURL());
+        Mockito.verify(_bucketDao, Mockito.times(2)).update(first.getId(), first);
     }
 }
