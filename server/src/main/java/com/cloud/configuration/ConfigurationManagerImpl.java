@@ -3639,6 +3639,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         continue;
                     }
                 }
+                if (VmDetailConstants.CPU_OVER_COMMIT_RATIO.equalsIgnoreCase(detailEntry.getKey())
+                        || VmDetailConstants.MEMORY_OVER_COMMIT_RATIO.equalsIgnoreCase(detailEntry.getKey())) {
+                    validateOverCommitRatioInServiceOfferingDetail(detailEntry.getKey(), detailEntry.getValue());
+                }
                 if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
                     // Add in disk offering details
                     continue;
@@ -3736,6 +3740,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return cmdExpiryAction;
+    }
+
+    /**
+     * A service offering may declare its own overcommit ratio, overriding whatever its cluster is
+     * set to. The value means the same thing at every scope: how far the declared size is inflated
+     * relative to what the VM really holds. 1 is not overcommitted at all, which is how a VM is
+     * exempted from a cluster's overcommit.
+     *
+     * Below 1 would mean the opposite - reserving more than the VM asked for. That is a different
+     * feature and is rejected rather than being reachable by mistyping 1 as 0.1.
+     */
+    protected void validateOverCommitRatioInServiceOfferingDetail(String key, String value) {
+        float ratio;
+        try {
+            ratio = Float.parseFloat(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            throw new InvalidParameterValueException(String.format("Service offering detail %s must be a number, got [%s].", key, value));
+        }
+        if (ratio < 1) {
+            throw new InvalidParameterValueException(String.format(
+                    "Service offering detail %s must be at least 1, got [%s]. 1 means the offering is not "
+                            + "overcommitted; higher values mean it is oversubscribed by that factor.", key, value));
+        }
     }
 
     @Override
