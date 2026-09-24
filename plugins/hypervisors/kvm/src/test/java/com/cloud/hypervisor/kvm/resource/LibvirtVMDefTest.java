@@ -19,6 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -581,5 +584,62 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals("<tpm model='tpm-tis'>\n" +
                 "<backend type='emulator' version='2.0'/>\n" +
                 "</tpm>\n", tpmDef.toString());
+    }
+
+    @Test
+    public void testDiskDefVirtioBlkUsesVirtioBusAndVdLabel() {
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 1, DiskDef.DiskBus.VIRTIOBLK, DiskDef.DiskFmtType.QCOW2);
+
+        String xmlDef = disk.toString();
+        // 'virtio-blk' is a CloudStack controller name; libvirt only accepts the bus 'virtio' and
+        // rejects the whole domain XML otherwise, which is what stopped these VMs from starting.
+        assertTrue(xmlDef, xmlDef.contains("<target dev='vdb' bus='virtio'/>"));
+        assertFalse(xmlDef, xmlDef.contains("virtio-blk"));
+        assertEquals(DiskDef.DiskBus.VIRTIOBLK, disk.getBusType());
+    }
+
+    @Test
+    public void testDiskDefVirtioBlkLabelsMatchVirtio() {
+        for (int devId = 0; devId < 4; devId++) {
+            DiskDef virtio = new DiskDef();
+            virtio.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+            DiskDef virtioBlk = new DiskDef();
+            virtioBlk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", devId, DiskDef.DiskBus.VIRTIOBLK, DiskDef.DiskFmtType.QCOW2);
+            assertEquals(virtio.getDiskLabel(), virtioBlk.getDiskLabel());
+        }
+    }
+
+    @Test
+    public void testDiskDefVirtioBlkWithDiscardUnmap() {
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, DiskDef.DiskBus.VIRTIOBLK, DiskDef.DiskFmtType.QCOW2);
+        disk.setQemuDriver(true);
+        disk.setDiscard(DiskDef.DiscardType.UNMAP);
+
+        String xmlDef = disk.toString();
+        // the point of the virtio-blk controller: a virtio disk that passes the guest's discard through
+        assertTrue(xmlDef, xmlDef.contains("discard='unmap'"));
+        assertTrue(xmlDef, xmlDef.contains("bus='virtio'"));
+        assertFalse(xmlDef, xmlDef.contains("virtio-blk"));
+    }
+
+    @Test
+    public void testDiskDefVirtioIsUnchanged() {
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+
+        String xmlDef = disk.toString();
+        assertTrue(xmlDef, xmlDef.contains("<target dev='vda' bus='virtio'/>"));
+        assertFalse(xmlDef, xmlDef.contains("discard="));
+    }
+
+    @Test
+    public void testDiskDefScsiIsUnchanged() {
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, DiskDef.DiskBus.SCSI, DiskDef.DiskFmtType.QCOW2);
+
+        String xmlDef = disk.toString();
+        assertTrue(xmlDef, xmlDef.contains("<target dev='sda' bus='scsi'/>"));
     }
 }

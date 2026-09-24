@@ -1538,6 +1538,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskController, controllerKey, deviceId);
             return busType;
         }
+        if (deviceId != 0 && DiskDef.DiskBus.VIRTIOBLK == DiskDef.DiskBus.fromValue(
+                MapUtils.getString(controllerInfo, VmDetailConstants.ROOT_DISK_CONTROLLER))) {
+            // A data disk with no controller of its own follows the root, as it already does when the
+            // VM starts. The scan below cannot help here: a virtio-blk disk is rendered with libvirt's
+            // 'virtio' bus, so it is indistinguishable from a plain virtio disk in the domain XML, and
+            // the disk would silently lose discard until the next stop/start.
+            logger.debug("Attaching disk (deviceId={}) with the root controller virtio-blk", deviceId);
+            return DiskDef.DiskBus.VIRTIOBLK;
+        }
         for (final DiskDef disk : disks) {
             if (disk.getDeviceType() != DeviceType.DISK) {
                 continue;

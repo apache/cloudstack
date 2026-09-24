@@ -686,6 +686,17 @@ public class LibvirtVMDef {
                 _bus = bus;
             }
 
+            /**
+             * The name libvirt knows this bus by. It is the enum's own value everywhere except
+             * VIRTIOBLK: 'virtio-blk' is a CloudStack disk controller name, not one of libvirt's
+             * target buses (ide, scsi, virtio, xen, usb, sata, sd, fdc, uml), and a virtio-blk
+             * disk is a virtio one. Rendering the enum value instead makes libvirt reject the
+             * domain XML, so the VM cannot start.
+             */
+            public String libvirtBus() {
+                return this == VIRTIOBLK ? VIRTIO._bus : _bus;
+            }
+
             public static DiskBus fromValue(String bus) {
                 for (DiskBus b : DiskBus.values()) {
                     if (b.toString().equalsIgnoreCase(bus)) {
@@ -845,7 +856,7 @@ public class LibvirtVMDef {
 
             if (bus == DiskBus.SCSI) {
                 return "sd" + getDevLabelSuffix(devId);
-            } else if (bus == DiskBus.VIRTIO) {
+            } else if (bus == DiskBus.VIRTIO || bus == DiskBus.VIRTIOBLK) {
                 return "vd" + getDevLabelSuffix(devId);
             } else if (bus == DiskBus.SATA){
                 return "sd" + getDevLabelSuffix(devId);
@@ -1235,7 +1246,7 @@ public class LibvirtVMDef {
             }
             diskBuilder.append("<target dev='" + _diskLabel + "'");
             if (_bus != null) {
-                diskBuilder.append(" bus='" + _bus + "'");
+                diskBuilder.append(" bus='" + _bus.libvirtBus() + "'");
             }
             diskBuilder.append("/>\n");
 
