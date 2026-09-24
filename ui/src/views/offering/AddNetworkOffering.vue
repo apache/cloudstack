@@ -711,6 +711,7 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
+        networkmode: [{ required: true, message: this.$t('message.error.select') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
