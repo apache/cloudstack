@@ -70,7 +70,7 @@
     <template v-if="selectedAccountType === 'Account'">
       <a-form-item :label="$t('label.account')" required>
         <a-select
-          @change="emitChangeEvent"
+          @change="handleSelectedAccountId"
           v-model:value="selectedAccount"
           showSearch
           optionFilterProp="label"
@@ -143,6 +143,7 @@ export default {
       selectedAccountType: this.$store.getters.project?.id ? 'Project' : 'Account',
       selectedDomain: null,
       selectedAccount: null,
+      selectedAccountId: null,
       selectedProject: null,
       loading: false,
       requestToken: 0
@@ -178,6 +179,7 @@ export default {
             this.selectedDomain = null
             this.selectedProject = null
             this.selectedAccount = null
+            this.selectedAccountId = null
             return
           }
           const domainIds = this.domains?.map(domain => domain.id)
@@ -221,6 +223,7 @@ export default {
             this.selectedAccount = this.accounts?.[0]?.name
           }
           this.selectedProject = null
+          this.handleSelectedAccountId(this.selectedAccount)
           this.emitChangeEvent()
         })
         .catch((error) => {
@@ -230,6 +233,18 @@ export default {
           this.loading = false
           this.initialized = true
         })
+    },
+    handleSelectedAccountId (accountName) {
+      const selected = this.accounts.find(acc => acc.name === accountName)
+      if (selected) {
+        this.selectedAccount = selected.name
+        this.selectedAccountId = selected.id
+      } else {
+        this.selectedAccount = null
+        this.selectedAccountId = null
+      }
+
+      this.emitChangeEvent()
     },
     fetchProjects () {
       this.loading = true
