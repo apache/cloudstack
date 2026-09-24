@@ -19,9 +19,16 @@
 
 package org.apache.cloudstack;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.saml.SAML2AuthManagerImpl;
 import org.apache.cloudstack.saml.SAMLTokenDao;
 import org.apache.cloudstack.saml.SAMLTokenVO;
@@ -51,6 +58,9 @@ public class SAML2AuthManagerImplTest extends TestCase {
     private UserDao userDao;
 
     @Mock
+    private UserDetailsDao userDetailsDao;
+
+    @Mock
     DomainManager domainMgr;
 
     SAML2AuthManagerImpl saml2AuthManager;
@@ -71,6 +81,10 @@ public class SAML2AuthManagerImplTest extends TestCase {
         Field userDaoField = SAML2AuthManagerImpl.class.getDeclaredField("_userDao");
         userDaoField.setAccessible(true);
         userDaoField.set(saml2AuthManager, userDao);
+
+        Field userDetailsDaoField = SAML2AuthManagerImpl.class.getDeclaredField("userDetailsDao");
+        userDetailsDaoField.setAccessible(true);
+        userDetailsDaoField.set(saml2AuthManager, userDetailsDao);
 
         Field domainMgrField = SAML2AuthManagerImpl.class.getDeclaredField("_domainMgr");
         domainMgrField.setAccessible(true);
@@ -117,7 +131,57 @@ public class SAML2AuthManagerImplTest extends TestCase {
         Mockito.verify(userDao, Mockito.atLeastOnce()).update(Mockito.anyLong(), Mockito.any(user.getClass()));
     }
 
+    @Test
+    public void testAuthorizeUserStoresPreSamlSourceOnEnable() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.LDAP);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
+        saml2AuthManager.authorizeUser(200L, "someID", true);
+
+        verify(userDetailsDao).addDetail(200L, "PreSamlSource", "LDAP", false);
+        assertEquals(User.Source.SAML2, user.getSource());
+    }
+
+    @Test
+    public void testAuthorizeUserDoesNotRestorePreSamlSourceWhenAlreadyAuthorized() {
+        UserVO user = new UserVO(200L);
+        user.setUsername("someuser");
+        user.setSource(User.Source.SAML2);
+        when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
+
+        saml2AuthManager.authorizeUser(200L, "someID", true);
+
+        verify(userDetailsDao, never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testGetPreSamlSourceRestoresStoredSource() throws Exception {
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "LDAP"));
+
+        assertEquals(User.Source.LDAP, invokeGetPreSamlSource(200L));
+    }
+
+    @Test
+    public void testGetPreSamlSourceDefaultsToUnknownWhenNothingStored() throws Exception {
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(null);
+
+        assertEquals(User.Source.UNKNOWN, invokeGetPreSamlSource(200L));
+    }
+
+    @Test
+    public void testGetPreSamlSourceDefaultsToUnknownOnGarbageValue() throws Exception {
+        when(userDetailsDao.findDetail(200L, "PreSamlSource")).thenReturn(new UserDetailVO(200L, "PreSamlSource", "not-a-real-source"));
+
+        assertEquals(User.Source.UNKNOWN, invokeGetPreSamlSource(200L));
+    }
+
+    private User.Source invokeGetPreSamlSource(long userId) throws Exception {
+        Method method = SAML2AuthManagerImpl.class.getDeclaredMethod("getPreSamlSource", long.class);
+        method.setAccessible(true);
+        return (User.Source) method.invoke(saml2AuthManager, userId);
+    }
 
     @Test
     public void testSaveToken() {
