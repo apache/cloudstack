@@ -105,6 +105,14 @@ public class MultipathNVMeOFPool implements KVMStoragePool {
         return true;
     }
 
+    /**
+     * Host-side resize, mirroring {@link MultipathSCSIPool#resize}. The provider has
+     * already grown the volume on the array; the adaptor makes it visible here.
+     */
+    public void resize(String path, String vmName, long newSize) {
+        ((MultipathNVMeOFAdapterBase)storageAdaptor).resize(path, vmName, newSize);
+    }
+
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks() {
         return null;

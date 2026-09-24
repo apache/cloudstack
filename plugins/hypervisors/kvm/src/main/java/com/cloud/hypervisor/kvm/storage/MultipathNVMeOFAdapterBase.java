@@ -56,6 +56,7 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
     static final long NS_RESCAN_TIMEOUT_SECS = 5;
     private static final long POLL_INTERVAL_MS = 2000;
     private static final long RESCAN_INTERVAL_MS = 10_000;
+    private static final long RESIZE_SETTLE_TIMEOUT_MS = 30_000;
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
@@ -393,8 +394,145 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
         throw new UnsupportedOperationException("Unimplemented method 'createFolder'");
     }
 
+    /**
+     * Host-side half of a volume resize. The storage provider has already grown the
+     * namespace on the array by the time we get here, so all that remains is to make
+     * the new capacity visible locally and tell a running guest about it.
+     *
+     * Unlike the SCSI/FC path there is no device-mapper map to grow: the kernel picks
+     * up the new namespace size either from the target's asynchronous event
+     * notification or from an explicit {@code nvme ns-rescan}, which we issue here
+     * rather than waiting for the AEN.
+     */
     public void resize(String path, String vmName, long newSize) {
-        throw new UnsupportedOperationException("Volume resize on NVMe-oF pools is driven by the storage provider, not the KVM adapter");
+        AddressInfo address = parseAndValidatePath(path);
+        if (address == null || address.getPath() == null) {
+            throw new CloudRuntimeException("Unable to resize NVMe-oF volume, could not derive a device path from [" + path + "]");
+        }
+
+        LOGGER.debug("Resizing NVMe-oF volume " + address.getPath() + " to " + newSize + " bytes for VM " + vmName);
+
+        rescanAllControllers();
+
+        long observed = waitForNamespaceSize(address.getPath(), newSize);
+        if (observed < newSize) {
+            // Not fatal: the array has already been grown, and the kernel may still
+            // catch up via an AEN. Surface it rather than failing the operation, so
+            // the management server does not roll back a resize that did happen.
+            LOGGER.warn("NVMe namespace " + address.getPath() + " still reports " + observed
+                    + " bytes after rescan, expected at least " + newSize
+                    + "; the guest may not observe the new size until the next rescan");
+        }
+
+        notifyGuestOfResize(address.getPath(), vmName, newSize, address.getAddress());
+    }
+
+    /**
+     * Poll the block device until it reports at least {@code expectedSize}, since
+     * ns-rescan and AEN processing are asynchronous.
+     *
+     * @return the last size observed, which may be smaller than expected on timeout.
+     */
+    private long waitForNamespaceSize(String devicePath, long expectedSize) {
+        long deadline = System.currentTimeMillis() + RESIZE_SETTLE_TIMEOUT_MS;
+        long observed = getPhysicalDiskSize(devicePath);
+        while (observed < expectedSize && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(POLL_INTERVAL_MS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            rescanAllControllers();
+            observed = getPhysicalDiskSize(devicePath);
+        }
+        return observed;
+    }
+
+    /**
+     * Ask libvirt to re-read the size of the guest's block device, so a running VM
+     * sees the extra capacity without a reboot. A stopped VM needs nothing here: it
+     * picks up the new size when the disk is next attached.
+     */
+    private void notifyGuestOfResize(String devicePath, String vmName, long newSize, String eui) {
+        if (StringUtils.isEmpty(vmName)) {
+            LOGGER.debug("No VM name supplied for resize of " + devicePath + "; skipping guest notification");
+            return;
+        }
+
+        if (!isVmRunning(vmName)) {
+            LOGGER.debug("VM " + vmName + " is not running; skipping guest notification for " + devicePath);
+            return;
+        }
+
+        String target = findDomainDiskTarget(vmName, devicePath, eui);
+        if (target == null) {
+            LOGGER.warn("Could not find a disk target for " + devicePath + " in domain " + vmName
+                    + "; skipping guest notification");
+            return;
+        }
+
+        // virsh blockresize takes the new size in KiB.
+        Script cmd = new Script("virsh", LOGGER);
+        cmd.add("blockresize");
+        cmd.add("--path", target);
+        cmd.add("--size", String.valueOf(newSize / 1024L));
+        cmd.add(vmName);
+        String result = cmd.execute();
+        if (result != null) {
+            LOGGER.warn("virsh blockresize of " + target + " on " + vmName + " failed: " + result);
+        } else {
+            LOGGER.info("Notified " + vmName + " of new size " + newSize + " bytes for " + target);
+        }
+    }
+
+    private boolean isVmRunning(String vmName) {
+        Script cmd = new Script("virsh", LOGGER);
+        cmd.add("domstate", vmName);
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String result = cmd.execute(parser);
+        return result == null && parser.getLine() != null && parser.getLine().trim().startsWith("running");
+    }
+
+    /**
+     * Resolve the domain-local disk target (vda, vdb, ...) backing {@code devicePath}.
+     *
+     * libvirt reports the source as it was configured, but may instead surface a
+     * canonicalised /dev/nvmeXnY in place of the /dev/disk/by-id symlink we attached,
+     * so accept either form, falling back to matching the bare EUI.
+     */
+    private String findDomainDiskTarget(String vmName, String devicePath, String eui) {
+        Script cmd = new Script("virsh", LOGGER);
+        cmd.add("domblklist", vmName);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = cmd.execute(parser);
+        if (result != null || parser.getLines() == null) {
+            return null;
+        }
+        String canonical = resolveCanonicalPath(devicePath);
+        for (String line : parser.getLines().split("\\R")) {
+            String[] cols = line.trim().split("\\s+");
+            if (cols.length < 2) {
+                continue;
+            }
+            String source = cols[1];
+            if (source.equals(devicePath)
+                    || (canonical != null && source.equals(canonical))
+                    || (StringUtils.isNotEmpty(eui) && source.toLowerCase().contains(eui.toLowerCase()))) {
+                return cols[0];
+            }
+        }
+        return null;
+    }
+
+    /** Resolve a /dev/disk/by-id symlink to its /dev/nvmeXnY target, or null. */
+    private String resolveCanonicalPath(String devicePath) {
+        try {
+            return new File(devicePath).getCanonicalPath();
+        } catch (Exception e) {
+            LOGGER.debug("Could not canonicalise " + devicePath + ": " + e.getMessage());
+            return null;
+        }
     }
 
     boolean isConnected(String path) {

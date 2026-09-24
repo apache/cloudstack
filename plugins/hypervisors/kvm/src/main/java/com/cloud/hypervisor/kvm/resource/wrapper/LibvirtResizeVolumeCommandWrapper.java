@@ -48,6 +48,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.MultipathNVMeOFPool;
 import com.cloud.hypervisor.kvm.storage.MultipathSCSIPool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -84,6 +85,10 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
             if (pool instanceof MultipathSCSIPool) {
                 return handleMultipathSCSIResize(command, pool);
+            }
+
+            if (pool instanceof MultipathNVMeOFPool) {
+                return handleMultipathNVMeOFResize(command, pool);
             }
 
             if (spool.getType().equals(StoragePoolType.PowerFlex)) {
@@ -237,6 +242,11 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
     private Answer handleMultipathSCSIResize(ResizeVolumeCommand command, KVMStoragePool pool) {
         ((MultipathSCSIPool)pool).resize(command.getPath(), command.getInstanceName(), command.getNewSize());
+        return new ResizeVolumeAnswer(command, true, "");
+    }
+
+    private Answer handleMultipathNVMeOFResize(ResizeVolumeCommand command, KVMStoragePool pool) {
+        ((MultipathNVMeOFPool)pool).resize(command.getPath(), command.getInstanceName(), command.getNewSize());
         return new ResizeVolumeAnswer(command, true, "");
     }
 }
