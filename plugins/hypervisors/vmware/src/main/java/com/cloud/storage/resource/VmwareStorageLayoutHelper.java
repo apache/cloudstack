@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.vmware.vim25.FileBackedVirtualDiskSpec;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDiskAdapterType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +32,10 @@ import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
+import com.cloud.hypervisor.vmware.mo.VmdkAdapterType;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.storage.Storage;
 
 import com.cloud.utils.Pair;
 
@@ -168,6 +174,17 @@ public class VmwareStorageLayoutHelper implements Configurable {
     }
 
     public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName, String excludeFolders) throws Exception {
+        return syncVolumeToVmDefaultFolder(dcMo, vmName, ds, vmdkName, excludeFolders, null);
+    }
+
+    public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName, String excludeFolders,
+                                                      VmdkAdapterType targetAdapterType) throws Exception {
+        return syncVolumeToVmDefaultFolder(dcMo, vmName, ds, vmdkName, excludeFolders, targetAdapterType, null).first();
+    }
+
+    public static Pair<String, Boolean> syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName,
+                                                                     String excludeFolders, VmdkAdapterType targetAdapterType,
+                                                                     Storage.ProvisioningType provisioningType) throws Exception {
 
         assert (ds != null);
         if (!ds.folderExists(String.format("[%s]", ds.getName()), vmName)) {
@@ -182,12 +199,37 @@ public class VmwareStorageLayoutHelper implements Configurable {
         String[] vmdkLinkedCloneModePair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, VmwareStorageLayoutType.VMWARE, true);
         String[] vmdkFullCloneModePair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, VmwareStorageLayoutType.VMWARE, false);
 
+        String deprecatedLegacyPath = getDeprecatedLegacyDatastorePathFromVmdkFileName(ds, vmdkName + ".vmdk");
+        if (ds.fileExists(deprecatedLegacyPath)) {
+            String vmwarePath = vmdkLinkedCloneModePair[0];
+            LOGGER.info("sync " + deprecatedLegacyPath + "->" + vmwarePath);
+            VirtualDiskManagerMO diskManager = new VirtualDiskManagerMO(ds.getContext());
+            if (targetAdapterType == null) {
+                diskManager.moveVirtualDisk(deprecatedLegacyPath, dcMo.getMor(), vmwarePath, dcMo.getMor(), true);
+            } else {
+                FileBackedVirtualDiskSpec diskSpec = createDiskSpec(targetAdapterType, provisioningType);
+                diskManager.copyVirtualDisk(deprecatedLegacyPath, dcMo.getMor(), vmwarePath, dcMo.getMor(), diskSpec, true);
+                diskManager.deleteVirtualDisk(deprecatedLegacyPath, dcMo.getMor());
+            }
+            return new Pair<>(vmwarePath, targetAdapterType != null);
+        }
+
         if (!ds.fileExists(vmdkLinkedCloneModeLegacyPair[0]) && !ds.fileExists(vmdkLinkedCloneModePair[0])) {
             // To protect against inconsistency caused by non-atomic datastore file management, detached disk may
             // be left over in its previous owner VM. We will do a fixup synchronization here by moving it to root
             // again.
             //
             syncVolumeToRootFolder(dcMo, ds, vmdkName, vmName, excludeFolders);
+        }
+
+        if (targetAdapterType != null && ds.fileExists(vmdkLinkedCloneModeLegacyPair[0])) {
+            String vmwarePath = vmdkLinkedCloneModePair[0];
+            LOGGER.info("sync " + vmdkLinkedCloneModeLegacyPair[0] + "->" + vmwarePath);
+            VirtualDiskManagerMO diskManager = new VirtualDiskManagerMO(ds.getContext());
+            FileBackedVirtualDiskSpec diskSpec = createDiskSpec(targetAdapterType, provisioningType);
+            diskManager.copyVirtualDisk(vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor(), vmwarePath, dcMo.getMor(), diskSpec, true);
+            diskManager.deleteVirtualDisk(vmdkLinkedCloneModeLegacyPair[0], dcMo.getMor());
+            return new Pair<>(vmwarePath, true);
         }
 
         for (int i=1; i<vmdkFullCloneModeLegacyPair.length; i++) {
@@ -212,7 +254,20 @@ public class VmwareStorageLayoutHelper implements Configurable {
         }
 
         // Note: we will always return a path
-        return vmdkLinkedCloneModePair[0];
+        return new Pair<>(vmdkLinkedCloneModePair[0], false);
+    }
+
+    private static FileBackedVirtualDiskSpec createDiskSpec(VmdkAdapterType targetAdapterType, Storage.ProvisioningType provisioningType) {
+        FileBackedVirtualDiskSpec diskSpec = new FileBackedVirtualDiskSpec();
+        if (targetAdapterType == VmdkAdapterType.buslogic) {
+            diskSpec.setAdapterType(VirtualDiskAdapterType.BUS_LOGIC.value());
+        } else if (targetAdapterType == VmdkAdapterType.lsilogic) {
+            diskSpec.setAdapterType(VirtualDiskAdapterType.LSI_LOGIC.value());
+        } else {
+            diskSpec.setAdapterType(targetAdapterType.toString());
+        }
+        diskSpec.setDiskType(VmwareHelper.getVirtualDiskType(provisioningType).value());
+        return diskSpec;
     }
 
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName) throws Exception {

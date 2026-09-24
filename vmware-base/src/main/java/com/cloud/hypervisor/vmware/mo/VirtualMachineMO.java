@@ -1284,6 +1284,12 @@ public class VirtualMachineMO extends BaseMO {
         createDisk(vmdkDatastorePath, VirtualDiskType.THIN, VirtualDiskMode.PERSISTENT, null, sizeInMb, morDs, controllerKey, vSphereStoragePolicyId);
     }
 
+    public void createDisk(String vmdkDatastorePath, Storage.ProvisioningType provisioningType, long sizeInMb, ManagedObjectReference morDs,
+                           int controllerKey, String vSphereStoragePolicyId) throws Exception {
+        createDisk(vmdkDatastorePath, VmwareHelper.getVirtualDiskType(provisioningType), VirtualDiskMode.PERSISTENT, null, sizeInMb, morDs,
+                controllerKey, vSphereStoragePolicyId);
+    }
+
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, long sizeInMb,
                            ManagedObjectReference morDs, int controllerKey, String vSphereStoragePolicyId) throws Exception {
@@ -1435,6 +1441,11 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String vSphereStoragePolicyId, Long maxIops) throws Exception {
+        attachDisk(vmdkDatastorePathChain, morDs, diskController, vSphereStoragePolicyId, maxIops, true);
+    }
+
+    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String vSphereStoragePolicyId, Long maxIops,
+                           boolean updateVmdkAdapter) throws Exception {
         if(logger.isTraceEnabled())
             logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
                             + GSON.toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
@@ -1465,7 +1476,7 @@ public class VirtualMachineMO extends BaseMO {
 
         synchronized (_mor.getValue().intern()) {
             VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1, maxIops);
-            if (StringUtils.isNotBlank(diskController)) {
+            if (updateVmdkAdapter && StringUtils.isNotBlank(diskController)) {
                 String vmdkFileName = vmdkDatastorePathChain[0];
                 updateVmdkAdapter(vmdkFileName, diskController);
             }
