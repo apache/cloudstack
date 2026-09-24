@@ -43,6 +43,8 @@ import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
+import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
+import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
 import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -464,5 +466,26 @@ public class ResourceAlertServiceImplTest {
         when(ruleDao.findById(1L)).thenReturn(rule);
 
         service.updateResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testRuleResponseIncludesResourceName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(7L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vm.getDisplayName()).thenReturn("web-01");
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        when(userVmDao.findByIdIncludingRemoved(7L)).thenReturn(vm);
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(joined.getResourceId()).thenReturn(7L);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(cmd);
+
+        assertEquals("vm-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceId"));
+        assertEquals("web-01", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceName"));
     }
 }

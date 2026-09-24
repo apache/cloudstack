@@ -47,6 +47,10 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "the specific resource ID; absent for generic rules")
     private String resourceId;
 
+    @SerializedName(ApiConstants.RESOURCE_NAME)
+    @Param(description = "name of the resource the rule watches")
+    private String resourceName;
+
     @SerializedName(ApiConstants.METRIC)
     @Param(description = "the metric being monitored")
     private String metric;
@@ -99,6 +103,7 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     public void setName(String name) { this.name = name; }
     public void setResourceType(String resourceType) { this.resourceType = resourceType; }
     public void setResourceId(String resourceId) { this.resourceId = resourceId; }
+    public void setResourceName(String resourceName) { this.resourceName = resourceName; }
     public void setMetric(String metric) { this.metric = metric; }
     public void setCondition(String condition) { this.condition = condition; }
     public void setThreshold(double threshold) { this.threshold = threshold; }
