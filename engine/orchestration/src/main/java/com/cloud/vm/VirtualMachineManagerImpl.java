@@ -481,7 +481,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Long> VmOpCancelInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.op.cancel.interval", "3600",
             "Time (in seconds) to wait before cancelling a operation", false);
     static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
-            "On destroy, force-stop takes this value ", true);
+            "On destroy, force-stop takes this value. When the host cannot be reached, the instance's resources are only " +
+                    "released if the host is Down or Removed; otherwise the destroy fails and can be retried once the host is back.", true);
     static final ConfigKey<Integer> ClusterDeltaSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "sync.interval", "60",
             "Cluster Delta sync interval in seconds",
             false);
@@ -693,7 +694,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _userVmDao.saveDetails(userVM);
         }
 
-        advanceStop(vm.getUuid(), VmDestroyForcestop.value());
+        advanceStopForDestroy(vm.getUuid());
         vm = _vmDao.findByUuid(vm.getUuid());
 
         try {
@@ -2364,6 +2365,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void advanceStop(final String vmUuid, final boolean cleanUpEvenIfUnableToStop)
             throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        advanceStop(vmUuid, cleanUpEvenIfUnableToStop, false);
+    }
+
+    /**
+     * vm.destroy.forcestop makes the stop that precedes a destroy a forced one. A forced stop that gets no answer from
+     * the host releases the instance's NICs, addresses and storage anyway. That is right for a host that is gone, and
+     * wrong for one that is only briefly unreachable, for example while its agent or a management server restarts:
+     * the domain keeps running, its address is handed to another instance and its volume is stranded.
+     *
+     * So a destroy's forced stop releases without the host's answer only when the host is gone. Otherwise it fails
+     * as an unforced stop would, the instance stays Running and the destroy can be retried. An explicit forced stop
+     * is not affected: that is a caller stating the instance is to be treated as stopped.
+     */
+    @Override
+    public void advanceStopForDestroy(final String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        final boolean force = VmDestroyForcestop.value();
+        advanceStop(vmUuid, force, force);
+    }
+
+    protected void advanceStop(final String vmUuid, final boolean cleanUpEvenIfUnableToStop, final boolean releaseOnlyIfHostIsGone)
+            throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -2372,7 +2394,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
             placeHolder = createPlaceHolderWork(vm.getId());
             try {
-                orchestrateStop(vmUuid, cleanUpEvenIfUnableToStop);
+                orchestrateStop(vmUuid, cleanUpEvenIfUnableToStop, releaseOnlyIfHostIsGone);
             } finally {
                 if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
@@ -2380,7 +2402,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
         } else {
-            final Outcome<VirtualMachine> outcome = stopVmThroughJobQueue(vmUuid, cleanUpEvenIfUnableToStop);
+            final Outcome<VirtualMachine> outcome = stopVmThroughJobQueue(vmUuid, cleanUpEvenIfUnableToStop, releaseOnlyIfHostIsGone);
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "stopVm");
 
@@ -2392,10 +2414,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void orchestrateStop(final String vmUuid, final boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    private void orchestrateStop(final String vmUuid, final boolean cleanUpEvenIfUnableToStop, final boolean releaseOnlyIfHostIsGone)
+            throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-        advanceStop(vm, cleanUpEvenIfUnableToStop);
+        advanceStop(vm, cleanUpEvenIfUnableToStop, releaseOnlyIfHostIsGone);
+    }
+
+    /**
+     * @return true when the host an instance was on cannot be running it anymore: there is no host, its record is
+     *         gone, or it is Down or Removed. In any other status the host may still be running it, whether or not
+     *         it answers right now.
+     */
+    protected boolean isHostGone(final Long hostId) {
+        return hostId == null || isGone(_hostDao.findById(hostId));
+    }
+
+    private static boolean isGone(final HostVO host) {
+        return host == null || host.getStatus() == Status.Down || host.getStatus() == Status.Removed;
+    }
+
+    /**
+     * Whether a stop may release an instance's resources without the host confirming the instance is stopped.
+     */
+    protected boolean mayReleaseWithoutHostConfirmation(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop, final boolean releaseOnlyIfHostIsGone) {
+        if (!cleanUpEvenIfUnableToStop) {
+            return false;
+        }
+        if (!releaseOnlyIfHostIsGone || vm.getHostId() == null) {
+            return true;
+        }
+        final HostVO host = _hostDao.findById(vm.getHostId());
+        if (isGone(host)) {
+            return true;
+        }
+        logger.warn("Not releasing the resources of {}: its host {} is {} and did not confirm the instance is stopped. "
+                + "Retry the destroy, or stop the instance with forced=true if it is known to be gone.", vm, host, host.getStatus());
+        return false;
     }
 
     private void updatePersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
@@ -2460,8 +2515,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return null;
     }
 
-    private void advanceStop(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException,
-    ConcurrentOperationException {
+    protected void advanceStop(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop, final boolean releaseOnlyIfHostIsGone)
+            throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         final State state = vm.getState();
         if (state == State.Stopped) {
             logger.debug("VM is already stopped: {}", vm);
@@ -2513,6 +2568,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (final NoTransitionException e1) {
             if (!cleanUpEvenIfUnableToStop) {
                 throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
+            }
+            // cleanup() releases the resources whether or not the host answers. For a destroy on a host that is not
+            // gone, go ahead only once the host has confirmed the instance is stopped.
+            if (releaseOnlyIfHostIsGone && !isHostGone(vm.getHostId())) {
+                final Pair<Boolean, String> stopResult = sendStop(vmGuru, profile, false, false);
+                if (!stopResult.first()) {
+                    logger.warn("Not releasing the resources of {} in state {}: its host did not confirm the instance is stopped.", vm, vm.getState());
+                    String errorDetails = stopResult.second() != null ? " due to " + stopResult.second() : "";
+                    throw new CloudRuntimeException("Unable to stop " + vm + " in state " + vm.getState() + errorDetails);
+                }
             }
             final boolean doCleanup = true;
             logger.warn("Unable to transition the state but we're moving on because it's forced stop", e1);
@@ -2588,7 +2653,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.warn("Unable to stop {} due to [{}].", profile.toString(), e.toString(), e);
         } finally {
             if (!stopped) {
-                if (!cleanUpEvenIfUnableToStop) {
+                if (!mayReleaseWithoutHostConfirmation(vm, cleanUpEvenIfUnableToStop, releaseOnlyIfHostIsGone)) {
                     logger.warn("Unable to stop vm {}", vm);
                     try {
                         stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
@@ -2699,7 +2764,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         logger.debug("Destroying vm {}, expunge flag {}", vm, (expunge ? "on" : "off"));
 
-        advanceStop(vmUuid, VmDestroyForcestop.value());
+        advanceStopForDestroy(vmUuid);
 
         deleteVMSnapshots(vm, expunge);
 
@@ -5705,6 +5770,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> stopVmThroughJobQueue(final String vmUuid, final boolean cleanup) {
+        return stopVmThroughJobQueue(vmUuid, cleanup, false);
+    }
+
+    public Outcome<VirtualMachine> stopVmThroughJobQueue(final String vmUuid, final boolean cleanup, final boolean releaseOnlyIfHostIsGone) {
         String commandName = VmWorkStop.class.getName();
         Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(null, vmUuid, null, commandName);
 
@@ -5715,7 +5784,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, VmWorkJobVO.Step.Prepare, vmId);
 
             workJob = newVmWorkJobAndInfo.first();
-            VmWorkStop workInfo = new VmWorkStop(newVmWorkJobAndInfo.second(), cleanup);
+            VmWorkStop workInfo = new VmWorkStop(newVmWorkJobAndInfo.second(), cleanup, releaseOnlyIfHostIsGone);
 
             setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
@@ -6055,7 +6124,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException(message);
         }
 
-        orchestrateStop(vm.getUuid(), work.isCleanup());
+        orchestrateStop(vm.getUuid(), work.isCleanup(), work.isReleaseOnlyIfHostIsGone());
         return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 

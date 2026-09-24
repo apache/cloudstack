@@ -131,6 +131,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -3831,7 +3832,7 @@ public class UserVmManagerImplTest {
 
             when(volumeApiService.destroyVolume(volumeId, CallContext.current().getCallingAccount(), expunge, false)).thenReturn(vol);
 
-            doReturn(vm).when(userVmManagerImpl).stopVirtualMachine(anyLong(), anyBoolean());
+            doNothing().when(userVmManagerImpl).stopVirtualMachineForDestroy(any(), any());
             doReturn(vm).when(userVmManagerImpl).destroyVm(vmId, expunge);
             doReturn(true).when(userVmManagerImpl).expunge(vm);
 
@@ -3841,7 +3842,8 @@ public class UserVmManagerImplTest {
 
                 assertNotNull(result);
                 assertEquals(vm, result);
-                Mockito.verify(userVmManagerImpl).stopVirtualMachine(vmId, false);
+                Mockito.verify(userVmManagerImpl).stopVirtualMachineForDestroy(any(), eq(vm));
+                Mockito.verify(userVmManagerImpl, never()).stopVirtualMachine(anyLong(), anyBoolean());
                 Mockito.verify(backupManager).checkAndRemoveBackupOfferingBeforeExpunge(vm);
             }
         }
@@ -4609,5 +4611,52 @@ public class UserVmManagerImplTest {
 
         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+    }
+
+    @Test
+    public void stopVirtualMachineForDestroyUsesTheDestroyStop() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+
+        userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+
+        Mockito.verify(virtualMachineManager).advanceStopForDestroy("vm-uuid");
+        Mockito.verify(virtualMachineManager, never()).advanceStop(anyString(), anyBoolean());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void stopVirtualMachineForDestroyFailsWhenTheStopTimesOut() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.doThrow(new OperationTimedoutException(null, 1L, 1L, 1, false)).when(virtualMachineManager).advanceStopForDestroy("vm-uuid");
+
+        userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+    }
+
+    private void setDestroyForcestop(String value) throws Exception {
+        java.lang.reflect.Field key = UserVmManagerImpl.class.getDeclaredField("VmDestroyForcestop");
+        key.setAccessible(true);
+        java.lang.reflect.Field defaultValue = ConfigKey.class.getDeclaredField("_defaultValue");
+        defaultValue.setAccessible(true);
+        defaultValue.set(key.get(null), value);
+    }
+
+    @Test
+    public void stopVirtualMachineForDestroyChecksTheForceStopPermissionOnlyWhenForced() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        try {
+            setDestroyForcestop("true");
+            doNothing().when(userVmManagerImpl).checkForceStopVmPermission(callerAccount);
+            userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+            Mockito.verify(userVmManagerImpl).checkForceStopVmPermission(callerAccount);
+
+            Mockito.clearInvocations(userVmManagerImpl);
+            setDestroyForcestop("false");
+            userVmManagerImpl.stopVirtualMachineForDestroy(callerAccount, vm);
+            Mockito.verify(userVmManagerImpl, never()).checkForceStopVmPermission(any());
+        } finally {
+            setDestroyForcestop("false");
+        }
     }
 }
