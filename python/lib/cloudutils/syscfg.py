@@ -167,7 +167,6 @@ class sysConfigAgentUbuntu(sysConfigAgent):
         self.svo = serviceOpsUbuntu()
 
         self.services = [hostConfig(self),
-                         securityPolicyConfigUbuntu(self),
                          networkConfigUbuntu(self),
                          libvirtConfigUbuntu(self),
                          firewallConfigUbuntu(self),
@@ -179,7 +178,6 @@ class sysConfigEL5(sysConfigAgentRedhatBase):
     def __init__(self, glbEnv):
         super(sysConfigEL5, self).__init__(glbEnv)
         self.services = [hostConfig(self),
-                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
@@ -192,7 +190,6 @@ class sysConfigEL6(sysConfigAgentRedhatBase):
         super(sysConfigEL6, self).__init__(glbEnv)
         self.services = [hostConfig(self),
                          cgroupConfig(self),
-                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
@@ -204,7 +201,6 @@ class sysConfigEL7(sysConfigAgentRedhat7Base):
     def __init__(self, glbEnv):
         super(sysConfigEL7, self).__init__(glbEnv)
         self.services = [hostConfig(self),
-                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
@@ -216,7 +212,6 @@ class sysConfigEL(sysConfigAgentELBase):
     def __init__(self, glbEnv):
         super(sysConfigEL, self).__init__(glbEnv)
         self.services = [hostConfig(self),
-                         securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
                          libvirtConfigRedhat(self),
                          firewallConfigAgent(self),
@@ -227,7 +222,6 @@ class sysConfigSUSE(sysConfigAgentSUSE):
     def __init__(self, glbEnv):
         super(sysConfigSUSE, self).__init__(glbEnv)
         self.services = [hostConfig(self),
-                         securityPolicyConfigSUSE(self),
                          networkConfigSUSE(self),
                          libvirtConfigSUSE(self),
                          firewallConfigAgent(self),
