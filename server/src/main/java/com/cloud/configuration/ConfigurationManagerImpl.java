@@ -92,11 +92,14 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.diagnostics.DiagnosticsServiceImpl;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -622,6 +625,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.MemoryCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.Ipv6SubnetCapacityThreshold.key());
+        weightBasedParametersForValidation.add(BackupManager.BackupStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
         weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
@@ -639,6 +644,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
         weightBasedParametersForValidation.add(ConfigurationManager.HostCapacityTypeCpuMemoryWeight.key());
+        weightBasedParametersForValidation.add(DiagnosticsServiceImpl.DiskQuotaPercentageThreshold.key());
+        weightBasedParametersForValidation.add(StorageManager.ObjectStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(StorageOrchestrationService.ImageStoreImbalanceThreshold.key());
     }
 
     protected void overProvisioningFactorsForValidation() {
