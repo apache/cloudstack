@@ -123,6 +123,14 @@ const vueConfig = {
 
   css: {
     loaderOptions: {
+      scss: {
+        sassOptions: {
+          // webpack 4's sass-loader 8 only speaks the legacy JS API, and the
+          // styles rely on @import; sass >= 1.79/1.80 deprecation-warns on
+          // both. Neither is actionable until the webpack 5 migration.
+          silenceDeprecations: ['legacy-js-api', 'import']
+        }
+      },
       less: {
         modifyVars: {
           // https://ant.design/docs/spec/colors
@@ -162,7 +170,11 @@ const vueConfig = {
   lintOnSave: undefined,
 
   // babel-loader no-ignore node_modules/*
-  transpileDependencies: [],
+  // minio (and its fast-xml-parser dependency) and vue-router ship modern
+  // syntax (class fields, optional chaining) in both their ESM and CJS
+  // builds, which webpack 4's parser can't handle unless babel transpiles
+  // them like first-party source.
+  transpileDependencies: [/[\\/]node_modules[\\/](minio|fast-xml-parser|vue-router)[\\/]/],
 
   pluginOptions: {
     i18n: {
