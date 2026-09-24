@@ -1528,13 +1528,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
-    private boolean hostSupportsSnapsthotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
+    private boolean hostSupportsSnapshotForVolume(HostVO host, VolumeInfo volume, boolean isFromVmSnapshot) {
         if (host.getHypervisorType() != HypervisorType.KVM) {
             return true;
         }
 
-        //Turn off snapshot by default for KVM if the volume attached to vm that is not in the Stopped/Destroyed state,
-        //unless it is set in the global flag
+        // For KVM, snapshots of a volume attached to a vm that is not in the Stopped/Destroyed state are allowed
+        // unless the global flag kvm.snapshot.enabled is turned off (it is enabled by default since 4.22.0.0)
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
@@ -1585,9 +1585,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
-                if (!hostSupportsSnapsthotForVolume(host, volume, isFromVmSnapshot)) {
+                if (!hostSupportsSnapshotForVolume(host, volume, isFromVmSnapshot)) {
                     throw new CloudRuntimeException(
-                            "KVM Snapshot is not supported for Running VMs. It is disabled by default due to a possible volume corruption in certain cases. To enable it set global settings kvm.snapshot.enabled to True. See the documentation for more details.");
+                            "KVM Snapshot is not supported for Running VMs because the global setting " +
+                                    "kvm.snapshot.enabled is set to false for this deployment. It can be disabled to " +
+                                    "avoid a possible volume corruption in certain cases. To allow snapshots of running " +
+                                    "VMs, set kvm.snapshot.enabled to true. See the documentation for more details.");
                 }
             }
         }

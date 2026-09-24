@@ -63,6 +63,8 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -473,8 +475,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         }
 
         long accountId = account.getAccountId();
-        clearOldAccountMapping(cmd);
-        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(cmd.getDomainId(), linkType, cmd.getLdapDomain(), cmd.getAccountType(), accountId));
+        LdapTrustMapVO vo = Transaction.execute((TransactionCallback<LdapTrustMapVO>) status -> {
+            clearOldAccountMapping(cmd, accountId);
+            clearAccountsOwnMapping(cmd.getDomainId(), accountId);
+            return _ldapTrustMapDao.persist(new LdapTrustMapVO(cmd.getDomainId(), linkType, cmd.getLdapDomain(), cmd.getAccountType(), accountId));
+        });
         return new LinkAccountToLdapResponse(domain.getUuid(), vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal(), account.getUuid(), cmd.getAccountName());
     }
 
@@ -515,10 +520,23 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         return linkAccountToLdapAndGetResponse(cmd);
     }
 
-    private void clearOldAccountMapping(LinkAccountToLdapCmd cmd) {
+    /**
+     * Replaces the account's existing LDAP mapping, if any, so {@link #linkAccountToLdap}
+     * can update the ldapDomain/type of an existing link instead of failing on the
+     * domain_id/account_id unique key.
+     */
+    private void clearAccountsOwnMapping(Long domainId, long accountId) {
+        LdapTrustMapVO ownVo = _ldapTrustMapDao.findByAccount(domainId, accountId);
+        if (ownVo != null) {
+            logger.warn("account {} in domain {} is already linked to ldap {} '{}'; replacing with the new mapping", accountId, domainId, ownVo.getType(), ownVo.getName());
+            _ldapTrustMapDao.expunge(ownVo.getId());
+        }
+    }
+
+    private void clearOldAccountMapping(LinkAccountToLdapCmd cmd, long accountId) {
         //        first find if exists log warning and update
         LdapTrustMapVO oldVo = _ldapTrustMapDao.findGroupInDomain(cmd.getDomainId(), cmd.getLdapDomain());
-        if (oldVo != null) {
+        if (oldVo != null && oldVo.getAccountId() != accountId) {
             // deal with edge cases, i.e. check if the old account is indeed deleted etc.
             if (oldVo.getAccountId() != 0L) {
                 AccountVO oldAcount = accountDao.findByIdIncludingRemoved(oldVo.getAccountId());
