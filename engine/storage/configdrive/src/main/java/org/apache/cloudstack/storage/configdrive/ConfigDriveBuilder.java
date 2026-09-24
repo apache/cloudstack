@@ -248,16 +248,24 @@ public class ConfigDriveBuilder {
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      */
     static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
-        JsonObject finalNetworkData = new JsonObject();
-        if (needForGeneratingNetworkData(supportedServices)) {
-            for (NicProfile nic : nics) {
-                List<Network.Service> supportedService = supportedServices.get(nic.getId());
-                JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
+        if (!needForGeneratingNetworkData(supportedServices)) {
+            // No NIC has the ConfigDrive provider assigned for Dhcp/Dns, meaning some other provider
+            // (e.g. a VirtualRouter or a network extension) is responsible for handing out network
+            // config over the wire. Skip writing network_data.json altogether: writing an empty-but-
+            // present file here would make cloud-init's DataSourceConfigDrive believe explicit (empty)
+            // network config was supplied, suppressing its default per-NIC DHCP auto-configuration and
+            // leaving the guest NIC administratively down.
+            return;
+        }
 
-                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "links", "id", "type");
-                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "networks", "id", "type");
-                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "services", "address", "type");
-            }
+        JsonObject finalNetworkData = new JsonObject();
+        for (NicProfile nic : nics) {
+            List<Network.Service> supportedService = supportedServices.get(nic.getId());
+            JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
+
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "links", "id", "type");
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "networks", "id", "type");
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "services", "address", "type");
         }
 
         writeFile(openStackFolder, "network_data.json", finalNetworkData.toString());
