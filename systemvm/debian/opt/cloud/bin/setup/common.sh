@@ -573,10 +573,42 @@ setup_dnsmasq() {
   fi
 }
 
+enable_ipv6_link_local() {
+  local eth=$1
+  log_it "Enabling IPv6 link-local on interface $eth"
+  # Generate the link-local address with EUI-64 based on the MAC address so
+  # the address can be calculated by the Management Server
+  sysctl -w net.ipv6.conf.${eth}.addr_gen_mode=0
+  # Only a link-local address is wanted, no SLAAC/RA configuration
+  sysctl -w net.ipv6.conf.${eth}.accept_ra=0
+  sysctl -w net.ipv6.conf.${eth}.autoconf=0
+  sysctl -w net.ipv6.conf.${eth}.disable_ipv6=0
+
+  # Wait for Duplicate Address Detection to complete so the address can be bound
+  LINK_LOCAL_IP6=""
+  local i
+  for i in $(seq 1 10); do
+    LINK_LOCAL_IP6=$(ip -6 addr show dev ${eth} scope link -tentative | grep -Po '(?<=inet6 )fe80:[0-9a-f:]+' | head -1)
+    [ -n "$LINK_LOCAL_IP6" ] && break
+    sleep 1
+  done
+
+  if [ -n "$LINK_LOCAL_IP6" ]; then
+    log_it "Interface $eth has IPv6 link-local address $LINK_LOCAL_IP6"
+  else
+    log_it "No IPv6 link-local address appeared on interface $eth"
+  fi
+}
+
 setup_sshd(){
   local ip=$1
   local eth=$2
-  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "/^ListenAddress fe80/d" -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  enable_ipv6_link_local $eth
+  if [ -n "$LINK_LOCAL_IP6" ]; then
+    log_it "Configuring sshd to also listen on ${LINK_LOCAL_IP6}%${eth}"
+    sed -i -e "/^ListenAddress $ip$/a ListenAddress ${LINK_LOCAL_IP6}%${eth}" /etc/ssh/sshd_config
+  fi
   sed -i "/3922/s/eth./$eth/" /etc/iptables/rules.v4
 }
 

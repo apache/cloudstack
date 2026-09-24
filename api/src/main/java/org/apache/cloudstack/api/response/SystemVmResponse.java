@@ -106,6 +106,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "The Control IP address for the System VM")
     private String linkLocalIp;
 
+    @SerializedName(ApiConstants.LINK_LOCAL_IP6)
+    @Param(description = "The Control IPv6 link-local address for the System VM, calculated from the link local MAC address", since = "4.23.0")
+    private String linkLocalIp6;
+
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS)
     @Param(description = "The link local MAC address for the System VM")
     private String linkLocalMacAddress;
@@ -425,6 +429,14 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setLinkLocalIp(String linkLocalIp) {
         this.linkLocalIp = linkLocalIp;
+    }
+
+    public String getLinkLocalIp6() {
+        return linkLocalIp6;
+    }
+
+    public void setLinkLocalIp6(String linkLocalIp6) {
+        this.linkLocalIp6 = linkLocalIp6;
     }
 
     public String getLinkLocalMacAddress() {
