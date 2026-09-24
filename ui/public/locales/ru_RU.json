@@ -12,6 +12,8 @@
 "label.account.id": "ID \u0443\u0447\u0451\u0442\u043d\u043e\u0439 \u0437\u0430\u043f\u0438\u0441\u0438",
 "label.account.name": "\u0418\u043c\u044f \u0443\u0447\u0451\u0442\u043d\u043e\u0439 \u0437\u0430\u043f\u0438\u0441\u0438",
 "label.account.specific": "\u0421\u043f\u0435\u0446\u0438\u0444\u0438\u043a\u0430 \u0430\u043a\u043a\u0430\u0443\u043d\u043d\u0442\u0430",
+"label.account.type.domain.admin": "Администратор домена",
+"label.account.type.normal": "Обычный (Пользователь)",
 "label.accounts": "\u0423\u0447\u0451\u0442\u043d\u044b\u0435 \u0437\u0430\u043f\u0438\u0441\u0438",
 "label.accounttype": "Account Type",
 "label.acl.export": "Export ACL rules",
