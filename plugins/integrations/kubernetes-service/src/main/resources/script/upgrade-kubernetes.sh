@@ -151,7 +151,13 @@ if [ -d "$BINARIES_DIR" ]; then
     if [[ ${EXTERNAL_CNI} == true ]]; then
       /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
     fi
-    /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
+    if [ -f "${BINARIES_DIR}/headlamp.yaml" ]; then
++      /opt/bin/kubectl apply -f ${BINARIES_DIR}/headlamp.yaml
++    elif [ -f "${BINARIES_DIR}/dashboard.yaml" ]; then
++      /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
++    else
++      echo "Warning: No dashboard YAML found in ISO (neither headlamp.yaml nor dashboard.yaml)"
++    fi
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
