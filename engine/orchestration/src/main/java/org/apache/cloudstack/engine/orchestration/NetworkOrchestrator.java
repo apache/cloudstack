@@ -82,6 +82,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import com.cloud.alert.AlertFormatUtils;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
@@ -4497,7 +4498,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (!answer.getResult()) {
             logger.warn("Unable to setup agent {} due to {}", host, answer.getDetails());
-            final String msg = "Incorrect Network setup on agent, Reinitialize agent after network names are setup, details : " + answer.getDetails();
+            final String msg = "Incorrect Network setup on agent " + AlertFormatUtils.describeHostLocation(host, dc, null)
+                    + ", Reinitialize agent after network names are setup, details : " + answer.getDetails();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, host.getPodId(), msg, msg);
             throw new ConnectionException(true, msg);
         } else {
