@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
-
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -91,6 +91,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = DomainResponse.class,
             description = "Restrict the backup offering to the Domains identified by these IDs.")
     private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.COMPRESS_ASYNC, type = CommandType.BOOLEAN, description = "Whether to compress synchronously during backup creation, or asynchronously later. " +
+            "Default true.")
+    private Boolean compressAsync;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -164,6 +168,10 @@ public class CreateBackupOfferingCmd extends BaseCmd {
 
     public Boolean getUserDrivenBackups() {
         return userDrivenBackups;
+    }
+
+    public boolean isCompressAsync() {
+        return BooleanUtils.toBooleanDefaultIfNull(this.compressAsync, true);
     }
 
     /////////////////////////////////////////////////////

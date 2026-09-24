@@ -105,7 +105,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
 
                 logger.debug("Backing up volume [{}].", volumeUuid);
                 Pair<String, Long> deltaPathOnSecondaryAndSize = copyBackupDeltaToSecondary(storagePoolManager, kbossTO, command.getBackupChainImageStoreUrls(),
-                        command.getImageStoreUrl(), maxWaitInMillis);
+                        command.getImageStoreUrl(), maxWaitInMillis, command);
 
                 mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize.put(volumeUuid, deltaPathOnSecondaryAndSize);
                 maxWaitInMillis = calculateRemainingTime(maxWaitInMillis, startTimeMillis);
@@ -165,7 +165,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * If there were snapshots created after the last backup, they'll be copied alongside and merged in the secondary storage.
      * */
     protected Pair<String, Long> copyBackupDeltaToSecondary(KVMStoragePoolManager storagePoolManager, KbossTO kbossTO, List<String> chainImageStoreUrls, String imageStoreUrl,
-            int waitInMillis) {
+            int waitInMillis, TakeKbossBackupCommand command) {
         VolumeObjectTO delta = kbossTO.getVolumeObjectTO();
         String parentDeltaPathOnSecondary = kbossTO.getPathBackupParentOnSecondary();
         List<String> deltaPathsToCopy = CollectionUtils.isEmpty(kbossTO.getVmSnapshotDeltaPaths()) ? new ArrayList<>() : new ArrayList<>(kbossTO.getVmSnapshotDeltaPaths());
@@ -199,7 +199,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
                 }
 
                 String backupDeltaFullPathOnPrimary = primaryPool.getLocalPathFor(deltaPathsToCopy.remove(0));
-                convertDeltaToSecondary(backupDeltaFullPathOnPrimary, backupDeltaFullPathOnSecondary, parentBackupFullPath, delta.getUuid(), waitInMillis);
+                convertDeltaToSecondary(backupDeltaFullPathOnPrimary, backupDeltaFullPathOnSecondary, parentBackupFullPath, delta.getUuid(), waitInMillis, command);
 
                 if (!deltaPathsToCopy.isEmpty()) {
                     parentDeltaPathOnSecondary = topDelta;
@@ -282,7 +282,8 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * @param volumeUuid volume uuid, used for logging.
      * @param waitInMillis timeout in milliseconds.
      * */
-    protected void convertDeltaToSecondary(String pathDeltaOnPrimary, String pathDeltaOnSecondary, String pathParentOnSecondary, String volumeUuid, int waitInMillis)
+    protected void convertDeltaToSecondary(String pathDeltaOnPrimary, String pathDeltaOnSecondary, String pathParentOnSecondary, String volumeUuid, int waitInMillis,
+            TakeKbossBackupCommand command)
             throws QemuImgException, LibvirtException {
         QemuImgFile backupDestination = new QemuImgFile(pathDeltaOnSecondary, QemuImg.PhysicalDiskFormat.QCOW2);
         QemuImgFile backupOrigin = new QemuImgFile(pathDeltaOnPrimary, QemuImg.PhysicalDiskFormat.QCOW2);
@@ -297,8 +298,13 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         createDirsIfNeeded(pathDeltaOnSecondary, volumeUuid);
 
         QemuImg qemuImg = new QemuImg(waitInMillis);
-        qemuImg.convert(backupOrigin, backupDestination, parentBackup, null, null,  new QemuImageOptions(backupOrigin.getFormat(), backupOrigin.getFileName(), null), null,
-                true, false, false, false, null, null);
+        Map<String, String> options = new HashMap<>();
+        if (command.isCompress()) {
+            qemuImg.setCompressionTypeOptionIfAvailable(options, command.getCompressionLib());
+        }
+        qemuImg.convert(backupOrigin, backupDestination, parentBackup, options, null,  new QemuImageOptions(backupOrigin.getFormat(), backupOrigin.getFileName(), null), null,
+                true, false, false, command.isCompress(), command.getCoroutines(), command.getRateLimit());
+
     }
 
 
