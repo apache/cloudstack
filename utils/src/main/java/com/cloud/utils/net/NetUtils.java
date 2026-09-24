@@ -306,7 +306,7 @@ public class NetUtils {
             final String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
             return defDev;
         }
-        return Script.runSimpleBashScript("ip route show default 0.0.0.0/0 | head -1 | awk '{print $5}'");
+        return Script.runSimpleBashScript("ip -j a | jq -r '.[] | .addr_info | map(select(.local == \"'`ip -j r s default | jq -r '.[0] | .prefsrc'`'\")) | .[].label'");
     }
 
     public static String getLocalIPString() {
