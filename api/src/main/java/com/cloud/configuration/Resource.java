@@ -22,37 +22,43 @@ public interface Resource {
     String UNLIMITED = "Unlimited";
 
     enum ResourceType { // All storage type resources are allocated_storage and not the physical storage.
-        user_vm("user_vm", 0),
-        public_ip("public_ip", 1),
-        volume("volume", 2),
-        snapshot("snapshot", 3),
-        template("template", 4),
-        project("project", 5),
-        network("network", 6),
-        vpc("vpc", 7),
-        cpu("cpu", 8),
-        memory("memory", 9),
-        primary_storage("primary_storage", 10),
-        secondary_storage("secondary_storage", 11),
-        backup("backup", 12),
-        backup_storage("backup_storage", 13),
-        bucket("bucket", 14),
-        object_storage("object_storage", 15),
-        gpu("gpu", 16);
+        user_vm("user_vm", "Instance", 0),
+        public_ip("public_ip", "Public IP", 1),
+        volume("volume", "Volume", 2),
+        snapshot("snapshot", "Snapshot", 3),
+        template("template", "Template", 4),
+        project("project", "Project", 5),
+        network("network", "Network", 6),
+        vpc("vpc", "VPC", 7),
+        cpu("cpu", "CPU", 8),
+        memory("memory", "Memory", 9),
+        primary_storage("primary_storage", "Primary Storage", 10),
+        secondary_storage("secondary_storage", "Secondary Storage", 11),
+        backup("backup", "Backup", 12),
+        backup_storage("backup_storage", "Backup Storage", 13),
+        bucket("bucket", "Bucket", 14),
+        object_storage("object_storage", "Object Storage", 15),
+        gpu("gpu", "GPU", 16);
 
         private String name;
+        private String displayName;
         private int ordinal;
         public static final long bytesToKiB = 1024;
         public static final long bytesToMiB = bytesToKiB * 1024;
         public static final long bytesToGiB = bytesToMiB * 1024;
 
-        ResourceType(String name, int ordinal) {
+        ResourceType(String name, String displayName, int ordinal) {
             this.name = name;
+            this.displayName = displayName;
             this.ordinal = ordinal;
         }
 
         public String getName() {
             return name;
+        }
+
+        public String getDisplayName() {
+            return displayName;
         }
 
         public int getOrdinal() {

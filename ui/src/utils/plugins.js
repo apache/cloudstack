@@ -138,7 +138,7 @@ export const pollJobPlugin = {
           if (action && action.label) {
             errMessage = i18n.global.t(action.label)
           }
-          var desc = result.jobresult.errortext
+          var desc = this.$toLocaleError(result.jobresult.errortext, result.jobresult.errortextkey, result.jobresult.errormetadata)
           if (name) {
             desc = `(${name}) ${desc}`
           }
@@ -229,7 +229,8 @@ export const notifierPlugin = {
         } else if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
           if (responseKey) {
-            desc = error.response.data[responseKey].errortext
+            const errObj = error.response.data[responseKey]
+            desc = this.$toLocaleError(errObj.errortext, errObj.errortextkey, errObj.errormetadata)
           } else if (typeof error.response.data === 'string') {
             desc = error.response.data
           }
@@ -617,6 +618,36 @@ export const backupUtilPlugin = {
         return false
       }
       return ['nas'].includes(provider.toLowerCase())
+    }
+  }
+}
+
+export const localeErrorUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$toLocaleError = function (msg, key, params) {
+      if (!key) {
+        return msg
+      }
+      let localeMsg
+      if (!key.endsWith('.admin') && store.getters.userInfo?.roletype === 'Admin') {
+        const adminKey = key + '.admin'
+        const adminMsg = i18n.global.t(adminKey)
+        if (adminMsg && adminMsg !== adminKey) {
+          localeMsg = adminMsg
+        }
+      }
+      if (!localeMsg) {
+        localeMsg = i18n.global.t(key)
+      }
+      if (!localeMsg || localeMsg === key) {
+        return msg
+      }
+      if (params && params.constructor === Object) {
+        for (const paramKey in params) {
+          localeMsg = localeMsg.replaceAll(`{{${paramKey}}}`, params[paramKey])
+        }
+      }
+      return localeMsg
     }
   }
 }

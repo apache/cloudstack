@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -61,10 +62,10 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmDiskInfo;
-import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
@@ -649,7 +650,8 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             try {
                 networkId = Long.parseLong(networkid);
             } catch (NumberFormatException e) {
-                throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkid);
+                throw Exceptions.invalidParameterValueException("vm.deploy.network.not.found.ip.map",
+                        Map.of("networkId", networkid));
             }
         }
         return networkId;
