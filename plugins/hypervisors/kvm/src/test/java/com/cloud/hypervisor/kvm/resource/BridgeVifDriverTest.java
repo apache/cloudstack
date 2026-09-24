@@ -18,11 +18,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -30,6 +32,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
+import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BridgeVifDriverTest {
@@ -99,5 +102,40 @@ public class BridgeVifDriverTest {
         nic.setBroadcastUri(new URI(Networks.BroadcastDomainType.Storage.scheme() + "://untagged"));
         String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
         Assert.assertEquals(BRIDGE_NAME, result);
+    }
+
+    private String createAndDeleteBridge(String vNetId, String trafficLabel, Networks.BroadcastDomainType broadcastType) throws InternalErrorException {
+        Mockito.doNothing().when(driver).deleteVnetBr(Mockito.anyString(), Mockito.anyBoolean());
+        String createdBridge;
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class)) {
+            createdBridge = driver.createVnetBr(vNetId, trafficLabel, broadcastType.scheme());
+        }
+
+        NicTO nic = new NicTO();
+        nic.setName(trafficLabel);
+        nic.setBroadcastUri(broadcastType.toUri(vNetId));
+        driver.deleteBr(nic);
+        return createdBridge;
+    }
+
+    @Test
+    public void deleteBrRemovesTheBridgeCreatedForVxlan() throws InternalErrorException {
+        driver._pifs = new HashMap<>();
+
+        String createdBridge = createAndDeleteBridge("5000", "unknownTrafficLabel", Networks.BroadcastDomainType.Vxlan);
+
+        Assert.assertEquals("brvx-5000", createdBridge);
+        Mockito.verify(driver).deleteVnetBr(createdBridge, true);
+    }
+
+    @Test
+    public void deleteBrRemovesTheBridgeCreatedForVlan() throws InternalErrorException {
+        driver._pifs = new HashMap<>();
+        driver._pifs.put("guestLabel", "eth1");
+
+        String createdBridge = createAndDeleteBridge("100", "guestLabel", Networks.BroadcastDomainType.Vlan);
+
+        Assert.assertEquals("breth1-100", createdBridge);
+        Mockito.verify(driver).deleteVnetBr(createdBridge, true);
     }
 }

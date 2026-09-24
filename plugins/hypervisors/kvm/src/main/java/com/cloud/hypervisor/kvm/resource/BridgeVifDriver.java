@@ -343,7 +343,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void deleteVnetBr(String brName, boolean deleteBr) {
+    protected void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
             if (cmdout == null)
@@ -458,6 +458,14 @@ public class BridgeVifDriver extends VifDriverBase {
 
     @Override
     public void deleteBr(NicTO nic) {
+        if (Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vxlan) {
+            // VXLAN bridges are named after the VNI alone, so no physical interface lookup is needed
+            String vxlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+            if (vxlanId != null) {
+                deleteVnetBr(generateVxnetBrName(null, vxlanId), true);
+            }
+            return;
+        }
         String vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
         String trafficLabel = nic.getName();
         String pifName = _pifs.get(trafficLabel);
