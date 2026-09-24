@@ -85,7 +85,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
-    private String _manageSnapshotPath;
     private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
@@ -106,7 +105,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
         _storageLayer = storage;
-        _manageSnapshotPath = Script.findScript("scripts/storage/qcow2/", "managesnapshot.sh");
     }
 
     @Override
@@ -280,16 +278,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         logger.debug(volDef.toString());
 
         return pool.storageVolCreateXML(volDef.toString(), 0);
-    }
-
-    public void storagePoolRefresh(StoragePool pool) {
-        try {
-            synchronized (getStoragePool(pool.getUUIDString())) {
-                refreshPool(pool);
-            }
-        } catch (LibvirtException e) {
-            logger.debug("refresh storage pool failed: " + e.toString());
-        }
     }
 
     private void checkNetfsStoragePoolMounted(String uuid) {

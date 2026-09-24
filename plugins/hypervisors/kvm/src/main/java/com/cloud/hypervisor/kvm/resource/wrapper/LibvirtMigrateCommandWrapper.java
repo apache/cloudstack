@@ -1083,41 +1083,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     /**
-     * Checks if any of the destination disks in the migration target a CLVM or CLVM_NG storage pool.
-     * This is used to determine if incremental migration should be disabled to avoid libvirt
-     * precreate errors with QCOW2-on-LVM setups.
-     *
-     * @param mapMigrateStorage the map containing migration disk information with destination pool types
-     * @return true if any destination disk targets CLVM or CLVM_NG, false otherwise
-     */
-    protected boolean hasClvmDestinationDisks(Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
-        if (MapUtils.isEmpty(mapMigrateStorage)) {
-            return false;
-        }
-
-        try {
-            for (Map.Entry<String, MigrateCommand.MigrateDiskInfo> entry : mapMigrateStorage.entrySet()) {
-                MigrateCommand.MigrateDiskInfo diskInfo = entry.getValue();
-               if (isClvmBlockDevice(diskInfo)) {
-                    logger.debug("Found disk targeting CLVM/CLVM_NG destination pool");
-                    return true;
-               }
-            }
-        } catch (final Exception e) {
-            logger.debug("Failed to check for CLVM destination disks: {}. Assuming no CLVM disks.", e.getMessage());
-        }
-
-        return false;
-    }
-
-    private boolean isClvmBlockDevice(MigrateCommand.MigrateDiskInfo diskInfo) {
-        if (diskInfo == null ||diskInfo.getDestPoolType() == null) {
-            return false;
-        }
-        return (Storage.StoragePoolType.CLVM.equals(diskInfo.getDestPoolType()) || Storage.StoragePoolType.CLVM_NG.equals(diskInfo.getDestPoolType()));
-    }
-
-    /**
      * Determines if the driver type should be updated during migration based on CLVM involvement.
      * The driver type needs to be updated when:
      * - Managed storage is being migrated, OR

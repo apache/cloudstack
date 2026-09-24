@@ -96,7 +96,6 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
         try {
             LibvirtUtilitiesHelper libvirtUtilitiesHelper = resource.getLibvirtUtilitiesHelper();
             Connect conn = libvirtUtilitiesHelper.getConnection();
-            List<VolumeObjectTO> volumeObjectTOS = cmd.getVolumeTOs();
             List<LibvirtVMDef.DiskDef> disks = resource.getDisks(conn, vmName);
 
             dm = resource.getDomain(conn, vmName);
@@ -164,7 +163,6 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
         Map<String, Long> mapVolumeToSnapshotSize = new HashMap<>();
         String nvramSnapshotPath = null;
 
-        List<VolumeObjectTO> volumeObjectTos = cmd.getVolumeTOs();
         KVMStoragePoolManager storagePoolMgr = resource.getStoragePoolMgr();
         try {
             nvramSnapshotPath = backupNvramIfNeeded(cmd, resource);
