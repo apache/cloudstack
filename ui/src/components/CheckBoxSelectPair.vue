@@ -24,6 +24,9 @@
           :disabled="forExternalNetProvider"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
+          <a-tooltip v-if="checkBoxTooltip" :title="checkBoxTooltip">
+            <info-circle-outlined class="tooltip-icon" />
+          </a-tooltip>
         </a-checkbox>
       </a-col>
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
@@ -69,6 +72,10 @@ export default {
     checkBoxLabel: {
       type: String,
       required: true
+    },
+    checkBoxTooltip: {
+      type: String,
+      default: null
     },
     defaultCheckBoxValue: {
       type: Boolean,
@@ -165,5 +172,10 @@ export default {
 <style lang="less" scoped>
 .ant-list-split .ant-list-item div {
   width: 100%;
+}
+
+.tooltip-icon {
+  color: rgba(0,0,0,.45);
+  margin-left: 2px;
 }
 </style>
