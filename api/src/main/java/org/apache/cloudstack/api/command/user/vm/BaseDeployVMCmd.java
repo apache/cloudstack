@@ -279,7 +279,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             description = "Number of days instance is leased for.")
     private Integer leaseDuration;
 
-    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            allowedValues = {"STOP", "DESTROY"},
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
