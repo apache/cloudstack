@@ -418,6 +418,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), SearchCriteria.Op.NEQ);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("crossZone", AllFieldsSearch.entity().isCrossZones(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
         ParentTemplateIdSearch = createSearchBuilder();
@@ -568,6 +569,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listAllActive() {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateVO> listAllCrossZoneTemplates() {
+        SearchCriteria<VMTemplateVO> sc = AllFieldsSearch.create();
+        sc.setParameters("crossZone", true);
         return listBy(sc);
     }
 
