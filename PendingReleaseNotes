@@ -81,3 +81,34 @@ example.ver.1 > example.ver.2:
     additional key store is required. Note: attaching an encrypted RBD volume
     to a running Instance requires libvirt >= 10.1.0; booting an Instance from
     an encrypted RBD root disk works on older libvirt.
+    
+  * Per-bucket credentials for object storage. Buckets on Ceph RGW object storage
+    now each get their own credential, and each credential has two key slots that
+    rotate independently, so one key can be replaced while consumers keep working
+    on the other. Every bucket in an account previously shared one credential, so
+    a leaked key exposed all of them and there was no way to rotate it.
+
+    - Requires Ceph Squid (v19) or later, because it is built on RGW accounts.
+      Object storage that cannot provide per-bucket credentials keeps the existing
+      per-account behaviour, and says so in the UI.
+
+    - Existing accounts keep the shared credential until an administrator migrates
+      them, from the Object Storage tab on the account. Migration is per account
+      per object store, and cannot be undone: it adopts the account's existing RGW
+      user as the root of a new RGW account at the gateway. Buckets created before
+      the migration keep working on the shared key until each one is given its own
+      credential.
+
+    - Once every bucket on an object store has its own credential, an administrator
+      can rotate the account's own key, so that the key that was shared with users
+      no longer works.
+
+    - The global setting object.storage.per.bucket.credentials decides how an
+      account is set up the first time it uses an object store. Turning it off
+      leaves already-migrated accounts as they are.
+
+  * listBuckets now applies its objectstorageid parameter. The parameter has been
+    accepted since 4.19.0 but never filtered, so any caller passing it received
+    every bucket. Those callers will now receive only the buckets on that object
+    store.
+

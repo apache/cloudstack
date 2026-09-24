@@ -651,3 +651,35 @@ WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;
 -- usage records introduced in 4.22.1 (cumulative and per-VM) can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
 CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- Per-bucket object storage credentials. A bucket without a bucket_credential row uses the
+-- legacy account-scoped credential; a bucket with one owns a dedicated backend identity
+-- holding up to two independently rotatable key slots.
+CREATE TABLE IF NOT EXISTS `cloud`.`bucket_credential` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `bucket_id` bigint(20) unsigned NOT NULL,
+    `provider_credential_id` varchar(255) NOT NULL COMMENT 'backend identity reference, e.g. the Ceph RGW user id',
+    `state` varchar(32) NOT NULL,
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_bucket_credential__bucket_id` (`bucket_id`),
+    CONSTRAINT `fk_bucket_credential__bucket_id` FOREIGN KEY (`bucket_id`) REFERENCES `cloud`.`bucket`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`bucket_credential_key` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `bucket_credential_id` bigint(20) unsigned NOT NULL,
+    `key_slot` int unsigned NOT NULL COMMENT '1 or 2',
+    `access_key` varchar(255),
+    `secret_key` varchar(255) COMMENT 'encrypted bucket secret key',
+    `state` varchar(32) NOT NULL,
+    `created` datetime NOT NULL,
+    `last_used` datetime,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uc_bucket_credential_key__cred_slot` (`bucket_credential_id`, `key_slot`),
+    CONSTRAINT `fk_bucket_credential_key__credential_id` FOREIGN KEY (`bucket_credential_id`) REFERENCES `cloud`.`bucket_credential`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
