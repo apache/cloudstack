@@ -185,6 +185,12 @@ export default {
     ResourceIcon,
     InfiniteScrollSelect
   },
+  props: {
+    resource: {
+      type: Object,
+      default: () => {}
+    }
+  },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
@@ -247,8 +253,8 @@ export default {
       })
     },
     fetchData () {
-      this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
-      this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
+      this.account = (this.$route.query && this.$route.query.account) || this.resource?.name || null
+      this.domainid = (this.$route.query && this.$route.query.domainid) || this.resource?.domainid || null
       // Set initial domain if provided from route
       if (this.domainid) {
         this.form.domainid = this.domainid
