@@ -160,6 +160,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -5042,8 +5043,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
         int maxDeviceId = maxDevices - 1;
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+        boolean vmHasConfigDrive = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null;
         if (deviceId != null) {
-            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3) {
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3
+                    || (vmHasConfigDrive && deviceId.longValue() == ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ)) {
                 throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
             }
             for (VolumeVO vol : vols) {
@@ -5058,6 +5061,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 devIds.add(String.valueOf(i));
             }
             devIds.remove("3");
+            if (vmHasConfigDrive) {
+                devIds.remove(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.toString());
+            }
             for (VolumeVO vol : vols) {
                 devIds.remove(vol.getDeviceId().toString().trim());
             }
