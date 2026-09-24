@@ -42,19 +42,50 @@ public class UUIDManagerImpl implements UUIDManager {
 
     @Override
     public <T> void checkUuid(String uuid, Class<T> entityType) {
+        checkUuid(uuid, entityType, false);
+    }
+
+    /**
+     * Validate UUID (validate format, allowed user role and UUID uniqueness across the resource).
+     *
+     * @param uuid                         UUID
+     * @param entityType                   the resource for which UUID is provided
+     * @param allowUuidFromDomainAdminRole allow Domain Admin user to provide UUID
+     */
+    private <T> void checkUuid(String uuid, Class<T> entityType, boolean allowUuidFromDomainAdminRole) {
 
         if (uuid == null) {
             return;
         }
 
         Account caller = CallContext.current().getCallingAccount();
+        long callerId = caller.getId();
 
-        // Only admin and system allowed to do this
-        if (!(caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId()))) {
-            throw new PermissionDeniedException("Please check your permissions, you are not allowed to create/update custom id");
-        }
+        validateCustomIdOperation(callerId, allowUuidFromDomainAdminRole);
 
         checkUuidSimple(uuid, entityType);
+    }
+
+    /**
+     * Validates that the caller is allowed to provide a custom id. Allowed callers are the system
+     * account and ROOT admins, plus domain admins when allowUuidFromDomainAdminRole is true.
+     *
+     * @param callerId                     the calling account id
+     * @param allowUuidFromDomainAdminRole allow Domain Admin user to provide UUID
+     * @throws PermissionDeniedException if the caller is not allowed to provide a custom id
+     */
+    private void validateCustomIdOperation(long callerId, boolean allowUuidFromDomainAdminRole) {
+        // if not system account
+        boolean operationDenied = callerId != Account.ACCOUNT_ID_SYSTEM
+                // and not root admin
+                && !_accountMgr.isRootAdmin(callerId)
+                // and if not domain admin (if allowUuidFromDomainAdminRole == true)
+                && !(allowUuidFromDomainAdminRole && _accountMgr.isDomainAdmin(callerId));
+
+        // Only admin and system allowed to do this, optionally domain admins allowed to do as well.
+        if (operationDenied) {
+            throw new PermissionDeniedException("Please check your permissions, you are not allowed to create/update custom id");
+        }
     }
 
     @Override
@@ -107,7 +138,7 @@ public class UUIDManagerImpl implements UUIDManager {
 
             throw new CloudRuntimeException("Unable to generate a unique uuid, please try again");
         } else {
-            checkUuid(customId, entityType);
+            checkUuid(customId, entityType, true);
             return customId;
         }
     }
