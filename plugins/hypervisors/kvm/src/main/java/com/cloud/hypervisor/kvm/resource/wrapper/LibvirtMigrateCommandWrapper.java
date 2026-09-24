@@ -108,9 +108,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
-        }
+        logger.debug("Trying to migrate VM {} to destination host: {}.", vmName, destinationUri);
 
         String result = null;
         Command.State commandState = null;
@@ -133,9 +131,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
-            }
+            logger.debug("Found domain with name {}. Starting VM migration to host {}.", vmName, destinationUri);
             to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
@@ -162,9 +158,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
-            if (logger.isDebugEnabled()) {
-                logger.debug("VM {} with XML configuration {} will be migrated to host {}.", vmName, maskSensitiveInfoInXML(xmlDesc), target);
-            }
+            logger.debug("VM {} will be migrated to host {} with the following XML configuration retrieved with flag [{}]: {} .", vmName, target, xmlFlag, maskSensitiveInfoInXML(xmlDesc));
 
             // Limit the VNC password in case the length is greater than 8 characters
             // Since libvirt version 8 VNC passwords are limited to 8 characters
@@ -175,11 +169,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                logger.debug(String.format("Editing mount path of ISO from %s to %s", oldIsoVolumePath, newIsoVolumePath));
+                logger.debug("Editing mount path of ISO from {} to {}.", oldIsoVolumePath, newIsoVolumePath);
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Replaced disk mount point {} with {} in Instance {} XML configuration. New XML configuration is {}.", oldIsoVolumePath, newIsoVolumePath, vmName, maskSensitiveInfoInXML(xmlDesc));
-                }
+                logger.debug("Replaced disk mount point {} with {} in Instance {} XML configuration. New XML configuration is {}.", oldIsoVolumePath, newIsoVolumePath, vmName, maskSensitiveInfoInXML(xmlDesc));
             }
 
             // Replace CDROM ISO path
@@ -208,25 +200,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             Set<String> migrateDiskLabels = null;
 
             if (migrateStorage) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Changing VM {} volumes during migration to host: {}.", vmName, target);
-                }
+                logger.debug("Changing VM {} volumes during migration to host: {}.", vmName, target);
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Changed VM {} XML configuration of used storage. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
-                }
+                logger.debug("Changed VM {} XML configuration of used storage. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 migrateDiskLabels = getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Changing VM {} DPDK interfaces during migration to host: {}.", vmName, target);
-                }
+                logger.trace("Changing VM {} DPDK interfaces during migration to host: {}.", vmName, target);
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Changed VM {} XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
-                }
+                logger.debug("Changed VM {} XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
             }
 
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
@@ -273,14 +257,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                         final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
                         if (setDowntime == 0 ) {
                             isMigrateDowntimeSet = true;
-                            logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
+                            logger.debug("Set max downtime for migration of {} to {}ms", vmName, String.valueOf(migrateDowntime));
                         }
                     } catch (final LibvirtException e) {
-                        logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
+                        logger.warn("Failed to set max downtime for migration. It might happen if the migration has already completed. Error: {}", e.getMessage());
                     }
                 }
                 if (sleeptime % 1000 == 0) {
-                    logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
+                    logger.info("Waiting for migration of {} to complete, waited {}ms.", vmName, sleeptime);
                 }
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
@@ -290,13 +274,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                         state = dm.getInfo().state;
                         logger.info("VM domain state when trying to abort migration : {}", state);
                     } catch (final LibvirtException e) {
-                        logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                        logger.warn("Could not get VM domain state after {}ms: {}", sleeptime, e.getMessage());
                     }
                     if (state != null && (state == DomainState.VIR_DOMAIN_RUNNING || state == DomainState.VIR_DOMAIN_PAUSED)) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
-                            logger.warn("Aborting migration of VM {} with domain job [{}] due to timeout after {} seconds. " +
-                                    "Job stats: data processed={} bytes, data remaining={} bytes", vmName, job, migrateWait, job.getDataProcessed(), job.getDataRemaining());
+                            logger.warn("Aborting migration of VM [{}] with domain job [{}] due to timeout after {} seconds. Job stats: data processed={} bytes, data remaining={} bytes.", vmName, job, migrateWait, job.getDataProcessed(), job.getDataRemaining());
                             dm.abortJob();
                             result = String.format("Migration of VM [%s] was cancelled by CloudStack due to time out after %d seconds.", vmName, migrateWait);
                             commandState = Command.State.FAILED;
@@ -304,7 +287,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
-                            logger.error(String.format("Failed to abort the VM migration job of VM [%s] due to: [%s].", vmName, e.getMessage()), e);
+                            logger.error("Failed to abort the VM migration job of VM {} due to: {}.", vmName, e.getMessage(), e);
                         }
                     }
                 }
@@ -316,27 +299,25 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                         state = dm.getInfo().state;
                         logger.info("VM domain state when trying to pause VM for migration: {}", state);
                     } catch (final LibvirtException e) {
-                        logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                        logger.info("Could not get VM domain state after {}ms: {}",sleeptime, e.getMessage());
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
-                            logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + migratePauseAfter + "ms to complete migration");
+                            logger.info("Pausing VM {} due to property vm.migrate.pauseafter setting to {}ms to complete migration.", vmName, migratePauseAfter);
                             dm.suspend();
                         } catch (final LibvirtException e) {
                             // pause could be racy if it attempts to pause right when vm is finished, simply warn
-                            logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
+                            logger.warn("Failed to pause vm {} : {}", vmName, e.getMessage());
                         }
                     }
                 }
             }
-            logger.info(String.format("Migration thread of VM [%s] finished.", vmName));
+            logger.info("Migration thread of VM [{}] finished.", vmName);
 
             destDomain = migrateThread.get(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT), TimeUnit.SECONDS);
 
             if (destDomain != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
-                }
+                logger.debug("Cleaning the disks of VM [{}] in the source pool after VM migration finished.", vmName);
                 resumeDomainIfPaused(destDomain, vmName);
 
                 // For cross-pool CLVM migration, skip deactivation so the source LV stays
@@ -351,7 +332,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
         } catch (final LibvirtException e) {
-            logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            logger.error("Could not migrate domain [{}] to host [{}] due to: [{}].", vmName, command.getDestinationIp(), e.getMessage(), e);
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
                 logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
@@ -365,7 +346,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             | SAXException
             | TransformerException
             | URISyntaxException e) {
-            logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            logger.error("Could not migrate domain [{}] to host [{}] due to: [{}].", vmName, command.getDestinationIp(), e.getMessage(), e);
             if (result == null) {
                 result = "Exception during migrate: " + e.getMessage();
             }
