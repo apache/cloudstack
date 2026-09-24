@@ -112,6 +112,12 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
     @Column(name="backupTotal")
     private Long backupTotal;
 
+    @Column(name = "instanceSnapshotLimit")
+    private Long instanceSnapshotLimit;
+
+    @Column(name = "instanceSnapshotTotal")
+    private Long instanceSnapshotTotal;
+
     @Column(name="templateLimit")
     private Long templateLimit;
 
@@ -348,6 +354,10 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         return backupStorageTotal;
     }
 
+    public Long getInstanceSnapshotTotal() {
+        return instanceSnapshotTotal;
+    }
+
     public Long getTemplateTotal() {
         return templateTotal;
     }
@@ -496,6 +506,10 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
 
     public void setBackupStorageLimit(Long backupStorageLimit) {
         this.backupStorageLimit = backupStorageLimit;
+    }
+
+    public Long getInstanceSnapshotLimit() {
+        return instanceSnapshotLimit;
     }
 
     public Long getTemplateLimit() {
