@@ -642,4 +642,14 @@ public class LibvirtVMDefTest extends TestCase {
         String xmlDef = disk.toString();
         assertTrue(xmlDef, xmlDef.contains("<target dev='sda' bus='scsi'/>"));
     }
+
+    @Test
+    public void testDiskDefVirtioBlkGetsAnIothreadLikeVirtio() {
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, DiskDef.DiskBus.VIRTIOBLK, DiskDef.DiskFmtType.QCOW2);
+        disk.isIothreadsEnabled(true);
+
+        String xmlDef = disk.toString();
+        assertTrue(xmlDef, xmlDef.contains("iothread="));
+    }
 }

@@ -523,4 +523,13 @@ public class KVMStorageProcessorTest {
         Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.SCSI,
                 storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.SCSI)), Map.of()));
     }
+
+    @Test
+    public void getAttachDiskBusTypePrefersTheRunningScsiDisksOverAVirtioBlkRootDetail() {
+        // the detail can be changed on a running VM; the disks it actually runs on win, so a SCSI VM
+        // does not get a virtio disk hot-plugged next to its sd* ones
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.SCSI,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.SCSI)), controllerInfo));
+    }
 }

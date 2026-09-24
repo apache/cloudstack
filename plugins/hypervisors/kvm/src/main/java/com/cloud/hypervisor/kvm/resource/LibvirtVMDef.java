@@ -1203,7 +1203,7 @@ public class LibvirtVMDef {
                     diskBuilder.append(String.format("io='%s' ", ioDriver));
                 }
 
-                if (isIothreadsEnabled && _bus == DiskBus.VIRTIO) {
+                if (isIothreadsEnabled && (_bus == DiskBus.VIRTIO || _bus == DiskBus.VIRTIOBLK)) {
                     diskBuilder.append(String.format("iothread='%s' ", NUMBER_OF_IOTHREADS));
                 }
                 diskBuilder.append("/>\n");
