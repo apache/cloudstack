@@ -104,6 +104,20 @@ public class LinstorUtilTest {
         }
 
         {
+            // dashes in the volume group name must be escaped as well (GH issue #14011)
+            StoragePool spLVMThin = new StoragePool();
+            Properties lvmThinProps = new Properties();
+            lvmThinProps.put("StorDriver/StorPoolName", "linstor_pool-lvm-thin/thin");
+            spLVMThin.setProps(lvmThinProps);
+            spLVMThin.setProviderKind(ProviderKind.LVM_THIN);
+            String snapPath = LinstorUtil.getSnapshotPath(spLVMThin,
+                "cs-12fc4055-3985-4025-8eb5-d6fd53effe37", "cs-d7aea646-5f40-46a2-b9dc-77e41ea29336");
+            Assert.assertEquals(
+                "/dev/mapper/linstor_pool--lvm--thin-cs--12fc4055--3985--4025--8eb5--d6fd53effe37_00000_cs--d7aea646--5f40--46a2--b9dc--77e41ea29336",
+                snapPath);
+        }
+
+        {
             StoragePool spZFS = new StoragePool();
             Properties zfsProps = new Properties();
             zfsProps.put("StorDriver/StorPoolName", "linstorPool");
