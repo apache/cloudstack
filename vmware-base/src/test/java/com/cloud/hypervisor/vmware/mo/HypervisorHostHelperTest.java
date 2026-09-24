@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -1040,5 +1041,26 @@ public class HypervisorHostHelperTest {
         false, Networks.BroadcastDomainType.NSX, null,
                 null, networkName);
         assertEquals(morNet.second(), networkName);
+    }
+
+    @Test
+    public void testPrepareNetworkWaitsForNsxDvPortGroup() throws Exception {
+        String networkName = "D1-A2-Z2-V8-S4";
+        DynamicProperty property = new DynamicProperty();
+        property.setVal(networkName);
+
+        when(hostMO.getHyperHostDatacenter()).thenReturn(mor);
+        when(datacenterMO.getDvSwitchMor(any(String.class))).thenReturn(mor);
+        when(vmwareClient.getDecendentMoRef(nullable(ManagedObjectReference.class), any(String.class), any(String.class))).thenReturn(mor);
+        when(vimService.retrieveProperties(any(), anyList())).thenReturn(List.of(), List.of(ocs));
+        when(ocs.getPropSet()).thenReturn(List.of(property));
+        when(ocs.getObj()).thenReturn(mor);
+
+        Pair<ManagedObjectReference, String> morNet = HypervisorHostHelper.prepareNetwork("NSX-VDS", "cloud.guest", hostMO, null, null,
+                200, null, 900000, VirtualSwitchType.VMwareDistributedVirtualSwitch, 1, null,
+                false, Networks.BroadcastDomainType.NSX, null,
+                null, networkName);
+        assertEquals(networkName, morNet.second());
+        verify(vimService, times(2)).retrieveProperties(any(), anyList());
     }
 }
