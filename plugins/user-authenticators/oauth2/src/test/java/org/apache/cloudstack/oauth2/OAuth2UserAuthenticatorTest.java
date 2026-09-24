@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -92,7 +93,7 @@ public class OAuth2UserAuthenticatorTest {
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
-        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
+        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0], domainId)).thenReturn(userOAuth2Authenticator);
         when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(true);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
@@ -107,7 +108,7 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
-        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
+        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0], domainId);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
@@ -125,7 +126,7 @@ public class OAuth2UserAuthenticatorTest {
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
-        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
+        when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0], domainId)).thenReturn(userOAuth2Authenticator);
         when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(false);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
@@ -140,7 +141,7 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
-        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
+        verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0], domainId);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
@@ -166,7 +167,7 @@ public class OAuth2UserAuthenticatorTest {
 
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao, never()).getUser(anyLong());
-        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString(), any());
     }
 
     @Test
@@ -210,6 +211,6 @@ public class OAuth2UserAuthenticatorTest {
 
         assertFalse(result.first());
         assertNull(result.second());
-        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString(), any());
     }
 }

@@ -120,18 +120,59 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public List<UserOAuth2Authenticator> listUserOAuth2AuthenticationProviders() {
-        return userOAuth2AuthenticationProviders;
+        if (userOAuth2AuthenticationProviders == null) {
+            return userOAuth2AuthenticationProviders;
+        }
+        List<UserOAuth2Authenticator> notExcluded = new ArrayList<>();
+        for (UserOAuth2Authenticator provider : userOAuth2AuthenticationProviders) {
+            if (!isProviderExcluded(provider.getName(), null)) {
+                notExcluded.add(provider);
+            }
+        }
+        return notExcluded;
     }
 
     @Override
     public UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(String providerName) {
+        return getUserOAuth2AuthenticationProvider(providerName, null);
+    }
+
+    @Override
+    public UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(String providerName, Long domainId) {
         if (StringUtils.isEmpty(providerName)) {
             throw new CloudRuntimeException("OAuth2 authentication provider name is empty");
         }
-        if (!userOAuth2AuthenticationProvidersMap.containsKey(providerName.toLowerCase())) {
+        if (!userOAuth2AuthenticationProvidersMap.containsKey(providerName.toLowerCase()) || isProviderExcluded(providerName, domainId)) {
             throw new CloudRuntimeException(String.format("Failed to find OAuth2 authentication provider by the name: %s.", providerName));
         }
         return userOAuth2AuthenticationProvidersMap.get(providerName.toLowerCase());
+    }
+
+    // oauth2.plugins.exclude is checked live here rather than relying on the registry's
+    // registration-time filtering, so a config change takes effect without a restart and so a
+    // domain-level override can be layered on top of the global list. A domain can only add
+    // further exclusions, never un-exclude something the global list already excludes.
+    protected boolean isProviderExcluded(String providerName, Long domainId) {
+        if (isExcludedByList(providerName, OAuth2AuthManager.OAuth2PluginsExclude.value())) {
+            return true;
+        }
+        if (domainId == null) {
+            return false;
+        }
+        String domainExcludeList = OAuth2AuthManager.OAuth2PluginsExclude.valueInScope(ConfigKey.Scope.Domain, domainId, true);
+        return isExcludedByList(providerName, domainExcludeList);
+    }
+
+    protected boolean isExcludedByList(String providerName, String excludeList) {
+        if (StringUtils.isEmpty(excludeList)) {
+            return false;
+        }
+        for (String excluded : excludeList.trim().split("\\s*,\\s*")) {
+            if (excluded.equalsIgnoreCase(providerName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<UserOAuth2Authenticator> getUserOAuth2AuthenticationProviders() {
@@ -152,7 +193,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId) {
-        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider);
+        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider, domainId);
         String email = authenticator.verifySecretCodeAndFetchEmail(code, domainId);
 
         return email;
