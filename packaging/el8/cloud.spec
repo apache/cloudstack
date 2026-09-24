@@ -129,6 +129,7 @@ Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
 Requires: python3-libnbd
 Requires: socat
+Requires: guestfs-tools
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
