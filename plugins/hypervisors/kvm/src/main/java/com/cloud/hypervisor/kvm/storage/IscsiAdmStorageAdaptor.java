@@ -47,6 +47,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
+    /** iscsiadm's ISCSI_ERR_NO_OBJS_FOUND: returned by "-m session" when no session is established. */
+    private static final int ISCSI_ERR_NO_OBJS_FOUND = 21;
+
+    /** iscsiadm's ISCSI_ERR_SESS_EXISTS: returned by "--login" when the session is already logged in (e.g. Ubuntu). */
+    private static final int ISCSI_SESSION_EXISTS_CODE = 15;
+
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
         IscsiAdmStoragePool storagePool = new IscsiAdmStoragePool(uuid, host, port, storagePoolType, this);
@@ -90,12 +96,16 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
+        final String host = pool.getSourceHost();
+        final int port = pool.getSourcePort();
+        final String iqn = getIqn(volumeUuid);
+
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 -o new
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
-        iScsiAdmCmd.add("-T", getIqn(volumeUuid));
-        iScsiAdmCmd.add("-p", pool.getSourceHost() + ":" + pool.getSourcePort());
+        iScsiAdmCmd.add("-T", iqn);
+        iScsiAdmCmd.add("-p", host + ":" + port);
         iScsiAdmCmd.add("-o", "new");
 
         String result = iScsiAdmCmd.execute();
@@ -122,26 +132,10 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
             }
         }
 
-        final String host = pool.getSourceHost();
-        final int port = pool.getSourcePort();
-        final String iqn = getIqn(volumeUuid);
-
-        // Always try to login; treat benign outcomes as success (idempotent)
-        iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
-        iScsiAdmCmd.add("-m", "node");
-        iScsiAdmCmd.add("-T", iqn);
-        iScsiAdmCmd.add("-p", host + ":" + port);
-        iScsiAdmCmd.add("--login");
-
-        result = iScsiAdmCmd.execute();
-
-        if (!handleLoginResult(result, volumeUuid)) {
+        // Login is always attempted (idempotent). Rescan runs only if the session already existed
+        // before login (Oracle re-login exits 0; Ubuntu may return ISCSI_ERR_SESS_EXISTS).
+        if (!loginOrRescanExistingSession(iqn, host, port, volumeUuid)) {
             return false;
-        }
-
-        // If the session already existed, a newly mapped LUN won't be visible until a rescan.
-        if (result != null) {
-            rescanIscsiSessions(iqn, host, port);
         }
 
         // There appears to be a race condition where logging in to the iSCSI volume via iscsiadm
@@ -154,7 +148,13 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         // After a certain number of tries and a certain waiting period in between tries,
         // this method could still return (it should not block indefinitely) (the race condition
         // isn't solved here, but made highly unlikely to be a problem).
-        waitForDiskToBecomeAvailable(volumeUuid, pool);
+        // If the by-path is missing or is a regular file (not the iSCSI block symlink), size
+        // stays 0. Return false so connect does not succeed and a raw file is not created at
+        // that by-path in place of the real LUN device.
+        if (!waitForDiskToBecomeAvailable(volumeUuid, pool)) {
+            logger.warn("iSCSI device not ready for target {} at {}:{} after wait", volumeUuid, host, port);
+            return false;
+        }
 
         return true;
     }
@@ -178,20 +178,73 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Checks the result of an iscsiadm login command.
-     * Returns true if the login succeeded or session already exists, false on failure.
+     * Checks existing session state, performs login, and rescans only if the session already existed.
+     *
+     * Login is always attempted (idempotent). A pre-login session check is required on Oracle,
+     * where re-login often exits 0; Ubuntu may instead return ISCSI_ERR_SESS_EXISTS (15).
+     * Session-preexisted must be treated as success first: on Ubuntu, re-login exits 15 with a
+     * non-null error message that would otherwise be treated as failure.
+     *
+     * @return true if login succeeded (and rescan ran when needed), false on login failure
      */
-    boolean handleLoginResult(String result, String volumeUuid) {
+    private boolean loginOrRescanExistingSession(String iqn, String host, int port, String volumeUuid) {
+        boolean sessionAlreadyActive = isIscsiSessionActive(iqn, host, port);
+        logger.debug("iSCSI session active check for target {} at {}:{}: {}", iqn, host, port, sessionAlreadyActive);
+
+        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
+        iScsiAdmCmd.add("-m", "node");
+        iScsiAdmCmd.add("-T", iqn);
+        iScsiAdmCmd.add("-p", host + ":" + port);
+        iScsiAdmCmd.add("--login");
+
+        String result = iScsiAdmCmd.execute();
+        boolean sessionPreExisted = (iScsiAdmCmd.getExitValue() == ISCSI_SESSION_EXISTS_CODE) || sessionAlreadyActive;
+
+        if (sessionPreExisted) {
+            logger.debug("iSCSI session for target {} at {}:{} pre-existed, performing rescan", iqn, host, port);
+            rescanIscsiSessions(iqn, host, port);
+            return true;
+        }
         if (result == null) {
             logger.debug("Successfully logged in to iSCSI target {}", volumeUuid);
             return true;
         }
-        String msg = result.toLowerCase();
-        if (msg.contains("already present") || msg.contains("already logged in") || msg.contains("session exists")) {
-            logger.debug("iSCSI session already exists for target {}, proceeding", volumeUuid);
-            return true;
-        }
         logger.debug("Failed to log in to iSCSI target {}: {}", volumeUuid, result);
+        return false;
+    }
+
+    /**
+     * Checks whether a session to the given target and portal is already established.
+     *
+     * "iscsiadm -m session" exits with ISCSI_ERR_NO_OBJS_FOUND when no session exists, which is a
+     * normal outcome here. Any other non-zero exit is logged and treated as not confirmed active.
+     */
+    private boolean isIscsiSessionActive(String iqn, String host, int port) {
+        Script sessionCmd = new Script(true, "iscsiadm", 0, logger);
+        sessionCmd.add("-m", "session");
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        sessionCmd.executeIgnoreExitValue(parser, ISCSI_ERR_NO_OBJS_FOUND);
+        int exitValue = sessionCmd.getExitValue();
+        if (exitValue != 0 && exitValue != ISCSI_ERR_NO_OBJS_FOUND) {
+            logger.warn("Unable to determine iSCSI session state for target {} at {}:{}: 'iscsiadm -m session' exited with {}",
+                    iqn, host, port, exitValue);
+            return false;
+        }
+
+        String sessions = parser.getLines();
+        if (StringUtils.isBlank(sessions)) {
+            return false;
+        }
+        // AllLinesParser uses BufferedReader.readLine() (strips \n, \r\n, and \r) and then
+        // appends "\n" after each session. split("\n") depends on that separator to walk
+        // one session per line when multiple sessions are listed.
+        for (String line : sessions.split("\n")) {
+            if (line.contains(iqn) && line.contains(host)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -209,19 +262,23 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private void waitForDiskToBecomeAvailable(String volumeUuid, KVMStoragePool pool) {
+    private boolean waitForDiskToBecomeAvailable(String volumeUuid, KVMStoragePool pool) {
         int numberOfTries = 10;
         int timeBetweenTries = 1000;
+        long deviceSize = 0;
 
-        while (getPhysicalDisk(volumeUuid, pool).getSize() == 0 && numberOfTries > 0) {
+        while ((deviceSize = getPhysicalDisk(volumeUuid, pool).getSize()) == 0 && numberOfTries > 0) {
             numberOfTries--;
 
             try {
                 Thread.sleep(timeBetweenTries);
-            } catch (Exception ex) {
-                // don't do anything
+            } catch (InterruptedException ex) {
+                logger.warn("Interrupted while waiting for iSCSI device {} to become available", volumeUuid, ex);
+                return false;
             }
         }
+
+        return deviceSize > 0;
     }
 
     private void waitForDiskToBecomeUnavailable(String host, int port, String iqn, String lun) {
@@ -290,8 +347,17 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     private long getDeviceSize(String deviceByPath) {
         try {
-            if (!Files.exists(Paths.get(deviceByPath))) {
-                logger.debug("Device by-path does not exist yet: " + deviceByPath);
+            Path devicePath = Paths.get(deviceByPath);
+            if (!Files.exists(devicePath)) {
+                logger.debug("Device by-path does not exist yet: {}", deviceByPath);
+                return 0L;
+            }
+            if (Files.isRegularFile(devicePath)) {
+                logger.warn("Found a corrupt regular file at iSCSI by-path {} (expected block device symlink); it must be removed manually", deviceByPath);
+                return 0L;
+            }
+            if (!Files.isSymbolicLink(devicePath)) {
+                logger.warn("Path {} exists but is not an iSCSI block device symlink", deviceByPath);
                 return 0L;
             }
         } catch (Exception ex) {
