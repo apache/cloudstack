@@ -20,6 +20,8 @@ import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeCapacityReconciler;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -40,6 +42,7 @@ import java.util.List;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterScaleWorkerTest {
@@ -54,6 +57,8 @@ public class KubernetesClusterScaleWorkerTest {
     private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     @Mock
     private UserVmDao userVmDao;
+    @Mock
+    private KubernetesClusterNodeCapacityReconciler kubernetesClusterNodeCapacityReconciler;
 
     private KubernetesClusterScaleWorker worker;
 
@@ -186,5 +191,36 @@ public class KubernetesClusterScaleWorkerTest {
         List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
 
         Assert.assertTrue(toRemove.isEmpty());
+    }
+
+    @Test
+    public void testShouldReconcileNodeCapacityOnlyForManagedKvmNodes() {
+        KubernetesCluster runningManagedCluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(runningManagedCluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(runningManagedCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+        KubernetesClusterScaleWorker scaleWorker = new KubernetesClusterScaleWorker(runningManagedCluster,
+                new java.util.HashMap<>(), 1L, null, false, null, null, clusterManager);
+        scaleWorker.kubernetesClusterNodeCapacityReconciler = kubernetesClusterNodeCapacityReconciler;
+
+        KubernetesClusterVmMapVO managedNode = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(managedNode.isExternalNode()).thenReturn(false);
+        UserVmVO kvmNode = Mockito.mock(UserVmVO.class);
+        Mockito.when(kvmNode.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        ServiceOffering oldOffering = Mockito.mock(ServiceOffering.class);
+        ServiceOffering targetOffering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(kubernetesClusterNodeCapacityReconciler.requiresKubeletRefresh(oldOffering, targetOffering, WORKER,
+                KubernetesCluster.State.Running)).thenReturn(true);
+
+        Assert.assertTrue(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
+
+        Mockito.when(managedNode.isExternalNode()).thenReturn(true);
+        Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
+
+        Mockito.when(managedNode.isExternalNode()).thenReturn(false);
+        Mockito.when(kvmNode.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
+
+        Mockito.when(runningManagedCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+        Assert.assertFalse(scaleWorker.shouldReconcileNodeCapacity(managedNode, kvmNode, oldOffering, targetOffering, WORKER));
     }
 }
