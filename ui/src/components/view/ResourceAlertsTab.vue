@@ -28,6 +28,9 @@
         <template v-if="column.key === 'alerttimestamp'">
           {{ $toLocaleDate(text) }}
         </template>
+        <template v-else-if="column.key === 'metricvalue'">
+          {{ Number(text).toFixed(2) }}
+        </template>
         <template v-else-if="column.key === 'severity'">
           <a-tag :color="severityColor(text)">{{ text }}</a-tag>
         </template>
