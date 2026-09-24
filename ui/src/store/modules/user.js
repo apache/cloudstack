@@ -445,8 +445,10 @@ const user = {
         getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
-        }).catch(error => {
-          reject(error)
+        }).catch(ignored => {
+          // A role is allowed to deny this read. It only records whether LDAP is configured, so
+          // treat it as not configured rather than rejecting the promise the whole console waits on.
+          commit('SET_LDAP', false)
         })
 
         getAPI('cloudianIsEnabled').then(response => {
