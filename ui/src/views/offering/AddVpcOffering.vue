@@ -166,7 +166,7 @@
         <a-form-item name="distributedrouter" ref="distributedrouter" :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-model:checked="form.distributedrouter" />
         </a-form-item>
-        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
+        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked || gatewayServiceChecked">
           <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
@@ -297,6 +297,7 @@ export default {
       isVpcVirtualRouterForAtLeastOneService: false,
       connectivityServiceChecked: false,
       sourceNatServiceChecked: false,
+      gatewayServiceChecked: false,
       selectedServiceProviderMap: {},
       ipv6NetworkOfferingEnabled: false,
       routedNetworkEnabled: false,
@@ -423,6 +424,8 @@ export default {
     },
     fetchSupportedServiceData () {
       var services = []
+      this.sourceNatServiceChecked = false
+      this.gatewayServiceChecked = false
       if (this.provider === 'NSX') {
         services.push({
           name: 'Dhcp',
@@ -506,6 +509,11 @@ export default {
         })
         services.push({
           name: 'UserData',
+          enabled: true,
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
+        services.push({
+          name: 'Vpn',
           enabled: true,
           provider: [{ name: 'VpcVirtualRouter' }]
         })
@@ -600,6 +608,13 @@ export default {
           })
         }
       }
+
+      if (this.Netris.name === this.form.provider && services.filter(svc => svc.name === 'SourceNat' && svc.provider[0].name === this.Netris.name).length > 0) {
+        this.sourceNatServiceChecked = true
+      }
+      if (this.Netris.name === this.form.provider && services.filter(svc => svc.name === 'Gateway').length > 0) {
+        this.gatewayServiceChecked = true
+      }
       for (var i in services) {
         services[i].description = services[i].name
       }
@@ -614,6 +629,10 @@ export default {
       if (this.provider === 'NSX') {
         this.form.nsxsupportlb = true
         this.handleNsxLbService(true)
+      }
+      if (this.provider === 'Netris') {
+        this.form.networkmode = 'NATTED'
+        this.networkmode = 'NATTED'
       }
       this.fetchSupportedServiceData()
     },
@@ -753,7 +772,10 @@ export default {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++
           } else if (values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
+            // For Netris NATTED (where SourceNat is auto-added server-side but not in the local map),
+            // use SourceNat. For all other cases (e.g. ROUTED VPC VR), use Gateway.
+            const redundantRouterService = (forNetris && values.networkmode !== 'ROUTED') ? 'SourceNat' : 'Gateway'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = redundantRouterService
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++
