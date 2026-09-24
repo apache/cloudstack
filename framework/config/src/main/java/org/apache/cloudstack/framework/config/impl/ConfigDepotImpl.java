@@ -24,11 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -38,6 +35,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +43,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -74,9 +74,18 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *     when constructing a ConfigKey then configuration server should use the
  *     validation class to validate the value the admin input for the key.
  */
-public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
+public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, Configurable {
     protected Logger logger = LogManager.getLogger(getClass());
+
     protected final static long CONFIG_CACHE_EXPIRE_SECONDS = 30;
+
+    protected final ConfigKey<Long> ConfigKeyCacheMaxSize = new ConfigKey<>("Advanced", Long.class, "config.key.cache.max.size", "512",
+            "Configuration keys cache max size", false);
+    protected final ConfigKey<Long> ConfigKeyCacheRefreshIntervalSeconds = new ConfigKey<>("Advanced", Long.class, "config.key.expire.seconds", String.valueOf(CONFIG_CACHE_EXPIRE_SECONDS),
+            "Configuration keys cache refresh interval in seconds", false);
+    protected final ConfigKey<Boolean> ConfigKeyCacheRefreshAfterWrite = new ConfigKey<>("Advanced", Boolean.class, "config.key.cache.refresh.after.write", "false",
+            "When true the configuration cache refreshes entries asynchronously and serves the stale value during reload (non-blocking); when false entries expire and the next read blocks to load a fresh value (stronger consistency across management servers)", false);
+
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -87,15 +96,13 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
     Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
-    LazyCache<Ternary<String, ConfigKey.Scope, Long>, String> configCache;
+    volatile LazyCache<Ternary<String, ConfigKey.Scope, Long>, String> configCache;
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
 
     public ConfigDepotImpl() {
-        configCache = new LazyCache<>(512,
-                CONFIG_CACHE_EXPIRE_SECONDS, this::getConfigStringValueInternal);
         ConfigKey.init(this);
         createEmptyScopeLevelMappings();
     }
@@ -121,7 +128,63 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return value != null ? value.second() : null;
     }
 
-    @PostConstruct
+    @SuppressWarnings("unchecked")
+    private <T> T getConfigValue(ConfigKey<T> configKey) {
+        String valueString;
+        try {
+            valueString = _configDao.getValueByKey(configKey.key());
+            if (valueString == null) {
+                valueString = configKey.defaultValue();
+            }
+        } catch (CloudRuntimeException e) {
+            String msg = "Failed to retrieve configuration value for: " + configKey.key();
+            logger.error(msg, e);
+            throw e;
+        } catch (Exception e) {
+            String msg = "Failed to retrieve configuration value for: " + configKey.key();
+            logger.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
+        return (T) ConvertUtils.convert(valueString, configKey.type());
+    }
+
+    /**
+     * Lazily initialize the config cache on first access. Reading the cache size and
+     * TTL here is safe because by the time any caller exercises the cache, Spring's
+     * refresh() has completed and DatabaseUpgradeChecker has run any pending schema
+     * migrations, so the configuration table is in its expected shape.
+     *
+     * populateConfiguration(this) is invoked here to guarantee that this bean's own
+     * ConfigKeys end up registered in _allKeys and persisted to the configuration
+     * table even when Spring's List<Configurable> autowiring excludes self. The call
+     * is idempotent: if ConfigurationServerImpl.populateConfigurations() already
+     * iterated over this bean, the _configured guard inside populateConfiguration
+     * makes it a no-op.
+     *
+     * The cache-tuning keys are read directly from the configuration table via
+     * getConfigValue(); they fall back to their defaults when no row is present. They are
+     * applied only here at initialization (the cache is built once), so changing them
+     * requires a restart.
+     */
+    private void ensureCacheInitialized() {
+        if (configCache == null) {
+            synchronized (this) {
+                if (configCache == null) {
+                    populateConfiguration(this);
+                    Long maxSize = getConfigValue(ConfigKeyCacheMaxSize);
+                    Long expirationSeconds = getConfigValue(ConfigKeyCacheRefreshIntervalSeconds);
+                    Boolean refreshAfterWrite = getConfigValue(ConfigKeyCacheRefreshAfterWrite);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("{} value: {}", ConfigKeyCacheMaxSize.key(), maxSize);
+                        logger.debug("{} value: {}", ConfigKeyCacheRefreshIntervalSeconds.key(), expirationSeconds);
+                        logger.debug("{} value: {}", ConfigKeyCacheRefreshAfterWrite.key(), refreshAfterWrite);
+                    }
+                    configCache = new LazyCache<>(maxSize, expirationSeconds, refreshAfterWrite, this::getConfigStringValueInternal);
+                }
+            }
+        }
+    }
+
     @Override
     public void populateConfigurations() {
         Date date = new Date();
@@ -282,6 +345,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         final String key = cacheKey.first();
         final ConfigKey.Scope scope = cacheKey.second();
         final Long scopeId = cacheKey.third();
+        logger.debug("Fetching config key from DB: key={}, scope={}, scopeId={}", key, scope, scopeId);
         if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
             ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
             if (scopedConfigStorage == null) {
@@ -290,11 +354,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             final ScopedConfigStorage scopedConfigStorageFinal = scopedConfigStorage;
             return Transaction.execute((TransactionCallback<String>) status -> scopedConfigStorageFinal.getConfigValue(scopeId, key));
         }
-        ConfigurationVO configurationVO = _configDao.findById(key);
-        if (configurationVO != null) {
-            return configurationVO.getValue();
-        }
-        return null;
+        return  _configDao.getValueByKey(key);
     }
 
     protected Ternary<String, ConfigKey.Scope, Long> getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
@@ -303,11 +363,22 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     @Override
     public String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId) {
+        ensureCacheInitialized();
         return configCache.get(getConfigCacheKey(key, scope, scopeId));
+    }
+
+    /**
+     * Inserts a value directly into the config cache without persisting to DB.
+     * Used to cache inherited values (e.g. from a parent scope) under a more specific scope key.
+     */
+    public void cacheValue(String key, ConfigKey.Scope scope, Long scopeId, String value) {
+        ensureCacheInitialized();
+        configCache.put(getConfigCacheKey(key, scope, scopeId), value);
     }
 
     @Override
     public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
+        ensureCacheInitialized();
         configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
     }
 
@@ -396,5 +467,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             return null;
         }
         return scopedConfigStorage.getParentScope(id);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConfigDepotImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{ConfigKeyCacheMaxSize, ConfigKeyCacheRefreshIntervalSeconds, ConfigKeyCacheRefreshAfterWrite};
     }
 }

@@ -30,6 +30,7 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +41,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.utils.Pair;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigDepotImplTest {
@@ -54,6 +56,12 @@ public class ConfigDepotImplTest {
 
     @InjectMocks
     private ConfigDepotImpl configDepotImpl = new ConfigDepotImpl();
+
+    @Before
+    public void setUp() {
+        configDepotImpl.setConfigurables(Collections.emptyList());
+        configDepotImpl.populateConfigurations();
+    }
 
     @Test
     public void createConfigObjectPersistsSubGroupWithNameAndGroupId() {
@@ -102,9 +110,7 @@ public class ConfigDepotImplTest {
     }
 
     private void runTestGetConfigStringValue(String key, String value) {
-        ConfigurationVO configurationVO = Mockito.mock(ConfigurationVO.class);
-        Mockito.when(configurationVO.getValue()).thenReturn(value);
-        Mockito.when(_configDao.findById(key)).thenReturn(configurationVO);
+        Mockito.when(_configDao.getValueByKey(key)).thenReturn(value);
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
     }
@@ -131,7 +137,7 @@ public class ConfigDepotImplTest {
         }
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
-        Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).findById(key);
+        Mockito.verify(_configDao, Mockito.timeout(2000).times(configDBRetrieval)).getValueByKey(key);
     }
 
     @Test
@@ -200,6 +206,58 @@ public class ConfigDepotImplTest {
     }
 
     @Test
+    public void testParentScopeValueCachedUnderChildScopeOnMiss() {
+        String keyName = "test.key";
+        ConfigKey<String> key = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
+                keyName, "default-value", "test", true, List.of(ConfigKey.Scope.Cluster, ConfigKey.Scope.Zone));
+
+        Long clusterId = 1L;
+        Long zoneId = 2L;
+        String zoneValue = "zone-value";
+
+        ScopedConfigStorage clusterStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(clusterStorage.getScope()).thenReturn(ConfigKey.Scope.Cluster);
+        Mockito.when(clusterStorage.getConfigValue(clusterId, keyName)).thenReturn(null);
+        Mockito.when(clusterStorage.getParentScope(clusterId)).thenReturn(new Pair<>(ConfigKey.Scope.Zone, zoneId));
+
+        ScopedConfigStorage zoneStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(zoneStorage.getScope()).thenReturn(ConfigKey.Scope.Zone);
+        Mockito.when(zoneStorage.getConfigValue(zoneId, keyName)).thenReturn(zoneValue);
+
+        configDepotImpl.setScopedStorages(List.of(clusterStorage, zoneStorage));
+
+        // first call: no cluster value, traverses to zone, zone value is cached under cluster scope key
+        Assert.assertEquals(zoneValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+
+        // second call: cache hit with zone value, cluster storage not queried again
+        Assert.assertEquals(zoneValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+        Mockito.verify(clusterStorage, Mockito.times(1)).getConfigValue(clusterId, keyName);
+    }
+
+    @Test
+    public void testDefaultValueCachedUnderChildScopeOnMiss() {
+        String keyName = "test.key";
+        String keyValue = "default-value";
+        ConfigKey<String> key = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
+                keyName, keyValue, "test", true, ConfigKey.Scope.Cluster);
+
+        Long clusterId = 1L;
+
+        ScopedConfigStorage clusterStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(clusterStorage.getScope()).thenReturn(ConfigKey.Scope.Cluster);
+        Mockito.when(clusterStorage.getConfigValue(clusterId, keyName)).thenReturn(null);
+
+        configDepotImpl.setScopedStorages(List.of(clusterStorage));
+
+        // first call: no cluster value, traverses to default, default value is cached under cluster scope key
+        Assert.assertEquals(keyValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+
+        // second call: cache hit with default value, cluster storage not queried again
+        Assert.assertEquals(keyValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+        Mockito.verify(clusterStorage, Mockito.times(1)).getConfigValue(clusterId, keyName);
+    }
+
+    @Test
     public void getParentScopeWithValidScope() {
         ConfigKey.Scope scope = ConfigKey.Scope.Cluster;
         ScopedConfigStorage scopedConfigStorage = Mockito.mock(ScopedConfigStorage.class);
@@ -216,5 +274,37 @@ public class ConfigDepotImplTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(parentScope, result.first());
         Assert.assertEquals(parentId, result.second());
+    }
+
+    @Test
+    public void testCacheNotInitializedBeforeFirstAccess() {
+        Assert.assertNull("configCache should be null until first access triggers lazy init",
+                configDepotImpl.configCache);
+    }
+
+    @Test
+    public void testCacheInitializedOnFirstAccess() {
+        Assert.assertNull(configDepotImpl.configCache);
+        configDepotImpl.getConfigStringValue("anyKey", ConfigKey.Scope.Global, null);
+        Assert.assertNotNull("configCache should be initialized after first access",
+                configDepotImpl.configCache);
+    }
+
+    @Test
+    public void testCacheInitializedOnlyOnce() {
+        configDepotImpl.getConfigStringValue("key1", ConfigKey.Scope.Global, null);
+        configDepotImpl.getConfigStringValue("key2", ConfigKey.Scope.Global, null);
+        configDepotImpl.getConfigStringValue("key3", ConfigKey.Scope.Global, null);
+        Mockito.verify(_configDao, Mockito.times(1)).getValueByKey("config.key.cache.max.size");
+        Mockito.verify(_configDao, Mockito.times(1)).getValueByKey("config.key.expire.seconds");
+    }
+
+    @Test
+    public void testCacheUsesDefaultsWhenConfigKeysAbsentInDB() {
+        Mockito.when(_configDao.getValueByKey("config.key.cache.max.size")).thenReturn(null);
+        Mockito.when(_configDao.getValueByKey("config.key.expire.seconds")).thenReturn(null);
+        configDepotImpl.getConfigStringValue("anyKey", ConfigKey.Scope.Global, null);
+        Assert.assertNotNull("Cache should initialize successfully with defaults when DB returns null",
+                configDepotImpl.configCache);
     }
 }
