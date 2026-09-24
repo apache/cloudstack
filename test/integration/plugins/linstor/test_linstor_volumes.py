@@ -19,7 +19,6 @@ import logging
 import os
 import random
 import time
-import socket
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -30,13 +29,15 @@ from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, St
 from marvin.lib.base import VirtualMachine, Volume, VmSnapshot
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_virtual_machines, \
+from marvin.lib.common import get_domain, get_zone, list_clusters, list_hosts, list_virtual_machines, \
     list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
+
+from linstor_test_utils import ServiceReady, get_guest_template
 
 # Prerequisites:
 #  Only one zone
@@ -226,45 +227,6 @@ class TestData:
             },
         }
 
-class ServiceReady:
-    @classmethod
-    def ready(cls, hostname: str, port: int) -> bool:
-        try:
-            s = socket.create_connection((hostname, port), timeout=1)
-            s.close()
-            return True
-        except (ConnectionRefusedError, socket.timeout, OSError):
-            return False
-
-    @classmethod
-    def wait(
-            cls,
-            hostname,
-            port,
-            wait_interval = 5,
-            timeout = 90,
-            service_name = 'ssh') -> bool:
-        """
-        Wait until the controller can be reached.
-        :param hostname:
-        :param port: port of the application
-        :param wait_interval:
-        :param timeout: time to wait until exit with False
-        :param service_name: name of the service to wait
-        :return:
-        """
-        starttime = int(round(time.time() * 1000))
-        while not cls.ready(hostname, port):
-            if starttime + timeout * 1000 < int(round(time.time() * 1000)):
-                raise RuntimeError("{s} {h} cannot be reached.".format(s=service_name, h=hostname))
-            time.sleep(wait_interval)
-        return True
-
-    @classmethod
-    def wait_ssh_ready(cls, hostname, wait_interval = 1, timeout = 90):
-        return cls.wait(hostname, 22, wait_interval, timeout, "ssh")
-
-
 class TestLinstorVolumes(cloudstackTestCase):
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
     _vm_not_in_running_state_err_msg = "The VM is not in the 'Running' state."
@@ -298,7 +260,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
+        cls.template = get_guest_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account

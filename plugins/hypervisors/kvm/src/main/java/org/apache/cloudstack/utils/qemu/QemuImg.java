@@ -252,14 +252,12 @@ public class QemuImg {
             Shouldn't this be -o backing_file=filename instead?
          */
         s.add("-f");
+        s.add(file.getFormat().toString());
         if (backingFile != null) {
-            s.add(backingFile.getFormat().toString());
             s.add("-F");
             s.add(backingFile.getFormat().toString());
             s.add("-b");
             s.add(backingFile.getFileName());
-        } else {
-            s.add(file.getFormat().toString());
         }
 
         s.add(file.getFileName());
