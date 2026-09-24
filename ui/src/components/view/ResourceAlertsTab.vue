@@ -60,6 +60,7 @@ export default {
       alerts: [],
       tabLoading: false,
       columns: [
+        { title: this.$t('label.alertrulename'), dataIndex: 'alertrulename', key: 'alertrulename' },
         { title: this.$t('label.metrictype'), dataIndex: 'metrictype', key: 'metrictype' },
         { title: this.$t('label.metricvalue'), dataIndex: 'metricvalue', key: 'metricvalue' },
         { title: this.$t('label.severity'), dataIndex: 'severity', key: 'severity' },
