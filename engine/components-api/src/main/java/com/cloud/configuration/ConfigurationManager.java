@@ -71,6 +71,53 @@ public interface ConfigurationManager {
             "Weight for CPU (as a value between 0 and 1) applied to compute capacity for Pods, Clusters and Hosts for COMBINED capacityType for ordering. Weight for RAM will be (1 - weight of CPU)",
             true, ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> ExpungeDelay = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Integer.class,
+            "expunge.delay",
+            "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed vm. The default value = the default value of expunge.interval",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> ExpungeInterval = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Integer.class,
+            "expunge.interval",
+            "86400",
+            "The interval (in seconds) to wait before running the expunge thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> ExpungeWorkers = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Integer.class,
+            "expunge.workers",
+            "10",
+            "Number of workers performing expunge",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> ExtractURLCleanUpInterval = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Integer.class,
+            "extract.url.cleanup.interval",
+            "7200",
+            "The interval (in seconds) to wait before cleaning up the extract URL's ",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<Integer> ExtractURLExpirationInterval = new ConfigKey<>(
+            ConfigKey.CATEGORY_ADVANCED,
+            Integer.class,
+            "extract.url.expiration.interval",
+            "14400",
+            "The life of an extract URL after which it is deleted ",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * Is this for a VPC
      * @param offering the offering to check
