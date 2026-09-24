@@ -646,7 +646,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             try {
                 if (Objects.isNull(network.getVpcId())) {
                     provisionFirewallRules(publicIp, owner, etcdStartPort, etcdStartPort);
-                } else if (network.getNetworkACLId() != NetworkACL.DEFAULT_ALLOW) {
+                } else if (!Objects.equals(network.getNetworkACLId(), NetworkACL.DEFAULT_ALLOW)) {
                     try {
                         provisionVpcTierAllowPortACLRule(network, ETCD_NODE_CLIENT_REQUEST_PORT, ETCD_NODE_CLIENT_REQUEST_PORT);
                         if (logger.isInfoEnabled()) {
