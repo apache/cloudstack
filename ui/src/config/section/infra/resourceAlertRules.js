@@ -23,8 +23,12 @@ export default {
   title: 'label.resource.alert.rules',
   icon: 'BellOutlined',
   permission: ['listResourceAlertRules'],
-  columns: ['name', 'resourcetype', 'metric', 'condition', 'threshold', 'severity', 'email'],
-  details: ['name', 'id', 'resourcetype', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'account', 'domain', 'created'],
+  columns: () => {
+    const cols = ['name', 'resourcetype', 'resourcename', 'metric', 'condition', 'threshold', 'severity']
+    if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
+    return cols
+  },
+  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'account', 'domain', 'created'],
   searchFilters: ['name', 'resourcetype'],
   tabs: [{
     name: 'details',
