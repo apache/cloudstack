@@ -63,6 +63,18 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @Param(description = "The ID of the guest Network the LB rule belongs to")
     private String networkId;
 
+    @SerializedName(ApiConstants.KEEPALIVE)
+    @Param(description = "whether the load balancer keeps client connections open between requests, unset means the network offering's setting is used", since = "4.23.0")
+    private Boolean keepAlive;
+
+    @SerializedName(ApiConstants.IDLE_TIMEOUT)
+    @Param(description = "how long an idle connection is held open, in milliseconds, unset means the global setting is used", since = "4.23.0")
+    private Long idleTimeout;
+
+    @SerializedName(ApiConstants.KEEPALIVE_TIMEOUT)
+    @Param(description = "how long an idle keepalive connection is held open waiting for the next request, in milliseconds", since = "4.23.0")
+    private Long keepAliveTimeout;
+
     @SerializedName(ApiConstants.CIDR_LIST)
     @Param(description = "The CIDR list to allow traffic, all other CIDRs will be blocked. Multiple entries must be separated by a single comma character (,).")
     private String cidrList;
@@ -141,6 +153,18 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     public void setCidrList(String cidrs) {
         this.cidrList = cidrs;
+    }
+
+    public void setKeepAlive(Boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
+    public void setIdleTimeout(Long idleTimeout) {
+        this.idleTimeout = idleTimeout;
+    }
+
+    public void setKeepAliveTimeout(Long keepAliveTimeout) {
+        this.keepAliveTimeout = keepAliveTimeout;
     }
 
     public void setAlgorithm(String algorithm) {

@@ -21,6 +21,11 @@ package com.cloud.network.rules;
  */
 public interface LoadBalancer extends FirewallRule, LoadBalancerContainer {
 
+    // Optional per rule haproxy settings, held as firewall rule details. Absent means inherit.
+    String KEEPALIVE = "keepalive";
+    String IDLE_TIMEOUT = "idletimeout";
+    String KEEPALIVE_TIMEOUT = "keepalivetimeout";
+
     int getDefaultPortStart();
 
     int getDefaultPortEnd();
