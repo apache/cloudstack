@@ -40,9 +40,13 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.service.ServiceOfferingCategoryVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -62,7 +66,10 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
@@ -144,6 +151,10 @@ public class ConfigurationManagerImplTest {
     DiskOfferingVO diskOfferingVOSpy;
     @Mock
     UpdateDiskOfferingCmd updateDiskOfferingCmdMock;
+    @Mock
+    ServiceOfferingCategoryDao serviceOfferingCategoryDaoMock;
+    @Mock
+    ServiceOfferingDao serviceOfferingDaoMock;
     @Mock
     NsxProviderDao nsxProviderDao;
     @Mock
@@ -263,7 +274,6 @@ public class ConfigurationManagerImplTest {
         }
     }
 
-
     @Test
     public void validateIfStringValueIsInRangeTestMultipleRangesValidValueReturnNull() {
         Mockito.doReturn("returnMsg1").when(configurationManagerImplSpy).validateRangePrivateIp(Mockito.anyString(), Mockito.anyString());
@@ -280,7 +290,6 @@ public class ConfigurationManagerImplTest {
         String testVariable = configurationManagerImplSpy.validateIfStringValueIsInRange("name", "value", "privateip", "instanceName", "default");
         Assert.assertEquals("The provided value is neither returnMsg1 NOR returnMsg2 NOR returnMsg3.", testVariable);
     }
-
 
     @Test
     public void validateRangePrivateIpTestValidValueReturnNull() {
@@ -723,7 +732,6 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueTypeTestReturnsTrueWhenValueIsTrueAndTypeIsBoolean() {
         Assert.assertTrue(configurationManagerImplSpy.validateValueType("true", Boolean.class));
-
     }
 
     @Test
@@ -953,7 +961,6 @@ public class ConfigurationManagerImplTest {
             configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), invalidValue);
         }
     }
-
 
     @Test
     public void getConfigurationTypeWrapperClassTestReturnsConfigType() {
@@ -1409,5 +1416,129 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    @Test
+    public void testCreateServiceOfferingCategoryWithDuplicateNameThrowsException() {
+        CreateServiceOfferingCategoryCmd cmd = mock(CreateServiceOfferingCategoryCmd.class);
+        when(cmd.getName()).thenReturn("Production");
+        when(serviceOfferingCategoryDaoMock.findByName("Production")).thenReturn(new ServiceOfferingCategoryVO("Production"));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.createServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testCreateServiceOfferingCategoryPersistsCategoryWithSortKey() {
+        CreateServiceOfferingCategoryCmd cmd = mock(CreateServiceOfferingCategoryCmd.class);
+        when(cmd.getName()).thenReturn("Production");
+        when(cmd.getSortKey()).thenReturn(5);
+        when(serviceOfferingCategoryDaoMock.findByName("Production")).thenReturn(null);
+        ServiceOfferingCategoryVO persisted = new ServiceOfferingCategoryVO("Production", 5);
+        when(serviceOfferingCategoryDaoMock.persist(any(ServiceOfferingCategoryVO.class))).thenReturn(persisted);
+
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            ServiceOfferingCategory result = configurationManagerImplSpy.createServiceOfferingCategory(cmd);
+
+            Assert.assertEquals(persisted, result);
+            Assert.assertEquals("Production", result.getName());
+            Assert.assertEquals(5, result.getSortKey());
+        }
+    }
+
+    @Test
+    public void testDeleteServiceOfferingCategoryWithUnknownIdThrowsException() {
+        DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(42L);
+        when(serviceOfferingCategoryDaoMock.findById(42L)).thenReturn(null);
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.deleteServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testDeleteDefaultServiceOfferingCategoryThrowsException() {
+        DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(serviceOfferingCategoryDaoMock.findById(1L)).thenReturn(new ServiceOfferingCategoryVO("Default"));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.deleteServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testDeleteServiceOfferingCategoryInUseThrowsException() {
+        DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(2L);
+        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+        when(serviceOfferingDaoMock.listByCategoryId(2L)).thenReturn(List.of(mock(ServiceOfferingVO.class)));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.deleteServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testDeleteUnusedServiceOfferingCategorySucceeds() {
+        DeleteServiceOfferingCategoryCmd cmd = mock(DeleteServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(2L);
+        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+        when(serviceOfferingDaoMock.listByCategoryId(2L)).thenReturn(Collections.emptyList());
+        when(serviceOfferingCategoryDaoMock.remove(2L)).thenReturn(true);
+
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            Assert.assertTrue(configurationManagerImplSpy.deleteServiceOfferingCategory(cmd));
+        }
+    }
+
+    @Test
+    public void testUpdateServiceOfferingCategoryWithUnknownIdThrowsException() {
+        UpdateServiceOfferingCategoryCmd cmd = mock(UpdateServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(42L);
+        when(serviceOfferingCategoryDaoMock.findById(42L)).thenReturn(null);
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.updateServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testUpdateServiceOfferingCategoryWithoutParametersThrowsException() {
+        UpdateServiceOfferingCategoryCmd cmd = mock(UpdateServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(2L);
+        when(cmd.getName()).thenReturn(null);
+        when(cmd.getSortKey()).thenReturn(null);
+        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.updateServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testUpdateServiceOfferingCategoryWithDuplicateNameThrowsException() {
+        UpdateServiceOfferingCategoryCmd cmd = mock(UpdateServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(2L);
+        when(cmd.getName()).thenReturn("Staging");
+        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+        when(serviceOfferingCategoryDaoMock.findByName("Staging")).thenReturn(new ServiceOfferingCategoryVO("Staging"));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () ->
+                configurationManagerImplSpy.updateServiceOfferingCategory(cmd));
+    }
+
+    @Test
+    public void testUpdateServiceOfferingCategoryFailureThrowsException() {
+        UpdateServiceOfferingCategoryCmd cmd = mock(UpdateServiceOfferingCategoryCmd.class);
+        when(cmd.getId()).thenReturn(2L);
+        when(cmd.getSortKey()).thenReturn(3);
+        when(serviceOfferingCategoryDaoMock.findById(2L)).thenReturn(new ServiceOfferingCategoryVO("Production"));
+        when(serviceOfferingCategoryDaoMock.update(anyLong(), any(ServiceOfferingCategoryVO.class))).thenReturn(false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () ->
+                configurationManagerImplSpy.updateServiceOfferingCategory(cmd));
     }
 }
