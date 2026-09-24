@@ -93,6 +93,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
             Map<String, Object> vpnCustomerGatewayParameters = (Map<String, Object>) capabilities.get(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS);
             response.setVpnCustomerGatewayParameters(vpnCustomerGatewayParameters);
         }
+        response.setDisableDefaultView((Boolean)capabilities.get(ApiConstants.DISABLE_DEFAULT_VIEW));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
