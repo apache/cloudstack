@@ -58,12 +58,14 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         propertiesUtilMocked = Mockito.mockStatic(PropertiesUtil.class);
+        AgentPropertiesFileHandler.clearCache();
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
         propertiesUtilMocked.close();
+        AgentPropertiesFileHandler.clearCache();
     }
 
     @Test
@@ -196,4 +198,39 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Assert.assertEquals(expectedResult, result);
     }
 
+    @Test
+    public void testCacheFunctionality() throws Exception {
+        String expectedResult = "cached-value";
+        AgentProperties.Property<String> agentProperty = new AgentProperties.Property<String>("test.property", "default", String.class);
+
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
+        Mockito.doReturn(expectedResult).when(propertiesMock).getProperty(Mockito.anyString());
+
+        Assert.assertFalse("Cache should be empty initially", AgentPropertiesFileHandler.isCacheLoaded());
+
+        String result1 = AgentPropertiesFileHandler.getPropertyValue(agentProperty);
+        Assert.assertEquals("First call should return correct value", expectedResult, result1);
+        Assert.assertTrue("Cache should be loaded after first call", AgentPropertiesFileHandler.isCacheLoaded());
+
+        Mockito.verify(PropertiesUtil.class, Mockito.times(1));
+        PropertiesUtil.loadFromFile(Mockito.any(File.class));
+
+        String result2 = AgentPropertiesFileHandler.getPropertyValue(agentProperty);
+        Assert.assertEquals("Second call should return same cached value", expectedResult, result2);
+        Assert.assertTrue("Cache should still be loaded", AgentPropertiesFileHandler.isCacheLoaded());
+
+        Mockito.verify(PropertiesUtil.class, Mockito.times(1));
+        PropertiesUtil.loadFromFile(Mockito.any(File.class));
+
+        AgentPropertiesFileHandler.clearCache();
+        Assert.assertFalse("Cache should be empty after clear", AgentPropertiesFileHandler.isCacheLoaded());
+
+        String result3 = AgentPropertiesFileHandler.getPropertyValue(agentProperty);
+        Assert.assertEquals("Third call should return correct value after cache clear", expectedResult, result3);
+        Assert.assertTrue("Cache should be loaded again", AgentPropertiesFileHandler.isCacheLoaded());
+
+        Mockito.verify(PropertiesUtil.class, Mockito.times(2));
+        PropertiesUtil.loadFromFile(Mockito.any(File.class));
+    }
 }

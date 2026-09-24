@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -59,6 +60,8 @@ public class PropertiesStorage implements StorageComponent {
             _properties.store(output, _name);
             output.flush();
             output.close();
+            AgentPropertiesFileHandler.clearCache();
+            logger.debug("Cleared agent properties cache after persisting key: {}", key);
         } catch (IOException e) {
             logger.error("Uh-oh: ", e);
         } finally {
