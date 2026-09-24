@@ -36,14 +36,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
@@ -51,9 +45,6 @@ import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -61,7 +52,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
@@ -81,7 +71,6 @@ import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
@@ -245,210 +234,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     @Override
-    public Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd) {
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        assert (secondaryStorageUrl != null);
-
-        String templateUrl = cmd.getUrl();
-
-        String templateName = null;
-        String mountPoint = null;
-        if (templateUrl.endsWith(".ova")) {
-            int index = templateUrl.lastIndexOf("/");
-            mountPoint = templateUrl.substring(0, index);
-            mountPoint = mountPoint.substring(secondaryStorageUrl.length() + 1);
-            if (!mountPoint.endsWith("/")) {
-                mountPoint = mountPoint + "/";
-            }
-
-            templateName = templateUrl.substring(index + 1).replace("." + ImageFormat.OVA.getFileExtension(), "");
-
-            if (templateName == null || templateName.isEmpty()) {
-                templateName = cmd.getName();
-            }
-        } else {
-            mountPoint = templateUrl.substring(secondaryStorageUrl.length() + 1);
-            if (!mountPoint.endsWith("/")) {
-                mountPoint = mountPoint + "/";
-            }
-            templateName = cmd.getName();
-        }
-
-        VmwareContext context = hostService.getServiceContext(cmd);
-        try {
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-
-            String templateUuidName = UuidUtils.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
-            // truncate template name to 32 chars to ensure they work well with vSphere API's.
-            templateUuidName = templateUuidName.replace("-", "");
-
-            DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
-            VirtualMachineMO templateMo = VmwareHelper.pickOneVmOnRunningHost(dcMo.findVmByNameAndLabel(templateUuidName), true);
-
-            if (templateMo == null) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Template " + templateName + " is not setup yet, setup template from secondary storage with uuid name: " + templateUuidName);
-                }
-                ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
-                assert (morDs != null);
-                DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(context, morDs);
-
-                copyTemplateFromSecondaryToPrimary(hyperHost, primaryStorageDatastoreMo, secondaryStorageUrl, mountPoint, templateName, templateUuidName, cmd.getNfsVersion());
-            } else {
-                logger.info("Template " + templateName + " has already been setup, skip the template setup process in primary storage");
-            }
-
-            return new PrimaryStorageDownloadAnswer(templateUuidName, 0);
-        } catch (Throwable e) {
-            return new PrimaryStorageDownloadAnswer(hostService.createLogMessageException(e, cmd));
-        }
-    }
-
-    @Override
-    @Deprecated
-    public Answer execute(VmwareHostService hostService, BackupSnapshotCommand cmd) {
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
-        String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
-        String prevBackupUuid = cmd.getPrevBackupUuid();
-        String searchExcludedFolders = cmd.getContextParam("searchexludefolders");
-        VirtualMachineMO workerVm = null;
-        String workerVMName = null;
-        String volumePath = cmd.getVolumePath();
-        ManagedObjectReference morDs = null;
-        DatastoreMO dsMo = null;
-
-        // By default assume failure
-        String details = null;
-        boolean success = false;
-        String snapshotBackupUuid = null;
-
-        VmwareContext context = hostService.getServiceContext(cmd);
-        VirtualMachineMO vmMo = null;
-        try {
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPool().getUuid());
-
-            try {
-                vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-                if (vmMo == null) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
-                    }
-
-                    vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
-                    if (vmMo == null) {
-                        dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-
-                        workerVMName = hostService.getWorkerName(context, cmd, 0, dsMo);
-                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
-
-                        if (vmMo == null) {
-                            throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
-                        }
-                        workerVm = vmMo;
-
-                        // attach volume to worker VM
-                        String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk", searchExcludedFolders);
-                        vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
-                    }
-                }
-
-                if (!vmMo.createSnapshot(snapshotUuid, "Snapshot taken for " + cmd.getSnapshotName(), false, false)) {
-                    throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
-                }
-
-                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid,
-                        prevBackupUuid, hostService.getWorkerName(context, cmd, 1, dsMo), cmd.getNfsVersion());
-
-                success = (snapshotBackupUuid != null);
-                if (success) {
-                    details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-                }
-
-            } finally {
-                if (vmMo != null) {
-                    ManagedObjectReference snapshotMor = vmMo.getSnapshotMor(snapshotUuid);
-                    if (snapshotMor != null) {
-                        vmMo.removeSnapshot(snapshotUuid, false);
-                    }
-                }
-
-                try {
-                    if (workerVm != null) {
-                        workerVm.detachAllDisksAndDestroy();
-                    }
-                } catch (Throwable e) {
-                    logger.warn(String.format("Failed to destroy worker VM [%s] due to: [%s].", workerVMName, e.getMessage()), e);
-                }
-            }
-        } catch (Throwable e) {
-            return new BackupSnapshotAnswer(cmd, false, hostService.createLogMessageException(e, cmd), snapshotBackupUuid, true);
-        }
-
-        return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, true);
-    }
-
-    @Override
-    public Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromVolumeCommand cmd) {
-        String secondaryStoragePoolURL = cmd.getSecondaryStorageUrl();
-        String volumePath = cmd.getVolumePath();
-        Long accountId = cmd.getAccountId();
-        Long templateId = cmd.getTemplateId();
-        String details = null;
-
-        VmwareContext context = hostService.getServiceContext(cmd);
-        try {
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-            if (vmMo == null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
-                }
-                vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
-
-                if (vmMo == null) {
-                    String msg = "Unable to find the owner VM for volume operation. vm: " + cmd.getVmName();
-                    logger.error(msg);
-                    throw new Exception(msg);
-                }
-            }
-
-            Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
-                    hostService.getWorkerName(context, cmd, 0, null), cmd.getNfsVersion());
-
-            return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
-
-        } catch (Throwable e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
-        }
-    }
-
-    @Override
-    public Answer execute(VmwareHostService hostService, CreatePrivateTemplateFromSnapshotCommand cmd) {
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        String backedUpSnapshotUuid = cmd.getSnapshotUuid();
-        Long newTemplateId = cmd.getNewTemplateId();
-        String details;
-        String uniqeName = UUID.randomUUID().toString();
-
-        VmwareContext context = hostService.getServiceContext(cmd);
-        try {
-            Ternary<String, Long, Long> result = createTemplateFromSnapshot(accountId, newTemplateId, uniqeName, secondaryStorageUrl, volumeId, backedUpSnapshotUuid,
-                    cmd.getNfsVersion());
-
-            return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), uniqeName, ImageFormat.OVA);
-        } catch (Throwable e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, hostService.createLogMessageException(e, cmd));
-        }
-    }
-
-    @Override
     public Answer execute(VmwareHostService hostService, CopyVolumeCommand cmd) {
         Long volumeId = cmd.getVolumeId();
         String volumePath = cmd.getVolumePath();
@@ -482,41 +267,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         } catch (Throwable e) {
             return new CopyVolumeAnswer(cmd, false, hostService.createLogMessageException(e, cmd), null, null);
         }
-    }
-
-    @Override
-    public Answer execute(VmwareHostService hostService, CreateVolumeFromSnapshotCommand cmd) {
-
-        String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-        Long accountId = cmd.getAccountId();
-        Long volumeId = cmd.getVolumeId();
-        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
-        String backedUpSnapshotUuid = cmd.getSnapshotUuid();
-
-        String details = null;
-        boolean success = false;
-        String newVolumeName = UUID.randomUUID().toString().replace("-", "");
-
-        VmwareContext context = hostService.getServiceContext(cmd);
-        try {
-            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-            ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStorageNameLabel);
-            if (morPrimaryDs == null) {
-                String msg = "Unable to find datastore: " + primaryStorageNameLabel;
-                logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            details = createVolumeFromSnapshot(hyperHost, primaryDsMo, newVolumeName, accountId, volumeId, secondaryStorageUrl, backedUpSnapshotUuid, cmd.getNfsVersion());
-            if (details == null) {
-                success = true;
-            }
-        } catch (Throwable e) {
-            details = hostService.createLogMessageException(e, cmd);
-        }
-
-        return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
     }
 
 
