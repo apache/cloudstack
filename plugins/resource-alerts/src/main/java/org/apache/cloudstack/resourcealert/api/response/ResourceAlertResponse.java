@@ -42,6 +42,18 @@ public class ResourceAlertResponse extends BaseResponse {
     @Param(description = "the ID of the resource that triggered this alert")
     private String resourceId;
 
+    @SerializedName(ApiConstants.RESOURCE_NAME)
+    @Param(description = "name of the resource that triggered the alert")
+    private String resourceName;
+
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "type of the resource that triggered the alert")
+    private String resourceType;
+
+    @SerializedName("alertrulename")
+    @Param(description = "name of the alert rule")
+    private String alertRuleName;
+
     @SerializedName("metrictype")
     @Param(description = "the metric that crossed the threshold")
     private String metricType;
@@ -65,6 +77,9 @@ public class ResourceAlertResponse extends BaseResponse {
     public void setId(String id) { this.id = id; }
     public void setAlertRuleId(String alertRuleId) { this.alertRuleId = alertRuleId; }
     public void setResourceId(String resourceId) { this.resourceId = resourceId; }
+    public void setResourceName(String resourceName) { this.resourceName = resourceName; }
+    public void setResourceType(String resourceType) { this.resourceType = resourceType; }
+    public void setAlertRuleName(String alertRuleName) { this.alertRuleName = alertRuleName; }
     public void setMetricType(String metricType) { this.metricType = metricType; }
     public void setMetricValue(double metricValue) { this.metricValue = metricValue; }
     public void setSeverity(String severity) { this.severity = severity; }
