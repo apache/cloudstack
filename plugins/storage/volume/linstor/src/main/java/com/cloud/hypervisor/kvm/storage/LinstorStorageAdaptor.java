@@ -593,7 +593,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool)
     {
-        throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
+        logger.debug("Linstor: listPhysicalDisks for pool {}", storagePoolUuid);
+        final DevelopersApi api = getLinstorAPI(pool);
+        final LinstorStoragePool linstorPool = (LinstorStoragePool) pool;
+        final String rscGroup = linstorPool.getResourceGroup();
+        List<KVMPhysicalDisk> disks = new ArrayList<>();
+        try {
+            List<ResourceDefinition> rscDfns = LinstorUtil.getRDListStartingWith(api, LinstorUtil.RSC_PREFIX);
+            for (ResourceDefinition rscDfn : rscDfns) {
+                if (rscGroup != null && !rscGroup.equalsIgnoreCase(rscDfn.getResourceGroupName())) {
+                    continue;
+                }
+                String name = rscDfn.getName().substring(LinstorUtil.RSC_PREFIX.length());
+                try {
+                    disks.add(getPhysicalDisk(name, pool));
+                } catch (Exception e) {
+                    logger.warn("Linstor: skipping resource {} while listing pool {}: {}",
+                            rscDfn.getName(), storagePoolUuid, e.getMessage());
+                }
+            }
+        } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+        return disks;
     }
 
     @Override

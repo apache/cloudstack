@@ -55,13 +55,25 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     }
 
     String HOST_UEFI_ENABLE = "host.uefi.enable";
+    String HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM = "host.kvm.diskonlyvmsnapshot.nvram";
     String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    String HOST_RBD_VOLUME_ENCRYPTION = "host.volume.encryption.rbd";
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
     String HOST_VDDK_SUPPORT = "host.vddk.support";
     String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
     String HOST_VDDK_VERSION = "host.vddk.version";
+    String HOST_VDDK_BLOCKCOPY_SUPPORT = "host.vddk.blockcopy.support";
+    String HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT = "host.vddk.blockcopy.inplace.finalization.support";
+    String HOST_VDDK_BLOCKCOPY_RBD_SUPPORT = "host.vddk.blockcopy.rbd.support";
+    String HOST_QEMU_IMG_VERSION = "host.qemu.img.version";
+    String HOST_QEMU_NBD_VERSION = "host.qemu.nbd.version";
+    String HOST_QEMU_IO_VERSION = "host.qemu.io.version";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String HOST_VIRTV2V_INPLACE_VERSION = "host.virtv2v.inplace.version";
+    String HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT = "host.vddk.rbd.direct.import.support";
+    String HOST_VIRTV2V_INPLACE_SUPPORT = "host.virtv2v.inplace.support";
+    String HOST_QEMU_RBD_SUPPORT = "host.qemu.rbd.support";
     String HOST_SSH_PORT = "host.ssh.port";
     String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
     String GUEST_OS_CATEGORY_ID = "guest.os.category.id";

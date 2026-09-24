@@ -35,17 +35,22 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements DnsZoneDao {
-    SearchBuilder<DnsZoneVO> DnsServerSearch;
+    SearchBuilder<DnsZoneVO> DnsServerZoneIdsSearch;
+    SearchBuilder<DnsZoneVO> DnsServerZonesSearch;
     SearchBuilder<DnsZoneVO> AccountSearch;
     SearchBuilder<DnsZoneVO> NameServerTypeSearch;
 
     public DnsZoneDaoImpl() {
         super();
 
-        DnsServerSearch  = createSearchBuilder();
-        DnsServerSearch.selectFields(DnsServerSearch.entity().getId());
-        DnsServerSearch.and(ApiConstants.DNS_SERVER_ID, DnsServerSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
-        DnsServerSearch.done();
+        DnsServerZoneIdsSearch = createSearchBuilder();
+        DnsServerZoneIdsSearch.selectFields(DnsServerZoneIdsSearch.entity().getId());
+        DnsServerZoneIdsSearch.and(ApiConstants.DNS_SERVER_ID, DnsServerZoneIdsSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        DnsServerZoneIdsSearch.done();
+
+        DnsServerZonesSearch = createSearchBuilder();
+        DnsServerZonesSearch.and(ApiConstants.DNS_SERVER_ID, DnsServerZonesSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        DnsServerZonesSearch.done();
 
         AccountSearch = createSearchBuilder();
         AccountSearch.and(ApiConstants.ACCOUNT_ID, AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -116,8 +121,15 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         return searchAndCount(sc, filter);
     }
 
+    @Override
+    public List<DnsZoneVO> listByDnsServerId(long dnsServerId) {
+        SearchCriteria<DnsZoneVO> sc = DnsServerZonesSearch.create();
+        sc.setParameters(ApiConstants.DNS_SERVER_ID, dnsServerId);
+        return listBy(sc);
+    }
+
     public List<Long> findDnsZoneIdsByServerId(long dnsServerId) {
-        SearchCriteria<DnsZoneVO> sc = DnsServerSearch.create();
+        SearchCriteria<DnsZoneVO> sc = DnsServerZoneIdsSearch.create();
         sc.setParameters(ApiConstants.DNS_SERVER_ID, dnsServerId);
         List<DnsZoneVO> dnsZones = listBy(sc);
         if (CollectionUtils.isEmpty(dnsZones)) {
