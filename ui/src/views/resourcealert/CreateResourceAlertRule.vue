@@ -31,10 +31,49 @@
         <a-input v-focus="true" v-model:value="form.name" />
       </a-form-item>
 
+      <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin">
+        <template #label>{{ $t('label.domain') }}</template>
+        <a-select
+          v-model:value="form.domainid"
+          allowClear
+          showSearch
+          optionFilterProp="label"
+          :loading="domainsLoading"
+          :placeholder="$t('label.resource.alert.owner.self')"
+          @change="onDomainChange">
+          <a-select-option v-for="d in domains" :key="d.id" :value="d.id" :label="d.path || d.name">{{ d.path || d.name }}</a-select-option>
+        </a-select>
+      </a-form-item>
+
+      <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin && form.domainid">
+        <template #label>{{ $t('label.account') }}</template>
+        <a-select
+          v-model:value="form.account"
+          showSearch
+          optionFilterProp="label"
+          :loading="accountsLoading"
+          @change="onOwnerChange">
+          <a-select-option v-for="a in accounts" :key="a.id" :value="a.name" :label="a.name">{{ a.name }}</a-select-option>
+        </a-select>
+      </a-form-item>
+
       <a-form-item name="resourcetype" ref="resourcetype">
         <template #label>{{ $t('label.resourcetype') }}</template>
         <a-select v-model:value="form.resourcetype" @change="onResourceTypeChange">
           <a-select-option v-for="rt in resourceTypes" :key="rt" :value="rt">{{ resourceTypeLabels[rt] || rt }}</a-select-option>
+        </a-select>
+      </a-form-item>
+
+      <a-form-item name="resourceid" ref="resourceid">
+        <template #label>{{ $t('label.resource') }}</template>
+        <a-select
+          v-model:value="form.resourceid"
+          :disabled="!form.resourcetype"
+          showSearch
+          optionFilterProp="label"
+          :loading="resourcesLoading">
+          <a-select-option value="" :label="$t('label.resource.alert.all.resources')">{{ $t('label.resource.alert.all.resources') }}</a-select-option>
+          <a-select-option v-for="r in resources" :key="r.id" :value="r.id" :label="r.displayname || r.name">{{ r.displayname || r.name }}</a-select-option>
         </a-select>
       </a-form-item>
 
@@ -116,9 +155,18 @@ export default {
       loading: false,
       webhooks: [],
       webhooksLoading: false,
+      resources: [],
+      resourcesLoading: false,
+      domains: [],
+      domainsLoading: false,
+      accounts: [],
+      accountsLoading: false,
       form: {
         name: '',
+        domainid: undefined,
+        account: undefined,
         resourcetype: undefined,
+        resourceid: '',
         metric: undefined,
         condition: undefined,
         threshold: undefined,
@@ -175,6 +223,12 @@ export default {
     }
   },
   computed: {
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    ownerParams () {
+      return this.form.domainid && this.form.account ? { domainid: this.form.domainid, account: this.form.account } : {}
+    },
     isRootAdmin () {
       return this.$store.getters.userInfo.roletype === 'Admin'
     },
@@ -187,19 +241,66 @@ export default {
   },
   created () {
     this.fetchWebhooks()
+    if (this.isAdminOrDomainAdmin) this.fetchDomains()
   },
   methods: {
     fetchWebhooks () {
       if (!('listWebhooks' in this.$store.getters.apis)) return
       this.webhooksLoading = true
-      getAPI('listWebhooks', { listall: true }).then(json => {
+      getAPI('listWebhooks', { listall: true, ...this.ownerParams }).then(json => {
         this.webhooks = json?.listwebhooksresponse?.webhook || []
       }).finally(() => {
         this.webhooksLoading = false
       })
     },
+    fetchDomains () {
+      this.domainsLoading = true
+      getAPI('listDomains', { listall: true, details: 'min' }).then(json => {
+        this.domains = json?.listdomainsresponse?.domain || []
+      }).finally(() => {
+        this.domainsLoading = false
+      })
+    },
+    onDomainChange () {
+      this.form.account = undefined
+      this.accounts = []
+      if (this.form.domainid) {
+        this.accountsLoading = true
+        getAPI('listAccounts', { domainid: this.form.domainid, details: 'min' }).then(json => {
+          this.accounts = json?.listaccountsresponse?.account || []
+        }).finally(() => {
+          this.accountsLoading = false
+        })
+      }
+      this.onOwnerChange()
+    },
+    onOwnerChange () {
+      this.form.webhookids = []
+      this.fetchWebhooks()
+      this.fetchResources()
+    },
+    fetchResources () {
+      this.form.resourceid = ''
+      this.resources = []
+      const sources = {
+        VirtualMachine: ['listVirtualMachines', 'listvirtualmachinesresponse', 'virtualmachine', { listall: true, details: 'min', ...this.ownerParams }],
+        Volume: ['listVolumes', 'listvolumesresponse', 'volume', { listall: true, ...this.ownerParams }],
+        Host: ['listHosts', 'listhostsresponse', 'host', { type: 'Routing' }],
+        StoragePool: ['listStoragePools', 'liststoragepoolsresponse', 'storagepool', {}]
+      }
+      const source = sources[this.form.resourcetype]
+      if (!source) return
+      const [api, responseKey, itemKey, params] = source
+      this.resourcesLoading = true
+      getAPI(api, params).then(json => {
+        this.resources = json?.[responseKey]?.[itemKey] || []
+      }).finally(() => {
+        this.resourcesLoading = false
+      })
+    },
     onResourceTypeChange () {
       this.form.metric = undefined
+      this.fetchResources()
     },
     handleSubmit () {
       this.$refs.formRef.validate().then(() => {
@@ -212,13 +313,16 @@ export default {
           severity: this.form.severity
         }
         if (this.isRootAdmin) params.email = this.form.email
+        if (this.form.resourceid) params.resourceid = this.form.resourceid
+        Object.assign(params, this.ownerParams)
         if (this.form.message) params.message = this.form.message
         if (this.form.resetinterval) params.resetinterval = this.form.resetinterval
         if (this.form.webhookids.length > 0) params.webhookids = this.form.webhookids.join(',')
         this.loading = true
         postAPI('createResourceAlertRule', params).then(() => {
+          this.$message.success(this.$t('label.create.resource.alert.rule') + ' - ' + params.name)
+          this.$emit('refresh-data')
           this.$emit('close-action')
-          this.$store.dispatch('AddAsyncJob', { title: this.$t('label.create.resource.alert.rule') })
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

@@ -56,7 +56,7 @@ export default {
       alerts: [],
       tabLoading: false,
       columns: [
-        { title: this.$t('label.resourceid'), dataIndex: 'resourceid', key: 'resourceid' },
+        { title: this.$t('label.resourcename'), dataIndex: 'resourcename', key: 'resourcename' },
         { title: this.$t('label.metrictype'), dataIndex: 'metrictype', key: 'metrictype' },
         { title: this.$t('label.metricvalue'), dataIndex: 'metricvalue', key: 'metricvalue' },
         { title: this.$t('label.severity'), dataIndex: 'severity', key: 'severity' },
