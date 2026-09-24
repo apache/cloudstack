@@ -155,7 +155,9 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 }
                 serializedResponse = ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
                         responseType);
-                userDetailsDao.removeDetail(userAccount.getId(), UserDetailVO.OauthLogin);
+                if (userAccount != null) {
+                    userDetailsDao.removeDetail(userAccount.getId(), UserDetailVO.OauthLogin);
+                }
                 return serializedResponse;
             } catch (final CloudAuthenticationException ex) {
                 ApiServlet.invalidateHttpSession(session, "fall through to API key,");
