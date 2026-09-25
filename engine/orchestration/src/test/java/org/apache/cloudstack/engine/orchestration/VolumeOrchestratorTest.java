@@ -179,6 +179,31 @@ public class VolumeOrchestratorTest {
     }
 
     @Test
+    public void testGetSupportedImageFormatForClusterKvmRbdIsRaw() {
+        Assert.assertEquals(Storage.ImageFormat.RAW,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD));
+        // Linstor (DRBD) volumes are also raw block devices.
+        Assert.assertEquals(Storage.ImageFormat.RAW,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor));
+    }
+
+    @Test
+    public void testGetSupportedImageFormatForClusterKvmNonRbdIsQcow2() {
+        Assert.assertEquals(Storage.ImageFormat.QCOW2,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+        Assert.assertEquals(Storage.ImageFormat.QCOW2,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Filesystem));
+    }
+
+    @Test
+    public void testGetSupportedImageFormatForClusterNonKvmIgnoresPoolType() {
+        Assert.assertEquals(Storage.ImageFormat.VHD,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.XenServer, Storage.StoragePoolType.RBD));
+        Assert.assertEquals(Storage.ImageFormat.OVA,
+                volumeOrchestrator.getSupportedImageFormatForCluster(Hypervisor.HypervisorType.VMware, Storage.StoragePoolType.RBD));
+    }
+
+    @Test
     public void testGrantVolumeAccessToHostIfNeededDriverNoNeed() {
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
         PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
@@ -280,6 +305,7 @@ public class VolumeOrchestratorTest {
         Mockito.when(oldVol.isRecreatable()).thenReturn(false);
         Mockito.when(oldVol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         Mockito.when(oldVol.getPassphraseId()).thenReturn(null); // no encryption
+        Mockito.when(oldVol.getKmsKeyId()).thenReturn(null); // no encryption
 
         VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(persistedVol);
@@ -308,6 +334,7 @@ public class VolumeOrchestratorTest {
         Mockito.when(oldVol.getInstanceId()).thenReturn(7L);
         Mockito.when(oldVol.isRecreatable()).thenReturn(true);
         Mockito.when(oldVol.getFormat()).thenReturn(Storage.ImageFormat.RAW);
+        Mockito.when(oldVol.getKmsKeyId()).thenReturn(null);
         Mockito.when(oldVol.getPassphraseId()).thenReturn(42L);
 
         PassphraseVO passphrase = Mockito.mock(PassphraseVO.class);
@@ -340,9 +367,6 @@ public class VolumeOrchestratorTest {
 
         VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
-
-        PassphraseVO mockPassPhrase = Mockito.mock(PassphraseVO.class);
-        Mockito.when(passphraseDao.persist(Mockito.any())).thenReturn(mockPassPhrase);
 
         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, null, 222L);
         assertNotNull(result);

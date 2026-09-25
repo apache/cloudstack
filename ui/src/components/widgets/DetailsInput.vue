@@ -19,7 +19,16 @@
   <div>
     <div class="input-row">
       <a-form-item no-style>
-        <a-input v-model:value="newKey" :placeholder="$t('label.key')" class="input-field" />
+        <a-auto-complete
+          v-if="optionalKeys && optionalKeys.length > 0"
+          :key="autoCompleteKey"
+          v-model:value="newKey"
+          :placeholder="$t('label.key')"
+          class="input-field"
+          :options="optionalKeyOptions"
+          :filterOption="(input, option) => option.value.toLowerCase().includes(input.toLowerCase())"
+        />
+        <a-input v-else v-model:value="newKey" :placeholder="$t('label.key')" class="input-field" />
       </a-form-item>
       <a-form-item no-style>
         <a-input v-model:value="newValue" :placeholder="$t('label.value')" class="input-field" />
@@ -82,6 +91,15 @@ export default {
     showTableHeaders: {
       type: Boolean,
       default: true
+    },
+    optionalKeys: {
+      type: Array,
+      default: () => []
+    }
+  },
+  computed: {
+    optionalKeyOptions () {
+      return this.optionalKeys.map(k => ({ value: k }))
     }
   },
   data () {
@@ -94,7 +112,8 @@ export default {
       newKey: '',
       newValue: '',
       tableData: [],
-      editBuffer: {}
+      editBuffer: {},
+      autoCompleteKey: 0
     }
   },
   created () {
@@ -127,6 +146,7 @@ export default {
       this.updateData()
       this.newKey = ''
       this.newValue = ''
+      this.autoCompleteKey++
     },
     removeEntry (key) {
       this.tableData = this.tableData.filter(item => item.key !== key)

@@ -17,18 +17,18 @@
 # under the License.
 
 
-# Usage: dhcpd_edithosts.py mac ip hostname dns gateway nextserver
+# Usage: dhcpd_edithosts.py mac ip hostname dns gateway nextserver [leasetime]
 import sys, os
 from os.path import exists
 from time import sleep
 from os import remove
 
-usage = '''dhcpd_edithosts.py mac ip hostname dns gateway nextserver'''
+usage = '''dhcpd_edithosts.py mac ip hostname dns gateway nextserver [leasetime]'''
 conf_path = "/etc/dhcpd.conf"
 file_lock = "/etc/dhcpd.conf_locked"
 sleep_max = 20
-host_entry = 'host %s { hardware ethernet %s; fixed-address %s; option domain-name-servers %s; option domain-name "%s"; option routers %s; default-lease-time infinite; max-lease-time infinite; min-lease-time infinite; filename "pxelinux.0";}'
-host_entry1 = 'host %s { hardware ethernet %s; fixed-address %s; option domain-name-servers %s; option domain-name "%s"; option routers %s; default-lease-time infinite; max-lease-time infinite; min-lease-time infinite; next-server %s; filename "pxelinux.0";}'
+host_entry = 'host %s { hardware ethernet %s; fixed-address %s; option domain-name-servers %s; option domain-name "%s"; option routers %s; default-lease-time %s; max-lease-time %s; min-lease-time %s; filename "pxelinux.0";}'
+host_entry1 = 'host %s { hardware ethernet %s; fixed-address %s; option domain-name-servers %s; option domain-name "%s"; option routers %s; default-lease-time %s; max-lease-time %s; min-lease-time %s; next-server %s; filename "pxelinux.0";}'
 def lock():
 	if exists(file_lock):
 		count = 0
@@ -59,9 +59,13 @@ def unlock():
 			print "Cannot remove file lock at %s" % file_lock
 			return False
 
-def insert_host_entry(mac, ip, hostname, dns, gateway, next_server):
+def insert_host_entry(mac, ip, hostname, dns, gateway, next_server, lease_time="infinite"):
 	if lock() == False:
 		return 1
+
+	# Convert 0 to 'infinite' for lease time
+	if lease_time == "0":
+		lease_time = "infinite"
 
 	cmd = 'sed -i /"fixed-address %s"/d %s' % (ip, conf_path)
 	ret = os.system(cmd)
@@ -78,9 +82,9 @@ def insert_host_entry(mac, ip, hostname, dns, gateway, next_server):
 		return 1
 
 	if next_server != "null":
-		entry = host_entry1 % (hostname, mac, ip, dns, "cloudnine.internal", gateway, next_server)
+		entry = host_entry1 % (hostname, mac, ip, dns, "cloudnine.internal", gateway, lease_time, lease_time, lease_time, next_server)
 	else:
-		entry = host_entry % (hostname, mac, ip, dns, "cloudnine.internal", gateway)
+		entry = host_entry % (hostname, mac, ip, dns, "cloudnine.internal", gateway, lease_time, lease_time, lease_time)
 	cmd = '''echo '%s' >> %s''' % (entry, conf_path)
 	ret = os.system(cmd)
 	if ret != 0:
@@ -111,6 +115,7 @@ if __name__ == "__main__":
 	dns = sys.argv[4]
 	gateway = sys.argv[5]
 	next_server = sys.argv[6]
+	lease_time = sys.argv[7] if len(sys.argv) > 7 else "infinite"
 
 	if exists(conf_path) == False:
 		conf_path = "/etc/dhcp/dhcpd.conf"
@@ -118,5 +123,5 @@ if __name__ == "__main__":
 		print "Cannot find dhcpd.conf"
 		sys.exit(1)
 
-	ret = insert_host_entry(mac, ip, hostname, dns, gateway, next_server)
+	ret = insert_host_entry(mac, ip, hostname, dns, gateway, next_server, lease_time)
 	sys.exit(ret)

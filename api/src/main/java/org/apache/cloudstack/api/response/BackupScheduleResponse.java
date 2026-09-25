@@ -56,6 +56,10 @@ public class BackupScheduleResponse extends BaseResponse {
     @Param(description = "maximum number of backups retained")
     private Integer maxBackups;
 
+    @SerializedName(ApiConstants.ISOLATED)
+    @Param(description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS)
+    private boolean isolated;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -110,5 +114,9 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setQuiesceVM(Boolean quiesceVM) {
         this.quiesceVM = quiesceVM;
+    }
+
+    public void setIsolated(boolean isolated) {
+        this.isolated = isolated;
     }
 }

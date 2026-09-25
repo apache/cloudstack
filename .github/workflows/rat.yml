@@ -17,8 +17,12 @@
 
 name: License Check
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+      - 4.22
+      - 4.20
+  pull_request:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -37,7 +41,7 @@ jobs:
         uses: ./.github/actions/install-nonoss
       - name: RAT licence checks
         run: |
-          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
+          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.18:check
       - name: Rat Report
         if: always()
         run: |

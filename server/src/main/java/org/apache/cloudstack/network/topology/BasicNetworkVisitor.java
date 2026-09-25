@@ -145,7 +145,9 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
         } else if (purpose == Purpose.Firewall) {
 
-            _commandSetupHelper.createApplyFirewallRulesCommands(rules, router, cmds, network.getId());
+            final Long guestNetworkId = network != null ? network.getId() : null;
+            final Long vpcId = network != null ? network.getVpcId() : router.getVpcId();
+            _commandSetupHelper.createApplyFirewallRulesCommands(rules, router, cmds, guestNetworkId, vpcId);
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 

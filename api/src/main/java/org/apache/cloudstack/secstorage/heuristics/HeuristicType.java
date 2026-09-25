@@ -18,8 +18,8 @@ package org.apache.cloudstack.secstorage.heuristics;
 
 /**
  * The type of the heuristic used in the allocation process of secondary storage resources.
- * Valid options are: {@link #ISO}, {@link #SNAPSHOT}, {@link #TEMPLATE} and {@link #VOLUME}
+ * Valid options are: {@link #ISO}, {@link #SNAPSHOT}, {@link #TEMPLATE}, {@link #VOLUME} and {@link #BACKUP}
  */
 public enum HeuristicType {
-    ISO, SNAPSHOT, TEMPLATE, VOLUME
+    ISO, SNAPSHOT, TEMPLATE, VOLUME, BACKUP
 }

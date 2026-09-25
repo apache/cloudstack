@@ -18,11 +18,23 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
+import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
+import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VDDK_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_SUPPORT;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
@@ -36,6 +48,7 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +64,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +86,9 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+import com.cloud.utils.exception.BackupException;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import com.cloud.agent.api.to.DataObjectType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.command.CommandInfo;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -89,6 +104,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -316,6 +332,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
+    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
@@ -366,6 +384,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
     // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
+    public static final String INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD = "virt-v2v-in-place --version";
+    // EL9-family distributions install virt-v2v-in-place in libexecdir, outside $PATH
+    public static final String VIRT_V2V_IN_PLACE_LIBEXEC_PATH = "/usr/libexec/virt-v2v-in-place";
+    public static final String INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD = "virt-v2v --help 2>&1 | grep -q -- '--in-place'";
     public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
     // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
     public static final String OVF_EXPORT_TOOl_GET_VERSION_CMD = "ovftool --version | awk '{print $3}'";
@@ -374,6 +396,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
     public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
+    public static final String NBDKIT_VDDK_DUMP_PLUGIN_CMD = "nbdkit vddk --dump-plugin";
+    public static final String QEMU_IMG_SUPPORTED_CHECK_CMD = "qemu-img --version";
+    public static final String QEMU_NBD_SUPPORTED_CHECK_CMD = "qemu-nbd --version";
+    public static final String QEMU_IO_SUPPORTED_CHECK_CMD = "qemu-io --version";
+    public static final String QEMU_IMG_RBD_SUPPORTED_CHECK_CMD = "qemu-img --help 2>&1 | grep -Eq '(^|[[:space:]])rbd([[:space:]]|$)'";
+    public static final String NBDCOPY_SUPPORTED_CHECK_CMD = "nbdcopy --version";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -393,6 +421,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
     public static final String IMAGE_SERVER_SYSTEMD_UNIT_NAME = "cloudstack-image-server";
+
+    private static final String BLOCK_PULL_COMMAND = "virsh blockpull --domain %s --path %s";
+
+    private static final String SNAPSHOT_XML = "<domainsnapshot>\n" +
+            "<name>%s</name>\n" +
+            "<memory snapshot='no'/>\n" +
+            "<disks> \n" +
+            "%s" +
+            "</disks> \n" +
+            "</domainsnapshot>";
+
+    private static final String TAG_DISK_SNAPSHOT = "<disk name='%s' snapshot='external'>\n" +
+            "<source file='%s'/>\n" +
+            "</disk>\n";
 
     protected int qcow2DeltaMergeTimeout;
 
@@ -594,6 +636,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
+    public static final String AGENT_IS_NOT_CONNECTED = "QEMU guest agent is not connected";
+
     /**
      * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
      * 1st parameter: VM's name;<br>
@@ -612,7 +656,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public synchronized void registerStatusUpdater(AgentStatusUpdater updater) {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             try {
                 Connect conn = LibvirtConnection.getConnection();
                 if (libvirtDomainListener != null) {
@@ -938,6 +982,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
     private String vddkTransports = null;
+    private String vddkNbdCompression = null;
     private String vddkThumbprint = null;
     private String vddkVersion = null;
     private String detectedPasswordFileOption = null;
@@ -1015,6 +1060,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getVddkTransports() {
         return vddkTransports;
+    }
+
+    public String getVddkNbdCompression() {
+        return vddkNbdCompression;
     }
 
     public String getVddkThumbprint() {
@@ -1248,13 +1297,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
         }
 
-        vddkVersion = detectVddkVersion();
+        vddkVersion = detectVddkVersion(vddkLibDir);
         if (StringUtils.isNotBlank(vddkVersion)) {
-            LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
+            LOGGER.info("Detected usable VMware VDDK library version: {}", vddkVersion);
         }
 
         vddkTransports = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkNbdCompression = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_NBD_COMPRESSION));
         vddkThumbprint = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
 
@@ -2358,7 +2409,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean stop() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
-            if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED) && libvirtDomainListener != null) {
+            if (isLibvirtEventsEnabled() && libvirtDomainListener != null) {
                 LOGGER.debug("Clearing old domain listener");
                 conn.removeLifecycleListener(libvirtDomainListener);
             }
@@ -3312,6 +3363,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
+        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+            // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
+            // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
+            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            if (videoRam == 0) {
+                videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
+            }
+        }
         return new VideoDef(videoHw, videoRam);
     }
 
@@ -3462,6 +3521,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
+    }
+
+    protected boolean isGuestX86(VirtualMachineTO vmTO) {
+        String arch = guestCpuArch != null ? guestCpuArch : vmTO.getArch();
+        return arch == null || arch.equals("x86_64") || arch.equals("i686");
     }
 
     private boolean isGuestS390x() {
@@ -3864,7 +3928,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
-                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                    String encryptEngine = (pool.getType() == StoragePoolType.RBD) ? "librbd" : null;
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()), encryptEngine);
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
             }
@@ -4387,28 +4453,53 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_SUPPORT, String.valueOf(hostSupportsVddkBlockCopy()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyInPlaceFinalization()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyRbd()));
+        cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_SUPPORT, String.valueOf(hostSupportsVirtV2vInPlace()));
+        cmd.getHostDetails().put(HOST_QEMU_RBD_SUPPORT, String.valueOf(hostSupportsQemuRbd()));
+        cmd.getHostDetails().put(HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, String.valueOf(hostSupportsVddkRbdDirectImport()));
         if (StringUtils.isNotBlank(vddkLibDir)) {
             cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
         }
         if (StringUtils.isNotBlank(vddkVersion)) {
             cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
         }
+        String qemuImgVersion = getQemuImgVersion();
+        if (StringUtils.isNotBlank(qemuImgVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_IMG_VERSION, qemuImgVersion);
+        }
+        String qemuNbdVersion = getQemuNbdVersion();
+        if (StringUtils.isNotBlank(qemuNbdVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_NBD_VERSION, qemuNbdVersion);
+        }
+        String qemuIoVersion = getQemuIoVersion();
+        if (StringUtils.isNotBlank(qemuIoVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_IO_VERSION, qemuIoVersion);
+        }
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
+        }
+        String virtV2vInPlaceVersion = getHostVirtV2vInPlaceVersion();
+        if (StringUtils.isNotBlank(virtV2vInPlaceVersion)) {
+            cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_VERSION, virtV2vInPlaceVersion);
         }
         if (hostSupportsOvfExport()) {
             cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
         }
+        addBackupJobDetails(cmd.getHostDetails());
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
@@ -4442,6 +4533,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return startupCommandsArray;
     }
 
+    private void addBackupJobDetails(Map<String, String> details) {
+        Integer maxCompressionOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxCompressionOperations != null) {
+            details.put(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxCompressionOperations.toString());
+        }
+
+        Integer maxValidationOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxValidationOperations != null) {
+            details.put(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxValidationOperations.toString());
+        }
+    }
+
     protected List<String> getHostTags() {
         List<String> hostTagsList = new ArrayList<>();
         String hostTags = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_TAGS);
@@ -4471,12 +4574,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         LOGGER.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            LOGGER.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            LOGGER.info("Setting host CPU max capacity: {} to 0, as it uses cgroup v1.", getHostCpuMaxCapacity());
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        LOGGER.info(String.format("Calculating the max shares of the host."));
+        LOGGER.info("Calculating the max shares of the host.");
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
         LOGGER.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
@@ -5147,7 +5250,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return disks.stream()
                 .filter(diskDef -> diskDef.getDiskPath() != null && diskDef.getDiskPath().contains(vol.getPath()))
                 .findFirst()
-                .orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find volume [%s].", vol.getUuid())));
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find volume [%s] with path [%s].", vol.getUuid(), vol.getPath())));
     }
 
     protected String getDiskPathFromDiskDef(DiskDef disk) {
@@ -6090,7 +6193,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         for (String snapshotName: snapshotNames) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+                LOGGER.debug("Cleaning snapshot {} of VM {} metadata.", Arrays.toString(snapshotNames), dm.getName());
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
@@ -6164,7 +6267,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Test host for volume encryption support
+     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup),
+     * reported as {@code host.volume.encryption}. RBD/librbd encryption support is a separate
+     * capability, reported as {@code host.volume.encryption.rbd}
+     * (see {@link #hostSupportsRbdVolumeEncryption()}).
      * @return boolean
      */
     public boolean hostSupportsVolumeEncryption() {
@@ -6189,6 +6295,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
+    /**
+     * Test host for librbd native LUKS encryption support (rbd CLI with the encryption subcommand).
+     */
+    public boolean hostSupportsRbdVolumeEncryption() {
+        return new RbdEncryption().isSupported();
+    }
+
     public boolean isSecureMode(String bootMode) {
         if (StringUtils.isNotBlank(bootMode) && "secure".equalsIgnoreCase(bootMode)) {
             return true;
@@ -6210,14 +6323,135 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean hostSupportsVddk(String overriddenVddkLibDir) {
-        String effectiveVddkLibDir = StringUtils.trimToNull(overriddenVddkLibDir);
-        if (StringUtils.isBlank(effectiveVddkLibDir)) {
-            effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
+        String effectiveVddkLibDir = resolveVddkLibDir(overriddenVddkLibDir);
+        return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && isNbdkitVddkPluginUsable(effectiveVddkLibDir);
+    }
+
+    public boolean hostSupportsVddkBlockCopy() {
+        return hostSupportsVddkBlockCopy(null);
+    }
+
+    public boolean hostSupportsVddkBlockCopy(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir)
+                && Script.runSimpleBashScriptForExitValue(QEMU_IMG_SUPPORTED_CHECK_CMD) == 0
+                && Script.runSimpleBashScriptForExitValue(QEMU_NBD_SUPPORTED_CHECK_CMD) == 0
+                && Script.runSimpleBashScriptForExitValue(QEMU_IO_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVddkBlockCopyInPlaceFinalization() {
+        return hostSupportsVddkBlockCopy() && hostSupportsVirtV2vInPlace();
+    }
+
+    public boolean hostSupportsVddkBlockCopyRbd() {
+        return hostSupportsVddkBlockCopyInPlaceFinalization()
+                && Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public String getQemuImgVersion() {
+        return detectFirstLineVersion("qemu-img", "--version");
+    }
+
+    public String getQemuNbdVersion() {
+        return detectFirstLineVersion("qemu-nbd", "--version");
+    }
+
+    public String getQemuIoVersion() {
+        return detectFirstLineVersion("qemu-io", "--version");
+    }
+
+    public boolean hostSupportsVirtV2vInPlace() {
+        return hostSupportsVirtV2vInPlaceBinary() || hostSupportsVirtV2vInPlaceOption();
+    }
+
+    /**
+     * nbdcopy (from libnbd) is an optional accelerator for full-disk copies from an
+     * nbdkit/VDDK source into a local raw block device: it uses multiple in-flight
+     * requests and connections, so it is typically faster than a single-connection
+     * qemu-img convert. It is a pure optimization - callers fall back to
+     * qemu-img convert when it is absent.
+     */
+    public boolean hostSupportsNbdcopy() {
+        return Script.runSimpleBashScriptForExitValue(NBDCOPY_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceBinary() {
+        return getVirtV2vInPlaceBinary() != null;
+    }
+
+    /**
+     * Resolves the virt-v2v-in-place executable. Ubuntu/Debian install it on $PATH,
+     * but EL9-family distributions ship it in /usr/libexec, so probing the bare name
+     * alone would (wrongly) disable in-place finalization there. Returns the
+     * invocable binary (name or absolute path), or null when neither works.
+     */
+    public String getVirtV2vInPlaceBinary() {
+        if (Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD) == 0) {
+            return "virt-v2v-in-place";
         }
-        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
-            effectiveVddkLibDir = detectVddkLibDir();
+        if (Script.runSimpleBashScriptForExitValue(VIRT_V2V_IN_PLACE_LIBEXEC_PATH + " --version") == 0) {
+            return VIRT_V2V_IN_PLACE_LIBEXEC_PATH;
         }
-        return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
+        return null;
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceOption() {
+        return Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public String getHostVirtV2vInPlaceVersion() {
+        if (!hostSupportsVirtV2vInPlace()) {
+            return "";
+        }
+        String inPlaceBinary = getVirtV2vInPlaceBinary();
+        if (inPlaceBinary == null) {
+            return getHostVirtV2vVersion();
+        }
+        String cmd = String.format("%s --version | awk '{print $2}'", inPlaceBinary);
+        String version = Script.runSimpleBashScript(cmd);
+        return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
+    }
+
+    protected String detectFirstLineVersion(String... command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToNull(line);
+                if (StringUtils.isNotBlank(trimmed)) {
+                    return parseVersionToken(trimmed);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to detect version for command {}: {}", String.join(" ", command), e.getMessage());
+        }
+        return null;
+    }
+
+    protected String parseVersionToken(String versionLine) {
+        String versionMarker = " version ";
+        int markerIndex = versionLine.indexOf(versionMarker);
+        if (markerIndex < 0) {
+            return versionLine;
+        }
+        String value = versionLine.substring(markerIndex + versionMarker.length());
+        String[] parts = value.split("\\s+", 2);
+        return parts.length > 0 ? parts[0] : versionLine;
+    }
+
+    public boolean hostSupportsQemuRbd() {
+        return Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport() {
+        return hostSupportsVddkRbdDirectImport(null);
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir) && hostSupportsQemuRbd() && hostSupportsVirtV2vInPlace();
     }
 
     protected boolean isVddkLibDirValid(String path) {
@@ -6232,6 +6466,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return libs != null && libs.length > 0;
     }
 
+    protected String resolveVddkLibDir(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = StringUtils.trimToNull(overriddenVddkLibDir);
+        if (StringUtils.isBlank(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
+        }
+        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = detectVddkLibDir();
+        }
+        return effectiveVddkLibDir;
+    }
+
     protected String detectVddkLibDir() {
         String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
         if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
@@ -6241,28 +6486,73 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String detectVddkVersion() {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--version");
-            Process process = pb.start();
+        return detectVddkVersion(null);
+    }
 
-            String output = new String(process.getInputStream().readAllBytes());
-            process.waitFor();
-
-            if (StringUtils.isBlank(output)) {
-                return null;
-            }
-
-            for (String line : output.split("\\R")) {
-                String trimmed = StringUtils.trimToEmpty(line);
-                if (trimmed.startsWith("vddk ")) {
-                    return StringUtils.trimToNull(trimmed.substring("vddk ".length()));
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            LOGGER.error("Failed to detect vddk version: {}", e.getMessage());
+    protected String detectVddkVersion(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = resolveVddkLibDir(overriddenVddkLibDir);
+        if (!isVddkLibDirValid(effectiveVddkLibDir)) {
             return null;
         }
+        return parseVddkLibraryVersionFromDumpPluginOutput(runNbdkitVddkDumpPlugin(effectiveVddkLibDir));
+    }
+
+    protected boolean isNbdkitVddkPluginUsable(String vddkLibDir) {
+        if (!isVddkLibDirValid(vddkLibDir)) {
+            return false;
+        }
+        String dumpPluginOutput = runNbdkitVddkDumpPlugin(vddkLibDir);
+        if (StringUtils.isBlank(parseVddkLibraryVersionFromDumpPluginOutput(dumpPluginOutput))) {
+            LOGGER.warn("nbdkit-vddk-plugin could not load VMware VDDK from [{}]", vddkLibDir);
+            return false;
+        }
+        return true;
+    }
+
+    protected String runNbdkitVddkDumpPlugin(String vddkLibDir) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--dump-plugin", String.format("libdir=%s", vddkLibDir));
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            boolean completed = process.waitFor(10, TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
+            }
+            String output = new String(process.getInputStream().readAllBytes());
+            if (!completed) {
+                LOGGER.warn("Timed out while checking nbdkit-vddk-plugin with libdir [{}]", vddkLibDir);
+                return output;
+            }
+            if (process.exitValue() != 0) {
+                LOGGER.warn("nbdkit-vddk-plugin check failed for libdir [{}]: {}", vddkLibDir, StringUtils.trimToEmpty(output));
+                return output;
+            }
+            return output;
+        } catch (Exception e) {
+            LOGGER.error("Failed to check nbdkit-vddk-plugin with libdir [{}]: {}", vddkLibDir, e.getMessage());
+            return null;
+        }
+    }
+
+    protected String parseVddkLibraryVersionFromDumpPluginOutput(String output) {
+        if (StringUtils.isBlank(output)) {
+            return null;
+        }
+        String libraryVersionPrefix = "vddk_library_version=";
+        try {
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                if (trimmed.startsWith(libraryVersionPrefix)) {
+                    return StringUtils.trimToNull(trimmed.substring(libraryVersionPrefix.length()));
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse nbdkit-vddk-plugin output: {}", e.getMessage());
+            return null;
+        }
+        return null;
     }
 
     public boolean hostSupportsWindowsGuestConversion() {
@@ -6574,12 +6864,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return String.join(File.separator, diskPathSplitted);
     }
 
+    public String getUefiNvramPath(String vmUuid) {
+        String nvramDirectory = uefiProperties.getProperty(LibvirtVMDef.GuestDef.GUEST_NVRAM_PATH);
+        if (StringUtils.isBlank(nvramDirectory) || StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+
+        return nvramDirectory + vmUuid + ".fd";
+    }
+
     public static String generateSecretUUIDFromString(String seed) {
         return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
     /**
-     * Merges the snapshot into base file.
+     * Merges the delta into a base file.
      *
      * @param vm           Domain of the VM;
      * @param diskLabel    Disk label to manage snapshot and base file;
@@ -6591,13 +6890,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param conn Libvirt connection;
      * @throws LibvirtException
      */
-    public void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
+    public void mergeDeltaIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
             Connect conn) throws LibvirtException {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         } else {
             mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         }
+    }
+
+    protected Boolean isLibvirtEventsEnabled() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED);
     }
 
     /**
@@ -6616,40 +6919,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             commitFlags |= Domain.BlockCommitFlags.ACTIVE;
         }
 
-        Semaphore semaphore = getSemaphoreToWaitForMerge();
-        BlockCommitListener blockCommitListener = getBlockCommitListener(semaphore, vmName);
-        vm.addBlockJobListener(blockCommitListener);
-
-        logger.info("Starting block commit of snapshot [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]", snapshotName,
-                vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
-
-        vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
-
-        Thread checkProgressThread = new Thread(() -> checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath));
-        checkProgressThread.start();
-
-        String errorMessage = String.format("the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]." +
-                " The job will be left running to avoid data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit" +
-                " involved the active image, the pivot will need to be manually done.", topFilePath, baseFilePath, snapshotName, vmName, volume);
+        BlockCommitListener blockCommitListener = getBlockCommitListener(vmName);
         try {
-            if (!semaphore.tryAcquire(qcow2DeltaMergeTimeout, TimeUnit.SECONDS)) {
-                throw new CloudRuntimeException("Timed out while waiting for " + errorMessage);
-            }
-        } catch (InterruptedException e) {
-            throw new CloudRuntimeException("Interrupted while waiting for " + errorMessage);
+            vm.addBlockJobListener(blockCommitListener);
+
+            logger.info("Starting block commit of QCOW2 delta [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]",
+                    snapshotName,
+                    vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
+
+            vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
+
+            checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
         } finally {
             vm.removeBlockJobListener(blockCommitListener);
         }
 
         String mergeResult = blockCommitListener.getResult();
-        try {
-            checkProgressThread.join();
-        } catch (InterruptedException ex) {
-            throw new CloudRuntimeException(String.format("Exception while running wait block commit task of snapshot [%s] and VM [%s].", snapshotName, vmName));
-        }
-
         if (mergeResult != null) {
-            String commitError = String.format("Failed %s The failure occurred due to [%s].", errorMessage, mergeResult);
+            String commitError = String.format("Failed the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]. The job will be left running to avoid" +
+                    " data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit involved the active image, the pivot will" +
+                    " need to be manually done. The failure occurred due to [%s].", topFilePath, baseFilePath, snapshotName, vmName, volume, mergeResult);
             logger.error(commitError);
             throw new CloudRuntimeException(commitError);
         }
@@ -6706,15 +6995,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * This was created to facilitate testing.
      * */
-    protected BlockCommitListener getBlockCommitListener(Semaphore semaphore, String vmName) {
-        return new BlockCommitListener(semaphore, vmName, ThreadContext.get("logcontextid"));
-    }
-
-    /**
-     * This was created to facilitate testing.
-     * */
-    protected Semaphore getSemaphoreToWaitForMerge() {
-        return new Semaphore(0);
+    protected BlockCommitListener getBlockCommitListener(String vmName) {
+        return new BlockCommitListener(vmName, ThreadContext.get("logcontextid"));
     }
 
     protected void checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
@@ -6730,8 +7012,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                logger.debug("Thread that was tracking the progress {} was interrupted.", partialLog, ex);
-                return;
+                logger.trace("Thread that was tracking the progress for the block commit job {} was interrupted. Ignoring.", partialLog, ex);
+                continue;
             }
 
             try {
@@ -7038,7 +7320,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         continue;
                     }
                     VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
-                    if (!diskPath.equals(volumeTO.getPath()) && !diskPath.equals(diskTO.getPath())) {
+                    if (!diskPath.substring(diskPath.lastIndexOf(File.separator) + 1).equals(volumeTO.getPath())) {
                         continue;
                     }
                     DataStoreTO dataStore = volumeTO.getDataStore();
@@ -7141,4 +7423,261 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         return false;
     }
+
+    public Map<String, Long> createDiskOnlyVmSnapshotForRunningVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, String snapshotName,
+            boolean quiesceVm) throws BackupException {
+        logger.info("Taking disk-only VM snapshot of running VM [{}].", vmName);
+
+        Domain dm = null;
+        try {
+            LibvirtUtilitiesHelper libvirtUtilitiesHelper = getLibvirtUtilitiesHelper();
+            Connect conn = libvirtUtilitiesHelper.getConnection();
+            List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+            dm = getDomain(conn, vmName);
+
+            if (dm == null) {
+                throw new BackupException(String.format("Creation of disk-only VM snapshot failed as we could not find the VM [%s].", vmName), true);
+            }
+
+            Pair<String, Map<String, Long>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeTosAndNewPaths, disks, snapshotName);
+
+            int flagsToUseForRunningVmSnapshotCreation = getFlagsToUseForRunningVmSnapshotCreation(quiesceVm);
+            String snapshotXml = snapshotXmlAndVolumeToNewPathMap.first();
+
+            logger.info("Creating disk-only VM snapshot for VM [{}] using parameters: snapshotXml [{}]; flags [{}].", vmName, snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            dm.snapshotCreateXML(snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            return snapshotXmlAndVolumeToNewPathMap.second();
+        } catch (LibvirtException e) {
+            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
+            boolean isVmConsistent = false;
+            if (e.getMessage().contains(AGENT_IS_NOT_CONNECTED)) {
+                errorMsg = "QEMU guest agent is not connected. If the VM has been recently started, it might connect soon. Otherwise the VM does not have the" +
+                        " guest agent installed; thus the QuiesceVM parameter is not supported.";
+                isVmConsistent = true;
+            }
+            logger.error(errorMsg, e);
+            throw new BackupException(errorMsg, isVmConsistent);
+        } finally {
+            if (dm != null) {
+                try {
+                    dm.free();
+                } catch (LibvirtException l) {
+                    logger.trace("Ignoring Libvirt error.", l);
+                }
+            }
+        }
+    }
+
+    public Map<String, Long> createDiskOnlyVMSnapshotOfStoppedVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName) {
+        logger.info("Creating volume deltas for stopped VM [{}].", vmName);
+
+        Map<String, Long> mapVolumeToSnapshotSize = new HashMap<>();
+        try {
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+
+                String snapshotPath = volumeObjectTOAndNewPath.second();
+                String snapshotFullPath = kvmStoragePool.getLocalPathFor(snapshotPath);
+                QemuImgFile newDelta = new QemuImgFile(snapshotFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                String currentDeltaFullPath = kvmStoragePool.getLocalPathFor(volumeObjectTO.getPath());
+                QemuImgFile currentDelta = new QemuImgFile(currentDeltaFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                QemuImg qemuImg = new QemuImg(0);
+
+                logger.debug("Creating new delta [{}] for volume [{}] as part of the delta creation process for VM [{}].", newDelta, volumeObjectTO.getUuid(), vmName);
+                qemuImg.create(newDelta, currentDelta);
+
+                mapVolumeToSnapshotSize.put(volumeObjectTO.getUuid(), getFileSize(currentDeltaFullPath));
+            }
+        } catch (Exception e) {
+            logger.error("Exception while creating volume delta for VM [{}]. Deleting leftover deltas.", vmName, e);
+            cleanupLeftoverDeltas(volumeTosAndNewPaths, mapVolumeToSnapshotSize);
+            throw new BackupException(String.format("An exception was caught during the delta creation for VM [%s]. The leftover deltas have been deleted.", vmName), true);
+        }
+
+        return mapVolumeToSnapshotSize;
+    }
+
+    protected void cleanupLeftoverDeltas(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, Map<String, Long> mapVolumeToSnapshotSize) {
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+            VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+            Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
+            if (volSize == null) {
+                continue;
+            }
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+            KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+            try {
+                Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
+            } catch (IOException ex) {
+                logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
+            }
+        }
+    }
+
+    public void mergeDeltaForStoppedVm(DeltaMergeTreeTO deltaMergeTreeTO) throws QemuImgException, IOException, LibvirtException {
+        logger.debug("Merging delta [{}] for stopped VM.", deltaMergeTreeTO);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        DataTO parentTo = deltaMergeTreeTO.getParent();
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) parentTo.getDataStore();
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        String childLocalPath = storagePool.getLocalPathFor(deltaMergeTreeTO.getChild().getPath());
+
+        QemuImgFile parent = new QemuImgFile(storagePool.getLocalPathFor(parentTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+        QemuImgFile child = new QemuImgFile(childLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Committing child delta [{}] into parent delta [{}].", parentTo, deltaMergeTreeTO.getChild());
+        qemuImg.commit(child, parent, true);
+
+        List<QemuImgFile> grandChildren = deltaMergeTreeTO.getGrandChildren().stream()
+                .map(deltaTo -> new QemuImgFile(storagePool.getLocalPathFor(deltaTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2))
+                .collect(Collectors.toList());
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", grandChildren, parent.getFileName());
+        for (QemuImgFile grandChild : grandChildren) {
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+
+        logger.debug("Deleting child at [{}] as it is useless.", childLocalPath);
+
+        Files.deleteIfExists(Path.of(childLocalPath));
+    }
+
+    public void mergeDeltaForRunningVm(DeltaMergeTreeTO mergeTreeTO, String vmName, VolumeObjectTO volumeObjectTO) throws LibvirtException, QemuImgException {
+        logger.debug("Merging delta [{}] for running VM [{}].", mergeTreeTO, vmName);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+        Domain domain = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+        DataTO childTO = mergeTreeTO.getChild();
+        DataTO parentSnapshotTO = mergeTreeTO.getParent();
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(volumeObjectTO, storagePoolManager);
+
+        boolean active = DataObjectType.VOLUME.equals(childTO.getObjectType());
+        String label = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO).getDiskLabel();
+        String parentSnapshotLocalPath = storagePool.getLocalPathFor(parentSnapshotTO.getPath());
+        String childDeltaPath = storagePool.getLocalPathFor(childTO.getPath());
+
+        logger.debug("Found label [{}] for [{}]. Will merge delta at [{}] into delta at [{}].", label, volumeObjectTO, parentSnapshotLocalPath, childDeltaPath);
+
+        mergeDeltaIntoBaseFile(domain, label, parentSnapshotLocalPath, childDeltaPath, active, childTO.getPath(), volumeObjectTO, conn);
+
+        QemuImgFile parent = new QemuImgFile(parentSnapshotLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", mergeTreeTO.getGrandChildren(), parentSnapshotLocalPath);
+        for (DataTO grandChildTo : mergeTreeTO.getGrandChildren()) {
+            if (checkIfFileIsInActiveChainForVm(domain, grandChildTo)) {
+                logger.debug("Grand-child [{}] is on the active chain of VM [{}], thus Libvirt has already rebased it, will ignore it.", grandChildTo, vmName);
+                continue;
+            }
+            QemuImgFile grandChild = new QemuImgFile(storagePool.getLocalPathFor(grandChildTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+    }
+
+    private boolean checkIfFileIsInActiveChainForVm(Domain vm, DataTO dataTO) throws LibvirtException {
+        String xml = vm.getXMLDesc(0);
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(dataTO, storagePoolManager);
+        return xml.contains(storagePool.getLocalPathFor(dataTO.getPath()));
+    }
+
+    public int getFlagsToUseForRunningVmSnapshotCreation(boolean quiesceVm) {
+        int flags = quiesceVm ? Domain.SnapshotCreateFlags.QUIESCE : 0;
+        flags += Domain.SnapshotCreateFlags.DISK_ONLY +
+                Domain.SnapshotCreateFlags.ATOMIC +
+                Domain.SnapshotCreateFlags.NO_METADATA;
+        return flags;
+    }
+
+    public Pair<String, Map<String, Long>> createSnapshotXmlAndNewVolumePathMap(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
+        StringBuilder stringBuilder = new StringBuilder();
+        Map<String, Long> volumeObjectToNewPathMap = new HashMap<>();
+
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndPath : volumeTosAndNewPaths) {
+            LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTOAndPath.first());
+            String newPath = volumeObjectTOAndPath.second();
+            stringBuilder.append(String.format(TAG_DISK_SNAPSHOT, diskdef.getDiskLabel(), getSnapshotTemporaryPath(diskdef.getDiskPath(), newPath)));
+
+            long snapSize = getFileSize(diskdef.getDiskPath());
+
+            volumeObjectToNewPathMap.put(volumeObjectTOAndPath.first().getUuid(), snapSize);
+        }
+
+        String snapshotXml = String.format(SNAPSHOT_XML, snapshotName, stringBuilder);
+        return new Pair<>(snapshotXml, volumeObjectToNewPathMap);
+    }
+
+    public long getFileSize(String path) {
+        return new File(path).length();
+    }
+
+    public boolean pullVolumeBackingFile(VolumeObjectTO volumeObjectTO, String vmName) throws LibvirtException {
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+
+        Domain vm = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+        DiskDef diskDef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO);
+
+        String diskLabel = diskDef.getDiskLabel();
+        Script.runSimpleBashScript(String.format(BLOCK_PULL_COMMAND, vmName, diskLabel));
+
+        boolean result = checkBlockPullProgress(vm, diskLabel, vmName, volumeObjectTO.getUuid());
+
+        if (!result) {
+            logger.warn("Failed to block pull volume [{}] of VM [{}], aborting.", volumeObjectTO, vmName);
+            vm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+        }
+        return result;
+    }
+
+    protected Boolean checkBlockPullProgress(Domain vm, String diskLabel, String vmName, String volumeUuid) {
+        int timeout = qcow2DeltaMergeTimeout;
+        DomainBlockJobInfo result;
+        long lastCommittedBytes = 0;
+        long endBytes = 0;
+        String partialLog = String.format("for volume [%s] of VM [%s]", volumeUuid, vmName);
+        while (timeout > 0) {
+            timeout -= 1;
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                logger.trace("Thread that was tracking the block pull progress {} was interrupted. Ignoring.", partialLog, ex);
+                continue;
+            }
+
+            try {
+                result = vm.getBlockJobInfo(diskLabel, 0);
+            } catch (LibvirtException ex) {
+                logger.warn("Exception while getting block job info {}: [{}].", partialLog, ex.getMessage(), ex);
+                return false;
+            }
+
+            if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
+                logger.debug("Block pull job {} has finished.", partialLog);
+                return true;
+            }
+
+            long currentCommittedBytes = result.cur;
+            if (currentCommittedBytes > lastCommittedBytes) {
+                logger.debug("The block pull {} is at [{}] of [{}].", partialLog, currentCommittedBytes, result.end);
+            }
+            lastCommittedBytes = currentCommittedBytes;
+            endBytes = result.end;
+        }
+        logger.warn(String.format("Block pull %s has timed out after waiting at least %s seconds. The progress of the operation was [%s] of [%s].", partialLog,
+                qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes));
+        return false;
+    }
+
+
 }

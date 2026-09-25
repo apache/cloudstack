@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.Vector;
-import java.util.concurrent.Semaphore;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -61,6 +60,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.agent.api.CheckOnHostAnswer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -82,6 +82,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
@@ -710,6 +711,63 @@ public class LibvirtComputingResourceTest {
         Document domainDoc = parse(videoDef.toString());
         assertXpath(domainDoc, "/video/model/@type", "vGPU");
         assertXpath(domainDoc, "/video/model/@vram", "200");
+    }
+
+    @Test
+    public void testCreateVideoDefX86DefaultsToVga() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefWindowsDefaultsToVga() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setOs("Windows Server 2025 (64-bit)");
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefExplicitDetailWins() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "virtio");
+        details.put(VmDetailConstants.VIDEO_RAM, "65536");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "virtio");
+        assertXpath(domainDoc, "/video/model/@vram", "65536");
+    }
+
+    @Test
+    public void testCreateVideoDefAgentPropertyWins() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy.videoHw = "qxl";
+        libvirtComputingResourceSpy.videoRam = 65536;
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "qxl");
+        assertXpath(domainDoc, "/video/model/@vram", "65536");
+    }
+
+    @Test
+    public void testCreateVideoDefAarch64UnconfiguredStaysEmpty() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setArch("aarch64");
+        libvirtComputingResourceSpy.guestCpuArch = "aarch64";
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        assertEquals("", videoDef.toString());
     }
 
     @Test
@@ -2406,7 +2464,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
 
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
-        when(storagePoolMgr.getStoragePool(command.getPooltype(), command.getStorageId(), true)).thenReturn(secondaryPool);
+        when(storagePoolMgr.getStoragePool(command.getPooltype(), command.getStorageId(), true, true)).thenReturn(secondaryPool);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2415,7 +2473,7 @@ public class LibvirtComputingResourceTest {
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
-        verify(storagePoolMgr, times(1)).getStoragePool(command.getPooltype(), command.getStorageId(), true);
+        verify(storagePoolMgr, times(1)).getStoragePool(command.getPooltype(), command.getStorageId(), true, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -3139,7 +3197,9 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
-        assertFalse(answer.getResult());
+        assertTrue(answer.getResult());
+        assertTrue(answer instanceof CheckOnHostAnswer);
+        assertFalse(((CheckOnHostAnswer)answer).isAlive());
 
         verify(libvirtComputingResourceMock, times(1)).getMonitor();
     }
@@ -5743,6 +5803,7 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(valueExpected, result);
     }
 
+    @Ignore
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
         Assert.assertEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
@@ -6685,10 +6746,12 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
 
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
-                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
+                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class);
+                MockedStatic<AgentPropertiesFileHandler> agentPropertiesFileHandlerMockedStatic = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+
+            agentPropertiesFileHandlerMockedStatic.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenAnswer(invocation -> true);
             libvirtUtilitiesHelperMockedStatic.when(() ->
                     LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenAnswer(invocation -> true);
-            Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
 
             threadContextMockedStatic.when(() ->
                     ThreadContext.get(Mockito.anyString())).thenReturn("logid");
@@ -6700,7 +6763,7 @@ public class LibvirtComputingResourceTest {
             String baseFilePath = "/file";
             String snapshotName = "snap";
 
-            libvirtComputingResourceSpy.mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(domainMock, diskLabel, baseFilePath, null, true, snapshotName, volumeObjectToMock, connMock);
+            libvirtComputingResourceSpy.mergeDeltaIntoBaseFile(domainMock, diskLabel, baseFilePath, null, true, snapshotName, volumeObjectToMock, connMock);
 
             Mockito.verify(domainMock, Mockito.times(1)).blockCommit(diskLabel, baseFilePath, null, 0, Domain.BlockCommitFlags.ACTIVE | Domain.BlockCommitFlags.DELETE);
             Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).manuallyDeleteUnusedSnapshotFile(true, "/" + snapshotName);
@@ -6710,10 +6773,12 @@ public class LibvirtComputingResourceTest {
     @Test
     public void mergeSnapshotIntoBaseFileTestActiveFlag() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
-                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
+                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class);
+                MockedStatic<AgentPropertiesFileHandler> agentPropertiesFileHandlerMockedStatic = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+
+            agentPropertiesFileHandlerMockedStatic.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenAnswer(invocation -> true);
             libvirtUtilitiesHelperMockedStatic.when(() ->
                     LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenAnswer(invocation -> false);
-            Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
 
             threadContextMockedStatic.when(() ->
                     ThreadContext.get(Mockito.anyString())).thenReturn("logid");
@@ -6725,7 +6790,7 @@ public class LibvirtComputingResourceTest {
             String baseFilePath = "/file";
             String snapshotName = "snap";
 
-            libvirtComputingResourceSpy.mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(domainMock, diskLabel, baseFilePath, null, true, snapshotName, volumeObjectToMock, connMock);
+            libvirtComputingResourceSpy.mergeDeltaIntoBaseFile(domainMock, diskLabel, baseFilePath, null, true, snapshotName, volumeObjectToMock, connMock);
 
             Mockito.verify(domainMock, Mockito.times(1)).blockCommit(diskLabel, baseFilePath, null, 0, Domain.BlockCommitFlags.ACTIVE);
             Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).manuallyDeleteUnusedSnapshotFile(false, "/" + snapshotName);
@@ -6735,10 +6800,12 @@ public class LibvirtComputingResourceTest {
     @Test
     public void mergeSnapshotIntoBaseFileTestDeleteFlag() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
-                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
+                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class);
+                MockedStatic<AgentPropertiesFileHandler> agentPropertiesFileHandlerMockedStatic = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+
+            agentPropertiesFileHandlerMockedStatic.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenAnswer(invocation -> true);
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
-            Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
             Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
@@ -6749,7 +6816,7 @@ public class LibvirtComputingResourceTest {
             String baseFilePath = "/file";
             String snapshotName = "snap";
 
-            libvirtComputingResourceSpy.mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
+            libvirtComputingResourceSpy.mergeDeltaIntoBaseFile(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
 
             Mockito.verify(domainMock, Mockito.times(1)).blockCommit(diskLabel, baseFilePath, null, 0, Domain.BlockCommitFlags.DELETE);
             Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).manuallyDeleteUnusedSnapshotFile(true, "/" + snapshotName);
@@ -6759,10 +6826,12 @@ public class LibvirtComputingResourceTest {
     @Test
     public void mergeSnapshotIntoBaseFileTestNoFlags() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
-                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
+                MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class);
+                MockedStatic<AgentPropertiesFileHandler> agentPropertiesFileHandlerMockedStatic = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+
+            agentPropertiesFileHandlerMockedStatic.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenAnswer(invocation -> true);
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
-            Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
             Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
@@ -6773,7 +6842,7 @@ public class LibvirtComputingResourceTest {
             String baseFilePath = "/file";
             String snapshotName = "snap";
 
-            libvirtComputingResourceSpy.mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
+            libvirtComputingResourceSpy.mergeDeltaIntoBaseFile(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
 
             Mockito.verify(domainMock, Mockito.times(1)).blockCommit(diskLabel, baseFilePath, null, 0, 0);
             Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).manuallyDeleteUnusedSnapshotFile(false, "/" + snapshotName);
@@ -6786,20 +6855,20 @@ public class LibvirtComputingResourceTest {
                 MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
-            Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
+            Mockito.doReturn(Boolean.TRUE).when(libvirtComputingResourceSpy).isLibvirtEventsEnabled();
             Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
             Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
             Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
 
-            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any(), Mockito.any());
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
             Mockito.doReturn("Failed").when(blockCommitListenerMock).getResult();
 
             String diskLabel = "vda";
             String baseFilePath = "/file";
             String snapshotName = "snap";
 
-            libvirtComputingResourceSpy.mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
+            libvirtComputingResourceSpy.mergeDeltaIntoBaseFile(domainMock, diskLabel, baseFilePath, null, false, snapshotName, volumeObjectToMock, connMock);
         }
     }
 
@@ -7173,6 +7242,38 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals("mce", cpuFeatures.get(1));
         Assert.assertEquals("-mmx", cpuFeatures.get(2));
         Assert.assertEquals("hle", cpuFeatures.get(3));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputReturnsLibraryVersion() {
+        String output = "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n" +
+                "vddk_library_version=8\n" +
+                "vddk_transport_modes=file:san:hotadd:nbdssl:nbd\n";
+
+        Assert.assertEquals("8", libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputIgnoresPluginVersionWithoutLoadedLibrary() {
+        String output = "nbdkit 1.24.0\n" +
+                "vddk 1.24.0\n" +
+                "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n";
+
+        Assert.assertNull(libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void isNbdkitVddkPluginUsableRequiresLoadedVddkLibrary() throws IOException {
+        Path vddkDir = Files.createTempDirectory("vddk-test");
+        Files.createDirectories(vddkDir.resolve("lib64"));
+        Files.createFile(vddkDir.resolve("lib64/libvixDiskLib.so.8"));
+        Mockito.doReturn("vddk_library_version=8\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertTrue(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
+
+        Mockito.doReturn("nbdkit: error: libssl.so.3: cannot open shared object file\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertFalse(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
     }
 
     @Test

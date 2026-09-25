@@ -2190,7 +2190,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
                                     // expunge volume from secondary if volume is on image store
                                     VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
                                     if (volOnSecondary != null) {
@@ -3114,7 +3114,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
-        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType()) && !DataStoreProvider.ONTAP_PLUGIN_NAME.equals(poolVO.getStorageProviderName())) {
             poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
             poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
         }
@@ -3444,6 +3444,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         long totalSize = pool.getCapacityBytes();
+        if (totalSize <= 0) {
+            return false;
+        }
         long usedSize = getUsedSize(pool);
         double usedPercentage = ((double)usedSize / (double)totalSize);
         double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getId());
@@ -3498,7 +3501,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long futureIops = currentIops + requestedIops;
         boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
         String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s]", pool, hasCapacity, requestedVolumes));
+        if (!hasEnoughIops) {
+            stringBuilder.append(String.format(" - Insufficient un-allocated IOPS for storage allocation: " +
+                    "capacityIops : %d, usedIops : %d, requestedIops : %d", pool.getCapacityIops(), currentIops, requestedIops));
+        }
+        logger.debug(stringBuilder.toString());
         return hasEnoughIops;
     }
 
@@ -4621,12 +4630,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageVMAutoScaleDown,
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
+                XenserverCreateCloneFull,
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
                 ObjectStorageCapacityThreshold,
-                COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES
+                COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES,
+                AgentMaxDataMigrationWaitTime
         };
     }
 

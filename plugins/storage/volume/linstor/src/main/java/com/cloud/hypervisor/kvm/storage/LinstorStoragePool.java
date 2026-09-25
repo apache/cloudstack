@@ -27,6 +27,7 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -46,16 +47,18 @@ public class LinstorStoragePool implements KVMStoragePool {
     private final Storage.StoragePoolType _storagePoolType;
     private final StorageAdaptor _storageAdaptor;
     private final String _resourceGroup;
+    private final boolean _insecureSsl;
     private final String localNodeName;
 
     public LinstorStoragePool(String uuid, String host, int port, String resourceGroup,
-                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor, boolean insecureSsl) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;
         _storagePoolType = storagePoolType;
         _storageAdaptor = storageAdaptor;
         _resourceGroup = resourceGroup;
+        _insecureSsl = insecureSsl;
         localNodeName = getHostname();
     }
 
@@ -211,6 +214,31 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     public String getResourceGroup() {
         return _resourceGroup;
+    }
+
+    /**
+     * A freshly spawned Linstor resource reads back as zeros only on providers that
+     * zero-initialize new volumes (LVM-thin, ZFS, and diskless). Thick providers
+     * (e.g. plain LVM) may expose stale data from previously deleted volumes, so the
+     * caller must write the zeros rather than skip them.
+     */
+    @Override
+    public boolean isVolumeZeroInitialized(String volumeName) {
+        return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeName);
+    }
+
+    /**
+     * A DRBD resource can be in use (Primary/open) on any node in the cluster, which a
+     * host-local qemu-img lock cannot see. Report the node it is in use on so adoption
+     * refuses a volume still attached to a running VM elsewhere.
+     */
+    @Override
+    public String getVolumeInUseNode(String volumeName) {
+        return LinstorUtil.isResourceInUse(this, LinstorUtil.RSC_PREFIX + volumeName);
+    }
+
+    public boolean isInsecureSsl() {
+        return _insecureSsl;
     }
 
     @Override

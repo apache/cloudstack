@@ -33,6 +33,7 @@ const additionalGetAPICommandsList = [
   'quotatarifflist',
   'quotaisenabled',
   'quotastatement',
+  'quotaemailtemplatelist',
   'verifyoauthcodeandgetuser'
 ]
 

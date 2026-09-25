@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -89,6 +90,13 @@ import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.kms.KMSKeyVO;
+import org.apache.cloudstack.kms.KMSWrappedKeyVO;
+import org.apache.cloudstack.kms.dao.KMSKeyDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
+import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.framework.kms.WrappedKey;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -287,6 +295,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Inject
     private DataStoreProviderManager dataStoreProviderMgr;
+    @Inject
+    private KMSManager kmsManager;
+    @Inject
+    private KMSKeyDao kmsKeyDao;
+    @Inject
+    private KMSWrappedKeyDao kmsWrappedKeyDao;
+
+    @Inject
+    private InternalBackupService internalBackupService;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -323,7 +340,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Find a destination storage pool with the specified criteria
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
         DiskProfile dskCh = new DiskProfile(volumeInfo.getId(), volumeInfo.getVolumeType(), volumeInfo.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
-                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, (diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null));
+                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, (diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null));
 
         dskCh.setHyperType(dataDiskHyperType);
         storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
@@ -358,9 +375,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
-        if ((diskOffering == null || diskOffering.getEncrypt()) && oldVol.getPassphraseId() != null) {
-            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
-            newVol.setPassphraseId(passphrase.getId());
+        if ((diskOffering == null || diskOffering.getEncrypt())) {
+            if (oldVol.getKmsKeyId() != null) {
+                newVol.setKmsKeyId(oldVol.getKmsKeyId());
+            } else if (oldVol.getPassphraseId() != null) {
+                PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
+                newVol.setPassphraseId(passphrase.getId());
+            }
         }
 
         return _volsDao.persist(newVol);
@@ -515,7 +536,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
         if (diskOffering.getEncrypt()) {
             VolumeVO vol = (VolumeVO) volume;
-            volume = setPassphraseForVolumeEncryption(vol);
+            // Retrieve KMS key from volume's kmsKeyId if provided
+            KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+            volume = setPassphraseForVolumeEncryption(vol, kmsKey, volume.getAccountId());
         }
         DataCenter dc = _entityMgr.findById(DataCenter.class, volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
@@ -652,7 +675,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     protected DiskProfile createDiskCharacteristics(VolumeInfo volumeInfo, VirtualMachineTemplate template, DataCenter dc, DiskOffering diskOffering) {
-        boolean requiresEncryption = diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null;
+        boolean requiresEncryption = diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null || volumeInfo.getKmsKeyId() != null;
         if (volumeInfo.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             String templateToString = getReflectOnlySelectedFields(template);
             String zoneToString = getReflectOnlySelectedFields(dc);
@@ -732,7 +755,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             if (diskOffering.getEncrypt()) {
                 VolumeVO vol = _volsDao.findById(volumeInfo.getId());
-                setPassphraseForVolumeEncryption(vol);
+                // Retrieve KMS key from volume's kmsKeyId if provided
+                KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+                setPassphraseForVolumeEncryption(vol, kmsKey, vol.getAccountId());
                 volumeInfo = volFactory.getVolume(volumeInfo.getId());
             }
         }
@@ -996,8 +1021,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                         Long deviceId, boolean incrementResourceCount) {
+    public DiskProfile allocateRawVolume(
+            Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm,
+            VirtualMachineTemplate template, Account owner, Long deviceId, Long kmsKeyId, boolean incrementResourceCount
+    ) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -1030,6 +1057,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
+        }
+
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
@@ -1049,7 +1081,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner, long deviceId, String configurationId, Volume volume, Snapshot snapshot) {
+                                                Account owner, long deviceId, String configurationId, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
 
         if (volume != null) {
@@ -1097,6 +1129,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVm = _userVmDao.findById(vm.getId());
             vol.setDisplayVolume(userVm.isDisplayVm());
+        }
+
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
         }
 
         vol = _volsDao.persist(vol);
@@ -1188,7 +1225,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                      Account owner, Volume volume, Snapshot snapshot) {
+                                                      Account owner, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         String templateToString = getReflectOnlySelectedFields(template);
 
         int volumesNumber = 1;
@@ -1235,7 +1272,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             logger.info("Adding disk object [{}] to VM [{}]", volumeName, vm);
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    template, vm, owner, deviceId, configurationId, volume, snapshot);
+                    template, vm, owner, deviceId, configurationId, kmsKeyId, volume, snapshot);
             profiles.add(diskProfile);
         }
 
@@ -1298,6 +1335,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * Returns the image format for a volume taking the underlying storage pool type into account.
+     * On KVM the default cluster format is QCOW2, but block-based pools such as RBD (Ceph) and
+     * Linstor (DRBD) store volumes as RAW images. This is relevant when importing/adopting an
+     * existing volume so the recorded format matches what is actually on the pool.
+     */
+    protected ImageFormat getSupportedImageFormatForCluster(HypervisorType hyperType, Storage.StoragePoolType poolType) {
+        if (hyperType == HypervisorType.KVM
+                && (poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor)) {
+            return ImageFormat.RAW;
+        }
+        return getSupportedImageFormatForCluster(hyperType);
+    }
+
     private boolean isSupportedImageFormatForCluster(VolumeInfo volume, HypervisorType rootDiskHyperType) {
         ImageFormat volumeFormat = volume.getFormat();
         if (rootDiskHyperType == HypervisorType.Hyperv) {
@@ -1325,21 +1376,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volumeInfo, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException {
+    public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volumeInfo, HypervisorType rootDiskHyperType, StoragePool storagePool, Long clusterId, Long podId)
+            throws NoTransitionException {
         String volumeToString = getReflectOnlySelectedFields(volumeInfo.getVolume());
 
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
-        logger.trace("storage-pool {}/{} is associated with pod {}",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId());
-        Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
+
+        if (storagePool != null) {
+            logger.trace("storage-pool {}/{} is associated with pod {}", storagePool.getName(), storagePool.getUuid(), storagePool.getPodId());
+            podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
+            clusterId = storagePool.getClusterId();
+            logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
+        }
+
         Pod pod = _entityMgr.findById(Pod.class, podId);
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
-        Long clusterId = storagePool.getClusterId();
-        logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
+
         Long hostId = vm.getHostId();
-        if (hostId == null && (storagePool.isLocal() || ClvmPoolManager.isClvmPoolType(storagePool.getPoolType()))) {
+        if (hostId == null && storagePool != null && (storagePool.isLocal() || ClvmPoolManager.isClvmPoolType(storagePool.getPoolType()))) {
             if (ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
                 hostId = getClvmLockHostFromVmVolumes(vm.getId());
                 if (hostId != null) {
@@ -1599,6 +1656,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _snapshotDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                     _snapshotDataStoreDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                 }
+                internalBackupService.updateVolumeId(vol.getId(), result.getVolume().getId());
 
                 // For CLVM volumes attached to a VM, update the CLVM_LOCK_HOST_ID after migration
                 updateClvmLockHostAfterMigration(result.getVolume(), destPool, "migrated");
@@ -1661,6 +1719,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (destPool == null) {
                 throw new CloudRuntimeException(String.format("Failed to find the destination storage pool [%s] to migrate the volume [%s] to.", storagePoolToString, volumeToString));
             }
+
+            internalBackupService.prepareVolumeForMigration(volume);
 
             volumeMap.put(volFactory.getVolume(volume.getId()), (DataStore)destPool);
         }
@@ -1945,7 +2005,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, vol.getDiskOfferingId());
             if (diskOffering.getEncrypt()) {
-                vol = setPassphraseForVolumeEncryption(vol);
+                // Retrieve KMS key from volume's kmsKeyId if provided
+                KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+                vol = setPassphraseForVolumeEncryption(vol, kmsKey, vol.getAccountId());
             }
             newVol = vol;
         } else {
@@ -1977,6 +2039,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 volume = volFactory.getVolume(newVol.getId(), destPool);
 
+                // CLVM: pin templateless volume creation to the deploy host
+                StoragePoolVO poolVO = _storagePoolDao.findById(destPool.getId());
+                if (poolVO != null && ClvmPoolManager.isClvmPoolType(poolVO.getPoolType())) {
+                    Long hostId = vm.getVirtualMachine().getHostId();
+                    if (hostId != null) {
+                        volume.setDestinationHostId(hostId);
+                        clvmPoolManager.setClvmLockHostId(volume.getId(), hostId);
+                        logger.info("CLVM pool detected during volume creation without a template. Setting lock host {} for volume {} "
+                                + "to route creation to correct host", hostId, volume.getUuid());
+                    }
+                }
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
                 final VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
@@ -2081,16 +2154,72 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return new Pair<>(newVol, destPool);
     }
 
-    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
-        if (volume.getPassphraseId() != null) {
+    /**
+     * Helper method to retrieve KMS key from volume's kmsKeyId
+     */
+    private KMSKeyVO getKmsKeyFromVolume(VolumeVO volume) {
+        if (volume.getKmsKeyId() == null) {
+            return null;
+        }
+        return kmsKeyDao.findById(volume.getKmsKeyId());
+    }
+
+    private VolumeVO setKmsKeyForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
+        // Determine caller account ID if not provided
+        if (callerAccountId == null) {
+            callerAccountId = volume.getAccountId();
+        }
+
+        // Validate permission
+        if (!kmsManager.hasPermission(callerAccountId, kmsKey)) {
+            throw new CloudRuntimeException("No permission to use KMS key: " + kmsKey);
+        }
+
+        try {
+            logger.debug("Generating and wrapping DEK for volume {} using KMS key {}", volume.getName(), kmsKey.getUuid());
+            long startTime = System.currentTimeMillis();
+
+            // Generate and wrap DEK using active KEK version
+            WrappedKey wrappedKey = kmsManager.generateVolumeKeyWithKek(kmsKey, callerAccountId);
+
+            // The wrapped key is already persisted by generateVolumeKeyWithKek, get its ID
+            KMSWrappedKeyVO wrappedKeyVO = kmsWrappedKeyDao.findByUuid(wrappedKey.getUuid());
+            if (wrappedKeyVO == null) {
+                throw new CloudRuntimeException("Failed to find persisted wrapped key: " + wrappedKey.getUuid());
+            }
+
+            // Set the wrapped key ID on the volume
+            volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
+
+            long finishTime = System.currentTimeMillis();
+            logger.debug("Generating and persisting wrapped key took {} ms for volume: {}",
+                    (finishTime - startTime), volume.getName());
+
+            return _volsDao.persist(volume);
+
+        } catch (KMSException e) {
+            throw new CloudRuntimeException("KMS failure while setting up volume encryption: " + e.getMessage(), e);
+        }
+    }
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
+        // If volume already has encryption set up, return it
+        if (volume.getKmsWrappedKeyId() != null || volume.getPassphraseId() != null) {
             return volume;
         }
-        logger.debug("Creating passphrase for the volume: " + volume.getName());
+        if (kmsKey != null) {
+            return setKmsKeyForVolumeEncryption(volume, kmsKey, callerAccountId);
+        }
+        // Legacy: passphrase-based encryption (fallback when KMS not enabled or KMS key not specified)
+        return setPassphraseForVolumeEncryption(volume);
+    }
+
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
+        logger.debug("Creating passphrase for the volume: {}", volume.getName());
         long startTime = System.currentTimeMillis();
         PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
-        logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
+        logger.debug("Creating and persisting passphrase took: {} ms for the volume: {}", finishTime - startTime, volume.toString());
         return _volsDao.persist(volume);
     }
 
@@ -2119,7 +2248,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
         long newSize = driver.getVolumeSizeRequiredOnPool(vol.getSize(),
                 template == null ? null : template.getSize(),
-                vol.getPassphraseId() != null);
+                vol.getPassphraseId() != null || vol.getKmsKeyId() != null);
 
         if (newSize == vol.getSize()) {
             return;
@@ -2440,7 +2569,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volume.getState() == Volume.State.Allocated) {
                 _volsDao.remove(volume.getId());
                 stateTransitTo(volume, Volume.Event.DestroyRequested);
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()),
+                        null);
             } else {
                 destroyVolumeInContext(volume);
             }
@@ -2549,7 +2679,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
-        vol.setFormat(getSupportedImageFormatForCluster(hypervisorType));
+        vol.setFormat(getSupportedImageFormatForCluster(hypervisorType, poolType));
         vol.setPoolId(poolId);
         vol.setPoolType(poolType);
         vol.setPath(path);
@@ -2593,7 +2723,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
-        vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
+        vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType(), poolType));
         vol.setPoolId(poolId);
         vol.setPoolType(poolType);
         vol.setPath(path);

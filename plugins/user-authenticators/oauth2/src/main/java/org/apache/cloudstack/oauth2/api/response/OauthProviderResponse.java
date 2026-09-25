@@ -16,11 +16,14 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.response;
 
+import java.util.Objects;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
+import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -55,6 +58,18 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Redirect URI registered in the OAuth provider")
     private String redirectUri;
 
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "UUID of the domain the provider belongs to (empty for global)", since = "4.23.0")
+    private String domainUuid;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "name of the domain the provider belongs to (empty for global)", since = "4.23.0")
+    private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain the provider belongs to (empty for global)", since = "4.23.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.AUTHORIZE_URL)
     @Param(description = "Authorize URL registered in the OAuth provider")
     private String authorizeUrl;
@@ -67,7 +82,7 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Whether the OAuth provider is enabled or not")
     private boolean enabled;
 
-    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl) {
+    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl, Domain domain) {
         this.id = id;
         this.provider = provider;
         this.name = provider;
@@ -77,6 +92,19 @@ public class OauthProviderResponse extends BaseResponse {
         this.redirectUri = redirectUri;
         this.authorizeUrl = authorizeUrl;
         this.tokenUrl = tokenUrl;
+        if (Objects.nonNull(domain)) {
+            this.domainUuid = domain.getUuid();
+            this.domainName = domain.getName();
+            this.domainPath = prettifyDomainPath(domain.getPath());
+        }
+    }
+
+    private static String prettifyDomainPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        String trimmed = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+        return "ROOT" + trimmed;
     }
 
     public String getId() {
@@ -126,6 +154,30 @@ public class OauthProviderResponse extends BaseResponse {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public String getDomainUuid() {
+        return domainUuid;
+    }
+
+    public void setDomainUuid(String domainUuid) {
+        this.domainUuid = domainUuid;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public String getAuthorizeUrl() {

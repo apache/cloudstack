@@ -52,16 +52,19 @@ public class QemuImg {
     public static final String ENCRYPT_FORMAT = "encrypt.format";
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
+    public static final String IMAGE_OPTS_FLAG = "--image-opts";
+    public static final String TARGET_IMAGE_OPTS_FLAG = "--target-image-opts";
     public static final String PREALLOCATION = "preallocation";
     public static final long QEMU_2_10 = 2010000;
-    public static final long QEMU_5_10 = 5010000;
+    public static final long QEMU_5_1 = 5001000;
+    public static final long QEMU_5_2 = 5002000;
 
     public static final int MIN_BITMAP_VERSION = 3;
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
     private String cloudQemuImgPath = "cloud-qemu-img";
-    private int timeout;
+    private long timeout;
     private boolean skipZero = false;
     private boolean skipTargetVolumeCreation = false;
     private boolean noCache = false;
@@ -129,28 +132,44 @@ public class QemuImg {
      * @param skipZeroIfSupported Don't write zeroes to target device during convert, if supported by qemu-img
      * @param noCache Ensure we flush writes to target disk (useful for block device targets)
      */
-    public QemuImg(final int timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
+    public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
-            final Script s = new Script(_qemuImgPath, timeout);
-            s.add("--help");
-
-            final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            final String result = s.execute(parser);
-
-            // Older Qemu returns output in result due to --help reporting error status
-            if (result != null) {
-                if (result.contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            } else {
-                if (parser.getLines().contains(TARGET_ZERO_FLAG)) {
-                    this.skipZero = true;
-                }
-            }
+            this.skipZero = isTargetZeroFlagSupported(timeout);
         }
         this.timeout = timeout;
         this.noCache = noCache;
         this.version = LibvirtConnection.getConnection().getVersion();
+    }
+
+    /**
+     * Detects support for the convert --target-is-zero flag. The flag used to be
+     * discovered via "qemu-img --help", but newer qemu (observed with 10.x on EL9)
+     * no longer lists it in the help text while still supporting it - which
+     * silently disabled zero-skipping and fully allocated thin block-device
+     * targets. Probe the option directly instead: a recognized option fails with
+     * "--target-is-zero requires use of -n flag", an unknown one with
+     * "unrecognized option".
+     */
+    private boolean isTargetZeroFlagSupported(final long timeout) {
+        // Fast path for older qemu that documents the flag in --help.
+        final Script help = new Script(_qemuImgPath, timeout);
+        help.add("--help");
+        final OutputInterpreter.AllLinesParser helpParser = new OutputInterpreter.AllLinesParser();
+        final String helpResult = help.execute(helpParser);
+        final String helpOutput = (helpResult != null ? helpResult : "") + StringUtils.defaultString(helpParser.getLines());
+        if (helpOutput.contains(TARGET_ZERO_FLAG)) {
+            return true;
+        }
+
+        final Script probe = new Script(_qemuImgPath, timeout);
+        probe.add("convert");
+        probe.add(TARGET_ZERO_FLAG);
+        final OutputInterpreter.AllLinesParser probeParser = new OutputInterpreter.AllLinesParser();
+        final String probeResult = probe.execute(probeParser);
+        final String probeOutput = (probeResult != null ? probeResult : "") + StringUtils.defaultString(probeParser.getLines());
+        return probeOutput.contains(TARGET_ZERO_FLAG)
+                && !probeOutput.contains("unrecognized option")
+                && !probeOutput.contains("invalid option");
     }
 
     /**
@@ -159,7 +178,7 @@ public class QemuImg {
      * @param timeout
      *            The timeout of scripts executed by this QemuImg object.
      */
-    public QemuImg(final int timeout) throws LibvirtException, QemuImgException {
+    public QemuImg(final long timeout) throws LibvirtException, QemuImgException {
         this(timeout, false, false);
     }
 
@@ -184,6 +203,12 @@ public class QemuImg {
     public QemuImg(final String qemuImgPath) throws LibvirtException {
         this(0, false, false);
         _qemuImgPath = qemuImgPath;
+    }
+
+    /**
+     * Created for testing purposes
+     * */
+    protected QemuImg() {
     }
 
     /* These are all methods supported by the qemu-img tool. */
@@ -392,7 +417,22 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
-        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+        convert(srcFile, destFile, null, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false, false, false, null, null);
+    }
+
+    /**
+     * Converts an image into an existing destination that is described by explicit image options
+     * ({@code --target-image-opts}) instead of a plain filename - for example an RBD image written
+     * through librbd encryption ({@code driver=rbd,...,encrypt.format=...}). The destination is
+     * never created ({@code -n} is implied) and must already exist with the wanted size and format.
+     *
+     * @param destImageOpts
+     *            image options describing the existing destination; passed as --target-image-opts.
+     */
+    public void convertIntoExistingTarget(final QemuImgFile srcFile, final Map<String, String> options,
+                        final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final QemuImageOptions destImageOpts,
+                        final boolean forceSourceFormat) throws QemuImgException {
+        convert(srcFile, null, null, options, qemuObjects, srcImageOpts, destImageOpts, null, forceSourceFormat, false, false, false, null, null);
     }
 
     protected Map<String, String> getResizeOptionsFromConvertOptions(final Map<String, String> options) {
@@ -408,31 +448,60 @@ public class QemuImg {
 
     /**
      * Converts an image from source to destination.
-     *
+     * <p>
      * This method is a facade for 'qemu-img convert' and converts a disk image or snapshot into a disk image with the specified filename and format.
      *
      * @param srcFile
-     *            The source file.
+     *         The source file.
      * @param destFile
-     *            The destination file.
+     *         The destination file.
+     * @param backingFile
+     *         The destination's backing file.
      * @param options
-     *            Options for the conversion. Takes a Map<String, String> with key value
-     *            pairs which are passed on to qemu-img without validation.
+     *         Options for the conversion. Takes a Map<String, String> with key value
+     *         pairs which are passed on to qemu-img without validation.
      * @param qemuObjects
-     *            Pass qemu Objects to create - see objects in the qemu main page.
+     *         Pass qemu Objects to create - see objects in the qemu main page.
      * @param srcImageOpts
-     *            pass qemu --image-opts to convert.
+     *         pass qemu --image-opts to convert.
      * @param snapshotName
-     *            If it is provided, conversion uses it as parameter.
+     *         If it is provided, conversion uses it as parameter.
      * @param forceSourceFormat
-     *            If true, specifies the source format in the conversion command.
+     *         If true, specifies the source format in the conversion command.
      * @param keepBitmaps
-     *            If true, copies the bitmaps to the destination image.
+     *         If true, copies the bitmaps to the destination image.
+     * @param outOfOrderWrites
+     *         If true, inform -W to convert
+     * @param compress
+     *         If true, inform -c to convert
+     * @param coroutines
+     *         If not null, inform -m and number of coroutines. By default, qemu uses 8 coroutines.
+     * @param rateLimit
+     *         If not null, inform -r and rate limit in MB/s. By default, qemu does not limit the convert rate.
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
-                        final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
-                        boolean keepBitmaps) throws QemuImgException {
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, QemuImgFile backingFile, final Map<String, String> options, final List<QemuObject> qemuObjects,
+            final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat, boolean keepBitmaps, boolean outOfOrderWrites, boolean compress,
+            Integer coroutines, Integer rateLimit) throws QemuImgException {
+        convert(srcFile, destFile, backingFile, options, qemuObjects, srcImageOpts, null, snapshotName, forceSourceFormat, keepBitmaps, outOfOrderWrites, compress, coroutines,
+                rateLimit);
+    }
+
+    /**
+     * Converts an image from source to destination, optionally into an existing destination described by explicit image options
+     * ({@code --target-image-opts}) instead of a plain filename; see {@link #convertIntoExistingTarget}. All other parameters
+     * behave as documented above.
+     *
+     * @param destImageOpts
+     *         If not null, the destination is described by these image options and {@code destFile} is unused.
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, QemuImgFile backingFile, final Map<String, String> options, final List<QemuObject> qemuObjects,
+            final QemuImageOptions srcImageOpts, final QemuImageOptions destImageOpts, final String snapshotName, final boolean forceSourceFormat, boolean keepBitmaps,
+            boolean outOfOrderWrites, boolean compress, Integer coroutines, Integer rateLimit) throws QemuImgException {
+        if (destImageOpts != null && this.version < QEMU_2_10) {
+            throw new QemuImgException(String.format("qemu >= 2.10 is required to convert into a destination described by %s", TARGET_IMAGE_OPTS_FLAG));
+        }
+
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -441,7 +510,10 @@ public class QemuImg {
 
         script.add("convert");
 
-        if (skipZero && Files.exists(Paths.get(destFile.getFileName()))) {
+        if (destImageOpts != null) {
+            // a destination described by image options always exists already; qemu-img requires -n with --target-image-opts
+            script.add("-n");
+        } else if (skipZero && Files.exists(Paths.get(destFile.getFileName()))) {
             script.add("-n");
             script.add(TARGET_ZERO_FLAG);
             script.add("-W");
@@ -452,11 +524,32 @@ public class QemuImg {
             script.add("-n");
         }
 
-        script.add("-O");
-        script.add(destFile.getFormat().toString());
+        if (destImageOpts == null) {
+            script.add("-O");
+            script.add(destFile.getFormat().toString());
+        }
 
+        addBackingFileToConvertCommand(script, backingFile);
         addScriptOptionsFromMap(options, script);
         addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
+
+        if (outOfOrderWrites) {
+            script.add("-W");
+        }
+
+        if (rateLimit != null) {
+            script.add("-r");
+            script.add(rateLimit + "M");
+        }
+
+        if (coroutines != null) {
+            script.add("-m");
+            script.add(String.valueOf(coroutines));
+        }
+
+        if (compress) {
+            script.add("-c");
+        }
 
         if (noCache) {
             script.add("-t");
@@ -484,20 +577,42 @@ public class QemuImg {
             script.add(srcFile.getFileName());
         }
 
-        if (this.version >= QEMU_5_10 && keepBitmaps && Qcow2Inspector.validateQcow2Version(srcFile.getFileName(), MIN_BITMAP_VERSION)) {
+        if (this.version >= QEMU_5_1 && keepBitmaps && Qcow2Inspector.validateQcow2Version(srcFile.getFileName(), MIN_BITMAP_VERSION)) {
             script.add("--bitmaps");
         }
 
-        script.add(destFile.getFileName());
+        if (destImageOpts != null) {
+            script.add(destImageOpts.toCommandFlag(TARGET_IMAGE_OPTS_FLAG));
+        } else {
+            script.add(destFile.getFileName());
+        }
 
         final String result = script.execute();
         if (result != null) {
             throw new QemuImgException(result);
         }
 
-        if (srcFile.getSize() < destFile.getSize()) {
+        // an image-options destination already exists with its final size; 'qemu-img resize' cannot address it by filename
+        if (destImageOpts == null && srcFile.getSize() < destFile.getSize()) {
             this.resize(destFile, destFile.getSize(), getResizeOptionsFromConvertOptions(options));
         }
+    }
+
+
+    protected void addBackingFileToConvertCommand(Script script, QemuImgFile backingFile) {
+        if (backingFile == null) {
+            return;
+        }
+
+        script.add("-o");
+
+        String opts;
+        if (backingFile.getFormat() == null) {
+            opts = String.format("backing_file=%s", backingFile.getFileName());
+        } else {
+            opts = String.format("backing_file=%s,backing_fmt=%s", backingFile.getFileName(), backingFile.getFormat().toString());
+        }
+        script.add(opts);
     }
 
     /**
@@ -871,11 +986,8 @@ public class QemuImg {
             throw new QemuImgException("File should not be null");
         }
 
-        final Script s = new Script(_qemuImgPath, timeout);
+        final Script s = createScript(_qemuImgPath, timeout);
         s.add("commit");
-        if (skipEmptyingFiles) {
-            s.add("-d");
-        }
 
         if (file.getFormat() != null) {
             s.add("-f");
@@ -885,6 +997,8 @@ public class QemuImg {
         if (base != null) {
             s.add("-b");
             s.add(base.getFileName());
+        } else if (skipEmptyingFiles) {
+            s.add("-d");
         }
 
         s.add(file.getFileName());
@@ -892,6 +1006,13 @@ public class QemuImg {
         if (result != null) {
             throw new QemuImgException(result);
         }
+    }
+
+    /**
+     * This was created to facilitate testing
+     * */
+    protected Script createScript(String path, long timeout) {
+        return new Script(path, timeout);
     }
 
     /**
@@ -927,7 +1048,10 @@ public class QemuImg {
     }
 
     protected static boolean helpSupportsImageFormat(String text, QemuImg.PhysicalDiskFormat format) {
-        Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
+        // QEMU >= 10.1.0 changed the qemu-img --help header from
+        // "Supported formats:" to "Supported image formats:", so the word
+        // "image" must be treated as optional here.
+        Pattern pattern = Pattern.compile("Supported\\s(image\\s)?formats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
     }
 
@@ -1006,4 +1130,9 @@ public class QemuImg {
             throw new QemuImgException(String.format("Exception while removing bitmap [%s] from file [%s]. Result is [%s].", srcFile.getFileName(), bitmapName, result));
         }
     }
+
+    public long getVersion() {
+        return this.version;
+    }
+
 }

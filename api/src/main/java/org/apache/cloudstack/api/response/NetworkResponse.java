@@ -335,6 +335,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_KEEP_MAC_ADDRESS_ON_PUBLIC_NIC, since = "4.23.0")
     private Boolean keepMacAddressOnPublicNic;
 
+    @SerializedName(ApiConstants.DNS_ZONE)
+    @Param(description = "DNS zone associated to the network", since = "4.23.0")
+    private String dnsZone;
+
+    @SerializedName(ApiConstants.DNS_SUB_DOMAIN)
+    @Param(description = "DNS subdomain associated to the network", since = "4.23.0")
+    private String dnsSubdomain;
+
     public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
@@ -709,5 +717,13 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setKeepMacAddressOnPublicNic(Boolean keepMacAddressOnPublicNic) {
         this.keepMacAddressOnPublicNic = keepMacAddressOnPublicNic;
+    }
+
+    public void setDnsZone(String dnsZone) {
+        this.dnsZone = dnsZone;
+    }
+
+    public void setDnsSubdomain(String dnsSubdomain) {
+        this.dnsSubdomain = dnsSubdomain;
     }
 }

@@ -85,7 +85,7 @@ public class DeleteVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ConcurrentOperationException {
         CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
-        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false);
+        Volume result = _volumeService.destroyVolume(id, CallContext.current().getCallingAccount(), true, false, null);
         if (result != null) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

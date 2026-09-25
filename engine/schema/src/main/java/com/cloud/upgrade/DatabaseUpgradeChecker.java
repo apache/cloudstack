@@ -88,12 +88,15 @@ import com.cloud.upgrade.dao.Upgrade41810to41900;
 import com.cloud.upgrade.dao.Upgrade41900to41910;
 import com.cloud.upgrade.dao.Upgrade41910to42000;
 import com.cloud.upgrade.dao.Upgrade42000to42010;
-import com.cloud.upgrade.dao.Upgrade42010to42100;
-import com.cloud.upgrade.dao.Upgrade42100to42200;
-import com.cloud.upgrade.dao.Upgrade42200to42210;
+import com.cloud.upgrade.dao.Upgrade42020to42030;
+import com.cloud.upgrade.dao.Upgrade42030to42040;
+import com.cloud.upgrade.dao.Upgrade42040to42100;
 import com.cloud.upgrade.dao.Upgrade420to421;
+import com.cloud.upgrade.dao.Upgrade42100to42200;
 import com.cloud.upgrade.dao.Upgrade421to430;
+import com.cloud.upgrade.dao.Upgrade42200to42210;
 import com.cloud.upgrade.dao.Upgrade42210to42300;
+import com.cloud.upgrade.dao.Upgrade42300to2400;
 import com.cloud.upgrade.dao.Upgrade430to440;
 import com.cloud.upgrade.dao.Upgrade431to440;
 import com.cloud.upgrade.dao.Upgrade432to440;
@@ -240,10 +243,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.19.0.0", new Upgrade41900to41910())
                 .next("4.19.1.0", new Upgrade41910to42000())
                 .next("4.20.0.0", new Upgrade42000to42010())
-                .next("4.20.1.0", new Upgrade42010to42100())
+                .next("4.20.2.0", new Upgrade42020to42030())
+                .next("4.20.3.0", new Upgrade42030to42040())
+                .next("4.20.4.0", new Upgrade42040to42100())
                 .next("4.21.0.0", new Upgrade42100to42200())
                 .next("4.22.0.0", new Upgrade42200to42210())
                 .next("4.22.1.0", new Upgrade42210to42300())
+                .next("4.23.0.0", new Upgrade42300to2400())
                 .build();
     }
 
@@ -509,8 +515,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             String csVersion = parseSystemVmMetadata();
             final CloudStackVersion sysVmVersion = CloudStackVersion.parse(csVersion);
             final  CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-            SystemVmTemplateRegistration.CS_MAJOR_VERSION  = sysVmVersion.getMajorRelease() + "." + sysVmVersion.getMinorRelease();
-            SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
+            updateSystemVmTemplateVersion(sysVmVersion);
 
             LOGGER.info("DB version = {} Code Version = {}", dbVersion, currentVersion);
 
@@ -534,6 +539,18 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * Sets the system VM template major/tiny version used to look up the matching system VM template,
+     * from the version parsed out of the system VM template metadata file. Below the versioning cutover
+     * (major &lt; 24) the tiny version is the legacy patch release; from the cutover onwards it is the
+     * security release, since the patch position is dropped in that scheme.
+     */
+    @VisibleForTesting
+    protected static void updateSystemVmTemplateVersion(CloudStackVersion sysVmVersion) {
+        SystemVmTemplateRegistration.CS_MAJOR_VERSION = String.format("%d.%d", sysVmVersion.getMajorRelease(), sysVmVersion.getMinorRelease());
+        SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getTinyRelease());
     }
 
     /**

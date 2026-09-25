@@ -201,6 +201,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.EncryptionUtil;
@@ -331,6 +332,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<TemplateAdapter> _adapters;
 
@@ -360,6 +363,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return adapter;
     }
 
+    private long validateUrlAndGetSecondaryStorageUsage(TemplateAdapter adapter, String format, String url, boolean isDirectDownload) {
+        boolean isHypervisorTemplateAdapter = adapter instanceof HypervisorTemplateAdapter && !isDirectDownload;
+        if (isHypervisorTemplateAdapter) {
+            UriUtils.validateUrl(format, url, !TemplateManager.getValidateUrlIsResolvableBeforeRegisteringTemplateValue(), isDirectDownload);
+        }
+        return isHypervisorTemplateAdapter ?
+                UriUtils.getRemoteSize(url, StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "Creating ISO")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException {
@@ -369,8 +381,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Secondary storage resource count is not incremented for BareMetalTemplateAdapter
         // Note: checking the file size before registering will require the Management Server host to have access to the Internet and a DNS server
         // If it does not, UriUtils.getRemoteSize will return 0L.
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, ImageFormat.ISO.getFileExtension(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
@@ -409,8 +420,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
-        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
-                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+        long secondaryStorageUsage = validateUrlAndGetSecondaryStorageUsage(adapter, cmd.getFormat(), cmd.getUrl(), cmd.isDirectDownload());
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
@@ -941,6 +951,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() != Status.DOWNLOAD_IN_PROGRESS) {
                 _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
+            }
+
+            if (!_tmpltSvr.canCopyTemplateToImageStore(tmpltId, dstZoneId)) {
+                logger.info("Not copying template {} to image store {}: zone {} has reached the configured secondary storage copy limit.",
+                        template, dstSecStore, dstZone);
+                continue;
             }
 
             AsyncCallFuture<TemplateApiResult> future = _tmpltSvr.copyTemplate(srcTemplate, dstSecStore);
@@ -1914,6 +1930,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _launchPermissionDao.removeAllPermissions(id);
             _messageBus.publish(_name, TemplateManager.MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT, PublishScope.LOCAL, template.getId());
         }
+
+        if (isPublic != null || isFeatured != null || "reset".equalsIgnoreCase(operation)) {
+            for (VMTemplateZoneVO templateZone : _tmpltZoneDao.listByTemplateId(template.getId())) {
+                _tmpltSvr.enforceSecStorageCopyLimit(template.getId(), templateZone.getZoneId());
+                _tmpltSvr.replicateTemplateUpToCap(template.getId(), templateZone.getZoneId());
+            }
+        }
         return true;
     }
 
@@ -1931,10 +1954,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
         boolean kvmSnapshotOnlyInPrimaryStorage = false;
         SnapshotInfo snapInfo = null;
+        long zoneId = 0;
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
-            long zoneId = 0;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
                 if (command.getZoneId() == null) {
@@ -2074,6 +2097,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (privateTemplate != null) {
+            try {
+                _tmpltSvr.replicateTemplateUpToCap(privateTemplate.getId(), zoneId);
+            } catch (Exception e) {
+                logger.warn("Failed to schedule additional copies for template [{}] in zone [{}]: {}",
+                        privateTemplate.getUniqueName(), zoneId, e.getMessage());
+            }
             return privateTemplate;
         } else {
             throw new CloudRuntimeException("Failed to create a Template");
@@ -2149,7 +2178,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _accountMgr.checkAccess(caller, null, true, volume);
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume.getPassphraseId() != null) {
+            if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
                 throw new UnsupportedOperationException("Cannot create Templates from encrypted volumes");
             }
 
@@ -2177,7 +2206,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume != null && volume.getPassphraseId() != null) {
+            if (volume != null && (volume.getPassphraseId() != null || volume.getKmsKeyId() != null)) {
                 throw new UnsupportedOperationException("Cannot create Templates from Snapshots of encrypted volumes");
             }
 
@@ -2395,6 +2424,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         return stores;
+    }
+
+    @Override
+    public int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        if (template == null) {
+            return 0;
+        }
+        TemplateType type = template.getTemplateType();
+        if (type == TemplateType.SYSTEM || type == TemplateType.ROUTING || type == TemplateType.BUILTIN) {
+            return 0;
+        }
+        return template.isPublicTemplate()
+                ? PublicTemplateSecStorageCopy.valueIn(zoneId)
+                : PrivateTemplateSecStorageCopy.valueIn(zoneId);
     }
 
     @Override
@@ -2718,6 +2761,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
                 TemplateDeleteFromPrimaryStorage,
+                PublicTemplateSecStorageCopy,
+                PrivateTemplateSecStorageCopy,
                 VmIsoMaxCount};
     }
 
@@ -2769,12 +2814,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
-        template.setUserDataId(userDataId);
         if (userDataId != null) {
+            UserData userData = userDataDao.findById(userDataId);
+            if (userData == null) {
+                throw new InvalidParameterValueException("Unable to find user data with the specified ID.");
+            }
+            _accountMgr.checkAccess(caller, null, false, userData);
             template.setUserDataLinkPolicy(overridePolicy);
         } else {
             template.setUserDataLinkPolicy(null);
         }
+        template.setUserDataId(userDataId);
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());

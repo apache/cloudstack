@@ -788,14 +788,21 @@ public class LibvirtVMDef {
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
+            String engine; // optional libvirt encryption engine (e.g. "librbd"); null => libvirt/qemu default
 
             public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat) {
+                this(passphraseUuid, encryptFormat, null);
+            }
+
+            public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat, String engine) {
                 this.passphraseUuid = passphraseUuid;
                 this.encryptFormat = encryptFormat;
+                this.engine = engine;
             }
 
             public String getPassphraseUuid() { return this.passphraseUuid; }
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
+            public String getEngine() { return this.engine; }
         }
 
         public static class DiskGeometry {
@@ -975,6 +982,7 @@ public class LibvirtVMDef {
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
         private DiskGeometry geometry = null;
+        private List<String> backingStoreList = null; // Ordered list of backing stores, the first in the list is the immediate backing store, and the last in the list is the base
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1346,6 +1354,14 @@ public class LibvirtVMDef {
             return _sourcePath;
         }
 
+        public List<String> getBackingStoreList() {
+            return backingStoreList;
+        }
+
+        public void setBackingStoreList(List<String> backingStoreList) {
+            this.backingStoreList = backingStoreList;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -1437,7 +1453,11 @@ public class LibvirtVMDef {
             }
 
             if (encryptDetails != null) {
-                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'>\n");
+                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'");
+                if (encryptDetails.engine != null) {
+                    diskBuilder.append(" engine='" + encryptDetails.engine + "'");
+                }
+                diskBuilder.append(">\n");
                 diskBuilder.append("<secret type='passphrase' uuid='" + encryptDetails.passphraseUuid + "' />\n");
                 diskBuilder.append("</encryption>\n");
             }

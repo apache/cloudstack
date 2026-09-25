@@ -62,4 +62,12 @@ public class CustomActionResultResponse extends BaseResponse {
     public void setResult(Map<String, String> result) {
         this.result = result;
     }
+
+    public Map<String, String> getResult() {
+        return result;
+    }
+
+    public boolean isSuccess() {
+        return Boolean.TRUE.equals(success);
+    }
 }

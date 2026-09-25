@@ -24,20 +24,18 @@ import org.apache.cloudstack.storage.service.model.ProtocolType;
 public class OntapStorage {
     private final String username;
     private final String password;
-    private final String managementLIF;
+    private final String storageIP;
     private final String svmName;
     private final Long size;
     private final ProtocolType protocolType;
-    private final Boolean isDisaggregated;
 
-    public OntapStorage(String username, String password, String managementLIF, String svmName, Long size, ProtocolType protocolType, Boolean isDisaggregated) {
+    public OntapStorage(String username, String password, String storageIP, String svmName, Long size, ProtocolType protocolType) {
         this.username = username;
         this.password = password;
-        this.managementLIF = managementLIF;
+        this.storageIP = storageIP;
         this.svmName = svmName;
         this.size = size;
         this.protocolType = protocolType;
-        this.isDisaggregated = isDisaggregated;
     }
 
     public String getUsername() {
@@ -48,13 +46,9 @@ public class OntapStorage {
         return password;
     }
 
-    public String getManagementLIF() {
-        return managementLIF;
-    }
+    public String getStorageIP() { return storageIP; }
 
-    public String getSvmName() {
-        return svmName;
-    }
+    public String getSvmName() { return svmName; }
 
     public Long getSize() {
         return size;
@@ -62,9 +56,5 @@ public class OntapStorage {
 
     public ProtocolType getProtocol() {
         return protocolType;
-    }
-
-    public Boolean getIsDisaggregated() {
-        return isDisaggregated;
     }
 }

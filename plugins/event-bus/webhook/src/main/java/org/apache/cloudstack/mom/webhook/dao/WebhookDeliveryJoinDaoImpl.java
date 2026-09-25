@@ -33,9 +33,12 @@ import com.cloud.utils.db.SearchCriteria;
 public class WebhookDeliveryJoinDaoImpl extends GenericDaoBase<WebhookDeliveryJoinVO, Long>
         implements WebhookDeliveryJoinDao {
     @Override
-    public Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByListApiParameters(Long id,
-            List<Long> webhookIds, Long managementServerId, String keyword, final Date startDate,
-            final Date endDate, final String eventType, Filter searchFilter) {
+    public Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByListApiParameters(final Long id,
+            final List<Long> webhookIds, final Long managementServerId, final String keyword, final Date startDate,
+            final Date endDate, final String eventType, final Filter searchFilter, boolean isRootAdmin) {
+        if (!isRootAdmin && CollectionUtils.isEmpty(webhookIds) && id == null) {
+            return new Pair<>(List.of(), 0);
+        }
         SearchBuilder<WebhookDeliveryJoinVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.IN);

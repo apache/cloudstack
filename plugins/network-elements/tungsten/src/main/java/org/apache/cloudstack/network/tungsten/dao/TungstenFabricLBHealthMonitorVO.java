@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.dao;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -28,6 +30,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "tungsten_lb_health_monitor")
@@ -65,6 +69,10 @@ public class TungstenFabricLBHealthMonitorVO implements InternalIdentity, Identi
 
     @Column(name = "url_path")
     private String urlPath;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed = null;
 
     public TungstenFabricLBHealthMonitorVO() {
         this.uuid = UUID.randomUUID().toString();

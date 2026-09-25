@@ -195,6 +195,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.StoragePool,
             null);
+    ConfigKey<Boolean> XenserverCreateCloneFull = new ConfigKey<>(Boolean.class,
+            "xenserver.create.full.clone",
+            "Storage",
+            "false",
+            "If set to true, creates VMs as full clones on XenServer hypervisor (uses VDI.copy instead of VDI.clone, removing the linked-clone parent relationship).",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
     ConfigKey<Boolean> VmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
             "vmware.allow.parallel.command.execution",
             "Advanced",
@@ -232,6 +240,9 @@ public interface StorageManager extends StorageService {
             "Storage", "true", "When enabled, this feature allows templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
             "while adding a new Secondary Storage. If the copy operation fails, the system falls back to downloading the template from the source URL.",
             true, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> AgentMaxDataMigrationWaitTime = new ConfigKey<>("Advanced", Integer.class, "agent.max.data.migration.wait.time", "3600",
+            "The maximum time (in seconds) that the secondary storage data migration command sent to the KVM Agent will be executed before a timeout occurs.", true, ConfigKey.Scope.Cluster);
 
     /**
      * should we execute in sequence not involving any storages?

@@ -42,6 +42,7 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.UpdateRegisteredExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 
 import com.cloud.agent.api.Answer;
@@ -64,6 +65,8 @@ public interface ExtensionsManager extends Manager {
     boolean deleteExtension(DeleteExtensionCmd cmd);
 
     Extension unregisterExtensionWithResource(UnregisterExtensionCmd cmd);
+
+    Extension updateRegisteredExtensionWithResource(UpdateRegisteredExtensionCmd cmd);
 
     Extension updateExtension(UpdateExtensionCmd cmd);
 

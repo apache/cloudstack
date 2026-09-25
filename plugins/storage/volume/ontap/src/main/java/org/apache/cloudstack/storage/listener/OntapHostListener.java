@@ -25,6 +25,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.alert.AlertManager;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +38,11 @@ import com.cloud.storage.StoragePool;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import com.cloud.host.dao.HostDao;
+
+import java.util.Map;
 
 public class OntapHostListener implements HypervisorHostListener {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -53,6 +57,9 @@ public class OntapHostListener implements HypervisorHostListener {
     private HostDao _hostDao;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private StoragePoolDetailsDao _storagePoolDetailsDao;
+
 
     @Override
     public boolean hostConnect(long hostId, long poolId)  {
@@ -60,6 +67,10 @@ public class OntapHostListener implements HypervisorHostListener {
         Host host = _hostDao.findById(hostId);
         if (host == null) {
             logger.error("host was not found with id : {}", hostId);
+            return false;
+        }
+        if (!host.getHypervisorType().equals(Hypervisor.HypervisorType.KVM)) {
+            logger.error("ONTAP plugin does not support {} type host currently ", host.getHypervisorType());
             return false;
         }
 
@@ -70,7 +81,12 @@ public class OntapHostListener implements HypervisorHostListener {
         }
         logger.info("Connecting host {} to ONTAP storage pool {}", host.getName(), pool.getName());
         try {
-            ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+            // Load storage pool details from database to pass mount options and other config to agent
+            Map<String, String> detailsMap = _storagePoolDetailsDao.listDetailsKeyPairs(poolId);
+            // Create the ModifyStoragePoolCommand to send to the agent
+            // Note: Always send command even if database entry exists, because agent may have restarted
+            // and lost in-memory pool registration. The command handler is idempotent.
+            ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
 
             Answer answer = _agentMgr.easySend(hostId, cmd);
 
@@ -87,9 +103,12 @@ public class OntapHostListener implements HypervisorHostListener {
                         "Unable to establish a connection from agent to storage pool %s due to %s", pool, answer.getDetails()));
             }
 
+            // Get the mount path from the answer
+
             if (!(answer instanceof ModifyStoragePoolAnswer)) {
-                logger.error("Received unexpected answer type {} for storage pool {}", answer.getClass().getName(), pool.getName());
-                throw new CloudRuntimeException("Failed to connect to storage pool. Please check agent logs for details.");
+                throw new CloudRuntimeException(String.format(
+                        "Unexpected answer type %s returned for modify storage pool command for pool %s on host %d",
+                        answer.getClass().getName(), pool, hostId));
             }
 
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
@@ -101,6 +120,7 @@ public class OntapHostListener implements HypervisorHostListener {
             String localPath = poolInfo.getLocalPath();
             logger.info("Storage pool {} successfully mounted at: {}", pool.getName(), localPath);
 
+            // Update or create the storage_pool_host_ref entry with the correct local_path
             StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
             if (storagePoolHost == null) {
@@ -113,6 +133,7 @@ public class OntapHostListener implements HypervisorHostListener {
                 logger.info("Updated storage_pool_host_ref entry with local_path: {}", localPath);
             }
 
+            // Update pool capacity/usage information
             StoragePoolVO poolVO = _storagePoolDao.findById(poolId);
             if (poolVO != null && poolInfo.getCapacityBytes() > 0) {
                 poolVO.setCapacityBytes(poolInfo.getCapacityBytes());
@@ -123,44 +144,45 @@ public class OntapHostListener implements HypervisorHostListener {
 
         } catch (Exception e) {
             logger.error("Exception while connecting host {} to storage pool {}", host.getName(), pool.getName(), e);
+            // CRITICAL: Don't throw exception - it crashes the agent and causes restart loops
+            // Return false to indicate failure without crashing
             return false;
         }
         return true;
     }
 
     @Override
-    public boolean hostDisconnected(Host host, StoragePool pool) {
-        logger.info("Disconnect from host " + host.getId() + " from pool " + pool.getName());
+    public boolean hostDisconnected(long hostId, long poolId) {
+        logger.info("Disconnect from host " + hostId + " from pool " + poolId);
 
-        Host hostToremove = _hostDao.findById(host.getId());
+        Host hostToremove = _hostDao.findById(hostId);
         if (hostToremove == null) {
-            logger.error("Failed to add host by HostListener as host was not found with id : {}", host.getId());
+            logger.error("Failed to add host by HostListener as host was not found with id : {}", hostId);
             return false;
         }
-        logger.info("Disconnecting host {} from ONTAP storage pool {}", host.getName(), pool.getName());
+
+        StoragePool pool = _storagePoolDao.findById(poolId);
+        if (pool == null) {
+            logger.error("Failed to disconnect host - storage pool not found with id: {}", poolId);
+            return false;
+        }
+        logger.info("Disconnecting host {} from ONTAP storage pool {}", hostToremove.getName(), pool.getName());
 
         try {
             DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(pool);
-            long hostId = host.getId();
             Answer answer = _agentMgr.easySend(hostId, cmd);
-
             if (answer != null && answer.getResult()) {
-                logger.info("Successfully disconnected host {} from ONTAP storage pool {}", host.getName(), pool.getName());
+                logger.info("Successfully disconnected host {} from ONTAP storage pool {}", hostToremove.getName(), pool.getName());
                 return true;
             } else {
                 String errMsg = (answer != null) ? answer.getDetails() : "Unknown error";
-                logger.warn("Failed to disconnect host {} from storage pool {}. Error: {}", host.getName(), pool.getName(), errMsg);
+                logger.warn("Failed to disconnect host {} from storage pool {}. Error: {}", hostToremove.getName(), pool.getName(), errMsg);
                 return false;
             }
         } catch (Exception e) {
-            logger.error("Exception while disconnecting host {} from storage pool {}", host.getName(), pool.getName(), e);
+            logger.error("Exception while disconnecting host {} from storage pool {}", hostToremove.getName(), pool.getName(), e);
             return false;
         }
-    }
-
-    @Override
-    public boolean hostDisconnected(long hostId, long poolId) {
-        return false;
     }
 
     @Override

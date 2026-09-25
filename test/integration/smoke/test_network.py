@@ -470,10 +470,8 @@ class TestPortForwarding(cloudstackTestCase):
         except Exception as e:
             self.fail("NAT Rule Deletion Failed: %s" % e)
 
-        # NAT rule listing should fail as the nat rule does not exist
-        with self.assertRaises(Exception):
-            list_nat_rules(self.apiclient,
-                           id=nat_rule.id)
+        nat_rules_after_deletion = list_nat_rules(self.apiclient, id=nat_rule.id)
+        self.assertEqual(nat_rules_after_deletion, None, "Check that the port forwarding rule has been deleted.")
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):
@@ -585,13 +583,8 @@ class TestPortForwarding(cloudstackTestCase):
 
         nat_rule.delete(self.apiclient)
 
-        try:
-            list_nat_rule_response = list_nat_rules(
-                self.apiclient,
-                id=nat_rule.id
-            )
-        except CloudstackAPIException:
-            logger.debug("Nat Rule is deleted")
+        nat_rules_after_deletion = list_nat_rules(self.apiclient, id=nat_rule.id)
+        self.assertEqual(nat_rules_after_deletion, None, "Check that the port forwarding rule has been deleted.")
 
         # Check if the Public SSH port is inaccessible
         with self.assertRaises(Exception):

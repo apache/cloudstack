@@ -187,6 +187,8 @@ public interface NetworkModel {
 
     boolean canElementEnableIndividualServices(Provider provider);
 
+    boolean canElementEnableIndividualServicesByName(String providerName);
+
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
 
     boolean isNetworkSystem(Network network);
@@ -236,6 +238,18 @@ public interface NetworkModel {
     String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware);
 
     String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware);
+
+    /**
+     * Resolves a provider name to a {@link Provider} instance.
+     * For known static providers, delegates to {@link Provider#getProvider(String)}.
+     * For dynamically-registered NetworkOrchestrator extension providers whose names
+     * are not in the static registry, returns a transient {@link Provider} with the
+     * given name so callers can still dispatch correctly.
+     *
+     * @param providerName the provider name from {@code ntwk_service_map} or similar
+     * @return a {@link Provider} instance, or {@code null} if not resolvable
+     */
+    Provider resolveProvider(String providerName);
 
     /**
      * @param providerName

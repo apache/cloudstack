@@ -18,6 +18,10 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -31,9 +35,11 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,6 +89,7 @@ public final class LinstorBackupSnapshotCommandWrapper
         final String srcPath,
         final SnapshotObjectTO dst,
         final KVMStoragePool secondaryPool,
+        final byte[] passphrase,
         int waitMilliSeconds
         )
         throws LibvirtException, QemuImgException, IOException
@@ -94,9 +101,22 @@ public final class LinstorBackupSnapshotCommandWrapper
         final QemuImgFile srcFile = new QemuImgFile(srcPath, QemuImg.PhysicalDiskFormat.RAW);
         final QemuImgFile dstFile = new QemuImgFile(dstPath, QemuImg.PhysicalDiskFormat.QCOW2);
 
-        // NOTE: the qemu img will also contain the drbd metadata at the end
         final QemuImg qemu = new QemuImg(waitMilliSeconds);
-        qemu.convert(srcFile, dstFile);
+        if (passphrase != null && passphrase.length > 0) {
+            // Encrypted volumes are backed up from their decrypted DRBD device, so the snapshot
+            // data here is plaintext. Encrypt the destination qcow2 with the volume's passphrase
+            // (LUKS), so the snapshot is not stored in clear text on secondary storage.
+            try (KeyFile keyFile = new KeyFile(passphrase)) {
+                final Map<String, String> options = new HashMap<>();
+                final List<QemuObject> qemuObjects = new ArrayList<>();
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(QemuImg.PhysicalDiskFormat.QCOW2,
+                    QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
+                qemu.convert(srcFile, dstFile, options, qemuObjects, null, true);
+            }
+        } else {
+            // NOTE: the qemu img will also contain the drbd metadata at the end
+            qemu.convert(srcFile, dstFile);
+        }
         LOGGER.info("Backup snapshot '{}' to '{}'", srcPath, dstPath);
         return dstPath;
     }
@@ -153,14 +173,21 @@ public final class LinstorBackupSnapshotCommandWrapper
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());
 
-            String dstPath = convertImageToQCow2(srcPath, dst, secondaryPool, cmd.getWaitInMillSeconds());
+            final byte[] passphrase = src.getVolume() != null ? src.getVolume().getPassphrase() : null;
+            final boolean encrypted = passphrase != null && passphrase.length > 0;
 
-            // resize to real volume size, cutting of drbd metadata
-            String result = qemuShrink(dstPath, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
-            if (result != null) {
-                return new CopyCmdAnswer("qemu-img shrink failed: " + result);
+            String dstPath = convertImageToQCow2(srcPath, dst, secondaryPool, passphrase, cmd.getWaitInMillSeconds());
+
+            if (!encrypted) {
+                // resize to real volume size, cutting of drbd metadata
+                // For encrypted volumes the source is the decrypted DRBD device (already net-sized,
+                // no drbd metadata to cut); shrinking an encrypted qcow2 would also need the secret.
+                String result = qemuShrink(dstPath, src.getVolume().getSize(), cmd.getWaitInMillSeconds());
+                if (result != null) {
+                    return new CopyCmdAnswer("qemu-img shrink failed: " + result);
+                }
+                LOGGER.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
             }
-            LOGGER.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
 
             SnapshotObjectTO snapshot = setCorrectSnapshotSize(dst, dstPath);
             LOGGER.info("Actual file size for '{}' is {}", dstPath, snapshot.getPhysicalSize());
@@ -171,6 +198,9 @@ public final class LinstorBackupSnapshotCommandWrapper
             LOGGER.error(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
+            if (src.getVolume() != null) {
+                src.getVolume().clearPassphrase();
+            }
             cleanupSecondaryPool(secondaryPool);
             if (zfsHidden) {
                 zfsSnapdev(true, src.getPath());

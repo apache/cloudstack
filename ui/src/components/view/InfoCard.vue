@@ -412,7 +412,7 @@
               <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
               <div class="resource-detail-item__details">
                 <hdd-outlined />
-                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GiB Storage</span>
                 <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
                   {{ $bytesToHumanReadableSize(resource.size) }}
                   <a-tooltip placement="right">
@@ -453,6 +453,30 @@
                       (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                     :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
                 </span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="$route.meta.name === 'volume' && resource.kmskey">
+              <div class="resource-detail-item__label">{{ $t('label.kms.key') }}</div>
+              <div class="resource-detail-item__details">
+                <safety-outlined />
+                <router-link
+                  v-if="resource.kmskeyid && $router.resolve('/kmskey/' + resource.kmskeyid).matched[0].redirect !== '/exception/404'"
+                  :to="{ path: '/kmskey/' + resource.kmskeyid }">
+                  {{ resource.kmskey }}
+                </router-link>
+                <span v-else>{{ resource.kmskey }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="$route.meta.name === 'kmskey' && resource.hsmprofile">
+              <div class="resource-detail-item__label">{{ $t('label.hsm.profile') }}</div>
+              <div class="resource-detail-item__details">
+                <safety-outlined />
+                <router-link
+                  v-if="resource.hsmprofileid && $router.resolve('/hsmprofile/' + resource.hsmprofileid).matched[0].redirect !== '/exception/404'"
+                  :to="{ path: '/hsmprofile/' + resource.hsmprofileid }">
+                  {{ resource.hsmprofile }}
+                </router-link>
+                <span v-else>{{ resource.hsmprofile }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
@@ -524,7 +548,7 @@
                 </span>
                 <project-outlined v-else />
                 <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
-                <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
+                <span v-else>{{ resource.projectname || resource.projectid }}</span>
               </div>
             </div>
 
@@ -861,6 +885,18 @@
                 <block-outlined v-else />
                 <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
                 <span v-else>{{ resource.domain || resource.domainid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.currency">
+              <div class="resource-detail-item__label">{{ $t('label.currency') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.currency }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.balance">
+              <div class="resource-detail-item__label">{{ $t('label.quota.current.balance') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.balance }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.payloadurl">

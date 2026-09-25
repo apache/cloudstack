@@ -703,13 +703,138 @@ class CsAcl(CsDataBag):
             self.add_routing_rules()
             return
 
+        desired_firewall_ips = set()
+        fw_chains_created = set()
+        if self.config.is_vpc() and self.config.is_vpc_firewall_enabled():
+            desired_firewall_ips = self._get_desired_vpc_firewall_ips()
+            # Pre-create FIREWALL chains for ALL public IPs that have any active rule
+            # (static NAT, port forwarding, LB, or explicit firewall rule) so that the
+            # default DROP is always in place even before any explicit firewall rule exists.
+            self._ensure_vpc_firewall_chains(desired_firewall_ips, fw_chains_created)
+
         for item in self.dbag:
             if item == "id":
                 continue
-            if self.config.is_vpc():
+            if self.config.is_vpc() and not ("purpose" in self.dbag[item] and self.dbag[item]["purpose"] == "Firewall"):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
+                if self.config.is_vpc() and self.dbag[item].get("purpose") == "Firewall" and not self.config.is_vpc_firewall_enabled():
+                    continue
+                # Chain skeleton is already ensured by the pre-creation pass above;
+                # _ensure_vpc_firewall_chains is idempotent (skips IPs in fw_chains_created).
+                if self.config.is_vpc() and self.config.is_vpc_firewall_enabled() and self.dbag[item].get("purpose") == "Firewall":
+                    src_ip = self.dbag[item].get("src_ip")
+                    self._ensure_vpc_firewall_chains([src_ip], fw_chains_created)
                 self.AclIP(self.dbag[item], self.config).create()
+
+        if self.config.is_vpc() and self.config.is_vpc_firewall_enabled():
+            self._cleanup_removed_vpc_firewall_chains(desired_firewall_ips)
+
+    def _get_desired_vpc_firewall_ips(self):
+        """
+        Collect the full set of public IPs that should have a FIREWALL mangle chain
+        in a VPC with firewall capability. This includes IPs from explicit firewall
+        rules, forwarding/static-NAT rules, and load-balancer rules.
+        """
+        if not self.config.is_vpc():
+            return set()
+
+        ips = set()
+        ips.update(self._get_firewall_rule_ips())
+        ips.update(self._get_forwarding_rule_ips())
+        ips.update(self._get_loadbalancer_ips())
+        return ips
+
+    def _get_firewall_rule_ips(self):
+        """Return public IPs that have explicit firewall rules in this data bag."""
+        ips = set()
+        for item in self.dbag:
+            if item == "id":
+                continue
+            rule = self.dbag[item]
+            if rule.get("purpose") == "Firewall":
+                src_ip = rule.get("src_ip")
+                if src_ip:
+                    ips.add(src_ip)
+        return ips
+
+    def _get_forwarding_rule_ips(self):
+        """
+        Return public IPs from the forwardingrules bag (static NAT and port forwarding).
+        That bag is keyed by public IP, so each key (other than 'id') is a public IP.
+        """
+        ips = set()
+        try:
+            fwd_bag = CsDataBag("forwardingrules", self.config)
+            for public_ip in fwd_bag.get_bag():
+                if public_ip == "id":
+                    continue
+                ips.add(public_ip)
+        except Exception as e:
+            logging.debug("Could not load forwardingrules for VPC firewall chain collection: %s", e)
+        return ips
+
+    def _get_loadbalancer_ips(self):
+        """
+        Return public IPs from the loadbalancer bag.
+        add_rules entries are formatted as 'ip:port', so the IP is the first segment.
+        """
+        ips = set()
+        try:
+            lb_bag = CsDataBag("loadbalancer", self.config)
+            lb_data = lb_bag.get_bag()
+            if "config" in lb_data and lb_data["config"]:
+                for rule_str in lb_data["config"][0].get("add_rules", []):
+                    ip = rule_str.split(":")[0]
+                    if ip:
+                        ips.add(ip)
+        except Exception as e:
+            logging.debug("Could not load loadbalancer for VPC firewall chain collection: %s", e)
+        return ips
+
+    def _ensure_vpc_firewall_chains(self, source_ips, fw_chains_created):
+        fw = self.config.get_fw()
+        for src_ip in source_ips:
+            if not src_ip or src_ip in fw_chains_created:
+                continue
+            fw.append(["mangle", "front",
+                       "-A PREROUTING -d %s/32 -j FIREWALL_%s" % (src_ip, src_ip)])
+            fw.append(["mangle", "front",
+                       "-A FIREWALL_%s -m state --state RELATED,ESTABLISHED -j RETURN" % src_ip])
+            fw.append(["mangle", "",
+                       "-A FIREWALL_%s -j DROP" % src_ip])
+            fw_chains_created.add(src_ip)
+
+    def _cleanup_removed_vpc_firewall_chains(self, desired_firewall_ips):
+        try:
+            mangle_save = CsHelper.execute("iptables-save -t mangle")
+            existing_firewall_ips = []
+            for line in mangle_save:
+                if line.startswith(":FIREWALL_"):
+                    chain = line.split(" ")[0][1:]
+                    existing_firewall_ips.append(chain.replace("FIREWALL_", "", 1))
+
+            for src_ip in existing_firewall_ips:
+                if src_ip in desired_firewall_ips:
+                    continue
+                self._delete_vpc_firewall_chain(src_ip)
+        except Exception as e:
+            logging.debug("Failed VPC firewall chain cleanup: %s", e)
+
+    def _delete_vpc_firewall_chain(self, src_ip):
+        chain = "FIREWALL_%s" % src_ip
+        try:
+            prerouting_rules = CsHelper.execute("iptables -t mangle -S PREROUTING")
+            for rule in prerouting_rules:
+                if ("-d %s/32" % src_ip) in rule and ("-j %s" % chain) in rule:
+                    delete_rule = rule.replace("-A PREROUTING", "-D PREROUTING", 1)
+                    CsHelper.execute2("iptables -t mangle %s" % delete_rule, False)
+
+            CsHelper.execute2("iptables -t mangle -F %s" % chain, False)
+            CsHelper.execute2("iptables -t mangle -X %s" % chain, False)
+            logging.info("Deleted VPC firewall chain %s as last firewall rule was removed", chain)
+        except Exception as e:
+            logging.debug("Failed deleting VPC firewall chain %s: %s", chain, e)
 
 class CsIpv6Firewall(CsDataBag):
     """

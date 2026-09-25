@@ -18,6 +18,8 @@
 package org.apache.cloudstack.api.command.user.userdata;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -56,6 +58,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
             description = "The ID of the ISO for the Instance")
     private Long isoId;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,

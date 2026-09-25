@@ -613,6 +613,10 @@ export default {
     handleShowAccountFields () {
       if (this.showAccountFields) {
         this.fetchDomains()
+      } else {
+        this.form.account = null
+        this.form.domain = null
+        this.form.forsystemvms = false
       }
     },
     handleOpenAddIpRangeModal () {

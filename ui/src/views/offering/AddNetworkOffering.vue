@@ -712,7 +712,6 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
-        serviceofferingid: [{ required: true, message: this.$t('message.error.select') }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
           type: 'array',
@@ -738,6 +737,23 @@ export default {
     },
     isSupportedServiceObject (obj) {
       return (obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object && 'provider' in obj)
+    },
+    isVpcCoreProvider (providerName, serviceName) {
+      if (['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)) {
+        return true
+      }
+      return serviceName === 'Connectivity' && ['NiciraNvp', 'Ovs', 'JuniperContrailVpcRouter'].includes(providerName)
+    },
+    isBuiltInNetworkProvider (providerName) {
+      const builtInProviders = [
+        'VirtualRouter', 'JuniperContrailRouter', 'JuniperContrailVpcRouter', 'JuniperSRX', 'PaloAlto',
+        'F5BigIp', 'Netscaler', 'ExternalDhcpServer', 'ExternalGateWay', 'ElasticLoadBalancerVm',
+        'SecurityGroupProvider', 'VpcVirtualRouter', 'None', 'NiciraNvp', 'InternalLbVm', 'CiscoVnmc',
+        'Ovs', 'Opendaylight', 'BrocadeVcs', 'GloboDns', 'BigSwitchBcf', 'ConfigDrive', 'Tungsten',
+        'Nsx', 'Netris', 'BaremetalDhcpProvider', 'BaremetalPxeProvider', 'BaremetalUserdataProvider',
+        'StratosphereSsp'
+      ]
+      return builtInProviders.includes(providerName)
     },
     fetchDomainData () {
       const params = {}
@@ -854,6 +870,9 @@ export default {
           for (var j in this.supportedServices[i].provider) {
             var provider = this.supportedServices[i].provider[j]
             provider.description = provider.name
+            provider.displaytext = this.isBuiltInNetworkProvider(provider.name)
+              ? provider.name
+              : `${provider.name} (${this.$t('label.extension')})`
             provider.enabled = true
             if (provider.name === 'VpcVirtualRouter') {
               provider.enabled = false
@@ -917,11 +936,18 @@ export default {
             var providers = svc.provider
             providers.forEach(function (provider, providerIndex) {
               if (self.forVpc) { // *** vpc ***
-                var enabledProviders = ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive']
-                if (self.lbType === 'internalLb') {
-                  enabledProviders.push('InternalLbVm')
+                // Keep the known VPC-safe providers allowlisted and only additionally enable
+                // extension providers, which listSupportedNetworkServices() already only returns
+                // for a service once the extension is confirmed to support it.
+                if (provider.name === 'InternalLbVm') {
+                  provider.enabled = self.lbType === 'internalLb' && svc.name === 'Lb'
+                } else {
+                  provider.enabled = self.isVpcCoreProvider(provider.name, svc.name) ||
+                    !self.isBuiltInNetworkProvider(provider.name)
                 }
-                provider.enabled = enabledProviders.includes(provider.name)
+                if (svc.name === 'Firewall' && provider.name === 'VpcVirtualRouter') {
+                  provider.enabled = false
+                }
               } else { // *** non-vpc ***
                 provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
               }

@@ -16,6 +16,7 @@
 # under the License.
 
 import logging
+import os
 import random
 import time
 import socket
@@ -282,6 +283,17 @@ class TestLinstorVolumes(cloudstackTestCase):
         first_host = list_hosts(cls.apiClient)[0]
 
         cls.testdata = TestData(first_host.ipaddress).testdata
+
+        # Registering a Linstor pool makes the management server read the resource-group capacity from
+        # the controller. If the controller enforces authentication, that call needs an API token,
+        # supplied as the 'lin.auth.apitoken' add-pool detail. Provide it via LINSTOR_API_TOKEN so it is
+        # never hard-coded; leave it unset for an unauthenticated controller.
+        api_token = os.environ.get("LINSTOR_API_TOKEN")
+        if api_token:
+            for storage_key in (TestData.primaryStorage,
+                                 TestData.primaryStorageSameInstance,
+                                 TestData.primaryStorageDistinctInstance):
+                cls.testdata[storage_key]["details"]["lin.auth.apitoken"] = api_token
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])

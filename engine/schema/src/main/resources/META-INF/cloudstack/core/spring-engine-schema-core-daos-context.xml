@@ -272,6 +272,10 @@
   <bean id="backupScheduleDaoImpl" class="org.apache.cloudstack.backup.dao.BackupScheduleDaoImpl" />
   <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
   <bean id="backupDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDetailsDaoImpl" />
+  <bean id="internalBackupStoragePoolDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDaoImpl" />
+  <bean id="internalBackupDataStoreDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupDataStoreDaoImpl" />
+  <bean id="internalBackupJoinDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupJoinDaoImpl" />
+  <bean id="internalBackupServiceJobDaoImpl" class="org.apache.cloudstack.backup.dao.InternalBackupServiceJobDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
   <bean id="imageTransferDaoImpl" class="org.apache.cloudstack.backup.dao.ImageTransferDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />
@@ -312,6 +316,21 @@
   <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
   <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
   <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
+  <bean id="vmwareCbtMigrationDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationDaoImpl" />
+  <bean id="vmwareCbtMigrationDiskDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationDiskDaoImpl" />
+  <bean id="vmwareCbtMigrationCycleDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationCycleDaoImpl" />
   <bean id="apiKeyPairDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairDaoImpl" />
   <bean id="apiKeyPairPermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDaoImpl" />
+  <bean id="kmsKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKeyDaoImpl" />
+  <bean id="kmsKekVersionDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKekVersionDaoImpl" />
+  <bean id="hsmProfileDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDaoImpl" />
+  <bean id="hsmProfileDetailsDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDetailsDaoImpl" />
+  <bean id="dnsServerDao" class="org.apache.cloudstack.dns.dao.DnsServerDaoImpl" />
+  <bean id="dnsZoneDao" class="org.apache.cloudstack.dns.dao.DnsZoneDaoImpl" />
+  <bean id="dnsZoneNetworkMapDao" class="org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDaoImpl" />
+  <bean id="dnsServerJoinDao" class="org.apache.cloudstack.dns.dao.DnsServerJoinDaoImpl" />
+  <bean id="dnsZoneJoinDao" class="org.apache.cloudstack.dns.dao.DnsZoneJoinDaoImpl" />
+  <bean id="dnsNicJoinDao" class="org.apache.cloudstack.dns.dao.NicDnsJoinDaoImpl" />
+  <bean id="dnsServerDetailsDao" class="org.apache.cloudstack.dns.dao.DnsServerDetailsDaoImpl" />
+
 </beans>

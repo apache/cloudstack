@@ -63,9 +63,14 @@ import { postAPI } from '@/api'
 
 export default {
   name: 'EmailTemplateDetails',
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
+  },
   data () {
     return {
-      resource: {},
       formModel: {
         templatesubject: null,
         templatebody: null
@@ -74,29 +79,10 @@ export default {
     }
   },
   created () {
-    this.fetchData()
+    this.formModel.templatesubject = this.resource.templatesubject || null
+    this.formModel.templatebody = this.resource.templatebody || null
   },
   methods: {
-    fetchData () {
-      this.loading = true
-      const params = {}
-      params.templatetype = this.$route.params.id
-
-      postAPI('quotaEmailTemplateList', params).then(json => {
-        const listTemplates = json.quotaemailtemplatelistresponse.quotaemailtemplate || []
-        this.resource = listTemplates && listTemplates.length > 0 ? listTemplates[0] : {}
-        this.preFillDataValues()
-      }).catch(e => {
-        this.$notifyError(e)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    preFillDataValues () {
-      console.log(this.resource)
-      this.formModel.templatesubject = this.resource.templatesubject || null
-      this.formModel.templatebody = this.resource.templatebody || null
-    },
     handleSubmit () {
       if (this.loading) return
       const params = {}

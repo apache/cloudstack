@@ -970,7 +970,7 @@ public class ServerAdapterTest {
 
         serverAdapter.deleteDisk("vol-uuid");
 
-        verify(volumeApiService).destroyVolume(10L, account, true, false);
+        verify(volumeApiService).destroyVolume(10L, account, true, false, null);
     }
 
 

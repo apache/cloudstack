@@ -180,7 +180,6 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
-        mock(NiciraNvpDeviceVO.class);
         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -203,7 +202,6 @@ public class NiciraNvpGuestNetworkGuruTest {
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
         when(physnet.getId()).thenReturn(NETWORK_ID);
 
-        mock(NiciraNvpDeviceVO.class);
         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
 
         final NetworkOffering offering = mock(NetworkOffering.class);
@@ -263,7 +261,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -318,7 +315,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -377,7 +373,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -432,7 +427,6 @@ public class NiciraNvpGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");

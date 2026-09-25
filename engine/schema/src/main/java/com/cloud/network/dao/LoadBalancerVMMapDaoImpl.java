@@ -34,8 +34,9 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
     public void remove(long loadBalancerId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -43,11 +44,12 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceIds.toArray());
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
         if (revoke != null) {
             sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
         }
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -56,12 +58,13 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceId);
         sc.addAnd("instanceIp", SearchCriteria.Op.EQ, instanceIp);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
         if (revoke != null) {
             sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
         }
 
-        expunge(sc);
+        remove(sc);
     }
 
 

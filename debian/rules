@@ -95,6 +95,7 @@ override_dh_auto_install:
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
+	sed -i '/requiretty/d' $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
@@ -176,7 +177,7 @@ override_dh_auto_install:
 
 	# cloudstack-marvin
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin
-	cp tools/marvin/dist/Marvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
+	cp tools/marvin/dist/[Mm]arvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
 
 	# cloudstack-integration-tests
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests

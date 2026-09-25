@@ -21,10 +21,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.cloud.network.IpAddress;
+import com.cloud.network.NetworkService;
+import com.cloud.utils.db.EntityManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,6 +37,12 @@ import com.cloud.utils.net.NetUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CreateFirewallRuleCmdTest {
+
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
+    private NetworkService networkService;
 
     private void validateAllIp4Cidr(final CreateFirewallRuleCmd cmd) {
         Assert.assertTrue(CollectionUtils.isNotEmpty(cmd.getSourceCidrList()));
@@ -87,5 +98,23 @@ public class CreateFirewallRuleCmdTest {
         Assert.assertTrue(CollectionUtils.isNotEmpty(cmd.getSourceCidrList()));
         Assert.assertEquals(2, cmd.getSourceCidrList().size());
         Assert.assertEquals(cidr, cmd.getSourceCidrList().get(1));
+    }
+
+    @Test
+    public void testGetNetworkIdVpcWithoutAssociatedNetworkUsesVpcFallbackAndSyncObjId() {
+        final CreateFirewallRuleCmd cmd = new CreateFirewallRuleCmd();
+        final IpAddress ip = Mockito.mock(IpAddress.class);
+
+        cmd._entityMgr = entityManager;
+        cmd._networkService = networkService;
+        ReflectionTestUtils.setField(cmd, "ipAddressId", 42L);
+
+        Mockito.when(networkService.getIp(42L)).thenReturn(ip);
+        Mockito.when(ip.getAssociatedWithNetworkId()).thenReturn(null);
+        Mockito.when(ip.getVpcId()).thenReturn(100L);
+        Mockito.when(ip.getNetworkId()).thenReturn(2L);
+
+        Assert.assertEquals(Long.valueOf(2L), cmd.getNetworkId());
+        Assert.assertEquals(Long.valueOf(2L), cmd.getSyncObjId());
     }
 }

