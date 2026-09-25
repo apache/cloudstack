@@ -19,6 +19,26 @@
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
+-- Backup report
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'failure_reason', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'logid', 'varchar(14)');
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_report` (
+   `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+   `created` DATETIME NOT NULL,
+   `removed` DATETIME,
+   `task_enabled` tinyint(1) DEFAULT 0,
+    PRIMARY KEY (`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`email_template` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `name` VARCHAR(55) NOT NULL,
+    `template` TEXT,
+    PRIMARY KEY (`id`)
+    );
+
 -- VMware CBT warm migration session state
 CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
