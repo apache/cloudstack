@@ -144,9 +144,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     /**
-     * Volumes must be added to a host set to be visable to the hosts.
-     * the Hostset should contain all the hosts that are membrers of the zone or
-     * cluster (depending on Cloudstack Storage Pool configuration)
+     * Connect the volume to the host that was granted access. The storage framework
+     * grants and revokes access one host at a time, so each host is given its own
+     * connection: a host-group scoped connection is shared by every member host and
+     * therefore cannot express the removal of a single host's access.
      */
     @Override
     public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
@@ -159,19 +160,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
         String volumeName = normalizeName(pod, dataObject.getExternalName());
         try {
             FlashArrayList<FlashArrayConnection> list = null;
-            if (AddressType.NVMETCP.equals(volumeAddressType) && hostgroup != null) {
-                // NVMe-TCP pod volumes are connected at the host-group level so the
-                // array assigns a consistent NSID visible to every member host.
-                list = POST("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName, null,
+            FlashArrayHost host = getHost(hostname);
+            if (host != null) {
+                list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
                     new TypeReference<FlashArrayList<FlashArrayConnection>>() {
                 });
-            } else {
-                FlashArrayHost host = getHost(hostname);
-                if (host != null) {
-                    list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
-                        new TypeReference<FlashArrayList<FlashArrayConnection>>() {
-                    });
-                }
             }
 
             if (list == null || list.getItems() == null || list.getItems().size() == 0) {
@@ -202,20 +195,20 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 if (list != null && list.getItems() != null) {
                     for (FlashArrayConnection conn : list.getItems()) {
                         if (AddressType.NVMETCP.equals(volumeAddressType)) {
-                            // Prefer a hostgroup-scoped match when a hostgroup is configured
-                            // on the pool; otherwise fall through to matching the connection
-                            // by host like the Fibre Channel branch below. Covers both
-                            // transport=nvme-tcp deployments with and without hostgroup=.
-                            if (hostgroup != null && conn.getHostGroup() != null
-                                    && conn.getHostGroup().getName() != null
-                                    && conn.getHostGroup().getName().equals(hostgroup)) {
-                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
-                            }
+                            // Match the host-scoped connection this adapter creates. A
+                            // host-group scoped match is kept only as a fallback, so that
+                            // volumes still carrying a group connection created by an
+                            // earlier release continue to resolve here.
                             if (conn.getHost() != null && conn.getHost().getName() != null
                                     && (conn.getHost().getName().equals(hostname)
                                         || (hostname.indexOf('.') > 0
                                             && conn.getHost().getName()
                                                 .equals(hostname.substring(0, hostname.indexOf('.')))))) {
+                                return conn.getNsid() != null ? "" + conn.getNsid() : "1";
+                            }
+                            if (hostgroup != null && conn.getHostGroup() != null
+                                    && conn.getHostGroup().getName() != null
+                                    && conn.getHostGroup().getName().equals(hostgroup)) {
                                 return conn.getNsid() != null ? "" + conn.getNsid() : "1";
                             }
                         } else if (conn.getHost() != null && conn.getHost().getName() != null
@@ -240,12 +233,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public void detach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
         String volumeName = normalizeName(pod, dataObject.getExternalName());
-        // hostname is always provided by cloudstack, but we will detach from hostgroup
-        // if this pool is configured to use hostgroup for attachments
-        if (hostgroup != null) {
-            DELETE("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName);
-        }
-
+        // Only the connection for this host may be removed. A host-group scoped
+        // connection is shared by every member host, so deleting it here would revoke
+        // the volume from all of them -- including the host a live-migrating VM has
+        // just moved to, which pulls the namespace out from under the running guest.
         FlashArrayHost host = getHost(hostname);
         if (host != null) {
             DELETE("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName);
