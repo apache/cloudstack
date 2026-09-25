@@ -15,17 +15,7 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
--- cloud.account_netstats_view source
+--;
+-- Schema upgrade from 4.22.1.0 to 4.22.2.0
+--;
 
-
-DROP VIEW IF EXISTS `cloud`.`account_netstats_view`;
-
-CREATE VIEW `cloud`.`account_netstats_view` AS
-select
-    `user_statistics`.`account_id` AS `account_id`,
-    (sum(`user_statistics`.`net_bytes_received`) + sum(`user_statistics`.`current_bytes_received`)) AS `bytesReceived`,
-    (sum(`user_statistics`.`net_bytes_sent`) + sum(`user_statistics`.`current_bytes_sent`)) AS `bytesSent`
-from
-    `user_statistics`
-group by
-    `user_statistics`.`account_id`;

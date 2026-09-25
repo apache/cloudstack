@@ -39,8 +39,8 @@ select
     `data_center`.`id` AS `data_center_id`,
     `data_center`.`uuid` AS `data_center_uuid`,
     `data_center`.`name` AS `data_center_name`,
-    `account_netstats_view`.`bytesReceived` AS `bytesReceived`,
-    `account_netstats_view`.`bytesSent` AS `bytesSent`,
+    (SELECT COALESCE(SUM(`us`.`net_bytes_received` + `us`.`current_bytes_received`), 0) FROM `cloud`.`user_statistics` `us` WHERE `us`.`account_id` = `account`.`id`) AS `bytesReceived`,
+    (SELECT COALESCE(SUM(`us`.`net_bytes_sent` + `us`.`current_bytes_sent`), 0) FROM `cloud`.`user_statistics` `us` WHERE `us`.`account_id` = `account`.`id`) AS `bytesSent`,
     `vmlimit`.`max` AS `vmLimit`,
     `vmcount`.`count` AS `vmTotal`,
     `runningvm`.`vmcount` AS `runningVms`,
@@ -89,8 +89,6 @@ from
     `cloud`.`domain` ON account.domain_id = domain.id
         left join
     `cloud`.`data_center` ON account.default_zone_id = data_center.id
-        left join
-    `cloud`.`account_netstats_view` ON account.id = account_netstats_view.account_id
         left join
     `cloud`.`resource_limit` vmlimit ON account.id = vmlimit.account_id
         and vmlimit.type = 'user_vm' and vmlimit.tag IS NULL
