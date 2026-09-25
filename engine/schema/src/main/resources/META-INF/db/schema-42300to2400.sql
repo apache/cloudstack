@@ -145,3 +145,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration_cycle` (
     UNIQUE KEY `uc_vmware_cbt_migration_cycle__migration_id__cycle_number` (`migration_id`, `cycle_number`),
     INDEX `i_vmware_cbt_migration_cycle__migration_id` (`migration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Generic OIDC OAuth2 provider: a type to select the implementation, and the issuer URL for discovery
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'type', 'VARCHAR(40) DEFAULT NULL COMMENT ''Provider implementation serving this registration, for example oidc; NULL means the provider name selects the implementation'' AFTER `token_url` ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'issuer_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Issuer URL of the OpenID Connect provider, used to read its discovery document'' AFTER `type` ');
