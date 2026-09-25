@@ -20,7 +20,9 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
 
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ImportConvertedInstanceAnswer;
@@ -35,7 +37,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.ResourceWrapper;
-import org.apache.commons.collections4.CollectionUtils;
+import com.cloud.storage.Storage;
 
 @ResourceWrapper(handles =  ImportConvertedInstanceCommand.class)
 public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseConvertCommandWrapper<ImportConvertedInstanceCommand, Answer, LibvirtComputingResource> {
@@ -46,6 +48,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
+        List<Storage.StoragePoolType> destinationStoragePoolTypes = cmd.getDestinationStoragePoolTypes();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         final String temporaryConvertUuid = cmd.getTemporaryConvertUuid();
         final boolean forceConvertToPool = cmd.isForceConvertToPool();
@@ -55,6 +58,12 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
 
         try {
+            if (isForcedBlockStorageConversion(conversionTemporaryLocation, forceConvertToPool)) {
+                List<KVMPhysicalDisk> disks = getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid);
+                UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid, disks, null);
+                return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
+            }
+
             String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
             LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(convertedBasePath);
 
@@ -68,7 +77,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
                 disks = temporaryDisks;
             } else {
                 disks = moveTemporaryDisksToDestination(temporaryDisks,
-                        destinationStoragePools, storagePoolMgr);
+                        destinationStoragePools, destinationStoragePoolTypes, storagePoolMgr);
                 cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid, true);
             }
 
@@ -92,5 +101,13 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends LibvirtBaseCon
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
+    }
+
+    private boolean isForcedBlockStorageConversion(DataStoreTO conversionTemporaryLocation, boolean forceConvertToPool) {
+        if (!forceConvertToPool || !(conversionTemporaryLocation instanceof PrimaryDataStoreTO)) {
+            return false;
+        }
+        Storage.StoragePoolType poolType = ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType();
+        return poolType == Storage.StoragePoolType.RBD || poolType == Storage.StoragePoolType.Linstor;
     }
 }

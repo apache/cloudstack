@@ -303,6 +303,40 @@ public class LinstorUtil {
     }
 
     /**
+     * Cluster-wide in-use check by pool (builds the API from the pool, mirroring
+     * {@link #resourceSupportZeroBlocks}). Unlike a host-local qemu-img file lock, this
+     * reflects the DRBD InUse state across every node, so a volume attached to a running
+     * VM on another host is detected.
+     *
+     * Fails closed: if the controller cannot be reached, or returns nothing, the state is
+     * unknown rather than "free", and {@link KVMStoragePool#IN_USE_NODE_UNKNOWN} is returned.
+     *
+     * @return the node the resource is in use on, {@code null} if it is provably not in use,
+     *         or {@link KVMStoragePool#IN_USE_NODE_UNKNOWN} if that could not be determined.
+     */
+    public static String isResourceInUse(KVMStoragePool pool, String resName) {
+        final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost(), null, insecureSsl);
+        try {
+            List<Resource> rscs = api.resourceList(resName, null, null);
+            if (rscs == null) {
+                LOGGER.error("isResourceInUse: null returned from resourceList for {}; treating in-use state as unknown",
+                        resName);
+                return KVMStoragePool.IN_USE_NODE_UNKNOWN;
+            }
+            return rscs.stream()
+                    .filter(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()))
+                    .map(Resource::getNodeName)
+                    .findFirst()
+                    .orElse(null);
+        } catch (ApiException apiExc) {
+            LOGGER.error("isResourceInUse: {}; treating in-use state of {} as unknown",
+                    apiExc.getBestMessage(), resName);
+            return KVMStoragePool.IN_USE_NODE_UNKNOWN;
+        }
+    }
+
+    /**
      * Check if the given resources are diskless.
      *
      * @param api developer api object to use
@@ -588,10 +622,17 @@ public class LinstorUtil {
     }
 
     /**
-     * Checks if all diskful resource are on a zeroed block device.
+     * Checks if all diskful resources are on a zeroed block device.
+     *
+     * Fails closed: this result enables skipping zero writes (nbdcopy --destination-is-zero /
+     * qemu-img --target-is-zero), so anything we cannot positively prove must return false.
+     * An unknown, empty or malformed answer is not proof, and a purely diskless view says
+     * nothing about the backing storage of its diskful peers.
+     *
      * @param pool Linstor pool to use
      * @param resName Linstor resource name
-     * @return true if all resources are on a provider with zeroed blocks.
+     * @return true only if at least one diskful volume was seen and every diskful volume is on a
+     *         provider that hands out zeroed blocks.
      */
     public static boolean resourceSupportZeroBlocks(KVMStoragePool pool, String resName) {
         final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
@@ -605,16 +646,38 @@ public class LinstorUtil {
                     null,
                     null);
 
-            if (resWithVols != null) {
-                return resWithVols.stream()
-                        .allMatch(res -> {
-                            Volume vol0 = res.getVolumes().get(0);
-                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS ||
-                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
-                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
-                        } );
+            if (resWithVols == null || resWithVols.isEmpty()) {
+                LOGGER.warn("resourceSupportZeroBlocks: no resource view returned for {}; assuming blocks are not zeroed",
+                        resName);
+                return false;
             }
+
+            boolean sawDiskful = false;
+            for (ResourceWithVolumes res : resWithVols) {
+                List<Volume> volumes = res.getVolumes();
+                if (volumes == null || volumes.isEmpty()) {
+                    LOGGER.warn("resourceSupportZeroBlocks: resource {} reported no volumes; assuming blocks are not zeroed",
+                            resName);
+                    return false;
+                }
+                Volume vol0 = volumes.get(0);
+                ProviderKind kind = vol0 == null ? null : vol0.getProviderKind();
+                if (kind == null) {
+                    LOGGER.warn("resourceSupportZeroBlocks: resource {} reported no provider kind; assuming blocks are not zeroed",
+                            resName);
+                    return false;
+                }
+                if (kind == ProviderKind.DISKLESS) {
+                    // A diskless replica stores nothing locally, so it neither proves nor
+                    // disproves anything about the data; the diskful peers decide.
+                    continue;
+                }
+                if (kind != ProviderKind.LVM_THIN && kind != ProviderKind.ZFS && kind != ProviderKind.ZFS_THIN) {
+                    return false;
+                }
+                sawDiskful = true;
+            }
+            return sawDiskful;
         } catch (ApiException apiExc) {
             LOGGER.error(apiExc.getMessage());
         }
