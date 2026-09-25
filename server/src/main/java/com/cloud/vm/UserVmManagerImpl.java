@@ -60,6 +60,13 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.utils.Profiler;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -415,6 +422,8 @@ import com.google.gson.reflect.TypeToken;
 
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, Configurable {
+
+    private static final Tracer tracer = GlobalOpenTelemetry.getTracer("com.cloud.vm");
 
     /**
      * The number of seconds to wait before timing out when trying to acquire a global lock.
@@ -2513,28 +2522,77 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void loadVmDetailsInMapForExternalDhcpIp() {
+        try {
+            Profiler profiler = new Profiler();
+            profiler.start();
 
-        List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
-        networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
+            Span methodSpan = tracer.spanBuilder("startup.loadVmDetailsForExternalDhcpIp")
+                    .setAttribute("cloudstack.phase", "startup")
+                    .startSpan();
+            // Unlike the bean/module startup spans (never made current — see
+            // CloudStackExtendedLifeCycle.startBeans), we DO make phase=startup baggage
+            // current here so the OTel agent copies it onto the auto-instrumented DB child
+            // spans below (via BaggageSpanProcessor), tying this slow ~35-min scan's queries
+            // to the boot trace. Safe because this method schedules no periodic pollers of
+            // its own, and start()'s executors were scheduled before this scope, so no
+            // background task captured this baggage.
+            try (Scope methodScope = methodSpan.makeCurrent();
+                 Scope phaseScope = Baggage.current().toBuilder()
+                         .put("cloudstack.phase", "startup").build().makeCurrent()) {
+                List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+                networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
+                methodSpan.setAttribute("shared.network.count", networks.size());
+                Map<Long, Boolean> offeringWithoutServices = new HashMap<>();
+                int networksScanned = 0;
+                int nicsAdded = 0;
 
-        for (NetworkVO network: networks) {
-            if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
+                for (NetworkVO network: networks) {
+                    boolean withoutServices = GuestType.L2.equals(network.getGuestType())
+                            || _networkModel.isSharedNetworkWithoutServices(network.getId())
+                            || offeringWithoutServices.computeIfAbsent(network.getNetworkOfferingId(),
+                            offeringId -> _networkModel.listNetworkOfferingServices(offeringId).isEmpty());
+                    if (!withoutServices) {
+                        continue;
+                    }
+                    networksScanned++;
 
-                for (NicVO nic : nics) {
-                    if (nic.getIPv4Address() == null) {
-                        long nicId = nic.getId();
-                        long vmId = nic.getInstanceId();
-                        VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+                    Span networkSpan = tracer.spanBuilder("startup.loadVmDetails.network")
+                            .setAttribute("cloudstack.phase", "startup")
+                            .setAttribute("network.id", network.getId())
+                            .startSpan();
+                    try (Scope networkScope = networkSpan.makeCurrent()) {
+                        List<NicVO> nullIpNics = _nicDao.listByNetworkId(network.getId()).stream()
+                                .filter(nic -> nic.getIPv4Address() == null)
+                                .collect(Collectors.toList());
+                        if (nullIpNics.isEmpty()) {
+                            continue;
+                        }
 
                         // only load running vms. For stopped vms get loaded on starting
-                        if (vmInstance != null && vmInstance.getState() == State.Running) {
-                            VmAndCountDetails vmAndCount = new VmAndCountDetails(vmId, VmIpFetchTrialMax.value());
-                            vmIdCountMap.put(nicId, vmAndCount);
+                        List<Long> vmIds = nullIpNics.stream().map(NicVO::getInstanceId).distinct().collect(Collectors.toList());
+                        Map<Long, VMInstanceVO> runningVmsById = _vmInstanceDao.listByIds(vmIds).stream()
+                                .filter(vm -> vm != null && vm.getState() == State.Running)
+                                .collect(Collectors.toMap(VMInstanceVO::getId, vm -> vm));
+
+                        for (NicVO nic : nullIpNics) {
+                            if (runningVmsById.containsKey(nic.getInstanceId())) {
+                                vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
+                                nicsAdded++;
+                            }
                         }
+                    } finally {
+                        networkSpan.end();
                     }
                 }
+
+                profiler.stop();
+                logger.info("External-DHCP VM-IP map seeded: {} shared-without-service networks, {} nics added, took {} ms",
+                        networksScanned, nicsAdded, profiler.getDurationInMillis());
+            } finally {
+                methodSpan.end();
             }
+        } catch (Exception e) {
+            logger.error("Failed to seed external-DHCP VM-IP retrieval map", e);
         }
     }
 

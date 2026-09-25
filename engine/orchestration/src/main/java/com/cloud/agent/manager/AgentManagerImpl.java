@@ -43,6 +43,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.StringUtils;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -60,6 +63,7 @@ import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.trace.TracingLabels;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
@@ -1647,11 +1651,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             processHostHealthCheckResult(hostHealthCheckResult, hostId);
         }
 
+        @WithSpan(kind = SpanKind.SERVER)
         protected void processRequest(final Link link, final Request request) {
             final AgentAttache attache = (AgentAttache)link.attachment();
             final Command[] cmds = request.getCommands();
+            if (cmds == null || cmds.length == 0) {
+                logger.warn("Received request with no commands: {}", request);
+                return;
+            }
             Command cmd = cmds[0];
             boolean logD = true;
+
+            if (cmd != null && cmd.getContextParam("logid") != null) {
+                ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
+            }
+
+            setSpanAttributes(cmd, attache);
 
             if (attache == null) {
                 if (!(cmd instanceof StartupCommand)) {
@@ -1780,6 +1795,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } catch (final ClosedChannelException e) {
                 logger.error("Unable to send response because connection is closed: {}", response);
             }
+        }
+
+        private void setSpanAttributes(Command cmd, AgentAttache attache) {
+            final Span span = Span.current();
+            final String commandName = cmd != null ? cmd.getClass().getSimpleName() : "UNKNOWN";
+            span.updateName("agent.in." + commandName);
+            span.setAttribute(TracingLabels.TRAFFIC, TracingLabels.TRAFFIC_HYPERVISOR);
+            span.setAttribute(TracingLabels.AGENT_COMMAND, commandName);
+            span.setAttribute(TracingLabels.HOST_ID, attache != null ? attache.getId() : -1L);
+            span.setAttribute(TracingLabels.AGENT_CALL, true);
         }
 
         protected void processResponse(final Link link, final Response response) {

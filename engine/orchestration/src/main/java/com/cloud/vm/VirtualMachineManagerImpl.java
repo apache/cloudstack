@@ -50,6 +50,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -99,6 +103,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.trace.TracingLabels;
 import org.apache.cloudstack.utils.cache.SingleCache;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -6159,8 +6164,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
+    @WithSpan
     public Pair<JobInfo.Status, String> handleVmWorkJob(final VmWork work) throws Exception {
-        return _jobHandlerProxy.handleVmWorkJob(work);
+        Span span = setSpanAttributes(work);
+        final String op = work.getClass().getSimpleName();
+        final String vmId = String.valueOf(work.getVmId());
+        try (Scope ignored = Baggage.current().toBuilder()
+                .put(TracingLabels.TRAFFIC, TracingLabels.TRAFFIC_HYPERVISOR)
+                .put(TracingLabels.VM_OP, op)
+                .put(TracingLabels.VM_ID, vmId)
+                .build().makeCurrent()) {
+            final Pair<JobInfo.Status, String> result = _jobHandlerProxy.handleVmWorkJob(work);
+            final JobInfo.Status status = (result != null) ? result.first() : null;
+            span.setAttribute(TracingLabels.JOB_RESULT, status != null ? status.name() : "UNKNOWN");
+            return result;
+        }
+    }
+
+    private Span setSpanAttributes(final VmWork work) {
+        final Span span = Span.current();
+        final String op = work.getClass().getSimpleName();
+        final String vmId = String.valueOf(work.getVmId());
+        span.updateName(op);
+        span.setAttribute(TracingLabels.TRAFFIC, TracingLabels.TRAFFIC_HYPERVISOR);
+        span.setAttribute(TracingLabels.VM_OP, op);
+        span.setAttribute(TracingLabels.VM_ID, vmId);
+        span.setAttribute(TracingLabels.OP_ROOT, true);
+        return span;
     }
 
     private VmWorkJobVO createPlaceHolderWork(final long instanceId) {

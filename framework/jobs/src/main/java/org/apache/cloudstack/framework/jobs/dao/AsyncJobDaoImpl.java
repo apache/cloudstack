@@ -21,7 +21,9 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
+import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.context.LogContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -298,5 +300,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         }
         List<Long> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+    @Override
+    public AsyncJobVO persist(AsyncJobVO job) {
+        if (job.getContextJson() == null) {
+            job.setContextJson(new Gson().toJson(LogContext.current().getContextParameters()));
+        }
+        return super.persist(job);
     }
 }
