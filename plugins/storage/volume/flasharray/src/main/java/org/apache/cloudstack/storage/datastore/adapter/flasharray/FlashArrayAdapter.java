@@ -318,7 +318,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
         FlashArrayVolume volume = null;
         try {
-            volume = withAddressType(getVolume(externalName));
+            volume = getVolume(externalName);
             // if we didn't get an address back its likely an empty object
             if (volume != null && volume.getAddress() == null) {
                 return null;
@@ -501,10 +501,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         if (sourceDataObject.getType().equals(ProviderAdapterDataObject.Type.SNAPSHOT)) {
             currentVol = getSnapshot(sourceDataObject.getExternalName());
         } else {
-            currentVol = (FlashArrayVolume) this
-                    .getFlashArrayItem(GET("/volumes?names=" + sourceDataObject.getExternalName(),
-                            new TypeReference<FlashArrayList<FlashArrayVolume>>() {
-                            }));
+            currentVol = getVolume(sourceDataObject.getExternalName());
         }
 
         if (currentVol == null) {
@@ -523,7 +520,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 "/volumes?names=" + payload.getExternalName() + "&overwrite=true", payload,
                 new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
-        FlashArrayVolume outVolume = (FlashArrayVolume) getFlashArrayItem(list);
+        FlashArrayVolume outVolume = withAddressType((FlashArrayVolume) getFlashArrayItem(list));
         pause(postCopyWait);
         return outVolume;
     }
@@ -990,11 +987,17 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
     }
 
+    /**
+     * Look up a volume by name. The pool's address type is always stamped onto the
+     * result, so no caller can emit an FC-style WWN for a volume that lives on an
+     * NVMe-TCP pool (see {@link FlashArrayVolume#getAddress()}). The snapshot
+     * accessor below holds the same invariant.
+     */
     private FlashArrayVolume getVolume(String volumeName) {
         FlashArrayList<FlashArrayVolume> list = GET("/volumes?names=" + volumeName,
                 new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
-        return (FlashArrayVolume) getFlashArrayItem(list);
+        return withAddressType((FlashArrayVolume) getFlashArrayItem(list));
     }
 
     private FlashArrayPod getVolumeNamespace(String name) {
@@ -1325,9 +1328,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
             if (list != null && list.getItems() != null) {
                 for (FlashArrayConnection conn : list.getItems()) {
                     if (AddressType.NVMETCP.equals(volumeAddressType)) {
-                        // Host-group-scoped NVMe connections come back as one
-                        // entry per host in the group; key on the host name so
-                        // connid.<hostname> is matched in parseAndValidatePath.
+                        // Key on the host name so connid.<hostname> is matched by
+                        // parseAndValidatePath. NVMe-TCP reports an nsid where Fibre
+                        // Channel reports a lun; the connection itself is host-scoped
+                        // on both transports.
                         if (conn.getHost() != null && conn.getHost().getName() != null) {
                             String id = conn.getNsid() != null ? "" + conn.getNsid() : "1";
                             map.put(conn.getHost().getName(), id);
