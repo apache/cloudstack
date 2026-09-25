@@ -145,3 +145,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration_cycle` (
     UNIQUE KEY `uc_vmware_cbt_migration_cycle__migration_id__cycle_number` (`migration_id`, `cycle_number`),
     INDEX `i_vmware_cbt_migration_cycle__migration_id` (`migration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add custom labels to GUI themes
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.gui_themes', 'custom_labels_path', 'TEXT DEFAULT NULL');

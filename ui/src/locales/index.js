@@ -21,6 +21,7 @@ import { vueProps } from '@/vue-app'
 const FALLBACK_LANG = 'en'
 const loadedLanguage = []
 const messages = {}
+let systemLang
 
 export const i18n = createI18n({
   locale: FALLBACK_LANG,
@@ -47,6 +48,17 @@ function fetchLocale (lang) {
     .then(json => applyMessages(lang, json))
 }
 
+export function updateMessages (customPath) {
+  fetch(`${customPath}/${systemLang}.json`)
+    .then(response => response.json())
+    .then((data) => {
+      const keys = Object.keys(data)
+      keys.forEach(x => {
+        messages[systemLang][x] = data[x]
+      })
+    })
+}
+
 export function loadLanguageAsync (lang) {
   if (!lang) {
     const locale = vueProps.$localStorage.get('LOCALE')
@@ -67,5 +79,6 @@ export function loadLanguageAsync (lang) {
   // already has the translations and avoids a flash of raw keys.
   return ensureTarget.then(() => {
     i18n.global.locale = lang
+    systemLang = lang
   })
 }

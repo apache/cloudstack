@@ -122,6 +122,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         String description = cmd.getDescription();
         String css = cmd.getCss();
         String jsonConfiguration = cmd.getJsonConfiguration();
+        String customLabelsPath = cmd.getCustomLabelsPath();
         String commonNames = cmd.getCommonNames();
         String providedDomainIds = cmd.getDomainIds();
         String providedAccountIds = cmd.getAccountIds();
@@ -138,7 +139,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             isPublic = false;
         }
 
-        GuiThemeVO guiThemeVO = new GuiThemeVO(name, description, css, jsonConfiguration, recursiveDomains, isPublic, new Date(), cmd.getLoginBaseDomain(), null);
+        GuiThemeVO guiThemeVO = new GuiThemeVO(name, description, css, jsonConfiguration, customLabelsPath, recursiveDomains, isPublic, new Date(), cmd.getLoginBaseDomain(), null);
         guiThemeDao.persist(guiThemeVO);
         persistGuiThemeDetails(guiThemeVO.getId(), commonNames, providedDomainIds, providedAccountIds);
         return guiThemeJoinDao.findById(guiThemeVO.getId());
@@ -273,6 +274,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         String description = cmd.getDescription();
         String css = cmd.getCss();
         String jsonConfiguration = cmd.getJsonConfiguration();
+        String customLabelsPath = cmd.getCustomLabelsPath();
         String commonNames = cmd.getCommonNames() == null ? guiThemeJoinVO.getCommonNames() : cmd.getCommonNames();
         String providedDomainIds = cmd.getDomainIds() == null ? guiThemeJoinVO.getDomains() : cmd.getDomainIds();
         String providedAccountIds = cmd.getAccountIds() == null ? guiThemeJoinVO.getAccounts() : cmd.getAccountIds();
@@ -289,10 +291,10 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             isPublic = false;
         }
 
-        return persistGuiTheme(guiThemeId, name, description, css, jsonConfiguration, commonNames, providedDomainIds, providedAccountIds, isPublic, recursiveDomains, baseDomainName);
+        return persistGuiTheme(guiThemeId, name, description, css, jsonConfiguration, customLabelsPath, commonNames, providedDomainIds, providedAccountIds, isPublic, recursiveDomains, baseDomainName);
     }
 
-    protected GuiThemeJoinVO persistGuiTheme(Long guiThemeId, String name, String description, String css, String jsonConfiguration, String commonNames, String providedDomainIds,
+    protected GuiThemeJoinVO persistGuiTheme(Long guiThemeId, String name, String description, String css, String jsonConfiguration, String customLabelsPath, String commonNames, String providedDomainIds,
                                          String providedAccountIds, Boolean isPublic, Boolean recursiveDomains, String loginBaseDomain){
         return Transaction.execute((TransactionCallback<GuiThemeJoinVO>) status -> {
             GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
@@ -311,6 +313,10 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
             if (jsonConfiguration != null) {
                 guiThemeVO.setJsonConfiguration(jsonConfiguration);
+            }
+
+            if (customLabelsPath != null) {
+                guiThemeVO.setCustomLabelsPath(customLabelsPath);
             }
 
             if (isPublic != null) {

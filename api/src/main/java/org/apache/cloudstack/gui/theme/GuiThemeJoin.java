@@ -45,5 +45,7 @@ public interface GuiThemeJoin extends InternalIdentity, Identity {
 
     Date getRemoved();
 
+    String getCustomLabelsPath();
+
     String getLoginBaseDomain();
 }

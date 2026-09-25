@@ -116,14 +116,14 @@ fetch('config.json?ts=' + Date.now())
       })
     }
 
-    await applyCustomGuiTheme(accountid, domainid)
-
     loadLanguageAsync().then(() => {
-      vueApp.use(store)
-        .use(router)
-        .use(i18n)
-        .use(bootstrap)
-        .mount('#app')
+      applyCustomGuiTheme(accountid, domainid).finally(() => {
+        vueApp.use(store)
+          .use(router)
+          .use(i18n)
+          .use(bootstrap)
+          .mount('#app')
+      })
     })
   }).catch(error => {
     renderError(error)
