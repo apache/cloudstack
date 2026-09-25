@@ -43,7 +43,7 @@ repos:
         files: (?i)\.zip$
         exclude: ^core/src/test/resources/vhds/test\.vhd\.zip$
   - repo: https://github.com/oxipng/oxipng
-    rev: 340cd9878d8d8289f09fa101b48a8f5f0b7783f4 # frozen: v10.2.0
+    rev: 36f3ef8aac65ecf1761739ea2f2e530281f1312b # frozen: v10.2.1
     hooks:
       - id: oxipng
         name: run oxipng
