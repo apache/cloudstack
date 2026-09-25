@@ -1838,6 +1838,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
                 externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize, keepMacAddressOnPublicNic);
 
+        // For an isolated network a start/end IP defines a custom DHCP range within the CIDR that
+        // guest IPs are allocated from; without it the whole CIDR is used, which is the default.
+        if (ntwkOff.getGuestType() == GuestType.Isolated && StringUtils.isNotBlank(startIP)) {
+            storeIsolatedNetworkDhcpRange(network.getId(), startIP, endIP);
+        }
+
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
 
@@ -1870,6 +1876,27 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private boolean isNonVpcNetworkSupportingDynamicRouting(NetworkOffering networkOffering) {
         return !networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode();
+    }
+
+    protected void storeIsolatedNetworkDhcpRange(long networkId, String startIP, String endIP) {
+        NetworkVO network = _networksDao.findById(networkId);
+        String cidr = network.getCidr();
+        if (endIP == null) {
+            endIP = startIP;
+        }
+        if (!NetUtils.isIpWithInCidrRange(startIP, cidr) || !NetUtils.isIpWithInCidrRange(endIP, cidr)) {
+            throw new InvalidParameterValueException(String.format("The DHCP range %s-%s is not within the network CIDR %s", startIP, endIP, cidr));
+        }
+        if (NetUtils.ip2Long(startIP) > NetUtils.ip2Long(endIP)) {
+            throw new InvalidParameterValueException(String.format("The DHCP start IP %s is greater than the end IP %s", startIP, endIP));
+        }
+        String gateway = network.getGateway();
+        if (gateway != null && NetUtils.ip2Long(gateway) >= NetUtils.ip2Long(startIP) && NetUtils.ip2Long(gateway) <= NetUtils.ip2Long(endIP)) {
+            throw new InvalidParameterValueException(String.format("The DHCP range %s-%s must not include the gateway %s", startIP, endIP, gateway));
+        }
+        network.setDhcpStartIp(startIP);
+        network.setDhcpEndIp(endIP);
+        _networksDao.update(networkId, network);
     }
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {

@@ -1378,4 +1378,51 @@ public class NetworkServiceImplTest {
 
         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
     }
+
+    private NetworkVO isolatedNetworkForDhcpRange() {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getCidr()).thenReturn("10.1.1.0/24");
+        Mockito.when(network.getGateway()).thenReturn("10.1.1.1");
+        Mockito.when(networkDao.findById(5L)).thenReturn(network);
+        return network;
+    }
+
+    @Test
+    public void storeIsolatedNetworkDhcpRangeStoresAValidRange() {
+        NetworkVO network = isolatedNetworkForDhcpRange();
+
+        service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.10", "10.1.1.20");
+
+        Mockito.verify(network).setDhcpStartIp("10.1.1.10");
+        Mockito.verify(network).setDhcpEndIp("10.1.1.20");
+        Mockito.verify(networkDao).update(5L, network);
+    }
+
+    @Test
+    public void storeIsolatedNetworkDhcpRangeDefaultsEndToStart() {
+        NetworkVO network = isolatedNetworkForDhcpRange();
+
+        service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.10", null);
+
+        Mockito.verify(network).setDhcpStartIp("10.1.1.10");
+        Mockito.verify(network).setDhcpEndIp("10.1.1.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void storeIsolatedNetworkDhcpRangeRejectsRangeOutsideCidr() {
+        isolatedNetworkForDhcpRange();
+        service.storeIsolatedNetworkDhcpRange(5L, "10.2.2.10", "10.2.2.20");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void storeIsolatedNetworkDhcpRangeRejectsStartGreaterThanEnd() {
+        isolatedNetworkForDhcpRange();
+        service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.20", "10.1.1.10");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void storeIsolatedNetworkDhcpRangeRejectsRangeIncludingGateway() {
+        isolatedNetworkForDhcpRange();
+        service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.1", "10.1.1.20");
+    }
 }
