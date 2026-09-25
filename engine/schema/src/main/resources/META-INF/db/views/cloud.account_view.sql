@@ -90,8 +90,6 @@ from
         left join
     `cloud`.`data_center` ON account.default_zone_id = data_center.id
         left join
-    `cloud`.`account_netstats_view` ON account.id = account_netstats_view.account_id
-        left join
     `cloud`.`resource_limit` vmlimit ON account.id = vmlimit.account_id
         and vmlimit.type = 'user_vm' and vmlimit.tag IS NULL
         left join
