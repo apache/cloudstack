@@ -28,7 +28,9 @@ import java.util.Map;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesUsageHistoryCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.response.HostMetricsStatsResponse;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
@@ -43,7 +45,11 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.api.HostStatsEntryBase;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.HostStatsVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostStatsDao;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -57,6 +63,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmStatsDao;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -122,6 +130,10 @@ public class MetricsServiceImplTest {
     SearchCriteria<VolumeVO> volumeSearchCriteriaMock;
     @Mock
     Filter filterMock;
+    @Mock
+    HostStatsDao hostStatsDaoMock;
+    @Mock
+    HostVO hostVOMock;
 
 
     private void prepareSearchCriteriaWhenUseSetParameters() {
@@ -328,6 +340,104 @@ public class MetricsServiceImplTest {
         spy.findVmStatsAccordingToDateParams(fakeVmId1, null, null);
 
         Mockito.verify(vmStatsDaoMock).findByVmId(Mockito.anyLong());
+    }
+
+    @Test
+    public void searchForHostMetricsStatsInternalTestWithAPopulatedListOfHosts() {
+        Mockito.doReturn(new ArrayList<HostStatsVO>()).when(spy).findHostStatsAccordingToDateParams(
+                Mockito.anyLong(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(1L).when(hostVOMock).getId();
+        Map<Long, List<HostStatsVO>> expected = new HashMap<>();
+        expected.put(1L, new ArrayList<>());
+
+        Map<Long, List<HostStatsVO>> result = spy.searchForHostMetricsStatsInternal(null, null, Arrays.asList(hostVOMock));
+
+        Mockito.verify(spy).findHostStatsAccordingToDateParams(1L, null, null);
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void searchForHostMetricsStatsInternalTestWithAnEmptyListOfHosts() {
+        Map<Long, List<HostStatsVO>> result = spy.searchForHostMetricsStatsInternal(null, null, new ArrayList<>());
+
+        Mockito.verify(spy, Mockito.never()).findHostStatsAccordingToDateParams(
+                Mockito.anyLong(), Mockito.any(), Mockito.any());
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void searchForHostMetricsStatsInternalTestWithEndDateBeforeStartDate() {
+        Date startDate = new Date();
+
+        spy.searchForHostMetricsStatsInternal(startDate, DateUtils.addSeconds(startDate, -1), Arrays.asList(hostVOMock));
+    }
+
+    @Test
+    public void findHostStatsAccordingToDateParamsTestWithStartDateAndEndDate() {
+        Date startDate = new Date();
+        Date endDate = DateUtils.addSeconds(startDate, 1);
+
+        spy.findHostStatsAccordingToDateParams(1L, startDate, endDate);
+
+        Mockito.verify(hostStatsDaoMock).findByHostIdAndTimestampBetween(1L, startDate, endDate);
+    }
+
+    @Test
+    public void findHostStatsAccordingToDateParamsTestWithOnlyStartDate() {
+        Date startDate = new Date();
+
+        spy.findHostStatsAccordingToDateParams(1L, startDate, null);
+
+        Mockito.verify(hostStatsDaoMock).findByHostIdAndTimestampGreaterThanEqual(1L, startDate);
+    }
+
+    @Test
+    public void findHostStatsAccordingToDateParamsTestWithOnlyEndDate() {
+        Date endDate = new Date();
+
+        spy.findHostStatsAccordingToDateParams(1L, null, endDate);
+
+        Mockito.verify(hostStatsDaoMock).findByHostIdAndTimestampLessThanEqual(1L, endDate);
+    }
+
+    @Test
+    public void findHostStatsAccordingToDateParamsTestWithNoDate() {
+        spy.findHostStatsAccordingToDateParams(1L, null, null);
+
+        Mockito.verify(hostStatsDaoMock).findByHostId(1L);
+    }
+
+    @Test
+    public void createHostMetricsStatsResponseTestWithValidInput() {
+        Mockito.doReturn(1L).when(hostVOMock).getId();
+        Mockito.doReturn("host-uuid").when(hostVOMock).getUuid();
+        Mockito.doReturn("host-name").when(hostVOMock).getName();
+        Map<Long, List<HostStatsVO>> statsMap = new HashMap<>();
+        statsMap.put(1L, new ArrayList<>());
+
+        ListResponse<HostMetricsStatsResponse> result = spy.createHostMetricsStatsResponse(
+                new Pair<>(Arrays.asList(hostVOMock), 5), statsMap);
+
+        Assert.assertEquals(Integer.valueOf(5), result.getCount());
+        Assert.assertEquals(1, result.getResponses().size());
+    }
+
+    @Test
+    public void createHostStatsResponseTestMapsTheStoredValues() {
+        Date timestamp = new Date();
+        HostStatsEntryBase entry = new HostStatsEntryBase(1L, "host", 12.345, 0.5, 100.0, 200.0, 4096.0, 1024.0);
+        HostStatsVO hostStatsVO = new HostStatsVO(1L, 2L, timestamp, new Gson().toJson(entry));
+
+        List<StatsResponse> result = spy.createHostStatsResponse(Arrays.asList(hostStatsVO));
+
+        Assert.assertEquals(1, result.size());
+        JsonObject response = new Gson().toJsonTree(result.get(0)).getAsJsonObject();
+        Assert.assertTrue(response.has("timestamp"));
+        Assert.assertEquals("12.35%", response.get("cpuused").getAsString());
+        Assert.assertEquals(100L, response.get("networkkbsread").getAsLong());
+        Assert.assertEquals(200L, response.get("networkkbswrite").getAsLong());
+        Assert.assertEquals(4096L, response.get("memorykbs").getAsLong());
+        Assert.assertEquals(1024L, response.get("memoryintfreekbs").getAsLong());
     }
 
     @Test
