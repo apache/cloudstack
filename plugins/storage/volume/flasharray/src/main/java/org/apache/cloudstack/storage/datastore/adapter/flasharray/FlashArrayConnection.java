@@ -31,6 +31,8 @@ public class FlashArrayConnection {
     private FlashArrayVolume volume;
     @JsonProperty("lun")
     private Integer lun;
+    @JsonProperty("nsid")
+    private Integer nsid;
 
     public FlashArrayConnectionHostgroup getHostGroup() {
         return hostGroup;
@@ -64,5 +66,12 @@ public class FlashArrayConnection {
         this.lun = lun;
     }
 
+    public Integer getNsid() {
+        return nsid;
+    }
+
+    public void setNsid(Integer nsid) {
+        this.nsid = nsid;
+    }
 
 }

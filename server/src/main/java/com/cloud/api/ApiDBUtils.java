@@ -1355,7 +1355,8 @@ public class ApiDBUtils {
                            StoragePoolType.PowerFlex,
                            StoragePoolType.CLVM,
                            StoragePoolType.Linstor,
-                           StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
+                           StoragePoolType.FiberChannel,
+                           StoragePoolType.NVMeTCP).contains(pool.getPoolType())) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
