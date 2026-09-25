@@ -267,8 +267,9 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        // NVMe-oF: the kernel drops the namespace as soon as the target
-        // removes the host(-group) connection. No host-side action needed.
+        // NVMe-oF: the kernel drops the namespace as soon as the target removes
+        // this host's connection, so there is no host-side map to tear down the way
+        // Fibre Channel must flush its device-mapper entry.
         return true;
     }
 
@@ -286,7 +287,11 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format) {
-        throw new UnsupportedOperationException("Deletion of NVMe namespaces is the storage provider's responsibility");
+        // Namespaces are created and destroyed by the storage provider, never from the
+        // host. Report "not handled here" instead of throwing, so a caller on a cleanup
+        // path behaves the same as it does on the Fibre Channel adapter.
+        LOGGER.info("deletePhysicalDisk({}) not handled by the NVMe-oF adapter; the storage provider owns namespace deletion", uuid);
+        return false;
     }
 
     @Override
@@ -297,12 +302,15 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, QemuImg.PhysicalDiskFormat format, long size, KVMStoragePool destPool) {
-        throw new UnsupportedOperationException("Unimplemented method 'createTemplateFromDisk'");
+        LOGGER.info("createTemplateFromDisk not supported on NVMe-oF pools");
+        return null;
     }
 
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool) {
-        throw new UnsupportedOperationException("Unimplemented method 'listPhysicalDisks'");
+        // The array owns the namespace inventory; it is not enumerable from the host.
+        LOGGER.info("listPhysicalDisks not supported on NVMe-oF pool {}", storagePoolUuid);
+        return null;
     }
 
     @Override
@@ -376,7 +384,13 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
-        throw new UnsupportedOperationException("Unimplemented method 'createTemplateFromDirectDownloadFile'");
+        // Not supported yet. The equivalent Fibre Channel path resolves the downloaded
+        // file through destPool.getPhysicalDisk(), which on this adapter requires a
+        // "type=NVMETCP;address=..." volume path and so cannot describe a plain local
+        // file. Supporting direct-download templates needs a separate way to present
+        // the local file as the copy source.
+        throw new UnsupportedOperationException(
+                "Direct download templates are not supported on NVMe-oF pools; register the template via secondary storage instead");
     }
 
     @Override
@@ -386,12 +400,15 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean createFolder(String uuid, String path) {
-        throw new UnsupportedOperationException("Unimplemented method 'createFolder'");
+        return createFolder(uuid, path, null);
     }
 
     @Override
     public boolean createFolder(String uuid, String path, String localPath) {
-        throw new UnsupportedOperationException("Unimplemented method 'createFolder'");
+        // Block storage has no directory structure to create. Succeed rather than
+        // throw, matching the Fibre Channel adapter.
+        LOGGER.info("createFolder({}, {}, {}) is a no-op on NVMe-oF pools", uuid, path, localPath);
+        return true;
     }
 
     /**
