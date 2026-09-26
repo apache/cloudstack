@@ -20,6 +20,7 @@ package com.cloud.hypervisor.kvm.storage;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +34,7 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.TemplateDownloaderUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -382,15 +384,109 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
         throw new UnsupportedOperationException("Unimplemented method 'createDiskFromTemplateBacking'");
     }
 
+    /**
+     * Write a directly-downloaded template onto a namespace on this pool.
+     *
+     * The two path arguments are different kinds of thing, which is worth being explicit
+     * about: {@code templateFilePath} is a plain local file produced by the direct-download
+     * helper, while {@code destTemplatePath} is a managed volume path of the form
+     * {@code type=NVMETCP;address=...}. Only the destination may be resolved through
+     * {@link KVMStoragePool#getPhysicalDisk(String)}; passing the local file through it
+     * would hand a file name to {@link #parseAndValidatePath(String)} and fail. The caller
+     * has already issued connectPhysicalDisk() for the destination, so the namespace is
+     * expected to be present.
+     *
+     * The template is written as QCOW2 onto the raw namespace rather than as RAW. That
+     * matches the ScaleIO adaptor, is consistent with the QCOW2 format the template is
+     * registered with, and is what lets the Qcow2Inspector check the caller runs on the
+     * returned path succeed.
+     *
+     * Note what the caller does with the returned disk: KVMStorageProcessor puts
+     * {@code disk.getName()} into the DirectDownloadAnswer, and that becomes the template's
+     * install path and later its external name, which the provider interpolates into array
+     * REST calls. {@link #getPhysicalDisk(String, KVMStoragePool)} names a disk
+     * {@code AddressInfo.toString()}, which contains spaces and brackets and would produce
+     * a name that cannot be placed in a URI. So the disk handed back here is named with the
+     * managed volume path we were given, matching what a volume records.
+     */
     @Override
     public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
-        // Not supported yet. The equivalent Fibre Channel path resolves the downloaded
-        // file through destPool.getPhysicalDisk(), which on this adapter requires a
-        // "type=NVMETCP;address=..." volume path and so cannot describe a plain local
-        // file. Supporting direct-download templates needs a separate way to present
-        // the local file as the copy source.
-        throw new UnsupportedOperationException(
-                "Direct download templates are not supported on NVMe-oF pools; register the template via secondary storage instead");
+        if (StringUtils.isAnyEmpty(templateFilePath, destTemplatePath) || destPool == null) {
+            throw new CloudRuntimeException("Unable to create a template from a direct download file on an NVMe-oF pool: "
+                    + "template file path, destination template path or destination pool not specified");
+        }
+
+        if (!Storage.ImageFormat.QCOW2.equals(format) && !Storage.ImageFormat.RAW.equals(format)) {
+            throw new CloudRuntimeException("Unsupported direct download template format for NVMe-oF pools: " + format
+                    + "; expected " + Storage.ImageFormat.QCOW2 + " or " + Storage.ImageFormat.RAW);
+        }
+
+        File sourceFile = new File(templateFilePath);
+        if (!sourceFile.exists()) {
+            throw new CloudRuntimeException("Direct download template file " + templateFilePath + " does not exist on this host");
+        }
+
+        LOGGER.debug("Creating a template on NVMe-oF pool [{}] from direct download file [{}] into [{}], format [{}]",
+                destPool.getUuid(), templateFilePath, destTemplatePath, format);
+
+        String srcTemplateFilePath = templateFilePath;
+        KVMPhysicalDisk destDisk;
+        try {
+            destDisk = destPool.getPhysicalDisk(destTemplatePath);
+            if (destDisk == null || StringUtils.isEmpty(destDisk.getPath())) {
+                throw new CloudRuntimeException("Unable to resolve the NVMe namespace for destination template path ["
+                        + destTemplatePath + "] on pool [" + destPool.getUuid() + "]");
+            }
+
+            // Direct-download templates are commonly published compressed.
+            if (TemplateDownloaderUtil.isTemplateExtractable(templateFilePath)) {
+                srcTemplateFilePath = sourceFile.getParent() + "/" + UUID.randomUUID().toString();
+                LOGGER.debug("Extracting downloaded template [{}] to [{}]", templateFilePath, srcTemplateFilePath);
+                Script.runSimpleBashScript(TemplateDownloaderUtil.getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath));
+                Script.runSimpleBashScript("rm -f " + templateFilePath);
+            }
+
+            QemuImg.PhysicalDiskFormat srcFormat = Storage.ImageFormat.RAW.equals(format)
+                    ? QemuImg.PhysicalDiskFormat.RAW : QemuImg.PhysicalDiskFormat.QCOW2;
+
+            QemuImg qemu = new QemuImg(timeout);
+            QemuImgFile srcFile = new QemuImgFile(srcTemplateFilePath, srcFormat);
+            // Populates the virtual size, and fails early if the file is unreadable or is
+            // not in the format the template claims to be.
+            qemu.info(srcFile);
+
+            long namespaceSize = getPhysicalDiskSize(destDisk.getPath());
+            if (namespaceSize > 0 && srcFile.getSize() > namespaceSize) {
+                throw new CloudRuntimeException("Direct download template needs " + srcFile.getSize()
+                        + " bytes but the NVMe namespace at " + destDisk.getPath() + " is only " + namespaceSize + " bytes");
+            }
+
+            QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), QemuImg.PhysicalDiskFormat.QCOW2);
+            destFile.setSize(srcFile.getSize());
+
+            LOGGER.debug("Converting [{}] onto NVMe namespace [{}]", srcFile.getFileName(), destDisk.getPath());
+            qemu.create(destFile);
+            qemu.convert(srcFile, destFile);
+
+            KVMPhysicalDisk template = new KVMPhysicalDisk(destDisk.getPath(), destTemplatePath, destPool);
+            template.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+            template.setVirtualSize(srcFile.getSize());
+            template.setSize(srcFile.getSize());
+            destDisk = template;
+            LOGGER.info("Wrote direct download template onto NVMe namespace [{}] on pool [{}]",
+                    destDisk.getPath(), destPool.getUuid());
+        } catch (QemuImgException | LibvirtException e) {
+            throw new CloudRuntimeException("Failed to write the direct download template [" + templateFilePath
+                    + "] onto the NVMe namespace for [" + destTemplatePath + "] on pool [" + destPool.getUuid()
+                    + "]: " + e.getMessage(), e);
+        } finally {
+            // Only remove what we extracted; the original download belongs to the caller.
+            if (!srcTemplateFilePath.equals(templateFilePath)) {
+                Script.runSimpleBashScript("rm -f " + srcTemplateFilePath);
+            }
+        }
+
+        return destDisk;
     }
 
     @Override
