@@ -57,7 +57,7 @@ setup(name="Marvin",
           "ipmisim >= 0.7",
           "pytz",
           "retries",
-          "PyCrypt",
+          "pycryptodome",
           "kubernetes",
           "urllib3",
           "setuptools >= 40.3.0"
