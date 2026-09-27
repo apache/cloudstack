@@ -605,6 +605,12 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         return sb.toString();
     }
 
+    private static void recordQemuImg(List<String> calls, String cmdline) {
+        if (cmdline.startsWith("qemu-img")) {
+            calls.add(cmdline);
+        }
+    }
+
     private void stubEncryptedNfsRestore(String passphrase) {
         when(command.getVmName()).thenReturn("test-vm");
         when(command.getBackupPath()).thenReturn("backup/path");
@@ -637,10 +643,11 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
                 scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn("{\"encrypted\": true}");
+                // mount/umount also run through executeCommandForExitValue (#14006); only qemu-img matters here
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
-                        .thenAnswer(inv -> { qemuImgCalls.add(joinArgs(inv.getArguments(), 0)); return 0; });
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 0)); return 0; });
                 scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
-                        .thenAnswer(inv -> { qemuImgCalls.add(joinArgs(inv.getArguments(), 1)); return 0; });
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 1)); return 0; });
 
                 BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
 
@@ -724,12 +731,15 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
                 scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn("{\"encrypted\": true}");
+                List<String> qemuImgCalls = new ArrayList<>();
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 1)); return 0; });
 
                 BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
 
                 Assert.assertFalse(answer.getResult());
                 Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("LUKS-encrypted but no passphrase is configured"));
-                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)), Mockito.never());
+                Assert.assertTrue("no qemu-img command may run without a passphrase: " + qemuImgCalls, qemuImgCalls.isEmpty());
             }
         }
     }
