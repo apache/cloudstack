@@ -27,6 +27,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,6 +82,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
 
     @Mock
     private VMTemplateDao vmTemplateDao;
+
+    @Mock
+    ExtensionHelper extensionHelper;
 
     private UserVmJoinVO userVm = new UserVmJoinVO();
     private UserVmResponse userVmResponse = new UserVmResponse();

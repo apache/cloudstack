@@ -30,7 +30,15 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
 
     @Override
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
-        if (!serverResource.hostSupportsInstanceConversion()) {
+        if (cmd.isUseVddk()) {
+            if (!serverResource.hostSupportsVddk(cmd.getVddkLibDir())) {
+                String msg = String.format("Cannot convert the instance from VMware using VDDK on host %s. " +
+                                "Please make sure virt-v2v%s, nbdkit-vddk and a valid VDDK library directory are available on the host.",
+                        serverResource.getPrivateIp(), serverResource.isUbuntuOrDebianHost() ? ", nbdkit" : "");
+                logger.info(msg);
+                return new CheckConvertInstanceAnswer(cmd, false, msg);
+            }
+        } else if (!serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s. " +
                     "Please install virt-v2v%s on the host before attempting the instance conversion.", serverResource.getPrivateIp(), serverResource.isUbuntuOrDebianHost()? ", nbdkit" : "");
             logger.info(msg);

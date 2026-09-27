@@ -396,7 +396,13 @@ export default {
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
-      columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
+      columns: () => {
+        const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'egressdefaultpolicy', 'order']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(fields.length - 1, 0, { field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
+        }
+        return fields
+      },
       details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       customParamHandler: (params, query) => {

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -132,6 +133,20 @@ public class UpdateExtensionCmdTest {
     public void isCleanupDetailsReturnsValueWhenSet() {
         ReflectionTestUtils.setField(cmd, "cleanupDetails", Boolean.TRUE);
         assertTrue(cmd.isCleanupDetails());
+    }
+
+    @Test
+    public void getReservedResourceDetailsReturnsValueWhenSet() {
+        setField(cmd, "reservedResourceDetails", "detail1,detail2,detail3");
+        String result = cmd.getReservedResourceDetails();
+        assertEquals("detail1,detail2,detail3", result);
+    }
+
+    @Test
+    public void getReservedResourceDetailsReturnsNullWhenNotSet() {
+        setField(cmd, "reservedResourceDetails", null);
+        String result = cmd.getReservedResourceDetails();
+        assertNull(result);
     }
 
     @Test

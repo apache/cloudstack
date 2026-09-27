@@ -562,13 +562,35 @@ export default {
           }
         },
         {
+          title: 'label.linstor.apitoken',
+          key: 'primaryStorageLinstorApiToken',
+          placeHolder: 'message.linstor.apitoken.description',
+          required: false,
+          display: {
+            primaryStorageProtocol: 'Linstor'
+          }
+        },
+        {
+          title: 'label.linstor.ssl.insecure',
+          key: 'primaryStorageLinstorInsecureSsl',
+          switch: true,
+          checked: true,
+          required: false,
+          display: {
+            primaryStorageProtocol: 'Linstor'
+          }
+        },
+        {
           title: 'label.provider',
           key: 'provider',
           placeHolder: 'message.error.select',
           value: 'DefaultPrimary',
           select: true,
           required: true,
-          options: this.primaryStorageProviders
+          options: this.primaryStorageProviders,
+          hidden: {
+            primaryStorageProtocol: 'Linstor'
+          }
         },
         {
           title: 'label.ismanaged',

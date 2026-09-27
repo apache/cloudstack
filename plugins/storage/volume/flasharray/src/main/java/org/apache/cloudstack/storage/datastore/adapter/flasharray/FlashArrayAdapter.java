@@ -23,14 +23,18 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
@@ -61,6 +65,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,9 +90,16 @@ public class FlashArrayAdapter implements ProviderAdapter {
     private static final String API_LOGIN_VERSION_DEFAULT = "1.19";
     private static final String API_VERSION_DEFAULT = "2.23";
 
+    // URLs for which the legacy-auth deprecation WARN has already been emitted,
+    // so we don't spam the logs once per refresh per pool while it's still configured.
+    private static final Set<String> WARNED_LEGACY_URLS = ConcurrentHashMap.newKeySet();
+
     static final ObjectMapper mapper = new ObjectMapper();
     public String pod = null;
     public String hostgroup = null;
+    private static final DateTimeFormatter DELETION_TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+
     private String username;
     private String password;
     private String accessToken;
@@ -200,28 +212,63 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     @Override
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
-        // first make sure we are disconnected
-        removeVlunsAll(context, pod, dataObject.getExternalName());
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
-        FlashArrayVolume volume = new FlashArrayVolume();
+        // Snapshots live under /volume-snapshots and already use the array's
+        // reserved form <volume>.<suffix>, which legitimately contains ".".
+        // The stricter [A-Za-z0-9_-] naming rule applies to regular volume
+        // names and free-form rename targets, not to these reserved snapshot
+        // names. Since FlashArray snapshot names are system-defined rather
+        // than arbitrary rename targets, we skip the usual timestamped rename
+        // and only mark snapshots destroyed; the array's own ".N" suffix
+        // already disambiguates them in the recycle bin.
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            try {
+                FlashArrayVolume destroy = new FlashArrayVolume();
+                destroy.setDestroyed(true);
+                PATCH("/volume-snapshots?names=" + fullName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+            } catch (CloudRuntimeException e) {
+                String msg = e.getMessage();
+                if (msg != null && (msg.contains("No such volume or snapshot")
+                        || msg.contains("Volume does not exist"))) {
+                    return;
+                }
+                throw e;
+            }
+            return;
+        }
 
-        // rename as we delete so it doesn't conflict if the template or volume is ever recreated
-        // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
-        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
-        volume.setExternalName(fullName + "-" + timestamp);
+        // first make sure we are disconnected
+        removeVlunsAll(context, pod, dataObject.getExternalName());
+
+        // Rename then destroy: FlashArray keeps destroyed volumes in a recycle
+        // bin (default 24h) from which they can be recovered. Renaming with a
+        // deletion timestamp gives operators a forensic trail when browsing the
+        // array - they can see when each destroyed copy was deleted on the
+        // CloudStack side. FlashArray rejects a single PATCH that combines
+        // {name, destroyed}, so the rename and the destroy must be issued as
+        // two separate requests each carrying only its own field.
+        // Use UTC so the rename suffix is stable regardless of the management
+        // server's local timezone or DST changes - operators correlating the
+        // CloudStack delete event with the array's audit log get a consistent
+        // wall-clock value.
+        String timestamp = DELETION_TIMESTAMP_FORMAT.format(java.time.Instant.now());
+        String renamedName = fullName + "-" + timestamp;
 
         try {
-            PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume rename = new FlashArrayVolume();
+            rename.setExternalName(renamedName);
+            PATCH("/volumes?names=" + fullName, rename, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
 
-            // now delete it with new name
-            volume.setDestroyed(true);
-
-            PATCH("/volumes?names=" + fullName + "-" + timestamp, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume destroy = new FlashArrayVolume();
+            destroy.setDestroyed(true);
+            PATCH("/volumes?names=" + renamedName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
-            if (e.toString().contains("Volume does not exist")) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("Volume does not exist")) {
                 return;
             } else {
                 throw e;
@@ -453,16 +500,47 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public ProviderVolumeStorageStats getManagedStorageStats() {
         FlashArrayPod pod = getVolumeNamespace(this.pod);
-        // just in case
-        if (pod == null || pod.getFootprint() == 0) {
+        if (pod == null) {
             return null;
         }
         Long capacityBytes = pod.getQuotaLimit();
-        Long usedBytes = pod.getQuotaLimit() - (pod.getQuotaLimit() - pod.getFootprint());
+        if (capacityBytes == null || capacityBytes == 0) {
+            // Pod has no explicit quota set; report the array total physical
+            // capacity so the CloudStack allocator has a real ceiling to plan
+            // against rather than bailing out with a zero-capacity pool.
+            capacityBytes = getArrayTotalCapacity();
+        }
+        if (capacityBytes == null || capacityBytes == 0) {
+            return null;
+        }
+        Long usedBytes = pod.getFootprint();
+        if (usedBytes == null) {
+            usedBytes = 0L;
+        }
         ProviderVolumeStorageStats stats = new ProviderVolumeStorageStats();
         stats.setCapacityInBytes(capacityBytes);
         stats.setActualUsedInBytes(usedBytes);
         return stats;
+    }
+
+    private Long getArrayTotalCapacity() {
+        try {
+            FlashArrayList<Map<String, Object>> list = GET("/arrays?space=true",
+                    new TypeReference<FlashArrayList<Map<String, Object>>>() {
+                    });
+            if (list != null && CollectionUtils.isNotEmpty(list.getItems())) {
+                Object cap = list.getItems().get(0).get("capacity");
+                if (cap instanceof Number) {
+                    return ((Number) cap).longValue();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not retrieve total capacity for FlashArray [{}] (pod [{}]): {}",
+                    this.url, this.pod, e.getMessage());
+            logger.debug("Stack trace for array total capacity lookup failure on FlashArray [{}] (pod [{}])",
+                    this.url, this.pod, e);
+        }
+        return null;
     }
 
     @Override
@@ -516,6 +594,91 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     private String getAccessToken() {
         return accessToken;
+    }
+
+    /**
+     * Discover the latest supported Purity REST API version by hitting the unauthenticated
+     * {@code /api/api_version} endpoint (returns {@code {"version":["1.0",...,"2.36"]}}).
+     * The discovered version is stored on {@link #apiVersion}; on failure the caller-configured
+     * default remains in place.
+     */
+    private void fetchApiVersionFromPurity(CloseableHttpClient client) {
+        HttpGet vReq = new HttpGet(url + "/api_version");
+        CloseableHttpResponse vResp = null;
+        try {
+            vResp = client.execute(vReq);
+            if (vResp.getStatusLine().getStatusCode() == 200) {
+                JsonNode root = mapper.readTree(vResp.getEntity().getContent());
+                JsonNode versions = root.get("version");
+                if (versions != null && versions.isArray() && versions.size() > 0) {
+                    apiVersion = versions.get(versions.size() - 1).asText();
+                }
+            } else {
+                logger.warn("Unexpected HTTP " + vResp.getStatusLine().getStatusCode()
+                        + " from FlashArray [" + url + "] /api_version, falling back to default "
+                        + API_VERSION_DEFAULT);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to discover Purity REST API version from " + url
+                    + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
+        } finally {
+            if (vResp != null) {
+                try {
+                    vResp.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Exchange the operator-configured username/password for a long-lived Purity api-token
+     * via REST 1.x {@code /auth/apitoken}. Emits the once-per-URL deprecation WARN.
+     * @return the api-token to feed into the REST 2.x /login exchange.
+     */
+    private String getApiTokenUsingUserPass(CloseableHttpClient client) throws IOException {
+        if (WARNED_LEGACY_URLS.add(url)) {
+            logger.warn("FlashArray adapter at [" + url + "] is using deprecated username/password "
+                    + "login against Purity REST 1.x. Replace with a pre-minted "
+                    + ProviderAdapter.API_TOKEN_KEY + " detail; the username/password code path will be "
+                    + "removed in a future release.");
+        }
+        HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
+        ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
+        postParms.add(new BasicNameValuePair("username", username));
+        postParms.add(new BasicNameValuePair("password", password));
+        request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
+        CloseableHttpResponse response = null;
+        try {
+            response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
+                FlashArrayApiToken legacyToken = mapper.readValue(response.getEntity().getContent(),
+                        FlashArrayApiToken.class);
+                if (legacyToken == null || legacyToken.getApiToken() == null) {
+                    throw new CloudRuntimeException(
+                            "Authentication responded successfully but no api token was returned");
+                }
+                return legacyToken.getApiToken();
+            } else if (statusCode == 401 || statusCode == 403) {
+                throw new CloudRuntimeException(
+                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
+                                + "] failed, unable to retrieve session token");
+            } else {
+                throw new CloudRuntimeException(
+                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
+                                + "] - " + response.getStatusLine().getReasonPhrase());
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
+                }
+            }
+        }
     }
 
     private synchronized void refreshSession(boolean force) {
@@ -592,9 +755,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
 
         apiVersion = connectionDetails.get(FlashArrayAdapter.API_VERSION);
-        if (apiVersion == null) {
+        boolean apiVersionExplicit = apiVersion != null;
+        if (!apiVersionExplicit) {
             apiVersion = queryParms.get(FlashArrayAdapter.API_VERSION);
-            if (apiVersion == null) {
+            apiVersionExplicit = apiVersion != null;
+            if (!apiVersionExplicit) {
                 apiVersion = API_VERSION_DEFAULT;
             }
         }
@@ -661,72 +826,66 @@ public class FlashArrayAdapter implements ProviderAdapter {
             skipTlsValidation = true;
         }
 
+        // Resolve the long-lived API token. Prefer a pre-minted api_token (Purity REST 2.x flow);
+        // fall back to legacy username/password auth via Purity REST 1.x for backward compatibility.
+        String apiToken = connectionDetails.get(ProviderAdapter.API_TOKEN_KEY);
+        if (apiToken != null && apiToken.isEmpty()) {
+            apiToken = null;
+        }
+        boolean usingLegacyUserPass = apiToken == null;
+        if (usingLegacyUserPass && (username == null || password == null)) {
+            throw new CloudRuntimeException("FlashArray adapter requires either " + ProviderAdapter.API_TOKEN_KEY
+                    + " (preferred) or both " + ProviderAdapter.API_USERNAME_KEY + " and "
+                    + ProviderAdapter.API_PASSWORD_KEY + " in the connection details");
+        }
+
+        CloseableHttpClient client = getClient();
         CloseableHttpResponse response = null;
         try {
-            HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
-            // request.addHeader("Content-Type", "application/json");
-            // request.addHeader("Accept", "application/json");
-            ArrayList<NameValuePair> postParms = new ArrayList<NameValuePair>();
-            postParms.add(new BasicNameValuePair("username", username));
-            postParms.add(new BasicNameValuePair("password", password));
-            request.setEntity(new UrlEncodedFormEntity(postParms, "UTF-8"));
-            CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            FlashArrayApiToken apitoken = null;
-            if (statusCode == 200 | statusCode == 201) {
-                apitoken = mapper.readValue(response.getEntity().getContent(), FlashArrayApiToken.class);
-                if (apitoken == null) {
-                    throw new CloudRuntimeException(
-                            "Authentication responded successfully but no api token was returned");
-                }
-            } else if (statusCode == 401 || statusCode == 403) {
-                throw new CloudRuntimeException(
-                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                + "] failed, unable to retrieve session token");
-            } else {
-                throw new CloudRuntimeException(
-                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
-                                + "] - " + response.getStatusLine().getReasonPhrase());
+            // Discover the latest supported API version from the array unless one was explicitly configured.
+            // GET /api/api_version is unauthenticated and returns {"version":["1.0",...,"2.36"]}.
+            if (!apiVersionExplicit) {
+                fetchApiVersionFromPurity(client);
             }
 
-            // now we need to get the access token
-            request = new HttpPost(url + "/" + apiVersion + "/login");
-            request.addHeader("api-token", apitoken.getApiToken());
-            response = (CloseableHttpResponse) client.execute(request);
+            if (usingLegacyUserPass) {
+                apiToken = getApiTokenUsingUserPass(client);
+            }
 
-            statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode == 200 | statusCode == 201) {
+            // Exchange the long-lived api-token for a short-lived x-auth-token (REST 2.x).
+            HttpPost request = new HttpPost(url + "/" + apiVersion + "/login");
+            request.addHeader("api-token", apiToken);
+            response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200 || statusCode == 201) {
                 Header[] headers = response.getHeaders("x-auth-token");
                 if (headers == null || headers.length == 0) {
                     throw new CloudRuntimeException(
-                            "Getting access token responded successfully but access token was not available");
+                            "FlashArray /login responded successfully but no x-auth-token header was returned");
                 }
                 accessToken = headers[0].getValue();
             } else if (statusCode == 401 || statusCode == 403) {
                 throw new CloudRuntimeException(
-                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                + "] failed, unable to retrieve session token");
+                        "FlashArray [" + url + "] rejected the api-token at /" + apiVersion + "/login");
             } else {
                 throw new CloudRuntimeException(
-                        "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
-                                + "] - " + response.getStatusLine().getReasonPhrase());
+                        "Unexpected HTTP response code from FlashArray [" + url + "] /" + apiVersion
+                                + "/login - [" + statusCode + "] - "
+                                + response.getStatusLine().getReasonPhrase());
             }
-
         } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Error creating input for login, check username/password encoding");
+            throw new CloudRuntimeException("Error encoding login form for FlashArray [" + url + "]", e);
         } catch (UnsupportedOperationException e) {
             throw new CloudRuntimeException("Error processing login response from FlashArray [" + url + "]", e);
         } catch (IOException e) {
             throw new CloudRuntimeException("Error sending login request to FlashArray [" + url + "]", e);
         } finally {
-            try {
-                if (response != null) {
+            if (response != null) {
+                try {
                     response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing response from login attempt to FlashArray", e);
                 }
-            } catch (IOException e) {
-                logger.debug("Error closing response from login attempt to FlashArray", e);
             }
         }
     }
@@ -894,7 +1053,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.setEntity(new StringEntity(data));
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
 
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200 || statusCode == 201) {
@@ -949,7 +1108,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.addHeader("X-auth-token", getAccessToken());
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
                 try {
@@ -991,7 +1150,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
             request.addHeader("X-auth-token", getAccessToken());
 
             CloseableHttpClient client = getClient();
-            response = (CloseableHttpResponse) client.execute(request);
+            response = client.execute(request);
             final int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200 || statusCode == 404 || statusCode == 400) {
                 // this means the volume was deleted successfully, or doesn't exist (effective

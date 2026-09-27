@@ -538,7 +538,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
             dstSubRule.add(sb.toString());
             if (stickinessSubRule != null) {
-                sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort()).toString();
+                sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort());
                 dstWithCookieSubRule.add(sb.toString());
             }
             destsAvailable = true;
@@ -637,6 +637,19 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
             dSection.set(7, "\tno option httpclose");
+        }
+        if (lbCmd.idleTimeout > 0) {
+            dSection.set(9, "\ttimeout client     " + Long.toString(lbCmd.idleTimeout));
+            dSection.set(10, "\ttimeout server     " + Long.toString(lbCmd.idleTimeout));
+        } else if (lbCmd.idleTimeout == 0) {
+            // .remove() is not allowed, only .set() operations are allowed as the list
+            // is a fixed size.  So lets just mark the entry as blank.
+            dSection.set(9, "");
+            dSection.set(10, "");
+        } else {
+            // Negative idleTimeout values are considered invalid; retain the
+            // default HAProxy timeout values from defaultsSection for predictability.
+            logger.warn("Negative idleTimeout ({}) configured; retaining default HAProxy timeouts.", lbCmd.idleTimeout);
         }
 
         if (logger.isDebugEnabled()) {

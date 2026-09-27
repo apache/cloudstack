@@ -83,8 +83,8 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
     public void execute() {
         try {
             if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null) {
-                throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there are no parameters to be updated, at least one of the",
-                        "following should be informed: name, description or allowUserDrivenBackups.", id));
+                throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there are no parameters to be updated," +
+                        " at least one of the following should be passed: name, description or allowUserDrivenBackups.", id));
             }
 
             BackupOffering result = backupManager.updateBackupOffering(this);

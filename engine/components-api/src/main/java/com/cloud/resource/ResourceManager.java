@@ -122,6 +122,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 
+    boolean executeUserRequest(long hostId, ResourceState.Event event, boolean isForced, boolean isForceDeleteStorage) throws AgentUnavailableException;
+
     boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
 
     boolean umanageHost(long hostId);

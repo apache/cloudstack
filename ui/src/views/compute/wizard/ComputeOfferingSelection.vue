@@ -41,6 +41,8 @@
       <template #headerCell="{ column }">
         <template v-if="column.key === 'cpu'"><appstore-outlined /> {{ $t('label.cpu') }}</template>
         <template v-if="column.key === 'ram'"><bulb-outlined /> {{ $t('label.memory') }}</template>
+        <template v-if="column.key === 'hosttags'"><tag-outlined /> {{ $t('label.hosttags') }}</template>
+        <template v-if="column.key === 'storagetags'"><tag-outlined /> {{ $t('label.storagetags') }}</template>
         <template v-if="column.key === 'gpu'"><font-awesome-icon
               :icon="['fa-solid', 'fa-microchip']"
               class="anticon"
@@ -197,6 +199,22 @@ export default {
         })
       }
 
+      if (this.computeItems.some(item => item.hosttags !== undefined && item.hosttags !== null)) {
+        baseColumns.push({
+          key: 'hosttags',
+          dataIndex: 'hosttags',
+          width: '30%'
+        })
+      }
+
+      if (this.computeItems.some(item => item.storagetags !== undefined && item.storagetags !== null)) {
+        baseColumns.push({
+          key: 'storagetags',
+          dataIndex: 'storagetags',
+          width: '30%'
+        })
+      }
+
       return baseColumns
     },
     tableSource () {
@@ -256,6 +274,7 @@ export default {
           }
           gpuValue = gpuCount + ' x ' + gpuType
         }
+
         return {
           key: item.id,
           name: item.name,
@@ -267,7 +286,9 @@ export default {
           gpuCount: gpuCount,
           gpuType: gpuType,
           gpu: gpuValue,
-          gpuDetails: this.getGpuDetails(item)
+          gpuDetails: this.getGpuDetails(item),
+          hosttags: item.hosttags !== undefined && item.hosttags !== null ? item.hosttags : undefined,
+          storagetags: item.storagetags !== undefined && item.storagetags !== null ? item.storagetags : undefined
         }
       })
     },

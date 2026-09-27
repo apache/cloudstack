@@ -66,7 +66,7 @@ public class BackupVO implements Backup {
     private String externalId;
 
     @Column(name = "type")
-    private String backupType;
+    private String type;
 
     @Column(name = "date")
     @Temporal(value = TemporalType.DATE)
@@ -113,7 +113,7 @@ public class BackupVO implements Backup {
     @Override
     public String toString() {
         return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "vmId", "backupType", "externalId"));
+                this, "id", "uuid", "vmId", "type", "externalId"));
     }
 
     @Override
@@ -145,11 +145,11 @@ public class BackupVO implements Backup {
     }
 
     public String getType() {
-        return backupType;
+        return type;
     }
 
     public void setType(String type) {
-        this.backupType = type;
+        this.type = type;
     }
 
     @Override

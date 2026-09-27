@@ -92,7 +92,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     @Parameter(name = ApiConstants.DISK_PATH,
             type = CommandType.STRING,
-            description = "path of the disk image")
+            description = "path of the disk image. It is the file name on file based storage pools (NFS, Local, SharedMountPoint), and the image name on RBD storage pools")
     private String diskPath;
 
     @Parameter(name = ApiConstants.IMPORT_SOURCE,
@@ -179,6 +179,14 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
     private Long guestOsId;
 
+    @Parameter(name = ApiConstants.USE_VDDK,
+            type = CommandType.BOOLEAN,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
+    private Boolean useVddk;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -253,6 +261,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public Long getStoragePoolId() {
         return storagePoolId;
+    }
+
+    public boolean getUseVddk() {
+        return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
     }
 
     public String getTmpPath() {

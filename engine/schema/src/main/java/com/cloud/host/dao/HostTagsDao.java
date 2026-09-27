@@ -45,4 +45,9 @@ public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
     HostTagResponse newHostTagResponse(HostTagVO hostTag);
 
     List<HostTagVO> searchByIds(Long... hostTagIds);
+
+    /**
+     * List all host tags defined on hosts within a cluster
+     */
+    List<String> listByClusterId(Long clusterId);
 }

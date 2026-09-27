@@ -51,6 +51,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.LinstorStoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -78,8 +79,25 @@ public class LinstorUtil {
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
 
     public static DevelopersApi getLinstorAPI(String linstorUrl) {
+        return getLinstorAPI(linstorUrl, null, false);
+    }
+
+    public static DevelopersApi getLinstorAPI(String linstorUrl, String apiToken) {
+        return getLinstorAPI(linstorUrl, apiToken, false);
+    }
+
+    public static DevelopersApi getLinstorAPI(String linstorUrl, String apiToken, boolean insecureSsl) {
         ApiClient client = new ApiClient();
         client.setBasePath(linstorUrl);
+        // An explicit (non-empty) token wins; otherwise the client falls back to the auth.json file
+        // on the local host (used on the agent side). No token at all -> unauthenticated controller.
+        client.setAccessTokenWithFallback(apiToken);
+        // Trust self-signed/untrusted controller certificates when explicitly allowed (rebuilds the
+        // http client, so set this before discovering HTTPS).
+        if (insecureSsl) {
+            client.setInsecureSsl();
+        }
+        client.discoverHttps();
         return new DevelopersApi(client);
     }
 
@@ -224,8 +242,8 @@ public class LinstorUtil {
         );
     }
 
-    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
-        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+    public static long getCapacityBytes(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
             List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
 
@@ -239,8 +257,8 @@ public class LinstorUtil {
         }
     }
 
-    public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName) {
-        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+    public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
             List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
 
@@ -505,7 +523,8 @@ public class LinstorUtil {
      * @return true if all resources are on a provider with zeroed blocks.
      */
     public static boolean resourceSupportZeroBlocks(KVMStoragePool pool, String resName) {
-        final DevelopersApi api = getLinstorAPI(pool.getSourceHost());
+        final boolean insecureSsl = pool instanceof LinstorStoragePool && ((LinstorStoragePool) pool).isInsecureSsl();
+        final DevelopersApi api = getLinstorAPI(pool.getSourceHost(), null, insecureSsl);
         try {
             List<ResourceWithVolumes> resWithVols = api.viewResources(
                     Collections.emptyList(),
@@ -760,7 +779,9 @@ public class LinstorUtil {
 
     public static String createResource(VolumeInfo vol, StoragePoolVO storagePoolVO,
                                         PrimaryDataStoreDao primaryDataStoreDao, boolean exactSize) {
-        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
+        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(storagePoolVO.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePoolVO.getId())));
         final String rscGrp = getRscGrp(storagePoolVO);
 
         final String rscName = LinstorUtil.RSC_PREFIX + vol.getUuid();
