@@ -56,6 +56,7 @@
         <template v-if="column.key === 'actions'">
           <template v-if="editingRuleId === record.id">
             <tooltip-button
+              key="save"
               :tooltip="$t('label.save')"
               type="primary"
               icon="check-outlined"
@@ -63,24 +64,28 @@
               :loading="editSubmitLoading"
               @click="saveEditRule(record)" />
             <tooltip-button
+              key="cancel"
               :tooltip="$t('label.cancel')"
               icon="close-outlined"
               @click="cancelEditRule" />
           </template>
           <template v-else-if="record.inherited">
             <tooltip-button
+              key="inherited"
               :tooltip="$t('message.inherited.readiness.rule')"
               :disabled="true"
               icon="delete-outlined" />
           </template>
           <template v-else>
             <tooltip-button
+              key="edit"
               :tooltip="$t('label.edit.readiness.rule')"
               icon="edit-outlined"
               style="margin-right: 5px"
               :disabled="editingRuleId !== null"
               @click="startEditRule(record)" />
             <a-popconfirm
+              key="delete"
               placement="topRight"
               :title="$t('message.confirm.delete.readiness.rule')"
               :ok-text="$t('label.yes')"
