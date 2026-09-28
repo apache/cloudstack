@@ -64,7 +64,6 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     float findClusterConsumption(Long clusterId, short capacityType, long computeRequested);
 
-
     Pair<List<Long>, Map<Long, Double>> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityType);
 
     List<CapacityVO> listHostCapacityByCapacityTypes(Long zoneId, Long clusterId, List<Short> capacityTypes);
