@@ -461,8 +461,25 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, getImageFormat(volume.getFormat()));
         return volumeDao.findById(diskProfile.getVolumeId());
+    }
+
+    /**
+     * Maps the format the hypervisor reported for the volume on the pool onto an image format, so that
+     * the imported volume records what is actually on the pool (raw on RBD, qcow2 on file based pools)
+     * instead of the cluster default for the hypervisor. Returns null when the format is not recognised.
+     */
+    protected Storage.ImageFormat getImageFormat(String format) {
+        if (StringUtils.isBlank(format)) {
+            return null;
+        }
+        try {
+            return Storage.ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unrecognised image format {} reported for the volume being imported, falling back to the hypervisor default", format);
+            return null;
+        }
     }
 
     protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume, DiskOfferingVO diskOffering, List<Reserver> reservations) {
