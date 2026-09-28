@@ -154,3 +154,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_alert_rules_webhook` (
     CONSTRAINT `fk_resource_alert_rules_webhook__rule_id` FOREIGN KEY (`resource_alert_rule_id`) REFERENCES `resource_alert_rules`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_resource_alert_rules_webhook__webhook_id` FOREIGN KEY (`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- webhook_delivery: allow deliveries that are not tied to a stored event, such as resource alerts
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.webhook_delivery', 'event_id', 'event_id', 'bigint unsigned COMMENT "id of the event"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.webhook_delivery', 'event_type', 'varchar(255) COMMENT "type of the event when the delivery is not tied to a stored event"');

@@ -114,7 +114,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, DeliveryConfig config) {
         WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
-                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(), webhook.getId());
+                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(),
+                        event.getEventType(), webhook.getId());
         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                 AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deliveryCompleteCallback(null, null))
@@ -245,13 +246,18 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         String eventUuid = UUID.randomUUID().toString();
         String description = payload;
         String resourceAccountUuid = null;
-        if (existingDelivery != null) {
+        if (existingDelivery != null && existingDelivery.getEventId() != null) {
             EventJoinVO eventJoinVO = eventJoinDao.findById(existingDelivery.getEventId());
             eventId = eventJoinVO.getId();
             eventType = eventJoinVO.getType();
             eventUuid = eventJoinVO.getUuid();
             description = existingDelivery.getPayload();
             resourceAccountUuid = eventJoinVO.getAccountUuid();
+        } else if (existingDelivery != null) {
+            eventType = existingDelivery.getEventType();
+            description = existingDelivery.getPayload();
+            Account account = accountManager.getAccount(webhook.getAccountId());
+            resourceAccountUuid = account.getUuid();
         } else {
             Account account = accountManager.getAccount(webhook.getAccountId());
             resourceAccountUuid = account.getUuid();
@@ -300,10 +306,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 continue;
             }
             WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
-                    new WebhookDeliveryThread.WebhookDeliveryContext<>(null, null, webhook.getId());
+                    new WebhookDeliveryThread.WebhookDeliveryContext<>(null, null, eventType, webhook.getId());
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                     AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().directDeliveryCompleteCallback(null, null))
+            caller.setCallback(caller.getTarget().deliveryCompleteCallback(null, null))
                     .setContext(context);
             WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
             job = ComponentContext.inject(job);
@@ -313,25 +319,12 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return jobs;
     }
 
-    // Not persisted: webhook_delivery.event_id must reference a row in the event table.
-    protected Void directDeliveryCompleteCallback(
-            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
-            WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
-        WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
-        if (result.isSuccess()) {
-            logger.debug("Delivered alert to webhook ID: {}", context.getRuleId());
-        } else {
-            logger.warn("Failed to deliver alert to webhook ID: {} due to: {}", context.getRuleId(), result.getResult());
-        }
-        return null;
-    }
-
     protected Void deliveryCompleteCallback(
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
             WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
         WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
-        WebhookDeliveryVO deliveryVO = new WebhookDeliveryVO(context.getEventId(), context.getRuleId(),
-                ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+        WebhookDeliveryVO deliveryVO = new WebhookDeliveryVO(context.getEventId(), context.getEventType(),
+                context.getRuleId(), ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
                 result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
         webhookDeliveryDao.persist(deliveryVO);
         return null;
@@ -486,8 +479,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         try {
             result = future.get();
             if (delivery != null) {
-                webhookDeliveryVO = new WebhookDeliveryVO(delivery.getEventId(), delivery.getWebhookId(),
-                        ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+                webhookDeliveryVO = new WebhookDeliveryVO(delivery.getEventId(), delivery.getEventType(),
+                        delivery.getWebhookId(), ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
                         result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
                 webhookDeliveryVO = webhookDeliveryDao.persist(webhookDeliveryVO);
             } else {

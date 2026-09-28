@@ -48,7 +48,7 @@ public class WebhookDeliveryJoinVO extends BaseViewVO implements InternalIdentit
     private String uuid;
 
     @Column(name = "event_id")
-    private long eventId;
+    private Long eventId;
 
     @Column(name = "event_uuid")
     private String eventUuid;
@@ -107,7 +107,7 @@ public class WebhookDeliveryJoinVO extends BaseViewVO implements InternalIdentit
         return uuid;
     }
 
-    public long getEventId() {
+    public Long getEventId() {
         return eventId;
     }
 

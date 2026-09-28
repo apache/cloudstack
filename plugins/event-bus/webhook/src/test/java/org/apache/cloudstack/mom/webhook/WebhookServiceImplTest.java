@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -499,6 +500,48 @@ public class WebhookServiceImplTest {
         webhookServiceImpl.deliveryCompleteCallback(callback, context);
 
         Mockito.verify(webhookDeliveryDao, Mockito.times(1)).persist(Mockito.any(WebhookDeliveryVO.class));
+    }
+
+    @Test
+    public void deliveryCompleteCallbackPersistsDeliveryWithoutStoredEvent() {
+        WebhookDeliveryThread.WebhookDeliveryResult result = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+        WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context =
+                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, null, "RESOURCE.ALERT", 456L);
+        Mockito.when(result.isSuccess()).thenReturn(false);
+        Mockito.when(result.getResult()).thenReturn("connection refused");
+        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
+        Mockito.when(callback.getResult()).thenReturn(result);
+
+        webhookServiceImpl.deliveryCompleteCallback(callback, context);
+
+        ArgumentCaptor<WebhookDeliveryVO> captor = ArgumentCaptor.forClass(WebhookDeliveryVO.class);
+        Mockito.verify(webhookDeliveryDao).persist(captor.capture());
+        Assert.assertNull(captor.getValue().getEventId());
+        Assert.assertEquals("RESOURCE.ALERT", captor.getValue().getEventType());
+        Assert.assertEquals(456L, captor.getValue().getWebhookId());
+        Assert.assertFalse(captor.getValue().isSuccess());
+    }
+
+    @Test
+    public void getManualDeliveryJobRedeliversDeliveryWithoutStoredEvent() {
+        WebhookDelivery existingDelivery = Mockito.mock(WebhookDelivery.class);
+        Webhook webhook = Mockito.mock(Webhook.class);
+        Account account = Mockito.mock(Account.class);
+        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+        Mockito.when(existingDelivery.getEventId()).thenReturn(null);
+        Mockito.when(existingDelivery.getEventType()).thenReturn("RESOURCE.ALERT");
+        Mockito.when(existingDelivery.getPayload()).thenReturn("{\"event\":\"RESOURCE.ALERT\"}");
+        Mockito.when(webhook.getAccountId()).thenReturn(1L);
+        Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+        Mockito.when(account.getUuid()).thenReturn("account-uuid");
+
+        Runnable job = webhookServiceImpl.getManualDeliveryJob(existingDelivery, webhook, null, null, future);
+
+        Event event = (Event) ReflectionTestUtils.getField(job, "event");
+        Assert.assertEquals("RESOURCE.ALERT", event.getEventType());
+        Assert.assertEquals("{\"event\":\"RESOURCE.ALERT\"}", event.getDescription());
+        Assert.assertEquals("account-uuid", event.getResourceAccountUuid());
+        Mockito.verify(eventJoinDao, Mockito.never()).findById(Mockito.anyLong());
     }
 
     @Test
