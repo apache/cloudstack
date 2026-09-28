@@ -1953,6 +1953,21 @@ public class NetworkServiceImplTest {
         service.disassociateNetworkFromNic(mockDisassociateCmd(11L, 206L));
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void disassociateNetworkFromNicFailsWhenAssociationIpHasActiveStaticNat() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, true);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(vm.getId()).thenReturn(5L);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.3.1.25", null);
+        Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(association);
+        IPAddressVO staticNatIp = Mockito.mock(IPAddressVO.class);
+        Mockito.when(ipAddressDao.findByAssociatedVmIdAndVmIp(5L, "10.3.1.25")).thenReturn(staticNatIp);
+
+        service.disassociateNetworkFromNic(mockDisassociateCmd(11L, 206L));
+    }
+
     @Test
     public void disassociateNetworkFromNicRemovesAssociationOnAStoppedVm() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, true);

@@ -949,7 +949,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         "Can't disassociate network %s, its allocated ip %s is associated with a port forwarding rule", networkId, ip4Address));
             }
         }
-        IPAddressVO publicIpVO = _ipAddressDao.findByIpAndNetworkId(networkId, ip4Address);
+        IPAddressVO publicIpVO = _ipAddressDao.findByAssociatedVmIdAndVmIp(vmId, ip4Address);
         if (publicIpVO != null) {
             throw new InvalidParameterValueException(String.format(
                     "Can't disassociate network %s, its allocated ip %s is associated with static NAT rule public IP address ID: %s", networkId, ip4Address, publicIpVO));
