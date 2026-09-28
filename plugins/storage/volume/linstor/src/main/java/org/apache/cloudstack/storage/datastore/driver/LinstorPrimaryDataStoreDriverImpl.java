@@ -251,7 +251,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         try
         {
-            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList());
+            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList(), null);
             if (answers.hasError())
             {
                 for (ApiCallRc answer : answers)
@@ -435,6 +435,25 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                         String utf8Passphrase = new String(volumeInfo.getPassphrase(), StandardCharsets.UTF_8);
                         cloneRequest.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
                     }
+                } else {
+                    // pin the clone target to the resource group's layer stack (e.g. STORAGE on
+                    // shared pools); otherwise the target can end up with a default DRBD stack
+                    // that has no common clone strategy with the source
+                    List<LayerType> rgLayers = LinstorUtil.getRscGrpLayerList(
+                            linstorApi, LinstorUtil.getRscGrp(storagePoolVO));
+                    if (!rgLayers.isEmpty()) {
+                        cloneRequest.setLayerList(rgLayers);
+                    }
+                }
+                // Shared storage pool templates are INACTIVE while unused (e.g. after a node
+                // reboot) and the clone source selection skips inactive resources. Activate one
+                // diskful resource and leave it active: concurrent clones share the source, so
+                // deactivating after a clone would race with other clones still using it.
+                final String activateNode = LinstorUtil.getDiskfulNodeToActivate(linstorApi, cloneRes);
+                if (activateNode != null) {
+                    logger.info("Linstor: activating template resource {} on {} for cloning",
+                            cloneRes, activateNode);
+                    LinstorUtil.checkLinstorAnswersThrow(linstorApi.activateRsc(cloneRes, activateNode));
                 }
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
                     cloneRes, cloneRequest);
@@ -661,18 +680,19 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             VirtualMachineManager.ExecuteInSequence.value());
 
         final StoragePool pool = (StoragePool) volumeInfo.getDataStore();
-        Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, pool, rscName);
-        if (optEP.isEmpty()) {
-            optEP = getLinstorEP(linstorApi, pool, rscName);
-        }
-
-        if (optEP.isPresent()) {
-            Answer answer = optEP.get().sendMessage(cmd);
-            if (!answer.getResult()) {
-                resultMsg = answer.getDetails();
-            }
+        Host diskfulHost = getDiskfullHost(linstorApi, pool, rscName);
+        Answer answer;
+        if (diskfulHost != null) {
+            answer = sendWithRscActivated(linstorApi, rscName, diskfulHost, cmd);
         } else {
-            resultMsg = "Unable to get matching Linstor endpoint.";
+            Optional<RemoteHostEndPoint> optEP = getLinstorEP(linstorApi, pool, rscName);
+            if (optEP.isEmpty()) {
+                return "Unable to get matching Linstor endpoint.";
+            }
+            answer = optEP.get().sendMessage(cmd);
+        }
+        if (!answer.getResult()) {
+            resultMsg = answer.getDetails();
         }
         return resultMsg;
     }
@@ -855,20 +875,55 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return Optional.empty();
     }
 
-    private Optional<RemoteHostEndPoint> getDiskfullEP(DevelopersApi api, StoragePool storagePool, String rscName)
+    private Host getDiskfullHost(DevelopersApi api, StoragePool storagePool, String rscName)
             throws ApiException {
-        List<com.linbit.linstor.api.model.StoragePool> linSPs = LinstorUtil.getDiskfulStoragePools(api, rscName);
-        if (linSPs != null) {
-            List<String> linstorNodeNames = linSPs.stream()
-                    .map(com.linbit.linstor.api.model.StoragePool::getNodeName)
-                    .collect(Collectors.toList());
-            Host host = getEnabledClusterHost(storagePool, linstorNodeNames);
+        // Take the first diskful copy whose host can be used: the copies are ordered by how
+        // suited they are (in use, then active, then inactive), and for shared storage pools
+        // only the active node may be read, so the order must not be broken here.
+        for (com.linbit.linstor.api.model.StoragePool linSP
+                : LinstorUtil.getDiskfulStoragePoolsByPreference(api, rscName)) {
+            Host host = getEnabledClusterHost(storagePool, Collections.singletonList(linSP.getNodeName()));
             if (host != null) {
-                return Optional.of(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
+                return host;
             }
+            logger.debug("Linstor: no usable cloudstack host for diskful node {}, trying next copy",
+                    linSP.getNodeName());
         }
         logger.error("Linstor: No diskfull host found.");
-        return Optional.empty();
+        return null;
+    }
+
+    /**
+     * Send the given command to the host, temporarily activating the resource there if it is
+     * inactive (e.g. a shared storage pool resource of a stopped VM). Activation goes through
+     * the Linstor controller, so the shared-space activation lock is honored; the agent itself
+     * must only activate/deactivate the snapshot LV, never the resource.
+     */
+    private Answer sendWithRscActivated(DevelopersApi api, String rscName, Host host, CopyCommand cmd)
+            throws ApiException {
+        boolean activated = false;
+        if (LinstorUtil.isResourceInactiveOnNode(api, rscName, host.getName())) {
+            ApiCallRcList answers = api.activateRsc(rscName, host.getName());
+            if (answers.hasError()) {
+                throw new CloudRuntimeException(String.format(
+                        "Linstor: Unable to activate resource %s on node %s: %s",
+                        rscName, host.getName(), LinstorUtil.getBestErrorMessage(answers)));
+            }
+            activated = true;
+        }
+        try {
+            return RemoteHostEndPoint.getHypervisorHostEndPoint(host).sendMessage(cmd);
+        } finally {
+            if (activated) {
+                ApiCallRcList answers = api.deactivateRsc(rscName, host.getName());
+                if (answers.hasError()) {
+                    // don't fail the copy over cleanup, but a stray active resource on a shared
+                    // storage pool must be visible in the logs
+                    logger.error("Linstor: Unable to deactivate resource {} on node {}: {}",
+                            rscName, host.getName(), LinstorUtil.getBestErrorMessage(answers));
+                }
+            }
+        }
     }
 
     private String restoreResourceFromSnapshot(
@@ -921,8 +976,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         TemplateInfo tInfo = (TemplateInfo) dstData;
         final StoragePoolVO pool = _storagePoolDao.findById(dstData.getDataStore().getId());
         final DevelopersApi api = getLinstorAPI(pool);
-        final String rscName = LinstorUtil.RSC_PREFIX + dstData.getUuid();
-        boolean newCreated = LinstorUtil.createResourceBase(
+        Pair<String, Boolean> crResult = LinstorUtil.createResourceBase(
             LinstorUtil.RSC_PREFIX + dstData.getUuid(),
             tInfo.getSize(),
             tInfo.getName(),
@@ -936,7 +990,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             false);
 
         Answer answer;
-        if (newCreated) {
+        boolean newRscCreated = crResult.second();
+        if (newRscCreated) {
+            String newRscName = crResult.first();
             int nMaxExecutionMinutes = NumbersUtil.parseInt(
                     _configDao.getValue(Config.SecStorageCmdExecutionTimeMax.key()), 30);
             CopyCommand cmd = new CopyCommand(
@@ -946,16 +1002,16 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     VirtualMachineManager.ExecuteInSequence.value());
 
             try {
-                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, rscName);
+                Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, pool, newRscName);
                 if (optEP.isPresent()) {
                     answer = optEP.get().sendMessage(cmd);
                 } else {
-                    deleteResourceDefinition(pool, rscName);
+                    deleteResourceDefinition(pool, newRscName);
                     throw new CloudRuntimeException("Unable to get matching Linstor endpoint.");
                 }
             } catch (ApiException exc) {
                 logger.error("copy template failed: ", exc);
-                deleteResourceDefinition(pool, rscName);
+                deleteResourceDefinition(pool, newRscName);
                 throw new CloudRuntimeException(exc.getBestMessage());
             }
         } else {
@@ -1103,11 +1159,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             // volumes we never read the storage snapshot directly: restore the snapshot into a temporary
             // resource and back up its decrypted DRBD device instead, symmetric to the restore path.
             final boolean encrypted = snapshotObject.getBaseVolume().getPassphraseId() != null;
-            Optional<RemoteHostEndPoint> optEP = encrypted ?
-                Optional.empty() : getDiskfullEP(api, pool, rscName);
+            Host diskfulHost = encrypted ? null : getDiskfullHost(api, pool, rscName);
             Answer answer;
-            if (optEP.isPresent()) {
-                answer = optEP.get().sendMessage(cmd);
+            if (diskfulHost != null) {
+                answer = sendWithRscActivated(api, rscName, diskfulHost, cmd);
             } else {
                 logger.debug("No diskfull endpoint used to copy image (encrypted={}), using temporary resource",
                     encrypted);
