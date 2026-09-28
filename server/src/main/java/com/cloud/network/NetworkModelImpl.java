@@ -149,6 +149,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -231,6 +233,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     UserIpv6AddressDao _ipv6Dao;
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
+    @Inject
+    NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     ApplicationLoadBalancerRuleDao _appLbRuleDao;
     @Inject
@@ -1025,6 +1029,23 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Nic getNicInNetwork(long vmId, long networkId) {
         return _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+    }
+
+    @Override
+    public Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId) {
+        NicVO nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+        if (nic != null) {
+            return new Pair<>(nic, new Network.IpAddresses(nic.getIPv4Address(), nic.getIPv6Address()));
+        }
+        // networkId isn't any nic's primary - check whether it's one of a trunk nic's associated networks instead,
+        // where the guest ip lives in nic_network_map rather than on the nic itself
+        for (NicVO candidate : _nicDao.listByVmId(vmId)) {
+            NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(candidate.getId(), networkId);
+            if (association != null) {
+                return new Pair<>(candidate, new Network.IpAddresses(association.getIp4Address(), association.getIp6Address()));
+            }
+        }
+        return null;
     }
 
     @Override
@@ -2349,6 +2370,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //Get ips used by tungsten
         List<String> tfIps = tungstenGuestNetworkIpAddressDao.listGuestIpAddressByNetworkId(network.getId());
         ips.addAll(tfIps);
+        //Get ips used by nics that are associated with this network as a secondary (trunk) network, not their primary
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNetworkId(network.getId())) {
+            if (StringUtils.isNotBlank(association.getIp4Address())) {
+                ips.add(association.getIp4Address());
+            }
+        }
         return ips;
     }
 

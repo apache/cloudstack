@@ -217,6 +217,7 @@ import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1494,6 +1495,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
+                if (!isHostReadyForMultiNetworkNics(vm, dest.getHost())) {
+                    logger.warn("Host {} does not have VLAN filtering enabled on its guest bridge, but {} has a multi-VLAN trunk nic; excluding this host and retrying", dest.getHost(), vm);
+                    lastKnownError = new CloudRuntimeException(String.format(
+                            "Host %s does not have VLAN filtering enabled on its guest bridge, so a multi-VLAN trunk nic cannot be plugged there", dest.getHost().getUuid()));
+                    avoids.addHost(dest.getHost().getId());
+                    continue;
+                }
+
                 avoids.addHost(dest.getHost().getId());
                 if (!template.isDeployAsIs()) {
                     journal.record("Deployment found - Attempt #" + (StartRetry.value() - retry), vmProfile, dest);
@@ -1756,6 +1765,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private boolean canExposeError(Account account) {
         return (account != null && account.getType() == Account.Type.ADMIN) || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value());
+    }
+
+    private boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
+        boolean hasMultiNetworkNic = _nicsDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!hasMultiNetworkNic) {
+            return true;
+        }
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
@@ -5400,7 +5418,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
-                AllowExposeDomainInMetadata, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
+                AllowExposeDomainInMetadata, AllowExposeNicVlanMapping, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
                 VmSyncPowerStateTransitioning, SystemVmEnableUserData
         };
     }

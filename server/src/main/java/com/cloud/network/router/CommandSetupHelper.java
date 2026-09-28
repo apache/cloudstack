@@ -157,7 +157,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 public class CommandSetupHelper {
 
@@ -170,6 +173,8 @@ public class CommandSetupHelper {
     private DomainDao domainDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -250,6 +255,8 @@ public class CommandSetupHelper {
             if (org.apache.commons.lang3.StringUtils.isNotBlank(customCloudName)) {
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_NAME_FILE, customCloudName);
             }
+
+            addNicVlanMappingToVmData(vmDataCommand, vm, nic);
 
             cmds.addCommand("vmdata", vmDataCommand);
         }
@@ -1359,6 +1366,38 @@ public class CommandSetupHelper {
                 final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
                 cmd.addVmData("metadata", keyValue.first(), keyValue.second());
             }
+        }
+    }
+
+    protected void addNicVlanMappingToVmData(VmDataCommand cmd, UserVm vm, NicVO nic) {
+        if (!nic.getMultiNetwork() || !VirtualMachineManager.AllowExposeNicVlanMapping.valueIn(vm.getAccountId())) {
+            return;
+        }
+        List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nic.getId());
+        List<NicVlanMappingEntry> mappings = new ArrayList<>();
+        for (NicNetworkMapVO association : associations) {
+            NetworkVO associatedNetwork = _networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null || associatedNetwork.getBroadcastDomainType() != BroadcastDomainType.Vlan || associatedNetwork.getBroadcastUri() == null) {
+                continue;
+            }
+            String vlanTag = BroadcastDomainType.Vlan.getValueFrom(associatedNetwork.getBroadcastUri());
+            mappings.add(new NicVlanMappingEntry(associatedNetwork.getUuid(), associatedNetwork.getName(), vlanTag));
+        }
+        // empty-string data is vmdata.py's signal to delete a previously-written file: once a nic has been
+        // trunked, its last association being removed must actively clear any stale file left from before,
+        // not just skip writing - the guest must never see associations that no longer exist
+        cmd.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.NIC_VLAN_MAPPING_FILE, mappings.isEmpty() ? "" : new Gson().toJson(mappings));
+    }
+
+    private static final class NicVlanMappingEntry {
+        private final String networkId;
+        private final String networkName;
+        private final String vlan;
+
+        private NicVlanMappingEntry(String networkId, String networkName, String vlan) {
+            this.networkId = networkId;
+            this.networkName = networkName;
+            this.vlan = vlan;
         }
     }
 

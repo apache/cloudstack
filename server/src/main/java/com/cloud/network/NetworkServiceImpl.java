@@ -41,12 +41,17 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.DetailVO;
+import com.cloud.host.HostVO;
 import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -90,8 +95,10 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.UpdateNicVlanMembershipCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
@@ -126,6 +133,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -137,7 +145,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -266,6 +277,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -329,6 +342,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     NicDao _nicDao = null;
     @Inject
+    NicNetworkMapDao _nicNetworkMapDao = null;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    HypervisorGuruManager _hvGuruMgr;
+    @Inject
     RulesManager _rulesMgr;
     List<NetworkGuru> _networkGurus;
     @Inject
@@ -373,6 +392,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     PortForwardingRulesDao _portForwardingDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
     @Inject
     DataCenterVnetDao _dcVnetDao;
     @Inject
@@ -884,6 +905,489 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             success = true;
         }
         return success;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_ASSOCIATE, eventDescription = "associating network to nic", create = true)
+    public Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException {
+        NicVO nic = getTrunkEligibleNic(cmd.getNicId());
+        VirtualMachine vm = getOwningVm(nic);
+        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+        if (vmRunning) {
+            checkHostReadyForVlanTrunk(vm);
+        }
+
+        associateNetworksInternal(nic, vm, caller, cmd.getNetworkIds(), cmd.getIpAddressesMap());
+
+        if (vmRunning) {
+            updateLiveVlanTrunkMembership(vm, nic);
+            refreshNicVlanMappingMetadata(nic);
+        }
+
+        return _nicDao.findById(nic.getId());
+    }
+
+    /**
+     * Rejects disassociating a trunk nic's network while an active PF/Static NAT/LB rule still targets the
+     * association's allocated ip - mirrors the equivalent guard in releaseSecondaryIpFromNic for secondary ips.
+     */
+    private void checkNoActiveRulesOnAssociation(long vmId, long networkId, String ip4Address) {
+        if (ip4Address == null) {
+            return;
+        }
+        List<FirewallRuleVO> fwRulesList = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.PortForwarding);
+        for (FirewallRuleVO rule : fwRulesList) {
+            if (_portForwardingDao.findByIdAndIp(rule.getId(), ip4Address) != null) {
+                throw new InvalidParameterValueException(String.format(
+                        "Can't disassociate network %s, its allocated ip %s is associated with a port forwarding rule", networkId, ip4Address));
+            }
+        }
+        IPAddressVO publicIpVO = _ipAddressDao.findByIpAndNetworkId(networkId, ip4Address);
+        if (publicIpVO != null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Can't disassociate network %s, its allocated ip %s is associated with static NAT rule public IP address ID: %s", networkId, ip4Address, publicIpVO));
+        }
+        if (_loadBalancerDao.isLoadBalancerRulesMappedToVmGuestIp(vmId, ip4Address, networkId)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Can't disassociate network %s, its allocated ip %s is mapped to a load balancing rule", networkId, ip4Address));
+        }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_ASSOCIATE, eventDescription = "associating network to nic", create = true)
+    public void associateNetworksToNic(Nic nic, List<Long> networkIds, Map<Long, Network.IpAddresses> requestedIps)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException {
+        NicVO nicVO = getTrunkEligibleNic(nic.getId());
+        VirtualMachine vm = getOwningVm(nicVO);
+        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
+        }
+        if (vm.getState() != VirtualMachine.State.Stopped) {
+            throw new CloudRuntimeException(String.format(
+                    "Nic %s's additional networks can only be associated while Instance %s is stopped or being created, not while %s",
+                    nicVO.getUuid(), vm.getUuid(), vm.getState()));
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vm);
+        associateNetworksInternal(nicVO, vm, caller, networkIds, requestedIps != null ? requestedIps : Collections.emptyMap());
+    }
+
+    /**
+     * Core of associateNetworkToNic, shared with the deploy-time trunk NIC path (associateNetworksToNic). No live
+     * update is issued here - callers decide whether/how to push the change to a running Instance.
+     */
+    private void associateNetworksInternal(NicVO nic, VirtualMachine vm, Account caller, List<Long> requestedNetworkIds, Map ipAddressesMap)
+            throws ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        if (requestedNetworkIds == null || requestedNetworkIds.isEmpty()) {
+            throw new InvalidParameterValueException("networkids must not be empty");
+        }
+
+        NetworkVO primaryNetwork = _networksDao.findById(nic.getNetworkId());
+        if (primaryNetwork == null) {
+            throw new CloudRuntimeException(String.format("Nic %s has no primary network", nic.getUuid()));
+        }
+
+        Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds);
+        List<NetworkVO> resultingSet = networkSets.first();
+        List<NetworkVO> requestedNetworks = networkSets.second();
+
+        validateTrunkSet(primaryNetwork, resultingSet);
+        validateNoOverlappingCidrs(resultingSet);
+        implementRequestedNetworks(requestedNetworks, vm, caller);
+        validateNoDuplicateVlanAfterImplement(resultingSet);
+        persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_NETWORK_DISASSOCIATE, eventDescription = "disassociating network from nic", create = true)
+    public Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) throws ResourceUnavailableException {
+        NicVO nic = getTrunkEligibleNic(cmd.getNicId());
+        VirtualMachine vm = getOwningVm(nic);
+        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        long targetNetworkId = cmd.getNetworkId();
+        if (targetNetworkId == nic.getNetworkId()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Network %s is nic %s's primary network and cannot be disassociated; add a new nic with the desired primary network instead",
+                    targetNetworkId, nic.getUuid()));
+        }
+
+        NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), targetNetworkId);
+        if (association == null) {
+            throw new InvalidParameterValueException(String.format("Nic %s is not associated with network %s", nic.getUuid(), targetNetworkId));
+        }
+        checkNoActiveRulesOnAssociation(vm.getId(), targetNetworkId, association.getIp4Address());
+
+        boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+        if (vmRunning) {
+            checkHostReadyForVlanTrunk(vm);
+        }
+
+        // guest IPs allocated for an association are never persisted anywhere but nic_network_map itself
+        // (allocateGuestIP/allocateGuestIpv6 compute availability fresh from live DB state each time),
+        // so removing this row is itself the release
+        _nicNetworkMapDao.remove(association.getId());
+
+        if (vmRunning) {
+            updateLiveVlanTrunkMembership(vm, nic);
+            refreshNicVlanMappingMetadata(nic);
+        }
+
+        return _nicDao.findById(nic.getId());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_PRIMARY_NETWORK_CHANGE, eventDescription = "changing nic's primary network", create = true)
+    public Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd) {
+        NicVO nic = getTrunkEligibleNic(cmd.getNicId());
+        VirtualMachine vm = getOwningVm(nic);
+        if (!NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId())) {
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk NICs are not enabled in zone %s", vm.getDataCenterId()));
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        if (vm.getState() != VirtualMachine.State.Stopped) {
+            throw new InvalidParameterValueException(String.format(
+                    "Nic %s's primary network can only be changed while Instance %s is stopped, since the nic is rebuilt fresh on its next start",
+                    nic.getUuid(), vm.getUuid()));
+        }
+
+        long newPrimaryNetworkId = cmd.getNetworkId();
+        if (newPrimaryNetworkId == nic.getNetworkId()) {
+            throw new InvalidParameterValueException(String.format("Network %s is already nic %s's primary network", newPrimaryNetworkId, nic.getUuid()));
+        }
+
+        NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), newPrimaryNetworkId);
+        if (association == null) {
+            throw new InvalidParameterValueException(String.format(
+                    "Network %s must already be associated with nic %s before it can become the primary; associate it first",
+                    newPrimaryNetworkId, nic.getUuid()));
+        }
+
+        long oldPrimaryNetworkId = nic.getNetworkId();
+        String oldPrimaryIp4 = nic.getIPv4Address();
+        String oldPrimaryIp6 = nic.getIPv6Address();
+
+        // reuses the IP already reserved for this network as an association - no new allocation needed,
+        // it's simply moving which table (nics vs nic_network_map) tracks the same reservation
+        _nicNetworkMapDao.remove(association.getId());
+        _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), oldPrimaryNetworkId, oldPrimaryIp4, oldPrimaryIp6));
+
+        nic.setNetworkId(newPrimaryNetworkId);
+        nic.setIPv4Address(association.getIp4Address());
+        nic.setIPv6Address(association.getIp6Address());
+        _nicDao.update(nic.getId(), nic);
+
+        return _nicDao.findById(nic.getId());
+    }
+
+    private void updateLiveVlanTrunkMembership(VirtualMachine vm, NicVO nic) throws ResourceUnavailableException {
+        if (vm.getHostId() == null) {
+            throw new CloudRuntimeException(String.format("Instance %s is Running but has no host assigned", vm.getUuid()));
+        }
+        DataCenter dc = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
+        NicProfile nicProfile = _networkModel.getNicProfile(vm, nic, dc);
+        HypervisorGuru guru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+        NicTO nicTO = guru.toNicTO(nicProfile);
+        UpdateNicVlanMembershipCommand updateCmd = new UpdateNicVlanMembershipCommand(nicTO, vm.getInstanceName());
+        Answer answer = _agentMgr.easySend(vm.getHostId(), updateCmd);
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Failed to update live VLAN trunk membership for nic %s: %s",
+                    nic.getUuid(), answer != null ? answer.getDetails() : "no response from host"));
+        }
+    }
+
+    /**
+     * Resends the nic's associated-network VLAN mapping metadata to its primary network's router(s), so the
+     * guest sees an up-to-date list immediately rather than only after that router's next restart. Best-effort:
+     * a failure here leaves guest-facing metadata briefly stale but must not fail the association change itself,
+     * since the actual nic_network_map/live VLAN membership updates (the correctness-critical parts) already
+     * succeeded by the time this runs.
+     */
+    private void refreshNicVlanMappingMetadata(NicVO nic) {
+        UserVmVO vm = _userVmDao.findById(nic.getInstanceId());
+        if (vm == null) {
+            return;
+        }
+        _userVmDao.loadDetails(vm);
+        List<DomainRouterVO> routers = routerDao.findByNetwork(nic.getNetworkId());
+        for (DomainRouterVO router : routers) {
+            if (router.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+            try {
+                Commands cmds = new Commands(Command.OnError.Stop);
+                commandSetupHelper.createVmDataCommand(router, vm, nic, vm.getDetail("SSH.PublicKey"), cmds);
+                networkHelper.sendCommandsToRouter(router, cmds);
+            } catch (Exception e) {
+                logger.warn("Failed to refresh nic VLAN mapping metadata for nic {} on router {}: {}", nic.getUuid(), router.getUuid(), e.getMessage(), e);
+            }
+        }
+    }
+
+    private NicVO getTrunkEligibleNic(long nicId) {
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find nic with id %d", nicId));
+        }
+        if (nic.getVmType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Multi-VLAN trunk nics are only supported on User Instances");
+        }
+        return nic;
+    }
+
+    private VirtualMachine getOwningVm(NicVO nic) {
+        VirtualMachine vm = _userVmDao.findById(nic.getInstanceId());
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find the Instance owning nic %s", nic.getUuid()));
+        }
+        return vm;
+    }
+
+    private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds) {
+        List<NicNetworkMapVO> existingAssociations = _nicNetworkMapDao.listByNicId(nic.getId());
+        Set<Long> associatedNetworkIds = new HashSet<>();
+        associatedNetworkIds.add(primaryNetwork.getId());
+        List<NetworkVO> resultingSet = new ArrayList<>();
+        resultingSet.add(primaryNetwork);
+        for (NicNetworkMapVO association : existingAssociations) {
+            associatedNetworkIds.add(association.getNetworkId());
+            NetworkVO existingNetwork = _networksDao.findById(association.getNetworkId());
+            if (existingNetwork != null) {
+                resultingSet.add(existingNetwork);
+            }
+        }
+
+        Set<Long> networksOnOtherNics = getNetworksTouchedByOtherNics(vm, nic.getId());
+
+        List<NetworkVO> requestedNetworks = new ArrayList<>();
+        for (Long requestedNetworkId : requestedNetworkIds) {
+            if (associatedNetworkIds.contains(requestedNetworkId)) {
+                NetworkVO alreadyAssociated = _networksDao.findById(requestedNetworkId);
+                throw new InvalidParameterValueException(String.format("Nic %s is already associated with network %s", nic.getUuid(),
+                        alreadyAssociated != null ? alreadyAssociated.getUuid() : requestedNetworkId));
+            }
+            if (networksOnOtherNics.contains(requestedNetworkId)) {
+                NetworkVO conflictingNetwork = _networksDao.findById(requestedNetworkId);
+                throw new InvalidParameterValueException(String.format(
+                        "Instance %s already has network %s on a different nic; a network can only be reachable through one of an Instance's nics at a time",
+                        vm.getUuid(), conflictingNetwork != null ? conflictingNetwork.getUuid() : requestedNetworkId));
+            }
+            NetworkVO requestedNetwork = _networksDao.findById(requestedNetworkId);
+            if (requestedNetwork == null) {
+                throw new InvalidParameterValueException(String.format("Unable to find network with id %d", requestedNetworkId));
+            }
+            requestedNetworks.add(requestedNetwork);
+            resultingSet.add(requestedNetwork);
+        }
+        return new Pair<>(resultingSet, requestedNetworks);
+    }
+
+    /**
+     * Networks already reachable through any of the vm's other nics - either as that nic's primary, or one of its
+     * own trunk associations. Mirrors VirtualMachineManagerImpl.checkIfNetworkExistsForUserVM's existing "at most
+     * one nic per network" rule for User VMs (trunk nics are already restricted to User Instances - see
+     * getTrunkEligibleNic), extended to also cover nic_network_map, which that check has no visibility into.
+     */
+    private Set<Long> getNetworksTouchedByOtherNics(VirtualMachine vm, long excludingNicId) {
+        Set<Long> networkIds = new HashSet<>();
+        for (NicVO otherNic : _nicDao.listByVmId(vm.getId())) {
+            if (otherNic.getId() == excludingNicId) {
+                continue;
+            }
+            networkIds.add(otherNic.getNetworkId());
+            for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(otherNic.getId())) {
+                networkIds.add(association.getNetworkId());
+            }
+        }
+        return networkIds;
+    }
+
+    private void validateTrunkSet(NetworkVO primaryNetwork, List<NetworkVO> resultingSet) {
+        for (NetworkVO network : resultingSet) {
+            validateNetworkFitsTrunk(primaryNetwork, network);
+        }
+    }
+
+    /**
+     * A CIDR is a network's own fixed property (unlike its VLAN, which may still be auto-allocated at this
+     * point), so this can run before implementation, on the same resultingSet buildResultingNetworkSet already
+     * built. Two associated networks sharing address space is not a VLAN-isolation gap, but it still leaves a
+     * guest unable to unambiguously route between them - the same failure any multi-homed Linux host hits when
+     * two of its interfaces sit on identical subnets.
+     */
+    private void validateNoOverlappingCidrs(List<NetworkVO> resultingSet) {
+        List<Pair<NetworkVO, String>> networkCidrs = new ArrayList<>();
+        for (NetworkVO network : resultingSet) {
+            String cidr = network.getCidr();
+            if (cidr == null) {
+                continue;
+            }
+            for (String range : cidr.split(",")) {
+                networkCidrs.add(new Pair<>(network, range.trim()));
+            }
+        }
+        for (int i = 0; i < networkCidrs.size(); i++) {
+            for (int j = i + 1; j < networkCidrs.size(); j++) {
+                NetworkVO networkA = networkCidrs.get(i).first();
+                NetworkVO networkB = networkCidrs.get(j).first();
+                if (networkA.getId() == networkB.getId()) {
+                    continue;
+                }
+                String cidrA = networkCidrs.get(i).second();
+                String cidrB = networkCidrs.get(j).second();
+                if (NetUtils.isNetworksOverlap(cidrA, cidrB)) {
+                    throw new InvalidParameterValueException(String.format(
+                            "Networks %s and %s have overlapping subnets (%s and %s) and cannot be associated with the same nic; " +
+                            "a guest cannot unambiguously route between associated networks that share address space",
+                            networkA.getUuid(), networkB.getUuid(), cidrA, cidrB));
+                }
+            }
+        }
+    }
+
+    private void implementRequestedNetworks(List<NetworkVO> requestedNetworks, VirtualMachine vm, Account caller)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        for (NetworkVO requestedNetwork : requestedNetworks) {
+            implementNetworkIfNeeded(requestedNetwork, vm, caller);
+        }
+    }
+
+    private void validateNoDuplicateVlanAfterImplement(List<NetworkVO> resultingSet) {
+        // re-fetch: implementNetworkIfNeeded may have just assigned a broadcastUri to one of the requested
+        // networks, and existing associations are re-read too rather than trusted stale
+        List<NetworkVO> implementedNetworks = new ArrayList<>();
+        for (NetworkVO network : resultingSet) {
+            NetworkVO refreshed = _networksDao.findById(network.getId());
+            if (refreshed == null) {
+                throw new CloudRuntimeException(String.format("Network %s disappeared during association", network.getUuid()));
+            }
+            implementedNetworks.add(refreshed);
+        }
+        validateNoDuplicateVlan(implementedNetworks);
+    }
+
+    private void persistAssociations(NicVO nic, VirtualMachine vm, List<NetworkVO> requestedNetworks, Map<Long, Network.IpAddresses> requestedIps)
+            throws InsufficientAddressCapacityException {
+        Map<Long, Network.IpAddresses> safeRequestedIps = requestedIps != null ? requestedIps : Collections.emptyMap();
+        for (NetworkVO network : requestedNetworks) {
+            NetworkVO refreshed = _networksDao.findById(network.getId());
+            Pair<String, String> allocatedIps = allocateIpsForAssociation(refreshed, safeRequestedIps.get(network.getId()));
+            _nicNetworkMapDao.persist(new NicNetworkMapVO(nic.getId(), network.getId(), allocatedIps.first(), allocatedIps.second()));
+        }
+        if (!nic.getMultiNetwork()) {
+            nic.setMultiNetwork(true);
+            _nicDao.update(nic.getId(), nic);
+            // this nic's own still-open usage row(s) predate network_id existing on this table and were never
+            // backfilled in bulk; backfill them now, unconditionally, since a later association on this same
+            // nic could otherwise introduce an offering collision this row can no longer be told apart from.
+            // Published as a usage event rather than written directly: this request thread already has an
+            // ambient `cloud` DB transaction open, and cloud_usage is a separate database - the usage job
+            // consumes this event and performs the actual write on its own thread, same as every other
+            // usage_network_offering row in this feature.
+            Map<String, String> details = Collections.singletonMap(UsageEventVO.DynamicParameters.networkId.name(), String.valueOf(nic.getNetworkId()));
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NIC_NETWORK_ID_BACKFILL, vm.getAccountId(), vm.getDataCenterId(), nic.getId(),
+                    Long.toString(nic.getId()), null, null, null, VirtualMachine.class.getName(), vm.getUuid(), details);
+        }
+    }
+
+    private Pair<String, String> allocateIpsForAssociation(NetworkVO network, Network.IpAddresses requested) throws InsufficientAddressCapacityException {
+        if (network.getGuestType() == Network.GuestType.L2) {
+            return new Pair<>(null, null);
+        }
+        String requestedIp4 = requested != null ? requested.getIp4Address() : null;
+        String requestedIp6 = requested != null ? requested.getIp6Address() : null;
+        String ip4Address = _ipAddrMgr.allocateGuestIP(network, requestedIp4);
+        String ip6Address = StringUtils.isNotBlank(network.getIp6Cidr()) ? ipv6AddrMgr.allocateGuestIpv6(network, requestedIp6) : null;
+        return new Pair<>(ip4Address, ip6Address);
+    }
+
+    private void checkHostReadyForVlanTrunk(VirtualMachine vm) {
+        if (vm.getHostId() == null) {
+            throw new CloudRuntimeException(String.format("Instance %s is Running but has no host assigned", vm.getUuid()));
+        }
+        DetailVO vlanFilteringDetail = _hostDetailsDao.findDetail(vm.getHostId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        if (vlanFilteringDetail == null || !Boolean.parseBoolean(vlanFilteringDetail.getValue())) {
+            HostVO host = _hostDao.findById(vm.getHostId());
+            throw new InvalidParameterValueException(String.format(
+                    "Host %s does not have VLAN filtering enabled on its guest bridge, so a multi-VLAN trunk nic cannot be associated on this Instance while it is running",
+                    host != null ? host.getUuid() : vm.getHostId()));
+        }
+    }
+
+    private void implementNetworkIfNeeded(NetworkVO network, VirtualMachine vm, Account caller)
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        if (network.getState() == Network.State.Implemented) {
+            return;
+        }
+        DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        Host host = vm.getHostId() != null ? _hostDao.findById(vm.getHostId()) : null;
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
+        Pair<? extends NetworkGuru, ? extends Network> implemented = _networkMgr.implementNetwork(network.getId(), dest, context);
+        if (implemented == null || implemented.first() == null) {
+            throw new CloudRuntimeException(String.format("Failed to implement network %s as part of associating it to a nic", network.getUuid()));
+        }
+    }
+
+    private void validateNoDuplicateVlan(List<NetworkVO> resultingSet) {
+        Map<URI, NetworkVO> seenBroadcastUris = new HashMap<>();
+        for (NetworkVO network : resultingSet) {
+            URI broadcastUri = network.getBroadcastUri();
+            if (broadcastUri == null) {
+                throw new CloudRuntimeException(String.format("Network %s has no VLAN assigned after implementation; this should not happen", network.getUuid()));
+            }
+            NetworkVO conflicting = seenBroadcastUris.put(broadcastUri, network);
+            if (conflicting != null) {
+                throw new InvalidParameterValueException(String.format("Networks %s and %s share the same VLAN (%s) and cannot be associated with the same nic",
+                        conflicting.getUuid(), network.getUuid(), broadcastUri));
+            }
+        }
+    }
+
+    private void validateNetworkFitsTrunk(NetworkVO primaryNetwork, NetworkVO network) {
+        if (network.getGuestType() != primaryNetwork.getGuestType()) {
+            throw new InvalidParameterValueException(String.format(
+                    "All networks associated with one nic must be the same type; network %s is %s but the nic's primary network %s is %s",
+                    network.getUuid(), network.getGuestType(), primaryNetwork.getUuid(), primaryNetwork.getGuestType()));
+        }
+        if (!Objects.equals(network.getPhysicalNetworkId(), primaryNetwork.getPhysicalNetworkId())) {
+            throw new InvalidParameterValueException(String.format(
+                    "All networks associated with one nic must be on the same physical network; network %s is not on the same physical network as %s",
+                    network.getUuid(), primaryNetwork.getUuid()));
+        }
+        if (!Objects.equals(network.getDataCenterId(), primaryNetwork.getDataCenterId())) {
+            throw new InvalidParameterValueException(String.format(
+                    "All networks associated with one nic must be in the same zone; network %s is not in the same zone as %s",
+                    network.getUuid(), primaryNetwork.getUuid()));
+        }
+        if (primaryNetwork.getGuestType() == Network.GuestType.Isolated && !Objects.equals(network.getVpcId(), primaryNetwork.getVpcId())) {
+            throw new InvalidParameterValueException(String.format(
+                    "A nic may only be associated with tiers of the same VPC (or all non-VPC networks); network %s does not match the VPC of %s",
+                    network.getUuid(), primaryNetwork.getUuid()));
+        }
+        if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
+            throw new InvalidParameterValueException(String.format("Multi-VLAN trunk nics only support VLAN-isolated networks; network %s is %s",
+                    network.getUuid(), network.getBroadcastDomainType()));
+        }
+        if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Network %s has security groups enabled; a nic associated with multiple networks may not use a security-group-enabled network",
+                    network.getUuid()));
+        }
     }
 
     /**
@@ -3583,12 +4087,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                 updateNetworkIpv6(network, networkOfferingId);
                                 network.setNetworkOfferingId(networkOfferingId);
                                 _networksDao.update(networkId, network, newSvcProviders);
-                                // get all nics using this network
+                                // get all nics using this network, either as their primary network or as an
+                                // associated network of a multi-VLAN trunk nic
                                 // log remove usage events for old offering
                                 // log assign usage events for new offering
+                                Set<Long> nicIds = new HashSet<>();
                                 List<NicVO> nics = _nicDao.listByNetworkId(networkId);
                                 for (NicVO nic : nics) {
-                                    if (Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
+                                    nicIds.add(nic.getId());
+                                }
+                                nicIds.addAll(_nicNetworkMapDao.listNicIdsByNetworkId(networkId));
+                                Map<String, String> usageDetails = Collections.singletonMap(UsageEventVO.DynamicParameters.networkId.name(), String.valueOf(networkId));
+                                for (Long nicId : nicIds) {
+                                    NicVO nic = _nicDao.findById(nicId);
+                                    if (nic == null || Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
                                         continue;
                                     }
                                     long vmId = nic.getInstanceId();
@@ -3599,10 +4111,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     }
                                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
                                     String nicIdString = Long.toString(nic.getId());
-                                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, oldNetworkOfferingId,
-                                            null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
-                                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, networkOfferingId,
-                                            null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
+                                    UsageEventUtils.publishUsageEventWithDetails(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, oldNetworkOfferingId,
+                                            null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), usageDetails, vm.isDisplay());
+                                    UsageEventUtils.publishUsageEventWithDetails(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), nicIdString, networkOfferingId,
+                                            null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), usageDetails, vm.isDisplay());
                                 }
                             }
                         });

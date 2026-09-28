@@ -276,21 +276,23 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 throw new InvalidParameterValueException(String.format("Invalid user vm: %s", vm));
                 }
 
-                // Verify that vm has nic in the network
+                // Verify that vm has nic in the network - either as its primary, or (for a trunk nic) as one of
+                // its associated networks, whose guest ip lives in nic_network_map rather than on the nic itself
                 Ip dstIp = rule.getDestinationIpAddress();
-                guestNic = _networkModel.getNicInNetwork(vmId, networkId);
-                if (guestNic == null || guestNic.getIPv4Address() == null) {
+                Pair<Nic, Network.IpAddresses> nicAndIp = _networkModel.getNicAndIpInNetwork(vmId, networkId);
+                if (nicAndIp == null || nicAndIp.second().getIp4Address() == null) {
                     throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
-                } else {
-                    dstIp = new Ip(guestNic.getIPv4Address());
                 }
+                guestNic = nicAndIp.first();
+                dstIp = new Ip(nicAndIp.second().getIp4Address());
 
                 if (vmIp != null) {
                     //vm ip is passed so it can be primary or secondary ip addreess.
                     if (!dstIp.equals(vmIp)) {
                         //the vm ip is secondary ip to the nic.
-                        // is vmIp is secondary ip or not
-                        NicSecondaryIp secondaryIp = _nicSecondaryDao.findByIp4AddressAndNicId(vmIp.toString(), guestNic.getId());
+                        // is vmIp is secondary ip or not - scoped by network, since the same nic can carry
+                        // secondary ips across more than one of its associated networks
+                        NicSecondaryIp secondaryIp = _nicSecondaryDao.findByIp4AddressAndNetworkIdAndInstanceId(networkId, vmId, vmIp.toString());
                         if (secondaryIp == null) {
                             throw new InvalidParameterValueException("IP Address is not in the VM nic's network ");
                         }
@@ -476,12 +478,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 throw new InvalidParameterValueException("Unable to find network by id");
             }
 
-            // Check that vm has a nic in the network
-            guestNic = _networkModel.getNicInNetwork(vmId, networkId);
-            if (guestNic == null) {
+            // Check that vm has a nic in the network - either as its primary, or (for a trunk nic) as one of its
+            // associated networks, whose guest ip lives in nic_network_map rather than on the nic itself
+            Pair<Nic, Network.IpAddresses> nicAndIp = _networkModel.getNicAndIpInNetwork(vmId, networkId);
+            if (nicAndIp == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id");
             }
-            dstIp = guestNic.getIPv4Address();
+            guestNic = nicAndIp.first();
+            dstIp = nicAndIp.second().getIp4Address();
 
             if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
                 throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " + "supported in network with specified id");
@@ -573,8 +577,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                         if (!secondaryIpSet) {
                             throw new InvalidParameterValueException("VM ip " + vmGuestIp + " address not belongs to the vm");
                         }
-                        //check the ip belongs to the vm or not
-                        nicSecIp = _nicSecondaryDao.findByIp4AddressAndNicId(vmGuestIp, guestNic.getId());
+                        //check the ip belongs to the vm or not - scoped by network, since the same nic can carry
+                        //secondary ips across more than one of its associated networks
+                        nicSecIp = _nicSecondaryDao.findByIp4AddressAndNetworkIdAndInstanceId(networkId, vmId, vmGuestIp);
                         if (nicSecIp == null) {
                             throw new InvalidParameterValueException("VM ip " + vmGuestIp + " address not belongs to the vm");
                         }
@@ -1479,9 +1484,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         // create new static nat rule
-        // Get nic IP4 address
+        // Get nic IP4 address - a null primary-nic match doesn't necessarily mean the vm has no nic in this
+        // network; it may be a trunk nic's associated (non-primary) network instead
         Nic guestNic = _networkModel.getNicInNetworkIncludingRemoved(vm.getId(), networkId);
-        if (guestNic == null) {
+        if (guestNic == null && _networkModel.getNicAndIpInNetwork(vm.getId(), networkId) == null) {
             throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id");
         }
 
@@ -1659,20 +1665,22 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
         Ip dstIp = rule.getDestinationIpAddress();
         if (virtualMachineId != null) {
-            // Verify that vm has nic in the network
-            Nic guestNic = _networkModel.getNicInNetwork(virtualMachineId, rule.getNetworkId());
-            if (guestNic == null || guestNic.getIPv4Address() == null) {
+            // Verify that vm has nic in the network - either as its primary, or (for a trunk nic) as one of its
+            // associated networks, whose guest ip lives in nic_network_map rather than on the nic itself
+            Pair<Nic, Network.IpAddresses> nicAndIp = _networkModel.getNicAndIpInNetwork(virtualMachineId, rule.getNetworkId());
+            if (nicAndIp == null || nicAndIp.second().getIp4Address() == null) {
                 throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
-            } else {
-                dstIp = new Ip(guestNic.getIPv4Address());
             }
+            Nic guestNic = nicAndIp.first();
+            dstIp = new Ip(nicAndIp.second().getIp4Address());
 
             if (vmGuestIp != null) {
                 //vm ip is passed so it can be primary or secondary ip addreess.
                 if (!dstIp.equals(vmGuestIp)) {
                     //the vm ip is secondary ip to the nic.
-                    // is vmIp is secondary ip or not
-                    NicSecondaryIp secondaryIp = _nicSecondaryDao.findByIp4AddressAndNicId(vmGuestIp.toString(), guestNic.getId());
+                    // is vmIp is secondary ip or not - scoped by network, since the same nic can carry
+                    // secondary ips across more than one of its associated networks
+                    NicSecondaryIp secondaryIp = _nicSecondaryDao.findByIp4AddressAndNetworkIdAndInstanceId(rule.getNetworkId(), virtualMachineId, vmGuestIp.toString());
                     if (secondaryIp == null) {
                         throw new InvalidParameterValueException("IP Address is not in the VM nic's network ");
                     }

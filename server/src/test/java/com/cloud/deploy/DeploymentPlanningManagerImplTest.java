@@ -40,6 +40,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -79,6 +80,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -224,6 +227,12 @@ public class DeploymentPlanningManagerImplTest {
     @Mock
     DataStoreManager _dataStoreManager;
 
+    @Mock
+    NicDao nicDao;
+
+    @Mock
+    HostDetailsDao hostDetailsDao;
+
     @Inject
     HostPodDao _podDao;
 
@@ -263,6 +272,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(vmDetailsDao.listDetailsKeyPairs(ArgumentMatchers.anyLong())).thenReturn(null);
 
         Mockito.when(volDao.findByInstance(ArgumentMatchers.anyLong())).thenReturn(new ArrayList<>());
+        Mockito.when(nicDao.listByVmId(ArgumentMatchers.anyLong())).thenReturn(new ArrayList<>());
 
         Mockito.when(_dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
@@ -470,6 +480,59 @@ public class DeploymentPlanningManagerImplTest {
                 assertAvoidIsEmpty(avoids, true, true, true, true);
             }
         }
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsNoTrunkNic() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO ordinaryNic = Mockito.mock(NicVO.class);
+        Mockito.when(ordinaryNic.getMultiNetwork()).thenReturn(false);
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(ordinaryNic));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+        Mockito.verify(hostDao, Mockito.never()).listEnabledIdsByDataCenterId(Mockito.anyLong());
+    }
+
+    @Test
+    public void avoidHostsNotReadyForMultiNetworkNicsExcludesNotReadyHosts() {
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(dataCenterId);
+        ExcludeList avoids = new ExcludeList();
+
+        NicVO trunkNic = Mockito.mock(NicVO.class);
+        Mockito.when(trunkNic.getMultiNetwork()).thenReturn(true);
+        Mockito.when(nicDao.listByVmId(instanceId)).thenReturn(Arrays.asList(trunkNic));
+
+        long readyHostId = 10L;
+        long notReadyHostId = 11L;
+        long noDetailHostId = 12L;
+        Mockito.when(hostDao.listEnabledIdsByDataCenterId(dataCenterId))
+                .thenReturn(Arrays.asList(readyHostId, notReadyHostId, noDetailHostId));
+
+        DetailVO readyDetail = Mockito.mock(DetailVO.class);
+        Mockito.when(readyDetail.getHostId()).thenReturn(readyHostId);
+        Mockito.when(readyDetail.getValue()).thenReturn("true");
+        DetailVO notReadyDetail = Mockito.mock(DetailVO.class);
+        Mockito.when(notReadyDetail.getHostId()).thenReturn(notReadyHostId);
+        Mockito.when(notReadyDetail.getValue()).thenReturn("false");
+        Mockito.when(hostDetailsDao.findByName(Host.HOST_VLAN_FILTERING_ENABLED))
+                .thenReturn(Arrays.asList(readyDetail, notReadyDetail));
+
+        _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
+
+        Assert.assertEquals(2, avoids.getHostsToAvoid().size());
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(notReadyHostId));
+        Assert.assertTrue(avoids.getHostsToAvoid().contains(noDetailHostId));
+        Assert.assertFalse(avoids.getHostsToAvoid().contains(readyHostId));
     }
 
     @Test
@@ -963,6 +1026,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public HostDetailsDao hostDetailsDao() {
             return Mockito.mock(HostDetailsDao.class);
+        }
+
+        @Bean
+        public NicDao nicDao() {
+            return Mockito.mock(NicDao.class);
         }
 
 
