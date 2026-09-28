@@ -237,6 +237,16 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
     }
 
+    @Override
+    public void validateVnfApplianceTrunkNic(VirtualMachineTemplate template, long deviceId) {
+        List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
+        for (VnfTemplateNicVO vnfNic : vnfNics) {
+            if (vnfNic.isManagement() && vnfNic.getDeviceId() == deviceId) {
+                throw new InvalidParameterValueException("VNF nic is the management interface and cannot be a multi-VLAN trunk nic: " + vnfNic);
+            }
+        }
+    }
+
     private void validateVnfApplianceNetworksMap(VirtualMachineTemplate template, Map<Integer, Long> vmNetworkMap) {
         if (MapUtils.isEmpty(vmNetworkMap)) {
             throw new InvalidParameterValueException("VNF networks map is empty");

@@ -53,6 +53,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -126,6 +127,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -212,6 +215,10 @@ public class NetworkServiceImplTest {
     PortForwardingRulesDao portForwardingRulesDao;
     @Mock
     LoadBalancerDao loadBalancerDao;
+    @Mock
+    VMTemplateDao templateDao;
+    @Mock
+    VnfTemplateManager vnfTemplateManagerMock;
     @Mock
     ConfigurationManager configMgr;
     @Mock
@@ -378,6 +385,8 @@ public class NetworkServiceImplTest {
         service._networkModel = networkModel;
         service._entityMgr = entityMgr;
         service._networkMgr = _networkMgr;
+        service._templateDao = templateDao;
+        service.vnfTemplateManager = vnfTemplateManagerMock;
         callContextMocked = Mockito.mockStatic(CallContext.class);
         // stubbed as a no-op by default: persistAssociations publishes a real UsageEventUtils call on every
         // first-time trunk conversion, which this class' tests don't otherwise need to know about
@@ -1827,6 +1836,25 @@ public class NetworkServiceImplTest {
         Mockito.verify(ipAddressManagerMock).allocateGuestIP(requestedNetwork, "10.1.1.99");
         Mockito.verify(nicNetworkMapDao).persist(Mockito.argThat(map ->
                 map.getNicId() == 11L && map.getNetworkId() == 206L && "10.1.1.99".equals(map.getIp4Address())));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void associateNetworksToNicRejectsVnfManagementNic() throws Exception {
+        // the live associate-network-to-nic path must reject trunking a VNF template's management nic, same as
+        // the deploy-time nicnetworkslist path already does via validateVnfApplianceTrunkNics
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(vm.getTemplateId()).thenReturn(99L);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(99L)).thenReturn(template);
+        Mockito.doThrow(new InvalidParameterValueException("VNF nic is the management interface"))
+                .when(vnfTemplateManagerMock).validateVnfApplianceTrunkNic(template, 0L);
+
+        service.associateNetworksToNic(nic, Arrays.asList(206L), null);
     }
 
     @Test(expected = InvalidParameterValueException.class)

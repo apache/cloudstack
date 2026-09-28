@@ -83,6 +83,7 @@ import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -225,6 +226,8 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -458,6 +461,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private BGPService bgpService;
     @Inject
     private ASNumberDao asNumberDao;
+    @Inject
+    VMTemplateDao _templateDao;
+    @Inject
+    VnfTemplateManager vnfTemplateManager;
 
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
@@ -992,6 +999,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NetworkVO primaryNetwork = _networksDao.findById(nic.getNetworkId());
         if (primaryNetwork == null) {
             throw new CloudRuntimeException(String.format("Nic %s has no primary network", nic.getUuid()));
+        }
+
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        if (template != null) {
+            vnfTemplateManager.validateVnfApplianceTrunkNic(template, nic.getDeviceId());
         }
 
         Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds);

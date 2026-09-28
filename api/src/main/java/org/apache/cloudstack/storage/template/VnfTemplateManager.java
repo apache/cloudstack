@@ -53,6 +53,13 @@ public interface VnfTemplateManager {
      */
     void validateVnfApplianceTrunkNics(VirtualMachineTemplate template, List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList);
 
+    /**
+     * Single-nic counterpart of {@link #validateVnfApplianceTrunkNics}, for the live associate-network-to-nic
+     * path (an already-deployed VNF's nic, rather than a deploy-time nicnetworkslist). No-op when the template
+     * has no VNF nic metadata at all, i.e. any non-VNF template.
+     */
+    void validateVnfApplianceTrunkNic(VirtualMachineTemplate template, long deviceId);
+
     SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner, DeployVnfApplianceCmd cmd);
 
     void createIsolatedNetworkRulesForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner,
