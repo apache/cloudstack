@@ -228,6 +228,8 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
     public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+    // internal-only signal consumed by the usage job - never user-facing, not an audit event
+    public static final String EVENT_NIC_NETWORK_ID_BACKFILL = "NIC.NETWORK.ID.BACKFILL";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";

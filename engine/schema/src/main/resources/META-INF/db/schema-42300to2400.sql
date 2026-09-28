@@ -40,3 +40,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`nic_network_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics', 'multi_network', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "true if this nic has additional network associations in nic_network_map"');
+
+-- Disambiguates usage_network_offering rows when a multi-VLAN trunk nic has more than one associated network
+-- sharing the same network offering. NULL for rows created before this column existed - those are never
+-- backfilled in bulk, only targeted, single-nic backfill on first conversion to a trunk nic.
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_network_offering', 'network_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "associated network this usage row belongs to"');

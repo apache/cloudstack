@@ -18,6 +18,7 @@
 package com.cloud.event;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,11 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.vm.Nic;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -48,6 +54,8 @@ public class UsageEventUtils {
     private static UsageEventDao s_usageEventDao;
     private static AccountDao s_accountDao;
     private static DataCenterDao s_dcDao;
+    private static NetworkDao s_networkDao;
+    private static NicNetworkMapDao s_nicNetworkMapDao;
     protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
@@ -61,6 +69,10 @@ public class UsageEventUtils {
     DataCenterDao dcDao;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    NetworkDao networkDao;
+    @Inject
+    NicNetworkMapDao nicNetworkMapDao;
 
     public UsageEventUtils() {
     }
@@ -71,6 +83,8 @@ public class UsageEventUtils {
         s_accountDao = accountDao;
         s_dcDao = dcDao;
         s_configDao = configDao;
+        s_networkDao = networkDao;
+        s_nicNetworkMapDao = nicNetworkMapDao;
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -92,6 +106,49 @@ public class UsageEventUtils {
         }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
 
+    }
+
+    // named distinctly, rather than as another publishUsageEvent(...) overload, because its parameter shape
+    // (Map<String, String>, boolean) is only distinguishable at compile time from the existing (Long, boolean)
+    // overload above when neither argument is a literal null - several existing call sites pass null literals
+    // here, which would make an overload ambiguous
+    public static void publishUsageEventWithDetails(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, Map<String, String> details, boolean displayResource) {
+        if (displayResource) {
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size, details);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    /**
+     * Emits one {@code usageType} usage event per network a NIC is actually billed against - its primary
+     * network, plus any additional networks it is associated with as a multi-VLAN trunk nic. An ordinary,
+     * non-trunk nic has exactly one such network, so this is identical to today's single-event behaviour for
+     * every legacy nic. Each event carries the network id as a detail, so the usage-processing side can
+     * disambiguate rows when a trunk nic's networks share the same network offering.
+     */
+    public static void publishNicNetworkOfferingUsageEvents(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
+            Nic nic, long isDefault, boolean displayResource) {
+        NetworkVO primaryNetwork = s_networkDao.findById(nic.getNetworkId());
+        if (primaryNetwork != null) {
+            publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), primaryNetwork, isDefault, displayResource);
+        }
+        if (nic.getMultiNetwork()) {
+            for (NicNetworkMapVO association : s_nicNetworkMapDao.listByNicId(nic.getId())) {
+                NetworkVO associatedNetwork = s_networkDao.findById(association.getNetworkId());
+                if (associatedNetwork != null) {
+                    publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), associatedNetwork, isDefault,
+                            displayResource);
+                }
+            }
+        }
+    }
+
+    private static void publishNicNetworkOfferingUsageEvent(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
+            long nicId, NetworkVO network, long isDefault, boolean displayResource) {
+        Map<String, String> details = Collections.singletonMap(UsageEventVO.DynamicParameters.networkId.name(), String.valueOf(network.getId()));
+        publishUsageEventWithDetails(usageType, accountId, zoneId, vmId, Long.toString(nicId), network.getNetworkOfferingId(), null, isDefault, entityType, entityUUID,
+                details, displayResource);
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,

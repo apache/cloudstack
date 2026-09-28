@@ -4689,8 +4689,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final long isDefault = nic.isDefaultNic() ? 1 : 0;
 
                     if(VirtualMachine.Type.User.equals(vmVO.getType())) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(), vmVO.getId(),
-                                Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid(), vm.isDisplay());
+                        NicVO nicVO = _nicsDao.findById(nic.getId());
+                        UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(),
+                                vmVO.getId(), VirtualMachine.class.getName(), vmVO.getUuid(), nicVO, isDefault, vm.isDisplay());
                     }
                     return nic;
                 } else {
@@ -4776,8 +4777,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _userVmMgr.setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 logger.debug("NIC is unplugged successfully for Instance {} in Network {}.", vm, network);
                 final long isDefault = nic.isDefaultNic() ? 1 : 0;
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
+                UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                        VirtualMachine.class.getName(), vm.getUuid(), nic, isDefault, vm.isDisplay());
             } else {
                 logger.warn("Failed to unplug NIC for the Instance {} from Network {}.", vm, network);
                 return false;

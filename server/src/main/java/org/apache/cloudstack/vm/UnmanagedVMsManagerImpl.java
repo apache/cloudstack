@@ -1044,9 +1044,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<NicVO> nics = nicDao.listByVmId(userVm.getId());
         for (NicVO nic : nics) {
             try {
-                NetworkVO network = networkDao.findById(nic.getNetworkId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, userVm.getAccountId(), userVm.getDataCenterId(), userVm.getId(),
-                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 1L, VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplay());
+                UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, userVm.getAccountId(), userVm.getDataCenterId(),
+                        userVm.getId(), VirtualMachine.class.getName(), userVm.getUuid(), nic, 1L, userVm.isDisplay());
             } catch (Exception e) {
                 logger.error(String.format("Failed to publish network usage records during VM import. %s", StringUtils.defaultString(e.getMessage())));
             }

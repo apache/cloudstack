@@ -1836,14 +1836,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to find a NIC profile for the existing default Network. This is bad and probably means some sort of configuration corruption");
         }
 
-        Network oldDefaultNetwork = null;
-        oldDefaultNetwork = _networkModel.getDefaultNetworkForVm(vmId);
-        String oldNicIdString = Long.toString(_networkModel.getDefaultNic(vmId).getId());
-        long oldNetworkOfferingId = -1L;
-
-        if (oldDefaultNetwork != null) {
-            oldNetworkOfferingId = oldDefaultNetwork.getNetworkOfferingId();
-        }
         NicVO existingVO = _nicDao.findById(existing.id);
         int chosenID = nic.getDeviceId();
         Integer existingID = existing.getDeviceId();
@@ -1869,16 +1861,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
             logger.debug("successfully set default network to " + network + " for " + vmInstance);
-            String nicIdString = Long.toString(nic.getId());
-            long newNetworkOfferingId = network.getNetworkOfferingId();
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
-                    oldNicIdString, oldNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), nicIdString,
-                    newNetworkOfferingId, null, 1L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(), nicIdString,
-                    newNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(), vmInstance.getId(),
-                    oldNicIdString, oldNetworkOfferingId, null, 0L, VirtualMachine.class.getName(), vmInstance.getUuid(), vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), existingVO, 1L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), nic, 1L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), nic, 0L, vmInstance.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmInstance.getAccountId(), vmInstance.getDataCenterId(),
+                    vmInstance.getId(), VirtualMachine.class.getName(), vmInstance.getUuid(), existingVO, 0L, vmInstance.isDisplay());
 
             if (vmInstance.getState() == State.Running) {
                 try {
@@ -3290,10 +3280,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void generateNetworkUsageForVm(VirtualMachine vm, boolean isDisplay, String eventType) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, vm.getClass().getName(), vm.getUuid(), isDisplay);
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    vm.getClass().getName(), vm.getUuid(), nic, isDefault, isDisplay);
         }
 
     }
@@ -5809,8 +5798,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), Long.toString(nic.getId()),
-                    network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
+            UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                    VirtualMachine.class.getName(), vm.getUuid(), nic, isDefault, vm.isDisplay());
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIPv4Address();
                 guestNic = nic;
