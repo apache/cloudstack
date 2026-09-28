@@ -294,6 +294,7 @@
     "vm.import.kvm.disk.in.use": "Unable to import Instance as the {{disk}} is already in use.",
     "vm.import.kvm.disk.path.required": "Unable to import Instance as a disk path is required for KVM disk import.",
     "vm.import.kvm.domain.account.required": "Unable to import Instance as both domain ID and account name are required for KVM import.",
+    "vm.import.kvm.host.cannot.access.storage.pool": "Unable to import Instance as the specified host does not have access to the {{storagePool}}.",
     "vm.import.kvm.host.not.found": "Unable to import Instance as the specified KVM host {{host}} could not be found.",
     "vm.import.kvm.host.required": "Unable to import Instance as a KVM host is required.",
     "vm.import.kvm.hostname.invalid.chars": "Unable to import KVM Instance as the hostname {{hostname}} contains invalid characters.",

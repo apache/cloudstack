@@ -2610,8 +2610,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             // A host the planner is pinned to must be able to see the pool, otherwise the volume check
             // runs on a host that cannot reach the image and reports it as missing.
             if (ImportSource.SHARED == importSource && hostId != null && storagePoolHostDao.findByPoolHost(poolId, hostId) == null) {
-                throw new InvalidParameterValueException(String.format(
-                        "Specified host does not have access to the storage pool: %s", storagePool.getUuid()));
+                throw Exceptions.invalidParameterValueException("vm.import.kvm.host.cannot.access.storage.pool", Map.of("storagePool", storagePool));
             }
 
             DiskOffering diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
