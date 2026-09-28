@@ -14,17 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.upgrade.dao;
+package com.cloud.hypervisor.kvm.resource.wrapper;
 
-public class Upgrade42300to42400 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+import org.apache.commons.lang3.StringUtils;
 
-    @Override
-    public String[] getUpgradableVersionRange() {
-        return new String[]{"4.23.0.0", "4.24.0.0"};
+class VmwareCbtCommandResult {
+
+    private final int exitValue;
+    private final String lastCommandOutput;
+
+    VmwareCbtCommandResult(int exitValue, String lastCommandOutput) {
+        this.exitValue = exitValue;
+        this.lastCommandOutput = lastCommandOutput;
     }
 
-    @Override
-    public String getUpgradedVersion() {
-        return "4.24.0.0";
+    int getExitValue() {
+        return exitValue;
+    }
+
+    String appendLastCommandOutput(String details) {
+        if (StringUtils.isBlank(lastCommandOutput) || StringUtils.contains(details, lastCommandOutput)) {
+            return details;
+        }
+        return String.format("%s Last command output: %s", details, lastCommandOutput);
     }
 }

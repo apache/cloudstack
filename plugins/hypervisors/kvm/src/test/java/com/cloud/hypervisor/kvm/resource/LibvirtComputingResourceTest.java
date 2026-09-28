@@ -714,6 +714,63 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testCreateVideoDefX86DefaultsToVga() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefWindowsDefaultsToVga() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setOs("Windows Server 2025 (64-bit)");
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefExplicitDetailWins() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "virtio");
+        details.put(VmDetailConstants.VIDEO_RAM, "65536");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "virtio");
+        assertXpath(domainDoc, "/video/model/@vram", "65536");
+    }
+
+    @Test
+    public void testCreateVideoDefAgentPropertyWins() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy.videoHw = "qxl";
+        libvirtComputingResourceSpy.videoRam = 65536;
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "qxl");
+        assertXpath(domainDoc, "/video/model/@vram", "65536");
+    }
+
+    @Test
+    public void testCreateVideoDefAarch64UnconfiguredStaysEmpty() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setArch("aarch64");
+        libvirtComputingResourceSpy.guestCpuArch = "aarch64";
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        assertEquals("", videoDef.toString());
+    }
+
+    @Test
     public void testCreateRngDef() {
         VirtualMachineTO to = createDefaultVM(false);
         RngDef rngDef = libvirtComputingResourceSpy.createRngDef();
@@ -7185,6 +7242,38 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals("mce", cpuFeatures.get(1));
         Assert.assertEquals("-mmx", cpuFeatures.get(2));
         Assert.assertEquals("hle", cpuFeatures.get(3));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputReturnsLibraryVersion() {
+        String output = "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n" +
+                "vddk_library_version=8\n" +
+                "vddk_transport_modes=file:san:hotadd:nbdssl:nbd\n";
+
+        Assert.assertEquals("8", libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void parseVddkLibraryVersionFromDumpPluginOutputIgnoresPluginVersionWithoutLoadedLibrary() {
+        String output = "nbdkit 1.24.0\n" +
+                "vddk 1.24.0\n" +
+                "vddk_default_libdir=/usr/lib64/vmware-vix-disklib\n";
+
+        Assert.assertNull(libvirtComputingResourceSpy.parseVddkLibraryVersionFromDumpPluginOutput(output));
+    }
+
+    @Test
+    public void isNbdkitVddkPluginUsableRequiresLoadedVddkLibrary() throws IOException {
+        Path vddkDir = Files.createTempDirectory("vddk-test");
+        Files.createDirectories(vddkDir.resolve("lib64"));
+        Files.createFile(vddkDir.resolve("lib64/libvixDiskLib.so.8"));
+        Mockito.doReturn("vddk_library_version=8\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertTrue(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
+
+        Mockito.doReturn("nbdkit: error: libssl.so.3: cannot open shared object file\n").when(libvirtComputingResourceSpy).runNbdkitVddkDumpPlugin(vddkDir.toString());
+
+        Assert.assertFalse(libvirtComputingResourceSpy.isNbdkitVddkPluginUsable(vddkDir.toString()));
     }
 
     @Test

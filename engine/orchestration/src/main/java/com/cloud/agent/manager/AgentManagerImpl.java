@@ -108,10 +108,12 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.org.Cluster;
@@ -166,6 +168,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected HostDetailsDao _hostDetailsDao = null;
     @Inject
     private ManagementServerHostDao _mshostDao;
     @Inject
@@ -802,18 +806,37 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             ReadyAnswer readyAnswer = (ReadyAnswer)answer;
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
             if (detailsMap != null) {
+                _hostDao.loadDetails(host);
+                if (host.getDetails() == null) {
+                    host.setDetails(new HashMap<>());
+                }
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
+                String diskOnlyVmSnapshotNvramSupport = detailsMap.get(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM);
                 String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
                 String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
+                String vmwareCbtSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_SUPPORT);
+                String vmwareCbtInPlaceFinalizationSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT);
+                String vmwareCbtRbdSupport = detailsMap.get(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT);
+                String qemuImgVersion = detailsMap.get(Host.HOST_QEMU_IMG_VERSION);
+                String qemuNbdVersion = detailsMap.get(Host.HOST_QEMU_NBD_VERSION);
+                String qemuIoVersion = detailsMap.get(Host.HOST_QEMU_IO_VERSION);
+                String virtV2vInPlaceVersion = detailsMap.get(Host.HOST_VIRTV2V_INPLACE_VERSION);
+                String virtv2vInPlaceSupport = detailsMap.get(Host.HOST_VIRTV2V_INPLACE_SUPPORT);
+                String qemuImgRbdSupport = detailsMap.get(Host.HOST_QEMU_RBD_SUPPORT);
+                String vddkRbdDirectImportSupport = detailsMap.get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
+                        vmwareCbtSupport, vmwareCbtInPlaceFinalizationSupport, vmwareCbtRbdSupport, qemuImgVersion, qemuNbdVersion, qemuIoVersion, virtV2vInPlaceVersion,
+                        virtv2vInPlaceSupport, qemuImgRbdSupport, vddkRbdDirectImportSupport)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
-                    if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
-                        host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
+                    if (syncBooleanHostCapability(host, Host.HOST_UEFI_ENABLE, uefiEnabled)) {
+                        updateNeeded = true;
+                    }
+                    if (syncBooleanHostCapability(host, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, diskOnlyVmSnapshotNvramSupport)) {
                         updateNeeded = true;
                     }
                     if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {
@@ -844,6 +867,64 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                         updateNeeded = true;
                     }
+                    if (StringUtils.isNotBlank(vmwareCbtSupport) && !vmwareCbtSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_SUPPORT, vmwareCbtSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vmwareCbtInPlaceFinalizationSupport) &&
+                            !vmwareCbtInPlaceFinalizationSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, vmwareCbtInPlaceFinalizationSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vmwareCbtRbdSupport) &&
+                            !vmwareCbtRbdSupport.equals(host.getDetails().get(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, vmwareCbtRbdSupport);
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuImgVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_IMG_VERSION)))) {
+                        if (StringUtils.isBlank(qemuImgVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_IMG_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_IMG_VERSION, qemuImgVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuNbdVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_NBD_VERSION)))) {
+                        if (StringUtils.isBlank(qemuNbdVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_NBD_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_NBD_VERSION, qemuNbdVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(qemuIoVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_QEMU_IO_VERSION)))) {
+                        if (StringUtils.isBlank(qemuIoVersion)) {
+                            host.getDetails().remove(Host.HOST_QEMU_IO_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_QEMU_IO_VERSION, qemuIoVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(virtV2vInPlaceVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VIRTV2V_INPLACE_VERSION)))) {
+                        if (StringUtils.isBlank(virtV2vInPlaceVersion)) {
+                            host.getDetails().remove(Host.HOST_VIRTV2V_INPLACE_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_VIRTV2V_INPLACE_VERSION, virtV2vInPlaceVersion);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(virtv2vInPlaceSupport) && !virtv2vInPlaceSupport.equals(host.getDetails().get(Host.HOST_VIRTV2V_INPLACE_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VIRTV2V_INPLACE_SUPPORT, virtv2vInPlaceSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(qemuImgRbdSupport) && !qemuImgRbdSupport.equals(host.getDetails().get(Host.HOST_QEMU_RBD_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_QEMU_RBD_SUPPORT, qemuImgRbdSupport);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vddkRbdDirectImportSupport) && !vddkRbdDirectImportSupport.equals(host.getDetails().get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, vddkRbdDirectImportSupport);
+                        updateNeeded = true;
+                    }
                     if (updateNeeded) {
                         _hostDao.saveDetails(host);
                     }
@@ -854,6 +935,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();
         return attache;
+    }
+
+    protected boolean syncBooleanHostCapability(HostVO host, String capabilityName, String advertisedValue) {
+        if (StringUtils.isNotBlank(advertisedValue)) {
+            if (!advertisedValue.equals(host.getDetails().get(capabilityName))) {
+                host.getDetails().put(capabilityName, advertisedValue);
+                return true;
+            }
+            return false;
+        }
+
+        if (host.getDetails().containsKey(capabilityName)) {
+            host.getDetails().remove(capabilityName);
+            DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), capabilityName);
+            if (hostDetail != null) {
+                _hostDetailsDao.remove(hostDetail.getId());
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override

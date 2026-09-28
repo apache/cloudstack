@@ -124,6 +124,7 @@
         ref="storagePoolSelection"
         :autoAssignAllowed="false"
         :resource="resource"
+        :hostId="selectedHost.id && selectedHost.id !== -1 ? selectedHost.id : null"
         @select="handleStoragePoolChange" />
     </div>
     <instance-volumes-storage-pool-select-list-view
@@ -132,6 +133,7 @@
       class="top-spaced"
       :resource="resource"
       :clusterId="selectedHost.id ? selectedHost.clusterid : null"
+      :hostId="selectedHost.id && selectedHost.id !== -1 ? selectedHost.id : null"
       @select="handleVolumeToPoolChange" />
 
     <a-divider />
@@ -284,7 +286,7 @@ export default {
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
       this.volumeToPoolSelection = []
-      if (this.migrateWithStorage) {
+      if (this.migrateWithStorage && this.migrateMode !== 1) {
         this.$refs.volumeToPoolSelect.resetSelection()
       }
     },

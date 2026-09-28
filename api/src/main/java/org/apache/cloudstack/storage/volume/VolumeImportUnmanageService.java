@@ -37,7 +37,8 @@ public interface VolumeImportUnmanageService extends PluggableService, Configura
             Arrays.asList(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.VMware);
 
     List<Storage.StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES_FOR_KVM = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem,
-            Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD, Storage.StoragePoolType.SharedMountPoint);
+            Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD, Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.Linstor);
 
     ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
             "allow.import.volume.with.backing.file",

@@ -37,7 +37,7 @@ public class NiciraNvpApiVersion {
         if (niciraApiVersion == null) {
             return false;
         }
-        int compare = CloudStackVersion.compare(niciraApiVersion, apiVersion);
+        int compare = CloudStackVersion.compare(niciraApiVersion, apiVersion, true);
         return (compare < 0);
     }
 

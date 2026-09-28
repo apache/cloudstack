@@ -126,7 +126,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
@@ -757,7 +756,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
 
-        Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
@@ -2272,7 +2271,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateVmOwnerTestCallsSetAccountIdSetDomainIdAndPersist() {
-        userVmManagerImpl.updateVmOwner(accountMock, userVmVoMock, 1L, 1L);
+        userVmManagerImpl.updateVmOwner(accountMock, userVmVoMock);
 
         Mockito.verify(userVmVoMock).setAccountId(Mockito.anyLong());
         Mockito.verify(userVmVoMock).setDomainId(Mockito.anyLong());
@@ -3227,23 +3226,22 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void moveVmToUserTestProjectIdProvidedAndDomainIdIsNullThrowsInvalidParameterValueException() throws ResourceUnavailableException, InsufficientCapacityException,
+    public void moveVmToUserTestMovesVmWhenProjectIdIsProvidedAndDomainIdIsNull() throws ResourceUnavailableException, InsufficientCapacityException,
             ResourceAllocationException {
-
-        String expectedMessage = "Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.";
-
         Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
         Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
         Mockito.doReturn(1L).when(assignVmCmdMock).getProjectId();
         Mockito.doReturn(null).when(assignVmCmdMock).getDomainId();
+        Mockito.doReturn(null).when(userVmManagerImpl).ensureDestinationNetwork(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).executeStepsToChangeOwnershipOfVm(Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
-        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
-            userVmManagerImpl.moveVmToUser(assignVmCmdMock);
-        });
+        userVmManagerImpl.moveVmToUser(assignVmCmdMock);
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Mockito.verify(userVmManagerImpl).executeStepsToChangeOwnershipOfVm(Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -3318,26 +3316,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void moveVmToUserTestAccountManagerCheckAccessThrowsPermissionDeniedException() throws ResourceUnavailableException, InsufficientCapacityException,
-            ResourceAllocationException {
-
-        LinkedList<VolumeVO> volumes = new LinkedList<>();
-
-        Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
-        Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
-        Mockito.doReturn(null).when(assignVmCmdMock).getProjectId();
-        Mockito.doReturn(volumes).when(volumeDaoMock).findByInstance(Mockito.anyLong());
-        Mockito.doReturn(accountMock).when(accountManager).finalizeOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doReturn(domainVoMock).when(domainDaoMock).findById(Mockito.anyLong());
-
-        configureDoNothingForMethodsThatWeDoNotWantToTest();
-
-        doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
-
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
-    }
-
-    @Test
     public void executeStepsToChangeOwnershipOfVmTestUpdateVmNetworkThrowsInsufficientCapacityException() throws ResourceUnavailableException, InsufficientCapacityException,
             ResourceAllocationException {
 
@@ -3352,10 +3330,10 @@ public class UserVmManagerImplTest {
                     Mockito.any());
 
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
-                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1L));
+                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock));
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
         }
     }
@@ -3375,10 +3353,10 @@ public class UserVmManagerImplTest {
                     Mockito.any());
 
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
-                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1L));
+                    userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock));
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
         }
     }
@@ -3397,10 +3375,10 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
-                    virtualMachineTemplateMock, 1L);
+                    virtualMachineTemplateMock);
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -3420,10 +3398,10 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
-                    virtualMachineTemplateMock, 1L);
+                    virtualMachineTemplateMock);
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+            Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -4777,5 +4755,20 @@ public class UserVmManagerImplTest {
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
         Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+    }
+
+    @Test
+    public void getRootVolumeSizeForVmRestoreAppliesMaxIopsToTheMaxIopsField() {
+        VolumeVO volume = new VolumeVO(Volume.Type.ROOT, "root", 1L, 1L, 1L, 1L,
+                com.cloud.storage.Storage.ProvisioningType.THIN, 10L, null, null, null);
+        UserVmVO restoreVm = Mockito.mock(UserVmVO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.MIN_IOPS, "500");
+        details.put(ApiConstants.MAX_IOPS, "2000");
+
+        userVmManagerImpl.getRootVolumeSizeForVmRestore(volume, null, restoreVm, null, details, true);
+
+        Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+        Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
     }
 }

@@ -38,8 +38,13 @@ under the License.
       <!-- ============================== -->
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
-          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
-          <PatternLayout pattern="%-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+         <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+      </Console>
+
+      <Console name="CONSOLE_ERR" target="SYSTEM_ERR">
+         <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </Console>
    </Appenders>
 
@@ -50,17 +55,11 @@ under the License.
       <!-- ================ -->
 
       <Logger name="com.cloud" level="INFO"/>
-
       <Logger name="org.apache" level="INFO"/>
-
       <Logger name="org" level="INFO"/>
-
       <Logger name="net" level="INFO"/>
-
       <Logger name="com.amazonaws" level="INFO"/>
-
       <Logger name="httpclient.wire" level="INFO"/>
-
       <Logger name="org.apache.http.wire" level="INFO"/>
 
       <!-- ======================= -->
@@ -69,6 +68,7 @@ under the License.
 
       <Root level="INFO">
          <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="CONSOLE_ERR"/>
          <AppenderRef ref="FILE"/>
       </Root>
 

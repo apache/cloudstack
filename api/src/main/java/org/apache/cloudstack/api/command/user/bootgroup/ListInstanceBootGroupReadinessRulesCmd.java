@@ -35,7 +35,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "listInstanceBootGroupReadinessRules",
         description = "Lists readiness rules for an Instance Boot Group",
-        since = "4.24.0",
+        since = "24.0",
         responseObject = InstanceBootGroupReadinessRuleResponse.class,
         entityType = {InstanceBootGroupReadinessRule.class},
         requestHasSensitiveInfo = false,

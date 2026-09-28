@@ -35,7 +35,7 @@ import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupService;
 
 @APICommand(name = "updateInstanceBootGroupMember",
         description = "Updates the boot order of a member in an instance boot group",
-        since = "4.24.0",
+        since = "24.0",
         responseObject = InstanceBootGroupMemberResponse.class,
         entityType = {InstanceBootGroupMember.class},
         requestHasSensitiveInfo = false,

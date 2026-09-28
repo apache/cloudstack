@@ -1,0 +1,1612 @@
+Added commands:
+
+    removeNodesFromKubernetesCluster (Removes external nodes from a CKS cluster. )
+
+    removeGuiTheme (Removes an existing GUI theme.)
+
+    updateOsCategory (Updates an OS category)
+
+    runCustomAction (Run the custom action)
+
+    addNodesToKubernetesCluster (Add nodes as workers to an existing CKS cluster. )
+
+    configureStorageAccess (Configure the storage access groups on zone/pod/cluster/host and storage, accordingly connections to the storage pools)
+
+    createGpuCard (Creates a GPU card definition in the system)
+
+    listVgpuProfiles (Lists all available vGPU profiles)
+
+    updateGuiTheme (Updates an existing GUI theme.)
+
+    manageGpuDevice (Manages a GPU device)
+
+    deleteOsCategory (Deletes an OS category)
+
+    cancelMaintenance (Cancels maintenance of the management server)
+
+    updateGpuCard (Updates a GPU card definition in the system)
+
+    updateCustomAction (Update the custom action)
+
+    listGuiThemes (Lists GUI themes.)
+
+    deleteCniConfiguration (Deletes a CNI Configuration)
+
+    createExtension (Create an extension)
+
+    deleteCustomAction (Delete the custom action)
+
+    addNetrisProvider (Add Netris Provider to CloudStack)
+
+    deleteGpuDevice (Deletes a vGPU profile from the system)
+
+    listStorageAccessGroups (Lists storage access groups)
+
+    quotaCreditsList (Lists quota credits of an account.)
+
+    unmanageGpuDevice (Unmanage a GPU device)
+
+    addCustomAction (Add a custom action for an extension)
+
+    prepareForMaintenance (Prepares management server for maintenance by preventing new jobs from being accepted after completion of active jobs and migrating the agents)
+
+    updateGpuDevice (Updates an existing GPU device)
+
+    createVMFromBackup (Creates and automatically starts a VM from a backup.)
+
+    listGpuDevices (Lists all available GPU devices)
+
+    addOsCategory (Adds a new OS category)
+
+    quotaValidateActivationRule (Validates if the given activation rule is valid for the informed usage type.)
+
+    updateVgpuProfile (Updates a vGPU profile in the system)
+
+    registerExtension (Register an extension with a resource)
+
+    listGpuCards (Lists all available GPU cards)
+
+    deleteVgpuProfile (Deletes a vGPU profile from the system)
+
+    deleteExtension (Delete the extensions)
+
+    createVgpuProfile (Creates a vGPU profile in the system)
+
+    listNetrisProviders (list all Netris providers added to CloudStack)
+
+    listConsoleSessions (Lists console sessions.)
+
+    listCniConfiguration (List user data for CNI plugins)
+
+    createGpuDevice (Creates a GPU device manually on a host)
+
+    unregisterExtension (Unregister an extension with a resource)
+
+    createGuiTheme (Creates a customized GUI theme for a set of Common Names (fixed or wildcard), a set of domain UUIDs, and/or a set of account UUIDs.)
+
+    registerCniConfiguration (Register a CNI Configuration to be used with CKS cluster)
+
+    listCustomActions (Lists the custom actions)
+
+    updateExtension (Update the extension)
+
+    removeManagementServer (Removes a Management Server.)
+
+    discoverGpuDevices (Discovers available GPU devices on a host)
+
+    deleteNetrisProvider (delete Netris Provider to CloudStack)
+
+    deleteGpuCard (Deletes a GPU card definition from the system)
+
+    listExtensions (Lists extensions)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVPCOffering
+
+		Request:
+
+			New parameters: provider (optional)
+
+	ldapCreateAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	copyIso
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	listVsphereStoragePolicyCompatiblePools
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	updateGuestOs
+
+		Request:
+
+			New parameters: oscategoryid (optional)
+
+			Changed parameters: osdisplayname (old version - required, new version - optional)
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	updateHost
+
+		Request:
+
+			New parameters: externaldetails (optional)
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	listClusters
+
+		Request:
+
+			New parameters: arch (optional), storageaccessgroup (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, podstorageaccessgroups, storageaccessgroups, zonestorageaccessgroups
+
+	listClustersMetrics
+
+		Request:
+
+			New parameters: arch (optional), storageaccessgroup (optional)
+
+	createBackupSchedule
+
+		Request:
+
+			New parameters: maxbackups (optional), quiescevm (optional)
+
+		Response:
+
+			New parameters: description, intervaltype, name, vmbackupofferingremoved, vmdetails
+
+	startRouter
+
+		Response:
+
+			New parameters: arch
+
+	listObjectStoragePools
+
+		Response:
+
+			New parameters: storageallocated
+
+	createBackup
+
+		Request:
+
+			New parameters: description (optional), name (optional), quiescevm (optional)
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: arch
+
+	listKubernetesClusters
+
+		Response:
+
+			New parameters: cniconfigname, cniconfigurationid, controlofferingid, controlofferingname, etcdips, etcdnodes, etcdofferingid, etcdofferingname, workerofferingid, workerofferingname
+
+	listCapabilities
+
+		Response:
+
+			New parameters: dynamicscalingenabled, extensionspath, instanceleaseenabled
+
+	listManagementServersMetrics
+
+		Request:
+
+			New parameters: peers (optional)
+
+	createStaticRoute
+
+		Request:
+
+			New parameters: nexthop (optional), vpcid (optional)
+
+			Changed parameters: gatewayid (old version - required, new version - optional)
+
+		Response:
+
+			New parameters: nexthop, vpcgatewayid, vpcgatewayip
+
+			Removed parameters: gatewayid
+
+	updateDomain
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	createSnapshotPolicy
+
+		Request:
+
+			New parameters: storageids (optional), usestoragereplication (optional)
+
+		Response:
+
+			New parameters: storage
+
+	listSystemVms
+
+		Request:
+
+			New parameters: arch (optional)
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	createSnapshot
+
+		Request:
+
+			New parameters: storageids (optional), usestoragereplication (optional)
+
+		Response:
+
+			New parameters: chainsize
+
+	listStoragePoolsMetrics
+
+		Request:
+
+			New parameters: storageaccessgroup (optional)
+
+	listStoragePools
+
+		Request:
+
+			New parameters: storageaccessgroup (optional)
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	findHostsForMigration
+
+		Response:
+
+			Removed parameters: id, averageload, capabilities, clusterid, clustername, clustertype, cpuallocated, cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, cpunumber, cpuspeed, cpuused, cpuwithoverprovisioning, created, disconnected, disksizeallocated, disksizetotal, events, explicithosttags, hahost, hasenoughcapacity, hosttags, hypervisor, hypervisorversion, implicithosttags, ipaddress, islocalstorageactive, lastpinged, managementserverid, memoryallocated, memoryallocatedbytes, memoryallocatedpercentage, memorytotal, memoryused, memorywithoverprovisioning, name, networkkbsread, networkkbswrite, oscategoryid, oscategoryname, podid, podname, removed, resourcestate, state, suitableformigration, type, version, zoneid, zonename
+
+	isAccountAllowedToCreateOfferingsWithTags
+
+		Request:
+
+			Changed parameters: id (old version - optional, new version - required)
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listStaticRoutes
+
+		Response:
+
+			New parameters: nexthop, vpcgatewayid, vpcgatewayip
+
+			Removed parameters: gatewayid
+
+	listPublicIpAddresses
+
+		Request:
+
+			New parameters: forprovider (optional)
+
+		Response:
+
+			New parameters: forprovider
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listAsyncJobs
+
+		Response:
+
+			New parameters: managementservername
+
+			Removed parameters: jobstatus
+
+	login
+
+		Response:
+
+			New parameters: managementserverid
+
+	copyTemplate
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	resizeVolume
+
+		Request:
+
+			New parameters: automigrate (optional)
+
+	triggerShutdown
+
+		Response:
+
+			New parameters: agents, agentscount, maintenanceinitiated, state
+
+	updateNetwork
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	listBackups
+
+		Request:
+
+			New parameters: backupofferingid (optional), listvmdetails (optional), name (optional)
+
+		Response:
+
+			New parameters: description, intervaltype, name, vmbackupofferingremoved, vmdetails
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	createVPC
+
+		Request:
+
+			New parameters: userouteripresolver (optional)
+
+	detachIso
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: arch (optional), extensionid (optional), gpuenabled (optional), leased (optional), userdataid (optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	upgradeKubernetesCluster
+
+		Response:
+
+			New parameters: cniconfigname, cniconfigurationid, controlofferingid, controlofferingname, etcdips, etcdnodes, etcdofferingid, etcdofferingname, workerofferingid, workerofferingname
+
+	listProjects
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	createAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	registerIso
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	updateZone
+
+		Response:
+
+			New parameters: gputotal, gpuused, provider, routedmodeenabled, storageaccessgroups
+
+	listVlanIpRanges
+
+		Response:
+
+			New parameters: provider
+
+			Removed parameters: fornsx
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	listProjectAccounts
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	updateUser
+
+		Request:
+
+			New parameters: apikeyaccess (optional)
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	addHost
+
+		Request:
+
+			New parameters: externaldetails (optional), storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	updateProject
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	registerUserKeys
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	listZones
+
+		Request:
+
+			New parameters: storageaccessgroup (optional)
+
+		Response:
+
+			New parameters: gputotal, gpuused, provider, routedmodeenabled, storageaccessgroups
+
+	deleteBackupSchedule
+
+		Request:
+
+			New parameters: id (optional)
+
+			Changed parameters: virtualmachineid (old version - required, new version - optional)
+
+	listBackupProviderOfferings
+
+		Response:
+
+			New parameters: provider
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	importBackupOffering
+
+		Response:
+
+			New parameters: provider
+
+	listEvents
+
+		Request:
+
+			New parameters: state (optional)
+
+	dedicatePublicIpRange
+
+		Response:
+
+			New parameters: provider
+
+			Removed parameters: fornsx
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	revertSnapshot
+
+		Response:
+
+			New parameters: chainsize
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	cancelHostAsDegraded
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	enableUser
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	suspendProject
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	createZone
+
+		Request:
+
+			New parameters: storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: gputotal, gpuused, provider, routedmodeenabled, storageaccessgroups
+
+	listDomainChildren
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	importUnmanagedInstance
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	updatePod
+
+		Response:
+
+			New parameters: storageaccessgroups, zonestorageaccessgroups
+
+	attachIso
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	createUser
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	createVpnGateway
+
+		Request:
+
+			New parameters: ipaddressid (optional)
+
+	listAccounts
+
+		Request:
+
+			New parameters: apikeyaccess (optional)
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	destroyRouter
+
+		Response:
+
+			New parameters: arch
+
+	activateProject
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	updateBackupSchedule
+
+		Request:
+
+			New parameters: maxbackups (optional), quiescevm (optional)
+
+		Response:
+
+			New parameters: description, intervaltype, name, vmbackupofferingremoved, vmdetails
+
+	addBaremetalHost
+
+		Request:
+
+			New parameters: externaldetails (optional), storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	createPod
+
+		Request:
+
+			New parameters: storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: storageaccessgroups, zonestorageaccessgroups
+
+	listVirtualMachinesMetrics
+
+		Request:
+
+			New parameters: arch (optional), extensionid (optional), gpuenabled (optional), leased (optional), userdataid (optional)
+
+	listHosts
+
+		Request:
+
+			New parameters: arch (optional), managementserverid (optional), storageaccessgroup (optional)
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	updateStoragePool
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	listBackupRepositories
+
+		Response:
+
+			Removed parameters: mountopts
+
+	moveDomain
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	listNetworks
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	listHostsMetrics
+
+		Request:
+
+			New parameters: arch (optional), managementserverid (optional), storageaccessgroup (optional)
+
+		Response:
+
+			Removed parameters: cpuloadaverage
+
+	cancelShutdown
+
+		Response:
+
+			New parameters: agents, agentscount, maintenanceinitiated, state
+
+	reserveIpAddress
+
+		Response:
+
+			New parameters: forprovider
+
+	listSnapshotPolicies
+
+		Response:
+
+			New parameters: storage
+
+	updateObjectStoragePool
+
+		Request:
+
+			New parameters: size (optional)
+
+		Response:
+
+			New parameters: storageallocated
+
+	stopRouter
+
+		Response:
+
+			New parameters: arch
+
+	lockAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listTemplates
+
+		Request:
+
+			New parameters: extensionid (optional), forcks (optional), isready (optional), oscategoryid (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	createBucket
+
+		Request:
+
+			Changed parameters: quota (old version - optional, new version - required)
+
+	oauthlogin
+
+		Response:
+
+			New parameters: managementserverid
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listBackupOfferings
+
+		Response:
+
+			New parameters: provider
+
+	listVnfTemplates
+
+		Request:
+
+			New parameters: extensionid (optional), forcks (optional), isready (optional), oscategoryid (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	deployVnfAppliance
+
+		Request:
+
+			New parameters: datadisksdetails (optional), externaldetails (optional), leaseduration (optional), leaseexpiryaction (optional), snapshotid (optional), volumeid (optional)
+
+			Changed parameters: templateid (old version - required, new version - optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: provider (optional)
+
+	listPods
+
+		Request:
+
+			New parameters: storageaccessgroup (optional)
+
+		Response:
+
+			New parameters: storageaccessgroups, zonestorageaccessgroups
+
+	listSnapshots
+
+		Response:
+
+			New parameters: chainsize
+
+	readyForShutdown
+
+		Request:
+
+			Changed parameters: managementserverid (old version - optional, new version - required)
+
+		Response:
+
+			New parameters: agents, agentscount, maintenanceinitiated, state
+
+	scaleKubernetesCluster
+
+		Request:
+
+			New parameters: nodeofferings (optional)
+
+		Response:
+
+			New parameters: cniconfigname, cniconfigurationid, controlofferingid, controlofferingname, etcdips, etcdnodes, etcdofferingid, etcdofferingname, workerofferingid, workerofferingname
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: arch
+
+	addBackupRepository
+
+		Response:
+
+			Removed parameters: mountopts
+
+	createProject
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	markDefaultZoneForAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	rebootRouter
+
+		Response:
+
+			New parameters: arch
+
+	createSnapshotFromVMSnapshot
+
+		Response:
+
+			New parameters: chainsize
+
+	updateIso
+
+		Request:
+
+			New parameters: forceupdateostype (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	updateBackupOffering
+
+		Response:
+
+			New parameters: provider
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: arch
+
+	samlSso
+
+		Response:
+
+			New parameters: managementserverid
+
+	createDomain
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	updateStorageCapabilities
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: externaldetails (optional), gpucount (optional), gpudisplay (optional), leaseduration (optional), leaseexpiryaction (optional), vgpuprofileid (optional)
+
+		Response:
+
+			New parameters: gpucardid, gpucardname, gpucount, gpudisplay, leaseduration, leaseexpiryaction, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listVmsForImport
+
+		Response:
+
+			New parameters: bootmode, boottype
+
+	addObjectStoragePool
+
+		Request:
+
+			New parameters: size (optional)
+
+		Response:
+
+			New parameters: storageallocated
+
+	updateTemplate
+
+		Request:
+
+			New parameters: forceupdateostype (optional), forcks (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	createVlanIpRange
+
+		Request:
+
+			New parameters: provider (optional)
+
+			Removed parameters: fornsx
+
+		Response:
+
+			New parameters: provider
+
+			Removed parameters: fornsx
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	listManagementServers
+
+		Request:
+
+			New parameters: peers (optional)
+
+		Response:
+
+			New parameters: agents, agentscount, ipaddress, lastagents, peers, pendingjobscount
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: arch
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: leaseduration (optional), leaseexpiryaction (optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	updateAccount
+
+		Request:
+
+			New parameters: apikeyaccess (optional)
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	listDomains
+
+		Response:
+
+			New parameters: backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	disableAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	resetUserDataForVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	archiveSnapshot
+
+		Response:
+
+			New parameters: chainsize
+
+	createTemplate
+
+		Request:
+
+			New parameters: arch (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	updatePortForwardingRule
+
+		Request:
+
+			New parameters: cidrlist (optional)
+
+	associateIpAddress
+
+		Response:
+
+			New parameters: forprovider
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	addKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: arch
+
+	linkUserDataToTemplate
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: arch
+
+	updateKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: arch
+
+	updateCluster
+
+		Request:
+
+			New parameters: externaldetails (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, podstorageaccessgroups, storageaccessgroups, zonestorageaccessgroups
+
+	listVmwareDcVms
+
+		Request:
+
+			New parameters: hostname (optional), instancename (optional)
+
+		Response:
+
+			New parameters: bootmode, boottype
+
+	getUserKeys
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: datadisksdetails (optional), externaldetails (optional), leaseduration (optional), leaseexpiryaction (optional), snapshotid (optional), volumeid (optional)
+
+			Changed parameters: templateid (old version - required, new version - optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	lockUser
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	createNetwork
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	copySnapshot
+
+		Request:
+
+			New parameters: storageids (optional), usestoragereplication (optional)
+
+		Response:
+
+			New parameters: chainsize
+
+	listUsers
+
+		Request:
+
+			New parameters: apikeyaccess (optional), usersource (optional)
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	updateVlanIpRange
+
+		Response:
+
+			New parameters: provider
+
+			Removed parameters: fornsx
+
+	disableUser
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	listIsos
+
+		Request:
+
+			New parameters: oscategoryid (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	startSystemVm
+
+		Response:
+
+			New parameters: arch
+
+			Removed parameters: jobid, jobstatus
+
+	registerVnfTemplate
+
+		Request:
+
+			New parameters: extensionid (optional), externaldetails (optional), forcks (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	declareHostAsDegraded
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	createKubernetesCluster
+
+		Request:
+
+			New parameters: asnumber (optional), cniconfigdetails (optional), cniconfigurationid (optional), etcdnodes (optional), hypervisor (optional), nodeofferings (optional), nodetemplates (optional)
+
+		Response:
+
+			New parameters: cniconfigname, cniconfigurationid, controlofferingid, controlofferingname, etcdips, etcdnodes, etcdofferingid, etcdofferingname, workerofferingid, workerofferingname
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	quotaCredits
+
+		Response:
+
+			New parameters: credit, creditedon, creditoruserid, creditorusername
+
+			Removed parameters: credits, updated_by, updated_on
+
+	getUploadParamsForTemplate
+
+		Request:
+
+			New parameters: forcks (optional)
+
+	syncStoragePool
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	listRouters
+
+		Request:
+
+			New parameters: arch (optional)
+
+		Response:
+
+			New parameters: arch
+
+	listKubernetesSupportedVersions
+
+		Request:
+
+			New parameters: arch (optional)
+
+		Response:
+
+			New parameters: arch
+
+	listZonesMetrics
+
+		Request:
+
+			New parameters: storageaccessgroup (optional)
+
+	updateIpAddress
+
+		Response:
+
+			New parameters: forprovider
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: specifyvlan
+
+			Removed parameters: associatednetwork, associatednetworkid
+
+	listUnmanagedInstances
+
+		Response:
+
+			New parameters: bootmode, boottype
+
+	registerTemplate
+
+		Request:
+
+			New parameters: extensionid (optional), externaldetails (optional), forcks (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	listVnfAppliances
+
+		Request:
+
+			New parameters: arch (optional), extensionid (optional), gpuenabled (optional), leased (optional), userdataid (optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	findStoragePoolsForMigration
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	createStoragePool
+
+		Request:
+
+			New parameters: storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	enableStorageMaintenance
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	cancelStorageMaintenance
+
+		Response:
+
+			New parameters: details, storageaccessgroups, usediops
+
+	updateSnapshotPolicy
+
+		Response:
+
+			New parameters: storage
+
+	queryAsyncJobResult
+
+		Response:
+
+			New parameters: managementservername
+
+			Removed parameters: jobstatus
+
+	prepareForShutdown
+
+		Response:
+
+			New parameters: agents, agentscount, maintenanceinitiated, state
+
+	addCluster
+
+		Request:
+
+			New parameters: extensionid (optional), externaldetails (optional), storageaccessgroups (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, podstorageaccessgroups, storageaccessgroups, zonestorageaccessgroups
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	enableAccount
+
+		Response:
+
+			New parameters: apikeyaccess, backupavailable, backuplimit, backupstorageavailable, backupstoragelimit, backupstoragetotal, backuptotal, bucketavailable, bucketlimit, buckettotal, gpuavailable, gpulimit, gputotal, objectstorageavailable, objectstoragelimit, objectstoragetotal
+
+	startKubernetesCluster
+
+		Response:
+
+			New parameters: cniconfigname, cniconfigurationid, controlofferingid, controlofferingname, etcdips, etcdnodes, etcdofferingid, etcdofferingname, workerofferingid, workerofferingname
+
+	reconnectHost
+
+		Response:
+
+			New parameters: clusterstorageaccessgroups, extensionid, extensionname, gputotal, gpuused, managementservername, podstorageaccessgroups, storageaccessgroups, virtualmachineid, zonestorageaccessgroups
+
+	listBackupSchedule
+
+		Response:
+
+			New parameters: id, maxbackups, quiescevm
+
+	getUser
+
+		Response:
+
+			New parameters: apikeyaccess
+
+	createManagementNetworkIpRange
+
+		Response:
+
+			New parameters: storageaccessgroups, zonestorageaccessgroups
+
+	updateVnfTemplate
+
+		Request:
+
+			New parameters: forceupdateostype (optional), forcks (optional)
+
+		Response:
+
+			New parameters: extensionid, extensionname, forcks
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: gpuenabled (optional), vgpuprofileid (optional)
+
+		Response:
+
+			New parameters: gpucardid, gpucardname, gpucount, gpudisplay, leaseduration, leaseexpiryaction, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	listOsCategories
+
+		Request:
+
+			New parameters: arch (optional), isfeatured (optional), isiso (optional), isvnf (optional), showicon (optional), zoneid (optional)
+
+		Response:
+
+			New parameters: created, icon, isfeatured
+
+	importVm
+
+		Request:
+
+			New parameters: importinstancehostid (optional)
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	updateServiceOffering
+
+		Request:
+
+			New parameters: externaldetails (optional)
+
+		Response:
+
+			New parameters: gpucardid, gpucardname, gpucount, gpudisplay, leaseduration, leaseexpiryaction, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: arch, gpucardid, gpucardname, gpucount, leaseduration, leaseexpiryaction, leaseexpirydate, maxheads, maxresolutionx, maxresolutiony, vgpuprofileid, vgpuprofilename, videoram
