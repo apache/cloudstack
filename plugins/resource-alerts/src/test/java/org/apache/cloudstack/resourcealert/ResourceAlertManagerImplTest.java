@@ -474,15 +474,22 @@ public class ResourceAlertManagerImplTest {
         when(stats.getCPUUtilization()).thenReturn(85.0);
         when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vm.getDisplayName()).thenReturn("web-01");
+        when(userVmDao.findByIdIncludingRemoved(VM_ID)).thenReturn(vm);
 
         manager.evaluateRules();
 
         verify(mailSender).sendMail(mailCaptor.capture());
         String subject = mailCaptor.getValue().getSubject();
+        String body = mailCaptor.getValue().getContent().toString();
         assertTrue(subject.contains("HIGH"));
         assertTrue(subject.contains("CPU_UTILIZATION"));
         assertTrue(subject.contains("GT"));
-        assertTrue(subject.contains("VirtualMachine"));
+        assertTrue(subject.contains("VirtualMachine web-01"));
+        assertTrue(body.contains("Resource: web-01"));
+        assertTrue(body.contains("Resource ID: vm-uuid"));
     }
 
     @Test
@@ -619,6 +626,7 @@ public class ResourceAlertManagerImplTest {
         doReturn(webhookHelper).when(manager).getWebhookHelper();
         UserVmVO vm = mock(UserVmVO.class);
         when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vm.getDisplayName()).thenReturn("web-01");
         when(userVmDao.findByIdIncludingRemoved(VM_ID)).thenReturn(vm);
 
         manager.evaluateRules();
@@ -630,6 +638,7 @@ public class ResourceAlertManagerImplTest {
         assertEquals(rule.getUuid(), payload.get("ruleid").getAsString());
         assertEquals("VirtualMachine", payload.get("resourcetype").getAsString());
         assertEquals("vm-uuid", payload.get("resourceid").getAsString());
+        assertEquals("web-01", payload.get("resourcename").getAsString());
         assertEquals("CPU_UTILIZATION", payload.get("metric").getAsString());
         assertEquals(85.0, payload.get("value").getAsDouble(), 0.001);
         assertEquals("HIGH", payload.get("severity").getAsString());
