@@ -83,6 +83,10 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "UUIDs of webhooks the rule delivers alerts to")
     private List<String> webhookIds;
 
+    @SerializedName(ApiConstants.WEBHOOK_NAMES)
+    @Param(description = "names of webhooks the rule delivers alerts to")
+    private List<String> webhookNames;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account that owns this rule")
     private String accountName;
@@ -112,6 +116,7 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     public void setEmail(boolean email) { this.email = email; }
     public void setResetInterval(int resetInterval) { this.resetInterval = resetInterval; }
     public void setWebhookIds(List<String> webhookIds) { this.webhookIds = webhookIds; }
+    public void setWebhookNames(List<String> webhookNames) { this.webhookNames = webhookNames; }
     public void setAccountName(String accountName) { this.accountName = accountName; }
     public void setDomainId(String domainId) { this.domainId = domainId; }
     public void setDomainName(String domainName) { this.domainName = domainName; }

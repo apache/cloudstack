@@ -292,7 +292,9 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setMessage(vo.getMessage());
         r.setEmail(vo.isEmail());
         r.setResetInterval(vo.getResetInterval());
-        r.setWebhookIds(getWebhookUuids(vo.getId()));
+        List<Pair<String, String>> webhooks = describeWebhooks(vo.getId());
+        r.setWebhookIds(webhooks.stream().map(Pair::first).collect(Collectors.toList()));
+        r.setWebhookNames(webhooks.stream().map(Pair::second).collect(Collectors.toList()));
         r.setAccountName(vo.getAccountName());
         r.setDomainId(vo.getDomainUuid());
         r.setDomainName(vo.getDomainName());
@@ -413,13 +415,13 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         return ids;
     }
 
-    private List<String> getWebhookUuids(long ruleId) {
+    private List<Pair<String, String>> describeWebhooks(long ruleId) {
         List<Long> ids = ruleWebhookDao.listWebhookIdsByRule(ruleId);
         WebhookHelper webhookHelper = ids.isEmpty() ? null : getWebhookHelper();
         if (webhookHelper == null) {
             return new ArrayList<>();
         }
-        return ids.stream().map(webhookHelper::getWebhookUuid).filter(Objects::nonNull).collect(Collectors.toList());
+        return ids.stream().map(webhookHelper::describeWebhook).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private void validateThreshold(ResourceAlertMetric metric, Double threshold) {

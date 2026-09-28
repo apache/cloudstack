@@ -144,7 +144,7 @@
           <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
               <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
           </div>
-          <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
+          <div v-else-if="['allowedroletypes', 'webhooknames'].includes(item) && Array.isArray(dataResource[item])">
             {{ dataResource[item].join(', ') }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>

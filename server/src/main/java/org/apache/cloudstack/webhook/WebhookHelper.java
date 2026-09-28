@@ -21,6 +21,8 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 
+import com.cloud.utils.Pair;
+
 public interface WebhookHelper {
     void deleteWebhooksForAccount(long accountId);
 
@@ -28,7 +30,7 @@ public interface WebhookHelper {
 
     ControlledEntity findWebhookByUuid(String uuid);
 
-    String getWebhookUuid(long webhookId);
+    Pair<String, String> describeWebhook(long webhookId);
 
     void deliverToWebhooks(List<Long> webhookIds, long accountId, String eventType, String payload);
 }

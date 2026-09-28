@@ -2362,6 +2362,7 @@
 "label.resource.alert.owner.self": "Your own account",
 "label.alertrulename": "Alert rule",
 "label.webhookids": "Webhooks",
+"label.webhooknames": "Webhooks",
 "label.cleanupwebhooks": "Remove all webhooks",
 "label.alerttimestamp": "Alert Time",
 "label.metrictype": "Metric",

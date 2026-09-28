@@ -1112,6 +1112,7 @@ public class ApiConstants {
     public static final String SEVERITY = "severity";
     public static final String RESET_INTERVAL = "resetinterval";
     public static final String WEBHOOK_IDS = "webhookids";
+    public static final String WEBHOOK_NAMES = "webhooknames";
     public static final String CLEANUP_WEBHOOKS = "cleanupwebhooks";
     public static final String ALERT_RULE_ID = "alertruleid";
     public static final String RELATIONAL_OPERATOR = "relationaloperator";
