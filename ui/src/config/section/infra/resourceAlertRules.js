@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { i18n } from '@/locales'
 
 export default {
   name: 'resourcealerts',
@@ -24,11 +25,13 @@ export default {
   icon: 'BellOutlined',
   permission: ['listResourceAlertRules'],
   columns: () => {
-    const cols = ['name', 'resourcetype', 'resourcename', 'metric', 'condition', 'threshold', 'severity']
+    const cols = ['name', 'resourcetype', {
+      resourcename: (record) => record.resourceid ? record.resourcename : i18n.global.t('label.resource.alert.all.resources')
+    }, 'metric', 'condition', 'threshold', 'severity']
     if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
     return cols
   },
-  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'account', 'domain', 'created'],
+  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'domain', 'created'],
   searchFilters: ['name', 'resourcetype'],
   tabs: [{
     name: 'details',
