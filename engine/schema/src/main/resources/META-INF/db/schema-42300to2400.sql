@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`nic_network_map` (
   CONSTRAINT `fk_nic_network_map__nic_id` FOREIGN KEY (`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_nic_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `uc_nic_network_map__uuid` UNIQUE (`uuid`),
-  UNIQUE KEY `uk_nic_network_map__nic_id_network_id` (`nic_id`, `network_id`),
+  INDEX `i_nic_network_map__nic_id_network_id` (`nic_id`, `network_id`),
   INDEX `i_nic_network_map__nic_id` (`nic_id`),
   INDEX `i_nic_network_map__network_id` (`network_id`),
   INDEX `i_nic_network_map__removed` (`removed`)
