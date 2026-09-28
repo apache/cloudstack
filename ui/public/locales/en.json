@@ -489,6 +489,7 @@
 "label.backup.restore": "Restore Instance backup",
 "label.backup.schedule.create.failed": "Failed to create Backup Schedule",
 "label.backuplimit": "Backup Limits",
+"label.backuppaths": "Backup secondary storage paths",
 "label.backup.schedules": "Backup Schedules",
 "label.backup.storage": "Backup Storage",
 "label.backupstoragelimit": "Backup Storage Limits (GiB)",

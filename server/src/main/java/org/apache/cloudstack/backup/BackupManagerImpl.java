@@ -85,6 +85,7 @@ import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
@@ -255,6 +256,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private DomainHelper domainHelper;
     @Inject
     ReservationDao reservationDao;
+    @Inject
+    private InternalBackupJoinDao internalBackupJoinDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -2595,7 +2598,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
+    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails, boolean isCallerRootAdmin) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
         DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
@@ -2675,6 +2678,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (backup.getToCheckpointId() != null) {
             response.setToCheckpointId(backup.getToCheckpointId());
+        }
+
+        if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && isCallerRootAdmin) {
+            List<InternalBackupJoinVO> backupJoins = internalBackupJoinDao.listById(backup.getId());
+            Map<String, String> backupVolumePaths = new HashMap<>();
+
+            backupJoins.forEach(b -> {
+                backupVolumePaths.put(b.getVolumeName(), b.getImageStorePath());
+            });
+
+            response.setBackupPaths(backupVolumePaths);
         }
 
         response.setObjectName("backup");
