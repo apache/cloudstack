@@ -407,6 +407,50 @@ public class InstanceBootGroupManagerImplTest {
     }
 
     //
+    // checkVmReadiness
+    //
+
+    /**
+     * Regression test: with maxAttempts retry attempts configured, a permanently-failing check must
+     * be evaluated exactly maxAttempts times and halt on that Nth attempt — not on an (N+1)th call,
+     * and the halt message must report "N/N", not "(N+1)/N".
+     */
+    @Test
+    public void testCheckVmReadinessGivesUpAfterExactlyMaxAttemptsNotOneMore() {
+        final long maxAttempts = 3L;
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
+        InstanceBootGroupManagerImpl.VmProgress progress = new InstanceBootGroupManagerImpl.VmProgress(VM_ID_1, MEMBER_ID_1);
+
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getName()).thenReturn("vm1");
+        when(userVmDao.findById(VM_ID_1)).thenReturn(vm);
+        when(instanceBootGroupReadinessRuleService.evaluateVmReadiness(eq(GROUP_ID), eq(VM_ID_1), anyLong(), anyString()))
+                .thenReturn(InstanceBootGroupReadinessRule.Status.NotReady);
+
+        Map<Long, InstanceBootGroupMemberVO> memberById = new HashMap<>();
+        Map<Long, Boolean> membersReadyStatus = new HashMap<>();
+
+        CloudRuntimeException thrown = null;
+        for (int call = 1; call <= maxAttempts; call++) {
+            try {
+                manager.checkVmReadiness(group, progress, memberById, membersReadyStatus, maxAttempts, 60L, false);
+            } catch (CloudRuntimeException e) {
+                thrown = e;
+            }
+            if (call < maxAttempts) {
+                assertFalse("must not give up before the final allowed attempt", progress.gaveUp);
+            }
+        }
+
+        assertTrue("must give up on the final allowed attempt", progress.gaveUp);
+        assertTrue("the final attempt must halt with an exception", thrown != null);
+        assertTrue("halt message must report the capped attempt count (3/3), not 4/3: " + thrown.getMessage(),
+                thrown.getMessage().contains("failed readiness after 3/3 retry attempts"));
+        verify(instanceBootGroupReadinessRuleService, Mockito.times((int) maxAttempts))
+                .evaluateVmReadiness(eq(GROUP_ID), eq(VM_ID_1), anyLong(), anyString());
+    }
+
+    //
     // checkInstanceGroupMembersReady
     //
 

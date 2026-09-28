@@ -143,16 +143,18 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
                 MaxMembersPerBootGroup};
     }
 
-    /** In-memory-only per-VM progress for a single start attempt — never persisted. */
-    private static final class VmProgress {
+    /** In-memory-only per-VM progress for a single start attempt — never persisted. Package-visible
+     *  (rather than private) purely so tests can construct one and inspect retry/give-up state
+     *  directly instead of via reflection. */
+    protected static final class VmProgress {
         private final long vmId;
         private final Long bootGroupMemberId;
         private boolean ready;
         /** Set when this VM has exhausted its retry attempts but belongs to an InstanceGroup
          *  member, so the group's own readiness rule (e.g. a quorum rule) gets the final say
          *  instead of this one VM halting the whole boot group. */
-        private boolean gaveUp;
-        private int retryAttempts;
+        protected boolean gaveUp;
+        protected int retryAttempts;
         /** Anchor for the per-attempt timeout window; reset on every retry, rebooted or not. */
         private long enteredWaitAtMs;
         /** Anchor for the initial-delay grace period; only reset on the initial start and on an
@@ -160,7 +162,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
          *  no fresh boot to wait out. */
         private long lastBootedAtMs;
 
-        private VmProgress(long vmId, Long bootGroupMemberId) {
+        protected VmProgress(long vmId, Long bootGroupMemberId) {
             this.vmId = vmId;
             this.bootGroupMemberId = bootGroupMemberId;
         }
@@ -248,9 +250,11 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
         final long pollIntervalMs = effectivePollIntervalSeconds * 1000L;
         final boolean effectiveRebootOnRetry = effectiveRebootOnRetry(group);
         int concurrency = (int) Math.max(1, Math.min(progressByVmId.size(), effectiveReadinessCheckConcurrency()));
-        // Bound the polling loop: initial delay + (maxRetries + 1) full timeout windows + inter-poll sleeps.
-        long maxWaitMs = (effectiveInitialDelaySeconds(group) + (effectiveMaxRetryAttempts + 1) * effectiveTimeoutSeconds
-                + effectiveMaxRetryAttempts * effectivePollIntervalSeconds) * 1000L;
+        // Bound the polling loop: initial delay + maxAttempts full timeout windows + inter-poll sleeps between them.
+        // At least one timeout window is always budgeted so a single check is never starved out, even if
+        // maxAttempts is configured to 0.
+        long maxWaitMs = (effectiveInitialDelaySeconds(group) + Math.max(1, effectiveMaxRetryAttempts) * effectiveTimeoutSeconds
+                + Math.max(0, effectiveMaxRetryAttempts - 1) * effectivePollIntervalSeconds) * 1000L;
         long deadline = System.currentTimeMillis() + maxWaitMs;
         logger.debug("Waiting for tier {} of {} to become ready: {} VM(s) tracked, timeout={}s, pollInterval={}s, checkConcurrency={}, maxWait={}ms",
                 tierOrder, group, progressByVmId.size(), effectiveTimeoutSeconds, effectivePollIntervalSeconds, concurrency, maxWaitMs);
@@ -311,8 +315,11 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
      * Runs on one of {@code waitForTierReady}'s pooled threads for a single VM: gates on the
      * initial-delay window, dispatches this poll's check with the remaining time budget, and treats
      * Error the same as NotReady — both get a retry before anything halts.
+     *
+     * <p>Package-visible (rather than private) so tests can call it directly instead of via
+     * reflection.</p>
      */
-    private void checkVmReadiness(InstanceBootGroupVO group, VmProgress progress, Map<Long, InstanceBootGroupMemberVO> memberById,
+    protected void checkVmReadiness(InstanceBootGroupVO group, VmProgress progress, Map<Long, InstanceBootGroupMemberVO> memberById,
             Map<Long, Boolean> membersReadyStatus, long effectiveMaxRetryAttempts, long effectiveTimeoutSeconds,
             boolean effectiveRebootOnRetry) {
         UserVmVO vm = userVmDao.findById(progress.vmId);
@@ -340,7 +347,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
             return;
         }
 
-        if (progress.retryAttempts < effectiveMaxRetryAttempts) {
+        if (progress.retryAttempts < effectiveMaxRetryAttempts - 1) {
             long now = System.currentTimeMillis();
             if (effectiveRebootOnRetry) {
                 rebootVm(progress.vmId);
