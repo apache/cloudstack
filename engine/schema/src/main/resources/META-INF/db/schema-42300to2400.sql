@@ -21,7 +21,7 @@
 
 ALTER TABLE `cloud`.`nics` ADD COLUMN `network_rate` int DEFAULT NULL COMMENT 'effective network rate in Mb/s for this NIC, -1 means unlimited';
 
-ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` smallint unsigned DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` int unsigned DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';
 
 -- VMware CBT warm migration session state
 CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration` (

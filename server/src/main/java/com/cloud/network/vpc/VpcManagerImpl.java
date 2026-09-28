@@ -601,7 +601,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean conserveMode = cmd.isConserveMode();
         Integer publicNetworkRate = cmd.getPublicNetworkRate();
         if (publicNetworkRate != null && publicNetworkRate < 0) {
-            throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as 0 or more");
+            throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as 0 (unlimited) or more");
         }
 
         // check if valid domain
@@ -1463,7 +1463,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Integer sortKey = cmd.getSortKey();
         final Integer publicNetworkRate = cmd.getPublicNetworkRate();
         if (publicNetworkRate != null && publicNetworkRate < 0) {
-            throw new InvalidParameterValueException("Failed to update VPC offering " + offeringId + ": specify the public network rate value as 0 or more");
+            throw new InvalidParameterValueException("Failed to update VPC offering " + offeringId + ": specify the public network rate value as 0 (unlimited) or more");
         }
 
         // check if valid domain
@@ -2839,13 +2839,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // the restart procedure.
                 if (vpcDao.update(vpc.getId(), entity)) {
                     vpc = entity;
-                    saveVpcNetworkRateInDetails(vpc);
                 }
 
                 // If the offering and redundant column are changing, force the
                 // clean up.
                 forceCleanup = true;
             }
+            // Refresh the persisted public network rate snapshot so a restart picks up
+            // any zone/offering rate change made since the VPC was created or last restarted.
+            saveVpcNetworkRateInDetails(vpc);
 
             if (forceCleanup) {
                 if (!rollingRestartVpc(vpc, context)) {
