@@ -316,6 +316,9 @@
   <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
   <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
   <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
+  <bean id="vmwareCbtMigrationDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationDaoImpl" />
+  <bean id="vmwareCbtMigrationDiskDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationDiskDaoImpl" />
+  <bean id="vmwareCbtMigrationCycleDaoImpl" class="com.cloud.vm.dao.VmwareCbtMigrationCycleDaoImpl" />
   <bean id="apiKeyPairDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairDaoImpl" />
   <bean id="apiKeyPairPermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDaoImpl" />
   <bean id="kmsKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKeyDaoImpl" />

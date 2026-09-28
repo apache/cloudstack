@@ -17,10 +17,20 @@
 
 package org.apache.cloudstack.vm;
 
+import java.util.List;
+import java.util.Map;
+
+import com.cloud.dc.DataCenter;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
+import com.cloud.org.Cluster;
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.uservm.UserVm;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 
@@ -75,4 +85,44 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }
+
+    UserVm importConvertedVmwareCbtInstanceToKvm(String vcenter, String datacenterName, String username, String password,
+                                                 String clusterName, String sourceHostName, String sourceVMName,
+                                                 UnmanagedInstanceTO convertedInstance, DataCenter zone,
+                                                 Cluster destinationCluster, String displayName, String hostName,
+                                                 Account caller, Account owner, long userId, Long templateId,
+                                                 Long serviceOfferingId, Map<String, Long> dataDiskOfferingMap,
+                                                 Map<String, Long> nicNetworkMap,
+                                                 Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                 Long guestOsId, Map<String, String> details, boolean forced,
+                                                 Long storagePoolId);
+
+    /**
+     * Maps a VMware guest identity (config.guestFullName / config.guestId, available regardless of
+     * the source VM's power state) to a CloudStack guest OS id, so an imported VM does not inherit
+     * the import dummy template's generic OS type. Returns null when no reasonable match exists;
+     * callers then keep their previous behaviour.
+     */
+    Long resolveGuestOsIdForVmwareImport(String osName, String osId);
+
+    /**
+     * Fills in the imported VM's hardware details from the VMware source: UEFI boot (with SECURE
+     * when the source has secure boot enabled) plus the q35 machine type when the source firmware
+     * is UEFI, and a vga console for Windows guests. Only keys the caller did not provide are
+     * added, so explicit user choices always win.
+     */
+    Map<String, String> applyVmwareImportHardwareDetails(Map<String, String> details, String bootType, String bootMode, String osName);
+
+    /**
+     * Preserves static source IPs across the migration: for every NIC that is mapped to a
+     * CloudStack network but has no caller-provided IP, requests the guest's own IPv4 address
+     * (captured from VMware Tools while the source runs) when that address fits the target
+     * network's CIDR, is not the network's gateway and is not already in use. Caller-provided
+     * entries always win; NICs whose source address does not fit fall back to normal allocation.
+     *
+     * @param nicIdToIpv4Cidrs source NIC id to its captured IPv4 addresses in CIDR form
+     * @return the effective NIC-to-IP map to use for the import
+     */
+    Map<String, Network.IpAddresses> autoFillStaticNicIpAddresses(Map<String, Long> nicNetworkMap,
+            Map<String, Network.IpAddresses> nicIpAddressMap, Map<String, List<String>> nicIdToIpv4Cidrs);
 }
