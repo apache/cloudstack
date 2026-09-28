@@ -119,4 +119,6 @@ public interface AsyncJob extends JobInfo {
     void setSyncSource(SyncQueueItem item);
 
     String getRelated();
+
+    String getContextJson();
 }

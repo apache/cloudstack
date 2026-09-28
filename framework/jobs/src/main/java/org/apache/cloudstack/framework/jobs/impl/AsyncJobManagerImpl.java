@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -35,10 +36,14 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.LogContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -64,6 +69,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.threadcontext.ThreadContextUtil;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -659,6 +665,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     AsyncJobExecutionContext.setCurrentExecutionContext(new AsyncJobExecutionContext(job));
                     String related = job.getRelated();
                     String logContext = job.getShortUuid();
+                    String contextJson = job.getContextJson();
                     if (related != null && !related.isEmpty()) {
                         AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
                         if (relatedJob != null) {
@@ -666,6 +673,34 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         }
                     }
                     ThreadContext.put("logcontextid", logContext);
+
+                    if (StringUtils.isNotBlank(contextJson)) {
+                        try {
+                            Type type = new TypeToken<Map<String, String>>() {
+                            }.getType();
+                            Map<String, String> ctx = new Gson().fromJson(contextJson, type);
+                            LogContext.current().putContextParameters(ctx);
+                            // don't fail the job due to logs
+                        } catch (JsonParseException e) {
+                            logger.warn(String.format("Failed to parse %s, log context won't be updated", contextJson), e);
+                        }
+                    }
+
+                    if (StringUtils.isBlank((String) ThreadContext.get(ThreadContextUtil.MDC_UUID_KEY))) {
+                        AsyncJob jobToCheck = job;
+                        logger.debug("Updating UUID MDC value");
+
+                        // If current job has no cmdInfo and has a related parent job, check parent instead
+                        if (StringUtils.isNotBlank(related)) {
+                            AsyncJob parentJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                            if (parentJob != null && StringUtils.isNotBlank(parentJob.getCmdInfo())) {
+                                jobToCheck = parentJob;
+                            }
+                        }
+
+                        // Extract entity UUID from the selected job
+                        ThreadContextUtil.extractAndSetUuidFromCmdInfo(jobToCheck.getCmdInfo());
+                    }
 
                     // execute the job
                     if (logger.isDebugEnabled()) {
@@ -721,6 +756,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         AsyncJobExecutionContext.unregister();
                         _jobMonitor.unregisterActiveTask(runNumber);
 
+                        LogContext.current().removeContextParameters();
+                        // These MDC keys are set directly (not via LogContext), so clear them here
+                        // as well; otherwise a value set for one job leaks into later jobs on this
+                        // pooled worker thread.
+                        ThreadContext.remove(ThreadContextUtil.MDC_UUID_KEY);
+                        ThreadContext.remove("logcontextid");
                     } catch (Throwable e) {
                         logger.error("Double exception", e);
                     }

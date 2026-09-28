@@ -32,6 +32,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -51,6 +56,8 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     protected Logger logger = LogManager.getLogger(getClass());
 
+    private static final Tracer tracer = GlobalOpenTelemetry.getTracer("org.apache.cloudstack.spring.module");
+
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
     public static final String MODULES_EXCLUDE = "modules.exclude";
@@ -64,6 +71,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     ApplicationContext rootContext = null;
     Set<String> excludes = new HashSet<String>();
     Properties configProperties = null;
+    Context loadCtx = null;
 
     public DefaultModuleDefinitionSet(Map<String, ModuleDefinition> modules, String root) {
         super();
@@ -72,11 +80,26 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     }
 
     public void load() throws IOException {
-        if (!loadRootContext())
-            return;
+        // Tagged cloudstack.phase=startup for the boot-trace debug filter, and
+        // deliberately never made current — parent Context is threaded explicitly via
+        // setParent below. Making startup spans current re-parents beans' periodic DB
+        // pollers under the boot trace so it never closes (see CloudStackExtendedLifeCycle
+        // .startBeans). Do NOT add makeCurrent() here.
+        Span loadSpan = tracer.spanBuilder("startup.modules.load")
+                .setAttribute("cloudstack.phase", "startup")
+                .startSpan();
+        loadCtx = Context.current().with(loadSpan);
+        try {
+            if (!loadRootContext())
+                return;
 
-        printHierarchy();
-        loadContexts();
+            printHierarchy();
+            loadContexts();
+        } finally {
+            loadSpan.end();
+            loadCtx = null;
+        }
+
         startContexts();
     }
 
@@ -161,18 +184,28 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         context.setParent(parent);
         context.setClassLoader(def.getClassLoader());
 
+        Context parentCtx = loadCtx != null ? loadCtx : Context.current();
+        Span span = tracer.spanBuilder("startup.module.load")
+                .setParent(parentCtx)
+                .setAttribute("cloudstack.phase", "startup")
+                .setAttribute("module.name", def.getName())
+                .startSpan();
         long start = System.currentTimeMillis();
-        if (logger.isInfoEnabled()) {
-            for (Resource resource : resources) {
-                logger.info("Loading module context [" + def.getName() + "] from " + resource);
+        try {
+            if (logger.isInfoEnabled()) {
+                for (Resource resource : resources) {
+                    logger.info("Loading module context [{}] from {}", def.getName(), resource);
+                }
             }
+            context.refresh();
+            logger.info("Loaded module context [{}] in {} ms", def.getName(), System.currentTimeMillis() - start);
+
+            contexts.put(def.getName(), context);
+
+            return context;
+        } finally {
+            span.end();
         }
-        context.refresh();
-        logger.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
-
-        contexts.put(def.getName(), context);
-
-        return context;
     }
 
     protected boolean shouldLoad(ModuleDefinition def) {

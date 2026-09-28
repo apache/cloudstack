@@ -29,6 +29,10 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
@@ -38,6 +42,7 @@ import com.cloud.utils.mgmt.ManagementBean;
 
 public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
+    private static final Tracer tracer = GlobalOpenTelemetry.getTracer("org.apache.cloudstack.spring.lifecycle");
 
     Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<>();
 
@@ -66,29 +71,60 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
     public void startBeans() {
         logger.info("Starting CloudStack Components");
 
-        with(new WithComponentLifeCycle() {
-            @Override
-            public void with(ComponentLifecycle lifecycle) {
-                logger.info("starting bean {}.", lifecycle.getName());
-                try {
-                    lifecycle.start();
-                } catch (Exception e) {
-                    logger.error("Error on starting bean [{}] due to: {}", lifecycle.getName(), e);
-                    throw new CloudRuntimeException("Failed to start bean [" + lifecycle.getName() + "]");
-                }
+        // Boot spans are tagged cloudstack.phase=startup so a stateless collector
+        // filter can extract the boot trace to the debug view. They are deliberately
+        // NEVER made current: several beans schedule periodic DB pollers during
+        // start(), and the OTel agent captures the current context at schedule time.
+        // If this span were current, every future poll would re-parent under the boot
+        // trace and it would never close. We thread the parent Context explicitly
+        // (setParent) so our own child spans link correctly without the context
+        // leaking onto those background executors. Do NOT add makeCurrent() here.
+        Span rootSpan = tracer.spanBuilder("startup.beans.start")
+                .setAttribute("cloudstack.phase", "startup")
+                .startSpan();
+        final Context beansCtx = Context.current().with(rootSpan);
 
-                if (lifecycle instanceof ManagementBean) {
-                    ManagementBean mbean = (ManagementBean)lifecycle;
-                    try {
-                        JmxUtil.registerMBean(mbean);
-                    } catch (MalformedObjectNameException | InstanceAlreadyExistsException |
-                             MBeanRegistrationException | NotCompliantMBeanException e) {
-                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
+        try {
+            with(new WithComponentLifeCycle() {
+                @Override
+                public void with(ComponentLifecycle lifecycle) {
+                    String beanName = lifecycle.getName();
+                    if (beanName == null) {
+                        beanName = lifecycle.getClass().getSimpleName();
                     }
-                    logger.info("Registered MBean: " + mbean.getName());
+                    logger.info("starting bean {}.", beanName);
+                    Span span = tracer.spanBuilder("startup.bean.start")
+                            .setParent(beansCtx)
+                            .setAttribute("cloudstack.phase", "startup")
+                            .setAttribute("bean.name", beanName)
+                            .startSpan();
+                    long start = System.currentTimeMillis();
+                    try {
+                        lifecycle.start();
+                    } catch (Exception e) {
+                        logger.error("Error on starting bean [{}] due to: {}", beanName, e.getMessage(), e);
+                        throw new CloudRuntimeException("Failed to start bean [" + beanName + "]");
+                    } finally {
+                        span.end();
+                    }
+                    logger.info("bean [{}] started in {} ms", beanName, System.currentTimeMillis() - start);
+
+                    if (lifecycle instanceof ManagementBean) {
+                        ManagementBean mbean = (ManagementBean)lifecycle;
+                        try {
+                            JmxUtil.registerMBean(mbean);
+                        } catch (MalformedObjectNameException | InstanceAlreadyExistsException |
+                                MBeanRegistrationException | NotCompliantMBeanException e) {
+                            logger.warn("Unable to register MBean: {}", mbean.getName(), e);
+                        }
+                        logger.info("Registered MBean: {}", mbean.getName());
+                    }
                 }
-            }
-        });
+            });
+        } finally {
+            rootSpan.end();
+        }
+
 
         logger.info("Done Starting CloudStack Components");
     }
