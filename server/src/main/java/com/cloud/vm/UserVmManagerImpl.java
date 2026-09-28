@@ -39,6 +39,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6620,6 +6621,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (TemplateType.VNF.equals(template.getTemplateType())) {
             if (!_itMgr.isBlankInstance(template)) {
                 vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds(), cmd.getVmNetworkMap());
+                vnfTemplateManager.validateVnfApplianceTrunkNics(template, cmd.getNicNetworksList());
             }
         } else if (cmd instanceof DeployVnfApplianceCmd) {
             throw new InvalidParameterValueException("Can't deploy VNF appliance from a non-VNF template");
@@ -6847,6 +6849,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        persistAdditionalNicNetworkAssociations(cmd, vm);
+
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(template.getId());
         for (VMTemplateVO tmpl: child_templates) {
@@ -6888,6 +6892,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    /**
+     * Persists nicnetworkslist's additional (non-primary) networks into nic_network_map for each newly-created nic,
+     * including any per-network requested IPs (nicnetworkslist[N].ip4addresses/ip6addresses) - a network with no
+     * requested IP auto-allocates, same as before this was added. The primary network of each nicnetworkslist entry
+     * already flows through the ordinary networkIds/ipToNetworkMap pipeline above unchanged, so this only handles
+     * the associations that pipeline has no concept of. No live agent update is issued - the vm hasn't started yet,
+     * so its first plug already reads these associations fresh.
+     */
+    private void persistAdditionalNicNetworkAssociations(BaseDeployVMCmd cmd, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+        List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList = cmd.getNicNetworksList();
+        if (CollectionUtils.isEmpty(nicNetworksList)) {
+            return;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        nics.sort(Comparator.comparingInt(NicVO::getDeviceId));
+        if (nics.size() != nicNetworksList.size()) {
+            throw new CloudRuntimeException(String.format(
+                    "Instance %s was created with %d nic(s) but %d %s entries were requested",
+                    vm.getUuid(), nics.size(), nicNetworksList.size(), ApiConstants.NIC_NETWORKS_LIST));
+        }
+        for (int i = 0; i < nics.size(); i++) {
+            BaseDeployVMCmd.NicNetworkGrouping grouping = nicNetworksList.get(i);
+            List<Long> additionalNetworkIds = grouping.getAssociatedNetworkIds();
+            if (!additionalNetworkIds.isEmpty()) {
+                networkService.associateNetworksToNic(nics.get(i), additionalNetworkIds, grouping.getAssociatedNetworkIps());
+            }
+        }
     }
 
     protected void validateLeaseProperties(Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
