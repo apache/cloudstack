@@ -1127,6 +1127,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
+        if (!storageMgr.storagePoolHasEnoughSpace(volume.getSize(), storagePool)) {
+            throw new InvalidParameterValueException(String.format("Storage pool %s does not have enough space to create volume %s.",
+                    storagePool.getName(), volume.getUuid()));
+        }
+
         DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
