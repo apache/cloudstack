@@ -1088,6 +1088,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     newPrimaryNetworkId, nic.getUuid()));
         }
 
+        NetworkVO newPrimaryNetwork = _networksDao.findById(newPrimaryNetworkId);
+        if (newPrimaryNetwork == null) {
+            throw new CloudRuntimeException(String.format("Unable to find network %s", newPrimaryNetworkId));
+        }
+
         long oldPrimaryNetworkId = nic.getNetworkId();
         String oldPrimaryIp4 = nic.getIPv4Address();
         String oldPrimaryIp6 = nic.getIPv6Address();
@@ -1100,9 +1105,31 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         nic.setNetworkId(newPrimaryNetworkId);
         nic.setIPv4Address(association.getIp4Address());
         nic.setIPv6Address(association.getIp6Address());
+        applyNetworkAddressingToNic(nic, newPrimaryNetwork);
         _nicDao.update(nic.getId(), nic);
 
         return _nicDao.findById(nic.getId());
+    }
+
+    /**
+     * Refreshes a nic's network-derived fields (gateway, netmask, broadcast/isolation uri, IPv6 gateway/cidr) to
+     * match the given network. These are stored on the nic row itself rather than resolved live from networkId, so
+     * changeNicPrimaryNetwork must update them explicitly - GuestNetworkGuru.reserve() only refreshes
+     * broadcastUri/isolationUri on the VM's next start, and never touches gateway/netmask/IPv6 fields at all,
+     * which would otherwise stay wrong indefinitely. Mirrors the same field derivation GuestNetworkGuru.allocate()
+     * uses when a nic is first created against a network.
+     */
+    private void applyNetworkAddressingToNic(NicVO nic, NetworkVO network) {
+        nic.setIPv4Gateway(network.getGateway());
+        if (network.getCidr() != null) {
+            nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
+        }
+        nic.setBroadcastUri(network.getBroadcastUri());
+        nic.setIsolationUri(network.getBroadcastUri());
+        if (network.getIp6Cidr() != null && network.getIp6Gateway() != null) {
+            nic.setIPv6Cidr(network.getIp6Cidr());
+            nic.setIPv6Gateway(network.getIp6Gateway());
+        }
     }
 
     private void updateLiveVlanTrunkMembership(VirtualMachine vm, NicVO nic) throws ResourceUnavailableException {

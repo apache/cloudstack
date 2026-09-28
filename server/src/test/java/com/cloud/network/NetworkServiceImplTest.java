@@ -143,6 +143,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
@@ -2136,6 +2137,11 @@ public class NetworkServiceImplTest {
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
         NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
         Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(association);
+        NetworkVO newPrimaryNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(newPrimaryNetwork.getGateway()).thenReturn("10.1.2.1");
+        Mockito.when(newPrimaryNetwork.getCidr()).thenReturn("10.1.2.0/24");
+        Mockito.when(networkDao.findById(206L)).thenReturn(newPrimaryNetwork);
+        Mockito.when(networkModel.getValidNetworkCidr(newPrimaryNetwork)).thenReturn("10.1.2.0/24");
 
         Nic result = service.changeNicPrimaryNetwork(mockChangePrimaryCmd(11L, 206L));
 
@@ -2146,6 +2152,10 @@ public class NetworkServiceImplTest {
         Mockito.verify(nic).setNetworkId(206L);
         Mockito.verify(nic).setIPv4Address("10.1.1.50");
         Mockito.verify(nic).setIPv6Address(null);
+        Mockito.verify(nic).setIPv4Gateway("10.1.2.1");
+        Mockito.verify(nic).setIPv4Netmask(NetUtils.cidr2Netmask("10.1.2.0/24"));
+        Mockito.verify(nic).setBroadcastUri(vlanUri(1180));
+        Mockito.verify(nic).setIsolationUri(vlanUri(1180));
         Mockito.verify(nicDao).update(Mockito.eq(11L), Mockito.eq(nic));
     }
 
