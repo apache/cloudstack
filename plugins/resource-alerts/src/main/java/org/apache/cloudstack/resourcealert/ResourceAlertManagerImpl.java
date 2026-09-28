@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -438,11 +437,12 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 rule.getMessage(), new Date());
         alertDao.persist(alert);
 
-        String subject = buildSubject(rule, resourceId, value);
-        String body = buildBody(rule, resourceId, value);
+        Pair<String, String> resource = describeResource(rule.getResourceType(), resourceId);
+        String subject = buildSubject(rule, resource);
+        String body = buildBody(rule, resource, value);
         long dcId = getDataCenterId(rule.getResourceType(), resourceId);
         publishAlertEvent(dcId, subject, body);
-        deliverToWebhooks(rule, alert, resourceId, value);
+        deliverToWebhooks(rule, alert, resource, value);
 
         if (rule.isEmail()) {
             sendEmail(subject, body);
@@ -460,7 +460,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
     }
 
-    private void deliverToWebhooks(ResourceAlertRuleVO rule, ResourceAlertVO alert, Long resourceId, double value) {
+    private void deliverToWebhooks(ResourceAlertRuleVO rule, ResourceAlertVO alert, Pair<String, String> resource, double value) {
         List<Long> webhookIds = ruleWebhookDao.listWebhookIdsByRule(rule.getId());
         if (webhookIds.isEmpty()) {
             return;
@@ -471,17 +471,18 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             return;
         }
         webhookHelper.deliverToWebhooks(webhookIds, rule.getAccountId(), ALERT_EVENT_TYPE,
-                buildWebhookPayload(rule, alert, resourceId, value));
+                buildWebhookPayload(rule, alert, resource, value));
     }
 
-    String buildWebhookPayload(ResourceAlertRuleVO rule, ResourceAlertVO alert, Long resourceId, double value) {
+    String buildWebhookPayload(ResourceAlertRuleVO rule, ResourceAlertVO alert, Pair<String, String> resource, double value) {
         JsonObject payload = new JsonObject();
         payload.addProperty("event", ALERT_EVENT_TYPE);
         payload.addProperty("id", alert.getUuid());
         payload.addProperty("ruleid", rule.getUuid());
         payload.addProperty("rulename", rule.getName());
         payload.addProperty("resourcetype", rule.getResourceType().name());
-        payload.addProperty("resourceid", getResourceUuid(rule.getResourceType(), resourceId));
+        payload.addProperty("resourceid", resource != null ? resource.first() : null);
+        payload.addProperty("resourcename", resource != null ? resource.second() : null);
         payload.addProperty("metric", rule.getMetric());
         payload.addProperty("condition", rule.getCondition().name());
         payload.addProperty("threshold", rule.getThreshold());
@@ -492,45 +493,51 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return payload.toString();
     }
 
-    private String getResourceUuid(ResourceAlertRule.ResourceType type, Long resourceId) {
-        if (resourceId == null) {
+    private Pair<String, String> describeResource(ResourceAlertRule.ResourceType type, Long id) {
+        if (id == null) {
             return null;
         }
-        Identity resource;
         switch (type) {
-            case VirtualMachine:
-                resource = userVmDao.findByIdIncludingRemoved(resourceId);
-                break;
-            case Volume:
-                resource = volumeDao.findByIdIncludingRemoved(resourceId);
-                break;
-            case Host:
-                resource = hostDao.findByIdIncludingRemoved(resourceId);
-                break;
-            case StoragePool:
-                resource = storagePoolDao.findByIdIncludingRemoved(resourceId);
-                break;
+            case VirtualMachine: {
+                UserVmVO vm = userVmDao.findByIdIncludingRemoved(id);
+                return vm == null ? null : new Pair<>(vm.getUuid(),
+                        StringUtils.isNotBlank(vm.getDisplayName()) ? vm.getDisplayName() : vm.getHostName());
+            }
+            case Volume: {
+                VolumeVO volume = volumeDao.findByIdIncludingRemoved(id);
+                return volume == null ? null : new Pair<>(volume.getUuid(), volume.getName());
+            }
+            case Host: {
+                HostVO host = hostDao.findByIdIncludingRemoved(id);
+                return host == null ? null : new Pair<>(host.getUuid(), host.getName());
+            }
+            case StoragePool: {
+                StoragePoolVO pool = storagePoolDao.findByIdIncludingRemoved(id);
+                return pool == null ? null : new Pair<>(pool.getUuid(), pool.getName());
+            }
             default:
-                resource = null;
+                return null;
         }
-        return resource != null ? resource.getUuid() : null;
     }
 
-    private String buildSubject(ResourceAlertRuleVO rule, Long resourceId, double value) {
+    private String buildSubject(ResourceAlertRuleVO rule, Pair<String, String> resource) {
         return String.format("[%s] Resource Alert: %s %s %.2f on %s %s",
                 rule.getSeverity().name(),
                 rule.getMetric(),
                 rule.getCondition().name(),
                 rule.getThreshold(),
                 rule.getResourceType().name(),
-                resourceId);
+                resource != null ? StringUtils.defaultIfBlank(resource.second(), resource.first()) : "unknown");
     }
 
-    private String buildBody(ResourceAlertRuleVO rule, Long resourceId, double value) {
+    private String buildBody(ResourceAlertRuleVO rule, Pair<String, String> resource, double value) {
         StringBuilder sb = new StringBuilder();
         sb.append("Rule: ").append(rule.getName()).append('\n');
         sb.append("Resource Type: ").append(rule.getResourceType().name()).append('\n');
-        sb.append("Resource ID: ").append(resourceId).append('\n');
+        if (resource != null) {
+            sb.append("Resource: ").append(StringUtils.defaultString(resource.second())).append('\n');
+            sb.append("Resource ID: ").append(resource.first()).append('\n');
+        }
         sb.append("Metric: ").append(rule.getMetric()).append('\n');
         sb.append(String.format("Condition: %s %.2f%n", rule.getCondition().name(), rule.getThreshold()));
         sb.append(String.format("Current Value: %.2f%n", value));
