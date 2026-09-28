@@ -80,6 +80,11 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
         </dependency>
+        <!-- ContextDataProvider, the SPI TraceContextDataProvider implements, is in log4j-core. -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
