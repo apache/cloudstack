@@ -57,24 +57,6 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Inject
     public VmImportService vmImportService;
 
-    public enum VmwareMigrationMode {
-        OVF,
-        VDDK,
-        CBT;
-
-        public static VmwareMigrationMode fromValue(String value, boolean useVddkFallback) {
-            if (StringUtils.isBlank(value)) {
-                return useVddkFallback ? VDDK : OVF;
-            }
-            for (VmwareMigrationMode mode : values()) {
-                if (mode.name().equalsIgnoreCase(value)) {
-                    return mode;
-                }
-            }
-            throw new IllegalArgumentException(String.format("Unsupported VMware migration mode: %s", value));
-        }
-    }
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -171,8 +153,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private Long importInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM. " +
-                    "When " + ApiConstants.USE_VDDK + " and " + ApiConstants.FORCE_CONVERT_TO_POOL + " are true, this can be an RBD primary storage pool for direct RBD import.")
+            description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
     @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
@@ -202,17 +183,8 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             type = CommandType.BOOLEAN,
             since = "4.22.1",
             description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
-                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ". " +
-                    "With " + ApiConstants.FORCE_CONVERT_TO_POOL + "=true and an RBD conversion pool, the source VMware VM must be powered off and " +
-                    "the conversion host must support qemu RBD access and in-place virt-v2v finalization.")
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
     private Boolean useVddk;
-
-    @Parameter(name = ApiConstants.VMWARE_MIGRATION_MODE,
-            type = CommandType.STRING,
-            since = "4.22.1",
-            description = "(only for importing VMs from VMware to KVM) optional - migration mode to use. Valid values are OVF, VDDK, and CBT. " +
-                    "When omitted, CloudStack preserves the existing usevddk behavior.")
-    private String vmwareMigrationMode;
 
 
     /////////////////////////////////////////////////////
@@ -293,10 +265,6 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public boolean getUseVddk() {
         return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
-    }
-
-    public String getVmwareMigrationMode() {
-        return vmwareMigrationMode;
     }
 
     public String getTmpPath() {
