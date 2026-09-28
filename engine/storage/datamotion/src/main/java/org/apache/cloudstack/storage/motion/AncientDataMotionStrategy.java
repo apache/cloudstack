@@ -472,7 +472,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 return true;
             }
 
+            if (Hypervisor.HypervisorType.XenServer.equals(((VolumeInfo) srcData).getHypervisorType())) {
+                return false;
+            }
+
             if (destData instanceof VolumeInfo) {
+                if (Hypervisor.HypervisorType.XenServer.equals(((VolumeInfo) destData).getHypervisorType())) {
+                    return false;
+                }
+
                 Scope srcDataStoreScope = srcData.getDataStore().getScope();
                 Scope destDataStoreScope = destData.getDataStore().getScope();
                 logger.info("srcDataStoreScope: {}, srcData pool type: {}; destDataStoreScope: {}, destData pool type: {}",
