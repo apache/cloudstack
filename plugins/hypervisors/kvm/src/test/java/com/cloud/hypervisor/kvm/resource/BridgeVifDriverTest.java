@@ -61,7 +61,7 @@ public class BridgeVifDriverTest {
         pifs.put(BRIDGE_NAME, "eth1");
         pifs.put("customLabel", "eth2");
         driver._pifs = pifs;
-        Mockito.lenient().doNothing().when(driver).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.lenient().doNothing().when(driver).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
     }
 
     @Test
@@ -173,7 +173,7 @@ public class BridgeVifDriverTest {
 
         driver.ensureVlanTrunkMembership(intf, nic);
 
-        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
     }
 
     @Test
@@ -185,7 +185,49 @@ public class BridgeVifDriverTest {
 
         driver.ensureVlanTrunkMembership(intf, nic);
 
-        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void usesSharedVlanAwareBridgeTrueOnlyForVlanNicOnFilteringReadyHost() {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        Assert.assertTrue(driver.usesSharedVlanAwareBridge(nic));
+
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(false);
+        Assert.assertFalse(driver.usesSharedVlanAwareBridge(nic));
+
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vxlan);
+        Assert.assertFalse(driver.usesSharedVlanAwareBridge(nic));
+    }
+
+    @Test
+    public void ensureVlanTrunkMembershipAppliesNativeVlanForOrdinaryNicOnFilteringReadyHost() throws InternalErrorException {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(false);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        NicTO nic = buildTrunkNic(100, null);
+        nic.setTrunkVlan(false);
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+
+        driver.ensureVlanTrunkMembership(intf, nic);
+
+        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "100", true);
+    }
+
+    @Test
+    public void ensureVlanTrunkMembershipNoOpsForOrdinaryNicWhenHostNotFilteringReady() throws InternalErrorException {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(false);
+        NicTO nic = buildTrunkNic(100, null);
+        nic.setTrunkVlan(false);
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+
+        driver.ensureVlanTrunkMembership(intf, nic);
+
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
     }
 
     @Test
@@ -197,8 +239,8 @@ public class BridgeVifDriverTest {
 
         driver.ensureVlanTrunkMembership(intf, nic);
 
-        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "100");
-        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "200");
+        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "100", true);
+        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "200", false);
     }
 
     @Test(expected = InternalErrorException.class)
@@ -208,6 +250,53 @@ public class BridgeVifDriverTest {
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
 
         driver.ensureVlanTrunkMembership(intf, nic);
+    }
+
+    @Test
+    public void updateVlanTrunkMembershipUpdatesXmlOnModernLibvirt() throws Exception {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        NicTO nic = buildTrunkNic(100, Collections.singletonList(200));
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+        org.libvirt.Domain vm = Mockito.mock(org.libvirt.Domain.class);
+
+        driver.updateVlanTrunkMembership(vm, intf, nic);
+
+        Mockito.verify(vm).updateDeviceFlags(Mockito.contains("trunk"),
+                Mockito.eq(org.libvirt.Domain.DeviceModifyFlags.LIVE));
+    }
+
+    @Test
+    public void updateVlanTrunkMembershipAppliesDiffOnOldLibvirt() throws Exception {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(false);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        NicTO nic = buildTrunkNic(100, Collections.singletonList(200));
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        intf.setDevName("vnet5");
+        org.libvirt.Domain vm = Mockito.mock(org.libvirt.Domain.class);
+        Map<Integer, Boolean> currentMembership = new HashMap<>();
+        currentMembership.put(100, true);
+        currentMembership.put(999, false);
+        Mockito.doReturn(currentMembership).when(driver).readCurrentVlanMembership("vnet5");
+
+        driver.updateVlanTrunkMembership(vm, intf, nic);
+
+        Mockito.verify(driver).runBridgeVlanCommand("del", "vnet5", "999", false);
+        Mockito.verify(driver).runBridgeVlanCommand("add", "vnet5", "200", false);
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand("add", "vnet5", "100", true);
+        Mockito.verify(vm, Mockito.never()).updateDeviceFlags(Mockito.anyString(), Mockito.anyInt());
+    }
+
+    @Test(expected = InternalErrorException.class)
+    public void updateVlanTrunkMembershipFailsForNonTrunkNic() throws Exception {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(false);
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+        org.libvirt.Domain vm = Mockito.mock(org.libvirt.Domain.class);
+
+        driver.updateVlanTrunkMembership(vm, intf, nic);
     }
 
     @Test(expected = InternalErrorException.class)
@@ -239,6 +328,7 @@ public class BridgeVifDriverTest {
 
         Assert.assertTrue(intf.isVlanTrunk());
         Assert.assertEquals(java.util.Arrays.asList(100, 200, 300), intf.getTrunkVlanTags());
+        Assert.assertEquals(Integer.valueOf(100), intf.getNativeVlanTag());
         Assert.assertEquals(BRIDGE_NAME, intf.getBrName());
     }
 
@@ -271,36 +361,58 @@ public class BridgeVifDriverTest {
 
         Assert.assertEquals("customLabel", intf.getBrName());
         Assert.assertEquals(Collections.singletonList(100), intf.getTrunkVlanTags());
+        Assert.assertEquals(Integer.valueOf(100), intf.getNativeVlanTag());
     }
 
     @Test
-    public void plugTrunkVlanNicProgramsUplinkForWhicheverBridgeTheNicActuallyUses() throws InternalErrorException {
+    public void plugTrunkVlanNicNeverModifiesTheUplinkItself() throws InternalErrorException {
         Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
         Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        Mockito.doReturn(Collections.emptyMap()).when(driver).readCurrentVlanMembership(Mockito.anyString());
 
         driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), buildTrunkNic(100, null), null, null, null, 0);
         driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), buildTrunkNic(300, null), "customLabel", null, null, 0);
 
-        Mockito.verify(driver).runBridgeVlanCommand("add", "eth1", "2-4094");
-        Mockito.verify(driver).runBridgeVlanCommand("add", "eth2", "2-4094");
+        // the uplink's own VLAN membership is the operator's responsibility, not CloudStack's - plugging a nic
+        // never adds anything to eth1/eth2, regardless of whether their current membership already covers the VLAN
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.eq("add"), Mockito.eq("eth1"), Mockito.anyString(), Mockito.anyBoolean());
+        Mockito.verify(driver, Mockito.never()).runBridgeVlanCommand(Mockito.eq("add"), Mockito.eq("eth2"), Mockito.anyString(), Mockito.anyBoolean());
     }
 
     @Test
-    public void plugTrunkVlanNicOnlyProgramsUplinkOnceForRepeatedNicsOnTheSameBridge() throws InternalErrorException {
+    public void plugTrunkVlanNicChecksUplinkMembershipForTheResolvedPif() throws InternalErrorException {
         Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
         Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        Mockito.doReturn(Collections.emptyMap()).when(driver).readCurrentVlanMembership(Mockito.anyString());
 
-        driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), buildTrunkNic(100, null), null, null, null, 0);
-        driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), buildTrunkNic(200, null), null, null, null, 0);
+        driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), buildTrunkNic(100, Collections.singletonList(200)), null, null, null, 0);
 
-        Mockito.verify(driver, Mockito.times(1)).runBridgeVlanCommand("add", "eth1", "2-4094");
+        Mockito.verify(driver).readCurrentVlanMembership("eth1");
     }
 
-    @Test(expected = InternalErrorException.class)
-    public void plugTrunkVlanNicFailsWhenUplinkPifUnknownForBridge() throws InternalErrorException {
+    @Test
+    public void plugTrunkVlanNicSucceedsWhenUplinkMembershipCannotBeRead() throws InternalErrorException {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
+        Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
+        Mockito.doThrow(new InternalErrorException("bridge command failed")).when(driver).readCurrentVlanMembership(Mockito.anyString());
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
+
+        // a failure to even read the uplink's current membership is only a missed diagnostic, never a reason to refuse the plug
+        driver.plugTrunkVlanNic(intf, buildTrunkNic(100, null), null, null, null, 0);
+
+        Assert.assertEquals(BRIDGE_NAME, intf.getBrName());
+    }
+
+    @Test
+    public void plugTrunkVlanNicSucceedsWhenUplinkPifUnknownForBridge() throws InternalErrorException {
+        Mockito.when(libvirtComputingResource.hostSupportsVlanTrunkXml()).thenReturn(true);
         Mockito.when(libvirtComputingResource.hostSupportsVlanFiltering()).thenReturn(true);
         NicTO nic = buildTrunkNic(100, null);
+        LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
 
-        driver.plugTrunkVlanNic(new LibvirtVMDef.InterfaceDef(), nic, "unknownLabel", null, null, 0);
+        // not being able to even determine the uplink is only a missed diagnostic, never a reason to refuse the plug
+        driver.plugTrunkVlanNic(intf, nic, "unknownLabel", null, null, 0);
+
+        Assert.assertEquals("unknownLabel", intf.getBrName());
     }
 }

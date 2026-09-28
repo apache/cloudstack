@@ -1605,6 +1605,7 @@ public class LibvirtVMDef {
         private int _vlanTag = -1;
         private boolean _vlanTrunk = false;
         private List<Integer> _vlanTrunkTags;
+        private Integer _nativeVlanTag;
         private boolean _pxeDisable = false;
         private boolean _linkStateUp = true;
         private Integer _slot;
@@ -1765,13 +1766,18 @@ public class LibvirtVMDef {
             return _vlanTag;
         }
 
-        public void setTrunkVlanTags(List<Integer> vlanTags) {
+        public void setTrunkVlanTags(List<Integer> vlanTags, Integer nativeVlanTag) {
             _vlanTrunk = true;
             _vlanTrunkTags = vlanTags;
+            _nativeVlanTag = nativeVlanTag;
         }
 
         public List<Integer> getTrunkVlanTags() {
             return _vlanTrunkTags;
+        }
+
+        public Integer getNativeVlanTag() {
+            return _nativeVlanTag;
         }
 
         public boolean isVlanTrunk() {
@@ -1884,7 +1890,11 @@ public class LibvirtVMDef {
             if (_vlanTrunk && CollectionUtils.isNotEmpty(_vlanTrunkTags)) {
                 netBuilder.append("<vlan trunk='yes'>\n");
                 for (Integer tag : _vlanTrunkTags) {
-                    netBuilder.append("<tag id='" + tag + "'/>\n");
+                    if (tag.equals(_nativeVlanTag)) {
+                        netBuilder.append("<tag id='" + tag + "' nativeMode='untagged'/>\n");
+                    } else {
+                        netBuilder.append("<tag id='" + tag + "'/>\n");
+                    }
                 }
                 netBuilder.append("</vlan>");
             } else if (_vlanTag > 0 && _vlanTag < 4095) {

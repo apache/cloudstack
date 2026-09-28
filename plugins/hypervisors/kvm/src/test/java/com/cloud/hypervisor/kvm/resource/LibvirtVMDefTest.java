@@ -163,20 +163,31 @@ public class LibvirtVMDefTest extends TestCase {
     public void testInterfaceTrunkVlanTags() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
-        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300));
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), 100);
 
         String expected =
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='cloudbr1'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
                         + "<model type='virtio'/>\n"
-                        + "<vlan trunk='yes'>\n<tag id='100'/>\n<tag id='200'/>\n<tag id='300'/>\n</vlan>"
+                        + "<vlan trunk='yes'>\n<tag id='100' nativeMode='untagged'/>\n<tag id='200'/>\n<tag id='300'/>\n</vlan>"
                         + "<link state='up'/>\n"
                         + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
         assertTrue(ifDef.isVlanTrunk());
         assertEquals(Arrays.asList(100, 200, 300), ifDef.getTrunkVlanTags());
+        assertEquals(Integer.valueOf(100), ifDef.getNativeVlanTag());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsWithoutNativeVlan() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), null);
+
+        String content = ifDef.toString();
+        assertFalse(content.contains("nativeMode"));
     }
 
     @Test
@@ -184,7 +195,7 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
         ifDef.setVlanTag(50);
-        ifDef.setTrunkVlanTags(Arrays.asList(50, 60));
+        ifDef.setTrunkVlanTags(Arrays.asList(50, 60), 50);
 
         String content = ifDef.toString();
         assertTrue(content.contains("<vlan trunk='yes'>"));

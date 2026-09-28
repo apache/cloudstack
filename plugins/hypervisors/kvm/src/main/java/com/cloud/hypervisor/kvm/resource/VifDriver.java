@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -48,6 +49,11 @@ public interface VifDriver {
 
     // applies manual VLAN trunk membership to a trunk nic's live tap on hosts whose libvirt can't do it via <vlan> XML; no-op otherwise
     default void ensureVlanTrunkMembership(LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException {
+    }
+
+    // applies nic's full desired VLAN membership (primary + associated networks) to an already-plugged trunk nic on a running Instance
+    default void updateVlanTrunkMembership(Domain vm, LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException, LibvirtException {
+        throw new InternalErrorException("This vif driver does not support live multi-VLAN trunk membership updates");
     }
 
 }
