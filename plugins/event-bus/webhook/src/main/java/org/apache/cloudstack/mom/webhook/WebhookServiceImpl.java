@@ -444,9 +444,9 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
-    public String getWebhookUuid(long webhookId) {
+    public Pair<String, String> describeWebhook(long webhookId) {
         WebhookVO webhook = webhookDao.findByIdIncludingRemoved(webhookId);
-        return webhook != null ? webhook.getUuid() : null;
+        return webhook != null ? new Pair<>(webhook.getUuid(), webhook.getName()) : null;
     }
 
     @Override

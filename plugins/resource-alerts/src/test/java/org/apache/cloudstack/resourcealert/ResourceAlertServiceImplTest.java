@@ -488,4 +488,21 @@ public class ResourceAlertServiceImplTest {
         assertEquals("vm-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceId"));
         assertEquals("web-01", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceName"));
     }
+
+    @Test
+    public void testRuleResponseIncludesWebhookIdsAndNames() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getId()).thenReturn(5L);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+        when(ruleWebhookDao.listWebhookIdsByRule(5L)).thenReturn(List.of(11L, 12L));
+        when(webhookHelper.describeWebhook(11L)).thenReturn(new Pair<>("wh-1", "ops-hook"));
+        when(webhookHelper.describeWebhook(12L)).thenReturn(null);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(List.of("wh-1"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
+        assertEquals(List.of("ops-hook"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
+    }
 }
