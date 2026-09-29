@@ -66,6 +66,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -478,6 +479,12 @@ public class ResourceAlertManagerImplTest {
         when(vm.getUuid()).thenReturn("vm-uuid");
         when(vm.getDisplayName()).thenReturn("web-01");
         when(userVmDao.findByIdIncludingRemoved(VM_ID)).thenReturn(vm);
+        AccountVO account = mock(AccountVO.class);
+        when(account.getAccountName()).thenReturn("acme");
+        when(accountDao.findByIdIncludingRemoved(1L)).thenReturn(account);
+        DomainVO domain = mock(DomainVO.class);
+        when(domain.getPath()).thenReturn("/acme/");
+        when(domainDao.findByIdIncludingRemoved(1L)).thenReturn(domain);
 
         manager.evaluateRules();
 
@@ -490,6 +497,8 @@ public class ResourceAlertManagerImplTest {
         assertTrue(subject.contains("VirtualMachine web-01"));
         assertTrue(body.contains("Resource: web-01"));
         assertTrue(body.contains("Resource ID: vm-uuid"));
+        assertTrue(body.contains("Account: acme"));
+        assertTrue(body.contains("Domain: /acme/"));
     }
 
     @Test
