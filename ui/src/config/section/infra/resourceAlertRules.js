@@ -31,7 +31,7 @@ export default {
     if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
     return cols
   },
-  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'domain', 'created'],
+  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'project', 'domain', 'created'],
   searchFilters: ['name', 'resourcetype'],
   tabs: [{
     name: 'details',
@@ -55,19 +55,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: (record, store) => {
-        const args = ['name', 'condition', 'threshold', 'severity', 'message', 'resetinterval', 'webhookids', 'cleanupwebhooks']
-        if (store.userInfo.roletype === 'Admin') args.push('email')
-        return args
-      },
-      mapping: {
-        condition: {
-          options: ['GT', 'GTE', 'LT', 'LTE', 'EQ']
-        },
-        severity: {
-          options: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/resourcealert/EditResourceAlertRule.vue')))
     },
     {
       api: 'deleteResourceAlertRule',
