@@ -2359,6 +2359,7 @@
 "label.message": "Message",
 "label.resetinterval": "Cooldown (seconds)",
 "label.resource.alert.all.resources": "All resources",
+"label.resource.alert.cooldown.default": "Leave empty to use the default",
 "label.resource.alert.owner.self": "Your own account",
 "label.alertrulename": "Alert rule",
 "label.webhookids": "Webhooks",

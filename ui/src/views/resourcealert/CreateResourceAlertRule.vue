@@ -115,7 +115,7 @@
 
       <a-form-item name="resetinterval" ref="resetinterval">
         <template #label>{{ $t('label.resetinterval') }}</template>
-        <a-input-number v-model:value="form.resetinterval" :min="0" style="width: 100%" />
+        <a-input-number v-model:value="form.resetinterval" :min="0" :placeholder="$t('label.resource.alert.cooldown.default')" style="width: 100%" />
       </a-form-item>
 
       <a-form-item name="webhookids" ref="webhookids" v-if="'listWebhooks' in $store.getters.apis">

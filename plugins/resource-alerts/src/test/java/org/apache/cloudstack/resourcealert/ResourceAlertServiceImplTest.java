@@ -18,6 +18,7 @@
 package org.apache.cloudstack.resourcealert;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -519,5 +520,17 @@ public class ResourceAlertServiceImplTest {
 
         assertEquals(List.of("wh-1"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
         assertEquals(List.of("ops-hook"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
+    }
+
+    @Test
+    public void testRuleResponseLeavesOutWebhookNamesWhenNone() {
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(List.of(), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
+        assertNull(org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
     }
 }

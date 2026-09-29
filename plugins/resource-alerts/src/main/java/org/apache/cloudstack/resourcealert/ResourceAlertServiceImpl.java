@@ -295,7 +295,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setResetInterval(vo.getResetInterval());
         List<Pair<String, String>> webhooks = describeWebhooks(vo.getId());
         r.setWebhookIds(webhooks.stream().map(Pair::first).collect(Collectors.toList()));
-        r.setWebhookNames(webhooks.stream().map(Pair::second).collect(Collectors.toList()));
+        // Left out when empty so the UI hides it
+        r.setWebhookNames(webhooks.isEmpty() ? null : webhooks.stream().map(Pair::second).collect(Collectors.toList()));
         r.setAccountName(vo.getAccountName());
         r.setDomainId(vo.getDomainUuid());
         r.setDomainName(vo.getDomainName());
