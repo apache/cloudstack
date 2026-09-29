@@ -21,6 +21,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -162,7 +163,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testTransferClvmVolumeLock_Success() throws AgentUnavailableException, OperationTimedoutException {
+    public void testTransferClvmVolumeLock_Success() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getPath()).thenReturn("/" + VG_NAME);
 
@@ -192,7 +193,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testTransferClvmVolumeLock_SameHost() throws AgentUnavailableException, OperationTimedoutException {
+    public void testTransferClvmVolumeLock_SameHost() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getPath()).thenReturn("/" + VG_NAME);
 
@@ -207,7 +208,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testTransferClvmVolumeLock_ActivationFails() throws AgentUnavailableException, OperationTimedoutException {
+    public void testTransferClvmVolumeLock_ActivationFails() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getPath()).thenReturn(VG_NAME);
 
@@ -221,7 +222,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testTransferClvmVolumeLock_AgentUnavailable() throws AgentUnavailableException, OperationTimedoutException {
+    public void testTransferClvmVolumeLock_AgentUnavailable() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getPath()).thenReturn(VG_NAME);
 
@@ -261,7 +262,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_ZoneScopedPool() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_ZoneScopedPool() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(null);
         when(pool.getDataCenterId()).thenReturn(1L);
@@ -284,7 +285,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_SuccessfulQuery() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_SuccessfulQuery() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -306,7 +307,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_VolumeNotLocked() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_VolumeNotLocked() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -331,7 +332,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_EmptyHostname() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_EmptyHostname() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -356,7 +357,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_HostnameNotResolved() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_HostnameNotResolved() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -377,7 +378,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_QueryFails() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_QueryFails() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -397,7 +398,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_NullAnswer() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_NullAnswer() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -416,7 +417,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_AgentUnavailableException() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_AgentUnavailableException() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -436,7 +437,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_OperationTimedoutException() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_OperationTimedoutException() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -456,7 +457,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_UpdateDatabase_MatchingValue() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_UpdateDatabase_MatchingValue() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.lenient().when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -484,7 +485,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_UpdateDatabase_DifferentValue() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_UpdateDatabase_DifferentValue() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -517,7 +518,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_UpdateDatabase_NoExistingDetail() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_UpdateDatabase_NoExistingDetail() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -540,7 +541,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_UpdateDatabase_RemoveDetailWhenUnlocked() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_UpdateDatabase_RemoveDetailWhenUnlocked() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -579,7 +580,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_SkipsNonKVMHosts() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_SkipsNonKVMHosts() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -602,7 +603,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_SkipsDownHosts() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_SkipsDownHosts() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -625,7 +626,7 @@ public class ClvmPoolManagerTest {
     }
 
     @Test
-    public void testQueryCurrentLockHolder_PathWithLeadingSlash() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_PathWithLeadingSlash() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -649,7 +650,7 @@ public class ClvmPoolManagerTest {
      * No fan-out should occur.
      */
     @Test
-    public void testQueryCurrentLockHolder_FastPath_HitOnDbHost() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_FastPath_HitOnDbHost() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getPath()).thenReturn(VG_NAME);
 
@@ -677,7 +678,7 @@ public class ClvmPoolManagerTest {
      * HOST_ID_1 should NOT be queried again during fan-out.
      */
     @Test
-    public void testQueryCurrentLockHolder_FastPath_MissDbHost_FanOutFindsOther() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_FastPath_MissDbHost_FanOutFindsOther() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         when(pool.getPath()).thenReturn(VG_NAME);
@@ -710,7 +711,7 @@ public class ClvmPoolManagerTest {
      * Fast path skip: DB host is DOWN. Fan-out proceeds to all UP hosts.
      */
     @Test
-    public void testQueryCurrentLockHolder_FastPath_DbHostDown_FanOut() throws AgentUnavailableException, OperationTimedoutException {
+    public void testQueryCurrentLockHolder_FastPath_DbHostDown_FanOut() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         when(pool.getPath()).thenReturn(VG_NAME);
@@ -741,7 +742,7 @@ public class ClvmPoolManagerTest {
      */
     @Test
     public void testQueryCurrentLockHolder_InactiveEverywhere_ActivatesOnDbHost()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -785,7 +786,7 @@ public class ClvmPoolManagerTest {
      */
     @Test
     public void testQueryCurrentLockHolder_InactiveEverywhere_ActivatesOnClusterHostWhenNoDbRecord()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -825,7 +826,7 @@ public class ClvmPoolManagerTest {
      */
     @Test
     public void testQueryCurrentLockHolder_InactiveEverywhere_SkipsDownDbHost_ActivatesOnClusterHost()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -868,7 +869,7 @@ public class ClvmPoolManagerTest {
      */
     @Test
     public void testQueryCurrentLockHolder_InactiveEverywhere_ActivationThrows_ReturnsNull()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
@@ -905,7 +906,7 @@ public class ClvmPoolManagerTest {
      */
     @Test
     public void testQueryCurrentLockHolder_InactiveEverywhere_NoEligibleHost_ReturnsNull()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         when(pool.getClusterId()).thenReturn(10L);
         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
