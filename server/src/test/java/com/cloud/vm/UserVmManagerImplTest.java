@@ -156,6 +156,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -208,7 +210,10 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -238,6 +243,18 @@ public class UserVmManagerImplTest {
 
     @Mock
     protected NicDao nicDao;
+
+    @Mock
+    private NicNetworkMapDao nicNetworkMapDao;
+
+    @Mock
+    private DomainRouterDao routerDao;
+
+    @Mock
+    private CommandSetupHelper commandSetupHelper;
+
+    @Mock
+    private NetworkHelper nwHelper;
 
     @Mock
     private NetworkDao _networkDao;
@@ -557,6 +574,58 @@ public class UserVmManagerImplTest {
         for (Map.Entry<ConfigKey, Object> entry : originalConfigValues.entrySet()) {
             updateDefaultConfigValue(entry.getKey(), entry.getValue(), true);
         }
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesIsNoOpForANicWithoutAssociations() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getId()).thenReturn(11L);
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(_networkDao, Mockito.never()).findById(Mockito.anyLong());
+        Mockito.verifyNoInteractions(commandSetupHelper);
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesPushesDhcpEntryForAnActiveAssociation() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getId()).thenReturn(11L);
+        NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.singletonList(association));
+        NetworkVO associatedNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(_networkDao.findById(206L)).thenReturn(associatedNetwork);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(routerDao.findByNetwork(206L)).thenReturn(Collections.singletonList(router));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.50"),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(206L), Mockito.eq(false), Mockito.eq(false), Mockito.any());
+        Mockito.verify(nwHelper).sendCommandsToRouter(Mockito.eq(router), Mockito.any());
+    }
+
+    @Test
+    public void syncNicNetworkAssociationDhcpEntriesCleansUpARemovedAssociation() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getId()).thenReturn(11L);
+        NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 207L, "10.1.1.60", null);
+        Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
+        NetworkVO removedNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(_networkDao.findById(207L)).thenReturn(removedNetwork);
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(routerDao.findByNetwork(207L)).thenReturn(Collections.singletonList(router));
+
+        userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
+
+        Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.60"),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(207L), Mockito.eq(false), Mockito.eq(true), Mockito.any());
+        Mockito.verify(nwHelper).sendCommandsToRouter(Mockito.eq(router), Mockito.any());
     }
 
     @Test

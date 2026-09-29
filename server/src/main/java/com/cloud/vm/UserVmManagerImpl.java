@@ -423,6 +423,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -524,6 +526,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private NetworkDao _networkDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private RulesManager _rulesMgr;
     @Inject
@@ -3481,6 +3485,37 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    // Converges a trunk nic's associated-network DHCP entries with its current nic_network_map rows on start;
+    // no-op for a nic without associations.
+    void syncNicNetworkAssociationDhcpEntries(UserVmVO vm, NicVO nic) {
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
+            sendAssociationDhcpEntry(vm, nic, association.getNetworkId(), association.getIp4Address(), association.getIp6Address(), false);
+        }
+        for (NicNetworkMapVO removedAssociation : _nicNetworkMapDao.listRemovedByNicId(nic.getId())) {
+            sendAssociationDhcpEntry(vm, nic, removedAssociation.getNetworkId(), removedAssociation.getIp4Address(), removedAssociation.getIp6Address(), true);
+        }
+    }
+
+    private void sendAssociationDhcpEntry(UserVmVO vm, NicVO nic, long networkId, String ip4Address, String ip6Address, boolean remove) {
+        NetworkVO network = _networkDao.findById(networkId);
+        if (network == null) {
+            return;
+        }
+        for (DomainRouterVO router : _routerDao.findByNetwork(networkId)) {
+            if (router.getState() != State.Running) {
+                continue;
+            }
+            try {
+                Commands commands = new Commands(Command.OnError.Stop);
+                commandSetupHelper.createDhcpEntryCommand(router, vm, nic.getMacAddress(), ip4Address, ip6Address,
+                        network.getGateway(), network.getIp6Gateway(), networkId, false, remove, commands);
+                nwHelper.sendCommandsToRouter(router, commands);
+            } catch (ResourceUnavailableException e) {
+                logger.warn("Failed to sync DHCP entry for nic {} on associated network {}: {}", nic.getUuid(), networkId, e.getMessage(), e);
+            }
+        }
+    }
+
     private void updateDns(UserVmVO vm, String hostName) throws ResourceUnavailableException, InsufficientCapacityException {
         if (!StringUtils.isEmpty(hostName)) {
             vm.setHostName(hostName);
@@ -5801,6 +5836,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
             UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                     VirtualMachine.class.getName(), vm.getUuid(), nic, isDefault, vm.isDisplay());
+            syncNicNetworkAssociationDhcpEntries(vm, nic);
             if (network.getTrafficType() == TrafficType.Guest) {
                 originalIp = nic.getIPv4Address();
                 guestNic = nic;

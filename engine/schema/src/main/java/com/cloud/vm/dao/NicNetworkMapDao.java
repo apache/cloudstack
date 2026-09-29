@@ -24,6 +24,8 @@ public interface NicNetworkMapDao extends GenericDao<NicNetworkMapVO, Long> {
 
     List<NicNetworkMapVO> listByNicId(long nicId);
 
+    List<NicNetworkMapVO> listRemovedByNicId(long nicId);
+
     List<NicNetworkMapVO> listByNetworkId(long networkId);
 
     NicNetworkMapVO findByNicIdAndNetworkId(long nicId, long networkId);

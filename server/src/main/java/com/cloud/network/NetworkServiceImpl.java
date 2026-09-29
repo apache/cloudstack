@@ -240,6 +240,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -931,11 +932,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             checkHostReadyForVlanTrunk(vm);
         }
 
-        associateNetworksInternal(nic, vm, caller, cmd.getNetworkIds(), cmd.getIpAddressesMap());
+        List<NetworkVO> newlyAssociatedNetworks = associateNetworksInternal(nic, vm, caller, cmd.getNetworkIds(), cmd.getIpAddressesMap());
 
         if (vmRunning) {
             updateLiveVlanTrunkMembership(vm, nic);
             refreshNicVlanMappingMetadata(nic);
+            for (NetworkVO network : newlyAssociatedNetworks) {
+                pushDhcpEntryForAssociation(vm, nic, network);
+            }
         }
 
         return _nicDao.findById(nic.getId());
@@ -986,11 +990,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         associateNetworksInternal(nicVO, vm, caller, networkIds, requestedIps != null ? requestedIps : Collections.emptyMap());
     }
 
-    /**
-     * Core of associateNetworkToNic, shared with the deploy-time trunk NIC path (associateNetworksToNic). No live
-     * update is issued here - callers decide whether/how to push the change to a running Instance.
-     */
-    private void associateNetworksInternal(NicVO nic, VirtualMachine vm, Account caller, List<Long> requestedNetworkIds, Map ipAddressesMap)
+    private List<NetworkVO> associateNetworksInternal(NicVO nic, VirtualMachine vm, Account caller, List<Long> requestedNetworkIds, Map ipAddressesMap)
             throws ResourceUnavailableException, InsufficientCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (requestedNetworkIds == null || requestedNetworkIds.isEmpty()) {
             throw new InvalidParameterValueException("networkids must not be empty");
@@ -1015,6 +1015,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         implementRequestedNetworks(requestedNetworks, vm, caller);
         validateNoDuplicateVlanAfterImplement(resultingSet);
         persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
+        return requestedNetworks;
     }
 
     @Override
@@ -1057,6 +1058,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (vmRunning) {
+            cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
             updateLiveVlanTrunkMembership(vm, nic);
             refreshNicVlanMappingMetadata(nic);
         }
@@ -1134,6 +1136,39 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (network.getIp6Cidr() != null && network.getIp6Gateway() != null) {
             nic.setIPv6Cidr(network.getIp6Cidr());
             nic.setIPv6Gateway(network.getIp6Gateway());
+        }
+    }
+
+    // Pushes a DHCP entry for a newly-associated network on a Running Instance.
+    private void pushDhcpEntryForAssociation(VirtualMachine vm, NicVO nic, NetworkVO network) throws ResourceUnavailableException {
+        NicNetworkMapVO association = _nicNetworkMapDao.findByNicIdAndNetworkId(nic.getId(), network.getId());
+        if (association == null) {
+            return;
+        }
+        sendDhcpEntryCommandForAssociation(vm, nic, network, association.getIp4Address(), association.getIp6Address(), false);
+    }
+
+    // Counterpart to pushDhcpEntryForAssociation, for a Running Instance's disassociate.
+    private void cleanupDhcpEntryForAssociation(VirtualMachine vm, NicVO nic, long networkId, String ip4Address, String ip6Address) throws ResourceUnavailableException {
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            return;
+        }
+        sendDhcpEntryCommandForAssociation(vm, nic, network, ip4Address, ip6Address, true);
+    }
+
+    // Bypasses the DhcpServiceProvider/NetworkElement pipeline: DhcpEntryRules re-fetches the nic's own DB row
+    // for its IP, which only ever holds the primary network's address, never an association's.
+    private void sendDhcpEntryCommandForAssociation(VirtualMachine vm, NicVO nic, NetworkVO network, String ip4Address, String ip6Address, boolean remove)
+            throws ResourceUnavailableException {
+        for (DomainRouterVO router : routerDao.findByNetwork(network.getId())) {
+            if (router.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+            Commands cmds = new Commands(Command.OnError.Stop);
+            commandSetupHelper.createDhcpEntryCommand(router, (UserVm) vm, nic.getMacAddress(), ip4Address, ip6Address,
+                    network.getGateway(), network.getIp6Gateway(), network.getId(), false, remove, cmds);
+            networkHelper.sendCommandsToRouter(router, cmds);
         }
     }
 

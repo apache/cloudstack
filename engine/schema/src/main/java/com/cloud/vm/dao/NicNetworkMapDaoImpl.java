@@ -54,6 +54,14 @@ public class NicNetworkMapDaoImpl extends GenericDaoBase<NicNetworkMapVO, Long> 
     }
 
     @Override
+    public List<NicNetworkMapVO> listRemovedByNicId(long nicId) {
+        SearchCriteria<NicNetworkMapVO> sc = createSearchCriteria();
+        sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
+        sc.addAnd("removed", SearchCriteria.Op.NNULL);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     public List<NicNetworkMapVO> listByNetworkId(long networkId) {
         SearchCriteria<NicNetworkMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);

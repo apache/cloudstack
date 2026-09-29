@@ -284,23 +284,30 @@ public class CommandSetupHelper {
     }
 
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
-        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
-                _networkModel.getExecuteInSeqNtwkElmtCmd());
+        createDhcpEntryCommand(router, vm, nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getIPv4Gateway(), nic.getIPv6Gateway(),
+                nic.getNetworkId(), nic.isDefaultNic(), remove, cmds);
+    }
 
-        String gatewayIp = nic.getIPv4Gateway();
+    // Same as createDhcpEntryCommand(router, vm, NicVO, ...), but for a nic's association with a network other
+    // than its primary (multi-VLAN trunk nics) - takes the addressing explicitly, since a nic's own DB row only
+    // ever carries its primary network's IP/gateway.
+    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final Commands cmds) {
+        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(macAddress, ip4Address, vm.getHostName(), ip6Address,
+                _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
-        dhcpCommand.setDefaultRouter(gatewayIp);
-        dhcpCommand.setIp6Gateway(nic.getIPv6Gateway());
+        dhcpCommand.setDefaultRouter(ip4Gateway);
+        dhcpCommand.setIp6Gateway(ip6Gateway);
         String ipaddress = null;
         final NicVO domrDefaultNic = findDefaultDnsIp(vm.getId());
         if (domrDefaultNic != null) {
             ipaddress = domrDefaultNic.getIPv4Address();
         }
         dhcpCommand.setDefaultDns(ipaddress);
-        dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
-        dhcpCommand.setDefault(nic.isDefaultNic());
+        dhcpCommand.setDuid(NetUtils.getDuidLL(macAddress));
+        dhcpCommand.setDefault(isDefaultNic);
         dhcpCommand.setRemove(remove);
 
         // Set DHCP lease timeout from zone-scoped config (0 = infinite)
@@ -309,7 +316,7 @@ public class CommandSetupHelper {
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
+        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand("dhcp", dhcpCommand);
