@@ -2261,7 +2261,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.warn("Failed to cleanup the converted disks for the VM {} through " +
                         "the conversion host {}: {}", sourceVM, convertHost.getName(), cleanupAnswer.getDetails());
             }
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             logger.error("Error cleaning up converted disks for VM {} through the conversion host {}",
                     sourceVM, convertHost.getName(), e);
         }
