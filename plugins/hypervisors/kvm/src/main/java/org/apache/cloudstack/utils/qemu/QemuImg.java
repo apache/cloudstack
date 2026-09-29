@@ -132,7 +132,7 @@ public class QemuImg {
     public QemuImg(final long timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
             final Script s = new Script(_qemuImgPath, timeout);
-            s.add("convert --help");
+            s.add("convert", "--help");
 
             final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             final String result = s.execute(parser);
@@ -913,7 +913,7 @@ public class QemuImg {
     public boolean supportsImageFormat(QemuImg.PhysicalDiskFormat format) {
         // qemu-img create -f $format -o help
         // - prints supported format options with rc=0 on known format, and
-        // - error message with rc=1 on unsupported formet
+        // - error message with rc=1 on unsupported format
         final Script createProbe = new Script(_qemuImgPath, timeout);
         createProbe.add("create", "-f", format.toString(), "-o", "help");
         String createProbeResult = createProbe.execute(new OutputInterpreter.AllLinesParser());
