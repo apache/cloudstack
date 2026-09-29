@@ -2845,9 +2845,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // clean up.
                 forceCleanup = true;
             }
-            // Refresh the persisted public network rate snapshot so a restart picks up
-            // any zone/offering rate change made since the VPC was created or last restarted.
-            saveVpcNetworkRateInDetails(vpc);
 
             if (forceCleanup) {
                 if (!rollingRestartVpc(vpc, context)) {
@@ -2856,6 +2853,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     return false;
                 }
                 reconfigStaticNatForVpcVr(vpcId);
+                saveVpcNetworkRateInDetails(vpc);
                 return true;
             }
 
@@ -2872,6 +2870,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return false;
             }
             logger.debug("VPC " + vpc + " was restarted successfully");
+            saveVpcNetworkRateInDetails(vpc);
             return true;
         } finally {
             logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
