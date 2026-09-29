@@ -1034,7 +1034,7 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test(expected = ServerApiException.class)
-    public void testImportVmFromVmwareToKvmForceMsMutuallyExclusiveWithUseVddk() throws OperationTimedoutException, AgentUnavailableException {
+    public void testImportVmFromVmwareToKvmForceMsMutuallyExclusiveWithUseVddk() throws OperationCancelledException, OperationTimedoutException, AgentUnavailableException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.FORCE_MS_AND_USE_VDDK, false, false);
     }
 

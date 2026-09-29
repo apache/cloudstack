@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
@@ -3305,21 +3304,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("created", SearchCriteria.Op.SC, scc);
         }
 
-        ApiCommandResourceType resourceType = cmd.getResourceType();
-        if (resourceType != null) {
-            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType);
+        if (cmd.getResourceType() != null) {
+            ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType.toString());
 
-            if (cmd.getResourceId() != null) {
-                Long resourceId = ApiDBUtils.findResourceId(resourceType, cmd.getResourceId());
-                if (resourceId == null) {
-                    throw new InvalidParameterValueException("Invalid resource id for the resource type " + resourceType);
-                }
-
-                sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, cmd.getResourceId());
-//                sc.addAnd("instanceId", SearchCriteria.Op.EQ, resourceId);
+            final String resourceId = getResourceUuid(cmd.getResourceId());
+            if (resourceId != null) {
+                sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, resourceId);
             }
         } else if (cmd.getResourceId() != null) {
-            throw new InvalidParameterValueException("Resource type must be specified for the resource id");
+            throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
         }
 
         if (cmd.getManagementServerId() != null) {

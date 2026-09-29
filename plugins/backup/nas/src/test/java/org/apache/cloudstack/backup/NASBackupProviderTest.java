@@ -532,7 +532,7 @@ public class NASBackupProviderTest {
      * is called with the active_checkpoint_id key.
      */
     @Test
-    public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException {
+    public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long vmId = 7L;
         Long hostId = 8L;
         Long backupOfferingId = 9L;
@@ -582,7 +582,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void restoreBackedUpVolumeClearsTargetVmActiveCheckpoint()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long targetVmId = 42L;
         Long backupOfferingId = 9L;
         String targetVmName = "i-2-42-VM";
@@ -652,7 +652,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void deleteWithLiveChildMarksDeletePendingAndPreservesFile()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -728,7 +728,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void deletingLeafSweepsUpDeletePendingParent()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -813,7 +813,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void deletingLastLiveMemberCollectsDeeperOrphanTombstones()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -890,7 +890,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void deletingAncestorOfTombstoneWithLiveDescendantTombstonesIt()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -959,7 +959,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void sweepContinuesPastFailedTombstoneDelete()
-            throws AgentUnavailableException, OperationTimedoutException {
+            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;

@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.jobs.AsyncJobService;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -186,6 +188,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
+    private final ExecutorService _eventBusPublisher = Executors.newSingleThreadExecutor(new NamedThreadFactory("AsyncJobMgr-EventBus"));
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
@@ -979,6 +982,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         };
     }
 
+    private boolean isPseudoJob(AsyncJob job) {
+        return AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(job.getDispatcher()) && AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE
+                .equals(job.getInstanceType());
+    }
+
     @DB
     private Runnable getGCTask() {
         return new ManagedContextRunnable() {
@@ -1421,17 +1429,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean stop() {
         cancelPendingJobs();
-        shutdownAndAwaitTermination(_workerJobExecutor);
-        shutdownAndAwaitTermination(_apiJobExecutor);
         _heartbeatScheduler.shutdown();
         _eventBusPublisher.shutdown();
-        _apiJobExecutor.shutdown();
-        _workerJobExecutor.shutdown();
+        shutdownAndAwaitTermination(_apiJobExecutor);
+        shutdownAndAwaitTermination(_workerJobExecutor);
         return true;
     }
 
     private void cancelPendingJobs() {
-        List<SyncQueueItemVO> jobs = _syncQueueItemDao.getActiveQueueItems(getMsid(), false);
+        List<SyncQueueItemVO> jobs = _queueItemDao.getActiveQueueItems(getMsid(), false);
         for (SyncQueueItemVO job : jobs) {
             AsyncJobVO childJob = _jobDao.findById(job.getContentId());
             if (childJob != null && StringUtils.isNotBlank(childJob.getRelated())) {
@@ -1537,8 +1543,26 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private void publishOnEventBus(AsyncJob job, String jobEvent) {
-        _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
-            new Pair<AsyncJob, String>(job, jobEvent));
+        try {
+            _eventBusPublisher.submit(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
+                    publishJobEvent(job, jobEvent);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            logger.warn("Failed to publish async job event, event bus publisher is shut down", e);
+        }
+    }
+
+    private void publishJobEvent(AsyncJob job, String jobEvent) {
+        try {
+            _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
+                    new Pair<>(job, jobEvent));
+        } catch (Throwable t) {
+            logger.warn("Failed to publish async job event on message bus. jobId={}, jobEvent={}",
+                    job != null ? job.getId() : null, jobEvent, t);
+        }
     }
 
     @Override

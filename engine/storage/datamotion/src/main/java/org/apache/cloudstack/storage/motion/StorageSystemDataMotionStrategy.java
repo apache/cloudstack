@@ -2458,7 +2458,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 String details = answer != null ? answer.getDetails() : "null answer";
                 logger.warn("CLVM lock command [{}] failed for LV [{}] on host [{}]: {}", operation, lvPath, hostId, details);
             }
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             logger.warn("Exception sending CLVM lock command [{}] for LV [{}] on host [{}]: {}", operation, lvPath, hostId, e.getMessage());
         }
     }
