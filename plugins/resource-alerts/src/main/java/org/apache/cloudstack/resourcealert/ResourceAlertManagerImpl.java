@@ -488,6 +488,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             VolumeVO vol = volumeDao.findById(resourceId);
             if (vol == null || vol.getInstanceId() == null) return null;
             vmId = vol.getInstanceId();
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm == null || !VirtualMachine.State.Running.equals(vm.getState())) return null;
         }
         VmStats s = statsCollector.getVmStats(vmId, false);
         return s != null ? extractor.applyAsDouble(s) : null;
