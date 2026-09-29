@@ -32,7 +32,6 @@ import org.apache.cloudstack.resourcealert.ResourceAlertRule;
 import org.apache.cloudstack.resourcealert.ResourceAlertService;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteResourceAlertRule",
         description = "Deletes a resource alert rule",
@@ -60,15 +59,11 @@ public class DeleteResourceAlertRuleCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
-        try {
-            boolean result = resourceAlertService.deleteResourceAlertRule(this);
-            if (!result) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete resource alert rule");
-            }
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } catch (CloudRuntimeException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        boolean result = resourceAlertService.deleteResourceAlertRule(this);
+        if (!result) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete resource alert rule");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        setResponseObject(response);
     }
 }

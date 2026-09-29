@@ -33,7 +33,6 @@ import org.apache.cloudstack.resourcealert.ResourceAlertRule;
 import org.apache.cloudstack.resourcealert.ResourceAlertService;
 import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "updateResourceAlertRule",
         description = "Updates a resource alert rule",
@@ -106,15 +105,11 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException {
-        try {
-            ResourceAlertRuleResponse response = resourceAlertService.updateResourceAlertRule(this);
-            if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update resource alert rule");
-            }
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } catch (CloudRuntimeException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        ResourceAlertRuleResponse response = resourceAlertService.updateResourceAlertRule(this);
+        if (response == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update resource alert rule");
         }
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 }
