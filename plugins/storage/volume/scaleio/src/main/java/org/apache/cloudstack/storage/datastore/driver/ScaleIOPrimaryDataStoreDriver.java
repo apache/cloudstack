@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -147,6 +148,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private VolumeService volumeService;
     @Inject
     private VolumeOrchestrationService volumeMgr;
+    @Inject
+    private StorageManager storageMgr;
     private ScaleIOSDCManager sdcManager;
 
     public ScaleIOPrimaryDataStoreDriver() {
@@ -200,6 +203,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
         try {
             sdcManager = ComponentContext.inject(sdcManager);
+            boolean hostConnectedToPool = storagePoolHostDao.findByPoolHost(dataStore.getId(), host.getId()) != null;
             final String sdcId = sdcManager.prepareSDC(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 alertHostSdcDisconnection(host);
@@ -207,6 +211,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         "Unable to grant access to %s: [id: %d, uuid: %s], no Sdc connected with host ip: %s",
                         dataObject.getType(), dataObject.getId(),
                         dataObject.getUuid(), host.getPrivateIpAddress()));
+            }
+
+            if (!hostConnectedToPool) {
+                connectHostToStoragePool(host, dataStore);
             }
 
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
@@ -228,6 +236,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return false;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
+        }
+    }
+
+    private void connectHostToStoragePool(Host host, DataStore dataStore) {
+        try {
+            logger.debug("Connecting host {} to PowerFlex storage pool {}", host, dataStore);
+            storageMgr.connectHostToSharedPool(host, dataStore.getId());
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to connect host %s to PowerFlex storage pool %s due to %s", host, dataStore, e.getMessage()), e);
         }
     }
 
@@ -1519,6 +1536,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
         if (host == null || pool == null) {
+            return false;
+        }
+
+        if (!Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
+            logger.debug("Host {} cannot prepare access to PowerFlex storage pool {}, unsupported hypervisor type: {}", host, pool, host.getHypervisorType());
             return false;
         }
 
