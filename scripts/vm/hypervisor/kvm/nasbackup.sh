@@ -233,7 +233,10 @@ print(gid)
     return 1
   fi
 
-  SP_CLEANUP_VOLUMES+=("$clone_name")
+  # Not registered in SP_CLEANUP_VOLUMES here: the caller always invokes this function via
+  # command substitution ($(...)), which runs it in a subshell — any append to the array here
+  # would be a mutation of that subshell's own copy and vanish once it exits. The caller must
+  # register $clone_name itself right after reading it back from stdout below.
   log -ne "StorPool: backup source volume $clone_name attached at $clone_path, reading from it for this backup"
   echo "$clone_path"
 }
@@ -244,7 +247,10 @@ sp_delete_backup_source_disk() {
   local clone_name="$1"
   log -ne "StorPool: releasing backup source volume $clone_name"
   sp_attach_detach_volume "detach" "$clone_name" || log -ne "Failed to detach StorPool backup source volume $clone_name"
-  storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1 || log -ne "Failed to delete StorPool backup source volume $clone_name"
+  if ! storpool_req -P -M VolumeDelete "$clone_name" >>"$logFile" 2>&1; then
+    log -ne "Failed to delete StorPool backup source volume $clone_name"
+    return 1
+  fi
 }
 
 # Safety net for any clone not already released by its own per-disk cleanup (e.g. the script
@@ -580,6 +586,9 @@ backup_stopped_vm() {
         exit 1
       fi
       sp_clone_name=$(sp_volume_name_from_path "$read_disk")
+      # Register the clone here, in the parent shell, right after the command substitution
+      # above returns — sp_create_backup_source_disk cannot do this itself (see its comment).
+      SP_CLEANUP_VOLUMES+=("$sp_clone_name")
     else
       volUuid="${disk##*/}"
     fi
@@ -593,13 +602,16 @@ backup_stopped_vm() {
     log -ne "Wrote $output from $read_disk"
 
     if [[ -n "$sp_clone_name" ]]; then
-      sp_delete_backup_source_disk "$sp_clone_name"
-      local -a remaining_clones=()
-      local tracked_clone
-      for tracked_clone in "${SP_CLEANUP_VOLUMES[@]}"; do
-        [[ "$tracked_clone" == "$sp_clone_name" ]] || remaining_clones+=("$tracked_clone")
-      done
-      SP_CLEANUP_VOLUMES=("${remaining_clones[@]}")
+      # Only drop the clone from SP_CLEANUP_VOLUMES once it's actually deleted — otherwise the
+      # EXIT trap's safety net would never see (and retry) a clone left behind by a failed delete.
+      if sp_delete_backup_source_disk "$sp_clone_name"; then
+        local -a remaining_clones=()
+        local tracked_clone
+        for tracked_clone in "${SP_CLEANUP_VOLUMES[@]}"; do
+          [[ "$tracked_clone" == "$sp_clone_name" ]] || remaining_clones+=("$tracked_clone")
+        done
+        SP_CLEANUP_VOLUMES=("${remaining_clones[@]}")
+      fi
     fi
 
     # Pre-seed a persistent bitmap on the source disk so the NEXT backup (taken
