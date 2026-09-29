@@ -56,6 +56,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
@@ -72,6 +73,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -547,6 +549,14 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     private String buildBody(ResourceAlertRuleVO rule, Pair<String, String> resource, double value) {
         StringBuilder sb = new StringBuilder();
         sb.append("Rule: ").append(rule.getName()).append('\n');
+        AccountVO owner = accountDao.findByIdIncludingRemoved(rule.getAccountId());
+        if (owner != null) {
+            sb.append("Account: ").append(owner.getAccountName()).append('\n');
+        }
+        DomainVO domain = domainDao.findByIdIncludingRemoved(rule.getDomainId());
+        if (domain != null) {
+            sb.append("Domain: ").append(domain.getPath()).append('\n');
+        }
         sb.append("Resource Type: ").append(rule.getResourceType().name()).append('\n');
         if (resource != null) {
             sb.append("Resource: ").append(StringUtils.defaultString(resource.second())).append('\n');
