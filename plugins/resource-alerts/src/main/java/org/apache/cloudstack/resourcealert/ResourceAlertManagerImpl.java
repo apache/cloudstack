@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -59,6 +60,7 @@ import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.AlertGenerator;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -76,6 +78,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
@@ -119,6 +122,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject ConfigurationDao configDao;
     @Inject ResourceTagDao resourceTagDao;
     @Inject AccountDao accountDao;
+    @Inject AccountManager accountManager;
     @Inject DomainDao domainDao;
     @Inject ManagementServerHostDao managementServerHostDao;
 
@@ -193,7 +197,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         List<ResourceAlertRuleVO> rules = ruleDao.listActive();
         for (ResourceAlertRuleVO rule : rules) {
             if (isOrphaned(rule)) {
-                logger.info("Removing resource alert rule {} as its owner or resource no longer exists", rule.getUuid());
+                logger.info("Removing resource alert rule {} as its owner or resource is gone, or the owner lost access to the resource", rule.getUuid());
                 alertDao.removeByAlertRuleId(rule.getId());
                 ruleDao.remove(rule.getId());
                 continue;
@@ -203,7 +207,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     }
 
     boolean isOrphaned(ResourceAlertRuleVO rule) {
-        if (accountDao.findById(rule.getAccountId()) == null) {
+        AccountVO owner = accountDao.findById(rule.getAccountId());
+        if (owner == null) {
             return true;
         }
         Long resourceId = rule.getResourceId();
@@ -212,15 +217,28 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
         switch (rule.getResourceType()) {
             case VirtualMachine:
-                return userVmDao.findById(resourceId) == null;
+                return !ownerCanAccess(owner, userVmDao.findById(resourceId));
             case Volume:
-                return volumeDao.findById(resourceId) == null;
+                return !ownerCanAccess(owner, volumeDao.findById(resourceId));
             case Host:
                 return hostDao.findById(resourceId) == null;
             case StoragePool:
                 return storagePoolDao.findById(resourceId) == null;
             default:
                 return false;
+        }
+    }
+
+    // A VM can move to another account or its owner can leave a project, so access is checked on every run.
+    private boolean ownerCanAccess(Account owner, ControlledEntity resource) {
+        if (resource == null) {
+            return false;
+        }
+        try {
+            accountManager.checkAccess(owner, null, false, resource);
+            return true;
+        } catch (PermissionDeniedException e) {
+            return false;
         }
     }
 

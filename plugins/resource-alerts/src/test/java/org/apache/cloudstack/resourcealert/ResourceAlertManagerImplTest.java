@@ -22,11 +22,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
 import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
@@ -68,6 +71,7 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -84,6 +88,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
@@ -113,6 +118,7 @@ public class ResourceAlertManagerImplTest {
     @Mock ResourceTagDao resourceTagDao;
     @Mock AccountDao accountDao;
     @Mock DomainDao domainDao;
+    @Mock AccountManager accountManager;
     @Mock ManagementServerHostDao managementServerHostDao;
     @Mock SMTPMailSender mailSender;
 
@@ -984,5 +990,18 @@ public class ResourceAlertManagerImplTest {
         assertFalse(manager.isInService(ResourceAlertRule.ResourceType.Volume, 7L));
 
         assertTrue(manager.isInService(ResourceAlertRule.ResourceType.VirtualMachine, VM_ID));
+    }
+
+    @Test
+    public void testRuleRemovedWhenOwnerLostAccessToResource() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        doThrow(new PermissionDeniedException("moved")).when(accountManager).checkAccess(any(Account.class), any(), anyBoolean(), any(ControlledEntity.class));
+
+        manager.evaluateRules();
+
+        verify(alertDao).removeByAlertRuleId(rule.getId());
+        verify(ruleDao).remove(rule.getId());
+        verify(alertDao, never()).persist(any());
     }
 }
