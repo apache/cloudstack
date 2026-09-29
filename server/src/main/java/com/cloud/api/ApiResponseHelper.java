@@ -2721,10 +2721,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setPublicMtu(network.getPublicMtu());
         response.setPrivateMtu(network.getPrivateMtu());
         NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
-        if (networkRateDetail != null) {
-            int networkRate = NumberUtils.toInt(networkRateDetail.getValue(), -1);
-            response.setNetworkRate(networkRate > 0 ? networkRate : -1);
-        }
+        int networkRate = networkRateDetail != null ? NumberUtils.toInt(networkRateDetail.getValue(), -1) : -1;
+        response.setNetworkRate(networkRate > 0 ? networkRate : -1);
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());
