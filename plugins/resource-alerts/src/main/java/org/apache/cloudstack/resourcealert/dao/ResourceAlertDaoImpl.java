@@ -52,6 +52,13 @@ public class ResourceAlertDaoImpl extends GenericDaoBase<ResourceAlertVO, Long> 
     }
 
     @Override
+    public int removeByAlertRuleId(long alertRuleId) {
+        SearchCriteria<ResourceAlertVO> sc = alertRuleIdSearch.create();
+        sc.setParameters("alertRuleId", alertRuleId);
+        return expunge(sc);
+    }
+
+    @Override
     public List<ResourceAlertVO> listByAlertRuleId(long alertRuleId) {
         SearchCriteria<ResourceAlertVO> sc = alertRuleIdSearch.create();
         sc.setParameters("alertRuleId", alertRuleId);

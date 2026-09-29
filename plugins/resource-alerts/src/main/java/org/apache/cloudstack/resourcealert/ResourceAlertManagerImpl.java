@@ -189,6 +189,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         for (ResourceAlertRuleVO rule : rules) {
             if (isOrphaned(rule)) {
                 logger.info("Removing resource alert rule {} as its owner or resource no longer exists", rule.getUuid());
+                alertDao.removeByAlertRuleId(rule.getId());
                 ruleDao.remove(rule.getId());
                 continue;
             }
