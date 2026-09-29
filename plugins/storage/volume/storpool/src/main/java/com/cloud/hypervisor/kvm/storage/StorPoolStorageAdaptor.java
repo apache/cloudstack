@@ -486,9 +486,11 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         }
 
         String volumePath = StorPoolUtil.devPath(globalId);
-        if (!attachOrDetachVolume("attach", "volume", volumePath)) {
+        try {
+            attachOrDetachVolume("attach", "volume", volumePath);
+        } catch (CloudRuntimeException e) {
             volumeDelete(globalId);
-            throw new CloudRuntimeException(String.format("Could not attach newly created StorPool volume %s", volumePath));
+            throw e;
         }
 
         KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, name, pool);

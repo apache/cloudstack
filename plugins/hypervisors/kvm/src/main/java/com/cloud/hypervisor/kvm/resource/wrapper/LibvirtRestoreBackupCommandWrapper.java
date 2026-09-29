@@ -373,12 +373,15 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                     targetExists = false;
                 }
             } else {
-                if (Storage.StoragePoolType.Linstor.equals(poolType)) {
-                    storagePoolMgr.connectPhysicalDisk(poolType, volumePool.getUuid(), volumeUuid, null);
-                } else if (Storage.StoragePoolType.StorPool.equals(poolType)) {
-                    storagePoolMgr.connectPhysicalDisk(poolType, volumePool.getUuid(), volumePath, null);
-                } else {
-                    disk = volumeStoragePool.getPhysicalDisk(volumePath);
+                switch (poolType) {
+                    case Linstor:
+                        storagePoolMgr.connectPhysicalDisk(poolType, volumePool.getUuid(), volumeUuid, null);
+                        break;
+                    case StorPool:
+                        storagePoolMgr.connectPhysicalDisk(poolType, volumePool.getUuid(), volumePath, null);
+                        break;
+                    default:
+                        disk = volumeStoragePool.getPhysicalDisk(volumePath);
                 }
             }
             qemu = new QemuImg(timeout, targetReadsAsZero, false);
@@ -433,7 +436,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         virshCmd.add(deviceToAttachDiskTo);
         virshCmd.add("--driver");
         virshCmd.add("qemu");
-        if (!Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
+        if (!List.of(Storage.StoragePoolType.Linstor, Storage.StoragePoolType.StorPool).contains(volumePool.getPoolType())) {
             virshCmd.add("--subdriver");
             virshCmd.add("qcow2");
         }

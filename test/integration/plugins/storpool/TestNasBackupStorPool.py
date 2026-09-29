@@ -556,6 +556,68 @@ class TestNasBackupStorPool(cloudstackTestCase):
 
         self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
+    @attr(tags=["advanced", "backup", "storpool"], required_hardware="true")
+    def test_06_restore_volume_attach_to_running_vm(self):
+        """Restore a volume from backup and hot-attach it to an already-Running VM.
+
+        Regression test for LibvirtRestoreBackupCommandWrapper.attachVolumeToVm only
+        excluding LINSTOR from the qcow2 --subdriver flag: a restored StorPool volume
+        is a RAW block device (like LINSTOR), so attaching it with --subdriver qcow2
+        makes virsh try to open the raw device as a qcow2 image. test_03 never caught
+        this because it attaches to a target VM that is still Stopped at attach time.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+
+        marker = "storpool_nas_running_attach_%s.txt" % int(time.time())
+        self._write_guest_marker(self.vm, marker)
+        time.sleep(5)
+        backup = self._create_backup(self.vm.id)
+        self.cleanup_backups.append(backup)
+
+        volumes = Volume.list(self.apiclient, virtualmachineid=self.vm.id, listall=True)
+        data_disk = next((v for v in volumes if v.type == "DATADISK"), None)
+        self.assertIsNotNone(data_disk, "Source VM should have a data disk")
+
+        # No startvm=False here: the target VM must already be Running when
+        # restoreVolumeFromBackupAndAttachToVM is called, to exercise the
+        # live virsh attach-disk path instead of an offline volume write.
+        target_vm = VirtualMachine.create(
+            self.apiclient,
+            {"name": "SP-NasRunAttach-%s" % uuid.uuid4()},
+            zoneid=self.zone.id,
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            hypervisor=self.hypervisor,
+            networkids=self.network_ids,
+            rootdisksize=self.template_size_gb,
+            mode=self.services["mode"])
+        self.cleanup.append(target_vm)
+
+        listed = VirtualMachine.list(self.apiclient, id=target_vm.id, listall=True) or []
+        self.assertTrue(listed and listed[0].state == "Running",
+                        "Target VM should be Running before the volume is hot-attached")
+
+        Backup.restoreVolumeFromBackupAndAttachToVM(
+            self.apiclient,
+            backupid=backup.id,
+            volumeid=data_disk.id,
+            virtualmachineid=target_vm.id)
+
+        target_volumes = self._verify_vm_volumes_on_storpool(target_vm)
+        self.assertEqual(2, len(target_volumes),
+                         "Target VM should have ROOT + hot-attached restored DATADISK volumes")
+        self._assert_guest_reachable(
+            target_vm, msg="VM should stay reachable after a volume is hot-attached from backup")
+
+        ssh = target_vm.get_ssh_client(reconnect=True)
+        result = ssh.execute("lsblk -d -n -o NAME | grep -c .")
+        self.assertTrue(result and int(result[0].strip()) >= 2,
+                        "Guest should see the hot-attached disk after restore")
+
+        self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
 
 class TestNasBackupMixedStorage(TestNasBackupStorPool):
     """Repeats the NAS backup smoke tests (test_01 .. test_05, inherited
