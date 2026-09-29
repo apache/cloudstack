@@ -432,7 +432,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private String getDeviceToAttachDisk(String vmName) {
         // --details adds a Type column so cdrom slots (hdc, hdd) can be filtered out — they sort
-        // after the real disks, so without this the last row is always a cdrom, not a free device.
+        // alphabetically ahead of virtio disks, so without this the selected row is a cdrom, not
+        // an actual disk.
         String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName, "--details" };
         // The commands are executed without a shell, so the awk program must be passed as a plain
         // argument. Keeping the quotes a shell would have stripped makes awk fail with
