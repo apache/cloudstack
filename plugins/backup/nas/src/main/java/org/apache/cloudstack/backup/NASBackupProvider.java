@@ -506,17 +506,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     /**
-     * True when any of the VM's volumes sits on a StorPool pool. Used to decide whether volume
-     * pool/path info must be sent to the agent even though the VM currently looks Running — see
-     * the caller in {@link #takeBackup}.
+     * True when any of the given volumes sits on a pool of the given type.
      */
-    private boolean hasStorPoolVolume(List<VolumeVO> volumes) {
+    private boolean hasVolumeOnPoolType(List<VolumeVO> volumes, Storage.StoragePoolType poolType) {
         if (volumes == null) {
             return false;
         }
         for (VolumeVO volume : volumes) {
             StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
-            if (pool != null && Storage.StoragePoolType.StorPool.equals(pool.getPoolType())) {
+            if (pool != null && poolType.equals(pool.getPoolType())) {
                 return true;
             }
         }
@@ -742,7 +740,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // to derive that from.
         boolean vmStopped = VirtualMachine.State.Stopped.equals(vm.getState());
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
-        boolean hasStorPoolVolume = hasStorPoolVolume(vmVolumes);
+        boolean hasStorPoolVolume = hasVolumeOnPoolType(vmVolumes, Storage.StoragePoolType.StorPool);
         if (vmStopped || decision.isContentBased() || hasStorPoolVolume) {
             if (!vmStopped && !decision.isContentBased()) {
                 logger.debug("VM {} looks {} but has a StorPool volume — sending volume pool/path info to the agent anyway, "
