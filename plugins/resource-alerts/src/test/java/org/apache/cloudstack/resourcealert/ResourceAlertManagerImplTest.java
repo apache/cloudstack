@@ -829,6 +829,7 @@ public class ResourceAlertManagerImplTest {
 
         manager.evaluateRules();
 
+        verify(alertDao).removeByAlertRuleId(rule.getId());
         verify(ruleDao).remove(rule.getId());
         verify(userVmDao, never()).listIdsByAccountOrDomainsAndState(any(), any(), any());
     }

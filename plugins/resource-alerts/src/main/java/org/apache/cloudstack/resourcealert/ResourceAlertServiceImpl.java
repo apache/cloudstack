@@ -214,6 +214,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ALERT_RULE_DELETE, eventDescription = "deleting resource alert rule")
     public boolean deleteResourceAlertRule(DeleteResourceAlertRuleCmd cmd) {
         findRuleForCaller(cmd.getId());
+        alertDao.removeByAlertRuleId(cmd.getId());
         return ruleDao.remove(cmd.getId());
     }
 

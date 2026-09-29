@@ -36,4 +36,6 @@ public interface ResourceAlertDao extends GenericDao<ResourceAlertVO, Long> {
             Date startDate, Date endDate, Long startIndex, Long pageSize);
 
     int removeOlderThan(Date date);
+
+    int removeByAlertRuleId(long alertRuleId);
 }

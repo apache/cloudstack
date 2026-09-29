@@ -303,6 +303,21 @@ public class ResourceAlertServiceImplTest {
         } catch (PermissionDeniedException expected) {
         }
         verify(ruleDao, never()).remove(1L);
+        verify(alertDao, never()).removeByAlertRuleId(1L);
+    }
+
+    @Test
+    public void testDeleteRemovesAlertHistory() {
+        DeleteResourceAlertRuleCmd cmd = mock(DeleteResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        when(ruleDao.remove(1L)).thenReturn(true);
+
+        service.deleteResourceAlertRule(cmd);
+
+        verify(alertDao).removeByAlertRuleId(1L);
+        verify(ruleDao).remove(1L);
     }
 
     @Test(expected = InvalidParameterValueException.class)
