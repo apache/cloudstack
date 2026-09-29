@@ -111,7 +111,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         Account caller = CallContext.current().getCallingAccount();
         checkInfrastructureAccess(caller, resourceType);
         checkEmailAccess(caller, email);
-        Account owner = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), null);
+        Account owner = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
         if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
@@ -152,7 +152,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         List<Long> permittedAccounts = new ArrayList<>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
                 new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
-        accountManager.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), null,
+        accountManager.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(),
                 permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         SearchBuilder<ResourceAlertRuleJoinVO> sb = createAclSearchBuilder(domainIdRecursiveListProject, permittedAccounts);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -300,6 +300,8 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setAccountName(vo.getAccountName());
         r.setDomainId(vo.getDomainUuid());
         r.setDomainName(vo.getDomainName());
+        r.setProjectId(vo.getProjectUuid());
+        r.setProjectName(vo.getProjectName());
         r.setCreated(vo.getCreated());
         return r;
     }
@@ -488,9 +490,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         List<Long> permittedAccounts = new ArrayList<>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
                 new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
-        accountManager.buildACLSearchParameters(caller, null, cmd.getAccountName(), null,
+        accountManager.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(),
                 permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        if (permittedAccounts.isEmpty() && domainIdRecursiveListProject.first() == null) {
+        if (permittedAccounts.isEmpty() && domainIdRecursiveListProject.first() == null
+                && domainIdRecursiveListProject.third() == null) {
             return null;
         }
         SearchBuilder<ResourceAlertRuleJoinVO> sb = createAclSearchBuilder(domainIdRecursiveListProject, permittedAccounts);

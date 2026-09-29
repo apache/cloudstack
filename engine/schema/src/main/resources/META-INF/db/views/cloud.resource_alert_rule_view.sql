@@ -42,7 +42,10 @@ CREATE VIEW `cloud`.`resource_alert_rule_view` AS
         d.id domain_id,
         d.uuid domain_uuid,
         d.name domain_name,
-        d.path domain_path
+        d.path domain_path,
+        p.uuid project_uuid,
+        p.name project_name
     FROM `cloud`.`resource_alert_rules` r
     INNER JOIN `cloud`.`account` a ON r.account_id = a.id
-    INNER JOIN `cloud`.`domain` d ON r.domain_id = d.id;
+    INNER JOIN `cloud`.`domain` d ON r.domain_id = d.id
+    LEFT JOIN `cloud`.`projects` p ON p.project_account_id = a.id;

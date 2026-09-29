@@ -95,6 +95,14 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "the ID of the domain this rule belongs to")
     private String domainId;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the rule")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the rule")
+    private String projectName;
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain this rule belongs to")
     private String domainName;
@@ -120,5 +128,7 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     public void setAccountName(String accountName) { this.accountName = accountName; }
     public void setDomainId(String domainId) { this.domainId = domainId; }
     public void setDomainName(String domainName) { this.domainName = domainName; }
+    public void setProjectId(String projectId) { this.projectId = projectId; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
     public void setCreated(Date created) { this.created = created; }
 }

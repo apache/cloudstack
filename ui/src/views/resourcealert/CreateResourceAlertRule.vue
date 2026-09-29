@@ -31,7 +31,7 @@
         <a-input v-focus="true" v-model:value="form.name" />
       </a-form-item>
 
-      <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin">
+      <a-form-item name="domainid" ref="domainid" v-if="canPickOwner">
         <template #label>{{ $t('label.domain') }}</template>
         <a-select
           v-model:value="form.domainid"
@@ -45,7 +45,7 @@
         </a-select>
       </a-form-item>
 
-      <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin && form.domainid">
+      <a-form-item name="account" ref="account" v-if="canPickOwner && form.domainid">
         <template #label>{{ $t('label.account') }}</template>
         <a-select
           v-model:value="form.account"
@@ -226,6 +226,10 @@ export default {
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
+    // In project view the project owns the rule, so there is no owner to pick
+    canPickOwner () {
+      return this.isAdminOrDomainAdmin && !this.$store.getters.project?.id
+    },
     ownerParams () {
       return this.form.domainid && this.form.account ? { domainid: this.form.domainid, account: this.form.account } : {}
     },
@@ -241,7 +245,7 @@ export default {
   },
   created () {
     this.fetchWebhooks()
-    if (this.isAdminOrDomainAdmin) this.fetchDomains()
+    if (this.canPickOwner) this.fetchDomains()
   },
   methods: {
     fetchWebhooks () {

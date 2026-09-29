@@ -98,6 +98,11 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
             description = "domain to associate this rule with")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID,
+            entityType = org.apache.cloudstack.api.response.ProjectResponse.class,
+            description = "project to associate this rule with")
+    private Long projectId;
+
     public String getName() { return name; }
     public String getResourceType() { return resourceType; }
     public String getResourceId() { return resourceId; }
@@ -111,6 +116,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     public List<String> getWebhookIds() { return webhookIds; }
     public String getAccountName() { return accountName; }
     public Long getDomainId() { return domainId; }
+    public Long getProjectId() { return projectId; }
 
     @Override
     public long getEntityOwnerId() {
