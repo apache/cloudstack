@@ -269,7 +269,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
-        } catch (OperationTimedoutException | AgentUnavailableException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
             throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + e.getMessage());
         }
     }

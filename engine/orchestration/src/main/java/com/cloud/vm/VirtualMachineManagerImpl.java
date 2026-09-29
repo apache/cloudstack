@@ -6464,7 +6464,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     logger.warn("Unable to update VM %s NIC [{}].", vm.getName(), nic.getUuid());
                     return false;
                 }
-            } catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException | OperationCancelledException e) {
                 throw new AgentUnavailableException(String.format("Unable to update NIC %s for VM %s.", nic.getUuid(), vm.getUuid()), vm.getHostId(), e);
             }
         }
@@ -6582,7 +6582,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException(msg);
             }
             logger.info("Successfully prepared source host {} for migration of VM {}", srcHostUuid, vmInstanceName);
-        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+        } catch (final AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
             logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostUuid, e.getMessage(), e);
             throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
         }

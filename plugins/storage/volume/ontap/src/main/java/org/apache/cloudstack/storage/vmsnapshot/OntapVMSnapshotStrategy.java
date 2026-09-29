@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
@@ -473,6 +474,9 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         } catch (OperationTimedoutException e) {
             logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] timed out: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " timed out: " + e.getMessage());
+        } catch (OperationCancelledException e) {
+            logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] cancelled: {}", vmSnapshot.getName(), e.getMessage());
+            throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " cancelled: " + e.getMessage());
         } catch (AgentUnavailableException e) {
             logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] failed, agent unavailable: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.getMessage());
