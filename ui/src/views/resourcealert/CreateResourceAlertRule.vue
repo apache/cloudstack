@@ -140,13 +140,7 @@
 
 <script>
 import { getAPI, postAPI } from '@/api'
-
-const METRICS_BY_TYPE = {
-  VirtualMachine: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
-  Host: ['CPU_UTILIZATION', 'MEMORY_UTILIZATION', 'LOAD_AVERAGE', 'NETWORK_READ_KBPS', 'NETWORK_WRITE_KBPS'],
-  Volume: ['DISK_READ_IOPS', 'DISK_WRITE_IOPS', 'DISK_READ_KBPS', 'DISK_WRITE_KBPS', 'VOLUME_SIZE_GB'],
-  StoragePool: ['STORAGE_UTILIZATION', 'STORAGE_USED_IOPS']
-}
+import { METRICS_BY_TYPE, CONDITIONS, SEVERITIES, RESOURCE_TYPE_LABELS, METRIC_LABELS, CONDITION_LABELS, SEVERITY_LABELS } from './resourceAlertOptions'
 
 export default {
   name: 'CreateResourceAlertRule',
@@ -185,41 +179,12 @@ export default {
         severity: [{ required: true, message: this.$t('label.required') }]
       },
 
-      conditions: ['GT', 'GTE', 'LT', 'LTE', 'EQ'],
-      severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
-      resourceTypeLabels: {
-        VirtualMachine: 'Virtual Machine',
-        Host: 'Host',
-        Volume: 'Volume',
-        StoragePool: 'Storage Pool'
-      },
-      metricLabels: {
-        CPU_UTILIZATION: 'CPU Utilization %',
-        MEMORY_UTILIZATION: 'Memory Utilization %',
-        DISK_READ_IOPS: 'Disk Read IOPS',
-        DISK_WRITE_IOPS: 'Disk Write IOPS',
-        DISK_READ_KBPS: 'Disk Read KB/s',
-        DISK_WRITE_KBPS: 'Disk Write KB/s',
-        NETWORK_READ_KBPS: 'Network In KB/s',
-        NETWORK_WRITE_KBPS: 'Network Out KB/s',
-        STORAGE_UTILIZATION: 'Storage Utilization %',
-        LOAD_AVERAGE: 'Load Average',
-        VOLUME_SIZE_GB: 'Volume Size (GB)',
-        STORAGE_USED_IOPS: 'Storage Used IOPS'
-      },
-      conditionLabels: {
-        GT: 'Is above',
-        GTE: 'Is above or equal to',
-        LT: 'Is below',
-        LTE: 'Is below or equal to',
-        EQ: 'Equals'
-      },
-      severityLabels: {
-        CRITICAL: 'Critical',
-        HIGH: 'High',
-        MEDIUM: 'Medium',
-        LOW: 'Low'
-      }
+      conditions: CONDITIONS,
+      severities: SEVERITIES,
+      resourceTypeLabels: RESOURCE_TYPE_LABELS,
+      metricLabels: METRIC_LABELS,
+      conditionLabels: CONDITION_LABELS,
+      severityLabels: SEVERITY_LABELS
     }
   },
   computed: {
@@ -320,7 +285,7 @@ export default {
         if (this.form.resourceid) params.resourceid = this.form.resourceid
         Object.assign(params, this.ownerParams)
         if (this.form.message) params.message = this.form.message
-        if (this.form.resetinterval) params.resetinterval = this.form.resetinterval
+        if (this.form.resetinterval !== undefined && this.form.resetinterval !== null) params.resetinterval = this.form.resetinterval
         if (this.form.webhookids.length > 0) params.webhookids = this.form.webhookids.join(',')
         this.loading = true
         postAPI('createResourceAlertRule', params).then(() => {
