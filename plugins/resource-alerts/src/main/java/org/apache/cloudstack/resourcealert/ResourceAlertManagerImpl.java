@@ -266,7 +266,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             try {
                 if (isGeneric) {
                     if (isOptedOut(rule.getResourceType(), resourceId)) continue;
-                    if (ruleDao.existsSpecificRule(rule.getResourceType(), rule.getMetric(), resourceId)) continue;
+                    if (ruleDao.existsSpecificRule(rule.getResourceType(), rule.getMetric(), resourceId, rule.getAccountId())) continue;
                 }
                 Double value = getMetricValue(rule.getResourceType(), metric, resourceId);
                 if (value == null || value < 0) {
