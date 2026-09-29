@@ -1004,4 +1004,43 @@ public class ResourceAlertManagerImplTest {
         verify(ruleDao).remove(rule.getId());
         verify(alertDao, never()).persist(any());
     }
+
+    private ResourceAlertRuleVO volumeReadIopsRule() {
+        return new ResourceAlertRuleVO("vol-io", ResourceAlertRule.ResourceType.Volume,
+                VOLUME_ID, 1L, 1L, "DISK_READ_IOPS", AlertCondition.LT, 5.0,
+                AlertSeverity.LOW, null, false, 600);
+    }
+
+    private void stubVolumeOnVm(VirtualMachine.State vmState) {
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeReadIopsRule()));
+        VolumeVO vol = mock(VolumeVO.class);
+        when(vol.getState()).thenReturn(Volume.State.Ready);
+        when(vol.getInstanceId()).thenReturn(VM_ID);
+        when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(vmState);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+        VmStats stats = mock(VmStats.class);
+        lenient().when(stats.getDiskReadIOs()).thenReturn(0.0);
+        lenient().when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+    }
+
+    @Test
+    public void testVolumeDiskRuleSkippedWhenVmStopped() {
+        stubVolumeOnVm(VirtualMachine.State.Stopped);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testVolumeDiskRuleFiresWhenVmRunning() {
+        stubVolumeOnVm(VirtualMachine.State.Running);
+        when(alertDao.findLastFiredForRule(anyLong(), eq(VOLUME_ID))).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(any());
+    }
 }
