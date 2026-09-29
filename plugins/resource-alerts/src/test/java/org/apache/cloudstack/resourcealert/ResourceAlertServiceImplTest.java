@@ -533,4 +533,14 @@ public class ResourceAlertServiceImplTest {
         assertEquals(List.of(), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
         assertNull(org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
     }
+
+    @Test
+    public void testCreateUsesProjectAsOwner() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getProjectId()).thenReturn(42L);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(accountManager).finalizeOwner(eq(caller), any(), any(), eq(42L));
+    }
 }

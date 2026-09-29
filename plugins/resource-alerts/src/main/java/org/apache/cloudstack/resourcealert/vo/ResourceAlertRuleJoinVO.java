@@ -114,6 +114,12 @@ public class ResourceAlertRuleJoinVO implements ControlledEntity {
     @Column(name = "domain_path")
     private String domainPath;
 
+    @Column(name = "project_uuid")
+    private String projectUuid;
+
+    @Column(name = "project_name")
+    private String projectName;
+
     public ResourceAlertRuleJoinVO() {}
 
     public long getId() { return id; }
@@ -139,6 +145,8 @@ public class ResourceAlertRuleJoinVO implements ControlledEntity {
     public String getDomainUuid() { return domainUuid; }
     public String getDomainName() { return domainName; }
     public String getDomainPath() { return domainPath; }
+    public String getProjectUuid() { return projectUuid; }
+    public String getProjectName() { return projectName; }
 
     @Override
     public Class<?> getEntityType() {

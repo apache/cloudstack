@@ -24,7 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -38,7 +38,7 @@ import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
         entityType = {ResourceAlert.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "24.0.0")
-public class ListResourceAlertsCmd extends BaseListAccountResourcesCmd {
+public class ListResourceAlertsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Inject
     ResourceAlertService resourceAlertService;
