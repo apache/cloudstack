@@ -70,10 +70,13 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
@@ -129,10 +132,24 @@ public class ResourceAlertManagerImplTest {
         lenient().when(defaultOwner.getId()).thenReturn(1L);
         lenient().when(defaultOwner.getType()).thenReturn(Account.Type.NORMAL);
         lenient().when(accountDao.findById(anyLong())).thenReturn(defaultOwner);
-        lenient().when(userVmDao.findById(anyLong())).thenReturn(mock(UserVmVO.class));
-        lenient().when(volumeDao.findById(anyLong())).thenReturn(mock(VolumeVO.class));
-        lenient().when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
-        lenient().when(storagePoolDao.findById(anyLong())).thenReturn(mock(StoragePoolVO.class));
+        UserVmVO vm = runningVm();
+        lenient().when(userVmDao.findById(anyLong())).thenReturn(vm);
+        VolumeVO volume = mock(VolumeVO.class);
+        lenient().when(volume.getState()).thenReturn(Volume.State.Ready);
+        lenient().when(volumeDao.findById(anyLong())).thenReturn(volume);
+        HostVO host = mock(HostVO.class);
+        lenient().when(host.getStatus()).thenReturn(Status.Up);
+        lenient().when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        lenient().when(hostDao.findById(anyLong())).thenReturn(host);
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        lenient().when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
+        lenient().when(storagePoolDao.findById(anyLong())).thenReturn(pool);
+    }
+
+    private UserVmVO runningVm() {
+        UserVmVO vm = mock(UserVmVO.class);
+        lenient().when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        return vm;
     }
 
     private ResourceAlertRuleVO vmCpuRule(Long resourceId) {
@@ -385,7 +402,7 @@ public class ResourceAlertManagerImplTest {
         when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
-        UserVmVO vm = mock(UserVmVO.class);
+        UserVmVO vm = runningVm();
         when(vm.getDataCenterId()).thenReturn(1L);
         when(userVmDao.findById(VM_ID)).thenReturn(vm);
 
@@ -511,7 +528,7 @@ public class ResourceAlertManagerImplTest {
         when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
-        UserVmVO vm = mock(UserVmVO.class);
+        UserVmVO vm = runningVm();
         when(vm.getDataCenterId()).thenReturn(42L);
         when(userVmDao.findById(VM_ID)).thenReturn(vm);
 
@@ -721,6 +738,7 @@ public class ResourceAlertManagerImplTest {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
         VolumeVO vol = mock(VolumeVO.class);
         when(vol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(vol.getState()).thenReturn(Volume.State.Ready);
         when(vol.getPath()).thenReturn("vol-path");
         when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
         VolumeStats stats = mock(VolumeStats.class);
@@ -738,6 +756,7 @@ public class ResourceAlertManagerImplTest {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
         VolumeVO vol = mock(VolumeVO.class);
         when(vol.getFormat()).thenReturn(Storage.ImageFormat.OVA);
+        when(vol.getState()).thenReturn(Volume.State.Ready);
         when(vol.getChainInfo()).thenReturn("chain-info");
         when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
 
@@ -931,5 +950,39 @@ public class ResourceAlertManagerImplTest {
 
         verify(ruleDao).existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID, 1L);
         verify(alertDao).persist(any());
+    }
+
+    @Test
+    public void testSpecificRuleSkipsStoppedVm() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        stubFiringVmCpuRule(rule);
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+
+        manager.evaluateRules();
+
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testIsInServiceChecksResourceState() {
+        HostVO host = mock(HostVO.class);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getResourceState()).thenReturn(ResourceState.Maintenance);
+        when(hostDao.findById(HOST_ID)).thenReturn(host);
+        assertFalse(manager.isInService(ResourceAlertRule.ResourceType.Host, HOST_ID));
+
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getStatus()).thenReturn(StoragePoolStatus.Maintenance);
+        when(storagePoolDao.findById(POOL_ID)).thenReturn(pool);
+        assertFalse(manager.isInService(ResourceAlertRule.ResourceType.StoragePool, POOL_ID));
+
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volume.getState()).thenReturn(Volume.State.Allocated);
+        when(volumeDao.findById(7L)).thenReturn(volume);
+        assertFalse(manager.isInService(ResourceAlertRule.ResourceType.Volume, 7L));
+
+        assertTrue(manager.isInService(ResourceAlertRule.ResourceType.VirtualMachine, VM_ID));
     }
 }

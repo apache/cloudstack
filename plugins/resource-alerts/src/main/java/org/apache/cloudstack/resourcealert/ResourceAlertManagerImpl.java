@@ -62,11 +62,14 @@ import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceState;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -221,6 +224,30 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
     }
 
+    // Stopped VMs and hosts or pools out of service report stale or zero stats.
+    boolean isInService(ResourceAlertRule.ResourceType type, long resourceId) {
+        switch (type) {
+            case VirtualMachine: {
+                UserVmVO vm = userVmDao.findById(resourceId);
+                return vm != null && VirtualMachine.State.Running.equals(vm.getState());
+            }
+            case Volume: {
+                VolumeVO volume = volumeDao.findById(resourceId);
+                return volume != null && Volume.State.Ready.equals(volume.getState());
+            }
+            case Host: {
+                HostVO host = hostDao.findById(resourceId);
+                return host != null && Status.Up.equals(host.getStatus()) && !ResourceState.isMaintenanceState(host.getResourceState());
+            }
+            case StoragePool: {
+                StoragePoolVO pool = storagePoolDao.findById(resourceId);
+                return pool != null && StoragePoolStatus.Up.equals(pool.getStatus());
+            }
+            default:
+                return false;
+        }
+    }
+
     // Every management server collects stats for all hosts, so only one may evaluate or alerts fire once per server.
     boolean isEvaluatingServer() {
         ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
@@ -267,6 +294,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         boolean isGeneric = rule.getResourceId() == null;
         for (Long resourceId : getResourceIds(rule)) {
             try {
+                if (checksServiceState(rule) && !isInService(rule.getResourceType(), resourceId)) continue;
                 if (isGeneric) {
                     if (isOptedOut(rule.getResourceType(), resourceId)) continue;
                     if (ruleDao.existsSpecificRule(rule.getResourceType(), rule.getMetric(), resourceId, rule.getAccountId())) continue;
@@ -295,6 +323,13 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         if (objType == null) return false;
         ResourceTag tag = resourceTagDao.findByKey(resourceId, objType, "resource.alert.opt.out");
         return tag != null && "true".equalsIgnoreCase(tag.getValue());
+    }
+
+    // All-resources VM and volume rules already list only running VMs and ready volumes.
+    private boolean checksServiceState(ResourceAlertRuleVO rule) {
+        return rule.getResourceId() != null
+                || ResourceAlertRule.ResourceType.Host.equals(rule.getResourceType())
+                || ResourceAlertRule.ResourceType.StoragePool.equals(rule.getResourceType());
     }
 
     private List<Long> getResourceIds(ResourceAlertRuleVO rule) {
