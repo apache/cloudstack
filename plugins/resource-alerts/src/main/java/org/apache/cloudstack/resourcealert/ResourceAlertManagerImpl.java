@@ -151,7 +151,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public boolean start() {
-        int interval = EVAL_INTERVAL.value();
+        int interval = getEvaluationInterval();
         executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "ResourceAlertEvaluator");
             t.setDaemon(true);
@@ -159,6 +159,19 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         });
         executor.scheduleAtFixedRate(new EvaluationTask(), interval, interval, TimeUnit.SECONDS);
         return true;
+    }
+
+    Integer configuredEvaluationInterval() {
+        return EVAL_INTERVAL.value();
+    }
+
+    int getEvaluationInterval() {
+        Integer interval = configuredEvaluationInterval();
+        if (interval == null || interval < 1) {
+            logger.warn("Invalid {} value {}, using {} seconds", EVAL_INTERVAL.key(), interval, EVAL_INTERVAL.defaultValue());
+            return Integer.parseInt(EVAL_INTERVAL.defaultValue());
+        }
+        return interval;
     }
 
     @Override

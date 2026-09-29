@@ -889,4 +889,20 @@ public class ResourceAlertManagerImplTest {
         long diff = Math.abs(cutoff.getValue().getTime() - before);
         assertTrue("cutoff should be about 30 days ago", diff < 60_000L);
     }
+
+    @Test
+    public void testEvaluationIntervalFallsBackWhenBelowOne() {
+        doReturn(0).when(manager).configuredEvaluationInterval();
+        assertEquals(60, manager.getEvaluationInterval());
+        doReturn(-5).when(manager).configuredEvaluationInterval();
+        assertEquals(60, manager.getEvaluationInterval());
+        doReturn(null).when(manager).configuredEvaluationInterval();
+        assertEquals(60, manager.getEvaluationInterval());
+    }
+
+    @Test
+    public void testEvaluationIntervalUsesValidSetting() {
+        doReturn(30).when(manager).configuredEvaluationInterval();
+        assertEquals(30, manager.getEvaluationInterval());
+    }
 }
