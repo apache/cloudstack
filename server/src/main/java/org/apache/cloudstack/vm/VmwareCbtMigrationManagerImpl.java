@@ -697,7 +697,7 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         cutoverCommand.setAllowNonInPlaceFinalization(isNonInPlaceFinalizationFallbackAllowed(storageTarget));
         cutoverCommand.setWait(getVmwareCbtMigrationAgentCommandTimeout());
 
-        VmwareCbtMigrationAnswer answer = sendVmwareCbtCommand(cbtHost, cutoverCommand, "cut over", migration.getUuid());
+        VmwareCbtMigrationAnswer answer = sendFinalCutoverCommand(cbtHost, cutoverCommand, migration, source);
         if (!answer.getResult()) {
             markMigrationFailed(migration, "CBT cutover failed", sanitizeSensitiveMessage(answer.getDetails(), source));
             return createVmwareCbtMigrationResponse(vmwareCbtMigrationDao.findById(migration.getId()));
@@ -870,10 +870,12 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
         cycle.setState(VmwareCbtMigrationCycle.State.Created);
         cycle.setDescription("Creating final VMware CBT snapshot for cutover");
         cycle.setUpdated(new Date());
-        cycle = vmwareCbtMigrationCycleDao.persist(cycle);
 
         VmwareCbtSnapshotInfo snapshot = null;
+        boolean cyclePersisted = false;
         try {
+            cycle = vmwareCbtMigrationCycleDao.persist(cycle);
+            cyclePersisted = true;
             snapshot = createDeltaSnapshot(source, migration, cycleNumber);
             cycle.setState(VmwareCbtMigrationCycle.State.QueryingChangedAreas);
             cycle.setSnapshotMor(snapshot.getSnapshotMor());
@@ -931,7 +933,9 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
             return true;
         } catch (RuntimeException e) {
             String error = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
-            markCycleFailed(cycle, error);
+            if (cyclePersisted) {
+                markCycleFailed(cycle, error);
+            }
             markMigrationFailed(migration, "Final CBT delta synchronization failed", error);
             return false;
         } finally {
@@ -2442,6 +2446,16 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
                     disk.getChangeId(), disk.getSnapshotMor(), disk.getCapacityBytes() == null ? 0L : disk.getCapacityBytes()));
         }
         return diskTOs;
+    }
+
+    private VmwareCbtMigrationAnswer sendFinalCutoverCommand(HostVO host, VmwareCbtCutoverCommand command,
+                                                             VmwareCbtMigrationVO migration, VmwareSource source) {
+        try {
+            return sendVmwareCbtCommand(host, command, "cut over", migration.getUuid());
+        } catch (RuntimeException e) {
+            String details = sanitizeSensitiveMessage(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()), source);
+            return new VmwareCbtMigrationAnswer(command, false, details, migration.getUuid());
+        }
     }
 
     private VmwareCbtMigrationAnswer sendVmwareCbtCommand(HostVO host, Command command, String action, String migrationUuid) {
