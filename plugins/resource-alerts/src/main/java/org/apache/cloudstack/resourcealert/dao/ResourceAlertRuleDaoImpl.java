@@ -59,6 +59,7 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         specificRuleSearch.and("resourceType", specificRuleSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         specificRuleSearch.and("metric", specificRuleSearch.entity().getMetric(), SearchCriteria.Op.EQ);
         specificRuleSearch.and("resourceId", specificRuleSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        specificRuleSearch.and("accountId", specificRuleSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         specificRuleSearch.and("removed", specificRuleSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         specificRuleSearch.done();
 
@@ -109,11 +110,12 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
     }
 
     @Override
-    public boolean existsSpecificRule(ResourceAlertRule.ResourceType resourceType, String metric, long resourceId) {
+    public boolean existsSpecificRule(ResourceAlertRule.ResourceType resourceType, String metric, long resourceId, long accountId) {
         SearchCriteria<ResourceAlertRuleVO> sc = specificRuleSearch.create();
         sc.setParameters("resourceType", resourceType);
         sc.setParameters("metric", metric);
         sc.setParameters("resourceId", resourceId);
+        sc.setParameters("accountId", accountId);
         return getCount(sc) > 0;
     }
 

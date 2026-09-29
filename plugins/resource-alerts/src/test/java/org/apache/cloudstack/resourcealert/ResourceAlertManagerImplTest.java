@@ -543,7 +543,7 @@ public class ResourceAlertManagerImplTest {
         when(tag.getValue()).thenReturn("false");
         when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
                 .thenReturn(tag);
-        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID))
+        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID, 1L))
                 .thenReturn(false);
 
         VmStats stats = mock(VmStats.class);
@@ -567,7 +567,7 @@ public class ResourceAlertManagerImplTest {
 
         when(resourceTagDao.findByKey(VM_ID, ResourceTag.ResourceObjectType.UserVm, "resource.alert.opt.out"))
                 .thenReturn(null);
-        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID))
+        when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID, 1L))
                 .thenReturn(true);
 
         manager.evaluateRules();
@@ -590,7 +590,7 @@ public class ResourceAlertManagerImplTest {
 
         verify(alertDao).persist(any());
         verify(resourceTagDao, never()).findByKey(anyLong(), any(), anyString());
-        verify(ruleDao, never()).existsSpecificRule(any(), anyString(), anyLong());
+        verify(ruleDao, never()).existsSpecificRule(any(), anyString(), anyLong(), anyLong());
     }
 
     @Test
@@ -904,5 +904,22 @@ public class ResourceAlertManagerImplTest {
     public void testEvaluationIntervalUsesValidSetting() {
         doReturn(30).when(manager).configuredEvaluationInterval();
         assertEquals(30, manager.getEvaluationInterval());
+    }
+
+    @Test
+    public void testGenericRuleNotSkippedBySpecificRuleOfAnotherAccount() {
+        ResourceAlertRuleVO rule = vmCpuRule(null);
+        stubFiringVmCpuRule(rule);
+        stubOwner(Account.Type.NORMAL);
+        when(userVmDao.listIdsByAccountOrDomainsAndState(1L, null, VirtualMachine.State.Running))
+                .thenReturn(Collections.singletonList(VM_ID));
+        lenient().when(ruleDao.existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID, 2L))
+                .thenReturn(true);
+        when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(ruleDao).existsSpecificRule(ResourceAlertRule.ResourceType.VirtualMachine, "CPU_UTILIZATION", VM_ID, 1L);
+        verify(alertDao).persist(any());
     }
 }
