@@ -23,7 +23,6 @@ import com.cloud.exception.InvalidParameterValueException;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -61,12 +60,6 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in hours to list the async jobs started or completed within that period up to now.", since = "4.23")
     private Integer duration;
-
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource.", since = "4.23")
-    private String resourceType;
-
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "the id of the resource", since = "4.23")
-    private String resourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -114,22 +107,6 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
 
     public Integer getDuration() {
         return duration;
-    }
-
-    public ApiCommandResourceType getResourceType() {
-        if (resourceType != null) {
-            ApiCommandResourceType jobInstanceType = com.cloud.utils.EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, resourceType, ApiCommandResourceType.None);
-            if (jobInstanceType == ApiCommandResourceType.None) {
-                throw new InvalidParameterValueException("Not a valid resource type");
-            }
-            return jobInstanceType;
-        }
-
-        return null;
-    }
-
-    public String getResourceId() {
-        return resourceId;
     }
 
     /////////////////////////////////////////////////////
