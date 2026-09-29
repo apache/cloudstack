@@ -1051,6 +1051,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // so removing this row is itself the release
         _nicNetworkMapDao.remove(association.getId());
 
+        if (nic.getMultiNetwork() && _nicNetworkMapDao.listByNicId(nic.getId()).isEmpty()) {
+            nic.setMultiNetwork(false);
+            _nicDao.update(nic.getId(), nic);
+        }
+
         if (vmRunning) {
             updateLiveVlanTrunkMembership(vm, nic);
             refreshNicVlanMappingMetadata(nic);

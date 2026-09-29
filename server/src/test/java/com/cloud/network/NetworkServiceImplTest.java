@@ -2005,12 +2005,34 @@ public class NetworkServiceImplTest {
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
         NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
         Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(association);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.emptyList());
 
         Nic result = service.disassociateNetworkFromNic(mockDisassociateCmd(11L, 206L));
 
         Assert.assertNotNull(result);
         Mockito.verify(nicNetworkMapDao).remove(association.getId());
         Mockito.verify(agentMgr, Mockito.never()).easySend(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(nic).setMultiNetwork(false);
+        Mockito.verify(nicDao).update(11L, nic);
+    }
+
+    @Test
+    public void disassociateNetworkFromNicKeepsMultiNetworkFlagWhenOtherAssociationsRemain() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, true);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
+        Mockito.when(nicNetworkMapDao.findByNicIdAndNetworkId(11L, 206L)).thenReturn(association);
+        NicNetworkMapVO remainingAssociation = new NicNetworkMapVO(11L, 207L, "10.1.1.60", null);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Arrays.asList(remainingAssociation));
+
+        Nic result = service.disassociateNetworkFromNic(mockDisassociateCmd(11L, 206L));
+
+        Assert.assertNotNull(result);
+        Mockito.verify(nicNetworkMapDao).remove(association.getId());
+        Mockito.verify(nic, Mockito.never()).setMultiNetwork(Mockito.anyBoolean());
+        Mockito.verify(nicDao, Mockito.never()).update(Mockito.eq(11L), Mockito.any());
     }
 
     @Test
