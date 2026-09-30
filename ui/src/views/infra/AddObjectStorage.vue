@@ -75,6 +75,37 @@
           </a-form-item>
         </div>
 
+        <div v-else-if="form.provider === 'SeaweedFS'">
+          <!-- SeaweedFS Object Store Configuration -->
+          <a-form-item name="url" ref="url">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            </template>
+            <a-input v-model:value="form.url" placeholder="http://seaweedfs-host:8333" />
+          </a-form-item>
+          <a-form-item name="accessKey" ref="accessKey" :label="$t('label.access.key')">
+            <a-input v-model:value="form.accessKey" />
+          </a-form-item>
+          <a-form-item name="secretKey" ref="secretKey" :label="$t('label.secret.key')">
+            <a-input-password v-model:value="form.secretKey" autocomplete="off"/>
+          </a-form-item>
+          <a-form-item name="s3Url" ref="s3Url" :label="$t('label.seaweedfs.s3.url')">
+            <a-input v-model:value="form.s3Url" :placeholder="$t('label.seaweedfs.s3.url.placeholder')"/>
+          </a-form-item>
+          <a-form-item name="iamUrl" ref="iamUrl" :label="$t('label.seaweedfs.iam.url')">
+            <a-input v-model:value="form.iamUrl" :placeholder="$t('label.seaweedfs.iam.url.placeholder')"/>
+          </a-form-item>
+          <a-form-item name="metricsUrl" ref="metricsUrl" :label="$t('label.seaweedfs.metrics.url')">
+            <a-input v-model:value="form.metricsUrl" :placeholder="$t('label.seaweedfs.metrics.url.placeholder')"/>
+          </a-form-item>
+          <a-form-item name="size" ref="size">
+            <template #label>
+              <tooltip-label :title="$t('label.size')" :tooltip="apiParams.size.description"/>
+            </template>
+            <a-input v-model:value="form.size" />
+          </a-form-item>
+        </div>
+
         <div v-else>
           <!-- Non-HyperStore Object Stores -->
           <a-form-item name="url" ref="url">
@@ -127,7 +158,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'Simulator'],
+      providers: ['MinIO', 'Ceph', 'Cloudian HyperStore', 'SeaweedFS', 'Simulator'],
       zones: [],
       loading: false
     }
@@ -185,6 +216,25 @@ export default {
           data['details[3].value'] = values.s3Url
           data['details[4].key'] = 'iamUrl'
           data['details[4].value'] = values.iamUrl
+        }
+
+        if (provider === 'SeaweedFS') {
+          let detailIdx = 2
+          if (values.s3Url) {
+            data['details[' + detailIdx + '].key'] = 's3Url'
+            data['details[' + detailIdx + '].value'] = values.s3Url
+            detailIdx++
+          }
+          if (values.iamUrl) {
+            data['details[' + detailIdx + '].key'] = 'iamUrl'
+            data['details[' + detailIdx + '].value'] = values.iamUrl
+            detailIdx++
+          }
+          if (values.metricsUrl) {
+            data['details[' + detailIdx + '].key'] = 'metricsUrl'
+            data['details[' + detailIdx + '].value'] = values.metricsUrl
+            detailIdx++
+          }
         }
 
         this.loading = true
