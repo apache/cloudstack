@@ -57,6 +57,9 @@
           <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
             {{ record.isolationuri }}
           </a-descriptions-item>
+          <a-descriptions-item :label="$t('label.networkrate')" v-if="record.networkrate">
+            {{ String(record.networkrate) === '-1' ? $t('label.unlimited') : record.networkrate }}
+          </a-descriptions-item>
         </template>
         <a-descriptions-item :label="$t('label.dns.name')" v-if="record.nicdnsname">
             {{ record.nicdnsname }}

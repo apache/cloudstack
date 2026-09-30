@@ -2104,6 +2104,7 @@
 "label.publicipid": "IP address ID",
 "label.publickey": "Public key",
 "label.publicnetwork": "Public Network",
+"label.publicnetworkrate": "Public network rate (Mb/s)",
 "label.publicport": "Public port",
 "label.purgeresources": "Purge Resources",
 "label.purge.usage.records.success": "Successfully purged usage records",

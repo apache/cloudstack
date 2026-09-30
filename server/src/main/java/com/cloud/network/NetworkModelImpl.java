@@ -123,6 +123,8 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -141,6 +143,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -148,6 +151,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -173,6 +177,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Inject
     ConfigurationManager _configMgr;
     @Inject
+    ServiceOfferingDao _serviceOfferingDao;
+    @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
@@ -190,6 +196,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     VpcDao vpcDao;
     @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
+    @Inject
+    DomainRouterDao _routerDao;
 
     private List<NetworkElement> networkElements;
 
@@ -1202,9 +1210,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final Network network = getNetwork(networkId);
         final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        // For user VM: For default nic use network rate from the service/compute offering,
+        // For user VM: Use network rate from the service/compute offering for every nic (default or not),
         //              or on NULL from vm.network.throttling.rate global setting
-        // For router: Get network rate for guest and public networks from the guest network offering
+        // For router: For guest networks, use network rate from the router's own system offering first,
+        //              falling back to the guest network offering, or on NULL from network.throttling.rate
+        //              For public networks, use network rate from the router's guest network offering,
         //              or on NULL from network.throttling.rate
         // For others: Use network rate from their network offering,
         //              or on NULL from network.throttling.rate setting at zone > global level
@@ -1213,7 +1223,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             switch (vm.getType()) {
                 case User:
                     final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-                    if (nic != null && nic.isDefaultNic()) {
+                    if (nic != null) {
                         return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
                     }
                     break;
@@ -1221,9 +1231,23 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     if (TrafficType.Guest.equals(network.getTrafficType())) {
                         final Nic routerNic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
                         if (routerNic != null) {
+                            final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+                            if (routerOffering != null && routerOffering.getRateMbps() != null) {
+                                final int systemOfferingRate = routerOffering.getRateMbps();
+                                return systemOfferingRate > 0 ? systemOfferingRate : -1;
+                            }
                             return _configMgr.getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
                         }
                     } else if (TrafficType.Public.equals(network.getTrafficType())) {
+                        // Use the router's own vpc_id: the guest NIC isn't persisted yet when this runs for the public NIC during initial VR deployment.
+                        final DomainRouterVO routerVO = _routerDao.findById(vmId);
+                        final Long vpcId = routerVO != null ? routerVO.getVpcId() : null;
+                        if (vpcId != null) {
+                            final Vpc vpc = vpcDao.findById(vpcId);
+                            if (vpc != null) {
+                                return _configMgr.getVpcOfferingNetworkRate(vpc.getVpcOfferingId(), network.getDataCenterId());
+                            }
+                        }
                         List<NicVO> routerNics = _nicDao.listByVmId(vmId);
                         for (final Nic routerNic : routerNics) {
                             final NetworkVO nw = _networksDao.findById(routerNic.getNetworkId());

@@ -1853,6 +1853,12 @@ export default {
           delete values.tags
         }
 
+        if (action.api === 'updateVPCOffering' && values.publicnetworkrate === -1) {
+          // The offering response normalizes an unset/unlimited rate to -1, but the
+          // update API only accepts 0 as the unlimited value for this field.
+          values.publicnetworkrate = 0
+        }
+
         if (['updateServiceOffering'].includes(action.api)) {
           if (values.hosttags === this.resource.hosttags) {
             delete values.hosttags

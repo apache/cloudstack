@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -484,6 +485,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             network.setVpcId(vpcId);
         }
         _networksDao.update(network.getId(), network, _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), newPhysicalNetworkId));
+        Integer networkRate = _networkModel.getNetworkRate(network.getId(), null);
+        _networkDetailsDao.addDetail(network.getId(), ApiConstants.NETWORKRATE, String.valueOf(networkRate), true);
         return network;
     }
 

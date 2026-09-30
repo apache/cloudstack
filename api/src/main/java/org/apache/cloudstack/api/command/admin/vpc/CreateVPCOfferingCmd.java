@@ -165,6 +165,11 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             description = "True if the VPC offering is IP conserve mode enabled, allowing public IPs to be used across multiple VPC tiers. Default value is false")
     private Boolean conserveMode;
 
+    @Parameter(name = ApiConstants.PUBLIC_NETWORK_RATE, type = CommandType.INTEGER,
+            since = "4.24.0",
+            description = "Data transfer rate in megabits per second allowed for a VPC's public gateway (internet-facing network), created with this offering. Default is unlimited")
+    private Integer publicNetworkRate;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -316,6 +321,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     public boolean isConserveMode() {
         return BooleanUtils.toBoolean(conserveMode);
+    }
+
+    public Integer getPublicNetworkRate() {
+        return publicNetworkRate;
     }
 
     @Override
