@@ -130,7 +130,7 @@ export default {
   props: {
     resource: {
       type: Object,
-      required: true
+      default: null
     },
     resourceType: {
       type: String,
@@ -198,7 +198,7 @@ export default {
           dataIndex: 'domainpath',
           slots: { customRender: 'domainpath' }
         })
-      if (this.resourceType) {
+      if (!this.scopedToManagementServer) {
         columns.push({
           title: this.$t('label.managementservername'),
           dataIndex: 'managementservername'
@@ -230,6 +230,9 @@ export default {
     },
     showActions () {
       return isAdmin() && 'cancelAsyncJob' in this.$store.getters.apis
+    },
+    scopedToManagementServer () {
+      return !this.resourceType && !!(this.resource && this.resource.id)
     }
   },
   created () {
@@ -243,7 +246,7 @@ export default {
   },
   methods: {
     fetchData () {
-      if (!this.resource || !this.resource.id) {
+      if (this.resourceType && !(this.resource && this.resource.id)) {
         this.jobs = []
         return
       }
@@ -256,7 +259,7 @@ export default {
       if (this.resourceType) {
         params.resourcetype = this.resourceType
         params.resourceid = this.resource.id
-      } else {
+      } else if (this.scopedToManagementServer) {
         params.managementserverid = this.resource.id
       }
       // pending is the API default; a period only makes sense once completed jobs are included
