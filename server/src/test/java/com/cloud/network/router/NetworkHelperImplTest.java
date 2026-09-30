@@ -164,7 +164,7 @@ public class NetworkHelperImplTest {
 
     @Test(expected=ResourceUnavailableException.class)
     public void testSendCommandsToRouterWrongRouterVersion()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -179,7 +179,7 @@ public class NetworkHelperImplTest {
 
     @Test
     public void testSendCommandsToRouter()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -217,7 +217,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithTrueResult()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -255,7 +255,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithNoAnswers()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = networkHelperSpy;
         VirtualRouter vr = mock(VirtualRouter.class);

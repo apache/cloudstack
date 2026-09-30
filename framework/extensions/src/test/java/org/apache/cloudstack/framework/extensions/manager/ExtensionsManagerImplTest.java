@@ -121,7 +121,6 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
@@ -487,7 +486,7 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
-    public void updateAllExtensionHostsRemovesHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void updateAllExtensionHostsRemovesHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
         Extension extension = mock(Extension.class);
         when(extension.getId()).thenReturn(1L);
         Long clusterId = 100L;
@@ -498,7 +497,7 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
-    public void updateAllExtensionHostsAddsHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void updateAllExtensionHostsAddsHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
         Extension extension = mock(Extension.class);
         when(extension.getId()).thenReturn(1L);
         Long clusterId = 100L;
@@ -509,7 +508,7 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
-    public void updateAllExtensionHostsHandlesEmptyHostListGracefully() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void updateAllExtensionHostsHandlesEmptyHostListGracefully() throws OperationTimedoutException, AgentUnavailableException {
         Extension extension = mock(Extension.class);
         Long clusterId = 100L;
         when(hostDao.listIdsByClusterId(clusterId)).thenReturn(Collections.emptyList());
@@ -518,7 +517,7 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
-    public void updateAllExtensionHostsHandlesNullClusterId() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void updateAllExtensionHostsHandlesNullClusterId() throws OperationTimedoutException, AgentUnavailableException {
         Extension extension = mock(Extension.class);
         when(extension.getId()).thenReturn(1L);
         when(extensionResourceMapDao.listResourceIdsByExtensionIdAndType(eq(1L), any())).thenReturn(Collections.emptyList());

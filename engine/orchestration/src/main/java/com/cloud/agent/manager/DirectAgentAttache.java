@@ -41,6 +41,7 @@ import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.RequestExecutionContext;
 import com.cloud.resource.ServerResource;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -334,6 +335,7 @@ public class DirectAgentAttache extends AgentAttache {
         @Override
         protected void runInContext() {
             long seq = _req.getSequence();
+            RequestExecutionContext.setRequestSequence(seq);
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
                     logger.warn(
@@ -385,6 +387,7 @@ public class DirectAgentAttache extends AgentAttache {
             } catch (Exception e) {
                 logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception caught ", e);
             } finally {
+                RequestExecutionContext.clear();
                 _outstandingCronTaskCount.decrementAndGet();
             }
         }
@@ -400,6 +403,7 @@ public class DirectAgentAttache extends AgentAttache {
         @Override
         protected void runInContext() {
             long seq = _req.getSequence();
+            RequestExecutionContext.setRequestSequence(seq);
             try {
                 Command[] cmds = _req.getCommands();
                 if (Thread.currentThread().isInterrupted() || _req.isCancelled()) {
@@ -472,6 +476,7 @@ public class DirectAgentAttache extends AgentAttache {
                 // This is pretty serious as processAnswers might not be called and the calling process is stuck waiting for the full timeout
                 logger.error(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught in runInContext, this will cause the management to become unpredictable", t);
             } finally {
+                RequestExecutionContext.clear();
                 _taskFutures.remove(seq);
                 _taskRequests.remove(seq);
                 _outstandingTaskCount.decrementAndGet();

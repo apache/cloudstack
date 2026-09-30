@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.api.command.admin.backup.CreateImageTransferCmd;
@@ -330,7 +329,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         StartBackupAnswer answer;
         try {
             answer = (StartBackupAnswer) agentManager.send(hostId, startCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             removeFailedBackup(backup);
             logger.error("Failed to communicate with agent on {} for {} start", host, backup, e);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
@@ -408,7 +407,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             StopBackupAnswer answer;
             try {
                 answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
-            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
                 removeFailedBackup(backup);
                 throw new CloudRuntimeException("Failed to communicate with agent", e);
             }
@@ -494,7 +493,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             imageTransfer = imageTransferDao.persist(imageTransfer);
             return imageTransfer;
 
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
     }
@@ -539,7 +538,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         );
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(hostId, nbdServerCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
         if (!nbdServerAnswer.getResult()) {
@@ -628,7 +627,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         CreateImageTransferAnswer transferAnswer;
         try {
             transferAnswer = (CreateImageTransferAnswer) agentManager.send(imageTransfer.getHostId(), transferCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
@@ -722,7 +721,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Answer answer;
         try {
             answer = agentManager.send(backup.getHostId(), finalizeCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
@@ -746,7 +745,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Answer answer;
         try {
             answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Failed to stop NBD server on image transfer finalization", e);
             return false;
         }
@@ -764,7 +763,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Answer answer;
         try {
             answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             return "Failed to communicate with agent";
         }
 
@@ -882,7 +881,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         Answer answer;
         try {
             answer = agentManager.send(hostId, deleteCmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Failed to communicate with agent to delete checkpoint for VM {}", vm.getId(), e);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
