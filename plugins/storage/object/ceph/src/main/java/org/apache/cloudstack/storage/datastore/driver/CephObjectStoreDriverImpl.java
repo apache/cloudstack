@@ -302,13 +302,20 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     public Map<String, Long> getAllBucketsUsage(long storeId) {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
         try {
-            List<BucketInfo> bucketinfo = rgwAdmin.listBucketInfo();
-            Map<String, Long> bucketsusage = new HashMap<String, Long>();
-            for (BucketInfo bucket: bucketinfo) {
+            logger.debug("Fetching statistics for all buckets accessible by the RGW administrator of the provider with ID [{}].", storeId);
+            List<BucketInfo> bucketsInfo = rgwAdmin.listBucketInfo();
+            Map<String, Long> bucketsUsage = new HashMap<>();
+            for (BucketInfo bucket : bucketsInfo) {
                 BucketInfo.Usage usage = bucket.getUsage();
-                bucketsusage.put(bucket.getBucket(), usage.getRgwMain().getSize_kb());
+                if (usage == null || usage.getRgwMain() == null) {
+                    logger.debug("Skipping bucket [{}] because RGW usage information is unavailable.", bucket.getBucket());
+                    continue;
+                }
+
+                bucketsUsage.put(bucket.getBucket(), usage.getRgwMain().getSize_kb());
             }
-            return bucketsusage;
+
+            return bucketsUsage;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
