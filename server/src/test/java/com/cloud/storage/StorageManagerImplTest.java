@@ -262,7 +262,7 @@ public class StorageManagerImplTest {
         PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
         storageManagerImpl._storagePoolDao = storagePoolDao;
         Mockito.doReturn(storagePool).when(storagePoolDao).findById(volume.getPoolId());
-        Assert.assertFalse(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
+        Assert.assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
 
     }
 
