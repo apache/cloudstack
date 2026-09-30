@@ -80,11 +80,13 @@ public class ResourceAlertMetricTest {
     }
 
     @Test
-    public void testVolumeSizeAppliesToVolumeOnly() {
-        assertTrue(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.Volume));
-        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
-        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.Host));
-        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
+    public void testVolumeUsedAppliesToVolumeOnly() {
+        assertTrue(ResourceAlertMetric.VOLUME_USED_GB.appliesTo(ResourceAlertRule.ResourceType.Volume));
+        assertFalse(ResourceAlertMetric.VOLUME_USED_GB.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
+        assertFalse(ResourceAlertMetric.VOLUME_USED_GB.appliesTo(ResourceAlertRule.ResourceType.Host));
+        assertFalse(ResourceAlertMetric.VOLUME_USED_GB.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
+        assertTrue(ResourceAlertMetric.VOLUME_UTILIZATION.appliesTo(ResourceAlertRule.ResourceType.Volume));
+        assertFalse(ResourceAlertMetric.VOLUME_UTILIZATION.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
     }
 
     @Test
@@ -101,6 +103,7 @@ public class ResourceAlertMetricTest {
         assertTrue(ResourceAlertMetric.MEMORY_UTILIZATION.isPercentage());
         assertTrue(ResourceAlertMetric.STORAGE_UTILIZATION.isPercentage());
         assertFalse(ResourceAlertMetric.DISK_READ_IOPS.isPercentage());
-        assertFalse(ResourceAlertMetric.VOLUME_SIZE_GB.isPercentage());
+        assertTrue(ResourceAlertMetric.VOLUME_UTILIZATION.isPercentage());
+        assertFalse(ResourceAlertMetric.VOLUME_USED_GB.isPercentage());
     }
 }

@@ -736,12 +736,12 @@ public class ResourceAlertManagerImplTest {
 
     private ResourceAlertRuleVO volumeSizeRule(double thresholdGb) {
         return new ResourceAlertRuleVO("vol", ResourceAlertRule.ResourceType.Volume,
-                VOLUME_ID, 1L, 1L, "VOLUME_SIZE_GB", AlertCondition.GT, thresholdGb,
+                VOLUME_ID, 1L, 1L, "VOLUME_USED_GB", AlertCondition.GT, thresholdGb,
                 AlertSeverity.MEDIUM, null, false, 600);
     }
 
     @Test
-    public void testVolumeSizeRuleUsesPhysicalSizeByPath() {
+    public void testVolumeUsedRuleUsesPhysicalSizeByPath() {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
         VolumeVO vol = mock(VolumeVO.class);
         when(vol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
@@ -759,7 +759,29 @@ public class ResourceAlertManagerImplTest {
     }
 
     @Test
-    public void testVolumeSizeRuleUsesChainInfoForOva() {
+    public void testVolumeUtilizationIsUsedOverDiskSize() {
+        ResourceAlertRuleVO rule = new ResourceAlertRuleVO("vol-pct", ResourceAlertRule.ResourceType.Volume,
+                VOLUME_ID, 1L, 1L, "VOLUME_UTILIZATION", AlertCondition.GT, 50.0,
+                AlertSeverity.MEDIUM, null, false, 600);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        VolumeVO vol = mock(VolumeVO.class);
+        when(vol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(vol.getState()).thenReturn(Volume.State.Ready);
+        when(vol.getPath()).thenReturn("vol-path");
+        when(volumeDao.findById(VOLUME_ID)).thenReturn(vol);
+        VolumeStats stats = mock(VolumeStats.class);
+        when(stats.getPhysicalSize()).thenReturn(6L * 1024 * 1024 * 1024);
+        when(stats.getVirtualSize()).thenReturn(8L * 1024 * 1024 * 1024);
+        when(statsCollector.getVolumeStats("vol-path")).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao).persist(alertCaptor.capture());
+        assertEquals(75.0, alertCaptor.getValue().getMetricValue(), 0.001);
+    }
+
+    @Test
+    public void testVolumeUsedRuleUsesChainInfoForOva() {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(volumeSizeRule(10.0)));
         VolumeVO vol = mock(VolumeVO.class);
         when(vol.getFormat()).thenReturn(Storage.ImageFormat.OVA);
@@ -847,7 +869,7 @@ public class ResourceAlertManagerImplTest {
     @Test
     public void testGenericVolumeRuleForRootAdminListsReadyVolumesCloudWide() {
         ResourceAlertRuleVO rule = new ResourceAlertRuleVO("vol", ResourceAlertRule.ResourceType.Volume,
-                null, 1L, 1L, "VOLUME_SIZE_GB", AlertCondition.GT, 10.0, AlertSeverity.LOW, null, false, 600);
+                null, 1L, 1L, "VOLUME_USED_GB", AlertCondition.GT, 10.0, AlertSeverity.LOW, null, false, 600);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
         stubOwner(Account.Type.ADMIN);
 
