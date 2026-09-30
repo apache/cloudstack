@@ -43,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -1933,7 +1932,7 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void checkNetScalerAsGroup() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void checkNetScalerAsGroup() throws OperationTimedoutException, AgentUnavailableException {
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
         when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);

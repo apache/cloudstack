@@ -35,7 +35,6 @@ import javax.inject.Inject;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.backup.InternalBackupService;
@@ -1885,7 +1884,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
-        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException | OperationCancelledException ex) {
+        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to copy image : ";
 
             logger.warn(msg, ex);
@@ -2160,8 +2159,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             } catch (final OperationTimedoutException e) {
                 throw new AgentUnavailableException("Operation timed out", destHost.getId());
-            } catch (final OperationCancelledException e) {
-                throw new AgentUnavailableException("Operation cancelled", destHost.getId());
             }
 
             for (VolumeInfo vol : samePoolClvmVolumes) {
@@ -2209,7 +2206,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             try {
                 migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
                 success = migrateAnswer != null && migrateAnswer.getResult();
-            } catch (OperationTimedoutException | OperationCancelledException ex) {
+            } catch (OperationTimedoutException ex) {
                 if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
                     final Answer answer = agentManager.send(destHost.getId(), new CheckVirtualMachineCommand(vm.getInstanceName()));
                     if (answer != null && answer.getResult() && answer instanceof CheckVirtualMachineAnswer) {
@@ -2238,7 +2235,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     throw new CloudRuntimeException(errMsg);
                 }
             }
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException | CloudRuntimeException ex) {
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
 
             errMsg = String.format("Copy volume(s) to storage(s) [%s] and VM to host [%s] failed in StorageSystemDataMotionStrategy.copyAsync. Error message: [%s].", volumesAndStorages, formatMigrationElementsAsJsonToDisplayOnLog("vm", vmTO.getId(), srcHost.getId(), destHost.getId()), ex.getMessage());
@@ -2458,7 +2455,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 String details = answer != null ? answer.getDetails() : "null answer";
                 logger.warn("CLVM lock command [{}] failed for LV [{}] on host [{}]: {}", operation, lvPath, hostId, details);
             }
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.warn("Exception sending CLVM lock command [{}] for LV [{}] on host [{}]: {}", operation, lvPath, hostId, e.getMessage());
         }
     }
@@ -3122,7 +3119,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             answer = (ResignatureAnswer)agentManager.send(hostVO.getId(), command);
         }
-        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException | OperationCancelledException ex) {
+        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             keepGrantedAccess = false;
 
             String msg = "Failed to resign the DataObject with the following ID: " + dataObj.getId();
@@ -3331,7 +3328,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
-        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException | OperationCancelledException ex) {
+        catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to perform VDI copy : ";
 
             logger.warn(msg, ex);

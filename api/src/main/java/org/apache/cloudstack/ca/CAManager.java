@@ -23,7 +23,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.exception.OperationCancelledException;
 import com.trilead.ssh2.Connection;
 
 import org.apache.cloudstack.framework.ca.CAProvider;
@@ -171,7 +170,7 @@ public interface CAManager extends CAService, Configurable, PluggableService {
      * @throws AgentUnavailableException
      * @throws OperationTimedoutException
      */
-    String generateKeyStoreAndCsr(final Host host, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
+    String generateKeyStoreAndCsr(final Host host, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException;
 
     /**
      * Deploys a Certificate payload to a provided host
@@ -183,7 +182,7 @@ public interface CAManager extends CAService, Configurable, PluggableService {
      * @throws AgentUnavailableException
      * @throws OperationTimedoutException
      */
-    boolean deployCertificate(final Host host, final Certificate certificate, final Boolean reconnect, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
+    boolean deployCertificate(final Host host, final Certificate certificate, final Boolean reconnect, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException;
 
     /**
      * Removes the host from an internal active client/certificate map

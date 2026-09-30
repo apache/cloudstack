@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -282,21 +281,21 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     }
 
     @Test
-    public void sendCopyCommandTest() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void sendCopyCommandTest() throws AgentUnavailableException, OperationTimedoutException {
         configureAndTestSendCommandTest(null);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void sendCopyCommandTestThrowAgentUnavailableException() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void sendCopyCommandTestThrowAgentUnavailableException() throws AgentUnavailableException, OperationTimedoutException {
         configureAndTestSendCommandTest(AgentUnavailableException.class);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void sendCopyCommandTestThrowOperationTimedoutException() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void sendCopyCommandTestThrowOperationTimedoutException() throws AgentUnavailableException, OperationTimedoutException {
         configureAndTestSendCommandTest(OperationTimedoutException.class);
     }
 
-    private void configureAndTestSendCommandTest(Class<? extends CloudException> exception) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    private void configureAndTestSendCommandTest(Class<? extends CloudException> exception) throws AgentUnavailableException, OperationTimedoutException {
         Host destHost = new HostVO("guid");
         TemplateObjectTO sourceTemplate = new TemplateObjectTO();
         sourceTemplate.setName("name");

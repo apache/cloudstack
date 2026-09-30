@@ -23,7 +23,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -217,7 +216,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         PrepareStorageClientAnswer prepareStorageClientAnswer;
         try {
             prepareStorageClientAnswer = (PrepareStorageClientAnswer) agentManager.send(host.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format("Failed to prepare SDC on the host %s, due to: %s", host, e.getMessage());
             logger.error(err);
             throw new CloudRuntimeException(err);
@@ -334,7 +333,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         Answer unprepareStorageClientAnswer;
         try {
             unprepareStorageClientAnswer = agentManager.send(host.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Failed to unprepare SDC on the host {} due to: {}", host, e.getMessage());
             return false;
         }
