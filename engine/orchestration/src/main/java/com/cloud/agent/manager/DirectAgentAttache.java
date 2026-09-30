@@ -132,29 +132,28 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     @Override
-    protected void cancel(final long seq) {
+    protected boolean cancelRunning(final long seq) {
         if (removeQueuedTask(seq)) {
             logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled queued task.");
-            super.cancel(seq);
-            return;
+            return true;
         }
 
         final Future<?> future = _taskFutures.get(seq);
         if (future == null) {
-            super.cancel(seq);
-            return;
+            // Neither queued nor running any more: it finished between the check and now, nothing to stop.
+            return true;
         }
 
         final ServerResource resource = _resource;
         if (resource == null || !resource.isRequestSequenceCancellable(seq)) {
             logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but the command is not cancellable, letting it run to completion.");
-            return;
+            return false;
         }
 
         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelling request sequence at the resource.");
         if (!resource.cancelRequestSequence(seq)) {
             logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Resource could not cancel the command, letting it run to completion.");
-            return;
+            return false;
         }
 
         final Request request = _taskRequests.get(seq);
@@ -163,8 +162,7 @@ public class DirectAgentAttache extends AgentAttache {
         }
         final boolean cancelled = future.cancel(true);
         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Running task " + (cancelled ? "cancelled" : "not cancelled"));
-
-        super.cancel(seq);
+        return true;
     }
 
     private synchronized boolean removeQueuedTask(final long seq) {

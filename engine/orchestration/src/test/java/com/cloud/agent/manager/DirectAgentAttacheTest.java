@@ -76,7 +76,7 @@ public class DirectAgentAttacheTest {
         Assert.assertEquals(1, directAgentAttache.tasks.size());
         Assert.assertTrue(directAgentAttache.isExecutionCancellable(202L));
 
-        directAgentAttache.cancel(202L);
+        directAgentAttache.cancelExecution(202L);
 
         Assert.assertTrue(request.isCancelled());
         Assert.assertEquals(0, directAgentAttache.tasks.size());
@@ -90,7 +90,7 @@ public class DirectAgentAttacheTest {
         Mockito.doReturn(true).when(_resource).cancelRequestSequence(101L);
 
         Assert.assertTrue(directAgentAttache.isExecutionCancellable(101L));
-        directAgentAttache.cancel(101L);
+        directAgentAttache.cancelExecution(101L);
 
         Mockito.verify(_resource).cancelRequestSequence(101L);
         Mockito.verify(runningTask).cancel(true);
@@ -105,7 +105,7 @@ public class DirectAgentAttacheTest {
         Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(303L);
 
         Assert.assertFalse(directAgentAttache.isExecutionCancellable(303L));
-        directAgentAttache.cancel(303L);
+        directAgentAttache.cancelExecution(303L);
 
         Mockito.verify(_resource, Mockito.never()).cancelRequestSequence(Mockito.anyLong());
         Mockito.verify(runningTask, Mockito.never()).cancel(Mockito.anyBoolean());
