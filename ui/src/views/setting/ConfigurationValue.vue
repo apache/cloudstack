@@ -199,6 +199,11 @@
       :width="'60vw'"
       @cancel="closeRelatedModal">
       <p>{{ $t('message.related.settings.changed').replace('%x', relatedSourceConfigName) }}</p>
+      <a-alert
+        type="info"
+        showIcon
+        style="margin-bottom: 12px"
+        :message="$t('message.related.settings.may.not.be.exhaustive')" />
       <a-table
         size="small"
         :showHeader="false"
@@ -396,22 +401,37 @@ export default {
     },
     fetchRelatedConfigurations (configrecord) {
       const prefix = this.getRelatedConfigPrefix(configrecord)
-      if (!prefix) {
-        return
-      }
-      this.relatedLoading = true
-      const params = {
+      const scopeParams = {
         [this.scopeKey]: this.$route.params?.id,
-        keyword: prefix,
         pagesize: -1,
         listAll: true
       }
-      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
-        params[this.scopeKey] = this.resource?.id
+      if (this.scopeKey === 'domainid' && !scopeParams[this.scopeKey]) {
+        scopeParams[this.scopeKey] = this.resource?.id
       }
-      getAPI('listConfigurations', params).then(json => {
-        const list = json?.listconfigurationsresponse?.configuration || []
-        this.relatedConfigs = list.filter(c => c.name !== configrecord.name && c.name.startsWith(prefix + '.'))
+      const requests = []
+      if (prefix) {
+        requests.push(
+          getAPI('listConfigurations', { ...scopeParams, keyword: prefix }).then(json => {
+            const list = json?.listconfigurationsresponse?.configuration || []
+            return list.filter(c => c.name.startsWith(prefix + '.'))
+          })
+        )
+      }
+      requests.push(
+        getAPI('listConfigurations', { ...scopeParams, parent: configrecord.name }).then(json => {
+          return json?.listconfigurationsresponse?.configuration || []
+        })
+      )
+      this.relatedLoading = true
+      Promise.all(requests).then(results => {
+        const merged = new Map()
+        results.flat().forEach(c => {
+          if (c.name !== configrecord.name) {
+            merged.set(c.name, c)
+          }
+        })
+        this.relatedConfigs = Array.from(merged.values())
         if (this.relatedConfigs.length > 0) {
           this.relatedSourceConfigName = configrecord.name
           this.relatedModalVisible = true
