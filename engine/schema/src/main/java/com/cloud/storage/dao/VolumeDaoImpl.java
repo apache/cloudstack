@@ -75,7 +75,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
-    protected final GenericSearchBuilder<VolumeVO, Long> IdsByAccountOrDomainsAndStateSearch;
     protected final SearchBuilder<VolumeVO> ExternalUuidSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -100,6 +99,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1 = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? ";
     private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2 = " GROUP BY pool.id ORDER BY 2 ASC ";
+    private static final String LIST_USER_VOLUME_IDS = "SELECT vol.id FROM `cloud`.`volumes` vol "
+            + "LEFT JOIN `cloud`.`vm_instance` vm ON vm.id = vol.instance_id "
+            + "WHERE vol.removed IS NULL AND (vol.instance_id IS NULL OR vm.type = 'User')";
 
     private static final String ORDER_ZONE_WIDE_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.scope = 'ZONE' AND pool.status='Up' " + " GROUP BY pool.id ORDER BY 2 ASC ";
@@ -120,18 +122,44 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<Long> listIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state) {
-        SearchCriteria<Long> sc = IdsByAccountOrDomainsAndStateSearch.create();
+    public List<Long> listUserVolumeIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state) {
+        if (domainIds != null && domainIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        StringBuilder sql = new StringBuilder(LIST_USER_VOLUME_IDS);
         if (accountId != null) {
-            sc.setParameters("accountId", accountId);
+            sql.append(" AND vol.account_id = ?");
         }
         if (domainIds != null) {
-            sc.setParameters("domainIds", domainIds.toArray());
+            sql.append(" AND vol.domain_id IN (").append(String.join(",", Collections.nCopies(domainIds.size(), "?"))).append(")");
         }
         if (state != null) {
-            sc.setParameters("state", state);
+            sql.append(" AND vol.state = ?");
         }
-        return customSearch(sc, null);
+        List<Long> ids = new ArrayList<>();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
+            int i = 1;
+            if (accountId != null) {
+                pstmt.setLong(i++, accountId);
+            }
+            if (domainIds != null) {
+                for (Long domainId : domainIds) {
+                    pstmt.setLong(i++, domainId);
+                }
+            }
+            if (state != null) {
+                pstmt.setString(i, state.name());
+            }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getLong(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to list user volume IDs", e);
+        }
+        return ids;
     }
 
     @Override
@@ -435,13 +463,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
         AllFieldsSearch.and("kmsWrappedKeyId", AllFieldsSearch.entity().getKmsWrappedKeyId(), Op.EQ);
         AllFieldsSearch.done();
-
-        IdsByAccountOrDomainsAndStateSearch = createSearchBuilder(Long.class);
-        IdsByAccountOrDomainsAndStateSearch.selectFields(IdsByAccountOrDomainsAndStateSearch.entity().getId());
-        IdsByAccountOrDomainsAndStateSearch.and("accountId", IdsByAccountOrDomainsAndStateSearch.entity().getAccountId(), Op.EQ);
-        IdsByAccountOrDomainsAndStateSearch.and("domainIds", IdsByAccountOrDomainsAndStateSearch.entity().getDomainId(), Op.IN);
-        IdsByAccountOrDomainsAndStateSearch.and("state", IdsByAccountOrDomainsAndStateSearch.entity().getState(), Op.EQ);
-        IdsByAccountOrDomainsAndStateSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
         RootDiskStateSearch.and("state", RootDiskStateSearch.entity().getState(), Op.IN);

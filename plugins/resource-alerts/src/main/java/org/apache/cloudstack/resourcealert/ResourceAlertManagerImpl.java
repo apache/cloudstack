@@ -396,7 +396,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             }
             case Volume: {
                 Pair<Long, List<Long>> scope = getGenericRuleScope(rule);
-                return scope == null ? Collections.emptyList() : volumeDao.listIdsByAccountOrDomainsAndState(
+                return scope == null ? Collections.emptyList() : volumeDao.listUserVolumeIdsByAccountOrDomainsAndState(
                         scope.first(), scope.second(), Volume.State.Ready);
             }
             case Host:
