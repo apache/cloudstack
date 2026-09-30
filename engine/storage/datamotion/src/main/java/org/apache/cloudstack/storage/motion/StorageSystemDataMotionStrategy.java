@@ -616,8 +616,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private void verifyFormatWithPoolType(ImageFormat imageFormat, StoragePoolType poolType) {
         if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 &&
                 !(imageFormat == ImageFormat.RAW && (StoragePoolType.PowerFlex == poolType ||
-                StoragePoolType.FiberChannel == poolType))) {
-            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex and FiberChannel)",
+                StoragePoolType.FiberChannel == poolType || StoragePoolType.OntapiSCSI == poolType))) {
+            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex, FiberChannel and OntapiSCSI)",
                 ImageFormat.VHD.toString(), ImageFormat.OVA.toString(), ImageFormat.QCOW2.toString(), ImageFormat.RAW.toString()));
         }
     }
