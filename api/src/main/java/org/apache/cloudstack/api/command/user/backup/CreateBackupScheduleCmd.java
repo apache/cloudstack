@@ -57,9 +57,15 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     private Long vmId;
 
     @Parameter(name = ApiConstants.INTERVAL_TYPE,
-            type = CommandType.STRING,
-            required = true,
-            description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+        type = CommandType.STRING,
+        required = true,
+        description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY",
+        allowedValues = {
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY"
+        })
     private String intervalType;
 
     @Parameter(name = ApiConstants.SCHEDULE,
