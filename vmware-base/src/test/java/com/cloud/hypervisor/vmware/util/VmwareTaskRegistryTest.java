@@ -135,7 +135,7 @@ public class VmwareTaskRegistryTest {
         registry.beginRequest(SEQ);
         final AtomicBoolean registered = new AtomicBoolean(true);
 
-        // the scope is per thread: a task waited on from another thread belongs to no request
+        // scope is per thread
         final Thread other = new Thread(() -> registered.set(VmwareTaskRegistry.taskStarted(mor("task-6"), client)));
         other.start();
         other.join();

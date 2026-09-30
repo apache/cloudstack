@@ -114,20 +114,16 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     protected boolean isExecutionCancellable(final long seq) {
-        // Still queued: it has not reached the resource, so dropping it strands nothing.
         if (isQueued(seq)) {
             return true;
         }
 
         if (!_taskFutures.containsKey(seq)) {
-            // Neither queued nor running here. We have nothing to stop and no way to know what the
-            // backend is doing, so do not claim it can be cancelled.
             return false;
         }
 
         final ServerResource resource = _resource;
-        // Deliberately not holding the attache lock: asking the resource means a call out to the
-        // hypervisor, and the send path needs the lock to keep queueing work.
+        // not under the attache lock: this call goes out to the hypervisor
         return resource != null && resource.isRequestSequenceCancellable(seq);
     }
 
@@ -140,7 +136,6 @@ public class DirectAgentAttache extends AgentAttache {
 
         final Future<?> future = _taskFutures.get(seq);
         if (future == null) {
-            // Neither queued nor running any more: it finished between the check and now, nothing to stop.
             return true;
         }
 
@@ -434,8 +429,7 @@ public class DirectAgentAttache extends AgentAttache {
                                 answer = new Answer(cmds[i], false, "Resource returned null answer");
                             }
 
-                            // If cancellation was requested while the current command was running,
-                            // stop scheduling further commands for cancellable sequences.
+                            // cancelled mid-request: do not start the remaining commands
                             if ((Thread.currentThread().isInterrupted() || _req.isCancelled())
                                     && resource.isRequestSequenceCancellable(seq)) {
                                 answers.add(answer);
@@ -468,7 +462,6 @@ public class DirectAgentAttache extends AgentAttache {
             } catch (InterruptedException e) {
                 logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Task interrupted");
                 Thread.currentThread().interrupt();
-                // Send cancellation response
                 handleCancellation(seq, "Task interrupted: " + e.getMessage());
             } catch (Throwable t) {
                 // This is pretty serious as processAnswers might not be called and the calling process is stuck waiting for the full timeout

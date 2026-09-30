@@ -147,7 +147,7 @@ public class XenServerTaskRegistryTest {
         final Task task = task("OpaqueRef:7", Types.TaskStatusType.PENDING);
         final AtomicBoolean registered = new AtomicBoolean(true);
 
-        // the scope is per thread: a task waited on from another thread belongs to no request
+        // scope is per thread
         final Thread other = new Thread(() -> registered.set(XenServerTaskRegistry.taskStarted(task, connection)));
         other.start();
         other.join();
@@ -158,7 +158,6 @@ public class XenServerTaskRegistryTest {
 
     @Test
     public void taskWithoutAReferenceIsStillTracked() throws Exception {
-        // a mocked or not-yet-round-tripped task has no opaque ref; it must not blow up the map
         final Task task = Mockito.mock(Task.class);
         Mockito.when(task.getStatus(connection)).thenReturn(Types.TaskStatusType.PENDING);
 
