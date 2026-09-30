@@ -47,8 +47,6 @@ public class LibvirtCopyToSecondaryStorageWrapper extends CommandWrapper<CopyToS
         KVMStoragePoolManager storagePoolMgr = libvirtResource.getStoragePoolMgr();
         KVMStoragePool secondaryPool;
 
-        boolean success;
-
         secondaryPool = storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl);
         String mountPoint = secondaryPool.getLocalPath();
 
