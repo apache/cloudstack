@@ -441,6 +441,31 @@ public class StatsCollectorTest {
     }
 
     @Test
+    public void getRecentVmStatsTestReturnsNewestStats() {
+        VmStatsVO latest = new VmStatsVO(1L, 1L, new Date(), "{\"cpuUtilization\":42.0}");
+        Mockito.doReturn(latest).when(vmStatsDaoMock).findLatestByVmId(1L);
+
+        VmStats result = statsCollector.getRecentVmStats(1L);
+
+        Assert.assertEquals(42.0, result.getCPUUtilization(), 0.001);
+    }
+
+    @Test
+    public void getRecentVmStatsTestIgnoresOldStats() {
+        Date old = new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10));
+        Mockito.doReturn(new VmStatsVO(1L, 1L, old, "{\"cpuUtilization\":42.0}")).when(vmStatsDaoMock).findLatestByVmId(1L);
+
+        Assert.assertNull(statsCollector.getRecentVmStats(1L));
+    }
+
+    @Test
+    public void getRecentVmStatsTestNoStats() {
+        Mockito.doReturn(null).when(vmStatsDaoMock).findLatestByVmId(1L);
+
+        Assert.assertNull(statsCollector.getRecentVmStats(1L));
+    }
+
+    @Test
     public void getLatestOrAccumulatedVmMetricsStatsTestAccumulate() {
         Mockito.doReturn(null).when(statsCollector).accumulateVmMetricsStats(Mockito.anyList());
 

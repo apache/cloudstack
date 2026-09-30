@@ -1,0 +1,733 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.resourcealert;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.resourcealert.api.command.user.CreateResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.DeleteResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.ListResourceAlertsCmd;
+import org.apache.cloudstack.resourcealert.api.command.user.UpdateResourceAlertRuleCmd;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleJoinDao;
+import org.apache.cloudstack.resourcealert.dao.ResourceAlertRuleWebhookDao;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.resourcealert.api.response.ResourceAlertResponse;
+import org.apache.cloudstack.resourcealert.api.response.ResourceAlertRuleResponse;
+import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleJoinVO;
+import org.apache.cloudstack.resourcealert.vo.ResourceAlertRuleVO;
+import org.apache.cloudstack.resourcealert.vo.ResourceAlertVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.webhook.WebhookHelper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class ResourceAlertServiceImplTest {
+
+    @Spy
+    @InjectMocks
+    ResourceAlertServiceImpl service;
+
+    @Mock AccountManager accountManager;
+    @Mock ResourceAlertRuleDao ruleDao;
+    @Mock ResourceAlertRuleJoinDao ruleJoinDao;
+    @Mock ResourceAlertDao alertDao;
+    @Mock ResourceAlertRuleWebhookDao ruleWebhookDao;
+    @Mock WebhookHelper webhookHelper;
+    @Mock UserVmDao userVmDao;
+    @Mock VolumeDao volumeDao;
+    @Mock HostDao hostDao;
+    @Mock PrimaryDataStoreDao storagePoolDao;
+
+    private MockedStatic<CallContext> callContextMocked;
+    private Account caller;
+    private Account owner;
+    private GlobalLock ownerLock;
+
+    @Before
+    public void setUp() {
+        caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(caller);
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContext);
+
+        owner = mock(Account.class);
+        when(owner.getId()).thenReturn(42L);
+        when(accountManager.finalizeOwner(eq(caller), any(), any(), any())).thenReturn(owner);
+
+        ownerLock = mock(GlobalLock.class);
+        when(ownerLock.lock(anyInt())).thenReturn(true);
+        doReturn(ownerLock).when(service).getOwnerLock(anyLong());
+    }
+
+    @After
+    public void tearDown() {
+        callContextMocked.close();
+    }
+
+    private CreateResourceAlertRuleCmd validVmCreateCmd() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getName()).thenReturn("cpu-high");
+        when(cmd.getResourceType()).thenReturn("VirtualMachine");
+        when(cmd.getCondition()).thenReturn("GT");
+        when(cmd.getSeverity()).thenReturn("HIGH");
+        when(cmd.getMetric()).thenReturn("CPU_UTILIZATION");
+        when(cmd.getThreshold()).thenReturn(80.0);
+        when(cmd.getResetInterval()).thenReturn(null);
+        when(cmd.getEmail()).thenReturn(null);
+        return cmd;
+    }
+
+    private ResourceAlertRuleVO persistedRuleCapture() {
+        ArgumentCaptor<ResourceAlertRuleVO> captor = ArgumentCaptor.forClass(ResourceAlertRuleVO.class);
+        verify(ruleDao).persist(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnInvalidCondition() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getResourceType()).thenReturn("VirtualMachine");
+        when(cmd.getCondition()).thenReturn("GREATER_THAN");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnInvalidSeverity() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getResourceType()).thenReturn("VirtualMachine");
+        when(cmd.getCondition()).thenReturn("GT");
+        when(cmd.getSeverity()).thenReturn("URGENT");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnInvalidResourceType() {
+        CreateResourceAlertRuleCmd cmd = mock(CreateResourceAlertRuleCmd.class);
+        when(cmd.getResourceType()).thenReturn("Database");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsWhenMetricDoesNotApplyToResourceType() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getMetric()).thenReturn("STORAGE_UTILIZATION");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsWhenAccountAtRuleLimit() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        // default limit is 20
+        when(ruleDao.countActiveByAccountId(42L)).thenReturn(20);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateUsesDefaultResetIntervalWhenNotSet() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(600, persistedRuleCapture().getResetInterval());
+    }
+
+    @Test
+    public void testCreateAssignsRuleToFinalizedOwner() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(42L, persistedRuleCapture().getAccountId());
+    }
+
+    @Test
+    public void testCreateResolvesResourceUuidAndChecksOwnerAccess() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(7L);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(accountManager).checkAccess(owner, null, false, (ControlledEntity) vm);
+        assertEquals(Long.valueOf(7L), persistedRuleCapture().getResourceId());
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCreateFailsWhenOwnerCannotAccessResource() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        doThrow(new PermissionDeniedException("denied"))
+                .when(accountManager).checkAccess(owner, null, false, (ControlledEntity) vm);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnUnknownResourceUuid() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("no-such-vm");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCreateHostRuleFailsForNonRootAdmin() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("Host");
+        when(accountManager.isRootAdmin(2L)).thenReturn(false);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateHostRuleAllowedForRootAdmin() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("Host");
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(ruleDao).persist(any(ResourceAlertRuleVO.class));
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCreateWithEmailFailsForNonRootAdmin() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getEmail()).thenReturn(true);
+        when(accountManager.isRootAdmin(2L)).thenReturn(false);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsWhenRuleNotFound() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(999L);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsWhenRuleAlreadyDeleted() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        ResourceAlertRuleVO deletedRule = mock(ResourceAlertRuleVO.class);
+        when(deletedRule.getRemoved()).thenReturn(new java.util.Date());
+        when(ruleDao.findById(1L)).thenReturn(deletedRule);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testUpdateFailsWhenCallerCannotAccessRule() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(caller, null, true, rule);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteFailsWhenRuleNotFound() {
+        DeleteResourceAlertRuleCmd cmd = mock(DeleteResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(999L);
+
+        service.deleteResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testDeleteDoesNotRemoveWhenCallerCannotAccessRule() {
+        DeleteResourceAlertRuleCmd cmd = mock(DeleteResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(caller, null, true, rule);
+
+        try {
+            service.deleteResourceAlertRule(cmd);
+        } catch (PermissionDeniedException expected) {
+        }
+        verify(ruleDao, never()).remove(1L);
+        verify(alertDao, never()).removeByAlertRuleId(1L);
+    }
+
+    @Test
+    public void testDeleteRemovesAlertHistory() {
+        DeleteResourceAlertRuleCmd cmd = mock(DeleteResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        when(ruleDao.remove(1L)).thenReturn(true);
+
+        service.deleteResourceAlertRule(cmd);
+
+        verify(alertDao).removeByAlertRuleId(1L);
+        verify(ruleDao).remove(1L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListAlertsFailsWithUnknownRuleUuid() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getAlertRuleId()).thenReturn("no-such-uuid");
+
+        service.listResourceAlerts(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testListAlertsFailsWhenCallerCannotAccessRule() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getAlertRuleId()).thenReturn("rule-uuid");
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(ruleDao.findByUuid("rule-uuid")).thenReturn(rule);
+        doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(caller, null, true, rule);
+
+        service.listResourceAlerts(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListAlertsFailsWhenResourceIdWithoutType() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+
+        service.listResourceAlerts(cmd);
+    }
+
+    private ControlledEntity mockWebhook(String uuid, long id) {
+        ControlledEntity webhook = mock(ControlledEntity.class, Mockito.withSettings().extraInterfaces(InternalIdentity.class));
+        when(((InternalIdentity) webhook).getId()).thenReturn(id);
+        when(webhookHelper.findWebhookByUuid(uuid)).thenReturn(webhook);
+        return webhook;
+    }
+
+    @Test
+    public void testCreateMapsWebhooksAfterCheckingOwnerAccess() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1", "wh-1"));
+        ControlledEntity webhook = mockWebhook("wh-1", 11L);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(accountManager, Mockito.times(2)).checkAccess(owner, null, false, webhook);
+        verify(ruleWebhookDao).replaceWebhooksForRule(Mockito.anyLong(), eq(List.of(11L)));
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCreateFailsWhenOwnerCannotAccessWebhook() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1"));
+        ControlledEntity webhook = mockWebhook("wh-1", 11L);
+        doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(owner, null, false, webhook);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnUnknownWebhook() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("no-such-webhook"));
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateWithWebhooksFailsWhenWebhookPluginMissing() {
+        doReturn(null).when(service).getWebhookHelper();
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getWebhookIds()).thenReturn(List.of("wh-1"));
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateWithoutWebhooksDoesNotTouchMapping() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        verify(ruleWebhookDao, never()).replaceWebhooksForRule(Mockito.anyLong(), any());
+    }
+
+    @Test
+    public void testUpdateCleanupWebhooksClearsMapping() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.isCleanupWebhooks()).thenReturn(true);
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
+
+        verify(ruleWebhookDao).replaceWebhooksForRule(1L, new ArrayList<>());
+    }
+
+    @Test
+    public void testListAlertsPassesPagingAndReturnsTotalCount() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getStartIndex()).thenReturn(20L);
+        when(cmd.getPageSizeVal()).thenReturn(10L);
+        ResourceAlertVO alert = mock(ResourceAlertVO.class);
+        when(alertDao.searchAndCountByFilters(null, null, null, null, null, 20L, 10L))
+                .thenReturn(new Pair<>(List.of(alert), 57));
+
+        ListResponse<ResourceAlertResponse> response = service.listResourceAlerts(cmd);
+
+        assertEquals(Integer.valueOf(57), response.getCount());
+        assertEquals(1, response.getResponses().size());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnPercentageThresholdAbove100() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getThreshold()).thenReturn(150.0);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnNegativeThreshold() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getMetric()).thenReturn("NETWORK_READ_KBPS");
+        when(cmd.getThreshold()).thenReturn(-1.0);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateAllowsNonPercentageThresholdAbove100() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getMetric()).thenReturn("NETWORK_READ_KBPS");
+        when(cmd.getThreshold()).thenReturn(5000.0);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(ruleDao).persist(any(ResourceAlertRuleVO.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnNegativeResetInterval() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResetInterval()).thenReturn(-5);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnPercentageThresholdAbove100() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getThreshold()).thenReturn(101.0);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getMetric()).thenReturn("CPU_UTILIZATION");
+        when(ruleDao.findById(1L)).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testRuleResponseIncludesResourceName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getId()).thenReturn(7L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        when(vm.getDisplayName()).thenReturn("web-01");
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+        when(userVmDao.findByIdIncludingRemoved(7L)).thenReturn(vm);
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(joined.getResourceId()).thenReturn(7L);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(cmd);
+
+        assertEquals("vm-uuid", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceId"));
+        assertEquals("web-01", org.springframework.test.util.ReflectionTestUtils.getField(response, "resourceName"));
+    }
+
+    @Test
+    public void testRuleResponseIncludesWebhookIdsAndNames() {
+        doReturn(webhookHelper).when(service).getWebhookHelper();
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getId()).thenReturn(5L);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+        when(ruleWebhookDao.listWebhookIdsByRule(5L)).thenReturn(List.of(11L, 12L));
+        when(webhookHelper.describeWebhook(11L)).thenReturn(new Pair<>("wh-1", "ops-hook"));
+        when(webhookHelper.describeWebhook(12L)).thenReturn(null);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(List.of("wh-1"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
+        assertEquals(List.of("ops-hook"), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
+    }
+
+    @Test
+    public void testRuleResponseLeavesOutWebhookNamesWhenNone() {
+        ResourceAlertRuleJoinVO joined = mock(ResourceAlertRuleJoinVO.class);
+        when(joined.getResourceType()).thenReturn(ResourceAlertRule.ResourceType.VirtualMachine);
+        when(ruleJoinDao.findById(Mockito.anyLong())).thenReturn(joined);
+
+        ResourceAlertRuleResponse response = service.createResourceAlertRule(validVmCreateCmd());
+
+        assertEquals(List.of(), org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookIds"));
+        assertNull(org.springframework.test.util.ReflectionTestUtils.getField(response, "webhookNames"));
+    }
+
+    @Test
+    public void testCreateUsesProjectAsOwner() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getProjectId()).thenReturn(42L);
+
+        service.createResourceAlertRule(cmd);
+
+        verify(accountManager).finalizeOwner(eq(caller), any(), any(), eq(42L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnBlankName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getName()).thenReturn("   ");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnDuplicateName() {
+        when(ruleDao.findActiveByAccountIdAndName(42L, "cpu-high")).thenReturn(mock(ResourceAlertRuleVO.class));
+
+        service.createResourceAlertRule(validVmCreateCmd());
+    }
+
+    @Test
+    public void testCreateTrimsName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getName()).thenReturn("  cpu-high  ");
+
+        service.createResourceAlertRule(cmd);
+
+        assertEquals("cpu-high", persistedRuleCapture().getName());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnDuplicateName() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getName()).thenReturn("taken");
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(rule.getAccountId()).thenReturn(42L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        ResourceAlertRuleVO other = mock(ResourceAlertRuleVO.class);
+        when(other.getId()).thenReturn(2L);
+        when(ruleDao.findActiveByAccountIdAndName(42L, "taken")).thenReturn(other);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testUpdateKeepsOwnName() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getName()).thenReturn("mine");
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(rule.getAccountId()).thenReturn(42L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        when(ruleDao.findActiveByAccountIdAndName(42L, "mine")).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
+
+        verify(rule).setName("mine");
+    }
+
+    @Test
+    public void testCreateAcceptsResourceTypeInAnyCase() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("virtualmachine");
+
+        service.createResourceAlertRule(cmd);
+
+        assertEquals(ResourceAlertRule.ResourceType.VirtualMachine, persistedRuleCapture().getResourceType());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListAlertsFailsOnInvalidSeverity() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getSeverity()).thenReturn("bogus");
+
+        service.listResourceAlerts(cmd);
+    }
+
+    @Test
+    public void testListAlertsNormalizesSeverity() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getSeverity()).thenReturn("high");
+        when(alertDao.searchAndCountByFilters(any(), any(), eq("HIGH"), any(), any(), any(), any()))
+                .thenReturn(new Pair<>(List.of(), 0));
+
+        service.listResourceAlerts(cmd);
+
+        verify(alertDao).searchAndCountByFilters(any(), any(), eq("HIGH"), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testListAlertsKeywordWithNoMatchingRuleReturnsEmpty() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getKeyword()).thenReturn("zzzz");
+        when(ruleDao.listIdsByNameLike("zzzz")).thenReturn(List.of());
+
+        ListResponse<ResourceAlertResponse> response = service.listResourceAlerts(cmd);
+
+        assertEquals(Integer.valueOf(0), response.getCount());
+        verify(alertDao, never()).searchAndCountByFilters(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testListAlertsKeywordFiltersByRuleName() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getKeyword()).thenReturn("cpu");
+        when(ruleDao.listIdsByNameLike("cpu")).thenReturn(List.of(5L, 6L));
+        when(alertDao.searchAndCountByFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new Pair<>(List.of(), 0));
+
+        service.listResourceAlerts(cmd);
+
+        verify(alertDao).searchAndCountByFilters(eq(List.of(5L, 6L)), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testCreateChecksLimitAndSavesUnderOwnerLock() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        InOrder order = inOrder(ownerLock, ruleDao);
+        order.verify(ownerLock).lock(ResourceAlertServiceImpl.OWNER_LOCK_WAIT_SECONDS);
+        order.verify(ruleDao).countActiveByAccountId(42L);
+        order.verify(ruleDao).persist(any(ResourceAlertRuleVO.class));
+        order.verify(ownerLock).unlock();
+        verify(service).getOwnerLock(42L);
+    }
+
+    @Test
+    public void testCreateReleasesOwnerLockWhenLimitReached() {
+        when(ruleDao.countActiveByAccountId(42L)).thenReturn(20);
+
+        try {
+            service.createResourceAlertRule(validVmCreateCmd());
+        } catch (InvalidParameterValueException e) {
+            verify(ownerLock).unlock();
+            verify(ownerLock).releaseRef();
+            return;
+        }
+        fail("Expected the rule limit to be enforced");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCreateFailsWhenOwnerLockNotAcquired() {
+        when(ownerLock.lock(anyInt())).thenReturn(false);
+
+        service.createResourceAlertRule(validVmCreateCmd());
+    }
+
+    private UpdateResourceAlertRuleCmd stateUpdateCmd(String state, ResourceAlertRuleVO rule) {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getState()).thenReturn(state);
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        return cmd;
+    }
+
+    @Test
+    public void testUpdateDisablesRule() {
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+
+        service.updateResourceAlertRule(stateUpdateCmd("disabled", rule));
+
+        verify(rule).setState(ResourceAlertRule.State.Disabled);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnInvalidState() {
+        service.updateResourceAlertRule(stateUpdateCmd("Paused", mock(ResourceAlertRuleVO.class)));
+    }
+}

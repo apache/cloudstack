@@ -1328,6 +1328,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     /**
+     * Gets the newest stats collected from a given VM, ignoring stats older than three collection intervals.
+     *
+     * @param vmId the specific VM.
+     * @return the newest stats, or null if there are none or they are too old.
+     */
+    public VmStats getRecentVmStats(long vmId) {
+        VmStatsVO latest = vmStatsDao.findLatestByVmId(vmId);
+        if (latest == null) {
+            return null;
+        }
+        long maxAge = 3 * Math.max(vmStatsInterval, ONE_MINUTE_IN_MILLISCONDS);
+        if (System.currentTimeMillis() - latest.getTimestamp().getTime() > maxAge) {
+            return null;
+        }
+        return gson.fromJson(latest.getVmStatsData(), VmStatsEntry.class);
+    }
+
+    /**
      * Gets the latest or the accumulation of the stats collected from a given VM.
      *
      * @param vmId the specific VM.

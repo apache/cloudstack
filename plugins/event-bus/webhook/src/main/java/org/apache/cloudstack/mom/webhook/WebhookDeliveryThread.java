@@ -309,16 +309,22 @@ public class WebhookDeliveryThread implements Runnable {
 
     public static class WebhookDeliveryContext<T> extends AsyncRpcContext<T> {
         private final Long eventId;
+        private final String eventType;
         private final Long ruleId;
 
-        public WebhookDeliveryContext(AsyncCompletionCallback<T> callback, Long eventId, Long ruleId) {
+        public WebhookDeliveryContext(AsyncCompletionCallback<T> callback, Long eventId, String eventType, Long ruleId) {
             super(callback);
             this.eventId = eventId;
+            this.eventType = eventType;
             this.ruleId = ruleId;
         }
 
         public Long getEventId() {
             return eventId;
+        }
+
+        public String getEventType() {
+            return eventType;
         }
 
         public Long getRuleId() {
