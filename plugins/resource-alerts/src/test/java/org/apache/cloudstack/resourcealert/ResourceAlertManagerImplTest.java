@@ -1054,4 +1054,19 @@ public class ResourceAlertManagerImplTest {
 
         verify(ruleWebhookDao).removeLinksToRemovedWebhooks();
     }
+
+    @Test
+    public void testBrokenRuleDoesNotStopOtherRules() {
+        ResourceAlertRuleVO broken = new ResourceAlertRuleVO("broken", ResourceAlertRule.ResourceType.VirtualMachine,
+                VM_ID, 1L, 1L, "NO_SUCH_METRIC", AlertCondition.GT, 1.0,
+                AlertSeverity.LOW, null, false, 600);
+        when(ruleDao.listActive()).thenReturn(Arrays.asList(broken, vmCpuRule(VM_ID)));
+        VmStats stats = mock(VmStats.class);
+        when(stats.getCPUUtilization()).thenReturn(85.0);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+
+        verify(alertDao, times(1)).persist(any());
+    }
 }
