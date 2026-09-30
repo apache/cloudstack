@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachineProfile;
 /**
  * Soft VM-to-host placement preference: the affinity group name is treated as a host tag, and hosts
  * carrying that tag in the VM's zone have their deployment priority raised. A preference, not a
- * constraint — no host is excluded. Note: the priority channel is not honored by automatic DRS.
+ * constraint, so no host is excluded. Note: the priority channel is not honored by automatic DRS.
  */
 public class HostTagAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
@@ -58,6 +58,11 @@ public class HostTagAffinityProcessor extends AffinityProcessorBase implements A
                 processAffinityGroup(vmGroupMapping, plan, vm);
             }
         }
+    }
+
+    @Override
+    public boolean isAdminControlledGroup() {
+        return true;
     }
 
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {

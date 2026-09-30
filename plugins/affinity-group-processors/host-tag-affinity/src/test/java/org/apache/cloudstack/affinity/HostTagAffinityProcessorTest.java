@@ -132,4 +132,10 @@ public class HostTagAffinityProcessorTest {
         // A soft preference must never fail a planned destination.
         Assert.assertTrue(processor.check(Mockito.mock(VirtualMachineProfile.class), Mockito.mock(DeployDestination.class)));
     }
+
+    @Test
+    public void testGroupIsAdminControlled() {
+        // Host tags are operator-set, so this group type is admin-controlled.
+        Assert.assertTrue(processor.isAdminControlledGroup());
+    }
 }
