@@ -82,7 +82,7 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
 
         // Use optimized post-imbalance calculation that adjusts only affected hosts
         Double postImbalance = getImbalancePostMigration(vm, destHost,
-                cluster.getId(), ClusterDrsAlgorithm.getVmMetric(serviceOffering, cluster.getId()),
+                cluster.getId(), serviceOffering,
                 baseMetricsArray, hostIdToIndexMap, hostCpuMap, hostMemoryMap);
 
         logger.trace("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost ID: {} destHost: {}",

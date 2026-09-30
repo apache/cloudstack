@@ -53,6 +53,14 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
+import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
@@ -148,6 +156,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     Map<String, ClusterDrsAlgorithm> drsAlgorithmMap = new HashMap<>();
 
+    @Inject
+    MessageBus messageBus;
+    // Epoch-ms of the last event-triggered DRS run, per cluster; drives the cooldown.
+    private final Map<Long, Long> lastEventDrsTriggerByCluster = new ConcurrentHashMap<>();
+    // Runs event-triggered DRS off the message-bus thread.
+    private ExecutorService eventDrsExecutor;
+
     public AsyncJobDispatcher getAsyncJobDispatcher() {
         return asyncJobDispatcher;
     }
@@ -179,6 +194,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         };
         Timer vmSchedulerTimer = new Timer("VMSchedulerPollTask");
         vmSchedulerTimer.schedule(schedulerPollTask, 5000L, 60 * 1000L);
+
+        // Subscribe to VM power-state events for event-driven DRS (gated per cluster by drs.event.driven.enable).
+        eventDrsExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("Event-Driven-DRS"));
+        messageBus.subscribe(VirtualMachineManager.Topics.VM_POWER_STATE, MessageDispatcher.getDispatcher(this));
+
         return true;
     }
 
@@ -278,48 +298,127 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<ClusterVO> clusterList = clusterDao.listAll();
 
         for (ClusterVO cluster : clusterList) {
-            if (cluster.getAllocationState() == Disabled || ClusterDrsEnabled.valueIn(
-                    cluster.getId()).equals(Boolean.FALSE)) {
-                continue;
-            }
-
-            ClusterDrsPlanVO lastPlan = drsPlanDao.listLatestPlanForClusterId(cluster.getId());
-
-            // If the last plan is ready or in progress or was executed within the last interval, skip this cluster.
-            // This is to avoid generating plans for clusters which are already being processed and to avoid
-            // generating plans for clusters which have been processed recently.This doesn't consider the type
-            // (manual or automated) of the last plan.
-            if (lastPlan != null && (lastPlan.getStatus() == ClusterDrsPlan.Status.READY ||
-                    lastPlan.getStatus() == ClusterDrsPlan.Status.IN_PROGRESS ||
-                    (lastPlan.getStatus() == ClusterDrsPlan.Status.COMPLETED &&
-                            lastPlan.getCreated().compareTo(DateUtils.addMinutes(new Date(), -1 * ClusterDrsInterval.valueIn(cluster.getId()))) > 0)
-            )) {
-                continue;
-            }
-
-            long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                    EventTypes.EVENT_CLUSTER_DRS,
-                    String.format("Generating DRS plan for cluster %s", cluster.getUuid()), cluster.getId(),
-                    ApiCommandResourceType.Cluster.toString(), true, 0);
-            GlobalLock clusterLock = GlobalLock.getInternLock(String.format(CLUSTER_LOCK_STR, cluster.getId()));
-            try {
-                if (clusterLock.lock(30)) {
-                    try {
-                        List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster,
-                                ClusterDrsMaxMigrations.valueIn(cluster.getId()));
-                        savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED,
-                                ClusterDrsPlan.Status.READY);
-                        logger.info("Generated DRS plan for cluster {}", cluster);
-                    } catch (Exception e) {
-                        logger.error("Unable to generate DRS plans for cluster {}", cluster, e);
-                    } finally {
-                        clusterLock.unlock();
-                    }
-                }
-            } finally {
-                clusterLock.releaseRef();
-            }
+            generateDrsPlanForCluster(cluster, ClusterDrsInterval.valueIn(cluster.getId()));
         }
+    }
+
+    /**
+     * Generates a DRS plan for a single cluster, skipping if DRS is disabled, a plan is already
+     * pending/running, or one completed within {@code debounceMinutes}.
+     */
+    void generateDrsPlanForCluster(ClusterVO cluster, int debounceMinutes) {
+        if (cluster.getAllocationState() == Disabled || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)) {
+            return;
+        }
+
+        ClusterDrsPlanVO lastPlan = drsPlanDao.listLatestPlanForClusterId(cluster.getId());
+
+        // Skip if the last plan is ready, in progress, or completed within the debounce window.
+        if (lastPlan != null && (lastPlan.getStatus() == ClusterDrsPlan.Status.READY ||
+                lastPlan.getStatus() == ClusterDrsPlan.Status.IN_PROGRESS ||
+                (lastPlan.getStatus() == ClusterDrsPlan.Status.COMPLETED &&
+                        lastPlan.getCreated().compareTo(DateUtils.addMinutes(new Date(), -1 * debounceMinutes)) > 0)
+        )) {
+            return;
+        }
+
+        long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                EventTypes.EVENT_CLUSTER_DRS,
+                String.format("Generating DRS plan for cluster %s", cluster.getUuid()), cluster.getId(),
+                ApiCommandResourceType.Cluster.toString(), true, 0);
+        GlobalLock clusterLock = GlobalLock.getInternLock(String.format(CLUSTER_LOCK_STR, cluster.getId()));
+        try {
+            if (clusterLock.lock(30)) {
+                try {
+                    List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster,
+                            ClusterDrsMaxMigrations.valueIn(cluster.getId()));
+                    savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED,
+                            ClusterDrsPlan.Status.READY);
+                    logger.info("Generated DRS plan for cluster {}", cluster);
+                } catch (Exception e) {
+                    logger.error("Unable to generate DRS plans for cluster {}", cluster, e);
+                } finally {
+                    clusterLock.unlock();
+                }
+            }
+        } finally {
+            clusterLock.releaseRef();
+        }
+    }
+
+    /**
+     * Message-bus handler for VM power-state events; triggers event-driven DRS for the VM's cluster.
+     */
+    @MessageHandler(topic = VirtualMachineManager.Topics.VM_POWER_STATE)
+    protected void handleVmPowerStateEvent(String subject, String senderAddress, Object args) {
+        if (!(args instanceof Long)) {
+            return;
+        }
+        try {
+            triggerEventDrivenDrsForVm((Long) args);
+        } catch (Exception e) {
+            logger.debug("Event-driven DRS: error handling VM power-state event for {}", args, e);
+        }
+    }
+
+    /**
+     * Resolves the VM's cluster and, subject to the enable flag and cooldown, schedules DRS plan generation.
+     */
+    void triggerEventDrivenDrsForVm(Long vmId) {
+        if (vmId == null) {
+            return;
+        }
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null || vm.getHostId() == null) {
+            return;
+        }
+        HostVO host = hostDao.findById(vm.getHostId());
+        if (host == null || host.getClusterId() == null) {
+            return;
+        }
+        Long clusterId = host.getClusterId();
+        if (!shouldTriggerEventDrivenDrs(clusterId)) {
+            return;
+        }
+        final ClusterVO cluster = clusterDao.findById(clusterId);
+        if (cluster == null) {
+            return;
+        }
+        final int debounceMinutes = ClusterDrsEventDrivenInterval.valueIn(clusterId);
+        logger.debug("Event-driven DRS: scheduling plan generation for cluster {} (triggered by VM {})", clusterId, vmId);
+        submitEventDrivenDrs(cluster, debounceMinutes);
+    }
+
+    /**
+     * Runs generateDrsPlanForCluster off the message-bus thread so event publishers are not blocked.
+     */
+    protected void submitEventDrivenDrs(final ClusterVO cluster, final int debounceMinutes) {
+        eventDrsExecutor.submit(() -> {
+            try {
+                generateDrsPlanForCluster(cluster, debounceMinutes);
+            } catch (Exception e) {
+                logger.warn("Event-driven DRS: plan generation failed for cluster {}", cluster, e);
+            }
+        });
+    }
+
+    /**
+     * Returns true if automatic and event-driven DRS are enabled and the per-cluster cooldown has
+     * elapsed, recording the trigger time when it does.
+     */
+    boolean shouldTriggerEventDrivenDrs(Long clusterId) {
+        if (ClusterDrsEnabled.valueIn(clusterId).equals(Boolean.FALSE)
+                || ClusterDrsEventDrivenEnabled.valueIn(clusterId).equals(Boolean.FALSE)) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        long cooldownMs = ClusterDrsEventDrivenInterval.valueIn(clusterId) * 60L * 1000L;
+        Long last = lastEventDrsTriggerByCluster.get(clusterId);
+        if (last != null && (now - last) < cooldownMs) {
+            return false;
+        }
+        lastEventDrsTriggerByCluster.put(clusterId, now);
+        return true;
     }
 
     /**
@@ -855,7 +954,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsMaxMigrations,
                 ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric, ClusterDrsMetricType, ClusterDrsMetricUseRatio,
-                ClusterDrsImbalanceSkipThreshold};
+                ClusterDrsImbalanceSkipThreshold, ClusterDrsEventDrivenEnabled, ClusterDrsEventDrivenInterval};
     }
 
     @Override
