@@ -23,9 +23,18 @@ import java.util.concurrent.Future;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 
 public interface StorageOrchestrationService {
+
+    ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
+            "image.store.imbalance.threshold",
+            "0.3",
+            "The storage imbalance threshold that is compared with the standard deviation percentage for a storage utilization metric. " +
+                    "The value is a percentage in decimal format.",
+            true, ConfigKey.Scope.Global);
+
     MigrationResponse migrateData(Long srcDataStoreId, List<Long> destDatastores, MigrationPolicy migrationPolicy);
 
     MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList, List<Long> snapshotIdList);
