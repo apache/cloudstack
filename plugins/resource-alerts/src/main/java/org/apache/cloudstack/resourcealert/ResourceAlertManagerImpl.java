@@ -544,7 +544,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             sendEmail(subject, body);
         }
 
-        logger.warn("Alert fired: rule={} metric={} resource={} value={} threshold={}",
+        logger.info("Alert fired: rule={} metric={} resource={} value={} threshold={}",
                 rule.getUuid(), rule.getMetric(), resourceId, value, rule.getThreshold());
     }
 
