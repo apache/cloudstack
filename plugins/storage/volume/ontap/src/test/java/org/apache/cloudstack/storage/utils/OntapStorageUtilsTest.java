@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.storage.utils;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OntapStorageUtilsTest {
@@ -78,5 +80,17 @@ public class OntapStorageUtilsTest {
         String result = OntapStorageUtils.getIgroupName(svmName, hostUuid);
 
         assertEquals(OntapStorageConstants.IGROUP_NAME_MAX_LENGTH, result.length());
+    }
+
+    @Test
+    public void isOntapSnapshotNotFoundError_matchesEntryDoesNotExist() {
+        CloudRuntimeException ex = new CloudRuntimeException("Job failed with error: entry doesn't exist");
+        assertTrue(OntapStorageUtils.isOntapObjectNotFoundError(ex));
+    }
+
+    @Test
+    public void isOntapSnapshotNotFoundError_rejectsUnrelatedErrors() {
+        assertFalse(OntapStorageUtils.isOntapObjectNotFoundError(
+                new CloudRuntimeException("Job failed with error: permission denied")));
     }
 }
