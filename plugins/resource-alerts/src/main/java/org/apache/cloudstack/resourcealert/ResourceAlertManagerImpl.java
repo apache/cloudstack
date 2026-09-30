@@ -205,13 +205,18 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         try {
             List<ResourceAlertRuleVO> rules = ruleDao.listActive();
             for (ResourceAlertRuleVO rule : rules) {
-                if (isOrphaned(rule)) {
-                    logger.info("Removing resource alert rule {} as its owner or resource is gone, or the owner lost access to the resource", rule.getUuid());
-                    alertDao.removeByAlertRuleId(rule.getId());
-                    ruleDao.remove(rule.getId());
-                    continue;
+                // One broken rule must not stop the others from being checked.
+                try {
+                    if (isOrphaned(rule)) {
+                        logger.info("Removing resource alert rule {} as its owner or resource is gone, or the owner lost access to the resource", rule.getUuid());
+                        alertDao.removeByAlertRuleId(rule.getId());
+                        ruleDao.remove(rule.getId());
+                        continue;
+                    }
+                    evaluateRule(rule);
+                } catch (Exception e) {
+                    logger.warn("Failed to evaluate resource alert rule {}", rule.getUuid(), e);
                 }
-                evaluateRule(rule);
             }
         } finally {
             vmStatsCache.clear();
