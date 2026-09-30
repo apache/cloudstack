@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -232,7 +231,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
     }
 
     private String getGreEndpointIP(Host host, Network nw)
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         String endpointIp = null;
         // Fetch fefault name for network label from configuration
         String physNetLabel = _configDao.getValue(Config.OvsTunnelNetworkDefaultLabel.key());
@@ -384,8 +383,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         } catch (GreTunnelException | OperationTimedoutException | AgentUnavailableException e) {
             // I really thing we should do a better handling of these exceptions
             logger.warn("Ovs Tunnel network created tunnel failed", e);
-        } catch (OperationCancelledException e) {
-            logger.warn("Ovs Tunnel network created tunnel cancelled", e);
         }
     }
 
@@ -564,8 +561,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 handleSetupBridgeAnswer(answers);
             } catch (OperationTimedoutException | AgentUnavailableException e) {
                 logger.warn("Ovs Tunnel network created bridge failed", e);
-            } catch (OperationCancelledException e) {
-                logger.warn("Ovs Tunnel network created bridge cancelled", e);
             }
 
             // now that bridge is setup, populate network acl's before the VM gets created
@@ -649,8 +644,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             } catch (GreTunnelException | OperationTimedoutException | AgentUnavailableException e) {
                 // I really thing we should do a better handling of these exceptions
                 logger.warn("Ovs Tunnel network created tunnel failed", e);
-            } catch (OperationCancelledException e) {
-                logger.warn("Ovs Tunnel network created tunnel cancelled", e);
             }
         }
     }

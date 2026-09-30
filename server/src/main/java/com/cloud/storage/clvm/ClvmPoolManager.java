@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -289,7 +288,7 @@ public class ClvmPoolManager implements Configurable {
             logger.debug("Host {} reports volume {} active={} (attr={})",
                     hostId, volumeUuid, queryAnswer.isActive(), queryAnswer.getLvAttributes());
             return queryAnswer.isActive();
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.debug("Could not query host {} for lock state: {}", hostId, e.getMessage());
             return null;
         }
@@ -364,7 +363,7 @@ public class ClvmPoolManager implements Configurable {
             logger.warn("Recovery activation of volume {} on host {} failed: {}",
                     volumeUuid, targetHostId,
                     activateAnswer != null ? activateAnswer.getDetails() : "null answer");
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.warn("Recovery activation of volume {} on host {} threw exception: {}",
                     volumeUuid, targetHostId, e.getMessage());
         }
@@ -466,7 +465,7 @@ public class ClvmPoolManager implements Configurable {
 
             return true;
 
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Exception during CLVM lock transfer for volume {}: {}", volumeUuid, e.getMessage(), e);
             return false;
         }

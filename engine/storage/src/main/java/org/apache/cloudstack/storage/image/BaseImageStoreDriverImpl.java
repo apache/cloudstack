@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -448,7 +447,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             answer = agentMgr.send(endPoint.getId(), cmd);
             answer.setContextParam("cmd", cmdExecId.toString());
             return answer;
-        }  catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        }  catch (AgentUnavailableException | OperationTimedoutException e) {
             errMsg = e.toString();
             logger.debug("Failed to send command, due to Agent [id: {}, uuid: {}]: {}", endPoint.getId(), endPoint.getUuid(), e.toString());
         }

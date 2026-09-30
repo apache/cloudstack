@@ -53,7 +53,6 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -248,8 +247,6 @@ public class ManagementServerMock {
             logger.warn("no agent running", e);
         } catch (OperationTimedoutException e) {
             logger.warn("agent not responding (in time)", e);
-        } catch (OperationCancelledException e) {
-            logger.warn("cancelled", e);
         }
     }
 

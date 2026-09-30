@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -882,7 +881,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateDeleteBackupTestDeleteFailedBackup() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteFailedBackup() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
@@ -897,7 +896,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateDeleteBackupTestDeleteBackupWithLiveChildren() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteBackupWithLiveChildren() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
@@ -915,7 +914,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenFailedToMerge() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenFailedToMerge() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
@@ -933,7 +932,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentNoEndPoint() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentNoEndPoint() throws OperationTimedoutException, AgentUnavailableException {
         long parentBackupId = 12;
         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
@@ -959,7 +958,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentTimedoutException() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentTimedoutException() throws OperationTimedoutException, AgentUnavailableException {
         long parentBackupId = 12;
         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
@@ -986,7 +985,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetNotEmpty() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetNotEmpty() throws OperationTimedoutException, AgentUnavailableException {
         long parentBackupId = 12;
         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
@@ -1016,7 +1015,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetEmpty() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetEmpty() throws OperationTimedoutException, AgentUnavailableException {
         long parentBackupId = 12;
         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
         doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
@@ -1070,7 +1069,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupTimeOut() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupTimeOut() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
         doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
@@ -1094,7 +1093,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupNullAnswers() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupNullAnswers() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
         doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
@@ -1119,7 +1118,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupAnswerFalse() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void orchestrateRestoreVMFromBackupTestSameVmCurrentBackupAnswerFalse() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
         doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, false);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
@@ -1145,7 +1144,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void orchestrateRestoreVMFromBackupTestSameVmQuickRestoreCurrentBackupAnswerTrue() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void orchestrateRestoreVMFromBackupTestSameVmQuickRestoreCurrentBackupAnswerTrue() throws AgentUnavailableException, OperationTimedoutException {
         doNothing().when(kbossBackupProviderSpy).validateNoVmSnapshots(virtualMachineMock);
         doNothing().when(kbossBackupProviderSpy).validateQuickRestore(backupVoMock, true);
         doReturn(new Pair<>(true, backupVoMock)).when(kbossBackupProviderSpy).validateCompressionStateForRestoreAndGetBackup(backupId);
@@ -1436,7 +1435,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotTimeout() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotTimeout() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();
@@ -1451,7 +1450,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotNullAnswer() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotNullAnswer() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();
@@ -1466,7 +1465,7 @@ public class KbossBackupProviderTest {
     }
 
     @Test
-    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotSuccess() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void prepareVmForSnapshotRevertTestCurrentBackupAfterVmSnapshotSuccess() throws OperationTimedoutException, AgentUnavailableException {
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findCurrent(vmId);
         doReturn(Date.from(Instant.now())).when(internalBackupJoinVoMock).getDate();
         doReturn(Date.from(Instant.EPOCH)).when(vmSnapshotVoMock).getCreated();

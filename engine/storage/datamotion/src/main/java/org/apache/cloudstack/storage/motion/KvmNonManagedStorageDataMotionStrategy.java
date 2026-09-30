@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -278,7 +277,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             Answer copyCommandAnswer = agentManager.send(destHost.getId(), copyCommand);
             logInCaseOfTemplateCopyFailure(copyCommandAnswer, sourceTemplate, destDataStore);
             return copyCommandAnswer;
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore), e);
         }
     }

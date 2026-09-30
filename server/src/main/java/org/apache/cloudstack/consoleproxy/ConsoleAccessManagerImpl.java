@@ -31,7 +31,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
@@ -744,7 +743,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 logger.info("VNC ticket could not be acquired correctly: " + ans.getDetails());
             }
             return ans.getTicket();
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Error acquiring ticket", e);
             return null;
         }

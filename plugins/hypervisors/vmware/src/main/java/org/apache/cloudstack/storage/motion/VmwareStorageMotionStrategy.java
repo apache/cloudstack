@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -381,9 +380,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         } catch (OperationTimedoutException e) {
             logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
             throw new AgentUnavailableException("Operation timed out on storage motion for " + vm, destHost.getId());
-        } catch (OperationCancelledException e) {
-            logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
-            throw new AgentUnavailableException("Operation cancelled on storage motion for " + vm, destHost.getId());
         }
     }
 
@@ -417,9 +413,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         } catch (OperationTimedoutException e) {
             logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
             throw new AgentUnavailableException("Operation timed out on storage motion for " + vm, destHost.getId());
-        } catch (OperationCancelledException e) {
-            logger.error("Error while migrating vm " + vm + " to host " + destHost, e);
-            throw new AgentUnavailableException("Operation cancelled on storage motion for " + vm, destHost.getId());
         }
     }
 

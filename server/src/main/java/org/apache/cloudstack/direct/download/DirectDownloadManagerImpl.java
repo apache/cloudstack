@@ -42,7 +42,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
@@ -764,7 +763,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         try {
             Answer answer = agentManager.send(host.getId(), cmd);
             return new Pair<>(answer != null && answer.getResult(), answer != null ? answer.getDetails() : "");
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Error revoking certificate {} from host {}", alias, host, e);
             return new Pair<>(false, e.getMessage());
         }
