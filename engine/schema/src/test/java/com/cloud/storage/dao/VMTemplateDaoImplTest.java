@@ -76,7 +76,8 @@ public class VMTemplateDaoImplTest {
         VMTemplateVO expectedTemplate = new VMTemplateVO();
         List<VMTemplateVO> returnedList = Collections.singletonList(expectedTemplate);
         doReturn(returnedList).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
-        VMTemplateVO result = templateDao.findLatestTemplateByName("test", CPU.CPUArch.getDefault());
+        VMTemplateVO result = templateDao.findLatestTemplateByName("test", Hypervisor.HypervisorType.KVM,
+                CPU.CPUArch.getDefault());
         assertNotNull("Expected a non-null template", result);
         assertEquals("Expected the returned template to be the first element", expectedTemplate, result);
     }
@@ -85,7 +86,8 @@ public class VMTemplateDaoImplTest {
     public void testFindLatestTemplateByName_ReturnsNullWhenNoTemplateFound() {
         List<VMTemplateVO> emptyList = Collections.emptyList();
         doReturn(emptyList).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
-        VMTemplateVO result = templateDao.findLatestTemplateByName("test", CPU.CPUArch.getDefault());
+        VMTemplateVO result = templateDao.findLatestTemplateByName("test", Hypervisor.HypervisorType.VMware,
+                CPU.CPUArch.getDefault());
         assertNull("Expected null when no templates are found", result);
     }
 
@@ -94,7 +96,8 @@ public class VMTemplateDaoImplTest {
         VMTemplateVO expectedTemplate = new VMTemplateVO();
         List<VMTemplateVO> returnedList = Collections.singletonList(expectedTemplate);
         doReturn(returnedList).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
-        VMTemplateVO result = templateDao.findLatestTemplateByName("test", null);
+        VMTemplateVO result = templateDao.findLatestTemplateByName("test", Hypervisor.HypervisorType.XenServer,
+                null);
         assertNotNull("Expected a non-null template even if arch is null", result);
         assertEquals("Expected the returned template to be the first element", expectedTemplate, result);
     }
@@ -336,5 +339,83 @@ public class VMTemplateDaoImplTest {
         doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
         VMTemplateVO readyTemplate = templateDao.findSystemVMReadyTemplate(zoneId, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType());
         Assert.assertEquals(CPU.CPUArch.arm64, readyTemplate.getArch());
+    }
+
+    @Test
+    public void findActiveSystemTemplateByHypervisorArchAndUrlPath_ReturnsTemplate() {
+        VMTemplateVO expectedTemplate = mock(VMTemplateVO.class);
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(expectedTemplate);
+        SearchCriteria<VMTemplateVO>sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(templateDao.createSearchBuilder()).thenReturn(sb);
+        List<VMTemplateVO> templates = Collections.singletonList(expectedTemplate);
+        doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+
+        VMTemplateVO result = templateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(
+                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "testPath");
+
+        assertNotNull(result);
+        assertEquals(expectedTemplate, result);
+    }
+
+    @Test
+    public void findActiveSystemTemplateByHypervisorArchAndUrlPath_ReturnsNullWhenNoTemplatesFound() {
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(template);
+        SearchCriteria<VMTemplateVO>sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(templateDao.createSearchBuilder()).thenReturn(sb);
+        doReturn(Collections.emptyList()).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+
+        VMTemplateVO result = templateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(
+                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "testPath");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void findActiveSystemTemplateByHypervisorArchAndUrlPath_NullHypervisor() {
+        VMTemplateVO expectedTemplate = mock(VMTemplateVO.class);
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(expectedTemplate);
+        SearchCriteria<VMTemplateVO>sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(templateDao.createSearchBuilder()).thenReturn(sb);
+        List<VMTemplateVO> templates = Collections.singletonList(expectedTemplate);
+        doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+
+        VMTemplateVO result = templateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(
+                null, CPU.CPUArch.amd64, "testPath");
+
+        assertNotNull(result);
+        assertEquals(expectedTemplate, result);
+    }
+
+    @Test
+    public void findActiveSystemTemplateByHypervisorArchAndUrlPath_NullArch() {
+        VMTemplateVO expectedTemplate = mock(VMTemplateVO.class);
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(expectedTemplate);
+        SearchCriteria<VMTemplateVO>sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(templateDao.createSearchBuilder()).thenReturn(sb);
+        List<VMTemplateVO> templates = Collections.singletonList(expectedTemplate);
+        doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+
+        VMTemplateVO result = templateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(
+                Hypervisor.HypervisorType.KVM, null, "testPath");
+
+        assertNotNull(result);
+        assertEquals(expectedTemplate, result);
+    }
+
+    @Test
+    public void findActiveSystemTemplateByHypervisorArchAndUrlPath_EmptyUrlPathSuffix() {
+        VMTemplateVO result = templateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(
+                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64, "");
+
+        assertNull(result);
     }
 }
