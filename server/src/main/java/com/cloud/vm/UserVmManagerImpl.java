@@ -2853,7 +2853,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm != null) {
             if (vm.getState().equals(State.Stopped)) {
-                HostVO host = _hostDao.findById(hostId);
+                HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
                 logger.debug("Destroying VM [{}] as it was unable to be deployed on Host: {}.", vm, host);
                 try {
                     _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
@@ -2870,10 +2870,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         volumeMgr.destroyVolume(volume);
                     }
                 }
-                String subject = String.format("Failed to deploy Instance [ID: %s]", vm.getUuid());
+                String subject = String.format("Failed to deploy Instance [%s]", vm);
+                String hostDesc;
+                if (host != null) {
+                    hostDesc = String.format(" on host [%s]", host);
+                } else if (hostId != null) {
+                    hostDesc = String.format(" on host [id: %s]", hostId);
+                } else {
+                    hostDesc = "";
+                }
                 String body = String.format("Failed to deploy [%s]%s. To troubleshoot, please check the logs with [logid:%s].",
                         vm,
-                        hostId != null ? String.format(" on host [%s]", hostId) : "",
+                        hostDesc,
                         ThreadContext.get("logcontextid"));
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), subject, body);
@@ -7780,15 +7788,37 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //if hosts are dedicated to different account/domains, raise an alert
         if (srcExplDedicated && destExplDedicated) {
-            if (!((accountOfDedicatedHost(srcHost) == null) || (accountOfDedicatedHost(srcHost).equals(accountOfDedicatedHost(destHost))))) {
-                String msg = String.format("VM is being migrated from host %s explicitly dedicated to account %d to host %s explicitly dedicated to account %d",
-                        srcHost, accountOfDedicatedHost(srcHost), destHost, accountOfDedicatedHost(destHost));
+            Long srcAccountId = accountOfDedicatedHost(srcHost);
+            Long destAccountId = accountOfDedicatedHost(destHost);
+            if (!((srcAccountId == null) || (srcAccountId.equals(destAccountId)))) {
+                Account srcAccount = _accountDao.findById(srcAccountId);
+                Account destAccount = destAccountId != null ? _accountDao.findById(destAccountId) : null;
+                String srcAccountDesc = srcAccount != null ? String.valueOf(srcAccount) : "id " + srcAccountId;
+                String destAccountDesc;
+                if (destAccountId == null) {
+                    destAccountDesc = "not dedicated to a specific account";
+                } else {
+                    destAccountDesc = "explicitly dedicated to account " + (destAccount != null ? destAccount : "id " + destAccountId);
+                }
+                String msg = String.format("VM is being migrated from host %s explicitly dedicated to account %s to host %s %s",
+                        srcHost, srcAccountDesc, destHost, destAccountDesc);
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
                 logger.warn(msg);
             }
-            if (!((domainOfDedicatedHost(srcHost) == null) || (domainOfDedicatedHost(srcHost).equals(domainOfDedicatedHost(destHost))))) {
-                String msg = String.format("VM is being migrated from host %s explicitly dedicated to domain %d to host %s explicitly dedicated to domain %d",
-                        srcHost, domainOfDedicatedHost(srcHost), destHost, domainOfDedicatedHost(destHost));
+            Long srcDomainId = domainOfDedicatedHost(srcHost);
+            Long destDomainId = domainOfDedicatedHost(destHost);
+            if (!((srcDomainId == null) || (srcDomainId.equals(destDomainId)))) {
+                Domain srcDomain = _domainDao.findById(srcDomainId);
+                Domain destDomain = destDomainId != null ? _domainDao.findById(destDomainId) : null;
+                String srcDomainDesc = srcDomain != null ? String.valueOf(srcDomain) : "id " + srcDomainId;
+                String destDomainDesc;
+                if (destDomainId == null) {
+                    destDomainDesc = "not dedicated to a specific domain";
+                } else {
+                    destDomainDesc = "explicitly dedicated to domain " + (destDomain != null ? destDomain : "id " + destDomainId);
+                }
+                String msg = String.format("VM is being migrated from host %s explicitly dedicated to domain %s to host %s %s",
+                        srcHost, srcDomainDesc, destHost, destDomainDesc);
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
                 logger.warn(msg);
             }
@@ -7799,7 +7829,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (deployPlanner.getDeploymentPlanner() != null && deployPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) {
             //VM is deployed using implicit planner
             long accountOfVm = vm.getAccountId();
-            String msg = String.format("VM of account %d with implicit deployment planner being migrated to host %s", accountOfVm, destHost);
+            Account accountOfVmObj = _accountDao.findById(accountOfVm);
+            String accountOfVmDesc = accountOfVmObj != null ? String.valueOf(accountOfVmObj) : "id " + accountOfVm;
+            String msg = String.format("VM of account %s with implicit deployment planner being migrated to host %s", accountOfVmDesc, destHost);
             //Get all vms on destination host
             boolean emptyDestination = false;
             List<VMInstanceVO> vmsOnDest = getVmsOnHost(destHostId);
@@ -7812,7 +7844,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (!isServiceOfferingUsingPlannerInPreferredMode(vm.getServiceOfferingId())) {
                     //Check if all vms on destination host are created using strict implicit mode
                     if (!checkIfAllVmsCreatedInStrictMode(accountOfVm, vmsOnDest)) {
-                        msg = String.format("Instance of Account %d with strict implicit deployment planner being migrated to host %s not having all Instances strict implicitly dedicated to Account %d", accountOfVm, destHost, accountOfVm);
+                        msg = String.format("Instance of Account %s with strict implicit deployment planner being migrated to host %s not having all Instances strict implicitly dedicated to Account %s", accountOfVmDesc, destHost, accountOfVmDesc);
                     }
                 } else {
                     //If vm is deployed using preferred implicit planner, check if all vms on destination host must be
@@ -7820,7 +7852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     for (VMInstanceVO vmsDest : vmsOnDest) {
                         ServiceOfferingVO destPlanner = serviceOfferingDao.findById(vm.getId(), vmsDest.getServiceOfferingId());
                         if (!((destPlanner.getDeploymentPlanner() != null && destPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) && vmsDest.getAccountId() == accountOfVm)) {
-                            msg = String.format("Instance of Account %d with preferred implicit deployment planner being migrated to host %s not having all Instances implicitly dedicated to Account %d", accountOfVm, destHost, accountOfVm);
+                            msg = String.format("Instance of Account %s with preferred implicit deployment planner being migrated to host %s not having all Instances implicitly dedicated to Account %s", accountOfVmDesc, destHost, accountOfVmDesc);
                         }
                     }
                 }

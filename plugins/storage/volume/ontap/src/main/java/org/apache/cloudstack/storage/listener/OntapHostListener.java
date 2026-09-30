@@ -95,7 +95,7 @@ public class OntapHostListener implements HypervisorHostListener {
             }
 
             if (!answer.getResult()) {
-                String msg = String.format("Unable to attach storage pool %s to host %d", pool, hostId);
+                String msg = String.format("Unable to attach storage pool %s to host %s", pool, host);
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
 
@@ -107,8 +107,8 @@ public class OntapHostListener implements HypervisorHostListener {
 
             if (!(answer instanceof ModifyStoragePoolAnswer)) {
                 throw new CloudRuntimeException(String.format(
-                        "Unexpected answer type %s returned for modify storage pool command for pool %s on host %d",
-                        answer.getClass().getName(), pool, hostId));
+                        "Unexpected answer type %s returned for modify storage pool command for pool %s on host %s",
+                        answer.getClass().getName(), pool, host));
             }
 
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
