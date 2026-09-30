@@ -33,7 +33,7 @@ import org.apache.cloudstack.context.CallContext;
  */
 public class CommandCreationWorker implements DispatchWorker {
 
-    private static final String ATTEMPT_TO_CREATE_NON_CREATION_CMD =
+    private static final String ATTEMP_TO_CREATE_NON_CREATION_CMD =
             "Trying to invoke creation on a Command that is not " +
             BaseAsyncCreateCmd.class.getName();
 
@@ -51,7 +51,8 @@ public class CommandCreationWorker implements DispatchWorker {
             }
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                    ATTEMPT_TO_CREATE_NON_CREATION_CMD);
+                    ATTEMP_TO_CREATE_NON_CREATION_CMD);
         }
     }
+
 }
