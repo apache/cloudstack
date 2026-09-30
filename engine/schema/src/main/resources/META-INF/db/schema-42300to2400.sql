@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_alert_rules` (
     PRIMARY KEY (`id`),
     INDEX `i_resource_alert_rules__account_id`(`account_id`),
     INDEX `i_resource_alert_rules__domain_id`(`domain_id`),
+    INDEX `i_resource_alert_rules__resource_type__resource_id`(`resource_type`, `resource_id`),
     CONSTRAINT `fk_resource_alert_rules__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_resource_alert_rules__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -57,7 +58,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_alerts` (
     `message` varchar(4096) DEFAULT NULL,
     `alert_timestamp` datetime NOT NULL,
     PRIMARY KEY (`id`),
-    INDEX `i_resource_alerts__alert_rule_id`(`alert_rule_id`),
+    INDEX `i_resource_alerts__alert_rule_id__resource_id__alert_timestamp`(`alert_rule_id`, `resource_id`, `alert_timestamp`),
+    INDEX `i_resource_alerts__resource_id__alert_timestamp`(`resource_id`, `alert_timestamp`),
     INDEX `i_resource_alerts__alert_timestamp`(`alert_timestamp`),
     CONSTRAINT `fk_resource_alerts__alert_rule_id` FOREIGN KEY (`alert_rule_id`) REFERENCES `resource_alert_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
