@@ -118,8 +118,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 CallContext.unregister();
             }
         } catch (Throwable e) {
-            // A job cancelled mid-execution has already reached a terminal state; re-reading it here
-            // stops the failure that cancellation caused from overwriting the CANCELLED result.
+            // a job cancelled mid-execution is already terminal; do not overwrite CANCELLED with the failure it caused
             AsyncJobVO jobFromDb = _asyncJobMgr.getAsyncJob(job.getId());
             if (jobFromDb != null && jobFromDb.getStatus().done()) {
                 logger.debug("Not recording failure for job-{}, it is already in {}", job.getId(), jobFromDb.getStatus());

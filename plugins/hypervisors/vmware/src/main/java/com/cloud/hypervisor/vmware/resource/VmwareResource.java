@@ -431,8 +431,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected volatile long _cmdSequence = 1;
 
-    // One registry per resource, so tasks are tracked per host and two hosts cannot collide on a
-    // request sequence number.
+    // per resource, so two hosts cannot collide on a request sequence
     private final VmwareTaskRegistry taskRegistry = new VmwareTaskRegistry();
 
     protected StorageSubsystemCommandHandler storageHandler;
@@ -477,8 +476,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         taskRegistry.beginRequest(requestSequence);
         try {
             Answer answer = executeRequestInternal(cmd);
-            // The command handlers report a cancelled vCenter task as an ordinary failure; mark it so
-            // the agent layer can tell a cancellation from a failure.
+            // a cancelled vCenter task surfaces as an ordinary failure; flag it as cancelled
             if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
                 answer.setCancelled(true);
             }
