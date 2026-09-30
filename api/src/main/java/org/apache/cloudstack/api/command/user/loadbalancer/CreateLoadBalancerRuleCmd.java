@@ -119,6 +119,22 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.KEEPALIVE, type = CommandType.BOOLEAN, since = "4.23.0",
+            description = "Whether the load balancer keeps client connections open between requests. "
+                    + "Only applies to rules the router serves in HTTP mode. If not set, the network offering's setting is used.")
+    private Boolean keepAlive;
+
+    @Parameter(name = ApiConstants.IDLE_TIMEOUT, type = CommandType.LONG, since = "4.23.0",
+            description = "How long an idle connection is held open, in milliseconds. Use 0 for infinite. "
+                    + "If not set, the global setting network.loadbalancer.haproxy.idle.timeout is used.")
+    private Long idleTimeout;
+
+    @Parameter(name = ApiConstants.KEEPALIVE_TIMEOUT, type = CommandType.LONG, since = "4.23.0",
+            description = "How long an idle keepalive connection is held open waiting for the next request, "
+                    + "in milliseconds. Only applies to rules the router serves in HTTP mode. "
+                    + "If not set, idletimeout applies.")
+    private Long keepAliveTimeout;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -135,6 +151,18 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     public String getAlgorithm() {
         return algorithm;
     }
+    public Boolean getKeepAlive() {
+        return keepAlive;
+    }
+
+    public Long getIdleTimeout() {
+        return idleTimeout;
+    }
+    public Long getKeepAliveTimeout() {
+        return keepAliveTimeout;
+    }
+
+
 
     public String getDescription() {
         return description;
@@ -307,6 +335,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                         getCidrList());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
+            _lbService.updateLoadBalancerConnectionSettings(result.getId(), getKeepAlive(), getIdleTimeout(), getKeepAliveTimeout());
         } catch (NetworkRuleConflictException e) {
             logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
