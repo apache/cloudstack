@@ -331,4 +331,59 @@ public class GenericDaoBaseTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(expectedResult, result);
     }
+
+    @Test
+    public void addFilterWithLimitOnlyAppendsLimit() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        Filter filter = new Filter(10);
+        dbTestDao.addFilter(sql, filter);
+        Assert.assertEquals("SELECT * FROM test LIMIT 10", sql.toString());
+    }
+
+    @Test
+    public void addFilterWithLimitOnlyDoesNotContainRand() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        Filter filter = new Filter(1);
+        dbTestDao.addFilter(sql, filter);
+        Assert.assertFalse(sql.toString().contains("RAND()"));
+        Assert.assertTrue(sql.toString().endsWith("LIMIT 1"));
+    }
+
+    @Test
+    public void addFilterWithRandomFilterContainsRand() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        Filter filter = new Filter(1, true);
+        dbTestDao.addFilter(sql, filter);
+        Assert.assertTrue(sql.toString().contains("ORDER BY RAND()"));
+        Assert.assertTrue(sql.toString().contains("LIMIT 1"));
+    }
+
+    @Test
+    public void addFilterWithOffsetAndLimit() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        Filter filter = new Filter(DbTestVO.class, "fieldString", true, 5L, 10L);
+        dbTestDao.addFilter(sql, filter);
+        String result = sql.toString();
+        Assert.assertTrue(result.contains("ORDER BY"));
+        Assert.assertTrue(result.contains("LIMIT 5, 10"));
+    }
+
+    @Test
+    public void addFilterWithNullFilterIsNoOp() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        dbTestDao.addFilter(sql, null);
+        Assert.assertEquals("SELECT * FROM test", sql.toString());
+    }
+
+    @Test
+    public void addFilterWithOrderByAndLimitOnly() {
+        StringBuilder sql = new StringBuilder("SELECT * FROM test");
+        Filter filter = new Filter(25);
+        filter.addOrderBy(DbTestVO.class, "fieldString", true);
+        dbTestDao.addFilter(sql, filter);
+        String result = sql.toString();
+        Assert.assertTrue(result.contains("ORDER BY"));
+        Assert.assertFalse(result.contains("RAND()"));
+        Assert.assertTrue(result.contains("LIMIT 25"));
+    }
 }
