@@ -21,6 +21,9 @@ import com.cloud.utils.exception.ExceptionUtil;
 public class Answer extends Command {
     protected boolean result;
     protected String details;
+    // Set when the command was stopped because its async job was cancelled, so callers can tell a
+    // cancellation from an ordinary failure without matching on the detail text.
+    protected boolean cancelled;
 
     protected Answer() {
         this(null);
@@ -47,6 +50,20 @@ public class Answer extends Command {
         return details;
     }
 
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(final boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public static Answer createCancelledAnswer(final Command command, final String details) {
+        Answer answer = new Answer(command, false, details);
+        answer.setCancelled(true);
+        return answer;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -69,6 +86,7 @@ public class Answer extends Command {
         Answer answer = (Answer) o;
 
         if (result != answer.result) return false;
+        if (cancelled != answer.cancelled) return false;
         if (details != null ? !details.equals(answer.details) : answer.details != null) return false;
 
         return true;
@@ -78,6 +96,7 @@ public class Answer extends Command {
     public int hashCode() {
         int result1 = super.hashCode();
         result1 = 31 * result1 + (result ? 1 : 0);
+        result1 = 31 * result1 + (cancelled ? 1 : 0);
         result1 = 31 * result1 + (details != null ? details.hashCode() : 0);
         return result1;
     }
