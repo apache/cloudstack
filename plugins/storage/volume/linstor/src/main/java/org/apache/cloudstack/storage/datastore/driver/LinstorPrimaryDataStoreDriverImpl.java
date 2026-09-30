@@ -251,7 +251,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         try
         {
-            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList());
+            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList(), null);
             if (answers.hasError())
             {
                 for (ApiCallRc answer : answers)
@@ -403,6 +403,29 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    /**
+     * Request the target size as part of the clone if the controller supports it.
+     *
+     * A clone reports COMPLETE as soon as every replica can access UpToDate data, which with
+     * Clone/BalanceAfterClone is while the additional replica is still syncing. A resize issued at that
+     * point is rejected with "Cannot resize volume, because we have a non-UpToDate DRBD device".
+     * Controllers with REST API 1.29.1+ take the size in the clone request and grow the volume inside the
+     * clone before the balance placement, so the race cannot occur. Older controllers keep the
+     * clone-then-resize sequence.
+     *
+     * @return true if the caller still has to resize the resource after the clone finished
+     */
+    static boolean applyCloneSize(DevelopersApi api, ResourceDefinitionCloneRequest cloneRequest, Long sizeByte) {
+        if (sizeByte == null || sizeByte <= 0) {
+            return false;
+        }
+        if (LinstorUtil.supportsCloneVolumeSizes(api)) {
+            cloneRequest.setVolumeSizes(Collections.singletonList(sizeByte / 1024));
+            return false;
+        }
+        return true;
+    }
+
     private String cloneResource(long csCloneId, VolumeInfo volumeInfo, StoragePoolVO storagePoolVO) {
         // get the cached template on this storage
         VMTemplateStoragePoolVO tmplPoolRef = _vmTemplatePoolDao.findByPoolTemplate(
@@ -436,6 +459,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                         cloneRequest.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
                     }
                 }
+                final boolean resizeAfterClone = applyCloneSize(linstorApi, cloneRequest, volumeInfo.getSize());
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
                     cloneRes, cloneRequest);
 
@@ -447,7 +471,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
                 logger.info("Clone resource definition " + cloneRes + " to " + rscName + " finished");
 
-                if (volumeInfo.getSize() != null && volumeInfo.getSize() > 0) {
+                if (resizeAfterClone) {
                     resizeResource(linstorApi, rscName, volumeInfo.getSize());
                 }
 

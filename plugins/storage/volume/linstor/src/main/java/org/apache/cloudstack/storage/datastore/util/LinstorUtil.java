@@ -101,6 +101,50 @@ public class LinstorUtil {
         return new DevelopersApi(client);
     }
 
+    /**
+     * The REST API version of the connected controller, e.g. "1.29.1", or null if it could not be queried.
+     */
+    @Nullable
+    public static String getRestApiVersion(DevelopersApi api) {
+        try {
+            return api.controllerVersion().getRestApiVersion();
+        } catch (ApiException apiExc) {
+            LOGGER.warn("Unable to query controller API version: {}", apiExc.getBestMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Check if the connected controller accepts volume_sizes on a resource-definition clone request
+     * (REST API 1.29.1, LINSTOR 1.35.0). With it the grow happens inside the clone, before an optional
+     * Clone/BalanceAfterClone placement, so it cannot race the balance replica's sync.
+     */
+    public static boolean supportsCloneVolumeSizes(DevelopersApi api) {
+        return isVersionAtLeast(getRestApiVersion(api), 1, 29, 1);
+    }
+
+    static boolean isVersionAtLeast(String version, int major, int minor, int patch) {
+        if (version == null || version.isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        try {
+            int maj = Integer.parseInt(parts[0]);
+            int min = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            int pat = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            if (maj != major) {
+                return maj > major;
+            }
+            if (min != minor) {
+                return min > minor;
+            }
+            return pat >= patch;
+        } catch (NumberFormatException nfExc) {
+            LOGGER.warn("Unable to parse controller API version '{}'", version);
+            return false;
+        }
+    }
+
     public static String getBestErrorMessage(ApiCallRcList answers) {
         return answers != null && !answers.isEmpty() ?
             answers.stream()
