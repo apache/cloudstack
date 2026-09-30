@@ -38,8 +38,6 @@ import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -48,11 +46,8 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.FenceCommand;
@@ -64,7 +59,6 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
@@ -87,8 +81,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
@@ -110,11 +102,9 @@ import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
@@ -338,20 +328,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.rebootVM((RebootCommand)cmd);
                 } else if (cmd instanceof GetVncPortCommand) {
                     answer = _mockVmMgr.getVncPort((GetVncPortCommand)cmd);
-                } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
-                    answer = _mockVmMgr.checkConsoleProxyLoad((CheckConsoleProxyLoadCommand)cmd);
-                } else if (cmd instanceof WatchConsoleProxyLoadCommand) {
-                    answer = _mockVmMgr.watchConsoleProxyLoad((WatchConsoleProxyLoadCommand)cmd);
                 } else if (cmd instanceof SecurityGroupRulesCmd) {
                     answer = _mockVmMgr.addSecurityGroupRules((SecurityGroupRulesCmd)cmd, info);
                 } else if (cmd instanceof SavePasswordCommand) {
                     answer = _mockVmMgr.savePassword((SavePasswordCommand)cmd);
-                } else if (cmd instanceof PrimaryStorageDownloadCommand) {
-                    answer = _mockStorageMgr.primaryStorageDownload((PrimaryStorageDownloadCommand)cmd);
-                } else if (cmd instanceof CreateCommand) {
-                    answer = _mockStorageMgr.createVolume((CreateCommand)cmd);
-                } else if (cmd instanceof AttachIsoCommand) {
-                    answer = _mockStorageMgr.AttachIso((AttachIsoCommand)cmd);
                 } else if (cmd instanceof DeleteStoragePoolCommand) {
                     answer = _mockStorageMgr.DeleteStoragePool((DeleteStoragePoolCommand)cmd);
                 } else if (cmd instanceof ModifyStoragePoolCommand) {
@@ -374,22 +354,12 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockStorageMgr.GetStorageStats((GetStorageStatsCommand)cmd);
                 } else if (cmd instanceof GetVolumeStatsCommand) {
                     answer = _mockStorageMgr.getVolumeStats((GetVolumeStatsCommand)cmd);
-                } else if (cmd instanceof ManageSnapshotCommand) {
-                    answer = _mockStorageMgr.ManageSnapshot((ManageSnapshotCommand)cmd);
-                } else if (cmd instanceof BackupSnapshotCommand) {
-                    answer = _mockStorageMgr.BackupSnapshot((BackupSnapshotCommand)cmd, info);
-                } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
-                    answer = _mockStorageMgr.CreateVolumeFromSnapshot((CreateVolumeFromSnapshotCommand)cmd);
                 } else if (cmd instanceof DeleteCommand) {
                     answer = _mockStorageMgr.Delete((DeleteCommand)cmd);
                 } else if (cmd instanceof SecStorageVMSetupCommand) {
                     answer = _mockStorageMgr.SecStorageVMSetup((SecStorageVMSetupCommand)cmd);
-                } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
-                    answer = _mockStorageMgr.CreatePrivateTemplateFromSnapshot((CreatePrivateTemplateFromSnapshotCommand)cmd);
                 } else if (cmd instanceof ComputeChecksumCommand) {
                     answer = _mockStorageMgr.ComputeChecksum((ComputeChecksumCommand)cmd);
-                } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
-                    answer = _mockStorageMgr.CreatePrivateTemplateFromVolume((CreatePrivateTemplateFromVolumeCommand)cmd);
                 } else if (cmd instanceof UploadStatusCommand) {
                     answer = _mockStorageMgr.getUploadStatus((UploadStatusCommand)cmd);
                 } else if (cmd instanceof MaintainCommand) {

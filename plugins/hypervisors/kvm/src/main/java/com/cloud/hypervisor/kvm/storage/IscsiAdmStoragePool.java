@@ -96,8 +96,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
-    // called from LibvirtComputingResource.execute(CreateCommand) and
-    // from KVMStorageProcessor.createVolume(CreateObjectCommand)
+    // called from KVMStorageProcessor.createVolume(CreateObjectCommand)
     // does not apply for iScsiAdmStoragePool
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {

@@ -24,14 +24,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
@@ -98,18 +93,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             ThreadContext.push(getCommandLogTitle(cmd));
             logCommand(cmd);
 
-            if (cmd instanceof PrimaryStorageDownloadCommand) {
-                answer = execute((PrimaryStorageDownloadCommand)cmd);
-            } else if (cmd instanceof BackupSnapshotCommand) {
-                answer = execute((BackupSnapshotCommand)cmd);
-            } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
-                answer = execute((CreatePrivateTemplateFromVolumeCommand)cmd);
-            } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
-                answer = execute((CreatePrivateTemplateFromSnapshotCommand)cmd);
-            } else if (cmd instanceof CopyVolumeCommand) {
+            if (cmd instanceof CopyVolumeCommand) {
                 answer = execute((CopyVolumeCommand)cmd);
-            } else if (cmd instanceof CreateVolumeFromSnapshotCommand) {
-                answer = execute((CreateVolumeFromSnapshotCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof CreateEntityDownloadURLCommand) {
@@ -159,27 +144,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         return new Answer(cmd, false, "Failed to download");
     }
 
-    private Answer execute(PrimaryStorageDownloadCommand cmd) {
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(BackupSnapshotCommand cmd) {
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(CreatePrivateTemplateFromSnapshotCommand cmd) {
-        return _storageMgr.execute(this, cmd);
-    }
-
     private Answer execute(CopyVolumeCommand cmd) {
-        return _storageMgr.execute(this, cmd);
-    }
-
-    private Answer execute(CreateVolumeFromSnapshotCommand cmd) {
         return _storageMgr.execute(this, cmd);
     }
 

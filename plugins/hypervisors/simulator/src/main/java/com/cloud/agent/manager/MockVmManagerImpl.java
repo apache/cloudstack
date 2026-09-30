@@ -72,8 +72,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -578,16 +576,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Override
     public Answer getVncPort(final GetVncPortCommand cmd) {
         return new GetVncPortAnswer(cmd, 0);
-    }
-
-    @Override
-    public Answer checkConsoleProxyLoad(final CheckConsoleProxyLoadCommand cmd) {
-        return Answer.createUnsupportedCommandAnswer(cmd);
-    }
-
-    @Override
-    public Answer watchConsoleProxyLoad(final WatchConsoleProxyLoadCommand cmd) {
-        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override

@@ -463,7 +463,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return path;
     }
 
-    // this is much like PrimaryStorageDownloadCommand, but keeping it separate. copies template direct to root disk
+    // copies template direct to root disk
     private KVMPhysicalDisk templateToPrimaryDownload(final String templateUrl, final KVMStoragePool primaryPool, final String volUuid, final Long size, final int timeout) {
         final int index = templateUrl.lastIndexOf("/");
         final String mountpoint = templateUrl.substring(0, index);
