@@ -327,6 +327,8 @@ public interface StorageManager extends StorageService {
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
 
+    boolean canHostAccessOrPrepareStoragePool(Host host, StoragePool pool);
+
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
     boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
