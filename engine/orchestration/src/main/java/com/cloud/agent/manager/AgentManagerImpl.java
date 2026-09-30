@@ -2123,7 +2123,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         logger.info("Job-{} on {} {} was cancelled, stopping its in-flight commands",
                                 job.getId(), job.getInstanceType(), job.getInstanceId());
                         if (!cancelJobExecution(job.getId(), "Job was cancelled")) {
-                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; the rest will run to completion", job.getId());
+                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", job.getId());
+                            continue;
                         }
                     }
                     asyncJobManager.finalizeCancelledJob(job.getId());

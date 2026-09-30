@@ -247,9 +247,13 @@ public abstract class AgentAttache {
     /** Job-cancel path; distinct from cancel(seq), which is also the timeout path and never reaches the hypervisor. */
     public boolean cancelExecution(final long seq) {
         _cancelledSequences.add(seq);
-        final boolean stopped = cancelRunning(seq);
+        if (!cancelRunning(seq)) {
+            // refused: the command runs on and its sender must see the real answer
+            _cancelledSequences.remove(seq);
+            return false;
+        }
         cancel(seq);
-        return stopped;
+        return true;
     }
 
     protected synchronized int findRequest(final Request req) {
