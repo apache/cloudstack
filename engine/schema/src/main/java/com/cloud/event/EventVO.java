@@ -73,6 +73,9 @@ public class EventVO implements Event {
     @Column(name = "start_id")
     private long startId;
 
+    @Column(name = "async_job_id")
+    private Long asyncJobId;
+
     @Column(name = "parameters", length = 1024)
     private String parameters;
 
@@ -207,6 +210,14 @@ public class EventVO implements Event {
 
     public void setStartId(long startId) {
         this.startId = startId;
+    }
+
+    public Long getAsyncJobId() {
+        return asyncJobId;
+    }
+
+    public void setAsyncJobId(Long asyncJobId) {
+        this.asyncJobId = asyncJobId;
     }
 
     @Override

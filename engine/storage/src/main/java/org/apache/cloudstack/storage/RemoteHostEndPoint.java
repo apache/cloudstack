@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -132,7 +131,10 @@ public class RemoteHostEndPoint implements EndPoint {
                 setId(newHostId);
             }
             return agentMgr.send(newHostId, cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException e) {
+            errMsg = e.toString();
+            logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
+        } catch (OperationTimedoutException e) {
             errMsg = e.toString();
             logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
         }
