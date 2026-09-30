@@ -34,6 +34,8 @@ select
     `event`.`parameters` AS `parameters`,
     `event`.`start_id` AS `start_id`,
     `eve`.`uuid` AS `start_uuid`,
+    `event`.`async_job_id` AS `async_job_id`,
+    `async_job`.`uuid` AS `async_job_uuid`,
     `event`.`user_id` AS `user_id`,
     `event`.`archived` AS `archived`,
     `event`.`display` AS `display`,
@@ -50,7 +52,7 @@ select
     `projects`.`uuid` AS `project_uuid`,
     `projects`.`name` AS `project_name`
 from
-    (((((`event`
+    ((((((`event`
 join `account` on
     ((`event`.`account_id` = `account`.`id`)))
 join `domain` on
@@ -60,4 +62,6 @@ join `user` on
 left join `projects` on
     ((`projects`.`project_account_id` = `event`.`account_id`)))
 left join `event` `eve` on
-    ((`event`.`start_id` = `eve`.`id`)));
+    ((`event`.`start_id` = `eve`.`id`)))
+left join `async_job` on
+    ((`event`.`async_job_id` = `async_job`.`id`)));

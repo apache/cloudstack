@@ -271,3 +271,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+
+-- Link every action event to the API job that raised it, so a job can be traced to its events
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event', 'async_job_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT ''The async job that raised this event'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__async_job_id', 'cloud.event', '(`async_job_id`)');

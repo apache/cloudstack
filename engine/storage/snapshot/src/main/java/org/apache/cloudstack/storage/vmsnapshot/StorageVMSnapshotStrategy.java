@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -211,11 +210,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException(
                     "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
-        } catch (OperationCancelledException e) {
-            logger.debug("Creating Instance snapshot: " + vmSnapshot.getName() + " cancelled: " + e.toString());
-            throw new CloudRuntimeException(
-                    "Creating Instance snapshot: " + vmSnapshot.getName() + " cancelled: " + e.toString());
-
         } catch (AgentUnavailableException e) {
             logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException(
@@ -228,7 +222,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                                                 .convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 try {
                     thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
-                } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+                } catch (AgentUnavailableException | OperationTimedoutException e) {
                     logger.debug("Could not unfreeze the VM due to " + e);
                 }
             }

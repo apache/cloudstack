@@ -36,7 +36,7 @@ import org.apache.cloudstack.jobs.AsyncJobService;
 import javax.inject.Inject;
 
 @APICommand(name = CancelAsyncJobCmd.APINAME, description = "Cancels the asynchronous job.", responseObject = AsyncJobResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin}, since = "4.23")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin}, since = "24.0")
 public class CancelAsyncJobCmd extends BaseCmd {
     public static final String APINAME = "cancelAsyncJob";
 

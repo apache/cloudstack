@@ -118,30 +118,31 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 CallContext.unregister();
             }
         } catch (Throwable e) {
-            //Get the latest job status from DB to check if it has been cancelled during execution
+            // A job cancelled mid-execution has already reached a terminal state; re-reading it here
+            // stops the failure that cancellation caused from overwriting the CANCELLED result.
             AsyncJobVO jobFromDb = _asyncJobMgr.getAsyncJob(job.getId());
-            if (!jobFromDb.getStatus().done()) {
-                String errorMsg = null;
-                int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
-                if (!(e instanceof ServerApiException)) {
-                    logger.error("Unexpected exception while executing {}", job.getCmd(), e);
-                    errorMsg = e.getMessage();
-                } else {
-                    ServerApiException sApiEx = (ServerApiException) e;
-                    errorMsg = sApiEx.getDescription();
-                    errorCode = sApiEx.getErrorCode().getHttpCode();
-                }
-
-                ExceptionResponse response = new ExceptionResponse();
-                response.setErrorCode(errorCode);
-                response.setErrorText(errorMsg);
-                response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
-
-                // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
-                //         and we need to preserve that as much as possible here
-
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
+            if (jobFromDb != null && jobFromDb.getStatus().done()) {
+                logger.debug("Not recording failure for job-{}, it is already in {}", job.getId(), jobFromDb.getStatus());
+                return;
             }
+
+            String errorMsg = null;
+            int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
+            if (!(e instanceof ServerApiException)) {
+                logger.error("Unexpected exception while executing {}", job.getCmd(), e);
+                errorMsg = e.getMessage();
+            } else {
+                ServerApiException sApiEx = (ServerApiException)e;
+                errorMsg = sApiEx.getDescription();
+                errorCode = sApiEx.getErrorCode().getHttpCode();
+            }
+
+            ExceptionResponse response = new ExceptionResponse();
+            response.setErrorCode(errorCode);
+            response.setErrorText(errorMsg);
+            response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
+
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));
         }
     }
 }

@@ -23,17 +23,14 @@ import org.apache.cloudstack.framework.jobs.impl.SyncQueueItemVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface SyncQueueItemDao extends GenericDao<SyncQueueItemVO, Long> {
-    SyncQueueItemVO getNextQueueItem(long queueId);
+    public SyncQueueItemVO getNextQueueItem(long queueId);
+    public int getActiveQueueItemCount(long queueId);
 
-    int getActiveQueueItemCount(long queueId);
+    public List<SyncQueueItemVO> getNextQueueItems(int maxItems);
 
-    List<SyncQueueItemVO> getNextQueueItems(int maxItems);
+    public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
 
-    List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
 
-    List<SyncQueueItemVO> getQueuedItems(long queueId);
-
-    List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
-
-    Long getQueueItemIdByContentIdAndType(long contentId, String contentType);
+    public Long getQueueItemIdByContentIdAndType(long contentId, String contentType);
 }

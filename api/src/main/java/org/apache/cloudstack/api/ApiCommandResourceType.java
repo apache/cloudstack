@@ -95,8 +95,7 @@ public enum ApiCommandResourceType {
     HsmProfile(org.apache.cloudstack.kms.HSMProfile.class),
     InstanceBootGroup(org.apache.cloudstack.vm.bootgroup.InstanceBootGroup.class),
     InstanceBootGroupReadinessRule(InstanceBootGroupReadinessRule.class),
-    Job(org.apache.cloudstack.jobs.JobInfo.class); // org.apache.cloudstack.framework.jobs.AsyncJob.class
-    // Job(null);
+    Job(org.apache.cloudstack.jobs.JobInfo.class);
 
     private final Class<?> clazz;
 

@@ -43,7 +43,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
@@ -690,8 +689,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         Instant start = Instant.ofEpochMilli(startTick);
         Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
         Instant now = Instant.now();
-        if (s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
-            if (logger.isInfoEnabled()) {
+        if(s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
+            if(logger.isInfoEnabled()) {
                 logger.info("Worker VM expired, seconds elapsed: " + Duration.between(start,now).getSeconds());
             }
             return true;
@@ -1583,7 +1582,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 if (result) {
                     compatiblePools.add(pool);
                 }
-            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
                 logger.error("Could not verify if storage policy " + storagePolicy.getName() + " is compatible with storage pool " + pool.getName());
             }
         }
