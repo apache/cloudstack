@@ -262,7 +262,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         volume_pool_response = list_storage_pools(self.apiclient,
                                                     id=vol_res[0].storageid)
         volume_pool = volume_pool_response[0]
-        if volume_pool.type.lower() != 'networkfilesystem':
+        if volume_pool.type not in ("NetworkFilesystem", "RBD"):
             self.skipTest("This test is not supported for volume created on storage pool type %s" % volume_pool.type)
         clusters = list_clusters(
             self.apiclient,
@@ -291,9 +291,8 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             'Up',
             "Check primary storage state"
         )
-        self.assertEqual(
-            storage.type,
-            'NetworkFilesystem',
+        self.assertTrue(
+            storage.type in ("NetworkFilesystem", "RBD"),
             "Check storage pool type"
         )
         storage_pools_response = list_storage_pools(self.apiclient,
