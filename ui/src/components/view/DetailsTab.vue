@@ -93,6 +93,9 @@
               {{ sizeInGiB(dataResource.chainsize) }} GiB
             </div>
           </div>
+          <div v-else-if="$route.meta.name === 'resourcealerts' && ['resourcetype', 'metric', 'condition', 'severity'].includes(item)">
+            {{ resourceAlertLabel(item, dataResource[item]) }}
+          </div>
           <div v-else-if="['name', 'type'].includes(item)">
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
@@ -263,6 +266,7 @@ import ObjectListTable from '@/components/view/ObjectListTable'
 import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { genericCompare } from '@/utils/sort'
+import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
 import CodeHighlight from 'vue-code-highlight/src/CodeHighlight.vue'
 import 'vue-code-highlight/themes/prism-okaidia.css'
 
@@ -466,6 +470,7 @@ export default {
     }
   },
   methods: {
+    resourceAlertLabel,
     decodeUserData (userdata) {
       const decodedData = Buffer.from(userdata, 'base64')
       return decodedData.toString('utf-8')

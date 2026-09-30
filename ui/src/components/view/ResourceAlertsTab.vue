@@ -39,6 +39,9 @@
         <template v-else-if="column.key === 'metricvalue'">
           {{ Number(text).toFixed(2) }}
         </template>
+        <template v-else-if="column.key === 'metrictype'">
+          {{ resourceAlertLabel('metrictype', text) }}
+        </template>
         <template v-else-if="column.key === 'severity'">
           <a-tag :color="severityColor(text)">{{ text }}</a-tag>
         </template>
@@ -49,6 +52,7 @@
 
 <script>
 import { getAPI } from '@/api'
+import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
 
 // Shows the alerts of one resource, or of one rule when no resourceType is given.
 export default {
@@ -115,6 +119,7 @@ export default {
     }
   },
   methods: {
+    resourceAlertLabel,
     fetchData () {
       if (!this.resource || !this.resource.id) return
       const params = { listall: true, page: this.page, pagesize: this.pageSize }
