@@ -421,11 +421,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String versionStringPath;
     private String gpuDiscoveryPath;
     private String patchScriptPath;
-    private String createVmPath;
     private String manageSnapshotPath;
     private String resizeVolumePath;
-    private String createTmplPath;
-    private String heartBeatPath;
     private String vmActivityCheckPath;
     private String nasBackupPath;
     private String imageServerPath;
@@ -467,7 +464,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public final static String CONFIG_DIR = "config";
     private boolean enableIoUring;
 
-    public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
     private StorageLayer storageLayer;
     private KVMStoragePoolManager storagePoolManager;
@@ -512,7 +508,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean noKvmClock;
     protected String videoHw;
     protected int videoRam;
-    protected Pair<Integer,Integer> hostOsVersion;
     protected int migrateSpeed;
     protected int migrateDowntime;
     protected int migratePauseAfter;
@@ -823,10 +818,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storageLayer;
     }
 
-    public String createTmplPath() {
-        return createTmplPath;
-    }
-
     public int getCmdsTimeout() {
         return cmdsTimeout;
     }
@@ -964,7 +955,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String vddkThumbprint = null;
     private String vddkVersion = null;
     private String detectedPasswordFileOption = null;
-    protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -1163,11 +1153,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find patch.sh");
         }
 
-        createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
-        if (createVmPath == null) {
-            throw new ConfigurationException("Unable to find the createvm.sh");
-        }
-
         manageSnapshotPath = Script.findScript(storageScriptsDir, "managesnapshot.sh");
         if (manageSnapshotPath == null) {
             throw new ConfigurationException("Unable to find the managesnapshot.sh");
@@ -1193,11 +1178,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find imageserver package");
         }
         imageServerPath = new File(imageServerMain).getParent();
-
-        createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
-        if (createTmplPath == null) {
-            throw new ConfigurationException("Unable to find the createtmplt.sh");
-        }
 
         securityGroupPath = Script.findScript(networkScriptsDir, "security_group.py");
         if (securityGroupPath == null) {
@@ -2859,7 +2839,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
         final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
         for (final InterfaceDef pluggedNic : pluggedNics) {
-            final String pluggedVlan = pluggedNic.getBrName();
             macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
             devNum++;
         }
