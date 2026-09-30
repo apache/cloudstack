@@ -73,5 +73,7 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 
     AsyncJobVO getRelatedJob(String jobId);
 
+    List<AsyncJobVO> listChildJobs(long parentJobId);
+
     List<AsyncJobVO> getCancelledJobs(long executingMsid);
 }
