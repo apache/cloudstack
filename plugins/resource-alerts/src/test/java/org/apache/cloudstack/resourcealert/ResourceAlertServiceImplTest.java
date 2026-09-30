@@ -543,4 +543,63 @@ public class ResourceAlertServiceImplTest {
 
         verify(accountManager).finalizeOwner(eq(caller), any(), any(), eq(42L));
     }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnBlankName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getName()).thenReturn("   ");
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnDuplicateName() {
+        when(ruleDao.findActiveByAccountIdAndName(42L, "cpu-high")).thenReturn(mock(ResourceAlertRuleVO.class));
+
+        service.createResourceAlertRule(validVmCreateCmd());
+    }
+
+    @Test
+    public void testCreateTrimsName() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getName()).thenReturn("  cpu-high  ");
+
+        service.createResourceAlertRule(cmd);
+
+        assertEquals("cpu-high", persistedRuleCapture().getName());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnDuplicateName() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getName()).thenReturn("taken");
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(rule.getAccountId()).thenReturn(42L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        ResourceAlertRuleVO other = mock(ResourceAlertRuleVO.class);
+        when(other.getId()).thenReturn(2L);
+        when(ruleDao.findActiveByAccountIdAndName(42L, "taken")).thenReturn(other);
+
+        service.updateResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testUpdateKeepsOwnName() {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getName()).thenReturn("mine");
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+        when(rule.getId()).thenReturn(1L);
+        when(rule.getAccountId()).thenReturn(42L);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        when(ruleDao.findActiveByAccountIdAndName(42L, "mine")).thenReturn(rule);
+
+        service.updateResourceAlertRule(cmd);
+
+        verify(rule).setName("mine");
+    }
 }

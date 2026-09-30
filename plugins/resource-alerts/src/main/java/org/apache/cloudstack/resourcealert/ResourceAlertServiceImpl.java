@@ -119,6 +119,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
                     "Account has reached the maximum of " + limit + " resource alert rules");
         }
         long domainId = owner.getDomainId();
+        String name = validateName(owner.getId(), cmd.getName(), null);
 
         InternalIdentity resource = findResourceOrFail(resourceType, cmd.getResourceId());
         if (resource instanceof ControlledEntity) {
@@ -127,7 +128,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         Long resourceId = resource != null ? resource.getId() : null;
 
         ResourceAlertRuleVO rule = new ResourceAlertRuleVO(
-                cmd.getName(), resourceType, resourceId,
+                name, resourceType, resourceId,
                 owner.getId(), domainId,
                 metric.name(), condition, cmd.getThreshold(), severity,
                 cmd.getMessage(), email, resetInterval);
@@ -185,7 +186,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         ResourceAlertRuleVO rule = findRuleForCaller(cmd.getId());
         checkEmailAccess(CallContext.current().getCallingAccount(), Boolean.TRUE.equals(cmd.getEmail()));
 
-        if (StringUtils.isNotBlank(cmd.getName())) rule.setName(cmd.getName());
+        if (cmd.getName() != null) rule.setName(validateName(rule.getAccountId(), cmd.getName(), rule.getId()));
         if (StringUtils.isNotBlank(cmd.getCondition())) rule.setCondition(parseCondition(cmd.getCondition()));
         if (cmd.getThreshold() != null) {
             validateThreshold(ResourceAlertMetric.valueOf(rule.getMetric()), cmd.getThreshold());
@@ -435,6 +436,19 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         if (metric.isPercentage() && threshold > 100) {
             throw new InvalidParameterValueException("threshold for " + metric.name() + " is a percentage and must be 100 or less");
         }
+    }
+
+    // Rules are picked by name in the UI and in alerts, so a name must be set and unique for its owner.
+    private String validateName(long accountId, String name, Long ruleId) {
+        String trimmed = StringUtils.trimToEmpty(name);
+        if (trimmed.isEmpty()) {
+            throw new InvalidParameterValueException("name cannot be blank");
+        }
+        ResourceAlertRuleVO existing = ruleDao.findActiveByAccountIdAndName(accountId, trimmed);
+        if (existing != null && (ruleId == null || existing.getId() != ruleId)) {
+            throw new InvalidParameterValueException("A resource alert rule named " + trimmed + " already exists for this account");
+        }
+        return trimmed;
     }
 
     private void validateResetInterval(Integer resetInterval) {
