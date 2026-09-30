@@ -252,7 +252,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return null;
         }
 
-        if(!connectPhysicalDisk(name, pool, null, false)) {
+        if (!connectPhysicalDisk(name, pool, null, false)) {
             throw new CloudRuntimeException(String.format("Failed to ensure disk %s was present", name));
         }
 
@@ -261,7 +261,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         if (provisioningType.equals(Storage.ProvisioningType.THIN)) {
             disk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
             disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-            try (KeyFile keyFile = new KeyFile(passphrase)){
+            try (KeyFile keyFile = new KeyFile(passphrase)) {
                 QemuImg qemuImg = new QemuImg(0, true, false);
                 Map<String, String> options = new HashMap<>();
                 List<QemuObject> qemuObjects = new ArrayList<>();
