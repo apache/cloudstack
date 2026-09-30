@@ -113,10 +113,6 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
         return (forced != null) ? forced : false;
     }
 
-    public boolean isCancellable() {
-        return true;
-    }
-
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
         CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));

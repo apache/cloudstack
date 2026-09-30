@@ -174,10 +174,6 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
         return getId();
     }
 
-    public boolean isCancellable() {
-        return true;
-    }
-
     @Override
     public void execute() {
         try {
