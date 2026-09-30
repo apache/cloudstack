@@ -68,7 +68,7 @@ export default {
       message: 'message.confirm.delete.resource.alert.rule',
       dataView: true,
       groupAction: true,
-      groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }
