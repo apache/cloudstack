@@ -387,7 +387,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         String jobEvent = eventInfo.second();
 
         if (logger.isTraceEnabled())
-            logger.trace("Handle async job publish event {}", jobEvent);
+            logger.trace("Handle asyjob publish event {}", jobEvent);
         if (eventDistributor == null) {
             setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
         }
@@ -418,7 +418,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     logger.debug("Unable to locate cmdEventType marker in job info. publish as unknown event");
             }
             String contextDetails = cmdInfo.get("ctxDetails");
-            if (contextDetails != null) {
+            if(contextDetails != null) {
                 Type objectMapType = new TypeToken<Map<Object, Object>>() {}.getType();
                 Map<Object, Object> ctxDetails = ApiGsonHelper.getBuilder().create().fromJson(contextDetails, objectMapType);
                 cmdInfoObj.put("ctxDetails", ctxDetails);
@@ -443,7 +443,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(StringUtils.obfuscatePasswordInJsonLikeString(job.getResult())));
         eventDescription.put("cmdInfo", cmdInfoObj);
         eventDescription.put("status", "" + job.getStatus());
-        // If the event.accountinfo boolean value is set, get the human-readable value for the username / domainname
+        // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
         if (UseEventAccountInfo.value()) {
             DomainVO domain = domainDao.findById(jobOwner.getDomainId());
             eventDescription.put("username", userJobOwner.getUsername());
@@ -494,12 +494,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         for (final Class<?> cmdClass : cmdClasses) {
-            final APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
-            if (apiCmdAnnotation == null) {
+            final APICommand at = cmdClass.getAnnotation(APICommand.class);
+            if (at == null) {
                 throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
             }
 
-            String apiName = apiCmdAnnotation.name();
+            String apiName = at.name();
             List<Class<?>> apiCmdList = s_apiNameCmdClassMap.get(apiName);
             if (apiCmdList == null) {
                 apiCmdList = new ArrayList<>();
@@ -540,18 +540,18 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // Use Multimap as the parameter map should be in the form (name=String, value=String[])
             // So parameter values are stored in a list for the same name key
-            // API TODO: Use Guava's (import com.google.common.collect.Multimap;)
+            // APITODO: Use Guava's (import com.google.common.collect.Multimap;)
             // (Immutable)Multimap<String, String> paramMultiMap = HashMultimap.create();
             // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             final Map parameterMap = new HashMap<String, String[]>();
             String responseType = HttpUtils.RESPONSE_TYPE_XML;
-            if (paramList != null) {
+            if(paramList != null) {
                 for (final NameValuePair param : paramList) {
                     if (param.getName().equalsIgnoreCase("response")) {
                         responseType = param.getValue();
                         continue;
                     }
-                    if (parameterMap.putIfAbsent(param.getName(), new String[]{param.getValue()}) != null) {
+                    if(parameterMap.putIfAbsent(param.getName(), new String[]{param.getValue()}) != null) {
                         String message = String.format("Query parameter '%s' has multiple values [%s, %s]. Only the last value will be respected." +
                             "It is advised to pass only a single parameter", param.getName(), param.getValue(), parameterMap.get(param.getName()));
                         logger.warn(StringUtils.cleanString(message));
@@ -755,7 +755,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             logger.info(ex.getDescription());
             throw ex;
         } catch (final Exception ex) {
-            logger.error("unhandled exception executing api command: {}", (command == null) ? "null" : command, ex);
+            logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command), ex);
             String errorMsg = ex.getMessage();
             if (!accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 // hide internal details to non-admin user for security reason
@@ -815,6 +815,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // in the api logs.
             log.append(response);
             return response;
+
         } else {
             dispatcher.dispatch(cmdObj, params, false);
 
@@ -1183,7 +1184,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     " for user.";
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED , errorMessage);
         } catch (final OriginDeniedException ex) {
-            // in this case, we can remove the session with extreme prejudice
+            // in this case we can remove the session with extreme prejudice
             final String errorMessage = String.format("The user '%s' is not allowed to execute commands from ip address '%s'.", user, remoteAddress.getHostName());
             logger.debug(errorMessage);
             return false;
@@ -1489,7 +1490,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Override
     public Class<?> getCmdClass(String cmdName) {
         List<Class<?>> cmdList = s_apiNameCmdClassMap.get(cmdName);
-        if (cmdList == null || cmdList.isEmpty())
+        if (cmdList == null || cmdList.size() == 0)
             return null;
         else if (cmdList.size() == 1)
             return cmdList.get(0);

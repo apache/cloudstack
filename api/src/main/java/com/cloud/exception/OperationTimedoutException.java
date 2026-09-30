@@ -19,8 +19,6 @@ package com.cloud.exception;
 import com.cloud.agent.api.Command;
 import com.cloud.utils.SerialVersionUID;
 
-import java.util.Arrays;
-
 /**
  * wait timeout.
  */
@@ -40,10 +38,9 @@ public class OperationTimedoutException extends CloudException {
     //
     transient Command[] _cmds;
     boolean _isActive;
-    boolean _isCancelled;
 
     public OperationTimedoutException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
-        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " timed out after " + time + " secs");
+        super("Commands " + seqId + " to Host " + agentId + " timed out after " + time + " secs");
         _agentId = agentId;
         _seqId = seqId;
         _time = time;
@@ -69,9 +66,5 @@ public class OperationTimedoutException extends CloudException {
 
     public boolean isActive() {
         return _isActive;
-    }
-
-    public boolean isCancelled() {
-        return _isCancelled;
     }
 }

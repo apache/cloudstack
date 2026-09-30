@@ -21,21 +21,21 @@ import java.util.List;
 import com.cloud.utils.component.Manager;
 
 public interface SyncQueueManager extends Manager {
-    SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit);
+    public SyncQueueVO queue(String syncObjType, long syncObjId, String itemType, long itemId, long queueSizeLimit);
 
-    SyncQueueItemVO dequeueFromOne(long queueId, Long msid);
+    public SyncQueueItemVO dequeueFromOne(long queueId, Long msid);
 
-    List<SyncQueueItemVO> dequeueFromAny(Long msid, int maxItems);
+    public List<SyncQueueItemVO> dequeueFromAny(Long msid, int maxItems);
 
-    void purgeItem(long queueItemId);
+    public void purgeItem(long queueItemId);
 
-    void returnItem(long queueItemId);
+    public void returnItem(long queueItemId);
 
-    List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
+    public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
 
-    List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive);
 
     void purgeAsyncJobQueueItemId(long asyncJobId);
 
-    void cleanupActiveQueueItems(Long msid, boolean exclusive);
+    public void cleanupActiveQueueItems(Long msid, boolean exclusive);
 }

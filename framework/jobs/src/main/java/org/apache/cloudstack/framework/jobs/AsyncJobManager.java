@@ -27,8 +27,8 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
 
-    String API_JOB_POOL_THREAD_PREFIX = "API-Job-Executor";
-    String WORK_JOB_POOL_THREAD_PREFIX = "Work-Job-Executor";
+    public static final String API_JOB_POOL_THREAD_PREFIX = "API-Job-Executor";
+    public static final String WORK_JOB_POOL_THREAD_PREFIX = "Work-Job-Executor";
 
     AsyncJobVO getAsyncJob(long jobId);
 
@@ -40,12 +40,20 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
+    /**
+     * As above, but with remove=false the row is left un-finalised: executing_msid is kept so the
+     * management server running the job can find it, and complete_msid stays null until that
+     * server has stopped the job's in-flight work and called finalizeCancelledJob.
+     */
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result, boolean remove);
+
+    List<AsyncJobVO> listCancelledJobsExecutingOn(long msid);
+
+    void finalizeCancelledJob(long jobId);
 
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-
     void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
             journalText, String journalObjJson);
 
@@ -118,14 +126,14 @@ public interface AsyncJobManager extends Manager {
      * This method will be deprecated after all code has been migrated to fully-asynchronous mode
      * that uses async-feature of joinJob/disjoinJob
      *
-     * @param wakeupTopicsOnMessageBus topic on message bus to wake up the wait
+     * @param wakupTopicsOnMessageBus topic on message bus to wakeup the wait
      * @param checkIntervalInMilliSeconds time to break out wait for checking predicate condition
      * @param timeoutInMilliseconds time out to break out the whole wait process
      * @param predicate
      * @return true, predicate condition is satisfied
      *             false, wait is timed out
      */
-    boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate);
+    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate);
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);
 

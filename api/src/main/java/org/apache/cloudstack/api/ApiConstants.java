@@ -339,6 +339,7 @@ public class ApiConstants {
     public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IS_2FA_ENABLED = "is2faenabled";
     public static final String IS_2FA_VERIFIED = "is2faverified";
+
     public static final String IS_2FA_MANDATED = "is2famandated";
     public static final String IS_ACTIVE = "isactive";
     public static final String IS_ASYNC = "isasync";
@@ -674,7 +675,6 @@ public class ApiConstants {
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_NAME = "usagename";
     public static final String USAGE_TYPE = "usagetype";
-    public static final String USAGE_SERVER = "usageserver";
     public static final String INCLUDE_TAGS = "includetags";
 
     public static final String VLAN = "vlan";

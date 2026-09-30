@@ -159,10 +159,9 @@ public class AsyncJobMonitor extends ManagerBase {
                         _activeInplaceThreads.decrementAndGet();
 
                     it.remove();
-                    _activeJobs.add(jobId);
-                    break;
                 }
             }
+            _activeJobs.remove(jobId);
         }
     }
 

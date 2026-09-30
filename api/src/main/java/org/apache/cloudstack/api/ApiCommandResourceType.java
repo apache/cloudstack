@@ -92,9 +92,7 @@ public enum ApiCommandResourceType {
     ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class),
     KmsKey(org.apache.cloudstack.kms.KMSKey.class),
     HsmProfile(org.apache.cloudstack.kms.HSMProfile.class),
-    Job(org.apache.cloudstack.jobs.JobInfo.class); // org.apache.cloudstack.framework.jobs.AsyncJob.class
-    // Job(null);
-
+    Job(org.apache.cloudstack.jobs.JobInfo.class);
 
     private final Class<?> clazz;
 

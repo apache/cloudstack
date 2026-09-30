@@ -126,6 +126,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         cancelledAsyncJobSearch = createSearchBuilder();
         cancelledAsyncJobSearch.and("status", cancelledAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+        cancelledAsyncJobSearch.and("executingMsid", cancelledAsyncJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
         cancelledAsyncJobSearch.done();
     }
 
@@ -329,15 +330,10 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     }
 
     @Override
-    public List<AsyncJobVO> getCancelledJobs() {
+    public List<AsyncJobVO> getCancelledJobs(long executingMsid) {
         SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
         sc.setParameters("status", JobInfo.Status.CANCELLED);
+        sc.setParameters("executingMsid", executingMsid);
         return listBy(sc);
-    }
-
-    @Override
-    public boolean isJobCancelled(Long jobId) {
-        AsyncJobVO job = findByIdIncludingRemoved(jobId);
-        return job != null && job.getStatus() == JobInfo.Status.CANCELLED;
     }
 }

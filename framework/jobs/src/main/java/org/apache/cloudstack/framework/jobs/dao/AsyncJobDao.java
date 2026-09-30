@@ -73,7 +73,5 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 
     AsyncJobVO getRelatedJob(String jobId);
 
-    List<AsyncJobVO> getCancelledJobs();
-
-    boolean isJobCancelled(Long jobId);
+    List<AsyncJobVO> getCancelledJobs(long executingMsid);
 }
