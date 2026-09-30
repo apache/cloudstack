@@ -525,8 +525,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         if (cmd.getDuration() != null) {
-            // Usage job timestamps are GMT; anchoring the window in the system zone would shift it
-            // by the offset on any management server that is not on UTC.
+            // usage job timestamps are GMT
             Date lastDate = new Date(DateUtil.currentGMTTime().getTime() - TimeUnit.HOURS.toMillis(cmd.getDuration()));
 
             SearchCriteria<UsageJobVO> scc = _usageJobDao.createSearchCriteria();

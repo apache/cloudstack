@@ -654,7 +654,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected List<DisconnectHook> _disconnectHooks = new CopyOnWriteArrayList<>();
-    // The same hooks, keyed by the request that registered them, so a cancellation can run them.
+    // the same hooks keyed by the request that registered them
     private final KvmCancellableRequests cancellableRequests = new KvmCancellableRequests();
 
     @Override
@@ -2405,14 +2405,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     @Override
     public Answer executeRequest(final Command cmd) {
-        // The agent stamps the request sequence on every command it dispatches; a command that did
-        // not come that way carries zero and is not tracked.
         final long requestSequence = cmd.getRequestSequence();
         cancellableRequests.begin(requestSequence, cmd);
         try {
             final Answer answer = executeRequestInternal(cmd);
-            // A wrapper whose libvirt job was aborted reports an ordinary failure; mark it so the
-            // management server can tell a cancellation from a failure.
+            // an aborted libvirt job surfaces as an ordinary failure; flag it as cancelled
             if (answer != null && !answer.getResult() && cancellableRequests.wasCancelRequested(requestSequence)) {
                 answer.setCancelled(true);
             }

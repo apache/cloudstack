@@ -99,8 +99,6 @@ public class DirectAgentAttacheTest {
 
     @Test
     public void testCancelLeavesNonCancellableRunningTaskAlone() throws Exception {
-        // a resource that cannot stop the backend work must not have its thread interrupted either,
-        // or the job is recorded as cancelled while the hypervisor finishes the operation
         final Request request = submitRunning(303L);
         Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(303L);
 
