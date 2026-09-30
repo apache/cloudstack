@@ -82,7 +82,7 @@ public class LibvirtCompressBackupCommandWrapper extends CommandWrapper<Compress
 
                 HashMap<String, String> options = new HashMap<>();
                 Backup.CompressionLibrary compressionLib = getCompressionLibrary(command, fullDeltaPath);
-                setCompressionTypeOptionIfAvailable(qemuImg, options, compressionLib);
+                qemuImg.setCompressionTypeOptionIfAvailable(options, compressionLib);
                 int coroutines = command.getCoroutines();
                 logger.info("Starting compression for backup delta [{}] with parent [{}] using [{}] coroutines.", child, parent, coroutines);
                 qemuImg.convert(originalBackup, compressedBackup, backingFile, options, null, new QemuImageOptions(originalBackup.getFormat(), originalBackup.getFileName(),
@@ -109,18 +109,6 @@ public class LibvirtCompressBackupCommandWrapper extends CommandWrapper<Compress
         }
 
         return command.getRateLimit();
-    }
-
-    /**
-     * Sets the compression type option if qemu-img is at least in version 5.1. Otherwise, will not set it and qemu will use zlib.
-     * */
-    private void setCompressionTypeOptionIfAvailable(QemuImg qemuImg, HashMap<String, String> options, Backup.CompressionLibrary compressionLib) {
-        if (qemuImg.getVersion() >= QemuImg.QEMU_5_1) {
-            options.put(COMPRESSION_TYPE, compressionLib.name());
-            return;
-        }
-        logger.warn("Qemu is at a lower version than 5.1, we will not be able to use zstd to compress backups. Only zlib is supported for this version. Current version is [{}].",
-                qemuImg.getVersion());
     }
 
     private Backup.CompressionLibrary getCompressionLibrary(CompressBackupCommand command, String fullDeltaPath) {
