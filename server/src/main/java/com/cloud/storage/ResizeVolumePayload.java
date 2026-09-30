@@ -22,6 +22,8 @@ public class ResizeVolumePayload {
     public final Long newMinIops;
     public final Long newMaxIops;
     public Long newDiskOfferingId;
+    public Long newReadRateIops;
+    public Long newWriteRateIops;
     public final Integer newHypervisorSnapshotReserve;
     public final boolean shrinkOk;
     public final String instanceName;
@@ -41,10 +43,12 @@ public class ResizeVolumePayload {
         this.newDiskOfferingId = null;
     }
 
-    public ResizeVolumePayload(Long newSize, Long newMinIops, Long newMaxIops, Long newDiskOfferingId, Integer newHypervisorSnapshotReserve, boolean shrinkOk,
-            String instanceName, long[] hosts, boolean isManaged) {
+    public ResizeVolumePayload(Long newSize, Long newMinIops, Long newMaxIops, Long newDiskOfferingId, Long newReadRateIops, Long newWriteRateIops,
+                               Integer newHypervisorSnapshotReserve, boolean shrinkOk, String instanceName, long[] hosts, boolean isManaged) {
         this(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
         this.newDiskOfferingId = newDiskOfferingId;
+        this.newReadRateIops = newReadRateIops;
+        this.newWriteRateIops = newWriteRateIops;
     }
 
     public Long getNewDiskOfferingId() {
