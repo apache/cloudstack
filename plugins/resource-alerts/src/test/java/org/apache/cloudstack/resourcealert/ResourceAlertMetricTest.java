@@ -41,12 +41,12 @@ public class ResourceAlertMetricTest {
     }
 
     @Test
-    public void testDiskMetricsApplyToVmAndVolume() {
+    public void testDiskMetricsApplyToVmOnly() {
         for (ResourceAlertMetric m : new ResourceAlertMetric[]{
                 ResourceAlertMetric.DISK_READ_IOPS, ResourceAlertMetric.DISK_WRITE_IOPS,
                 ResourceAlertMetric.DISK_READ_KBPS, ResourceAlertMetric.DISK_WRITE_KBPS}) {
             assertTrue(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.VirtualMachine));
-            assertTrue(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Volume));
+            assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Volume));
             assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.Host));
             assertFalse(m.name(), m.appliesTo(ResourceAlertRule.ResourceType.StoragePool));
         }
