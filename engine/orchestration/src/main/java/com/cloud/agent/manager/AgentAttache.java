@@ -129,6 +129,9 @@ public abstract class AgentAttache {
     protected long _nextSequence;
 
     protected AgentManagerImpl _agentMgr;
+    // Requests cancelled because their job was cancelled, as opposed to timed out. A waiting sender
+    // consults this so it reports a cancellation and not a timeout when the answer never comes.
+    private final Set<Long> _cancelledSequences = ConcurrentHashMap.newKeySet();
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
@@ -232,8 +235,33 @@ public abstract class AgentAttache {
         }
     }
 
+    /**
+     * Whether the resource can stop what it is doing for this request. Attaches that cannot ask their
+     * resource must answer false: claiming a cancellation that did not happen is the very mismatch
+     * this exists to prevent.
+     */
     protected boolean isExecutionCancellable(final long seq) {
-        return true;
+        return false;
+    }
+
+    /**
+     * Stops the resource's work for an executing request. Returns true only when it was stopped (or
+     * had nothing left to stop). Attaches that cannot reach their resource answer false.
+     */
+    protected boolean cancelRunning(final long seq) {
+        return false;
+    }
+
+    /**
+     * Cancels a request because the job it belongs to was cancelled: stops the resource's work for it,
+     * then drops the request. Distinct from {@link #cancel(long)}, which is also the timeout path and
+     * must never reach into the hypervisor.
+     */
+    public boolean cancelExecution(final long seq) {
+        _cancelledSequences.add(seq);
+        final boolean stopped = cancelRunning(seq);
+        cancel(seq);
+        return stopped;
     }
 
     protected synchronized int findRequest(final Request req) {
@@ -416,14 +444,13 @@ public abstract class AgentAttache {
 
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
-        final Long jobId = _agentMgr.getAsyncJobId();
         long seq = req.getSequence();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
-                if (isJobCancelled(jobId) && isExecutionCancellable(seq)) {
+                if (_cancelledSequences.contains(seq)) {
                     throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
                 }
                 Command[] cmds = req.getCommands();
@@ -437,7 +464,7 @@ public abstract class AgentAttache {
                     } catch (final InterruptedException e) {
                         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for the answer");
                         Thread.currentThread().interrupt();
-                        if (isJobCancelled(jobId) && isExecutionCancellable(seq)) {
+                        if (_cancelledSequences.contains(seq)) {
                             throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
                         }
                     }
@@ -451,6 +478,10 @@ public abstract class AgentAttache {
 
                     new Response(req, answers).logD("Received: ", false);
                     return answers;
+                }
+
+                if (_cancelledSequences.contains(seq)) {
+                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
                 }
 
                 answers = sl.getAnswers(); // Try it again.
@@ -499,12 +530,9 @@ public abstract class AgentAttache {
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
+            _cancelledSequences.remove(seq);
             unregisterListener(seq);
         }
-    }
-
-    private boolean isJobCancelled(final Long jobId) {
-        return jobId != null && _agentMgr.isJobCancelled(jobId);
     }
 
     private Answer[] waitForAnswerOfReconcileCommand(SynchronousListener sl, final long seq, final Command command, final int wait) {

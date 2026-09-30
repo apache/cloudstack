@@ -2197,7 +2197,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 continue;
             }
             logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
-            attache.cancel(request.second());
+            if (!attache.cancelExecution(request.second())) {
+                allCancelled = false;
+            }
         }
         return allCancelled;
     }
