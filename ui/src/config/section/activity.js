@@ -21,7 +21,6 @@ export default {
   name: 'activity',
   title: 'label.activity',
   icon: 'AuditOutlined',
-  permission: ['listEvents'],
   children: [
     {
       name: 'jobs',
