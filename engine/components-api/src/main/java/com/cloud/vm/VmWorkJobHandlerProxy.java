@@ -93,34 +93,36 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
 
         Method method = getHandlerMethod(work.getClass());
-        if (method == null) {
+        if (method != null) {
+
+            try {
+                if (logger.isDebugEnabled())
+                    logger.debug("Execute VM work job: " + work.getClass().getName() + work);
+
+                Object obj = method.invoke(_target, work);
+
+                if (logger.isDebugEnabled())
+                    logger.debug("Done executing VM work job: " + work.getClass().getName() + work);
+
+                assert (obj instanceof Pair);
+                return (Pair<JobInfo.Status, String>)obj;
+            } catch (InvocationTargetException e) {
+                logger.error("Invocation exception, caused by: " + e.getCause());
+
+                // legacy CloudStack code relies on checked exception for error handling
+                // we need to re-throw the real exception here
+                if (e.getCause() != null && e.getCause() instanceof Exception) {
+                    logger.info("Rethrow exception " + e.getCause());
+                    throw (Exception)e.getCause();
+                }
+
+                throw e;
+            }
+        } else {
             logger.error("Unable to find handler for VM work job: {} {}", work.getClass().getName(), work);
+
             RuntimeException ex = new RuntimeException("Unable to find handler for VM work job: " + work.getClass().getName());
             return new Pair<>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
-        }
-
-        try {
-            if (logger.isDebugEnabled())
-                logger.debug("Execute VM work job: {}{}", work.getClass().getName(), work);
-
-            Object obj = method.invoke(_target, work);
-
-            if (logger.isDebugEnabled())
-                logger.debug("Done executing VM work job: {}{}", work.getClass().getName(), work);
-
-            assert (obj instanceof Pair);
-            return (Pair<JobInfo.Status, String>)obj;
-        } catch (InvocationTargetException e) {
-            logger.error("Invocation exception, caused by: {}", String.valueOf(e.getCause()));
-
-            // legacy CloudStack code relies on checked exception for error handling
-            // we need to re-throw the real exception here
-            if (e.getCause() != null && e.getCause() instanceof Exception) {
-                logger.info("Rethrow exception {}", String.valueOf(e.getCause()));
-                throw (Exception)e.getCause();
-            }
-
-            throw e;
         }
     }
 }

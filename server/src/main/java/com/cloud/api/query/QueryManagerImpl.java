@@ -20,9 +20,6 @@ import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +31,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -926,6 +924,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
         Long startId = cmd.getStartId();
+        final Long jobId = cmd.getJobId();
         final String resourceUuid = getResourceUuid(cmd.getResourceId());
         final ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
         final String stateStr = cmd.getState();
@@ -983,6 +982,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         eventSearchBuilder.and("archived", eventSearchBuilder.entity().getArchived(), SearchCriteria.Op.EQ);
         eventSearchBuilder.and("resourceId", eventSearchBuilder.entity().getResourceId(), SearchCriteria.Op.EQ);
         eventSearchBuilder.and("resourceType", eventSearchBuilder.entity().getResourceType(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("asyncJobId", eventSearchBuilder.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             eventSearchBuilder.and().op("keywordType", eventSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
@@ -1009,6 +1009,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (id == null) {
                 sc.setParameters("id", startId);
             }
+        }
+
+        if (jobId != null) {
+            sc.setParameters("asyncJobId", jobId);
         }
 
         if (keyword != null) {
@@ -3221,12 +3225,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        boolean pendingJobsOnly = cmd.getJobStatuses() == null;
+        // A job is soft-deleted the moment it completes, so anything but the default pending-only
+        // listing has to reach into removed rows or it can never return a finished job.
+        final boolean filterByStatus = cmd.getJobStatuses() != null;
+        final boolean includeRemoved = filterByStatus || cmd.getEndDate() != null || cmd.getDuration() != null;
 
         Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
 
-        if (!pendingJobsOnly) {
+        if (filterByStatus) {
             sb.and("statuses", sb.entity().getStatus(), SearchCriteria.Op.IN);
         }
         sb.and("instanceTypeNEQ", sb.entity().getInstanceType(), SearchCriteria.Op.NEQ);
@@ -3260,7 +3267,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object endDate = cmd.getEndDate();
 
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
-        if (!pendingJobsOnly) {
+        if (filterByStatus) {
             sc.setParameters("statuses", cmd.getJobStatuses().toArray());
         }
         sc.setParameters("instanceTypeNEQ", AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE);
@@ -3292,11 +3299,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cmd.getDuration() != null) {
-            ZoneId systemZoneId = ZoneId.systemDefault();
-            LocalDateTime nowLocal = LocalDateTime.now();
-            ZonedDateTime nowZoned = nowLocal.atZone(systemZoneId);
-            ZonedDateTime lastDateTimeZoned = nowZoned.minusHours(cmd.getDuration());
-            Date lastDate = Date.from(lastDateTimeZoned.toInstant());
+            // Rows are written with DateUtil.currentGMTTime(); anchoring the window in the system
+            // zone would shift it by the offset on any management server that is not on UTC.
+            Date lastDate = new Date(DateUtil.currentGMTTime().getTime() - TimeUnit.HOURS.toMillis(cmd.getDuration()));
 
             SearchCriteria<AsyncJobJoinVO> scc = _jobJoinDao.createSearchCriteria();
             scc.addOr("created", SearchCriteria.Op.GTEQ, lastDate);
@@ -3318,10 +3323,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (cmd.getManagementServerId() != null) {
             ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
+            if (msHost == null) {
+                throw new InvalidParameterValueException("Unable to find a management server with the specified id");
+            }
             sc.setParameters("executingMsid", msHost.getMsid());
         }
 
-        return _jobJoinDao.searchAndCount(sc, searchFilter);
+        return _jobJoinDao.searchAndCount(sc, searchFilter, includeRemoved);
     }
 
     @Override

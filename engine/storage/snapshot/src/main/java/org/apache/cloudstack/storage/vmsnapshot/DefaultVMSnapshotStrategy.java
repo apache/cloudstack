@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
@@ -209,10 +208,6 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         } catch (OperationTimedoutException e) {
             logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
-        } catch (OperationCancelledException e) {
-            logger.debug("Creating Instance snapshot: " + vmSnapshot.getName() + " cancelled: " + e.toString());
-            throw new CloudRuntimeException("Creating Instance snapshot: " + vmSnapshot.getName() + " cancelled: " + e.toString());
-
         } catch (AgentUnavailableException e) {
             logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
@@ -269,7 +264,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
-        } catch (OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException e) {
             throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + e.getMessage());
         }
     }
@@ -454,7 +449,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 logger.error(errMsg);
                 throw new CloudRuntimeException(String.format("Unable to revert VM %s to snapshot %s.", userVm.getInstanceName(), vmSnapshotVO.getName()));
             }
-        } catch (OperationTimedoutException | OperationCancelledException e) {
+        } catch (OperationTimedoutException e) {
             logger.debug("Failed to revert Instance Snapshot", e);
             throw new CloudRuntimeException(e.getMessage());
         } catch (AgentUnavailableException e) {

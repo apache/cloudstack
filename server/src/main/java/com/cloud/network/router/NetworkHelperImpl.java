@@ -28,7 +28,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.validation.ChecksumUtil;
@@ -208,9 +207,6 @@ public class NetworkHelperImpl implements NetworkHelper {
             answers = _agentMgr.send(router.getHostId(), cmds);
         } catch (final OperationTimedoutException e) {
             logger.warn("Timed Out", e);
-            throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
-        } catch (final OperationCancelledException e) {
-            logger.warn("Operation Cancelled", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
 

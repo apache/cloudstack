@@ -16,10 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.job;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
@@ -54,11 +58,11 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the job", since="4.22.1")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.JOB_STATUS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "Comma-seperated list of job statuses (0 - Pending, 1 - Success, 2 - Failed, 3 - Cancelled) to list the async jobs. " +
-            "Only pending jobs are listed by default.", since = "4.23")
-    private List<Long> jobStatuses;
+    @Parameter(name = ApiConstants.JOB_STATUS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Comma-separated list of job statuses to list the async jobs by. " +
+            "Accepts names (IN_PROGRESS, SUCCEEDED, FAILED, CANCELLED) or ordinals (0, 1, 2, 3). Only pending jobs are listed by default.", since = "24.0")
+    private List<String> jobStatuses;
 
-    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in hours to list the async jobs started or completed within that period up to now.", since = "4.23")
+    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in hours to list the async jobs started or completed within that period up to now.", since = "24.0")
     private Integer duration;
 
     /////////////////////////////////////////////////////
@@ -94,15 +98,34 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
             throw new InvalidParameterValueException("Empty job status");
         }
 
-        for (Long status : jobStatuses) {
-            try {
-                JobInfo.Status.fromValue(Math.toIntExact(status));
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Invalid job status: " + status);
-            }
+        List<Long> statuses = new ArrayList<>(jobStatuses.size());
+        for (String status : jobStatuses) {
+            statuses.add((long)parseJobStatus(status).value());
+        }
+        return statuses;
+    }
+
+    private JobInfo.Status parseJobStatus(String status) {
+        if (StringUtils.isBlank(status)) {
+            throw new InvalidParameterValueException("Empty job status");
         }
 
-        return jobStatuses;
+        String value = status.trim();
+        try {
+            return JobInfo.Status.fromValue(Integer.parseInt(value));
+        } catch (NumberFormatException e) {
+            // not an ordinal, fall through and try the name
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException(String.format("Invalid job status: %s. Valid values are %s or their ordinals",
+                    status, Arrays.toString(JobInfo.Status.values())));
+        }
+
+        try {
+            return JobInfo.Status.valueOf(value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException(String.format("Invalid job status: %s. Valid values are %s or their ordinals",
+                    status, Arrays.toString(JobInfo.Status.values())));
+        }
     }
 
     public Integer getDuration() {

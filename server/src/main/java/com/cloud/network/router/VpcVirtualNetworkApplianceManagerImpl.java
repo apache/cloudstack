@@ -28,7 +28,6 @@ import java.util.Objects;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
@@ -931,7 +930,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         try {
             _agentMgr.send(router.getHostId(), cmds);
-        } catch (final OperationTimedoutException | OperationCancelledException e) {
+        } catch (final OperationTimedoutException e) {
             logger.debug("Failed to start remote access VPN: ", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
