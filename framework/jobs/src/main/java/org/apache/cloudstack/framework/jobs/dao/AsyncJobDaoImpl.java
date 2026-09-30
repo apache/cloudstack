@@ -330,6 +330,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     }
 
     @Override
+    public List<AsyncJobVO> listChildJobs(long parentJobId) {
+        SearchCriteria<AsyncJobVO> sc = relatedAsyncJobSearch.create();
+        sc.setParameters("related", String.valueOf(parentJobId));
+        return listBy(sc);
+    }
+
+    @Override
     public List<AsyncJobVO> getCancelledJobs(long executingMsid) {
         SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
         sc.setParameters("status", JobInfo.Status.CANCELLED);
