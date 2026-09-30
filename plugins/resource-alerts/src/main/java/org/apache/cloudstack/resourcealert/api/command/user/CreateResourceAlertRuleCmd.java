@@ -74,7 +74,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     private String severity;
 
     @Parameter(name = ApiConstants.MESSAGE, type = CommandType.STRING,
-            description = "custom message to include in the alert")
+            description = "custom message to include in the alert", length = 4096)
     private String message;
 
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.BOOLEAN,
