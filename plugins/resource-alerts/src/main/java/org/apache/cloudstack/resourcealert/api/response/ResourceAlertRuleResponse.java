@@ -79,6 +79,10 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     @Param(description = "minimum seconds between repeat firings of this rule")
     private int resetInterval;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "Enabled or Disabled; disabled rules are not checked")
+    private String state;
+
     @SerializedName(ApiConstants.WEBHOOK_IDS)
     @Param(description = "UUIDs of webhooks the rule delivers alerts to")
     private List<String> webhookIds;
@@ -123,6 +127,7 @@ public class ResourceAlertRuleResponse extends BaseResponse {
     public void setMessage(String message) { this.message = message; }
     public void setEmail(boolean email) { this.email = email; }
     public void setResetInterval(int resetInterval) { this.resetInterval = resetInterval; }
+    public void setState(String state) { this.state = state; }
     public void setWebhookIds(List<String> webhookIds) { this.webhookIds = webhookIds; }
     public void setWebhookNames(List<String> webhookNames) { this.webhookNames = webhookNames; }
     public void setAccountName(String accountName) { this.accountName = accountName; }

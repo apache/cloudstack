@@ -1113,4 +1113,28 @@ public class ResourceAlertManagerImplTest {
 
         assertFalse(manager.canFire(1L, VM_ID, 60));
     }
+
+    @Test
+    public void testDisabledRuleIsNotChecked() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        rule.setState(ResourceAlertRule.State.Disabled);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+
+        manager.evaluateRules();
+
+        verify(statsCollector, never()).getRecentVmStats(anyLong());
+        verify(alertDao, never()).persist(any());
+    }
+
+    @Test
+    public void testDisabledRuleIsStillRemovedWhenResourceIsGone() {
+        ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
+        rule.setState(ResourceAlertRule.State.Disabled);
+        when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
+        when(userVmDao.findById(VM_ID)).thenReturn(null);
+
+        manager.evaluateRules();
+
+        verify(ruleDao).remove(rule.getId());
+    }
 }

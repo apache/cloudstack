@@ -32,6 +32,7 @@ CREATE VIEW `cloud`.`resource_alert_rule_view` AS
         r.message,
         r.email,
         r.reset_interval,
+        r.state,
         r.created,
         r.updated,
         r.removed,

@@ -190,7 +190,7 @@ class TestResourceAlerts(cloudstackTestCase):
 
     @attr(tags=["advanced", "basic", "smoke"], required_hardware="false")
     def test_01_rule_lifecycle(self):
-        """Create, list, update and delete a rule on one VM"""
+        """Create, list, update, disable, enable and delete a rule on one VM"""
         rule = self.create_rule(self.apiclient, resourcetype="VirtualMachine", resourceid=self.vm1.id,
                                 metric="CPU_UTILIZATION", condition="GT", threshold=80, severity="HIGH",
                                 resetinterval=300)
@@ -204,6 +204,11 @@ class TestResourceAlerts(cloudstackTestCase):
         updated = rule.update(self.apiclient, threshold=90, severity="CRITICAL")
         self.assertEqual(updated.threshold, 90)
         self.assertEqual(updated.severity, "CRITICAL")
+        self.assertEqual(updated.state, "Enabled")
+
+        paused = rule.update(self.apiclient, state="Disabled")
+        self.assertEqual(paused.state, "Disabled")
+        self.assertEqual(rule.update(self.apiclient, state="Enabled").state, "Enabled")
 
         rule.delete(self.apiclient)
         self.forget(rule)

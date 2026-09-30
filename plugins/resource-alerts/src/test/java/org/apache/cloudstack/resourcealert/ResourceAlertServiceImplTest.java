@@ -706,4 +706,28 @@ public class ResourceAlertServiceImplTest {
 
         service.createResourceAlertRule(validVmCreateCmd());
     }
+
+    private UpdateResourceAlertRuleCmd stateUpdateCmd(String state, ResourceAlertRuleVO rule) {
+        UpdateResourceAlertRuleCmd cmd = mock(UpdateResourceAlertRuleCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getState()).thenReturn(state);
+        when(cmd.getThreshold()).thenReturn(null);
+        when(cmd.getResetInterval()).thenReturn(null);
+        when(ruleDao.findById(1L)).thenReturn(rule);
+        return cmd;
+    }
+
+    @Test
+    public void testUpdateDisablesRule() {
+        ResourceAlertRuleVO rule = mock(ResourceAlertRuleVO.class);
+
+        service.updateResourceAlertRule(stateUpdateCmd("disabled", rule));
+
+        verify(rule).setState(ResourceAlertRule.State.Disabled);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateFailsOnInvalidState() {
+        service.updateResourceAlertRule(stateUpdateCmd("Paused", mock(ResourceAlertRuleVO.class)));
+    }
 }

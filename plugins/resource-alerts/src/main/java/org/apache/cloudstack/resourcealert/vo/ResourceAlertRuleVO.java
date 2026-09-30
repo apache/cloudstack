@@ -88,6 +88,10 @@ public class ResourceAlertRuleVO implements ResourceAlertRule {
     @Column(name = "reset_interval")
     private int resetInterval;
 
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private State state = State.Enabled;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -134,6 +138,7 @@ public class ResourceAlertRuleVO implements ResourceAlertRule {
     @Override public String getMessage() { return message; }
     @Override public boolean isEmail() { return email; }
     @Override public int getResetInterval() { return resetInterval; }
+    @Override public State getState() { return state; }
     @Override public Date getCreated() { return created; }
 
     @Override
@@ -151,6 +156,7 @@ public class ResourceAlertRuleVO implements ResourceAlertRule {
     public void setMessage(String message) { this.message = message; }
     public void setEmail(boolean email) { this.email = email; }
     public void setResetInterval(int resetInterval) { this.resetInterval = resetInterval; }
+    public void setState(State state) { this.state = state; }
     public void setUpdated(Date updated) { this.updated = updated; }
     public void setRemoved(Date removed) { this.removed = removed; }
 }

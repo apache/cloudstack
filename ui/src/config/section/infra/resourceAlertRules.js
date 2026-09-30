@@ -30,11 +30,11 @@ export default {
   columns: () => {
     const cols = ['name', label('resourcetype'), {
       resourcename: (record) => record.resourceid ? record.resourcename : i18n.global.t('label.resource.alert.all.resources')
-    }, label('metric'), label('condition'), 'threshold', label('severity')]
+    }, label('metric'), label('condition'), 'threshold', label('severity'), 'state']
     if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
     return cols
   },
-  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'project', 'domain', 'created'],
+  details: ['name', 'id', 'resourcetype', 'resourcename', 'resourceid', 'metric', 'condition', 'threshold', 'severity', 'state', 'message', 'email', 'resetinterval', 'webhooknames', 'account', 'project', 'domain', 'created'],
   searchFilters: ['name', 'resourcetype'],
   tabs: [{
     name: 'details',
@@ -60,6 +60,30 @@ export default {
       dataView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/resourcealert/EditResourceAlertRule.vue')))
+    },
+    {
+      api: 'updateResourceAlertRule',
+      icon: 'play-circle-outlined',
+      label: 'label.enable.resource.alert.rule',
+      message: 'message.confirm.enable.resource.alert.rule',
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      defaultArgs: { state: 'Enabled' },
+      groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Enabled' } }) },
+      show: (record) => { return record.state === 'Disabled' }
+    },
+    {
+      api: 'updateResourceAlertRule',
+      icon: 'pause-circle-outlined',
+      label: 'label.disable.resource.alert.rule',
+      message: 'message.confirm.disable.resource.alert.rule',
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      defaultArgs: { state: 'Disabled' },
+      groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Disabled' } }) },
+      show: (record) => { return record.state !== 'Disabled' }
     },
     {
       api: 'deleteResourceAlertRule',

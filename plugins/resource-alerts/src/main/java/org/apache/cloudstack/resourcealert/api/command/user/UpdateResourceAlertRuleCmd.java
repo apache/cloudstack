@@ -79,6 +79,10 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
             description = "new minimum seconds between repeat firings")
     private Integer resetInterval;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
+            description = "Enabled or Disabled; a disabled rule is not checked and fires no alerts")
+    private String state;
+
     @Parameter(name = ApiConstants.WEBHOOK_IDS, type = CommandType.LIST, collectionType = CommandType.STRING,
             description = "UUIDs of webhooks to deliver alerts of this rule to; replaces the current list")
     private List<String> webhookIds;
@@ -95,6 +99,7 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
     public String getMessage() { return message; }
     public Boolean getEmail() { return email; }
     public Integer getResetInterval() { return resetInterval; }
+    public String getState() { return state; }
     public List<String> getWebhookIds() { return webhookIds; }
     public boolean isCleanupWebhooks() { return Boolean.TRUE.equals(cleanupWebhooks); }
 

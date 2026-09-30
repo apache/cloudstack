@@ -79,6 +79,10 @@ public class ResourceAlertRuleJoinVO implements ControlledEntity {
     @Column(name = "reset_interval")
     private int resetInterval;
 
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private ResourceAlertRule.State state;
+
     @Column(name = "created")
     private Date created;
 
@@ -134,6 +138,7 @@ public class ResourceAlertRuleJoinVO implements ControlledEntity {
     public String getMessage() { return message; }
     public boolean isEmail() { return email; }
     public int getResetInterval() { return resetInterval; }
+    public ResourceAlertRule.State getState() { return state; }
     public Date getCreated() { return created; }
     public Date getUpdated() { return updated; }
     public Date getRemoved() { return removed; }

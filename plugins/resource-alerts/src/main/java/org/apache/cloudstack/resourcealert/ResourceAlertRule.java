@@ -29,6 +29,10 @@ public interface ResourceAlertRule extends ControlledEntity, Identity, InternalI
         VirtualMachine, Volume, Host, StoragePool
     }
 
+    enum State {
+        Enabled, Disabled
+    }
+
     String getName();
     ResourceType getResourceType();
     Long getResourceId();
@@ -39,5 +43,6 @@ public interface ResourceAlertRule extends ControlledEntity, Identity, InternalI
     String getMessage();
     boolean isEmail();
     int getResetInterval();
+    State getState();
     Date getCreated();
 }
