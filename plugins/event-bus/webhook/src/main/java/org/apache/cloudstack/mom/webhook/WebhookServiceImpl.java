@@ -297,12 +297,13 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         event.setResourceAccountUuid(account != null ? account.getUuid() : null);
         for (Long webhookId : webhookIds) {
             WebhookVO webhook = webhookDao.findById(webhookId);
+            // Info level, as the caller picked these webhooks and would otherwise not know why nothing arrived.
             if (webhook == null || !Webhook.State.Enabled.equals(webhook.getState())) {
-                logger.debug("Skipping delivering {} to webhook ID: {} as it is missing or disabled", event, webhookId);
+                logger.info("Skipping delivering {} to webhook ID: {} as it is missing or disabled", eventType, webhookId);
                 continue;
             }
             if (!isEventMatchingFilters(event, webhookFiltersCache.get(webhook.getId()))) {
-                logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
+                logger.info("Skipping delivering {} to {} as it doesn't match the webhook filters", eventType, webhook);
                 continue;
             }
             WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
