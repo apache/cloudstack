@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -1035,6 +1036,14 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(statsCollector, times(2)).getRecentVmStats(VM_ID);
+    }
+
+    @Test
+    public void testEmailSenderIsBounded() {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) new ResourceAlertManagerImpl().emailExecutor;
+        assertEquals(1, executor.getMaximumPoolSize());
+        assertEquals(ResourceAlertManagerImpl.EMAIL_QUEUE_SIZE, executor.getQueue().remainingCapacity());
+        executor.shutdownNow();
     }
 
 }

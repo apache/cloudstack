@@ -24,9 +24,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -126,11 +128,15 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     @Inject ManagementServerHostDao managementServerHostDao;
 
     private ScheduledExecutorService executor;
-    ExecutorService emailExecutor = Executors.newCachedThreadPool(r -> {
-        Thread t = new Thread(r, "ResourceAlertEmailSender");
-        t.setDaemon(true);
-        return t;
-    });
+    static final int EMAIL_QUEUE_SIZE = 100;
+
+    // One sender and a bounded queue, so a slow mail server or an alert storm can't pile up threads.
+    ExecutorService emailExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+            new ArrayBlockingQueue<>(EMAIL_QUEUE_SIZE), r -> {
+                Thread t = new Thread(r, "ResourceAlertEmailSender");
+                t.setDaemon(true);
+                return t;
+            }, (r, e) -> logger.warn("Dropping resource alert email as {} emails are already waiting to be sent", EMAIL_QUEUE_SIZE));
 
     private final Map<Long, VmStats> vmStatsCache = new HashMap<>();
 
