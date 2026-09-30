@@ -874,4 +874,12 @@ public class VmwareResourceTest {
         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
+
+    @Test
+    public void testUnknownRequestSequenceIsNotCancellable() {
+        // a resource that is not tracking a request must not claim it can cancel it, or the job is
+        // marked cancelled while the hypervisor finishes the operation
+        assertFalse(vmwareResource.isRequestSequenceCancellable(4242L));
+        assertFalse(vmwareResource.cancelRequestSequence(4242L));
+    }
 }
