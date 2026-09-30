@@ -1761,21 +1761,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             logger.debug("Checking suitable pools for volume [{}, {}] of VM [{}].", toBeCreated, toBeCreated.getVolumeType().name(), vmProfile);
-
-            if (toBeCreated.getState() == Volume.State.Allocated && toBeCreated.getPoolId() != null) {
-                toBeCreated.setPoolId(null);
-                if (!_volsDao.update(toBeCreated.getId(), toBeCreated)) {
-                    throw new CloudRuntimeException(String.format("Error updating volume [%s] to clear pool Id.", toBeCreated));
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Setting pool_id to NULL for volume id={} as it is in Allocated state", toBeCreated);
-                }
-            }
-            // If the plan specifies a poolId, it means that this VM's ROOT
-            // volume is ready and the pool should be reused.
-            // In this case, also check if rest of the volumes are ready and can
-            // be reused.
-            if ((plan.getPoolId() != null || (toBeCreated.getVolumeType() == Volume.Type.DATADISK && toBeCreated.getPoolId() != null && toBeCreated.getState() == Volume.State.Ready)) &&
+            // If the plan specifies a poolId, prefer the existing pool if it is still suitable;
+            // otherwise fall through to the allocator so the VM can still start.
+            if (plan.getPoolId() != null || (toBeCreated.getPoolId() != null &&
+                    (toBeCreated.getState() == Volume.State.Ready || toBeCreated.getState() == Volume.State.Allocated)) &&
                     checkIfPoolCanBeReused(vmProfile, plan, avoid, suitableVolumeStoragePools, readyAndReusedVolumes, toBeCreated)) {
                 continue;
             }
@@ -1896,10 +1885,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (plan.getDataCenterId() == exstPoolDcId && ((plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId) ||
                 (dataStore != null && dataStore.getScope() != null && dataStore.getScope().getScopeType() == ScopeType.ZONE))) {
-            logger.debug("Pool [{}] of volume [{}] used by VM [{}] fits the specified plan. No need to reallocate a pool for this volume.",
+            logger.debug("Pool [{}] of volume [{}] used by VM [{}] fits the specified plan. Planner will use existing pool for volume.",
                     pool, toBeCreated, vmProfile);
             suitablePools.add(pool);
             suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+            // Allocated/Creating volumes still need to be created, so they aren't ready to use.
             if (!(toBeCreated.getState() == Volume.State.Allocated || toBeCreated.getState() == Volume.State.Creating)) {
                 readyAndReusedVolumes.add(toBeCreated);
             }
