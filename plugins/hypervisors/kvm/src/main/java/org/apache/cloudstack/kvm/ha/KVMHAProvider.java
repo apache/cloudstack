@@ -21,6 +21,7 @@ package org.apache.cloudstack.kvm.ha;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 
 import org.apache.cloudstack.api.response.OutOfBandManagementResponse;
@@ -89,15 +90,51 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
         try {
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
-                return resp.getSuccess();
+                if (resp.getSuccess()) {
+                    return true;
+                }
+                logger.warn("OOBM fence operation failed for the host {}", r);
+                return fenceHostViaStorageHeartbeat(r);
             } else {
                 logger.warn("OOBM fence operation failed for this host {}", r);
-                return false;
+                return fenceHostViaStorageHeartbeat(r);
             }
         } catch (Exception e){
             logger.warn("OOBM service is not configured or enabled for this host {} error is {}", r, e.getMessage());
+            if (fenceHostViaStorageHeartbeat(r)) {
+                return true;
+            }
             throw new HAFenceException(String.format("OBM service is not configured or enabled for this host %s", r.getName()), e);
         }
+    }
+
+    /**
+     * Fallback fencing for when out-of-band management cannot power off the host, e.g. a
+     * complete power failure that takes down the BMC (IPMI/iDRAC/iLO) together with the host.
+     * The host is considered fenced only when the neighbouring hosts in the cluster positively
+     * report its storage heartbeat as expired; it is never considered fenced when any check
+     * still sees it alive or when the heartbeat check itself fails.
+     */
+    protected boolean fenceHostViaStorageHeartbeat(final Host host) {
+        if (!isStorageHeartbeatFencingEnabled(host)) {
+            return false;
+        }
+        try {
+            final Status hostStatus = hostActivityChecker.getHostAgentStatus(host);
+            if (hostStatus == Status.Down) {
+                logger.warn("Neighbouring hosts report the storage heartbeat of the host {} as expired, considering it fenced as [{}] is enabled",
+                        host, KVMHAConfig.KvmHAFenceOnStorageHeartbeat.key());
+                return true;
+            }
+            logger.warn("Not considering the host {} fenced via storage heartbeat as its reported status is [{}]", host, hostStatus);
+        } catch (Exception e) {
+            logger.warn("Storage heartbeat fencing check failed for the host {}", host, e);
+        }
+        return false;
+    }
+
+    protected boolean isStorageHeartbeatFencingEnabled(final Host host) {
+        return KVMHAConfig.KvmHAFenceOnStorageHeartbeat.valueIn(host.getClusterId());
     }
 
     @Override
@@ -152,6 +189,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             KVMHAConfig.KvmHADegradedMaxPeriod,
             KVMHAConfig.KvmHARecoverWaitPeriod,
             KVMHAConfig.KvmHARecoverAttemptThreshold,
+            KVMHAConfig.KvmHAFenceOnStorageHeartbeat,
         };
     }
 }
