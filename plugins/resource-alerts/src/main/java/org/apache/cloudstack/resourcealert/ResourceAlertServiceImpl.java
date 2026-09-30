@@ -214,6 +214,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             validateResetInterval(cmd.getResetInterval());
             rule.setResetInterval(cmd.getResetInterval());
         }
+        if (StringUtils.isNotBlank(cmd.getState())) rule.setState(parseState(cmd.getState()));
         rule.setUpdated(new Date());
 
         if (cmd.isCleanupWebhooks()) {
@@ -318,6 +319,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         r.setMessage(vo.getMessage());
         r.setEmail(vo.isEmail());
         r.setResetInterval(vo.getResetInterval());
+        r.setState(vo.getState() != null ? vo.getState().name() : null);
         List<Pair<String, String>> webhooks = describeWebhooks(vo.getId());
         r.setWebhookIds(webhooks.stream().map(Pair::first).collect(Collectors.toList()));
         // Left out when empty so the UI hides it
@@ -551,6 +553,14 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             throw new InvalidParameterValueException("Invalid resourcetype: " + value + ". Valid values: VirtualMachine, Volume, Host, StoragePool");
         }
         return type;
+    }
+
+    private ResourceAlertRule.State parseState(String value) {
+        ResourceAlertRule.State state = EnumUtils.getEnumIgnoreCase(ResourceAlertRule.State.class, value);
+        if (state == null) {
+            throw new InvalidParameterValueException("Invalid state: " + value + ". Valid values: Enabled, Disabled");
+        }
+        return state;
     }
 
     private AlertCondition parseCondition(String value) {

@@ -214,6 +214,9 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                         ruleDao.remove(rule.getId());
                         continue;
                     }
+                    if (ResourceAlertRule.State.Disabled.equals(rule.getState())) {
+                        continue;
+                    }
                     evaluateRule(rule);
                 } catch (Exception e) {
                     logger.warn("Failed to evaluate resource alert rule {}", rule.getUuid(), e);

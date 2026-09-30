@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`resource_alert_rules` (
     `message` varchar(4096) DEFAULT NULL,
     `email` tinyint(1) NOT NULL DEFAULT 0,
     `reset_interval` int unsigned NOT NULL DEFAULT 600 COMMENT 'minimum seconds between repeat firings of this rule',
+    `state` varchar(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Enabled or Disabled; disabled rules are not checked',
     `created` datetime DEFAULT NULL,
     `updated` datetime DEFAULT NULL,
     `removed` datetime DEFAULT NULL,
