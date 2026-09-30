@@ -45,6 +45,7 @@ import org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
 import org.springframework.stereotype.Component;
@@ -127,6 +128,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     NetworkOfferingDetailsDao _networkOfferingDetailsDao;
     @Inject
+    ObjectStoreDetailsDao _objectStoreDetailsDao;
+    @Inject
     ResourceManagerUtil resourceManagerUtil;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
@@ -162,6 +165,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.SnapshotPolicy, _snapshotPolicyDetailsDao);
         s_daoMap.put(ResourceObjectType.GuestOs, _guestOsDetailsDao);
         s_daoMap.put(ResourceObjectType.NetworkOffering, _networkOfferingDetailsDao);
+        s_daoMap.put(ResourceObjectType.ObjectStore, _objectStoreDetailsDao);
         return true;
     }
 
