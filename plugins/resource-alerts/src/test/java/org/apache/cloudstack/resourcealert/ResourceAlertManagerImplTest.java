@@ -1046,4 +1046,12 @@ public class ResourceAlertManagerImplTest {
         executor.shutdownNow();
     }
 
+    @Test
+    public void testRemoveStaleWebhookLinks() {
+        when(ruleWebhookDao.removeLinksToRemovedWebhooks()).thenReturn(2);
+
+        manager.removeStaleWebhookLinks();
+
+        verify(ruleWebhookDao).removeLinksToRemovedWebhooks();
+    }
 }

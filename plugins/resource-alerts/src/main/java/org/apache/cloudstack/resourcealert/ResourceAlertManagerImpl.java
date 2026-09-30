@@ -303,6 +303,13 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         }
     }
 
+    void removeStaleWebhookLinks() {
+        int removed = ruleWebhookDao.removeLinksToRemovedWebhooks();
+        if (removed > 0) {
+            logger.debug("Removed {} resource alert rule links to deleted webhooks", removed);
+        }
+    }
+
     class EvaluationTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -315,6 +322,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                     if (isEvaluatingServer()) {
                         evaluateRules();
                         removeExpiredAlerts();
+                        removeStaleWebhookLinks();
                     }
                 } finally {
                     lock.unlock();
