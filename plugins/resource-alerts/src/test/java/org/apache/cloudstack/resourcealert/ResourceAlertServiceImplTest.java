@@ -602,4 +602,14 @@ public class ResourceAlertServiceImplTest {
 
         verify(rule).setName("mine");
     }
+
+    @Test
+    public void testCreateAcceptsResourceTypeInAnyCase() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("virtualmachine");
+
+        service.createResourceAlertRule(cmd);
+
+        assertEquals(ResourceAlertRule.ResourceType.VirtualMachine, persistedRuleCapture().getResourceType());
+    }
 }
