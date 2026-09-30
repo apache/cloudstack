@@ -129,6 +129,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     private ScheduledExecutorService executor;
     static final int EMAIL_QUEUE_SIZE = 100;
+    static final long COOLDOWN_TOLERANCE_MILLIS = 5000L;
 
     // One sender and a bounded queue, so a slow mail server or an alert storm can't pile up threads.
     ExecutorService emailExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
@@ -525,11 +526,13 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return locator != null ? statsCollector.getVolumeStats(locator) : null;
     }
 
-    private boolean canFire(long ruleId, Long resourceId, int resetInterval) {
+    // Alert times are stored without milliseconds and runs drift a little, so a cooldown equal to
+    // the check interval would otherwise skip every other check.
+    boolean canFire(long ruleId, Long resourceId, int resetInterval) {
         ResourceAlertVO last = alertDao.findLastFiredForRule(ruleId, resourceId);
         if (last == null) return true;
-        long secondsSinceLast = (System.currentTimeMillis() - last.getAlertTimestamp().getTime()) / 1000;
-        return secondsSinceLast >= resetInterval;
+        long millisSinceLast = System.currentTimeMillis() - last.getAlertTimestamp().getTime();
+        return millisSinceLast >= TimeUnit.SECONDS.toMillis(resetInterval) - COOLDOWN_TOLERANCE_MILLIS;
     }
 
     private void fireAlert(ResourceAlertRuleVO rule, Long resourceId, double value) {
