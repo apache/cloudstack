@@ -1095,6 +1095,7 @@
                             <exclude>systemvm/agent/noVNC/**</exclude>
                             <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
+                            <exclude>systemvm/test/frr-bgppeers-ipv4-ipv6.conf</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>tools/appliance/*/template.json</exclude>
                             <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
