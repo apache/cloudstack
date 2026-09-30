@@ -18,7 +18,6 @@ package com.cloud.agent;
 
 import java.util.Map;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Answer;
@@ -34,10 +33,12 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
 
+import org.apache.cloudstack.jobs.JobCancellationHandler;
+
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
-public interface AgentManager {
+public interface AgentManager extends JobCancellationHandler {
     ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
@@ -86,7 +87,7 @@ public interface AgentManager {
      * @return an Answer
      */
 
-    Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
+    Answer send(Long hostId, Command cmd) throws AgentUnavailableException, OperationTimedoutException;
 
     /**
      * Synchronous sending a list of commands to the agent.
@@ -101,9 +102,9 @@ public interface AgentManager {
      *            should the agent stop execution on the first error.
      * @return an array of Answer
      */
-    Answer[] send(Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
+    Answer[] send(Long hostId, Commands cmds) throws AgentUnavailableException, OperationTimedoutException;
 
-    Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException;
+    Answer[] send(Long hostId, Commands cmds, int timeout) throws AgentUnavailableException, OperationTimedoutException;
 
     /**
      * Asynchronous sending of a command to the agent.
@@ -181,4 +182,11 @@ public interface AgentManager {
     int getHostSshPort(HostVO host);
 
     Long getAsyncJobId();
+
+    /**
+     * True when the given job has been cancelled. Answered from an in-memory view refreshed by the
+     * cancelled-jobs poller, so it is cheap enough to consult on the command path.
+     */
+    boolean isJobCancelled(Long jobId);
+
 }

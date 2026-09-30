@@ -102,65 +102,82 @@ public class DirectAgentAttache extends AgentAttache {
         cleanup(state);
     }
 
-    @Override
-    protected synchronized boolean isExecutionCancellable(final long seq) {
-        if (_taskFutures.containsKey(seq)) {
-            final ServerResource resource = _resource;
-            return resource == null || resource.isRequestSequenceCancellable(seq);
-        }
-
-        if (_taskRequests.containsKey(seq)) {
-            return true;
-        }
-
+    private synchronized boolean isQueued(final long seq) {
         for (Task task : tasks) {
             if (task._req.getSequence() == seq) {
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
     @Override
-    protected synchronized void cancel(final long seq) {
-        Request request = _taskRequests.get(seq);
-        if (request != null) {
-            request.cancel();
-            _taskRequests.remove(seq);
-            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Removed task request.");
+    protected boolean isExecutionCancellable(final long seq) {
+        // Still queued: it has not reached the resource, so dropping it strands nothing.
+        if (isQueued(seq)) {
+            return true;
         }
 
+        if (!_taskFutures.containsKey(seq)) {
+            // Neither queued nor running here. We have nothing to stop and no way to know what the
+            // backend is doing, so do not claim it can be cancelled.
+            return false;
+        }
+
+        final ServerResource resource = _resource;
+        // Deliberately not holding the attache lock: asking the resource means a call out to the
+        // hypervisor, and the send path needs the lock to keep queueing work.
+        return resource != null && resource.isRequestSequenceCancellable(seq);
+    }
+
+    @Override
+    protected void cancel(final long seq) {
+        if (removeQueuedTask(seq)) {
+            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled queued task.");
+            super.cancel(seq);
+            return;
+        }
+
+        final Future<?> future = _taskFutures.get(seq);
+        if (future == null) {
+            super.cancel(seq);
+            return;
+        }
+
+        final ServerResource resource = _resource;
+        if (resource == null || !resource.isRequestSequenceCancellable(seq)) {
+            logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but the command is not cancellable, letting it run to completion.");
+            return;
+        }
+
+        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelling request sequence at the resource.");
+        if (!resource.cancelRequestSequence(seq)) {
+            logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Resource could not cancel the command, letting it run to completion.");
+            return;
+        }
+
+        final Request request = _taskRequests.get(seq);
+        if (request != null) {
+            request.cancel();
+        }
+        final boolean cancelled = future.cancel(true);
+        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Running task " + (cancelled ? "cancelled" : "not cancelled"));
+
+        super.cancel(seq);
+    }
+
+    private synchronized boolean removeQueuedTask(final long seq) {
         final Iterator<Task> iterator = tasks.iterator();
         while (iterator.hasNext()) {
             final Task task = iterator.next();
             if (task._req.getSequence() == seq) {
                 task._req.cancel();
                 iterator.remove();
-                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled queued task.");
-                super.cancel(seq);
-                return;
+                _taskRequests.remove(seq);
+                return true;
             }
         }
-
-        final Future<?> future = _taskFutures.get(seq);
-        if (future != null) {
-            final ServerResource resource = _resource;
-            if (resource != null && !resource.isRequestSequenceCancellable(seq)) {
-                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but command is not cancellable, continuing execution.");
-                return;
-            }
-
-            if (resource != null) {
-                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancel request sequence.");
-                resource.cancelRequestSequence(seq);
-            }
-
-            final boolean cancelled = future.cancel(true);
-            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Running task " + (cancelled ? "cancelled" : "not cancelled"));
-            _taskFutures.remove(seq);
-        }
-
-        super.cancel(seq);
+        return false;
     }
 
     @Override
@@ -397,7 +414,7 @@ public class DirectAgentAttache extends AgentAttache {
                 for (int i = 0; i < cmds.length; i++) {
                     if (Thread.currentThread().isInterrupted() || _req.isCancelled()) {
                         for (int j = i; j < cmds.length; j++) {
-                            answers.add(new Answer(cmds[j], false, "Command cancelled"));
+                            answers.add(Answer.createCancelledAnswer(cmds[j], "Command cancelled"));
                         }
                         break;
                     }
@@ -421,7 +438,7 @@ public class DirectAgentAttache extends AgentAttache {
                                     && resource.isRequestSequenceCancellable(seq)) {
                                 answers.add(answer);
                                 for (int j = i + 1; j < cmds.length; j++) {
-                                    answers.add(new Answer(cmds[j], false, "Command cancelled"));
+                                    answers.add(Answer.createCancelledAnswer(cmds[j], "Command cancelled"));
                                 }
                                 break;
                             }
@@ -467,7 +484,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 ArrayList<Answer> answers = new ArrayList<>(cmds.length);
                 for (Command cmd : cmds) {
-                    answers.add(new Answer(cmd, false, reason != null ? reason : "Task cancelled"));
+                    answers.add(Answer.createCancelledAnswer(cmd, reason != null ? reason : "Task cancelled"));
                 }
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
                 processAnswers(seq, resp);

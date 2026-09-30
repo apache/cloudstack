@@ -39,8 +39,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.command.ReconcileAnswer;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
@@ -416,16 +414,16 @@ public abstract class AgentAttache {
         }
     }
 
-    public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
-        Long jobId = _agentMgr.getAsyncJobId();
+        final Long jobId = _agentMgr.getAsyncJobId();
         long seq = req.getSequence();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
-                if (_agentMgr._asyncJobDao.isJobCancelled(jobId) && isExecutionCancellable(seq)) {
+                if (isJobCancelled(jobId) && isExecutionCancellable(seq)) {
                     throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
                 }
                 Command[] cmds = req.getCommands();
@@ -437,18 +435,16 @@ public abstract class AgentAttache {
                     try {
                         answers = sl.waitFor(wait);
                     } catch (final InterruptedException e) {
-                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for job commands processing");
+                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for the answer");
                         Thread.currentThread().interrupt();
-                        if (_agentMgr._asyncJobDao.isJobCancelled(jobId) && isExecutionCancellable(seq)) {
-                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled during waiting for job commands processing");
+                        if (isJobCancelled(jobId) && isExecutionCancellable(seq)) {
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
                         }
                     }
                 }
                 if (answers != null) {
                     for (Answer answer : answers) {
-                        if (answer != null && !answer.getResult() &&
-                                answer.getDetails() != null &&
-                                answer.getDetails().contains("cancelled")) {
+                        if (answer != null && answer.isCancelled()) {
                             throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, answer.getDetails());
                         }
                     }
@@ -486,7 +482,7 @@ public abstract class AgentAttache {
             }
             throw e;
         } catch (OperationCancelledException e) {
-            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Operation cancelled: " + req.toString());
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled: " + req.toString());
             cancel(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
@@ -507,18 +503,8 @@ public abstract class AgentAttache {
         }
     }
 
-    private Long getAsyncJobId() {
-        Long jobId = null;
-        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
-        if (context != null && context.getJob() != null) {
-            AsyncJob job = context.getJob();
-            if (job.getRelated() != null && !job.getRelated().isEmpty()) {
-                jobId = Long.parseLong(job.getRelated());
-            } else {
-                jobId = job.getId();
-            }
-        }
-        return jobId;
+    private boolean isJobCancelled(final Long jobId) {
+        return jobId != null && _agentMgr.isJobCancelled(jobId);
     }
 
     private Answer[] waitForAnswerOfReconcileCommand(SynchronousListener sl, final long seq, final Command command, final int wait) {
