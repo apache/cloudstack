@@ -94,6 +94,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
+    ConfigKey<Boolean> NASBackupCompressionEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.backup.compression.enabled",
+            "false",
+            "Enable qcow2 compression for NAS backup files.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
     ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.incremental.enabled",
             "false",
@@ -103,6 +111,38 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     "Toggling this is safe at any time: switching off forces the next backup to be a fresh " +
                     "full anchor (existing chains stay restorable), switching back on resumes incrementals " +
                     "on the next full + incremental cycle.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Boolean> NASBackupEncryptionEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.backup.encryption.enabled",
+            "false",
+            "Enable LUKS encryption for NAS backup files.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<String> NASBackupEncryptionPassphrase = new ConfigKey<>("Secure", String.class,
+            "nas.backup.encryption.passphrase",
+            "",
+            "Passphrase for LUKS encryption of NAS backup files. Required when encryption is enabled.",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Integer> NASBackupBandwidthLimitMbps = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.bandwidth.limit.mbps",
+            "0",
+            "Bandwidth limit in MiB/s for backup operations (0 = unlimited).",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
+    ConfigKey<Boolean> NASBackupIntegrityCheckEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "nas.backup.integrity.check",
+            "false",
+            "Run qemu-img check on backup files after creation to verify integrity.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -282,6 +322,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // chain/checkpoint metadata is created, sent to the agent, or persisted (legacy-full).
         Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
         if (incrementalEnabled == null || !incrementalEnabled) {
+            return ChainDecision.legacyFull();
+        }
+
+        // Compression and LUKS encryption rewrite each backup file with qemu-img convert. On an
+        // incremental file that either flattens it through its backing chain (a full-size copy that
+        // defeats the chain) or leaves an encrypted child whose parent needs its own secret to open.
+        // Until both features are chain-aware, a zone with either one enabled takes full backups.
+        Long zoneId = vm.getDataCenterId();
+        if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))
+                || Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
             return ChainDecision.legacyFull();
         }
 
@@ -583,6 +633,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);
 
+        // Pass optional backup enhancement settings from zone-scoped configs
+        applyBackupEnhancementDetails(command, vm.getDataCenterId());
+
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
@@ -653,6 +706,32 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
     }
 
+    /**
+     * Translates the zone-scoped backup-enhancement settings (compression, encryption,
+     * bandwidth limit, integrity check) into details on the {@link TakeBackupCommand}.
+     * Fails fast if encryption is enabled without a configured passphrase.
+     */
+    protected void applyBackupEnhancementDetails(TakeBackupCommand command, Long zoneId) {
+        if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))) {
+            command.addDetail(TakeBackupCommand.DETAIL_COMPRESSION, "true");
+        }
+        if (Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
+            String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new CloudRuntimeException("NAS backup encryption is enabled but no passphrase is configured (nas.backup.encryption.passphrase)");
+            }
+            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION, "true");
+            command.addDetail(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE, passphrase);
+        }
+        Integer bandwidthLimit = NASBackupBandwidthLimitMbps.valueIn(zoneId);
+        if (bandwidthLimit != null && bandwidthLimit > 0) {
+            command.addDetail(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT, String.valueOf(bandwidthLimit));
+        }
+        if (Boolean.TRUE.equals(NASBackupIntegrityCheckEnabled.valueIn(zoneId))) {
+            command.addDetail(TakeBackupCommand.DETAIL_INTEGRITY_CHECK, "true");
+        }
+    }
+
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
@@ -676,6 +755,19 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setDetails(details);
 
         return backupDao.persist(backup);
+    }
+
+    /**
+     * Restore-side counterpart of {@link #applyBackupEnhancementDetails}: hands the zone's LUKS passphrase
+     * to the host so encrypted backup files can be checked and converted back. It is sent whenever a
+     * passphrase is configured, not only while encryption is switched on, so backups taken before
+     * encryption was disabled stay restorable; the host ignores it for plain backups.
+     */
+    protected void applyRestoreEncryptionDetails(RestoreBackupCommand command, Long zoneId) {
+        String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
+        if (passphrase != null && !passphrase.isEmpty()) {
+            command.setEncryptionPassphrase(passphrase);
+        }
     }
 
     @Override
@@ -717,6 +809,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
+        applyRestoreEncryptionDetails(restoreCommand, vm.getDataCenterId());
 
         BackupAnswer answer;
         try {
@@ -842,6 +935,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
         restoreCommand.setBackupFiles(Collections.singletonList(matchingVolume.getPath()));
+        applyRestoreEncryptionDetails(restoreCommand, backup.getZoneId());
 
         BackupAnswer answer;
         try {
@@ -1253,6 +1347,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 NASBackupRestoreMountTimeout,
+                NASBackupCompressionEnabled,
+                NASBackupEncryptionEnabled,
+                NASBackupEncryptionPassphrase,
+                NASBackupBandwidthLimitMbps,
+                NASBackupIntegrityCheckEnabled,
                 NASBackupFullEvery,
                 NASBackupIncrementalEnabled
         };
