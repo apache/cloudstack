@@ -446,9 +446,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         } catch (OperationTimedoutException e) {
             logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] timed out: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " timed out: " + e.getMessage());
-        } catch (OperationCancelledException e) {
-            logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] cancelled: {}", vmSnapshot.getName(), e.getMessage());
-            throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " cancelled: " + e.getMessage());
         } catch (AgentUnavailableException e) {
             logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] failed, agent unavailable: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.getMessage());

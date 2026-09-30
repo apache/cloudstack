@@ -45,7 +45,6 @@ import com.cloud.agent.api.MigrateBackupsBetweenSecondaryStoragesCommand;
 import com.cloud.agent.api.MigrateBetweenSecondaryStoragesCommandAnswer;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -425,7 +424,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                     throw new CloudRuntimeException("Unable to migrate KVM incremental backups to another secondary storage");
                 }
 
-            } catch (final OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
+            } catch (final OperationTimedoutException | AgentUnavailableException e) {
                 throw new CloudRuntimeException("Error while migrating KVM incremental backup chain. Check the logs for more information.", e);
             } finally {
                 if (answer != null) {

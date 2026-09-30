@@ -43,7 +43,6 @@ import com.cloud.utils.db.TransactionLegacy;
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
     final GenericSearchBuilder<SyncQueueItemVO, Integer> queueActiveItemSearch;
-    final SearchBuilder<SyncQueueItemVO> queuedItemsSearch;
 
     public SyncQueueItemDaoImpl() {
         super();
@@ -58,10 +57,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueActiveItemSearch.and("processNumber", queueActiveItemSearch.entity().getLastProcessNumber(), Op.NNULL);
         queueActiveItemSearch.select(null, Func.COUNT, queueActiveItemSearch.entity().getId());
         queueActiveItemSearch.done();
-
-        queuedItemsSearch = createSearchBuilder();
-        queuedItemsSearch.and("queueId", queuedItemsSearch.entity().getQueueId(), SearchCriteria.Op.EQ);
-        queuedItemsSearch.done();
     }
 
     @Override
@@ -144,16 +139,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     }
 
     @Override
-    public List<SyncQueueItemVO> getQueuedItems(long queueId) {
-        SearchCriteria<SyncQueueItemVO> sc = queuedItemsSearch.create();
-        sc.setParameters("queueId", queueId);
-
-        Filter filter = new Filter(SyncQueueItemVO.class, "created", true, null, null);
-        List<SyncQueueItemVO> queueItems = search(sc, filter);
-        return queueItems;
-    }
-
-    @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
         Date cutTime = DateUtil.currentGMTTime();
 
@@ -162,14 +147,14 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessTime", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessTime2", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.LT);
+
         sbItem.done();
 
         SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
         sc.setParameters("lastProcessTime2", new Date(cutTime.getTime() - thresholdMs));
 
-        if (exclusive) {
+        if(exclusive)
             return lockRows(sc, null, true);
-        }
         return listBy(sc, null);
     }
 
