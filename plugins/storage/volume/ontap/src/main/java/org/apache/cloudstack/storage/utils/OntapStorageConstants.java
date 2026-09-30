@@ -106,6 +106,22 @@ public class OntapStorageConstants {
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
+    public static final String ONTAP_TEMP_CG_PREFIX = "cs-temp-cg-";
+    /** ONTAP CG API: action required when referencing existing FlexVols in a consistency group. */
+    public static final String CG_VOLUME_PROVISIONING_ACTION_ADD = "add";
+    public static final int ONTAP_CG_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_CG_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_MAX_RETRIES = 30;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_POLL_INTERVAL_MS = 1000;
+    public static final int ONTAP_SFSR_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+    /** Retry settings for FlexVolume create/resize/delete job polling. */
+    public static final int ONTAP_VOLUME_JOB_MAX_RETRIES = 10;
+    public static final int ONTAP_VOLUME_JOB_POLL_INTERVAL_MS = 1000;
+    public static final int ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES = 30;
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
