@@ -38,6 +38,8 @@ public class ListDataStoreObjectsAnswer extends Answer {
 
     private List<Boolean> isDirs;
 
+    private List<Boolean> isSymlinks;
+
     private List<Long> sizes;
 
     private List<Long> lastModified;
@@ -57,6 +59,20 @@ public class ListDataStoreObjectsAnswer extends Answer {
         this.paths = paths;
         this.absPaths = absPaths;
         this.isDirs = isDirs;
+        this.sizes = sizes;
+        this.lastModified = lastModified;
+    }
+
+    public ListDataStoreObjectsAnswer(boolean pathExists, int count, List<String> names, List<String> paths, List<String> absPaths, List<Boolean> isDirs, List<Boolean> isSymlinks,
+            List<Long> sizes, List<Long> lastModified) {
+        super();
+        this.pathExists = pathExists;
+        this.count = count;
+        this.names = names;
+        this.paths = paths;
+        this.absPaths = absPaths;
+        this.isDirs = isDirs;
+        this.isSymlinks = isSymlinks;
         this.sizes = sizes;
         this.lastModified = lastModified;
     }
@@ -95,6 +111,13 @@ public class ListDataStoreObjectsAnswer extends Answer {
             return Collections.emptyList();
         }
         return isDirs;
+    }
+
+    public List<Boolean> getIsSymlinks() {
+        if (isSymlinks == null) {
+            return Collections.emptyList();
+        }
+        return isSymlinks;
     }
 
     public List<Long> getSizes() {
