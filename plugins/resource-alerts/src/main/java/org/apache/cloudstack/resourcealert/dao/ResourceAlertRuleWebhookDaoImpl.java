@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.resourcealert.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,10 +29,16 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ResourceAlertRuleWebhookDaoImpl extends GenericDaoBase<ResourceAlertRuleWebhookVO, Long>
         implements ResourceAlertRuleWebhookDao {
+
+    // Webhooks are soft deleted, so the foreign key cascade never removes their links.
+    private static final String REMOVE_LINKS_TO_REMOVED_WEBHOOKS = "DELETE rw FROM `cloud`.`resource_alert_rules_webhook` rw "
+            + "JOIN `cloud`.`webhook` w ON w.id = rw.webhook_id WHERE w.removed IS NOT NULL";
 
     private final SearchBuilder<ResourceAlertRuleWebhookVO> ruleSearch;
 
@@ -60,5 +68,15 @@ public class ResourceAlertRuleWebhookDaoImpl extends GenericDaoBase<ResourceAler
                 }
             }
         });
+    }
+
+    @Override
+    public int removeLinksToRemovedWebhooks() {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareStatement(REMOVE_LINKS_TO_REMOVED_WEBHOOKS)) {
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to remove resource alert rule links to removed webhooks", e);
+        }
     }
 }

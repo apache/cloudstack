@@ -28,4 +28,6 @@ public interface ResourceAlertRuleWebhookDao extends GenericDao<ResourceAlertRul
     List<Long> listWebhookIdsByRule(long ruleId);
 
     void replaceWebhooksForRule(long ruleId, List<Long> webhookIds);
+
+    int removeLinksToRemovedWebhooks();
 }
