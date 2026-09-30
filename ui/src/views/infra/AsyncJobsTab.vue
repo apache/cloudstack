@@ -52,6 +52,7 @@
       :columns="columns"
       :dataSource="jobs"
       :rowKey="item => item.jobid"
+      :scroll="{ x: 'max-content' }"
       :pagination="false" >
       <template #cmd="{ text }">
         {{ text ? text.split('.').pop() : '' }}
