@@ -637,6 +637,23 @@ public class AgentProperties{
     public static final Property<String> KVM_SCRIPTS_DIR = new Property<>("kvm.scripts.dir", "scripts/vm/hypervisor/kvm");
 
     /**
+     * Host-local parent directory for the NAS backup pull-mode scratch area: the NBD socket and
+     * the libvirt-managed fleecing (copy-before-write) images used while backing up a running VM
+     * on raw block-device storage such as LINSTOR/DRBD.
+     * <p>
+     * Must be on a real on-disk filesystem with room for the guest's write churn during a backup,
+     * and must NOT be on the NAS share: copy-before-write runs inline with guest writes, so a slow
+     * or remote location stalls the VM. Keep the path short — the resulting socket path is subject
+     * to the kernel's 108-byte UNIX socket limit.
+     * <p>
+     * Data type: String.<br>
+     * Default value: <code>/var/tmp</code>
+     *
+     * @since 4.22.0
+     */
+    public static final Property<String> NAS_BACKUP_PULL_SCRATCH_DIR = new Property<>("nas.backup.pull.scratch.dir", "/var/tmp");
+
+    /**
      * Specifies start MAC address for private IP range.<br>
      * Data type: String.<br>
      * Default value: <code>00:16:3e:77:e2:a0</code>

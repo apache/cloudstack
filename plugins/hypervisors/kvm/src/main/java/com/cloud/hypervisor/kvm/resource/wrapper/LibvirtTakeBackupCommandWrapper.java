@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -52,6 +54,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
+    /**
+     * Content-based (libvirt pull mode) modes, used for raw block-device storage such as
+     * LINSTOR/DRBD which cannot carry QEMU persistent dirty bitmaps. Neither carries a bitmap
+     * name; the incremental one needs only its per-disk parent paths.
+     */
+    private static final String MODE_CONTENT_FULL = "content-full";
+    private static final String MODE_CONTENT_INCREMENTAL = "content-incremental";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -170,6 +179,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("--parent-paths");
             argv.add(String.join(",", parentPaths));
         }
+        // Host-local scratch dir for the pull-mode NBD socket and fleecing images. Sent for every
+        // mode: harmless for the push-mode paths, which ignore it.
+        String scratchDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_DIR);
+        if (StringUtils.isNotBlank(scratchDir)) {
+            argv.add("-S");
+            argv.add(scratchDir);
+        }
 
         List<String[]> commands = new ArrayList<>();
         commands.add(argv.toArray(new String[0]));
@@ -205,6 +221,16 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         }
         if (MODE_LEGACY_FULL.equals(mode)) {
             return null; // feature-off full backup, no bitmap or chain args expected
+        }
+        if (MODE_CONTENT_FULL.equals(mode)) {
+            return null; // pull-mode full — no bitmap, no parent
+        }
+        if (MODE_CONTENT_INCREMENTAL.equals(mode)) {
+            // No bitmap is involved: the delta comes from comparing the disk against the parent.
+            if (CollectionUtils.isEmpty(command.getParentPaths())) {
+                return "content-incremental mode requires parentPaths";
+            }
+            return null;
         }
         return "Unknown backup mode: " + mode;
     }

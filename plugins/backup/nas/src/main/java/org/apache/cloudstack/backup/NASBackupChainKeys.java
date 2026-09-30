@@ -49,6 +49,20 @@ public final class NASBackupChainKeys {
     public static final String TYPE_LEGACY_FULL = "legacy-full";
 
     /**
+     * Backup taken through the content-based (libvirt pull mode) path, used for raw
+     * block-device storage such as LINSTOR/DRBD which cannot carry QEMU persistent dirty
+     * bitmaps. A full standalone qcow2, written sparse in a single pass.
+     */
+    public static final String TYPE_CONTENT_FULL = "content-full";
+
+    /**
+     * Delta backup produced by content comparison rather than dirty bitmaps: a qcow2 overlay
+     * on the disk's NBD export, safe-rebased onto the parent so it holds only the clusters
+     * that differ. Same chain shape as {@link #TYPE_INCREMENTAL}.
+     */
+    public static final String TYPE_CONTENT_INCREMENTAL = "content-incremental";
+
+    /**
      * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap
      * name that currently exists on the running VM and is therefore the only valid parent
      * for the next incremental backup. Written by {@link #BITMAP_NAME} on each successful
