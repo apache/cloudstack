@@ -39,6 +39,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cpu.CPU;
 import com.cloud.host.Host;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
@@ -59,6 +60,32 @@ public class HostDaoImplTest {
     private SearchBuilder<HostVO> mockSearchBuilder;
     @Mock
     private SearchCriteria<HostVO> mockSearchCriteria;
+
+    @Test
+    public void testListAllUpAndEnabledNonHAHostsCollapsesRepeatedHosts() {
+        // the host_tags join carries no DISTINCT, so a host comes back once per non-rule tag it
+        // holds. Callers read the result as a set of candidate hosts.
+        SearchBuilder<HostTagVO> tagSearchBuilder = mock(SearchBuilder.class);
+        when(tagSearchBuilder.entity()).thenReturn(mock(HostTagVO.class));
+        HostTagsDao hostTagsDao = mock(HostTagsDao.class);
+        when(hostTagsDao.createSearchBuilder()).thenReturn(tagSearchBuilder);
+        hostDao._hostTagsDao = hostTagsDao;
+
+        when(mockSearchBuilder.entity()).thenReturn(mock(HostVO.class));
+        when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        doReturn(mockSearchBuilder).when(hostDao).createSearchBuilder();
+
+        HostVO twoTags = mock(HostVO.class);
+        when(twoTags.getId()).thenReturn(1L);
+        HostVO oneTag = mock(HostVO.class);
+        when(oneTag.getId()).thenReturn(2L);
+        doReturn(Arrays.asList(twoTags, twoTags, oneTag)).when(hostDao).listBy(any(SearchCriteria.class));
+
+        List<HostVO> hosts = hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, 3L, 2L, 1L, null);
+
+        assertEquals(2, hosts.size());
+        assertEquals(Arrays.asList(1L, 2L), hosts.stream().map(HostVO::getId).collect(Collectors.toList()));
+    }
 
     @Test
     public void testCountUpAndEnabledHostsInZone() {

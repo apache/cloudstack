@@ -370,6 +370,13 @@
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
 
+    <!--
+      Declared here rather than with the allocators because both the allocators and the DRS service
+      read it, and they live in sibling module contexts. A bean in a descendant context is not
+      visible to its parent.
+    -->
+    <bean id="hostLoadTracker" class="com.cloud.agent.manager.allocator.impl.HostLoadTracker" />
+
     <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
         <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
