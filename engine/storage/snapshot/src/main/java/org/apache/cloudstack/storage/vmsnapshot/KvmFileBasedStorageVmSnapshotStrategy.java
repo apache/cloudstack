@@ -142,52 +142,57 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.ExpungeRequested);
 
-        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshotBeingDeleted.getVmId());
-        List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParentAndStateIn(vmSnapshotBeingDeleted.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
-        PrimaryDataStoreTO nvramPrimaryDataStore = getPrimaryDataStoreForNvramCleanup(vmSnapshotBeingDeleted, volumeTOs);
+        try {
+            List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshotBeingDeleted.getVmId());
+            List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParentAndStateIn(vmSnapshotBeingDeleted.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
+            PrimaryDataStoreTO nvramPrimaryDataStore = getPrimaryDataStoreForNvramCleanup(vmSnapshotBeingDeleted, volumeTOs);
 
-        long realSize = getVMSnapshotRealSize(vmSnapshotBeingDeleted);
-        int numberOfChildren = snapshotChildren.size();
+            long realSize = getVMSnapshotRealSize(vmSnapshotBeingDeleted);
+            int numberOfChildren = snapshotChildren.size();
 
-        List<SnapshotVO> volumeSnapshotVos = new ArrayList<>();
-        if (isCurrent && numberOfChildren == 0) {
-            volumeSnapshotVos = mergeCurrentDeltaOnSnapshot(vmSnapshotBeingDeleted, userVm, hostId, volumeTOs);
-        } else if (numberOfChildren == 0) {
-            logger.debug("Deleting VM snapshot [{}] as no snapshots/volumes depend on it.", vmSnapshot.getUuid());
-            volumeSnapshotVos = deleteSnapshot(vmSnapshotBeingDeleted, hostId);
-            mergeOldSiblingWithOldParentIfOldParentIsDead(vmSnapshotDao.findByIdIncludingRemoved(vmSnapshotBeingDeleted.getParent()), userVm, hostId, volumeTOs);
-        } else if (!isCurrent && numberOfChildren == 1) {
-            VMSnapshotVO childSnapshot = snapshotChildren.get(0);
-            volumeSnapshotVos = mergeSnapshots(vmSnapshotBeingDeleted, childSnapshot, userVm, volumeTOs, hostId);
-        }
+            List<SnapshotVO> volumeSnapshotVos = new ArrayList<>();
+            if (isCurrent && numberOfChildren == 0) {
+                volumeSnapshotVos = mergeCurrentDeltaOnSnapshot(vmSnapshotBeingDeleted, userVm, hostId, volumeTOs);
+            } else if (numberOfChildren == 0) {
+                logger.debug("Deleting VM snapshot [{}] as no snapshots/volumes depend on it.", vmSnapshot.getUuid());
+                volumeSnapshotVos = deleteSnapshot(vmSnapshotBeingDeleted, hostId);
+                mergeOldSiblingWithOldParentIfOldParentIsDead(vmSnapshotDao.findByIdIncludingRemoved(vmSnapshotBeingDeleted.getParent()), userVm, hostId, volumeTOs);
+            } else if (!isCurrent && numberOfChildren == 1) {
+                VMSnapshotVO childSnapshot = snapshotChildren.get(0);
+                volumeSnapshotVos = mergeSnapshots(vmSnapshotBeingDeleted, childSnapshot, userVm, volumeTOs, hostId);
+            }
 
-        for (SnapshotVO snapshotVO : volumeSnapshotVos) {
-            snapshotVO.setState(Snapshot.State.Destroyed);
-            snapshotDao.update(snapshotVO.getId(), snapshotVO);
-        }
+            for (SnapshotVO snapshotVO : volumeSnapshotVos) {
+                snapshotVO.setState(Snapshot.State.Destroyed);
+                snapshotDao.update(snapshotVO.getId(), snapshotVO);
+            }
 
-        for (VolumeObjectTO volumeTo : volumeTOs) {
-            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshotBeingDeleted, userVm, volumeTo);
-            virtualSize += volumeTo.getSize();
-        }
+            for (VolumeObjectTO volumeTo : volumeTOs) {
+                publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshotBeingDeleted, userVm, volumeTo);
+                virtualSize += volumeTo.getSize();
+            }
 
-        publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshotBeingDeleted, userVm, realSize, virtualSize);
+            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshotBeingDeleted, userVm, realSize, virtualSize);
 
-        if (numberOfChildren > 1 || (isCurrent && numberOfChildren == 1)) {
-            transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.Hide);
+            if (numberOfChildren > 1 || (isCurrent && numberOfChildren == 1)) {
+                transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.Hide);
+                return true;
+            }
+
+            deleteNvramSnapshotIfNeeded(vmSnapshotBeingDeleted, hostId, nvramPrimaryDataStore);
+
+            transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.OperationSucceeded);
+
+            vmSnapshotDetailsDao.removeDetails(vmSnapshotBeingDeleted.getId());
+
+            vmSnapshotBeingDeleted.setRemoved(DateUtil.now());
+            vmSnapshotDao.update(vmSnapshotBeingDeleted.getId(), vmSnapshotBeingDeleted);
+
             return true;
+        } catch (RuntimeException ex) {
+            transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.OperationFailed);
+            throw ex;
         }
-
-        deleteNvramSnapshotIfNeeded(vmSnapshotBeingDeleted, hostId, nvramPrimaryDataStore);
-
-        transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.OperationSucceeded);
-
-        vmSnapshotDetailsDao.removeDetails(vmSnapshotBeingDeleted.getId());
-
-        vmSnapshotBeingDeleted.setRemoved(DateUtil.now());
-        vmSnapshotDao.update(vmSnapshotBeingDeleted.getId(), vmSnapshotBeingDeleted);
-
-        return true;
     }
 
     @Override
