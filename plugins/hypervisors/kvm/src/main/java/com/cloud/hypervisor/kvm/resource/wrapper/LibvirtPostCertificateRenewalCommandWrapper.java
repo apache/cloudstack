@@ -46,7 +46,6 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
 
     @Override
     public Answer execute(final PostCertificateRenewalCommand command, final LibvirtComputingResource serverResource) {
-        logger.info("Restarting libvirt after certificate provisioning/renewal");
         if (command != null) {
             pushRenewedVncCertificateToRunningVms(serverResource);
             restartLibvirtd();
@@ -56,6 +55,7 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
     }
 
     private void restartLibvirtd() {
+        logger.info("Restarting libvirt after certificate provisioning/renewal");
         final int timeout = 30000;
         Script script = new Script(true, "service", timeout, logger);
         script.add("libvirtd");
