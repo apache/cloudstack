@@ -129,8 +129,7 @@ public abstract class AgentAttache {
     protected long _nextSequence;
 
     protected AgentManagerImpl _agentMgr;
-    // Requests cancelled because their job was cancelled, as opposed to timed out. A waiting sender
-    // consults this so it reports a cancellation and not a timeout when the answer never comes.
+    // cancelled because the job was cancelled, as opposed to timed out
     private final Set<Long> _cancelledSequences = ConcurrentHashMap.newKeySet();
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
@@ -235,28 +234,17 @@ public abstract class AgentAttache {
         }
     }
 
-    /**
-     * Whether the resource can stop what it is doing for this request. Attaches that cannot ask their
-     * resource must answer false: claiming a cancellation that did not happen is the very mismatch
-     * this exists to prevent.
-     */
+    /** Default false: an attache that cannot ask its resource must not claim it. */
     protected boolean isExecutionCancellable(final long seq) {
         return false;
     }
 
-    /**
-     * Stops the resource's work for an executing request. Returns true only when it was stopped (or
-     * had nothing left to stop). Attaches that cannot reach their resource answer false.
-     */
+    /** Returns true only when the resource's work was stopped (or nothing was left to stop). */
     protected boolean cancelRunning(final long seq) {
         return false;
     }
 
-    /**
-     * Cancels a request because the job it belongs to was cancelled: stops the resource's work for it,
-     * then drops the request. Distinct from {@link #cancel(long)}, which is also the timeout path and
-     * must never reach into the hypervisor.
-     */
+    /** Job-cancel path; distinct from cancel(seq), which is also the timeout path and never reaches the hypervisor. */
     public boolean cancelExecution(final long seq) {
         _cancelledSequences.add(seq);
         final boolean stopped = cancelRunning(seq);

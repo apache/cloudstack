@@ -61,8 +61,6 @@ public class KvmCancellableRequestsTest {
 
     @Test
     public void requestWithoutAHookHasNothingToStop() {
-        // the agent cannot interrupt a blocking libvirt call or a child process from outside, so a
-        // request that registered no hook must be refused, not recorded as cancelled
         requests.begin(SEQ, new CheckHealthCommand());
 
         Assert.assertFalse(requests.isCancellable(SEQ));
@@ -81,7 +79,7 @@ public class KvmCancellableRequestsTest {
         Assert.assertEquals(1, hook.runs.get());
         Assert.assertEquals(1, dropped.size());
 
-        // a Thread runs only once; a second cancel must not try to start it again
+        // a Thread runs only once
         Assert.assertTrue(requests.cancel(SEQ, dropped::add));
         Assert.assertEquals(1, hook.runs.get());
     }

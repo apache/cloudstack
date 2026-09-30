@@ -27,15 +27,7 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 
-/**
- * Tracks the XenAPI tasks a resource is waiting on, per agent request sequence, so a request can be
- * cancelled by cancelling the tasks it created.
- *
- * One instance per resource (one per host). The resource opens a request scope for the executing
- * thread; {@link CitrixResourceBase#waitForTask} then reports every task it waits on through that
- * scope. Registering at that single chokepoint is what gives complete coverage: the storage processor
- * and the command wrappers all wait on their tasks through the resource.
- */
+/** Per agent request sequence, the XenAPI tasks a resource is waiting on; one instance per host. waitForTask is the single registration point. */
 public class XenServerTaskRegistry {
     private static final Logger LOGGER = LogManager.getLogger(XenServerTaskRegistry.class);
 
@@ -71,10 +63,7 @@ public class XenServerTaskRegistry {
         }
     }
 
-    /**
-     * Marks the current thread as executing the given request. A null sequence (a command that did not
-     * arrive through the agent layer) leaves the thread unscoped, so nothing is tracked for it.
-     */
+    /** A null sequence (not from the agent layer) leaves the thread unscoped. */
     public void beginRequest(final Long sequence) {
         if (sequence == null) {
             return;
@@ -98,11 +87,7 @@ public class XenServerTaskRegistry {
         return state != null && state.cancelRequested;
     }
 
-    /**
-     * Called by the resource when it starts waiting on a task. Returns true when the request this thread
-     * is executing has already been cancelled, so the caller can cancel the newly created task straight
-     * away instead of letting it run.
-     */
+    /** Returns true when the request was already cancelled, so the caller cancels the new task at once. */
     static boolean taskStarted(final Task task, final Connection connection) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || task == null) {
@@ -127,12 +112,7 @@ public class XenServerTaskRegistry {
         }
     }
 
-    /**
-     * Whether the request can be stopped. Unknown sequences are not cancellable: we have nothing to stop
-     * and no way to know what the backend is doing. A request with no task in flight can be stopped by
-     * interrupting its thread; one with tasks in flight only if every one of them is still pending --
-     * XenAPI has no cancelable flag, a task that is no longer pending simply cannot be cancelled.
-     */
+    /** Unknown sequences are not cancellable; XenAPI has no cancelable flag, so tasks must still be pending. */
     public boolean isCancellable(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -152,11 +132,7 @@ public class XenServerTaskRegistry {
         return true;
     }
 
-    /**
-     * Cancels every task the request has in flight and marks the request so that any task it creates
-     * afterwards is cancelled as soon as the resource starts waiting on it. Returns true only if every
-     * in-flight task was actually cancelled.
-     */
+    /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -177,13 +153,7 @@ public class XenServerTaskRegistry {
         return allCancelled;
     }
 
-    /**
-     * Asks XenServer to cancel the task and waits, bounded, for it to reach a terminal state.
-     *
-     * Uses the asynchronous cancel: the synchronous form would hold the cancelling thread on a XenServer
-     * round trip, and this is called from the agent layer while it holds nothing but the request's
-     * bookkeeping. Returns whether the task ended cancelled, with the reason when it did not.
-     */
+    /** cancelAsync, then poll to a terminal state: the synchronous cancel would hold the caller on a XenServer round trip. */
     static Pair<Boolean, String> cancelTask(final Task task, final Connection connection) {
         final String ref = refOf(task);
         try {
@@ -221,8 +191,7 @@ public class XenServerTaskRegistry {
         }
     }
 
-    // A task's opaque ref is the natural key, but a task that has not been round-tripped to the
-    // server (or a test double) has none; fall back to identity so the map never sees a null key.
+    // no opaque ref before a round trip (or on a test double): fall back to identity
     private static String refOf(final Task task) {
         final String ref = task.toWireString();
         return ref != null ? ref : "task@" + Integer.toHexString(System.identityHashCode(task));

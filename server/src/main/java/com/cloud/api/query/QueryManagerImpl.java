@@ -3225,8 +3225,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        // A job is soft-deleted the moment it completes, so anything but the default pending-only
-        // listing has to reach into removed rows or it can never return a finished job.
+        // completed jobs are soft-deleted; anything but the pending-only default must include removed rows
         final boolean filterByStatus = cmd.getJobStatuses() != null;
         final boolean includeRemoved = filterByStatus || cmd.getEndDate() != null || cmd.getDuration() != null;
 
@@ -3299,8 +3298,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cmd.getDuration() != null) {
-            // Rows are written with DateUtil.currentGMTTime(); anchoring the window in the system
-            // zone would shift it by the offset on any management server that is not on UTC.
+            // rows are written in GMT
             Date lastDate = new Date(DateUtil.currentGMTTime().getTime() - TimeUnit.HOURS.toMillis(cmd.getDuration()));
 
             SearchCriteria<AsyncJobJoinVO> scc = _jobJoinDao.createSearchCriteria();

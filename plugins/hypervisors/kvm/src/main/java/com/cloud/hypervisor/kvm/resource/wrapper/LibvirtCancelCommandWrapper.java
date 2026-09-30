@@ -22,11 +22,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
-/**
- * Answers the management server's question about another request in flight on this agent: can it be
- * stopped (checkOnly), or stop it. Runs out of sequence so it is not queued behind the very request it
- * is asking about.
- */
+/** Can another request in flight on this agent be stopped (checkOnly), or stop it. Out of sequence, so it is not queued behind that request. */
 @ResourceWrapper(handles = CancelCommand.class)
 public final class LibvirtCancelCommandWrapper extends CommandWrapper<CancelCommand, Answer, LibvirtComputingResource> {
 

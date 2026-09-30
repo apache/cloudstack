@@ -308,8 +308,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
 
-    // One registry per resource, so tasks are tracked per host and two hosts cannot collide on a
-    // request sequence number.
+    // per resource, so two hosts cannot collide on a request sequence
     private final XenServerTaskRegistry taskRegistry = new XenServerTaskRegistry();
 
     protected int _wait;
@@ -1784,8 +1783,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         taskRegistry.beginRequest(requestSequence);
         try {
             final Answer answer = executeRequestInternal(cmd);
-            // The command wrappers report a cancelled XenAPI task as an ordinary failure; mark it so
-            // the agent layer can tell a cancellation from a failure.
+            // a cancelled XenAPI task surfaces as an ordinary failure; flag it as cancelled
             if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
                 answer.setCancelled(true);
             }
@@ -5314,16 +5312,13 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         if (logger.isTraceEnabled()) {
             logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
         }
-        // Register with the request this thread is executing, so the request can be cancelled by
-        // cancelling this task. If the request was already cancelled before the task was created,
-        // cancel it now rather than let it run.
+        // register with the executing request; a request already cancelled cancels the new task at once
         if (XenServerTaskRegistry.taskStarted(task, c)) {
             logger.info("Request executing on this thread was already cancelled, cancelling newly created task " + task);
             XenServerTaskRegistry.cancelTask(task, c);
         }
         try {
-            // Keep waiting through CANCELLING as well: the task is still winding down on the host, and
-            // callers read its final status right after this returns.
+            // wait through CANCELLING too: callers read the final status right after this returns
             Types.TaskStatusType status = task.getStatus(c);
             while (status == Types.TaskStatusType.PENDING || status == Types.TaskStatusType.CANCELLING) {
                 try {

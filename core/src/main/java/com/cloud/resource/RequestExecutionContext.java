@@ -16,14 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
-/**
- * The agent request sequence the current thread is executing a command for.
- *
- * Set by the direct-agent attache around each {@link ServerResource#executeRequest} call and read by
- * resources that track backend work per request, so that a cancellation aimed at a request sequence can
- * find the hypervisor task that request created. Resources used to number commands with their own
- * counter, which never matched the sequence the agent layer cancels by.
- */
+/** The agent request sequence the current thread executes a command for; set by the direct-agent attache so resources can key backend work by it. */
 public final class RequestExecutionContext {
 
     private static final ThreadLocal<Long> REQUEST_SEQUENCE = new ThreadLocal<>();

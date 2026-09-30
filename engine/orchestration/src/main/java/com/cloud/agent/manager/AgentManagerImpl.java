@@ -165,12 +165,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<>();
     protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
-    // A job can have several commands in flight, on more than one host, so this maps to a set.
-    // Written from every worker thread in send() and read by the cancelled-jobs poller.
+    // a job can have several commands in flight on several hosts
     protected final Map<Long, Set<Pair<Long, Long>>> _jobToHostIdAndReqSequenceMap = new ConcurrentHashMap<>();
-    // Jobs known to be cancelled, keyed by id with the time first seen. Deliberately sticky rather
-    // than a mirror of the database: a worker thread keeps consulting this after the job row has
-    // been finalised, and the row then no longer shows up as cancelled-and-unacknowledged.
+    // sticky on purpose: workers consult it after the job row has been finalised
     protected final Map<Long, Long> _cancelledJobs = new ConcurrentHashMap<>();
     private static final long CANCELLED_JOB_MEMORY_MS = TimeUnit.HOURS.toMillis(1);
 
@@ -2112,12 +2109,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    /**
-     * Refreshes the local view of cancelled jobs and stops whatever they still have in flight.
-     *
-     * Scoped to jobs executing on this management server: another server holds the agent connection
-     * for its own jobs, and acting on them here would race it for work we cannot reach.
-     */
+    /** Stops in-flight work of jobs cancelled on this management server and acknowledges them. */
     protected class CancelledJobsCheckTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -2151,7 +2143,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean isJobExecutionCancellable(final long jobId) {
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
         if (CollectionUtils.isEmpty(inFlight)) {
-            // Nothing is running on an agent for this job, so cancelling it strands no backend work.
             return true;
         }
 
@@ -2173,8 +2164,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean cancelJobExecution(final long jobId, final String reason) {
-        // Mark it before touching the agents, so a worker thread that catches the interruption and
-        // carries on to its next command is refused there.
+        // mark first, so a worker that carries on to its next command is refused there
         _cancelledJobs.putIfAbsent(jobId, System.currentTimeMillis());
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
         if (CollectionUtils.isEmpty(inFlight)) {

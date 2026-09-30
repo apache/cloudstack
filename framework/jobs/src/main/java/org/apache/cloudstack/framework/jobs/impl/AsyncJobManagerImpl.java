@@ -185,8 +185,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private NetworkOrchestrationService networkOrchestrationService;
     @Inject
     private ReconcileCommandService reconcileCommandService;
-    // A list so that the job framework still starts in contexts that have no agent layer;
-    // Spring leaves it empty rather than failing to wire.
+    // a list: Spring leaves it empty when no agent layer is present
     @Inject
     private List<JobCancellationHandler> jobCancellationHandlers;
 
@@ -1478,11 +1477,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
-    /**
-     * A queued child (VM work) job whose parent has already finished must not run: the parent was
-     * cancelled or failed while this child waited its turn. Completes the child with the parent's
-     * status and drops it from the queue.
-     */
+    /** A queued VM work job whose parent already finished is completed with the parent's status instead of run. */
     private boolean isChildOfFinishedJob(final SyncQueueItemVO item) {
         if (!SyncQueueItem.AsyncJobContentType.equalsIgnoreCase(item.getContentType())) {
             return false;
@@ -1522,8 +1517,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return errMessage;
         }
 
-        // A job that is still queued can always be dropped. One that is executing -- here or on
-        // another management server -- only if its command opted in.
         if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
             try {
                 final Class<?> cmdClass = Class.forName(job.getCmd());
@@ -1547,9 +1540,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return errMessage;
         }
 
-        // Ask before changing anything. If the backend work cannot be stopped, refusing is the
-        // honest answer: recording the job as cancelled while the hypervisor finishes the operation
-        // is the divergence this whole feature exists to prevent.
+        // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
         for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
             if (!handler.isJobExecutionCancellable(jobId)) {
                 errMessage = "Cannot cancel job-" + jobId + ", the operation it is running cannot be stopped at this point.";
@@ -1568,9 +1559,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
             }
 
-            // If no other management server is executing the job there is nobody left to
-            // acknowledge the cancellation, so finish the row here. Otherwise keep executing_msid
-            // so that server's poller can find the job, stop its in-flight commands and finish it.
+            // finalise here unless another management server is executing the job; its poller acknowledges
             final Long executingMsid = job.getExecutingMsid();
             final boolean finalizeNow = executingMsid == null || executingMsid == getMsid();
             completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, finalizeNow);
@@ -1606,7 +1595,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private boolean isActiveJob(final long jobId) {
-        // a VM work child runs on behalf of its API parent, so check whichever of the two is active
+        // a VM work child runs on behalf of its API parent
         final AsyncJobVO relatedJob = _jobDao.getRelatedJob(String.valueOf(jobId));
         if (relatedJob != null) {
             return _jobMonitor.isActiveJob(relatedJob.getId());

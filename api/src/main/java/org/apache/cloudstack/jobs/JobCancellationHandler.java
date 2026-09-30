@@ -16,28 +16,12 @@
 // under the License.
 package org.apache.cloudstack.jobs;
 
-/**
- * Lets the job layer ask whoever is running a job's backend work whether that work can be stopped,
- * and then stop it.
- *
- * This is an interface rather than a direct call to the agent manager because the job framework is
- * built before the agent layer and the agent layer already depends on it; calling the other way
- * round would close the cycle.
- */
+/** Lets the job layer ask whoever runs a job's backend work whether it can be stopped, and stop it. An interface, not AgentManager: the job framework is built first. */
 public interface JobCancellationHandler {
 
-    /**
-     * Whether everything this job currently has in flight can be stopped.
-     *
-     * Asked before the job is marked cancelled. A job whose backend work cannot be stopped is
-     * refused outright, rather than recorded as cancelled while the operation runs to completion --
-     * that divergence between what CloudStack believes and what the hypervisor did is the whole
-     * reason this check exists.
-     */
+    /** Asked before the job is marked cancelled; a job whose work cannot be stopped is refused, not recorded as cancelled. */
     boolean isJobExecutionCancellable(long jobId);
 
-    /**
-     * Stops whatever this job has in flight. Returns true only if all of it was actually stopped.
-     */
+    /** Returns true only if everything in flight was actually stopped. */
     boolean cancelJobExecution(long jobId, String reason);
 }

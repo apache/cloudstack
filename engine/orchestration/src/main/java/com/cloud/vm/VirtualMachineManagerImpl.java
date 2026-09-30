@@ -1677,9 +1677,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     canRetry = false;
                     throw new AgentUnavailableException("Unable to start " + vm.getHostName(), destHostId, e);
                 } catch (OperationCancelledException e) {
-                    // Same shape as an active timeout: the start command reached the host and was
-                    // stopped part-way, so the VM may be half-started there. The job itself is
-                    // already CANCELLED; this is about leaving the VM in a known state.
+                    // like an active timeout: the host may have half-started the VM
                     logger.debug("Start of {} on host {} was cancelled", vm, dest.getHost());
                     if (e.isActive()) {
                         _haMgr.scheduleStop(vm, destHostId, WorkType.CheckStop);

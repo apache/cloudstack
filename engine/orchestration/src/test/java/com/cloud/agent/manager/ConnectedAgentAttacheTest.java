@@ -122,8 +122,6 @@ public class ConnectedAgentAttacheTest {
 
     @Test
     public void anAgentThatDoesNotUnderstandCancellationIsNotCancellable() throws Exception {
-        // an older agent, or a resource with nothing to stop, answers unsupported; claiming it could
-        // be cancelled would record a cancellation that never happened
         AgentManagerImpl agentMgr = mock(AgentManagerImpl.class);
         ConnectedAgentAttache attache = new ConnectedAgentAttache(agentMgr, 5L, "uuid", "host", Hypervisor.HypervisorType.KVM, mock(Link.class), false);
         when(agentMgr.send(Mockito.eq(5L), Mockito.any(Command.class))).thenReturn(new UnsupportedAnswer(null, "unsupported"));
