@@ -68,6 +68,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -615,5 +616,13 @@ public class CitrixResourceBaseTest {
         Assert.assertFalse(listAnswer.getIsDirs().get(0));
         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+    }
+
+    @Test
+    public void testUnknownRequestSequenceIsNotCancellable() {
+        // a resource that is not tracking a request must not claim it can cancel it, or the job is
+        // marked cancelled while the hypervisor finishes the operation
+        assertFalse(citrixResourceBase.isRequestSequenceCancellable(4242L));
+        assertFalse(citrixResourceBase.cancelRequestSequence(4242L));
     }
 }

@@ -51,7 +51,6 @@ import java.util.concurrent.TimeoutException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.agent.api.MigrateCommand;
 import com.xensource.xenapi.VTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
@@ -127,6 +126,7 @@ import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitie
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.RequestExecutionContext;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
@@ -306,9 +306,11 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     protected String _configDriveSRName = "ConfigDriveISOs";
     public String _attachIsoDeviceNum = "3";
 
-    protected volatile long _cmdSequence = 1;
-
     protected XenServerUtilitiesHelper xenServerUtilitiesHelper = new XenServerUtilitiesHelper();
+
+    // One registry per resource, so tasks are tracked per host and two hosts cannot collide on a
+    // request sequence number.
+    private final XenServerTaskRegistry taskRegistry = new XenServerTaskRegistry();
 
     protected int _wait;
     // Hypervisor specific params with generic value, may need to be overridden
@@ -1778,44 +1780,38 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(final Command cmd) {
-        if (Thread.currentThread().isInterrupted()) {
-            String msg = "Command " + cmd.getClass().getSimpleName() + " was cancelled before execution";
-            logger.warn(msg);
-            return new Answer(cmd, false, msg);
-        }
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        final Long requestSequence = RequestExecutionContext.getRequestSequence();
+        taskRegistry.beginRequest(requestSequence);
         try {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedException("Command execution cancelled");
+            final Answer answer = executeRequestInternal(cmd);
+            // The command wrappers report a cancelled XenAPI task as an ordinary failure; mark it so
+            // the agent layer can tell a cancellation from a failure.
+            if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
+                answer.setCancelled(true);
             }
-            long cmdSequence = _cmdSequence++;
-            Class<? extends Command> clz = cmd.getClass();
-            if (clz == StartCommand.class) {
-                String vmName = ((StartCommand) cmd).getVirtualMachine().getName();
-                setTaskContext(cmdSequence, cmd, vmName);
-            } else if (clz == StopCommand.class) {
-                String vmName = ((StopCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
-            } else if (clz == RebootCommand.class) {
-                String vmName = ((RebootCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
-            } else if (clz == MigrateCommand.class) {
-                String vmName = ((MigrateCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
-            }
-
-            return wrapper.execute(cmd, this);
-        } catch (final Exception e) {
-            return Answer.createUnsupportedCommandAnswer(cmd);
+            return answer;
         } finally {
-            CitrixHelper.clearTaskContext();
+            taskRegistry.endRequest(requestSequence);
         }
     }
 
-    private void setTaskContext(long cmdSequence, Command cmd, String vmName) {
-        String commandType = cmd.getClass().getSimpleName();
-        CitrixHelper.setTaskContext(this, cmdSequence, vmName, commandType);
+    @Override
+    public boolean isRequestSequenceCancellable(final long sequence) {
+        return taskRegistry.isCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(final long sequence) {
+        return taskRegistry.cancel(sequence);
+    }
+
+    private Answer executeRequestInternal(final Command cmd) {
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        try {
+            return wrapper.execute(cmd, this);
+        } catch (final Exception e) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
     }
 
     protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {
@@ -3983,14 +3979,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public void migrateVM(final Connection conn, final Host destHost, final VM vm, final String vmName) throws Exception {
         Task task = null;
-        CitrixHelper.TaskContext taskContext = CitrixHelper.getCurrentTaskContext();
         try {
             final Map<String, String> other = new HashMap<>();
             other.put("live", "true");
             task = vm.poolMigrateAsync(conn, destHost, other);
-            if (taskContext != null) {
-                taskContext.registerTask(task, conn);
-            }
             try {
                 // poll every 1 seconds
                 final long timeout = _migratewait * 1000L;
@@ -4002,10 +3994,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     return;
                 }
                 throw new CloudRuntimeException("migrate VM catch HandleInvalid and VM is not running on dest host");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("migrate VM interrupted for VM: " + vmName);
-                throw e;
             }
         } catch (final XenAPIException e) {
             final String msg = "Unable to migrate VM(" + vmName + ") from host(" + _host.getUuid() + ")";
@@ -4018,10 +4006,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 } catch (final Exception e1) {
                     logger.debug("unable to destroy task(" + task + ") on host(" + _host.getUuid() + ") due to " + e1);
                 }
-            }
-
-            if (taskContext != null) {
-                taskContext.unregisterTask();
             }
         }
     }
@@ -5090,18 +5074,13 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return null;
     }
 
-    public void shutdownVM(final Connection conn, final VM vm, final String vmName, final boolean forcedStop) throws Exception {
+    public void shutdownVM(final Connection conn, final VM vm, final String vmName, final boolean forcedStop) throws XmlRpcException {
         Task task = null;
-        CitrixHelper.TaskContext taskContext = CitrixHelper.getCurrentTaskContext();
         try {
             if (forcedStop) {
                 task = vm.hardShutdownAsync(conn);
             } else {
                 task = vm.cleanShutdownAsync(conn);
-            }
-
-            if (taskContext != null) {
-                taskContext.registerTask(task, conn);
             }
 
             try {
@@ -5114,10 +5093,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     return;
                 }
                 throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in HALTED state");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("Shutdown VM interrupted for VM: " + vmName);
-                throw e;
             }
         } catch (final XenAPIException e) {
             logger.debug("Unable to shutdown VM(" + vmName + ") with force=" + forcedStop + " on host(" + _host.getUuid() + ") due to " + e);
@@ -5153,10 +5128,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     logger.debug("unable to destroy task(" + task + ") on host(" + _host.getUuid() + ") due to " + e1);
                 }
             }
-
-            if (taskContext != null) {
-                taskContext.unregisterTask();
-            }
         }
     }
 
@@ -5167,12 +5138,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public void startVM(final Connection conn, final Host host, final VM vm, final String vmName) throws Exception {
         Task task = null;
-        CitrixHelper.TaskContext taskContext = CitrixHelper.getCurrentTaskContext();
         try {
             task = vm.startOnAsync(conn, host, false, true);
-            if (taskContext != null) {
-                taskContext.registerTask(task, conn);
-            }
             try {
                 // poll every 1 seconds , timeout after 10 minutes
                 waitForTask(conn, task, 1000, 10 * 60 * 1000);
@@ -5191,10 +5158,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     return;
                 }
                 throw new CloudRuntimeException("Start VM " + vmName + " catch BadAsyncResult and VM is not in RUNNING state");
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("Start VM interrupted for VM: " + vmName);
-                throw e;
             }
         } catch (final XenAPIException e) {
             final String msg = "Unable to start VM(" + vmName + ") on host(" + _host.getUuid() + ") due to " + e;
@@ -5207,9 +5170,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 } catch (final Exception e1) {
                     logger.debug("unable to destroy task(" + task + ") on host(" + _host.getUuid() + ") due to " + e1);
                 }
-            }
-            if (taskContext != null) {
-                taskContext.unregisterTask();
             }
         }
     }
@@ -5349,46 +5309,41 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
     }
 
-    public void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException, InterruptedException {
+    public void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         final long beginTime = System.currentTimeMillis();
         if (logger.isTraceEnabled()) {
             logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout + "ms timeout");
         }
-        while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
-            // Check for thread interruption before each iteration
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt(); // Restore interrupt status
+        // Register with the request this thread is executing, so the request can be cancelled by
+        // cancelling this task. If the request was already cancelled before the task was created,
+        // cancel it now rather than let it run.
+        if (XenServerTaskRegistry.taskStarted(task, c)) {
+            logger.info("Request executing on this thread was already cancelled, cancelling newly created task " + task);
+            XenServerTaskRegistry.cancelTask(task, c);
+        }
+        try {
+            // Keep waiting through CANCELLING as well: the task is still winding down on the host, and
+            // callers read its final status right after this returns.
+            Types.TaskStatusType status = task.getStatus(c);
+            while (status == Types.TaskStatusType.PENDING || status == Types.TaskStatusType.CANCELLING) {
                 try {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") is " + status + ", sleeping for " + pollInterval + "ms");
+                    }
+                    Thread.sleep(pollInterval);
+                } catch (final InterruptedException ignored) {
+                }
+                if (System.currentTimeMillis() - beginTime > timeout) {
+                    final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task;
+                    logger.warn(msg);
                     task.cancel(c);
-                    logger.info("Cancelled XenServer task: " + task.getUuid(c) + " due to interruption");
-                } catch (Exception e) {
-                    logger.warn("Failed to cancel task: " + task.getUuid(c), e);
+                    task.destroy(c);
+                    throw new TimeoutException(msg);
                 }
-                throw new InterruptedException("Task wait cancelled for task: " + task.getUuid(c));
+                status = task.getStatus(c);
             }
-
-            try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") is pending, sleeping for " + pollInterval + "ms");
-                }
-                Thread.sleep(pollInterval);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt(); // Restore interrupt status
-                try {
-                    task.cancel(c);
-                    logger.info("Cancelled XenServer task: " + task.getUuid(c) + " due to interruption");
-                } catch (Exception ex) {
-                    logger.warn("Failed to cancel task: " + task.getUuid(c), ex);
-                }
-                throw new InterruptedException("Task wait interrupted for task: " + task.getUuid(c));
-            }
-            if (System.currentTimeMillis() - beginTime > timeout) {
-                final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task;
-                logger.warn(msg);
-                task.cancel(c);
-                task.destroy(c);
-                throw new TimeoutException(msg);
-            }
+        } finally {
+            XenServerTaskRegistry.taskFinished(task);
         }
     }
 
