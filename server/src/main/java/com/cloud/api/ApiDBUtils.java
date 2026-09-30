@@ -32,8 +32,6 @@ import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -940,10 +938,6 @@ public class ApiDBUtils {
         return s_vmDao.findByIdIncludingRemoved(vmId);
     }
 
-    public static VMInstanceVO findVMInstanceByUuid(String vmUuid) {
-        return s_vmDao.findByUuidIncludingRemoved(vmUuid);
-    }
-
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
         // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from
@@ -1112,10 +1106,6 @@ public class ApiDBUtils {
         return s_accountDao.findByIdIncludingRemoved(accountId);
     }
 
-    public static Account findAccountByUuid(String accountUuid) {
-        return s_accountDao.findByUuidIncludingRemoved(accountUuid);
-    }
-
     public static Account findAccountByNameDomain(String accountName, Long domainId) {
         return s_accountDao.findActiveAccount(accountName, domainId);
     }
@@ -1196,20 +1186,12 @@ public class ApiDBUtils {
         return s_hostDao.findByIdIncludingRemoved(hostId);
     }
 
-    public static HostVO findHostByUuid(String hostUuid) {
-        return s_hostDao.findByUuidIncludingRemoved(hostUuid);
-    }
-
     public static HostVO findHostByTypeNameAndZoneId(Long zoneId, String name, Host.Type type) {
         return s_hostDao.findByTypeNameAndZoneId(zoneId, name, type);
     }
 
     public static IPAddressVO findIpAddressById(long addressId) {
         return s_ipAddressDao.findById(addressId);
-    }
-
-    public static IPAddressVO findIpAddressByUuid(String addressUuid) {
-        return s_ipAddressDao.findByUuidIncludingRemoved(addressUuid);
     }
 
     public static GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
@@ -1236,10 +1218,6 @@ public class ApiDBUtils {
 
     public static SecurityGroup findSecurityGroupById(Long groupId) {
         return s_securityGroupDao.findById(groupId);
-    }
-
-    public static SecurityGroup findSecurityGroupByUuid(String groupUuid) {
-        return s_securityGroupDao.findByUuidIncludingRemoved(groupUuid);
     }
 
     public static HostPodVO findPodById(Long podId) {
@@ -1271,16 +1249,8 @@ public class ApiDBUtils {
         return s_snapshotDao.findByIdIncludingRemoved(snapshotId);
     }
 
-    public static Snapshot findSnapshotByUuid(String snapshotUuid) {
-        return s_snapshotDao.findByUuidIncludingRemoved(snapshotUuid);
-    }
-
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
         return s_storagePoolDao.findByIdIncludingRemoved(storagePoolId);
-    }
-
-    public static StoragePoolVO findStoragePoolByUuid(String storagePoolUuid) {
-        return s_storagePoolDao.findByUuidIncludingRemoved(storagePoolUuid);
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
@@ -1294,20 +1264,12 @@ public class ApiDBUtils {
         return template;
     }
 
-    public static VMTemplateVO findTemplateByUuid(String templateUuid) {
-        return s_templateDao.findByUuidIncludingRemoved(templateUuid);
-    }
-
     public static UploadVO findUploadById(Long id) {
         return s_uploadDao.findById(id);
     }
 
     public static User findUserById(Long userId) {
         return s_userDao.findById(userId);
-    }
-
-    public static User findUserByUuid(String userUuid) {
-        return s_userDao.findByUuidIncludingRemoved(userUuid);
     }
 
     public static UserAccountJoinVO findUserAccountById(Long id) {
@@ -1324,10 +1286,6 @@ public class ApiDBUtils {
 
     public static VolumeVO findVolumeById(Long volumeId) {
         return s_volumeDao.findByIdIncludingRemoved(volumeId);
-    }
-
-    public static VolumeVO findVolumeByUuid(String volumeUuid) {
-        return s_volumeDao.findByUuidIncludingRemoved(volumeUuid);
     }
 
     public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
@@ -1487,24 +1445,12 @@ public class ApiDBUtils {
         return s_physicalNetworkDao.findById(id);
     }
 
-    public static PhysicalNetworkVO findPhysicalNetworkByUuid(String uuid) {
-        return s_physicalNetworkDao.findByUuidIncludingRemoved(uuid);
-    }
-
     public static PhysicalNetworkTrafficTypeVO findPhysicalNetworkTrafficTypeById(long id) {
         return s_physicalNetworkTrafficTypeDao.findById(id);
     }
 
-    public static PhysicalNetworkTrafficTypeVO findPhysicalNetworkTrafficTypeByUuid(String uuid) {
-        return s_physicalNetworkTrafficTypeDao.findByUuidIncludingRemoved(uuid);
-    }
-
     public static NetworkVO findNetworkById(long id) {
         return s_networkDao.findByIdIncludingRemoved(id);
-    }
-
-    public static NetworkVO findNetworkByUuid(String uuid) {
-        return s_networkDao.findByUuidIncludingRemoved(uuid);
     }
 
     public static Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId, long zoneId) {
@@ -1736,72 +1682,36 @@ public class ApiDBUtils {
         return s_counterDao.findById(counterId);
     }
 
-    public static CounterVO getCounterByUuid(String counterUuid) {
-        return s_counterDao.findByUuidIncludingRemoved(counterUuid);
-    }
-
     public static ConditionVO findConditionById(long conditionId) {
         return s_asConditionDao.findById(conditionId);
-    }
-
-    public static ConditionVO findConditionByUuid(String conditionUuid) {
-        return s_asConditionDao.findByUuidIncludingRemoved(conditionUuid);
     }
 
     public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderById(long providerId) {
         return s_physicalNetworkServiceProviderDao.findById(providerId);
     }
 
-    public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderByUuid(String providerUuid) {
-        return s_physicalNetworkServiceProviderDao.findByUuidIncludingRemoved(providerUuid);
-    }
-
     public static FirewallRuleVO findFirewallRuleById(long ruleId) {
         return s_firewallRuleDao.findById(ruleId);
-    }
-
-    public static FirewallRuleVO findFirewallRuleByUuid(String ruleUuid) {
-        return s_firewallRuleDao.findByUuidIncludingRemoved(ruleUuid);
     }
 
     public static StaticRouteVO findStaticRouteById(long routeId) {
         return s_staticRouteDao.findById(routeId);
     }
 
-    public static StaticRouteVO findStaticRouteByUuid(String routeUuid) {
-        return s_staticRouteDao.findByUuidIncludingRemoved(routeUuid);
-    }
-
     public static VpcGatewayVO findVpcGatewayById(long gatewayId) {
         return s_vpcGatewayDao.findById(gatewayId);
-    }
-
-    public static VpcGatewayVO findVpcGatewayByUuid(String gatewayUUid) {
-        return s_vpcGatewayDao.findByUuidIncludingRemoved(gatewayUUid);
     }
 
     public static AutoScalePolicyVO findAutoScalePolicyById(long policyId) {
         return s_asPolicyDao.findById(policyId);
     }
 
-    public static AutoScalePolicyVO findAutoScalePolicyByUuid(String policyUuid) {
-        return s_asPolicyDao.findByUuidIncludingRemoved(policyUuid);
-    }
-
     public static AutoScaleVmProfileVO findAutoScaleVmProfileById(long profileId) {
         return s_asVmProfileDao.findById(profileId);
     }
 
-    public static AutoScaleVmProfileVO findAutoScaleVmProfileByUuid(String profileUuid) {
-        return s_asVmProfileDao.findByUuidIncludingRemoved(profileUuid);
-    }
-
     public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId) {
         return s_asVmGroupDao.findById(groupId);
-    }
-
-    public static AutoScaleVmGroupVO findAutoScaleVmGroupByUuid(String groupUuid) {
-        return s_asVmGroupDao.findByUuidIncludingRemoved(groupUuid);
     }
 
     public static int countAvailableVmsByGroupId(long groupId) {
@@ -2003,131 +1913,6 @@ public class ApiDBUtils {
             assert (false);
         }
         return jobInstanceId;
-    }
-
-    public static Long findResourceId(ApiCommandResourceType resourceType, String resourceUuid) {
-        if (StringUtils.isBlank(resourceUuid)
-                || !UuidUtils.isUuid(resourceUuid)
-                || resourceType == ApiCommandResourceType.None) {
-            return null;
-        }
-
-        Long resourceId = null;
-
-        if (resourceType == ApiCommandResourceType.Volume) {
-            VolumeVO volume = ApiDBUtils.findVolumeByUuid(resourceUuid);
-            if (volume != null) {
-                resourceId = volume.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Template || resourceType == ApiCommandResourceType.Iso) {
-            VMTemplateVO template = ApiDBUtils.findTemplateByUuid(resourceUuid);
-            if (template != null) {
-                resourceId = template.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.VirtualMachine || resourceType == ApiCommandResourceType.ConsoleProxy ||
-                resourceType == ApiCommandResourceType.SystemVm || resourceType == ApiCommandResourceType.DomainRouter) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceByUuid(resourceUuid);
-            if (vm != null) {
-                resourceId = vm.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Snapshot) {
-            Snapshot snapshot = ApiDBUtils.findSnapshotByUuid(resourceUuid);
-            if (snapshot != null) {
-                resourceId = snapshot.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Host) {
-            Host host = ApiDBUtils.findHostByUuid(resourceUuid);
-            if (host != null) {
-                resourceId = host.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.StoragePool) {
-            StoragePoolVO spool = ApiDBUtils.findStoragePoolByUuid(resourceUuid);
-            if (spool != null) {
-                resourceId = spool.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.IpAddress) {
-            IPAddressVO ip = ApiDBUtils.findIpAddressByUuid(resourceUuid);
-            if (ip != null) {
-                resourceId = ip.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.SecurityGroup) {
-            SecurityGroup sg = ApiDBUtils.findSecurityGroupByUuid(resourceUuid);
-            if (sg != null) {
-                resourceId = sg.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.PhysicalNetwork) {
-            PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkByUuid(resourceUuid);
-            if (pnet != null) {
-                resourceId = pnet.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.TrafficType) {
-            PhysicalNetworkTrafficTypeVO trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeByUuid(resourceUuid);
-            if (trafficType != null) {
-                resourceId = trafficType.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.PhysicalNetworkServiceProvider) {
-            PhysicalNetworkServiceProvider sp = ApiDBUtils.findPhysicalNetworkServiceProviderByUuid(resourceUuid);
-            if (sp != null) {
-                resourceId = sp.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.FirewallRule) {
-            FirewallRuleVO fw = ApiDBUtils.findFirewallRuleByUuid(resourceUuid);
-            if (fw != null) {
-                resourceId = fw.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Account) {
-            Account acct = ApiDBUtils.findAccountByUuid(resourceUuid);
-            if (acct != null) {
-                resourceId = acct.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.User) {
-            User usr = ApiDBUtils.findUserByUuid(resourceUuid);
-            if (usr != null) {
-                resourceId = usr.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.StaticRoute) {
-            StaticRouteVO route = ApiDBUtils.findStaticRouteByUuid(resourceUuid);
-            if (route != null) {
-                resourceId = route.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.PrivateGateway) {
-            VpcGatewayVO gateway = ApiDBUtils.findVpcGatewayByUuid(resourceUuid);
-            if (gateway != null) {
-                resourceId = gateway.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Counter) {
-            CounterVO counter = ApiDBUtils.getCounterByUuid(resourceUuid);
-            if (counter != null) {
-                resourceId = counter.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Condition) {
-            ConditionVO condition = ApiDBUtils.findConditionByUuid(resourceUuid);
-            if (condition != null) {
-                resourceId = condition.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.AutoScalePolicy) {
-            AutoScalePolicyVO policy = ApiDBUtils.findAutoScalePolicyByUuid(resourceUuid);
-            if (policy != null) {
-                resourceId = policy.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.AutoScaleVmProfile) {
-            AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileByUuid(resourceUuid);
-            if (profile != null) {
-                resourceId = profile.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.AutoScaleVmGroup) {
-            AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupByUuid(resourceUuid);
-            if (group != null) {
-                resourceId = group.getId();
-            }
-        } else if (resourceType == ApiCommandResourceType.Network) {
-            NetworkVO networkVO = ApiDBUtils.findNetworkByUuid(resourceUuid);
-            if(networkVO != null) {
-                resourceId = networkVO.getId();
-            }
-        }
-
-        return resourceId;
     }
 
     ///////////////////////////////////////////////////////////////////////

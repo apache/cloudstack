@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.xenserver.resource.XcpServer83Resource;
 import com.cloud.hypervisor.xenserver.resource.Xenserver84Resource;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
@@ -635,8 +634,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
         } catch (OperationTimedoutException e) {
             logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
-        } catch (OperationCancelledException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it is cancelled", e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }

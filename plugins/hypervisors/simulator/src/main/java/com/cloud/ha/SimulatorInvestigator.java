@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.ha.HAManager;
 
 import com.cloud.agent.AgentManager;
@@ -103,9 +102,6 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
             throw new UnknownVM();
         } catch (OperationTimedoutException e) {
             logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
-            throw new UnknownVM();
-        } catch (OperationCancelledException e) {
-            logger.debug("Operation cancelled for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         }
     }

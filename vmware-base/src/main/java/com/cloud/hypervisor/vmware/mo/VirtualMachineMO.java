@@ -226,11 +226,6 @@ public class VirtualMachineMO extends BaseMO {
             return true;
 
         ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("powerOn", morTask, _context);
-        }
-
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
@@ -298,24 +293,9 @@ public class VirtualMachineMO extends BaseMO {
             } else {
                 logger.error("VMware powerOnVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("powerOn interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel powerOn task: " + ex.getMessage());
-            }
-            throw e;
         } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
             // make sure to let VM question monitor exit
             flags[0] = true;
-            if (future != null) {
-                future.cancel(true);
-            }
         }
 
         return false;
@@ -365,15 +345,10 @@ public class VirtualMachineMO extends BaseMO {
 
     private boolean powerOffNoCheck() throws Exception {
         ManagedObjectReference morTask = _context.getService().powerOffVMTask(_mor);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("powerOff", morTask, _context);
-        }
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
 
             // It seems that even if a power-off task is returned done, VM state may still not be marked,
             // wait up to 5 seconds to make sure to avoid race conditioning for immediate following on operations
@@ -394,24 +369,10 @@ public class VirtualMachineMO extends BaseMO {
                 return true;
             }
 
-                logger.error("VMware powerOffVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("powerOff interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel powerOff task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
+            logger.error("VMware powerOffVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+
+        return false;
     }
 
     public VirtualMachinePowerState getResetSafePowerState() throws Exception {
@@ -447,34 +408,15 @@ public class VirtualMachineMO extends BaseMO {
 
     public boolean reset() throws Exception {
         ManagedObjectReference morTask = _context.getService().resetVMTask(_mor);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("reset", morTask, _context);
-        }
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
-                return true;
-            } else {
-                logger.error("VMware resetVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("resetVM interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel resetVM task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            logger.error("VMware resetVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+        return false;
     }
 
     public void shutdown() throws Exception {
@@ -500,35 +442,16 @@ public class VirtualMachineMO extends BaseMO {
 
     public boolean migrate(ManagedObjectReference morRp, ManagedObjectReference morTargetHost) throws Exception {
         ManagedObjectReference morTask = _context.getService().migrateVMTask(_mor, morRp, morTargetHost, VirtualMachineMovePriority.DEFAULT_PRIORITY, null);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("migrateVM", morTask, _context);
+
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            logger.error("VMware migrateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
-                return true;
-            } else {
-                logger.error("VMware migrateVM_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("migrateVM interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel migrateVM task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
-        }
+        return false;
     }
 
     public boolean changeDatastore(VirtualMachineRelocateSpec relocateSpec) throws Exception {
@@ -605,63 +528,44 @@ public class VirtualMachineMO extends BaseMO {
         long apiTimeout = _context.getVimClient().getVcenterSessionTimeout();
         ManagedObjectReference morTask = _context.getService().createSnapshotTask(_mor, snapshotName, snapshotDescription, dumpMemory, quiesce);
         boolean result = _context.getVimClient().waitForTask(morTask);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("createSnapshot", morTask, _context);
-        }
 
-        try {
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
 
-                ManagedObjectReference morSnapshot = null;
+            ManagedObjectReference morSnapshot = null;
 
-                // We still need to wait until the object appear in vCenter
-                long startTick = System.currentTimeMillis();
+            // We still need to wait until the object appear in vCenter
+            long startTick = System.currentTimeMillis();
 
-                while (System.currentTimeMillis() - startTick < apiTimeout) {
-                    morSnapshot = getSnapshotMor(snapshotName);
+            while (System.currentTimeMillis() - startTick < apiTimeout) {
+                morSnapshot = getSnapshotMor(snapshotName);
 
-                    if (morSnapshot != null) {
-                        break;
-                    }
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        logger.debug("[ignored] interrupted while waiting for snapshot to be done.");
-                    }
+                if (morSnapshot != null) {
+                    break;
                 }
 
-                if (morSnapshot == null) {
-                    logger.error("We've been waiting for over " + apiTimeout + " milli seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, " +
-                            "but it is still not there?!");
-
-                    return null;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    logger.debug("[ignored] interrupted while waiting for snapshot to be done.");
                 }
-
-                logger.debug("Waited for " + (System.currentTimeMillis() - startTick) + " seconds for snapshot object [" + snapshotName + "] to appear in vCenter.");
-
-                return morSnapshot;
-            } else {
-                logger.error("VMware createSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
 
-            return null;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("createSnapshot interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel createSnapshot task: " + ex.getMessage());
+            if (morSnapshot == null) {
+                logger.error("We've been waiting for over " + apiTimeout + " milli seconds for snapshot MOR to be appearing in vCenter after CreateSnapshot task is done, " +
+                        "but it is still not there?!");
+
+                return null;
             }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
+
+            logger.debug("Waited for " + (System.currentTimeMillis() - startTick) + " seconds for snapshot object [" + snapshotName + "] to appear in vCenter.");
+
+            return morSnapshot;
+        } else {
+            logger.error("VMware createSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
+
+        return null;
     }
 
     public boolean removeSnapshot(String snapshotName, boolean removeChildren) throws Exception {
@@ -672,35 +576,15 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         ManagedObjectReference morTask = _context.getService().removeSnapshotTask(morSnapshot, removeChildren, true);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("removeSnapshot", morTask, _context);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            logger.error("VMware removeSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
-                return true;
-            } else {
-                logger.error("VMware removeSnapshot_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("removeSnapshot interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel removeSnapshot task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
-        }
+        return false;
     }
 
     public boolean revertToSnapshot(String snapshotName) throws Exception {
@@ -710,35 +594,15 @@ public class VirtualMachineMO extends BaseMO {
             return false;
         }
         ManagedObjectReference morTask = _context.getService().revertToSnapshotTask(morSnapshot, _mor, null);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("revertToSnapshot", morTask, _context);
+        boolean result = _context.getVimClient().waitForTask(morTask);
+        if (result) {
+            _context.waitForTaskProgressDone(morTask);
+            return true;
+        } else {
+            logger.error("VMware revert to snapshot failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-            if (result) {
-                _context.waitForTaskProgressDone(morTask);
-                return true;
-            } else {
-                logger.error("VMware revert to snapshot failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-            }
-
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("revertToSnapshot interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel revertToSnapshot task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
-        }
+        return false;
     }
 
     /**
@@ -1621,38 +1485,18 @@ public class VirtualMachineMO extends BaseMO {
             reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
             ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-            VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-            if (taskCtx != null) {
-                taskCtx.registerTask("reconfigVM/attachDisk", morTask, _context);
+            boolean result = _context.getVimClient().waitForTask(morTask);
+
+            if (!result) {
+                if (logger.isTraceEnabled())
+                    logger.trace("vCenter API trace - attachDisk() done(failed)");
+                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
 
-            try {
-                boolean result = _context.getVimClient().waitForTask(morTask);
-
-                if (!result) {
-                    if (logger.isTraceEnabled())
-                        logger.trace("vCenter API trace - attachDisk() done(failed)");
-                    throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-                }
-
-                _context.waitForTaskProgressDone(morTask);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("reconfigVM/attachDisk interrupted for VM: " + getVmName() + ", cancelling task");
-                try {
-                    _context.getVimClient().cancelTask(morTask);
-                } catch (Exception ex) {
-                    logger.warn("Failed to cancel reconfigVM/attachDisk task: " + ex.getMessage());
-                }
-                throw e;
-            } finally {
-                if (taskCtx != null) {
-                    taskCtx.unregisterTask();
-                }
-            }
+            _context.waitForTaskProgressDone(morTask);
         }
 
-        if (logger.isTraceEnabled())
+        if(logger.isTraceEnabled())
             logger.trace("vCenter API trace - attachDisk() done(successfully)");
     }
 
@@ -1705,32 +1549,12 @@ public class VirtualMachineMO extends BaseMO {
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
-        if (taskCtx != null) {
-            taskCtx.registerTask("reconfigVM/detachDisk", morTask, _context);
-        }
+        boolean result = _context.getVimClient().waitForTask(morTask);
 
-        try {
-            boolean result = _context.getVimClient().waitForTask(morTask);
-
-            if (!result) {
-                throw new CloudRuntimeException(String.format("Failed to detach disk from instance [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
-            }
-            _context.waitForTaskProgressDone(morTask);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("reconfigVM/detachDisk interrupted for VM: " + getVmName() + ", cancelling task");
-            try {
-                _context.getVimClient().cancelTask(morTask);
-            } catch (Exception ex) {
-                logger.warn("Failed to cancel reconfigVM/detachDisk task: " + ex.getMessage());
-            }
-            throw e;
-        } finally {
-            if (taskCtx != null) {
-                taskCtx.unregisterTask();
-            }
+        if (!result) {
+            throw new CloudRuntimeException(String.format("Failed to detach disk from instance [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
         }
+        _context.waitForTaskProgressDone(morTask);
 
         // VMware does not update snapshot references to the detached disk, we have to work around it
         SnapshotDescriptor snapshotDescriptor = null;
@@ -4032,13 +3856,9 @@ public class VirtualMachineMO extends BaseMO {
                 vmTasks++;
                 if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
                     String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
-                    if (_context.getVimClient().isTaskCancellable(task)) {
-                        logger.debug(taskName + " task pending for the Instance: " + vmName + ", cancelling it");
-                        vmPendingTasks++;
-                        _context.getVimClient().cancelTask(task);
-                    } else {
-                        logger.debug(taskName + " task pending for the Instance: " + vmName + ", but not cancellable");
-                    }
+                    logger.debug(taskName + " task pending for the Instance: " + vmName + ", cancelling it");
+                    vmPendingTasks++;
+                    _context.getVimClient().cancelTask(task);
                 }
             }
         }

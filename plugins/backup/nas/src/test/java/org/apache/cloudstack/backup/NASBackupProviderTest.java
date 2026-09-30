@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
 import org.junit.Test;
@@ -132,7 +131,7 @@ public class NASBackupProviderTest {
     private AlertManager alertManager;
 
     @Test
-    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
         Long hostId = 1L;
         BackupVO backup = new BackupVO();
         backup.setBackupOfferingId(1L);
@@ -158,7 +157,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
                 "nfs", "address", "sync", 1024L, null);
 
@@ -242,7 +241,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException {
         Long backupOfferingId = 3L;
         Long accountId = 4L;
         Long domainId = 5L;
@@ -277,7 +276,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
         HostVO host = hostDao.findById(2L);
         Mockito.when(host.getName()).thenReturn("kvm01");
@@ -312,7 +311,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
 
         BackupAnswer answer = mock(BackupAnswer.class);
@@ -591,7 +590,7 @@ public class NASBackupProviderTest {
      * is called with the active_checkpoint_id key.
      */
     @Test
-    public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+    public void restoreClearsActiveCheckpointDetail() throws AgentUnavailableException, OperationTimedoutException {
         Long vmId = 7L;
         Long hostId = 8L;
         Long backupOfferingId = 9L;
@@ -641,7 +640,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void restoreBackedUpVolumeClearsTargetVmActiveCheckpoint()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long targetVmId = 42L;
         Long backupOfferingId = 9L;
         String targetVmName = "i-2-42-VM";
@@ -711,7 +710,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void deleteWithLiveChildMarksDeletePendingAndPreservesFile()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -787,7 +786,7 @@ public class NASBackupProviderTest {
      */
     @Test
     public void deletingLeafSweepsUpDeletePendingParent()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -872,7 +871,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void deletingLastLiveMemberCollectsDeeperOrphanTombstones()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -949,7 +948,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void deletingAncestorOfTombstoneWithLiveDescendantTombstonesIt()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
@@ -1018,7 +1017,7 @@ public class NASBackupProviderTest {
 
     @Test
     public void sweepContinuesPastFailedTombstoneDelete()
-            throws AgentUnavailableException, OperationTimedoutException, OperationCancelledException {
+            throws AgentUnavailableException, OperationTimedoutException {
         Long zoneId = 1L;
         Long vmId = 2L;
         Long hostId = 3L;
