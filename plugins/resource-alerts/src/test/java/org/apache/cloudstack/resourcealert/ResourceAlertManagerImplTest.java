@@ -199,7 +199,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -219,7 +219,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(75.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
 
         manager.evaluateRules();
 
@@ -233,7 +233,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
 
         ResourceAlertVO recentAlert = mock(ResourceAlertVO.class);
         when(recentAlert.getAlertTimestamp()).thenReturn(new Date(System.currentTimeMillis() - 10_000L));
@@ -251,7 +251,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
 
         ResourceAlertVO oldAlert = mock(ResourceAlertVO.class);
         when(oldAlert.getAlertTimestamp()).thenReturn(new Date(System.currentTimeMillis() - 700_000L));
@@ -266,7 +266,7 @@ public class ResourceAlertManagerImplTest {
     public void testNullStatsSkipped() {
         ResourceAlertRuleVO rule = vmCpuRule(VM_ID);
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(null);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(null);
 
         manager.evaluateRules();
 
@@ -283,7 +283,7 @@ public class ResourceAlertManagerImplTest {
         VmStats stats = mock(VmStats.class);
         when(stats.getMemoryKBs()).thenReturn(8192.0);
         when(stats.getIntFreeMemoryKBs()).thenReturn(-1.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
 
         manager.evaluateRules();
 
@@ -300,7 +300,7 @@ public class ResourceAlertManagerImplTest {
         VmStats stats = mock(VmStats.class);
         when(stats.getMemoryKBs()).thenReturn(8192.0);
         when(stats.getIntFreeMemoryKBs()).thenReturn(2048.0); // 75% used
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -339,8 +339,8 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(101L, false)).thenReturn(stats);
-        when(statsCollector.getVmStats(102L, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(101L)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(102L)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), anyLong())).thenReturn(null);
 
         manager.evaluateRules();
@@ -405,7 +405,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         UserVmVO vm = runningVm();
@@ -424,7 +424,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(75.0); // below threshold
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
 
         manager.evaluateRules();
 
@@ -440,7 +440,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -461,7 +461,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -479,7 +479,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -496,7 +496,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
         UserVmVO vm = mock(UserVmVO.class);
         when(vm.getUuid()).thenReturn("vm-uuid");
@@ -531,7 +531,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         UserVmVO vm = runningVm();
@@ -580,7 +580,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -615,7 +615,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
 
         manager.evaluateRules();
@@ -634,7 +634,7 @@ public class ResourceAlertManagerImplTest {
 
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
         when(alertDao.findLastFiredForRule(anyLong(), eq(VM_ID))).thenReturn(null);
         when(userVmDao.findById(VM_ID)).thenReturn(null);
 
@@ -647,7 +647,7 @@ public class ResourceAlertManagerImplTest {
         when(ruleDao.listActive()).thenReturn(Collections.singletonList(rule));
         VmStats stats = mock(VmStats.class);
         when(stats.getCPUUtilization()).thenReturn(85.0);
-        when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
     }
 
     @Test
@@ -716,7 +716,7 @@ public class ResourceAlertManagerImplTest {
 
         verify(alertDao).persist(alertCaptor.capture());
         assertEquals(2500.0, alertCaptor.getValue().getMetricValue(), 0.001);
-        verify(statsCollector, never()).getVmStats(anyLong(), any(Boolean.class));
+        verify(statsCollector, never()).getRecentVmStats(anyLong());
     }
 
     @Test
@@ -877,7 +877,7 @@ public class ResourceAlertManagerImplTest {
         manager.evaluateRules();
 
         verify(ruleDao).remove(rule.getId());
-        verify(statsCollector, never()).getVmStats(anyLong(), any(Boolean.class));
+        verify(statsCollector, never()).getRecentVmStats(anyLong());
     }
 
     @Test
@@ -1022,7 +1022,7 @@ public class ResourceAlertManagerImplTest {
         when(userVmDao.findById(VM_ID)).thenReturn(vm);
         VmStats stats = mock(VmStats.class);
         lenient().when(stats.getDiskReadIOs()).thenReturn(0.0);
-        lenient().when(statsCollector.getVmStats(VM_ID, false)).thenReturn(stats);
+        lenient().when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
     }
 
     @Test
@@ -1043,4 +1043,20 @@ public class ResourceAlertManagerImplTest {
 
         verify(alertDao).persist(any());
     }
+    @Test
+    public void testVmStatsReadOnceForRulesOnSameVm() {
+        ResourceAlertRuleVO cpuRule = vmCpuRule(VM_ID);
+        ResourceAlertRuleVO netRule = new ResourceAlertRuleVO("vm-net", ResourceAlertRule.ResourceType.VirtualMachine,
+                VM_ID, 1L, 1L, "NETWORK_READ_KBPS", AlertCondition.GT, 1000.0,
+                AlertSeverity.LOW, null, false, 600);
+        when(ruleDao.listActive()).thenReturn(Arrays.asList(cpuRule, netRule));
+        VmStats stats = mock(VmStats.class);
+        when(statsCollector.getRecentVmStats(VM_ID)).thenReturn(stats);
+
+        manager.evaluateRules();
+        manager.evaluateRules();
+
+        verify(statsCollector, times(2)).getRecentVmStats(VM_ID);
+    }
+
 }
