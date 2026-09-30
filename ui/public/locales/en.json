@@ -2337,7 +2337,7 @@
 "label.alerttimestamp": "Alert Time",
 "label.metrictype": "Metric",
 "label.metricvalue": "Value",
-"message.confirm.delete.resource.alert.rule": "Are you sure you want to delete this alert?",
+"message.confirm.delete.resource.alert.rule": "Please confirm that you want to delete this alert rule. Its alert history is deleted too.",
 "label.routingmode": "Routing mode",
 "label.routing.policy": "Routing policy",
 "label.routing.policy.terms": "Routing policy terms",
