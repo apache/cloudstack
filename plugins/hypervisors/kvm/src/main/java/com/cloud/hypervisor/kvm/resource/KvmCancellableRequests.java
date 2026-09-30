@@ -28,15 +28,7 @@ import org.apache.logging.log4j.Logger;
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.kvm.resource.disconnecthook.DisconnectHook;
 
-/**
- * Tracks, per agent request sequence, the backend work the resource could stop for it.
- *
- * The command wrappers already register a {@link DisconnectHook} for every long-running libvirt job
- * they start, so that an agent disconnect aborts it. Those hooks are exactly what a cancellation needs
- * to run; this keeps them keyed by the request that created them. A request with no hook has nothing
- * that can be stopped -- the agent cannot interrupt a blocking libvirt call or a child process from
- * outside -- and is reported as not cancellable rather than cancelled in name only.
- */
+/** Per agent request sequence, the DisconnectHooks the wrappers registered for its libvirt jobs: they are what a cancellation runs. A request without a hook has nothing that can be stopped. */
 public class KvmCancellableRequests {
     private static final Logger LOGGER = LogManager.getLogger(KvmCancellableRequests.class);
 
@@ -54,10 +46,7 @@ public class KvmCancellableRequests {
         }
     }
 
-    /**
-     * Marks the current thread as executing the given request. A sequence of zero (a command that did
-     * not arrive through the agent layer) leaves the thread unscoped, so nothing is tracked for it.
-     */
+    /** A sequence of zero (not from the agent layer) leaves the thread unscoped. */
     public void begin(final long sequence, final Command command) {
         if (sequence <= 0) {
             return;
@@ -110,12 +99,7 @@ public class KvmCancellableRequests {
         return state != null && !state.hooks.isEmpty();
     }
 
-    /**
-     * Runs the request's hooks, each once and bounded by its own timeout, and hands every hook that ran
-     * to the caller so it can be dropped from the disconnect list -- a Thread runs only once, and the
-     * disconnect path would otherwise try to start it again. Returns true only if the request was known,
-     * had something to stop, and every hook ran to completion.
-     */
+    /** Runs each hook once, bounded by its timeout; a Thread cannot be started twice, so ran hooks are handed back for removal from the disconnect list. */
     public boolean cancel(final long sequence, final Consumer<DisconnectHook> onHookRan) {
         final RequestState state = requests.get(sequence);
         if (state == null) {

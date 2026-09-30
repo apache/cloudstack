@@ -418,9 +418,7 @@ public class VmwareClient {
 
         boolean retVal = false;
 
-        // Register with the request this thread is executing, so the request can be cancelled by
-        // cancelling this task. If the request was already cancelled before the task was created,
-        // cancel it now rather than let it run.
+        // register with the executing request; a request already cancelled cancels the new task at once
         if (VmwareTaskRegistry.taskStarted(task, this)) {
             LOGGER.info("Request executing on this thread was already cancelled, cancelling newly created task {}", task.getValue());
             cancelTask(task);
@@ -804,10 +802,7 @@ public class VmwareClient {
         return info.isCancelable();
     }
 
-    /**
-     * Asks vCenter to cancel the task and waits, bounded, for it to reach a terminal state.
-     * Returns whether the task ended cancelled, with the reason when it did not.
-     */
+    /** Asks vCenter to cancel and waits, bounded, for a terminal state. */
     public Pair<Boolean, String> cancelTask(ManagedObjectReference task) throws Exception {
         TaskInfo info = getDynamicProperty(task, "info");
         if (info == null) {
@@ -839,8 +834,7 @@ public class VmwareClient {
         LOGGER.debug("Cancelling task " + taskName + " of the entity " + entityName);
         getService().cancelTask(task);
 
-        // Cancellation is asynchronous. Poll for the outcome rather than going through waitForValues:
-        // that method is synchronized and the thread waiting on this very task holds its monitor.
+        // poll rather than waitForValues: it is synchronized and the thread waiting on this task holds its monitor
         final long deadline = System.currentTimeMillis() + CANCEL_TASK_WAIT_MS;
         while (System.currentTimeMillis() < deadline) {
             info = getDynamicProperty(task, "info");

@@ -40,11 +40,7 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
-    /**
-     * As above, but with remove=false the row is left un-finalised: executing_msid is kept so the
-     * management server running the job can find it, and complete_msid stays null until that
-     * server has stopped the job's in-flight work and called finalizeCancelledJob.
-     */
+    /** With remove=false the row keeps executing_msid until the executing server has stopped the job's work and called finalizeCancelledJob. */
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result, boolean remove);
 
     List<AsyncJobVO> listCancelledJobsExecutingOn(long msid);
