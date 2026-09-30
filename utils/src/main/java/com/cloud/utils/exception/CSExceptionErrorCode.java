@@ -75,6 +75,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.UnavailableCommandException", 4555);
             ExceptionErrorCodeMap.put("com.cloud.exception.OperationTimedoutException", 4560);
             ExceptionErrorCodeMap.put("org.apache.cloudstack.framework.kms.KMSException", 4561);
+            ExceptionErrorCodeMap.put("com.cloud.exception.OperationCancelledException", 4565);
 
             // Have a special error code for ServerApiException when it is
             // thrown in a standalone manner when failing to detect any of the above

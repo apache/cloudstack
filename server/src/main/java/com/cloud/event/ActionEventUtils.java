@@ -32,6 +32,9 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
@@ -183,6 +186,7 @@ public class ActionEventUtils {
         event.setState(state);
         event.setDescription(description);
         event.setDisplay(eventDisplayEnabled);
+        event.setAsyncJobId(currentJobId());
 
         if (domainId != null) {
             event.setDomainId(domainId);
@@ -203,6 +207,20 @@ public class ActionEventUtils {
         }
         event = s_eventDao.persist(event);
         return event;
+    }
+
+    /** The API job this thread works for (a VM work job's parent), or null outside a job. */
+    private static Long currentJobId() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context == null || context.getJob() == null) {
+            return null;
+        }
+        final AsyncJob job = context.getJob();
+        if (AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(job.getDispatcher())) {
+            return null;
+        }
+        final String related = job.getRelated();
+        return StringUtils.isNotEmpty(related) ? Long.valueOf(related) : job.getId();
     }
 
     private static void publishOnEventBus(Event eventRecord, long userId, long accountId, Long domainId,

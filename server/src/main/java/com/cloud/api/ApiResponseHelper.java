@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
@@ -2375,6 +2376,12 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         return createAsyncJobResponse(_jobMgr.queryJob(jobId, true));
+    }
+
+    @Override
+    public AsyncJobResponse cancelJobResponse(CancelAsyncJobCmd cmd) {
+        AsyncJob job = _jobMgr.queryJob(cmd.getId(), true);
+        return createAsyncJobResponse(job);
     }
 
     public AsyncJobResponse createAsyncJobResponse(AsyncJob job) {

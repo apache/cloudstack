@@ -48,9 +48,9 @@ import com.cloud.vm.VirtualMachine;
         description = "Attempts Migration of an Instance to a different host or Root volume of the Instance to a different storage pool",
         responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true)
+        responseHasSensitiveInfo = true,
+        cancellable = true)
 public class MigrateVMCmd extends BaseAsyncCmd {
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

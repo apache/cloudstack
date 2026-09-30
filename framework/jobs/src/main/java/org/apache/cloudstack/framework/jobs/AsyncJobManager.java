@@ -40,6 +40,13 @@ public interface AsyncJobManager extends Manager {
 
     void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result);
 
+    /** With remove=false the row keeps executing_msid until the executing server has stopped the job's work and called finalizeCancelledJob. */
+    void completeAsyncJob(long jobId, JobInfo.Status jobStatus, int resultCode, String result, boolean remove);
+
+    List<AsyncJobVO> listCancelledJobsExecutingOn(long msid);
+
+    void finalizeCancelledJob(long jobId);
+
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);

@@ -39,7 +39,8 @@ import com.cloud.user.Account;
             since = "4.14.0",
             authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
             requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true)
+            responseHasSensitiveInfo = true,
+            cancellable = true)
 public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     private static final String s_name = "destroyvolumeresponse";

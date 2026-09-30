@@ -654,6 +654,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected List<DisconnectHook> _disconnectHooks = new CopyOnWriteArrayList<>();
+    // the same hooks keyed by the request that registered them
+    private final KvmCancellableRequests cancellableRequests = new KvmCancellableRequests();
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -2403,6 +2405,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     @Override
     public Answer executeRequest(final Command cmd) {
+        final long requestSequence = cmd.getRequestSequence();
+        cancellableRequests.begin(requestSequence, cmd);
+        try {
+            final Answer answer = executeRequestInternal(cmd);
+            // an aborted libvirt job surfaces as an ordinary failure; flag it as cancelled
+            if (answer != null && !answer.getResult() && cancellableRequests.wasCancelRequested(requestSequence)) {
+                answer.setCancelled(true);
+            }
+            return answer;
+        } finally {
+            cancellableRequests.end(requestSequence);
+        }
+    }
+
+    @Override
+    public boolean isRequestSequenceCancellable(final long sequence) {
+        return cancellableRequests.isCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(final long sequence) {
+        return cancellableRequests.cancel(sequence, this::removeDisconnectHook);
+    }
+
+    private Answer executeRequestInternal(final Command cmd) {
         if (isReconcileCommandsEnabled) {
             ReconcileCommandUtils.updateLogFileForCommand(COMMANDS_LOG_PATH, cmd, Command.State.STARTED);
         }
@@ -6921,10 +6948,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public void addDisconnectHook(DisconnectHook hook) {
         LOGGER.debug("Adding disconnect hook " + hook);
         _disconnectHooks.add(hook);
+        cancellableRequests.attach(hook);
     }
 
     public void removeDisconnectHook(DisconnectHook hook) {
         LOGGER.debug("Removing disconnect hook " + hook);
+        cancellableRequests.detach(hook);
         if (_disconnectHooks.contains(hook)) {
             LOGGER.debug("Removing disconnect hook " + hook);
             _disconnectHooks.remove(hook);

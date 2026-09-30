@@ -48,8 +48,14 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ManagementServerPeerTab.vue')))
     },
     {
-      name: 'pending.jobs',
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+      name: 'jobs',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue'))),
+      show: () => { return 'listAsyncJobs' in store.getters.apis }
+    },
+    {
+      name: 'usage.jobs',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/UsageJobsTab.vue'))),
+      show: () => { return 'listUsageJobs' in store.getters.apis }
     },
     {
       name: 'connected.agents',

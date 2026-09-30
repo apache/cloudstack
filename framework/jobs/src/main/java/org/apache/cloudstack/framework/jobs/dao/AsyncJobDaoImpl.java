@@ -50,6 +50,8 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> byIdResourceIdResourceTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
+    private final SearchBuilder<AsyncJobVO> relatedAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> cancelledAsyncJobSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -116,6 +118,16 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pendingNonPseudoAsyncJobsSearch.and("instanceTypeNEQ", pendingNonPseudoAsyncJobsSearch.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         pendingNonPseudoAsyncJobsSearch.and("jobStatusEQ", pendingNonPseudoAsyncJobsSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         pendingNonPseudoAsyncJobsSearch.and("executingMsidIN", pendingNonPseudoAsyncJobsSearch.entity().getExecutingMsid(), SearchCriteria.Op.IN);
+
+        relatedAsyncJobSearch = createSearchBuilder();
+        relatedAsyncJobSearch.and("related", relatedAsyncJobSearch.entity().getRelated(), SearchCriteria.Op.EQ);
+        relatedAsyncJobSearch.done();
+
+        cancelledAsyncJobSearch = createSearchBuilder();
+        cancelledAsyncJobSearch.and("status", cancelledAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.and("completeMsId", cancelledAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
+        cancelledAsyncJobSearch.and("executingMsid", cancelledAsyncJobSearch.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        cancelledAsyncJobSearch.done();
     }
 
     @Override
@@ -308,5 +320,27 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("accountId", accountId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public AsyncJobVO getRelatedJob(String jobId) {
+        SearchCriteria<AsyncJobVO> sc = relatedAsyncJobSearch.create();
+        sc.setParameters("related", jobId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> listChildJobs(long parentJobId) {
+        SearchCriteria<AsyncJobVO> sc = relatedAsyncJobSearch.create();
+        sc.setParameters("related", String.valueOf(parentJobId));
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AsyncJobVO> getCancelledJobs(long executingMsid) {
+        SearchCriteria<AsyncJobVO> sc = cancelledAsyncJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.CANCELLED);
+        sc.setParameters("executingMsid", executingMsid);
+        return listBy(sc);
     }
 }

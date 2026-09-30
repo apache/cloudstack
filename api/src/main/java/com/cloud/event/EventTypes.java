@@ -899,6 +899,8 @@ public class EventTypes {
     public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";
     public static final String EVENT_DNS_NAME_COLLISION = "DNS.NAME.COLLISION";
 
+    public static final String EVENT_JOB_CANCEL = "JOB.CANCEL";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

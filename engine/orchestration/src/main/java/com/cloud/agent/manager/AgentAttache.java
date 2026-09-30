@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -128,6 +129,8 @@ public abstract class AgentAttache {
     protected long _nextSequence;
 
     protected AgentManagerImpl _agentMgr;
+    // cancelled because the job was cancelled, as opposed to timed out
+    private final Set<Long> _cancelledSequences = ConcurrentHashMap.newKeySet();
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
@@ -229,6 +232,28 @@ public abstract class AgentAttache {
         if (index >= 0) {
             _requests.remove(index);
         }
+    }
+
+    /** Default false: an attache that cannot ask its resource must not claim it. */
+    protected boolean isExecutionCancellable(final long seq) {
+        return false;
+    }
+
+    /** Returns true only when the resource's work was stopped (or nothing was left to stop). */
+    protected boolean cancelRunning(final long seq) {
+        return false;
+    }
+
+    /** Job-cancel path; distinct from cancel(seq), which is also the timeout path and never reaches the hypervisor. */
+    public boolean cancelExecution(final long seq) {
+        _cancelledSequences.add(seq);
+        if (!cancelRunning(seq)) {
+            // refused: the command runs on and its sender must see the real answer
+            _cancelledSequences.remove(seq);
+            return false;
+        }
+        cancel(seq);
+        return true;
     }
 
     protected synchronized int findRequest(final Request req) {
@@ -411,13 +436,15 @@ public abstract class AgentAttache {
 
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
-
         long seq = req.getSequence();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
+                if (_cancelledSequences.contains(seq)) {
+                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
+                }
                 Command[] cmds = req.getCommands();
                 if (cmds != null && cmds.length == 1 && (cmds[0] != null) && cmds[0].isReconcile()
                         && !sl.isDisconnected() && _agentMgr.isReconcileCommandsEnabled(_hypervisorType)) {
@@ -427,12 +454,26 @@ public abstract class AgentAttache {
                     try {
                         answers = sl.waitFor(wait);
                     } catch (final InterruptedException e) {
-                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted");
+                        logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for the answer");
+                        Thread.currentThread().interrupt();
+                        if (_cancelledSequences.contains(seq)) {
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
+                        }
                     }
                 }
                 if (answers != null) {
+                    for (Answer answer : answers) {
+                        if (answer != null && answer.isCancelled()) {
+                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, answer.getDetails());
+                        }
+                    }
+
                     new Response(req, answers).logD("Received: ", false);
                     return answers;
+                }
+
+                if (_cancelledSequences.contains(seq)) {
+                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
                 }
 
                 answers = sl.getAnswers(); // Try it again.
@@ -463,6 +504,14 @@ public abstract class AgentAttache {
                 sendNext(seq);
             }
             throw e;
+        } catch (OperationCancelledException e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled: " + req.toString());
+            cancel(seq);
+            final Long current = _currentSequence;
+            if (req.executeInSequence() && (current != null && current == seq)) {
+                sendNext(seq);
+            }
+            throw e;
         } catch (Exception e) {
             logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception while waiting for answer", e);
             cancel(seq);
@@ -473,6 +522,7 @@ public abstract class AgentAttache {
             _agentMgr.updateReconcileCommandsIfNeeded(req.getSequence(), req.getCommands(), Command.State.TIMED_OUT);
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
         } finally {
+            _cancelledSequences.remove(seq);
             unregisterListener(seq);
         }
     }
