@@ -1235,9 +1235,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
     }
 
-    private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
+    protected void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
         if (!forVirtualNetworks) {
-            NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+            NicVO nic = ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
 
             if (nic == null) {  // find in nic_secondary_ips, user vm only
                 NicSecondaryIpVO secondaryIp =
@@ -1266,6 +1266,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                     }
                 }
             } else if (nic.getVmType() == Type.DomainRouter) {
+                ipResponse.setIsSystem(true);
                 VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
                 if (vm != null) {
                     ipResponse.setVirtualMachineId(vm.getUuid());
