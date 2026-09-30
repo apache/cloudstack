@@ -291,7 +291,7 @@ export default {
     },
     cancelJob (record) {
       this.cancelling = record.jobid
-      postAPI('cancelAsyncJob', { id: record.jobid }).then(() => {
+      postAPI('cancelAsyncJob', { jobid: record.jobid }).then(() => {
         this.$message.success(this.$t('message.cancel.job.success'))
       }).catch(error => {
         // a refusal (the operation cannot be stopped) is expected; show the server's reason
