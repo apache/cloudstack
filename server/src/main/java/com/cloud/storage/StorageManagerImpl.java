@@ -200,7 +200,6 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
@@ -2064,7 +2063,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     answers.add(_agentMgr.send(targetHostId, cmd));
                 }
                 return new Pair<>(hostId, answers.toArray(new Answer[answers.size()]));
-            } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
                 logger.debug("Unable to send storage pool command to {} via {}", pool::toString, () -> _hostDao.findById(hostId), () -> e);
             }
         }
@@ -3664,7 +3663,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } catch (AgentUnavailableException e) {
             logger.debug("Unable to send storage pool command to " + pool + " via " + hostIds.get(0), e);
             throw new StorageUnavailableException("Unable to send command to the pool ", pool.getId());
-        } catch (OperationTimedoutException | OperationCancelledException e) {
+        } catch (OperationTimedoutException e) {
             logger.debug("Failed to process storage pool command to " + pool + " via " + hostIds.get(0), e);
             throw new StorageUnavailableException("Failed to process storage command to the pool ", pool.getId());
         }

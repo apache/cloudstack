@@ -18,7 +18,6 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
 import com.cloud.host.Host;
@@ -610,11 +609,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
-        } catch (OperationCancelledException e) {
-            logger.error("Operation to initiate backup cancelled for VM {}", vm.getInstanceName());
-            backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
-            throw new CloudRuntimeException("Operation to initiate backup cancelled");
         }
 
         if (answer != null && answer.getResult()) {
@@ -736,8 +730,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
-        } catch (OperationCancelledException e) {
-            throw new CloudRuntimeException("Operation to restore backup cancelled");
         }
         if (answer == null) {
             throw new CloudRuntimeException(String.format("No answer received from the backend control plane while restoring VM %s from backup %s", vm.getInstanceName(), backup.getUuid()));
@@ -864,8 +856,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backed up volume timed out, please try again");
-        } catch (OperationCancelledException e) {
-            throw new CloudRuntimeException("Operation to restore backed up volume cancelled");
         }
 
         if (answer.getResult()) {
@@ -1002,8 +992,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
-        } catch (OperationCancelledException e) {
-            throw new CloudRuntimeException("Operation to delete backup cancelled");
         }
         if (answer == null || !answer.getResult()) {
             logger.error("Failed to delete backup file for {} ({}); leaving DB row intact",
@@ -1244,8 +1232,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 logger.warn("Unable to contact backend control plane to get backup stats for repository: {}", repository.getName());
             } catch (OperationTimedoutException e) {
                 logger.warn("Operation to get backup stats timed out for the repository: " + repository.getName());
-            } catch (OperationCancelledException e) {
-                logger.warn("Operation to get backup stats cancelled for the repository: " + repository.getName());
             }
         }
     }

@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.motion;
 
-import com.cloud.exception.OperationCancelledException;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRcList;
@@ -454,9 +453,6 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             } catch (final OperationTimedoutException e) {
                 errMsg = String.format("Operation timed out due to %s", e.getMessage());
                 throw new AgentUnavailableException(errMsg, destHost.getId());
-            } catch (final OperationCancelledException e) {
-                errMsg = String.format("Operation cancelled due to %s", e.getMessage());
-                throw new AgentUnavailableException(errMsg, destHost.getId());
             }
 
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
@@ -489,7 +485,7 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException | CloudRuntimeException ex) {
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in LinstorDataMotionStrategy.copyAsync. Error message: [%s].",
                     vmTO, srcHost, destHost, ex.getMessage());
