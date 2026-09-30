@@ -36,7 +36,6 @@ import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -58,6 +57,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -353,8 +353,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     public int getGloballyConfiguredCidrSize() {
         try {
-            final String globalVlanBits = _configDao.getValue(Config.GuestVlanBits.key());
-            return 8 + Integer.parseInt(globalVlanBits);
+            return 8 + NetworkService.GuestVlanBits.value();
         } catch (final Exception e) {
             throw new CloudRuntimeException("Failed to read the globally configured VLAN bits size.");
         }

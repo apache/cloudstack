@@ -40,10 +40,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -208,7 +208,7 @@ public class ActionEventUtils {
     private static void publishOnEventBus(Event eventRecord, long userId, long accountId, Long domainId,
           String eventCategory, String eventType, Event.State state, String description, String resourceUuid,
           String resourceType) {
-        String configKey = Config.PublishActionEvent.key();
+        String configKey = ManagementServer.PublishActionEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)

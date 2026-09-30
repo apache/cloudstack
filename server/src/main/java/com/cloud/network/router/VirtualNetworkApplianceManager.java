@@ -64,6 +64,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<>(String.class, RouterTemplateOvm3CK, "Advanced", "SystemVM Template (Ovm3)",
             "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> RouterRamSize = new ConfigKey<>("Hidden", Integer.class, "router.ram.size", "512",
+            "Default RAM for router VM (in MB).", true);
+
     ConfigKey<String> VirtualRouterUserData = new ConfigKey<>(String.class, "virtual.router.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
             "UUID for user data of VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
@@ -72,6 +75,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     ConfigKey<Boolean> SetServiceMonitor = new ConfigKey<>(Boolean.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Boolean> NetworkRouterRpFilter = new ConfigKey<>("Network", Boolean.class, "network.disable.rpfilter", "true",
+            "disable rp_filter on Domain Router VM public interfaces.", true);
+
+    ConfigKey<Boolean> EnableServiceMonitoring = new ConfigKey<>("Network", Boolean.class, "network.router.enableserviceMonitoring", "false",
+            "service monitoring in router enable/disable option, default false", true);
 
     ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
@@ -131,11 +140,39 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     ConfigKey<Boolean> RemoveControlIpOnStop = new ConfigKey<>(Boolean.class, RemoveControlIpOnStopCK, "Advanced", "true",
             "on stopping routers and system VMs the IP will be released to preserve IPv4 space.", true, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> RouterStatsInterval = new ConfigKey<>("Advanced", Integer.class, "router.stats.interval", "300",
+            "Interval (in seconds) to report router statistics.", true);
+
+    ConfigKey<Integer> RouterCheckInterval = new ConfigKey<>("Advanced", Integer.class, "router.check.interval", "30",
+            "Interval (in seconds) to report redundant router status.", true);
+
+    ConfigKey<Integer> RouterCheckPoolSize = new ConfigKey<>("Advanced", Integer.class, "router.check.poolsize", "10",
+            "Numbers of threads using to check redundant router status.", true);
+
+    ConfigKey<Integer> RouterExtraPublicNics = new ConfigKey<>("Advanced", Integer.class, "router.extra.public.nics", "2",
+            "specify extra public nics used for virtual router(up to 5)", true);
+
+    ConfigKey<String> DnsBasicZoneUpdates = new ConfigKey<>("Advanced", String.class, "network.dns.basiczone.updates", "all",
+            "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod",
+            true, ConfigKey.Kind.Select, "all,pod");
+
+    ConfigKey<Integer> RedundantRouterVrrpInterval = new ConfigKey<>("Advanced", Integer.class, "router.redundant.vrrp.interval", "1",
+            "seconds between VRRP broadcast. It would 3 times broadcast fail to trigger fail-over mechanism of redundant router", true);
+
+    ConfigKey<Boolean> DirectAttachNetworkEnabled = new ConfigKey<>("Advanced", Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false",
+            "Direct-attach VMs using external DHCP server", true);
+
+    ConfigKey<String> DirectAttachNetworkExternalAPIURL = new ConfigKey<>("Advanced", String.class, "direct.attach.network.externalIpAllocator.url", null,
+            "Direct-attach VMs using external DHCP server (API url)", true);
+
     int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
     boolean USE_POD_VLAN = false;
     int DEFAULT_PRIORITY = 100;
     int DEFAULT_DELTA = 2;
+
+    ConfigKey<Integer> RouterCpuMHz = new ConfigKey<>("Advanced", Integer.class, "router.cpu.mhz", String.valueOf(DEFAULT_ROUTER_CPU_MHZ),
+            "Default CPU speed (MHz) for router VM.", true);
 
 
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;

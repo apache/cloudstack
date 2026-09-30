@@ -81,7 +81,6 @@ import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -104,6 +103,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
@@ -1519,12 +1519,8 @@ public class TemplateServiceImpl implements TemplateService {
     private String generateCopyUrl(String ipAddress, String dir, String path) {
         String hostname = ipAddress;
         String scheme = "http";
-        boolean _sslCopy = false;
-        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        boolean _sslCopy = SecondaryStorageVmManager.SecStorageEncryptCopy.value();
         String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
-        if (sslCfg != null) {
-            _sslCopy = Boolean.parseBoolean(sslCfg);
-        }
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
             logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;

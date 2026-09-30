@@ -76,7 +76,6 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
@@ -131,7 +130,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -380,7 +378,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 } else if (vm.getHypervisorType() == HypervisorType.External) {
                     plannerName = "ExternalServerPlanner";
                 } else {
-                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+                    plannerName = VmDeploymentPlanner.value();
                 }
             }
             planner = getDeploymentPlannerByName(plannerName);
@@ -1327,13 +1325,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         });
 
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        _vmCapacityReleaseInterval = UserVmManager.CapacitySkipcountingHours.value();
 
-        String hostReservationReleasePeriod = _configDao.getValue(Config.HostReservationReleasePeriod.key());
+        String hostReservationReleasePeriod = _configDao.getValue(HostReservationReleasePeriod.key());
         if (hostReservationReleasePeriod != null) {
             _hostReservationReleasePeriod = Long.parseLong(hostReservationReleasePeriod);
             if (_hostReservationReleasePeriod <= 0)
-                _hostReservationReleasePeriod = Long.parseLong(Config.HostReservationReleasePeriod.getDefaultValue());
+                _hostReservationReleasePeriod = Long.parseLong(HostReservationReleasePeriod.defaultValue());
         }
 
         _timer = new Timer("HostReservationReleaseChecker");
@@ -2130,7 +2128,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {allowRouterOnDisabledResource, allowAdminVmOnDisabledResource};
+        return new ConfigKey<?>[] {allowRouterOnDisabledResource, allowAdminVmOnDisabledResource, HostReservationReleasePeriod, VmDeploymentPlanner};
     }
 
     @Override

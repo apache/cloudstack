@@ -28,7 +28,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 
-import com.cloud.configuration.Config;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 
 @APICommand(name = "getApiLimit", responseObject = ApiLimitResponse.class, description = "Get API limit count for the caller",
@@ -58,7 +58,7 @@ public class GetApiLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
+        boolean apiLimitEnabled = ManagementServer.ApiLimitEnabled.value();
         if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
