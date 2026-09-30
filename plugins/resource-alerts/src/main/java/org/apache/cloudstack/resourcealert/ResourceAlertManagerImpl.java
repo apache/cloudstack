@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -410,6 +409,9 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     }
 
     private Double getMetricValue(ResourceAlertRule.ResourceType type, ResourceAlertMetric metric, long resourceId) {
+        if (!metric.appliesTo(type)) {
+            return null;
+        }
         switch (metric) {
             case CPU_UTILIZATION:
                 if (type == ResourceAlertRule.ResourceType.VirtualMachine) {
@@ -440,14 +442,22 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                     return ((total - free) / total) * 100.0;
                 }
                 break;
-            case DISK_READ_IOPS:
-                return getVmDiskStat(type, resourceId, s -> s.getDiskReadIOs());
-            case DISK_WRITE_IOPS:
-                return getVmDiskStat(type, resourceId, s -> s.getDiskWriteIOs());
-            case DISK_READ_KBPS:
-                return getVmDiskStat(type, resourceId, s -> s.getDiskReadKBs());
-            case DISK_WRITE_KBPS:
-                return getVmDiskStat(type, resourceId, s -> s.getDiskWriteKBs());
+            case DISK_READ_IOPS: {
+                VmStats s = getVmStats(resourceId);
+                return s != null ? s.getDiskReadIOs() : null;
+            }
+            case DISK_WRITE_IOPS: {
+                VmStats s = getVmStats(resourceId);
+                return s != null ? s.getDiskWriteIOs() : null;
+            }
+            case DISK_READ_KBPS: {
+                VmStats s = getVmStats(resourceId);
+                return s != null ? s.getDiskReadKBs() : null;
+            }
+            case DISK_WRITE_KBPS: {
+                VmStats s = getVmStats(resourceId);
+                return s != null ? s.getDiskWriteKBs() : null;
+            }
             case NETWORK_READ_KBPS: {
                 if (type == ResourceAlertRule.ResourceType.Host) {
                     HostStats s = statsCollector.getHostStats(resourceId);
@@ -494,20 +504,6 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         if (vol == null) return null;
         String locator = Storage.ImageFormat.OVA.equals(vol.getFormat()) ? vol.getChainInfo() : vol.getPath();
         return locator != null ? statsCollector.getVolumeStats(locator) : null;
-    }
-
-    // For volume rules, resolve the attached VM and use its aggregate disk stats.
-    private Double getVmDiskStat(ResourceAlertRule.ResourceType type, long resourceId, ToDoubleFunction<VmStats> extractor) {
-        long vmId = resourceId;
-        if (type == ResourceAlertRule.ResourceType.Volume) {
-            VolumeVO vol = volumeDao.findById(resourceId);
-            if (vol == null || vol.getInstanceId() == null) return null;
-            vmId = vol.getInstanceId();
-            UserVmVO vm = userVmDao.findById(vmId);
-            if (vm == null || !VirtualMachine.State.Running.equals(vm.getState())) return null;
-        }
-        VmStats s = getVmStats(vmId);
-        return s != null ? extractor.applyAsDouble(s) : null;
     }
 
     private boolean canFire(long ruleId, Long resourceId, int resetInterval) {
