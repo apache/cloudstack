@@ -67,14 +67,18 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.context.CallContext;
 
 public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAlertService {
+
+    static final int OWNER_LOCK_WAIT_SECONDS = 30;
 
     @Inject
     AccountManager accountManager;
@@ -113,33 +117,44 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         checkEmailAccess(caller, email);
         Account owner = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
-        int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
-        if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
-            throw new InvalidParameterValueException(
-                    "Account has reached the maximum of " + limit + " resource alert rules");
-        }
         long domainId = owner.getDomainId();
-        String name = validateName(owner.getId(), cmd.getName(), null);
 
         InternalIdentity resource = findResourceOrFail(resourceType, cmd.getResourceId());
         if (resource instanceof ControlledEntity) {
             accountManager.checkAccess(owner, null, false, (ControlledEntity) resource);
         }
         Long resourceId = resource != null ? resource.getId() : null;
-
-        ResourceAlertRuleVO rule = new ResourceAlertRuleVO(
-                name, resourceType, resourceId,
-                owner.getId(), domainId,
-                metric.name(), condition, cmd.getThreshold(), severity,
-                cmd.getMessage(), email, resetInterval);
-
         List<Long> webhookIds = resolveWebhookIds(owner, cmd.getWebhookIds());
-        ruleDao.persist(rule);
+
+        // Held across management servers so parallel creates can't go over the limit or reuse a name.
+        GlobalLock lock = getOwnerLock(owner.getId());
+        if (!lock.lock(OWNER_LOCK_WAIT_SECONDS)) {
+            throw new CloudRuntimeException("Unable to create the resource alert rule as another rule is being created for the account, please try again");
+        }
+        ResourceAlertRuleVO rule;
+        try {
+            int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
+            if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
+                throw new InvalidParameterValueException(
+                        "Account has reached the maximum of " + limit + " resource alert rules");
+            }
+            String name = validateName(owner.getId(), cmd.getName(), null);
+
+            rule = new ResourceAlertRuleVO(
+                    name, resourceType, resourceId,
+                    owner.getId(), domainId,
+                    metric.name(), condition, cmd.getThreshold(), severity,
+                    cmd.getMessage(), email, resetInterval);
+            ruleDao.persist(rule);
+            if (!webhookIds.isEmpty()) {
+                ruleWebhookDao.replaceWebhooksForRule(rule.getId(), webhookIds);
+            }
+        } finally {
+            lock.unlock();
+            lock.releaseRef();
+        }
         CallContext.current().setEventResourceId(rule.getId());
         CallContext.current().setEventDetails("Rule: " + rule.getName());
-        if (!webhookIds.isEmpty()) {
-            ruleWebhookDao.replaceWebhooksForRule(rule.getId(), webhookIds);
-        }
         return toRuleResponse(ruleJoinDao.findById(rule.getId()));
     }
 
@@ -445,6 +460,10 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         if (metric.isPercentage() && threshold > 100) {
             throw new InvalidParameterValueException("threshold for " + metric.name() + " is a percentage and must be 100 or less");
         }
+    }
+
+    GlobalLock getOwnerLock(long accountId) {
+        return GlobalLock.getInternLock("ResourceAlertRules.Account." + accountId);
     }
 
     // Rules are picked by name in the UI and in alerts, so a name must be set and unique for its owner.

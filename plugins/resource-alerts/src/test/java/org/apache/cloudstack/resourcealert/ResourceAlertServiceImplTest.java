@@ -19,10 +19,14 @@ package org.apache.cloudstack.resourcealert;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -55,6 +59,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -69,6 +74,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -93,6 +100,7 @@ public class ResourceAlertServiceImplTest {
     private MockedStatic<CallContext> callContextMocked;
     private Account caller;
     private Account owner;
+    private GlobalLock ownerLock;
 
     @Before
     public void setUp() {
@@ -106,6 +114,10 @@ public class ResourceAlertServiceImplTest {
         owner = mock(Account.class);
         when(owner.getId()).thenReturn(42L);
         when(accountManager.finalizeOwner(eq(caller), any(), any(), any())).thenReturn(owner);
+
+        ownerLock = mock(GlobalLock.class);
+        when(ownerLock.lock(anyInt())).thenReturn(true);
+        doReturn(ownerLock).when(service).getOwnerLock(anyLong());
     }
 
     @After
@@ -660,5 +672,38 @@ public class ResourceAlertServiceImplTest {
         service.listResourceAlerts(cmd);
 
         verify(alertDao).searchAndCountByFilters(eq(List.of(5L, 6L)), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testCreateChecksLimitAndSavesUnderOwnerLock() {
+        service.createResourceAlertRule(validVmCreateCmd());
+
+        InOrder order = inOrder(ownerLock, ruleDao);
+        order.verify(ownerLock).lock(ResourceAlertServiceImpl.OWNER_LOCK_WAIT_SECONDS);
+        order.verify(ruleDao).countActiveByAccountId(42L);
+        order.verify(ruleDao).persist(any(ResourceAlertRuleVO.class));
+        order.verify(ownerLock).unlock();
+        verify(service).getOwnerLock(42L);
+    }
+
+    @Test
+    public void testCreateReleasesOwnerLockWhenLimitReached() {
+        when(ruleDao.countActiveByAccountId(42L)).thenReturn(20);
+
+        try {
+            service.createResourceAlertRule(validVmCreateCmd());
+        } catch (InvalidParameterValueException e) {
+            verify(ownerLock).unlock();
+            verify(ownerLock).releaseRef();
+            return;
+        }
+        fail("Expected the rule limit to be enforced");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCreateFailsWhenOwnerLockNotAcquired() {
+        when(ownerLock.lock(anyInt())).thenReturn(false);
+
+        service.createResourceAlertRule(validVmCreateCmd());
     }
 }
