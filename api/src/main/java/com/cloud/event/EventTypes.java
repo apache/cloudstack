@@ -297,7 +297,7 @@ public class EventTypes {
     public static final String EVENT_ACCOUNT_CREATE = "ACCOUNT.CREATE";
     public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
     public static final String EVENT_ACCOUNT_UPDATE = "ACCOUNT.UPDATE";
-    public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE";
+    public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE"; // Not used anymore, but left for the Account entity mapping
 
     // UserVO Events
     public static final String EVENT_USER_LOGIN = "USER.LOGIN";

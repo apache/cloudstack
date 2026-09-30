@@ -67,10 +67,6 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "Path of the Domain the Account belongs to", since = "4.13")
     private String domainPath;
 
-    @SerializedName(ApiConstants.DEFAULT_ZONE_ID)
-    @Param(description = "The default zone of the Account")
-    private String defaultZoneId;
-
     @SerializedName(ApiConstants.RECEIVED_BYTES)
     @Param(description = "The total number of Network traffic bytes received")
     private Long bytesReceived;
@@ -670,10 +666,6 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setObjectStorageAvailable(String objectStorageAvailable) {
         this.objectStorageAvailable = objectStorageAvailable;
-    }
-
-    public void setDefaultZone(String defaultZoneId) {
-        this.defaultZoneId = defaultZoneId;
     }
 
     public void setIsDefault(Boolean isDefault) {
