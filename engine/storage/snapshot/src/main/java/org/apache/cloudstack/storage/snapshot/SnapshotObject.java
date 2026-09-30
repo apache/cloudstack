@@ -129,7 +129,9 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     /**
-     * Returns the snapshotInfo of the passed snapshot parentId. Will search for the snapshot reference which has a checkpoint path. If none is found, throws an exception.
+     * Returns the snapshotInfo of the passed snapshot parentId. Will search for the snapshot reference which has a checkpoint path.
+     * If none is found, returns the plain parent on this snapshot's store: KVM snapshots may also be chained without checkpoints,
+     * e.g. Linstor chains deltas through a content diff against the parent snapshot file on secondary storage.
      * */
     protected SnapshotInfo getCorrectIncrementalParent(long parentId) {
         List<SnapshotDataStoreVO> parentSnapshotDatastoreVos = snapshotStoreDao.findBySnapshotId(parentId);
@@ -141,8 +143,11 @@ public class SnapshotObject implements SnapshotInfo {
         logger.debug("Found parent snapshot references {}, will filter to just one.", parentSnapshotDatastoreVos);
 
         SnapshotDataStoreVO parent = parentSnapshotDatastoreVos.stream().filter(snapshotDataStoreVO -> snapshotDataStoreVO.getKvmCheckpointPath() != null)
-                .findFirst().
-                orElseThrow(() -> new CloudRuntimeException(String.format("Could not find snapshot parent with id [%s]. None of the records have a checkpoint path.", parentId)));
+                .findFirst().orElse(null);
+
+        if (parent == null) {
+            return snapshotFactory.getSnapshot(parentId, store);
+        }
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(parentId, parent.getDataStoreId(), parent.getRole());
         snapshotInfo.setKvmIncrementalSnapshot(parent.getKvmCheckpointPath() != null);
