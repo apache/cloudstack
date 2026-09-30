@@ -88,37 +88,54 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         hostToClusterMap = sortByClusterSize(hostToClusterMap);
 
         int hostsToGive = allHosts.size() - avLoad;
-        int hostsLeftToGive = hostsToGive;
-        int hostsLeft = directHosts.size();
-        List<HostVO> hostsToReturn = new ArrayList<HostVO>();
 
         logger.debug("Management server {} can give away {} as it currently owns {} and the " +
                 "average agent load in the system is {}; finalyzing list of hosts to give away...",
                 ms, hostsToGive, allHosts.size(), avLoad);
+        List<HostVO> hostsToReturn = selectHostsToGiveAway(hostToClusterMap, hostsToGive, directHosts.size());
+
+        logger.debug("Management server {} is ready to give away {} hosts", ms, hostsToReturn.size());
+        return hostsToReturn;
+    }
+
+    /**
+     * Picks hosts to hand over from a management server that is over its average agent load.
+     * Whole clusters are preferred (so a hypervisor cluster stays on a single management server
+     * whenever possible), but when no combination of whole clusters can satisfy {@code hostsToGive}
+     * (e.g. a single cluster holds all the hosts), a partial subset of the last cluster considered
+     * is taken instead of giving away nothing, so rebalancing still makes progress.
+     */
+    protected List<HostVO> selectHostsToGiveAway(Map<Long, List<HostVO>> hostToClusterMap, int hostsToGive, int totalDirectHosts) {
+        int hostsLeftToGive = hostsToGive;
+        int hostsLeft = totalDirectHosts;
+        List<HostVO> hostsToReturn = new ArrayList<HostVO>();
+
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();
-            if (hostsToReturn.size() < hostsToGive) {
-                logger.debug("Trying cluster id=" + cluster);
+            if (hostsToReturn.size() >= hostsToGive) {
+                break;
+            }
 
-                if (hostsInCluster.size() > hostsLeftToGive) {
-                    logger.debug("Skipping cluster id=" + cluster + " as it has more hosts than we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive);
-                    if (hostsLeft >= hostsLeftToGive) {
-                        continue;
-                    } else {
-                        break;
-                    }
-                } else {
-                    logger.debug("Taking all " + hostsInCluster.size() + " hosts: " + hostsInCluster + " from cluster id=" + cluster);
-                    hostsToReturn.addAll(hostsInCluster);
-                    hostsLeftToGive = hostsLeftToGive - hostsInCluster.size();
-                }
+            logger.debug("Trying cluster id=" + cluster);
+
+            if (hostsInCluster.size() <= hostsLeftToGive) {
+                logger.debug("Taking all " + hostsInCluster.size() + " hosts: " + hostsInCluster + " from cluster id=" + cluster);
+                hostsToReturn.addAll(hostsInCluster);
+                hostsLeftToGive = hostsLeftToGive - hostsInCluster.size();
+            } else if (hostsLeft >= hostsLeftToGive) {
+                logger.debug("Skipping cluster id=" + cluster + " as it has more hosts than we need: " + hostsInCluster.size() + " vs " + hostsLeftToGive
+                        + ", and remaining clusters can still satisfy the quota");
+                continue;
             } else {
+                logger.debug("No combination of whole clusters can satisfy the quota; taking a partial subset of " + hostsLeftToGive
+                        + " hosts from cluster id=" + cluster + " instead of giving away nothing");
+                hostsToReturn.addAll(hostsInCluster.subList(0, hostsLeftToGive));
+                hostsLeftToGive = 0;
                 break;
             }
         }
 
-        logger.debug("Management server {} is ready to give away {} hosts", ms, hostsToReturn.size());
         return hostsToReturn;
     }
 
