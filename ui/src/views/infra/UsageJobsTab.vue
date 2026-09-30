@@ -42,6 +42,7 @@
       :columns="columns"
       :dataSource="jobs"
       :rowKey="(item, index) => item.usageserver + '-' + item.startdate + '-' + index"
+      :scroll="{ x: 'max-content' }"
       :pagination="false">
       <template #jobtype="{ text }">
         {{ jobTypeLabel(text) }}
