@@ -1073,8 +1073,4 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VirtualMachine;
     }
-
-    public boolean isCancellable() {
-        return true;
-    }
 }
