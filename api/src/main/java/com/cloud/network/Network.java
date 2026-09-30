@@ -43,7 +43,7 @@ import com.cloud.utils.fsm.StateObject;
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     enum GuestType {
-        Shared, Isolated, L2;
+        Shared, Isolated, L2, L3;
 
         public static GuestType fromValue(String type) {
             if (StringUtils.isBlank(type)) {
@@ -54,6 +54,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
                 return Isolated;
             } else if (type.equalsIgnoreCase("L2")) {
                 return L2;
+            } else if (type.equalsIgnoreCase("L3")) {
+                return L3;
             } else {
                 throw new InvalidParameterValueException("Unexpected Guest type : " + type);
             }

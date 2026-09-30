@@ -557,6 +557,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         sgProviders.add(Provider.SecurityGroupProvider);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
 
+        final Map<Network.Service, Set<Network.Provider>> defaultL3NetworkOfferingProviders = new HashMap<>();
+        final Set<Provider> configDriveProvider = new HashSet<>();
+        configDriveProvider.add(Provider.ConfigDrive);
+        defaultL3NetworkOfferingProviders.put(Service.UserData, configDriveProvider);
+        defaultL3NetworkOfferingProviders.put(Service.Dns, configDriveProvider);
+        final Set<Provider> l3SecurityGroupProvider = new HashSet<>();
+        l3SecurityGroupProvider.add(Provider.SecurityGroupProvider);
+        defaultL3NetworkOfferingProviders.put(Service.SecurityGroup, l3SecurityGroupProvider);
+
         tungstenProvider.add(Provider.Tungsten);
         final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<>();
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Connectivity, tungstenProvider);
@@ -618,6 +627,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false,
                             null, true, false, false, false, false, null, null, null, true, null, null, false);
+                }
+
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL3NetworkOffering) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL3NetworkOffering,
+                            "Offering for Direct Routed (L3) networks - public IPs routed directly to Instances, configuration via ConfigDrive (UserData and DNS), Security Groups enabled, no Virtual Router and no DHCP",
+                            TrafficType.Guest, null, false, Availability.Optional, null, defaultL3NetworkOfferingProviders, true, Network.GuestType.L3, false, null, true,
+                            null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
                 }
 
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE) == null) {
@@ -2940,7 +2956,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final boolean vlanSpecified = vlanId != null;
             if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
                 if (vlanSpecified) {
-                    if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                    if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isL3NetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
                         throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
                     }
                 } else {
@@ -2950,13 +2966,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             if (vlanSpecified) {
                 URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
+                if (BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed
+                        && _vlanDao.findByZoneAndVlanId(zoneId, uri.toString()) != null) {
+                    throw new InvalidParameterValueException(String.format(
+                            "The routed id %s is already used by a public IP range in zone %s", vlanId, zone.getName()));
+                }
                 // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
                 URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
-                if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isL3NetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
                     bypassVlanOverlapCheck = true;
                 }
                 //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
-                if (!(bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork))
+                if (!(bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.L3 || isPrivateNetwork))
                         && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                     throw new InvalidParameterValueException("The VLAN tag to use for new guest network, " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                             + zone.getName());
@@ -3097,12 +3118,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final NetworkVO userNetwork = new NetworkVO();
                 userNetwork.setNetworkDomain(networkDomainFinal);
 
-                    if (cidr != null && gateway != null) {
+                    if (cidr != null && (gateway != null || ntwkOff.getGuestType() == GuestType.L3)) {
                         userNetwork.setCidr(cidr);
                         userNetwork.setGateway(gateway);
                     }
 
-                    if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
+                    if (StringUtils.isNotBlank(ip6Cidr) && (StringUtils.isNotBlank(ip6Gateway) || ntwkOff.getGuestType() == GuestType.L3)) {
                         userNetwork.setIp6Cidr(ip6Cidr);
                         userNetwork.setIp6Gateway(ip6Gateway);
                     }
@@ -3161,14 +3182,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
                             }
 
-                            if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
+                            final boolean isRoutedUri = uri != null && BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed;
+                            if (!isRoutedUri && _networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
                                 throw new InvalidParameterValueException(String.format(
                                         "Network with vlan %s already exists or overlaps with other network pvlans in zone %s",
                                         vlanIdFinal, zone));
                             }
 
                         userNetwork.setBroadcastUri(uri);
-                        if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                        if (uri != null && BroadcastDomainType.getSchemeValue(uri) == BroadcastDomainType.Routed) {
+                            userNetwork.setBroadcastDomainType(BroadcastDomainType.Routed);
+                        } else if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
                             userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
                         } else {
                             userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
@@ -3233,6 +3257,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return !offering.isSpecifyVlan();
     }
 
+    /**
+     * An L3 (Direct Routed) network whose offering does not carry specifyVlan gets its routed id
+     * allocated from the physical network's vnet range at creation, the same way a Shared network
+     * without specifyVlan gets its VLAN — and released the same way on deletion.
+     */
+    @Override
+    public boolean isL3NetworkWithoutSpecifyVlan(NetworkOffering offering) {
+        if (offering == null || offering.getTrafficType() != TrafficType.Guest || offering.getGuestType() != GuestType.L3) {
+            return false;
+        }
+        return !offering.isSpecifyVlan();
+    }
+
     private boolean isPrivateGatewayWithoutSpecifyVlan(NetworkOffering ntwkOff) {
         return ntwkOff.getId() == _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan).getId();
     }
@@ -3250,8 +3287,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!pNtwk.getIsolationMethods().isEmpty() && StringUtils.isNotBlank(pNtwk.getIsolationMethods().get(0))) {
             String isolationMethod = pNtwk.getIsolationMethods().get(0).toLowerCase();
             String vxlan = BroadcastDomainType.Vxlan.toString().toLowerCase();
+            String routed = BroadcastDomainType.Routed.toString().toLowerCase();
             if (isolationMethod.equals(vxlan)) {
                 return BroadcastDomainType.encodeStringIntoBroadcastUri(vlanId, BroadcastDomainType.Vxlan);
+            }
+            if (isolationMethod.equals(routed)) {
+                return BroadcastDomainType.encodeStringIntoBroadcastUri(vlanId, BroadcastDomainType.Routed);
             }
         }
         return BroadcastDomainType.fromString(vlanId);
@@ -3668,8 +3709,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             logger.debug("Deleted ip range for private network {}", network);
         }
 
-        // release vlans of user-shared networks without specifyvlan
-        if (isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()))) {
+        final NetworkOffering deletedNetworkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (isSharedNetworkWithoutSpecifyVlan(deletedNetworkOffering) || isL3NetworkWithoutSpecifyVlan(deletedNetworkOffering)) {
             logger.debug("Releasing vnet for the network {}", network);
             _dcDao.releaseVnet(BroadcastDomainType.getValue(network.getBroadcastUri()), network.getDataCenterId(),
                     network.getPhysicalNetworkId(), network.getAccountId(), network.getReservationId());
