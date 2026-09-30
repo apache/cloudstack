@@ -132,7 +132,7 @@ export default {
       }
     },
     getVolumes () {
-      getAPI('listVolumes', { listall: true, listsystemvms: true, virtualmachineid: this.vm.id }).then(json => {
+      getAPI('listVolumes', { listall: true, listsystemvms: true, projectid: '-1', virtualmachineid: this.vm.id }).then(json => {
         this.volumes = json.listvolumesresponse.volume
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
