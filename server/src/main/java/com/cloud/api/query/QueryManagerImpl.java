@@ -5484,6 +5484,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.KVM_HINT_DEDICATED, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
