@@ -566,6 +566,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         jobResponse.setScheduled(job.getScheduled());
         jobResponse.setStartDate(job.getStartDate());
         jobResponse.setEndDate(job.getEndDate());
+        jobResponse.setExecutionTime(job.getExecTime());
         jobResponse.setSuccess(job.getSuccess());
         jobResponse.setHeartbeat(job.getHeartbeat());
         jobResponse.setObjectName("usagejobs");

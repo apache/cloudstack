@@ -248,6 +248,10 @@ public class DirectAgentAttache extends AgentAttache {
             Task task = tasks.remove();
             Future<?> future = _agentMgr.getDirectAgentPool().submit(task);
             _taskFutures.put(task._req.getSequence(), future);
+            if (future.isDone()) {
+                // the task may have finished (and cleaned up) before the future was recorded
+                _taskFutures.remove(task._req.getSequence());
+            }
         }
     }
 
