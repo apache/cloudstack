@@ -18,10 +18,19 @@ package com.cloud.exception;
 
 import com.cloud.agent.api.Command;
 import com.cloud.utils.SerialVersionUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.Arrays;
 
-public class OperationCancelledException extends CloudException {
+/**
+ * Thrown when an operation was stopped because its async job was cancelled.
+ *
+ * Unchecked on purpose: a cancellation is not an alternative outcome that every caller between the
+ * agent layer and the job layer should have to name and handle. Almost all of them would only
+ * re-label it as a timeout or an unavailable agent, which is exactly what hides the cancellation
+ * from the job result. Callers that genuinely need to distinguish it still can.
+ */
+public class OperationCancelledException extends CloudRuntimeException {
     private static final long serialVersionUID = SerialVersionUID.OperationCancelledException;
     long _agentId;
     long _seqId;
