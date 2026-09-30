@@ -69,8 +69,10 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
-        if (job.getExecutingMsid() != null) {
-            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(job.getExecutingMsid());
+        // a finished job no longer has an executing server; the one that completed it is the answer then
+        final Long msid = job.getExecutingMsid() != null ? job.getExecutingMsid() : job.getCompleteMsid();
+        if (msid != null) {
+            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
             if (managementServer != null) {
                 jobResponse.setManagementServerId(managementServer.getUuid());
                 jobResponse.setManagementServerName(managementServer.getName());
