@@ -133,6 +133,8 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         return t;
     });
 
+    private final Map<Long, VmStats> vmStatsCache = new HashMap<>();
+
     private SMTPMailSender mailSender;
     private String[] emailRecipients;
     private String senderAddress;
@@ -194,16 +196,29 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     @Override
     public void evaluateRules() {
-        List<ResourceAlertRuleVO> rules = ruleDao.listActive();
-        for (ResourceAlertRuleVO rule : rules) {
-            if (isOrphaned(rule)) {
-                logger.info("Removing resource alert rule {} as its owner or resource is gone, or the owner lost access to the resource", rule.getUuid());
-                alertDao.removeByAlertRuleId(rule.getId());
-                ruleDao.remove(rule.getId());
-                continue;
+        vmStatsCache.clear();
+        try {
+            List<ResourceAlertRuleVO> rules = ruleDao.listActive();
+            for (ResourceAlertRuleVO rule : rules) {
+                if (isOrphaned(rule)) {
+                    logger.info("Removing resource alert rule {} as its owner or resource is gone, or the owner lost access to the resource", rule.getUuid());
+                    alertDao.removeByAlertRuleId(rule.getId());
+                    ruleDao.remove(rule.getId());
+                    continue;
+                }
+                evaluateRule(rule);
             }
-            evaluateRule(rule);
+        } finally {
+            vmStatsCache.clear();
         }
+    }
+
+    // Several rules can watch the same VM, so its stats are read once per run.
+    private VmStats getVmStats(long vmId) {
+        if (!vmStatsCache.containsKey(vmId)) {
+            vmStatsCache.put(vmId, statsCollector.getRecentVmStats(vmId));
+        }
+        return vmStatsCache.get(vmId);
     }
 
     boolean isOrphaned(ResourceAlertRuleVO rule) {
@@ -398,7 +413,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
         switch (metric) {
             case CPU_UTILIZATION:
                 if (type == ResourceAlertRule.ResourceType.VirtualMachine) {
-                    VmStats s = statsCollector.getVmStats(resourceId, false);
+                    VmStats s = getVmStats(resourceId);
                     return s != null ? s.getCPUUtilization() : null;
                 }
                 if (type == ResourceAlertRule.ResourceType.Host) {
@@ -408,7 +423,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 break;
             case MEMORY_UTILIZATION:
                 if (type == ResourceAlertRule.ResourceType.VirtualMachine) {
-                    VmStats s = statsCollector.getVmStats(resourceId, false);
+                    VmStats s = getVmStats(resourceId);
                     if (s == null) return null;
                     double total = s.getMemoryKBs();
                     double free = s.getIntFreeMemoryKBs();
@@ -438,7 +453,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                     HostStats s = statsCollector.getHostStats(resourceId);
                     return s != null ? s.getNetworkReadKBs() : null;
                 }
-                VmStats s = statsCollector.getVmStats(resourceId, false);
+                VmStats s = getVmStats(resourceId);
                 return s != null ? s.getNetworkReadKBs() : null;
             }
             case NETWORK_WRITE_KBPS: {
@@ -446,7 +461,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                     HostStats s = statsCollector.getHostStats(resourceId);
                     return s != null ? s.getNetworkWriteKBs() : null;
                 }
-                VmStats s = statsCollector.getVmStats(resourceId, false);
+                VmStats s = getVmStats(resourceId);
                 return s != null ? s.getNetworkWriteKBs() : null;
             }
             case STORAGE_USED_IOPS: {
@@ -491,7 +506,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm == null || !VirtualMachine.State.Running.equals(vm.getState())) return null;
         }
-        VmStats s = statsCollector.getVmStats(vmId, false);
+        VmStats s = getVmStats(vmId);
         return s != null ? extractor.applyAsDouble(s) : null;
     }
 
