@@ -33,6 +33,7 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
     private final SearchBuilder<ResourceAlertRuleVO> accountIdSearch;
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeAndIdSearch;
     private final SearchBuilder<ResourceAlertRuleVO> activeByAccountSearch;
+    private final SearchBuilder<ResourceAlertRuleVO> activeByAccountAndNameSearch;
     private final SearchBuilder<ResourceAlertRuleVO> specificRuleSearch;
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeSearch;
 
@@ -54,6 +55,12 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         activeByAccountSearch.and("accountId", activeByAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         activeByAccountSearch.and("removed", activeByAccountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         activeByAccountSearch.done();
+
+        activeByAccountAndNameSearch = createSearchBuilder();
+        activeByAccountAndNameSearch.and("accountId", activeByAccountAndNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        activeByAccountAndNameSearch.and("name", activeByAccountAndNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        activeByAccountAndNameSearch.and("removed", activeByAccountAndNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        activeByAccountAndNameSearch.done();
 
         specificRuleSearch = createSearchBuilder();
         specificRuleSearch.and("resourceType", specificRuleSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
@@ -107,6 +114,14 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         SearchCriteria<ResourceAlertRuleVO> sc = activeByAccountSearch.create();
         sc.setParameters("accountId", accountId);
         return getCount(sc);
+    }
+
+    @Override
+    public ResourceAlertRuleVO findActiveByAccountIdAndName(long accountId, String name) {
+        SearchCriteria<ResourceAlertRuleVO> sc = activeByAccountAndNameSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("name", name);
+        return findOneBy(sc);
     }
 
     @Override
