@@ -68,7 +68,7 @@ public class UpdateResourceAlertRuleCmd extends BaseCmd {
     private String severity;
 
     @Parameter(name = ApiConstants.MESSAGE, type = CommandType.STRING,
-            description = "new alert message")
+            description = "new alert message", length = 4096)
     private String message;
 
     @Parameter(name = ApiConstants.EMAIL, type = CommandType.BOOLEAN,
