@@ -518,9 +518,9 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
     }
 
     private ResourceAlertRule.ResourceType parseResourceType(String value) {
-        ResourceAlertRule.ResourceType type = EnumUtils.getEnum(ResourceAlertRule.ResourceType.class, value);
+        ResourceAlertRule.ResourceType type = EnumUtils.getEnumIgnoreCase(ResourceAlertRule.ResourceType.class, value);
         if (type == null) {
-            throw new InvalidParameterValueException("Invalid resourcetype: " + value);
+            throw new InvalidParameterValueException("Invalid resourcetype: " + value + ". Valid values: VirtualMachine, Volume, Host, StoragePool");
         }
         return type;
     }
