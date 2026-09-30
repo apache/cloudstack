@@ -454,7 +454,47 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format,
             ProvisioningType provisioningType, long size, byte[] passphrase) {
-        return null;
+        SP_LOG("StorPoolStorageAdaptor.createPhysicalDisk: name=%s, pool=%s, size=%d", name, pool.getUuid(), size);
+
+        if (passphrase != null) {
+            throw new CloudRuntimeException("Encrypted StorPool volumes are not supported");
+        }
+
+        if (size <= 0) {
+            throw new CloudRuntimeException("Size must be greater than 0 to create a StorPool volume");
+        }
+
+        String[] uuidParts = pool.getUuid() != null ? pool.getUuid().split(";") : new String[0];
+        if (uuidParts.length == 0 || StringUtils.isBlank(uuidParts[0])) {
+            throw new CloudRuntimeException("Unable to resolve the StorPool template for pool " + pool.getUuid());
+        }
+        String template = uuidParts[0];
+
+        Map<String, String> tags = new HashMap<>();
+        tags.put("cs", "volume");
+        tags.put("uuid", name);
+
+        OutputInterpreter.AllLinesParser parser = createStorPoolVolume(template, size, tags,
+                String.format(" for %s", name));
+
+        String globalId = getNameFromResponse(parser.getLines(), false, false);
+        if (StringUtils.isBlank(globalId)) {
+            LOGGER.warn(String.format("StorPool volume for %s was created but its globalId could not be parsed from the response; " +
+                    "it must be found (tag uuid=%s) and deleted manually to avoid an orphaned volume", name, name));
+            throw new CloudRuntimeException(String.format("StorPool did not return a volume name/globalId when creating %s", name));
+        }
+
+        String volumePath = StorPoolUtil.devPath(globalId);
+        if (!attachOrDetachVolume("attach", "volume", volumePath)) {
+            volumeDelete(globalId);
+            throw new CloudRuntimeException(String.format("Could not attach newly created StorPool volume %s", volumePath));
+        }
+
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, name, pool);
+        disk.setFormat(PhysicalDiskFormat.RAW);
+        disk.setSize(size);
+        disk.setVirtualSize(size);
+        return disk;
     }
 
     @Override
@@ -466,21 +506,25 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private OutputInterpreter.AllLinesParser createStorPoolVolume(KVMStoragePool destPool, QemuImgFile srcFile,
                                                                   QemuImg qemu, String templateUuid) throws QemuImgException, LibvirtException {
         Map<String, String> info = qemu.info(srcFile);
-        Map<String, Object> reqParams = new HashMap<>();
-        reqParams.put("template", templateUuid);
-        reqParams.put("size", info.get("virtual_size"));
         Map<String, String> tags = new HashMap<>();
         tags.put("cs", "template");
-        reqParams.put("tags", tags);
-        Gson gson = new Gson();
-        String js = gson.toJson(reqParams);
+        return createStorPoolVolume(templateUuid, info.get("virtual_size"), tags, "");
+    }
 
-        Script sc = createStorPoolRequest(js, "VolumeCreate", null,true);
+    private OutputInterpreter.AllLinesParser createStorPoolVolume(String templateUuid, Object size,
+                                                                  Map<String, String> tags, String errorContext) {
+        Map<String, Object> reqParams = new HashMap<>();
+        reqParams.put("template", templateUuid);
+        reqParams.put("size", size);
+        reqParams.put("tags", tags);
+        String js = new Gson().toJson(reqParams);
+
+        Script sc = createStorPoolRequest(js, "VolumeCreate", null, true);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
         String res = sc.execute(parser);
         if (res != null) {
-            throw new CloudRuntimeException("Could not create volume due to: " + res);
+            throw new CloudRuntimeException(String.format("Could not create StorPool volume%s due to: %s", errorContext, res));
         }
         return parser;
     }

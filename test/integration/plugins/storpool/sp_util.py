@@ -21,6 +21,7 @@ from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_sna
 from marvin.lib.base import (Account,
                              Cluster,
                              Configurations,
+                             ImageStore,
                              ServiceOffering,
                              Snapshot,
                              StoragePool,
@@ -682,26 +683,50 @@ class StorPoolHelper():
         apiclient.destroyVirtualMachine(cmd)
 
     @classmethod
-    def check_storpool_volume_size(cls, volume, spapi):
-        name = volume.path.split("/")[3]
+    def get_storpool_volume_by_path(cls, spapi, path):
+        """
+        Resolve a CloudStack volume path (/dev/storpool-byid/<globalId>) to a
+        StorPool volume.
+        """
+        if not path:
+            raise Exception("Volume path is empty")
+        parts = path.rstrip("/").split("/")
+        if len(parts) < 4:
+            raise Exception("Unexpected StorPool volume path: %s" % path)
+        name = "~" + parts[3]
         try:
-            spvolume = spapi.volumeList(volumeName = "~" + name)
-            if spvolume[0].size != volume.size:
-                raise Exception("Storpool volume size is not the same as CloudStack db size")
-        except spapi.ApiError as err:
-           raise Exception(err)
+            volumes = spapi.volumeList(volumeName=name)
+        except Exception as err:
+            raise Exception("StorPool volume not found for path %s: %s" % (path, err))
+        if not volumes:
+            raise Exception("StorPool volume not found for path %s" % path)
+        return volumes[0]
+
+    @classmethod
+    def check_storpool_volume_size(cls, volume, spapi):
+        spvolume = cls.get_storpool_volume_by_path(spapi, volume.path)
+        if spvolume.size != volume.size:
+            raise Exception("Storpool volume size is not the same as CloudStack db size")
 
     @classmethod
     def check_storpool_volume_iops(cls, spapi, volume,):
-        name = volume.path.split("/")[3]
-        try:
-            spvolume = spapi.volumeList(volumeName = "~" + name)
-            logging.debug(spvolume[0].iops)
-            logging.debug(volume.maxiops)
-            if spvolume[0].iops != volume.maxiops:
-                raise Exception("Storpool volume size is not the same as CloudStack db size")
-        except spapi.ApiError as err:
-           raise Exception(err)
+        spvolume = cls.get_storpool_volume_by_path(spapi, volume.path)
+        logging.debug(spvolume.iops)
+        logging.debug(volume.maxiops)
+        if spvolume.iops != volume.maxiops:
+            raise Exception("Storpool volume size is not the same as CloudStack db size")
+
+    @classmethod
+    def verify_storpool_volume(cls, spapi, volume, check_size=True):
+        """Assert the CloudStack volume exists on StorPool; optionally compare size."""
+        if not volume.path or not volume.path.startswith("/dev/storpool"):
+            raise Exception("Volume %s does not have a StorPool device path: %s" %
+                            (volume.id, volume.path))
+        spvolume = cls.get_storpool_volume_by_path(spapi, volume.path)
+        if check_size and volume.size is not None and spvolume.size != volume.size:
+            raise Exception("StorPool volume size %s does not match CloudStack size %s for %s" %
+                            (spvolume.size, volume.size, volume.path))
+        return spvolume
 
     @classmethod
     def create_custom_disk(cls, apiclient, services, size = None, miniops = None, maxiops =None, diskofferingid=None, zoneid=None, account=None, domainid=None, snapshotid=None):
@@ -925,6 +950,19 @@ class StorPoolHelper():
             cls.debug("Cannot perform the tests because there aren't the required count of StorPool storage pools %s" % sp_pools)
             return
         return sp_pools
+
+    @classmethod
+    def get_nfs_pool(cls, zone):
+        """Return the NFS primary storage entries configured for this zone in
+        the Marvin cfg file. NFS entries don't set "provider" (unlike
+        StorPool/RBD), so they're identified by their "nfs://" url instead."""
+        storage_pools = zone.primaryStorages
+        nfs_pools = []
+        for storage in storage_pools:
+            url = storage['url'] or ""
+            if not storage['provider'] and str(url).lower().startswith("nfs://"):
+                nfs_pools.append(storage)
+        return nfs_pools
 
     @classmethod
     def create_snapshot_template(cls, apiclient, services, snapshot_id, zone_id):

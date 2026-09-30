@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Assert;
@@ -572,6 +573,164 @@ public class NASBackupProviderTest {
         boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
         Assert.assertTrue(ok);
         Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID);
+    }
+
+    private VMInstanceVO mockActiveVm(Long vmId, Long hostId, String name) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        Mockito.when(vm.getRemoved()).thenReturn(null);
+        Mockito.when(vm.getName()).thenReturn(name);
+        return vm;
+    }
+
+    private void mockActiveHostById(Long hostId) {
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+    }
+
+    private void mockHostByIp(String hostIp, Long hostId) {
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(hostDao.findByIp(hostIp)).thenReturn(host);
+    }
+
+    private BackupVO mockBackup(Long vmId, Long backupOfferingId, String externalId, Long id) {
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vmId);
+        backup.setBackupOfferingId(backupOfferingId);
+        backup.setExternalId(externalId);
+        ReflectionTestUtils.setField(backup, "id", id);
+        return backup;
+    }
+
+    private BackupVO mockBackupWithVolume(Long vmId, Long backupOfferingId, String externalId,
+            long size, Backup.VolumeInfo backedUp, Long id) {
+        BackupVO backup = mockBackup(vmId, backupOfferingId, externalId, id);
+        backup.setSize(size);
+        backup.setBackedUpVolumes(new Gson().toJson(Collections.singletonList(backedUp)));
+        return backup;
+    }
+
+    private void mockNasRepository(Long backupOfferingId) {
+        BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                "nfs", "address", "sync", 1024L, null);
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(repo);
+    }
+
+    private void mockStorPoolRootVolume(Long vmId, Long poolId, String devicePath) {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(poolId);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.StorPool);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+
+        VolumeVO rootVolume = mock(VolumeVO.class);
+        Mockito.when(rootVolume.getPoolId()).thenReturn(poolId);
+        Mockito.when(rootVolume.getPath()).thenReturn(devicePath);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(rootVolume));
+    }
+
+    private void mockSourceVolume(String volUuid, String name) {
+        VolumeVO srcVolume = mock(VolumeVO.class);
+        Mockito.when(srcVolume.getUuid()).thenReturn(volUuid);
+        Mockito.when(srcVolume.getName()).thenReturn(name);
+        Mockito.when(volumeDao.findByUuid(volUuid)).thenReturn(srcVolume);
+    }
+
+    private void mockThinDiskOffering(Long diskOfferingId) {
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        Mockito.when(diskOffering.getId()).thenReturn(diskOfferingId);
+        Mockito.when(diskOffering.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+        Mockito.when(diskOfferingDao.findByUuid(Mockito.anyString())).thenReturn(diskOffering);
+    }
+
+    private void mockStorPoolPoolByUuid(String dsUuid, Long poolId) {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(poolId);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.StorPool);
+        Mockito.when(storagePoolDao.findByUuid(dsUuid)).thenReturn(pool);
+    }
+
+    private BackupAnswer mockSuccessfulAgentSend() throws AgentUnavailableException, OperationTimedoutException {
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
+        return answer;
+    }
+
+    private void assertRestoreVolumePaths(List<String> expectedPaths) throws AgentUnavailableException, OperationTimedoutException {
+        ArgumentCaptor<RestoreBackupCommand> captor = ArgumentCaptor.forClass(RestoreBackupCommand.class);
+        Mockito.verify(agentManager).send(Mockito.anyLong(), captor.capture());
+        Assert.assertEquals(expectedPaths, captor.getValue().getRestoreVolumePaths());
+    }
+
+    private void assertPersistedVolume(Storage.ImageFormat expectedFormat, String expectedPath) {
+        ArgumentCaptor<VolumeVO> volumeCaptor = ArgumentCaptor.forClass(VolumeVO.class);
+        Mockito.verify(volumeDao).persist(volumeCaptor.capture());
+        Assert.assertEquals(expectedFormat, volumeCaptor.getValue().getFormat());
+        Assert.assertEquals(expectedPath, volumeCaptor.getValue().getPath());
+    }
+
+    /**
+     * StorPool stores the full device path in the volume's path column, so it must be sent as-is.
+     */
+    @Test
+    public void restoreVMBackupDoesNotDoublePrefixStorPoolVolumePath()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 21L;
+        Long hostId = 22L;
+        Long backupOfferingId = 23L;
+        Long poolId = 24L;
+        String storPoolDevicePath = "/dev/storpool-byid/t.t.t";
+
+        VMInstanceVO vm = mockActiveVm(vmId, hostId, "vm21");
+        mockActiveHostById(hostId);
+        BackupVO backup = mockBackup(vmId, backupOfferingId, "i-2-21-VM/2026.06.01.10.00.00", 210L);
+        mockNasRepository(backupOfferingId);
+        mockStorPoolRootVolume(vmId, poolId, storPoolDevicePath);
+        mockSuccessfulAgentSend();
+
+        boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
+        Assert.assertTrue(ok);
+
+        assertRestoreVolumePaths(Collections.singletonList(storPoolDevicePath));
+    }
+
+    /**
+     * StorPool provisions/names new volumes itself (a globalId), so the persisted path must
+     * come from BackupAnswer#getRestoredVolumePath, not the guessed UUID-based path.
+     */
+    @Test
+    public void restoreBackedUpVolumeUsesQcow2FormatAndRealPathForStorPool()
+            throws AgentUnavailableException, OperationTimedoutException {
+        Long backupOfferingId = 33L;
+        Long poolId = 34L;
+        String volUuid = UUID.randomUUID().toString();
+        String hostIp = "10.0.0.9";
+        String dsUuid = UUID.randomUUID().toString();
+        String realStorPoolPath = "/dev/storpool-byid/t.t.t";
+
+        mockSourceVolume(volUuid, "data-sp");
+        mockThinDiskOffering(6L);
+        mockStorPoolPoolByUuid(dsUuid, poolId);
+        mockHostByIp(hostIp, 8L);
+        mockNasRepository(backupOfferingId);
+
+        Backup.VolumeInfo backedUp = new Backup.VolumeInfo(volUuid, "i-2-99-VM/2026/data-sp.qcow2",
+                Volume.Type.DATADISK, 2048L, 1L, "disk-offering-uuid", null, null);
+        BackupVO backup = mockBackupWithVolume(99L, backupOfferingId, "i-2-99-VM/2026.06.22.10.00.00",
+                2048L, backedUp, 330L);
+
+        BackupAnswer answer = mockSuccessfulAgentSend();
+        Mockito.when(answer.getRestoredVolumePath()).thenReturn(realStorPoolPath);
+
+        Pair<Boolean, String> result = nasBackupProvider.restoreBackedUpVolume(
+                backup, backedUp, hostIp, dsUuid, new Pair<>("i-2-42-VM", VirtualMachine.State.Stopped), null, false);
+        Assert.assertTrue(result.first());
+
+        assertPersistedVolume(Storage.ImageFormat.QCOW2, realStorPoolPath);
     }
 
     /**
