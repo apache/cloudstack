@@ -79,6 +79,7 @@ jobs:
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
                   smoke/test_async_job
+                  smoke/test_async_jobs
                   smoke/test_attach_multiple_volumes
                   smoke/test_backup_recovery_dummy
                   smoke/test_certauthority_root
