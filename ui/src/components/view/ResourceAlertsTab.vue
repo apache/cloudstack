@@ -17,13 +17,21 @@
 
 <template>
   <div>
+    <a-select
+      v-model:value="severity"
+      style="width: 200px; margin-bottom: 12px"
+      @change="onFilterChange">
+      <a-select-option value="">{{ $t('label.severity') }}: {{ $t('label.all') }}</a-select-option>
+      <a-select-option v-for="s in severities" :key="s" :value="s">{{ s }}</a-select-option>
+    </a-select>
     <a-table
       size="small"
       :columns="columns"
       :dataSource="alerts"
       :rowKey="item => item.id"
       :loading="tabLoading"
-      :pagination="{ pageSize: 20, showSizeChanger: true }">
+      :pagination="pagination"
+      @change="onTableChange">
       <template #bodyCell="{ column, text }">
         <template v-if="column.key === 'alerttimestamp'">
           {{ $toLocaleDate(text) }}
@@ -42,6 +50,7 @@
 <script>
 import { getAPI } from '@/api'
 
+// Shows the alerts of one resource, or of one rule when no resourceType is given.
 export default {
   name: 'ResourceAlertsTab',
   props: {
@@ -51,7 +60,7 @@ export default {
     },
     resourceType: {
       type: String,
-      required: true
+      default: ''
     },
     loading: {
       type: Boolean,
@@ -59,11 +68,19 @@ export default {
     }
   },
   data () {
+    const firstColumn = this.resourceType
+      ? { title: this.$t('label.alertrulename'), dataIndex: 'alertrulename', key: 'alertrulename' }
+      : { title: this.$t('label.resourcename'), dataIndex: 'resourcename', key: 'resourcename' }
     return {
       alerts: [],
       tabLoading: false,
+      severity: '',
+      severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+      page: 1,
+      pageSize: 20,
+      total: 0,
       columns: [
-        { title: this.$t('label.alertrulename'), dataIndex: 'alertrulename', key: 'alertrulename' },
+        firstColumn,
         { title: this.$t('label.metrictype'), dataIndex: 'metrictype', key: 'metrictype' },
         { title: this.$t('label.metricvalue'), dataIndex: 'metricvalue', key: 'metricvalue' },
         { title: this.$t('label.severity'), dataIndex: 'severity', key: 'severity' },
@@ -72,12 +89,27 @@ export default {
       ]
     }
   },
+  computed: {
+    pagination () {
+      return {
+        current: this.page,
+        pageSize: this.pageSize,
+        total: this.total,
+        showSizeChanger: true,
+        showTotal: total => `${this.$t('label.total')} ${total} ${this.$t('label.items')}`
+      }
+    }
+  },
   created () {
     this.fetchData()
   },
   watch: {
     resource: {
-      handler () {
+      handler (newItem, oldItem) {
+        if (newItem?.id !== oldItem?.id) {
+          this.page = 1
+          this.severity = ''
+        }
         this.fetchData()
       }
     }
@@ -85,12 +117,33 @@ export default {
   methods: {
     fetchData () {
       if (!this.resource || !this.resource.id) return
+      const params = { listall: true, page: this.page, pagesize: this.pageSize }
+      if (this.resourceType) {
+        params.resourcetype = this.resourceType
+        params.resourceid = this.resource.id
+      } else {
+        params.alertruleid = this.resource.id
+      }
+      if (this.severity) {
+        params.severity = this.severity
+      }
       this.tabLoading = true
-      getAPI('listResourceAlerts', { resourcetype: this.resourceType, resourceid: this.resource.id, listall: true }).then(json => {
-        this.alerts = json?.listresourcealertsresponse?.resourcealert || []
+      getAPI('listResourceAlerts', params).then(json => {
+        const response = json?.listresourcealertsresponse || {}
+        this.alerts = response.resourcealert || []
+        this.total = response.count || 0
       }).finally(() => {
         this.tabLoading = false
       })
+    },
+    onFilterChange () {
+      this.page = 1
+      this.fetchData()
+    },
+    onTableChange (pagination) {
+      this.page = pagination.current
+      this.pageSize = pagination.pageSize
+      this.fetchData()
     },
     severityColor (severity) {
       const map = { CRITICAL: 'red', HIGH: 'orange', MEDIUM: 'gold', LOW: 'blue' }
