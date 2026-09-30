@@ -100,7 +100,7 @@ public class NioTest {
         testBytes = new byte[1000000];
         randomGenerator.nextBytes(testBytes);
 
-        server = new NioServer("NioTestServer", 0, 1, new NioTestServer(), null,  null);
+        server = new NioServer("NioTestServer", 0, 1, new NioTestServer(), null, null);
         try {
             server.start();
         } catch (final NioConnectionException e) {
@@ -245,8 +245,7 @@ public class NioTest {
                         logger.info("Sending data to server");
                         task.getLink().send(getTestBytes());
                     } catch (ClosedChannelException e) {
-                        logger.error(e.getMessage());
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 } else if (task.getType() == Task.Type.DATA) {
                     logger.info("Client: Received DATA task");

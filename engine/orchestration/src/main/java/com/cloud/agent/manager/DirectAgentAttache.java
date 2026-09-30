@@ -38,7 +38,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
-import org.apache.logging.log4j.ThreadContext;
+import org.apache.cloudstack.threadcontext.ThreadContextCommandUtil;
 
 public class DirectAgentAttache extends AgentAttache {
 
@@ -181,9 +181,7 @@ public class DirectAgentAttache extends AgentAttache {
                         return;
                     }
 
-                    if (cmd.getContextParam("logid") != null) {
-                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
-                    }
+                    ThreadContextCommandUtil.propagateContextFromCommand(cmd);
                     logger.debug("Ping from [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                     long seq = _seq++;
 
@@ -245,9 +243,7 @@ public class DirectAgentAttache extends AgentAttache {
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
                     Command currentCmd = cmds[i];
-                    if (currentCmd.getContextParam("logid") != null) {
-                        ThreadContext.put("logcontextid", currentCmd.getContextParam("logid"));
-                    }
+                    ThreadContextCommandUtil.propagateContextFromCommand(currentCmd);
                     try {
                         if (resource != null) {
                             answer = resource.executeRequest(cmds[i]);
@@ -303,9 +299,7 @@ public class DirectAgentAttache extends AgentAttache {
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
                     Command currentCmd = cmds[i];
-                    if (currentCmd.getContextParam("logid") != null) {
-                        ThreadContext.put("logcontextid", currentCmd.getContextParam("logid"));
-                    }
+                    ThreadContextCommandUtil.propagateContextFromCommand(currentCmd);
                     try {
                         if (resource != null) {
                             answer = resource.executeRequest(cmds[i]);
