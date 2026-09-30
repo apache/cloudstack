@@ -253,7 +253,6 @@ public class GlobalLock {
                     } else {
                         // take ownership temporarily to prevent others enter into stage of acquiring DB lock
                         ownerThread = Thread.currentThread();
-                        // XXX: do we need it here (???)
                         addRef();
                         if (logger.isDebugEnabled()) {
                             logger.debug("Taking ownership on global lock {} to acquire, owner thread: {}, "

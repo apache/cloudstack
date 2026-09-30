@@ -101,7 +101,7 @@ public class AgentShell implements IAgentShell, Daemon {
         try {
             backoffAlgorithm.getConfiguration().forEach((key, value) -> setPersistentProperty(null, key, value));
         } catch (RuntimeException e) {
-            LOGGER.warn("Failed to persist backoff properties");
+            LOGGER.warn("Failed to persist backoff properties", e);
         }
     }
 
@@ -420,7 +420,7 @@ public class AgentShell implements IAgentShell, Daemon {
         if (LOGGER.isDebugEnabled()) {
             List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
             for (String property : properties) {
-                LOGGER.debug("Found property: {}, value: {}", property, _properties.getProperty(property));
+                LOGGER.debug("Found property: {}", property);
             }
         }
 
@@ -439,8 +439,7 @@ public class AgentShell implements IAgentShell, Daemon {
             setBackoffAlgorithm(BackoffFactory.create(_properties));
             LOGGER.info("Created {} delay algorithm implementation", getBackoffAlgorithm().getClass().getName());
         } catch (RuntimeException e) {
-            String msg = String.format("Failed to create backoff with provided properties %s, failing back to default", _properties);
-            LOGGER.warn(msg, e);
+            LOGGER.warn("Failed to create backoff algorithm from the provided properties, falling back to default", e);
             setBackoffAlgorithm(BackoffFactory.createDefault(_properties));
         }
     }
@@ -583,7 +582,6 @@ public class AgentShell implements IAgentShell, Daemon {
             shell.start();
         } catch (ConfigurationException e) {
             LOGGER.fatal(e.getMessage(), e);
-            System.out.println(e.getMessage());
         }
     }
 

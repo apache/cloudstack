@@ -125,30 +125,30 @@ public class HostConnectProcess {
     }
 
     /**
-     * Task wait for the Host to be available to connect to submit {@link StartupCommand}.
+     * Task waits for the Host to be available to connect to submit {@link StartupCommand}.
      * Checks Host status on Management Server cluster and submit {@link StartupCommand} only if there is no lock and
      * Host is not {@link Status#Connecting}.
      */
     public static class HostStatusTask implements Runnable, AsyncSend {
         private final Set<Status> operationalStatuses = Set.of(Status.Connecting, Status.Up, Status.Rebalancing);
 
-        private final Link _link;
-        private final boolean _forceConnect;
-        private final Agent _agent;
-        private final AtomicReference<? extends ScheduledFuture<?>> _futureRef;
+        private final Link link;
+        private final boolean forceConnect;
+        private final Agent agent;
+        private final AtomicReference<? extends ScheduledFuture<?>> futureRef;
 
         public HostStatusTask(Link link, boolean forceConnect, Agent agent,
                               AtomicReference<? extends ScheduledFuture<?>> futureRef) {
             logger.debug("{} created", this.getClass().getSimpleName());
-            _link = link;
-            _forceConnect = forceConnect;
-            _agent = agent;
-            _futureRef = futureRef;
+            this.link = link;
+            this.forceConnect = forceConnect;
+            this.agent = agent;
+            this.futureRef = futureRef;
         }
 
         private void cancel() {
             logger.debug("Cancelling future");
-            Optional.ofNullable(_futureRef.get())
+            Optional.ofNullable(futureRef.get())
                     .filter(Predicate.not(ScheduledFuture::isCancelled))
                     .ifPresent(future -> future.cancel(true));
             logger.debug("Cancelled future");
@@ -165,7 +165,7 @@ public class HostConnectProcess {
         }
 
         private void runInternal() {
-            ServerAttache attache = (ServerAttache) _link.attachment();
+            ServerAttache attache = (ServerAttache) link.attachment();
             if (attache == null || attache.getLink() == null) {
                 cancel();
                 return;
@@ -176,8 +176,8 @@ public class HostConnectProcess {
                 answer = getAgentConnectStatusAnswer(attache);
             } catch (IOException e) {
                 cancel();
-                logger.error("The connection to {} interrupted, restarting the whole process", _link, e);
-                _agent.getRequestHandler().submit(() -> _agent.reconnect(_link, null, _forceConnect));
+                logger.error("The connection to {} interrupted, restarting the whole process", link, e);
+                agent.getRequestHandler().submit(() -> agent.reconnect(link, null, forceConnect));
                 return;
             }
             if (answer == null) {
@@ -190,16 +190,16 @@ public class HostConnectProcess {
                 // send startup command here
                 logger.info("There is no lock and Host status is {}", status);
                 try {
-                    sendStartupCommand(_link, _forceConnect);
-                    logger.debug("Sending startup command to {} finished", _link);
+                    sendStartupCommand();
+                    logger.debug("Sending startup command to {} finished", link);
                     cancel();
                     logger.debug("Unscheduled {}", getClass().getSimpleName());
                 } catch (RuntimeException e) {
-                    logger.error("Failed to send startup command to {}", _link, e);
+                    logger.error("Failed to send startup command to {}", link, e);
                 } catch (IOException e) {
                     cancel();
-                    logger.error("The connection to {} interrupted, restarting the whole process", _link, e);
-                    _agent.getRequestHandler().submit(() -> _agent.reconnect(_link, null, _forceConnect));
+                    logger.error("The connection to {} interrupted, restarting the whole process", link, e);
+                    agent.getRequestHandler().submit(() -> agent.reconnect(link, null, forceConnect));
                 }
             } else {
                 logger.info("There is lock and Host status is {}, will retry later", status);
@@ -207,7 +207,7 @@ public class HostConnectProcess {
         }
 
         private AgentConnectStatusAnswer getAgentConnectStatusAnswer(ServerAttache attache) throws IOException {
-            AgentConnectStatusCommand command = _agent.setupAgentConnectStatusCommand(new AgentConnectStatusCommand());
+            AgentConnectStatusCommand command = agent.setupAgentConnectStatusCommand(new AgentConnectStatusCommand());
             var commands = new Command[]{command};
             try {
                 return send(attache, commands, AgentConnectStatusAnswer.class, DEFAULT_ASYNC_COMMAND_TIMEOUT_SEC);
@@ -218,26 +218,26 @@ public class HostConnectProcess {
             }
         }
 
-        public void sendStartupCommand(Link link, boolean connectionTransfer) throws IOException {
+        public void sendStartupCommand() throws IOException {
             ServerAttache attache = (ServerAttache) link.attachment();
             if (attache == null || attache.getLink() == null) {
                 return;
             }
-            ServerResource serverResource = _agent.getResource();
+            ServerResource serverResource = agent.getResource();
             StartupCommand[] startup = serverResource.initialize();
             if (ArrayUtils.isEmpty(startup)) {
                 logger.warn("No startup commands returned from {}, Startup command sending skipped", serverResource.getName());
                 return;
             }
-            String msHostList = _agent.getPersistentProperty("host");
+            String msHostList = agent.getPersistentProperty("host");
             // need to downcast StartupCommand[] to Command[], otherwise logger will fail to decode JSON on MS side
             Command[] commands = new Command[startup.length];
             for (int i = 0; i < startup.length; i++) {
                 StartupCommand command = startup[i];
                 commands[i] = command;
-                _agent.setupStartupCommand(command);
+                agent.setupStartupCommand(command);
                 command.setMSHostList(msHostList);
-                command.setConnectionTransferred(connectionTransfer);
+                command.setConnectionTransferred(forceConnect);
                 ThreadContextCommandUtil.setContextInCommand(command);
             }
             String commandName = commands[0].getClass().getSimpleName();
@@ -263,29 +263,29 @@ public class HostConnectProcess {
                 AgentConnectStatusAnswer answer = getAgentConnectStatusAnswer(attache);
                 if (answer == null) {
                     logger.warn("Received empty agent connect status answer, reconnecting");
-                    _agent.getRequestHandler().submit(() -> _agent.reconnect(link, null, connectionTransfer));
+                    agent.getRequestHandler().submit(() -> agent.reconnect(link, null, forceConnect));
                     return;
                 }
                 Boolean lockAvailable = answer.isLockAvailable();
                 Status status = answer.getHostStatus();
                 if (Boolean.TRUE.equals(lockAvailable) && status != null && operationalStatuses.contains(status)) {
-                    logger.info("Host is in operational state {} on {}", status, _link);
+                    logger.info("Host is in operational state {} on {}", status, link);
                 } else if (Boolean.FALSE.equals(lockAvailable)) {
-                    logger.info("Host is locked and has state {} on {}", status, _link);
+                    logger.info("Host is locked and has state {} on {}", status, link);
                 } else {
-                    logger.info("Host is locked and has state {} on {}, reconnecting", status, _link);
-                    _agent.getRequestHandler().submit(() -> _agent.reconnect(link, null, connectionTransfer));
+                    logger.info("Host is locked and has state {} on {}, reconnecting", status, link);
+                    agent.getRequestHandler().submit(() -> agent.reconnect(link, null, forceConnect));
                     return;
                 }
             }
             if (serverResource instanceof ResourceStatusUpdater) {
-                ((ResourceStatusUpdater) serverResource).registerStatusUpdater(_agent);
+                ((ResourceStatusUpdater) serverResource).registerStatusUpdater(agent);
             }
 
         }
 
         public Agent getAgent() {
-            return _agent;
+            return agent;
         }
     }
 

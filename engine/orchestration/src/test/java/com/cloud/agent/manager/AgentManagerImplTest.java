@@ -74,7 +74,6 @@ public class AgentManagerImplTest {
     @Before
     public void setUp() throws Exception {
         host = new HostVO("some-Uuid");
-        Mockito.when(host.getId()).thenReturn(1L)
         FieldUtils.writeField(host, "id", HOST_ID, true);
         host.setDataCenterId(1L);
         cmds = new StartupCommand[]{new StartupRoutingCommand()};

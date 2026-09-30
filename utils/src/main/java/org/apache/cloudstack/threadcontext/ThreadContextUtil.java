@@ -43,16 +43,14 @@ public class ThreadContextUtil {
     /**
      * Wrap {@link Runnable} to propagate {@link ThreadContext} values.
      *
-     * @param delegate
-     * @return
+     * @param delegate the runnable to execute with the calling thread's {@link ThreadContext} values
+     * @return a runnable that installs the captured context, runs the delegate and restores the previous context
      */
     public static Runnable wrapThreadContext(Runnable delegate) {
-        @SuppressWarnings("unchecked")
         Map<String, String> context = ThreadContext.getContext() != null ?
                 new HashMap<>(ThreadContext.getContext()) : null;
 
         return () -> {
-            @SuppressWarnings("unchecked")
             Map<String, String> oldContext = ThreadContext.getContext() != null ?
                     new HashMap<>(ThreadContext.getContext()) : null;
             try {

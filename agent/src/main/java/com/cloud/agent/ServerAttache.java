@@ -124,7 +124,7 @@ public class ServerAttache {
     protected synchronized void cancel(long seq) {
         logger.debug(log(seq, "Cancelling."));
 
-        ServerListener listener = _waitForList.remove(seq);
+        ServerListener listener = unregisterListener(seq);
         if (listener != null) {
             listener.processDisconnect();
         }
@@ -194,7 +194,7 @@ public class ServerAttache {
                 logger.debug(log(seq, "Unable to find listener."));
             } else {
                 processed = monitor.processAnswers(seq, answers);
-                logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
+                logger.trace(log(seq, processed ? "Processed" : "Not processed"));
                 if (!monitor.isRecurring()) {
                     unregisterListener(seq);
                 }
@@ -486,7 +486,7 @@ public class ServerAttache {
                     listener.processTimeout(_seq);
                 }
             } catch (Exception e) {
-                ServerAttache.logger.warn("Exception ", e);
+                ServerAttache.logger.warn(log(_seq, "Failed to process listener timeout"), e);
             }
         }
     }

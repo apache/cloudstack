@@ -22,7 +22,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -152,5 +154,40 @@ public class ManagementServerAddressUtilTest {
     public void testIPv6Localhost() throws Exception {
         setConfigValue("::1");
         assertFalse(ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames());
+    }
+
+    @Test
+    public void testConfiguredAddressListParsesAndTrims() throws Exception {
+        setConfigValue(" ms1.example.com, 192.168.1.2 ,,ms3.example.com");
+        assertEquals(List.of("ms1.example.com", "192.168.1.2", "ms3.example.com"), ManagementServerAddressUtil.getConfiguredAddressList());
+        setConfigValue(null);
+        assertTrue(ManagementServerAddressUtil.getConfiguredAddressList().isEmpty());
+    }
+
+    @Test
+    public void testConfiguredAddressesMatchPersistedIps() throws Exception {
+        setConfigValue("192.168.1.1,192.168.1.2,192.168.1.3");
+        assertEquals(List.of("192.168.1.2"), ManagementServerAddressUtil.getConfiguredAddresses(List.of("ms2.example.com"), List.of("192.168.1.2")));
+    }
+
+    @Test
+    public void testConfiguredAddressesMatchPersistedHostnamesIgnoringCase() throws Exception {
+        setConfigValue("MS1.example.com,ms2.example.com,ms3.example.com");
+        assertEquals(List.of("MS1.example.com", "ms3.example.com"),
+                ManagementServerAddressUtil.getConfiguredAddresses(List.of("ms1.example.com", "ms3.example.com"), List.of("192.168.1.1", "192.168.1.3")));
+    }
+
+    @Test
+    public void testConfiguredAddressesSingleServerOverload() throws Exception {
+        setConfigValue("ms1.example.com,ms2.example.com");
+        assertEquals(List.of("ms2.example.com"), ManagementServerAddressUtil.getConfiguredAddresses("ms2.example.com", "192.168.1.2"));
+        assertTrue(ManagementServerAddressUtil.getConfiguredAddresses((String) null, (String) null).isEmpty());
+    }
+
+    @Test
+    public void testConfiguredAddressesSkipUnresolvableAliases() throws Exception {
+        setConfigValue("ms1.example.com,alias.invalid");
+        assertEquals(List.of("ms1.example.com"),
+                ManagementServerAddressUtil.getConfiguredAddresses(List.of("ms1.example.com"), List.of("192.168.1.1")));
     }
 }

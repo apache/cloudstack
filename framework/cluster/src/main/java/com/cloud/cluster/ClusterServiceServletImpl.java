@@ -18,7 +18,6 @@ package com.cloud.cluster;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -99,13 +98,14 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            String msg = "Failed to encode request POST parameters: " + postParameters;
+            String msg = "Failed to encode request POST parameters";
             logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
             throw new RemoteException(msg, e);
         }
 
-        return executePostMethod(client, method);
+        return executePostMethod(client, method, String.format("deliver PDU (seq: %d, ack seq: %d, agent: %d)",
+                pdu.getSequenceId(), pdu.getAckSequenceId(), pdu.getAgentId()));
     }
 
     protected List<NameValuePair> getPingPostParameters(final String callingPeer) {
@@ -128,28 +128,18 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            String msg = "Failed to encode ping request POST parameters: " + postParameters;
+            String msg = "Failed to encode ping request POST parameters";
             logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
             throw new RemoteException(msg, e);
         }
 
-        final String returnVal = executePostMethod(client, method);
+        final String returnVal = executePostMethod(client, method, "ping from " + callingPeer);
         return Boolean.TRUE.toString().equalsIgnoreCase(returnVal);
     }
 
-    private String executePostMethod(final CloseableHttpClient client, final HttpPost method) {
+    private String executePostMethod(final CloseableHttpClient client, final HttpPost method, final String requestDescription) {
         String result = null;
-        String request = null;
-
-        if (logger.isDebugEnabled()) {
-            try {
-                request = EntityUtils.toString(method.getEntity(), Charset.defaultCharset());
-            } catch (Exception e) {
-                logger.warn("Failed to retrieve request entity for POST {}", serviceUrl, e);
-            }
-        }
-
         try {
             final Profiler profiler = new Profiler();
             profiler.start();
@@ -158,15 +148,14 @@ public class ClusterServiceServletImpl implements ClusterService {
             if (response == HttpStatus.SC_OK) {
                 result = EntityUtils.toString(httpResponse.getEntity());
                 profiler.stop();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("POST {} request: {}, response :{}, responding time: {} ms", serviceUrl, request, result, profiler.getDurationInMillis());
-                }
+                logger.debug("POST {} {} succeeded, response length: {}, responding time: {} ms", serviceUrl, requestDescription,
+                        result != null ? result.length() : 0, profiler.getDurationInMillis());
             } else {
                 profiler.stop();
-                logger.error("Invalid response code : {}, from : {} request: {}, method : {} responding time: {}", response, serviceUrl, request, method.getParams().getParameter("method"), profiler.getDurationInMillis());
+                logger.error("Invalid response code: {} from POST {} {}, responding time: {} ms", response, serviceUrl, requestDescription, profiler.getDurationInMillis());
             }
         } catch (IOException e) {
-            logger.error("Exception from : {} request: {}, method : {}, exception :", serviceUrl, request, method.getParams().getParameter("method"), e);
+            logger.error("Exception from POST {} {}", serviceUrl, requestDescription, e);
         } finally {
             method.releaseConnection();
         }

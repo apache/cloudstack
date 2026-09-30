@@ -19,7 +19,7 @@
 
 package com.cloud.utils.nio;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * WorkerFactory creates and selects workers.
@@ -32,6 +32,6 @@ public interface HandlerFactory {
     default int getNewConnectionsCount() {
         return 0;
     }
-    default void registerNewConnection(InetSocketAddress address) {}
-    default void unregisterNewConnection(InetSocketAddress address) {}
+    default void registerNewConnection(SocketAddress address) {}
+    default void unregisterNewConnection(SocketAddress address) {}
 }

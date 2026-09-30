@@ -122,7 +122,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         Optional<RequestLine> requestLineOpt = requestOpt.map(HttpRequest::getRequestLine);
         String method = requestLineOpt.map(RequestLine::getMethod).orElse(null);
         String uri = requestLineOpt.map(RequestLine::getUri).orElse(null);
-        logger.debug("{} {} {}", method, uri, requestBody);
+        logger.debug("{} {} (body length: {})", method, uri, requestBody != null ? requestBody.length() : 0);
     }
 
     protected void handleRequest(HttpRequest req, HttpResponse response) {

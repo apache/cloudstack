@@ -51,7 +51,8 @@ public interface BackoffFactory {
      * @return {@link BackoffAlgorithm} implementation object
      */
     static BackoffAlgorithm createDefault(Properties properties) {
-        Properties newProperties = new Properties(properties);
+        Properties newProperties = new Properties();
+        newProperties.putAll(properties);
         newProperties.put(BACKOFF_IMPLEMENTATION_KEY, DEFAULT_BACKOFF_IMPLEMENTATION);
         return create(newProperties);
     }
@@ -85,8 +86,7 @@ public interface BackoffFactory {
             logger.warn(msg, e);
             throw new RuntimeException(msg, e);
         } catch (ConfigurationException e) {
-            String msg = String.format("Failed to configure backoff implementation for %s with parameters %s",
-                    className, params);
+            String msg = String.format("Failed to configure backoff implementation for %s", className);
             logger.warn(msg, e);
             throw new RuntimeException(msg, e);
         }

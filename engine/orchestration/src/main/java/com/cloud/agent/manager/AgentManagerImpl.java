@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -433,11 +434,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public void registerNewConnection(InetSocketAddress address) {
-        logger.trace("Adding new agent connection from {}", address.toString());
+    public void registerNewConnection(SocketAddress address) {
+        logger.trace("Adding new agent connection from {}", address);
         try {
-            String ipAddress = address.getAddress().getHostAddress();
-            String msName = msCache.get(ipAddress);
+            String ipAddress = address instanceof InetSocketAddress ? ((InetSocketAddress) address).getAddress().getHostAddress() : null;
+            String msName = ipAddress != null ? msCache.get(ipAddress) : null;
             if (msName != null) {
                 logger.info("New connection {} is from Management Server {} ({}), skipping registration",
                         address, ipAddress, msName);
@@ -452,7 +453,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public void unregisterNewConnection(InetSocketAddress address) {
+    public void unregisterNewConnection(SocketAddress address) {
         logger.trace("Removing new agent connection ({} of {}) for {}", newAgentConnections.size(), maxConcurrentNewAgentConnections, address);
         newAgentConnections.remove(address.toString());
     }
@@ -1061,8 +1062,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         // add alert to the Host here
         if (e instanceof ConnectionException) {
             ConnectionException ce = (ConnectionException) e;
-            // XXX: in case of Storage Pool issue we are ending up here
-            // Failed to establish connection with PowerFlex Gateway to check host SDC connection
             if (ce.isSetupError()) {
                 logger.warn("Monitor {} says there is an error in the connect process for {} due to {}",
                         monitorClassName, host, e.getMessage());
@@ -1650,8 +1649,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             return answer;
-            // FIXME: There are a lot of result != null checks in callers. Should this method trow exception?
-            //  In case of null the Domain logic has no idea what is going on; otherwise it can do additional steps/validation.
         } catch (final AgentUnavailableException e) {
             logger.warn("Failed to send command {} to Host {}: {}", cmd.getClass().getSimpleName(), hostId, e.getLocalizedMessage(), e);
             return null;
@@ -1843,9 +1840,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     public List<String> getAvoidMsList() {
-        // Detect config format and build avoid list using matching format
-        boolean isUsingHostnames = ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames();
-        return isUsingHostnames ? _mshostDao.listNonUpStateMsHostnames() : _mshostDao.listNonUpStateMsIPs();
+        List<String> nonUpMsIps = _mshostDao.listNonUpStateMsIPs();
+        if (!ManagementServerAddressUtil.isManagementServerAddressListUsingHostnames()) {
+            return nonUpMsIps;
+        }
+        // agents hold the configured addresses, which may be aliases of the persisted hostnames
+        return ManagementServerAddressUtil.getConfiguredAddresses(_mshostDao.listNonUpStateMsHostnames(), nonUpMsIps);
     }
 
     private void setReadyCommandMSList(HostVO host, ReadyCommand ready) {
@@ -2890,11 +2890,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         public String get(String ipAddress) {
-            return msCache.get("msHosts", key -> msHostDao.findAllIncludingRemoved()
-                            .stream()
-                            .collect(Collectors.toMap(ManagementServerHostVO::getServiceIP,
-                                    ManagementServerHostVO::getName)))
-                    .get(ipAddress);
+            return msCache.get("msHosts", key -> {
+                Map<String, String> msNamesByIp = new HashMap<>();
+                for (ManagementServerHostVO msHost : msHostDao.listAllIncludingRemoved()) {
+                    if (msHost.getServiceIP() != null) {
+                        msNamesByIp.put(msHost.getServiceIP(), msHost.getName() != null ? msHost.getName() : "");
+                    }
+                }
+                return msNamesByIp;
+            }).get(ipAddress);
         }
     }
 

@@ -31,8 +31,9 @@ import com.cloud.utils.db.GlobalLock;
 public class AgentConnectStatusAnswer extends Answer {
 
     /**
-     * {@link Boolean#TRUE} means host has {@link GlobalLock#lock(int)} acquired, otherwise {@link Boolean#FALSE},
-     * and null if there is an error during executing {@link AgentConnectStatusCommand}.
+     * {@link Boolean#TRUE} means the host connect {@link GlobalLock} is available (no management server holds it),
+     * so the agent may send its {@link StartupCommand}; {@link Boolean#FALSE} means another connect process holds it;
+     * null if there is an error during executing {@link AgentConnectStatusCommand}.
      */
     private Boolean lockAvailable;
     /**

@@ -30,13 +30,24 @@ public class ThreadContextCommandUtil {
 
     /**
      * Propagate UUID and log context ID from Command trace context to MDC.
+     * A key absent from the command is removed from MDC so that a worker thread does not
+     * carry over the context of a previously processed command.
      *
      * @param cmd the command containing trace context parameters
      */
     public static void propagateContextFromCommand(Command cmd) {
-        if (cmd != null) {
-            ThreadContextUtil.setLogContextId(cmd.getTraceContextParam(ThreadContextUtil.CONTEXT_LOG_ID_KEY));
-            ThreadContextUtil.setUuid(cmd.getTraceContextParam(ThreadContextUtil.CONTEXT_UUID_KEY));
+        if (cmd == null) {
+            return;
+        }
+        putOrRemove(ThreadContextUtil.MDC_LOG_CONTEXT_ID_KEY, cmd.getTraceContextParam(ThreadContextUtil.CONTEXT_LOG_ID_KEY));
+        putOrRemove(ThreadContextUtil.MDC_UUID_KEY, cmd.getTraceContextParam(ThreadContextUtil.CONTEXT_UUID_KEY));
+    }
+
+    private static void putOrRemove(String mdcKey, String value) {
+        if (StringUtils.isNotEmpty(value)) {
+            ThreadContext.put(mdcKey, value);
+        } else {
+            ThreadContext.remove(mdcKey);
         }
     }
 

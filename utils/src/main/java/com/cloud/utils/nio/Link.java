@@ -63,7 +63,7 @@ public class Link {
 
     private final InetSocketAddress _addr;
     private final NioConnection _connection;
-    private SelectionKey _key;
+    private volatile SelectionKey _key;
     private Integer _localPort;
     private final ConcurrentLinkedQueue<ByteBuffer[]> _writeQueue;
     private ByteBuffer _readBuffer;

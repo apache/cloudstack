@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
@@ -680,7 +681,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         try {
                             stopAndCleanupConnection();
                         } catch (Exception ex) {
-                            logger.warn("Got an exception during stop and cleanup connection", e);
+                            logger.warn("Got an exception during stop and cleanup connection", ex);
                         }
 
                         updateRefuseLoopState(e, host, firstRefuseLoopHostRef, ignoreAvoidMsHostListRef, skipTimeoutRef);
@@ -734,13 +735,13 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         if (skipTimeout && firstRefuseLoopHost == null) {
             firstRefuseLoopHostRef.set(host);
             ignoreAvoidMsHostListRef.set(false);
-            logger.debug("Started refuse loop for host {}", firstRefuseLoopHost);
+            logger.debug("Started refuse loop for host {}", host);
             // closed "refuse loop"
         } else if (skipTimeout && firstRefuseLoopHost.equalsIgnoreCase(host)) {
             ignoreAvoidMsHostListRef.set(true);
             logger.debug("Closed refuse loop for host {}", firstRefuseLoopHost);
             // got non "refuse" related issue, break "refuse loop"
-        } else if (!skipTimeout && (firstRefuseLoopHostRef != null || ignoreAvoidMsHostListRef.get())) {
+        } else if (!skipTimeout && (firstRefuseLoopHost != null || ignoreAvoidMsHostListRef.get())) {
             logger.debug("Broke refuse loop for host {} by {}", firstRefuseLoopHost, host);
             firstRefuseLoopHostRef.set(null);
             ignoreAvoidMsHostListRef.set(false);
@@ -839,7 +840,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         logger.debug("Calling storm guard");
         boolean reconnectForCurrentLink = link == this.link;
         boolean currentLinkTerminated = this.link != null && this.link.isTerminated();
-        boolean reconnectForNewHost = this.hostname != null && this.hostname.equals(preferredHost);
+        String connectedHost = connection != null ? connection.getHost() : null;
+        boolean reconnectForNewHost = org.apache.commons.lang3.StringUtils.isNotBlank(preferredHost) && !preferredHost.equalsIgnoreCase(connectedHost);
         // if none of the above is true
         boolean stormDetected = !(reconnectForCurrentLink || currentLinkTerminated || reconnectForNewHost);
         // connection storm guard
@@ -1708,12 +1710,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     @Override
-    public void registerNewConnection(InetSocketAddress address) {
+    public void registerNewConnection(SocketAddress address) {
         logger.trace("Register new connection to {}", address);
     }
 
     @Override
-    public void unregisterNewConnection(InetSocketAddress address) {
+    public void unregisterNewConnection(SocketAddress address) {
         logger.trace("Unregister new connection to {}", address);
     }
 
