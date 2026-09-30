@@ -32,7 +32,8 @@ public enum ResourceAlertMetric {
     NETWORK_READ_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
     NETWORK_WRITE_KBPS(ResourceAlertRule.ResourceType.VirtualMachine, ResourceAlertRule.ResourceType.Host),
     LOAD_AVERAGE(ResourceAlertRule.ResourceType.Host),
-    VOLUME_SIZE_GB(ResourceAlertRule.ResourceType.Volume),
+    VOLUME_USED_GB(ResourceAlertRule.ResourceType.Volume),
+    VOLUME_UTILIZATION(ResourceAlertRule.ResourceType.Volume),
     STORAGE_USED_IOPS(ResourceAlertRule.ResourceType.StoragePool);
 
     private final Set<ResourceAlertRule.ResourceType> applicableTypes;
@@ -46,6 +47,6 @@ public enum ResourceAlertMetric {
     }
 
     public boolean isPercentage() {
-        return this == CPU_UTILIZATION || this == MEMORY_UTILIZATION || this == STORAGE_UTILIZATION;
+        return this == CPU_UTILIZATION || this == MEMORY_UTILIZATION || this == STORAGE_UTILIZATION || this == VOLUME_UTILIZATION;
     }
 }

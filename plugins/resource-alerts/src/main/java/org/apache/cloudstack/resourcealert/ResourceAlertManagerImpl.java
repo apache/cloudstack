@@ -499,9 +499,14 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
                 StorageStats pool = statsCollector.getStoragePoolStats(resourceId);
                 return pool != null && pool.getUsedIops() != null ? pool.getUsedIops().doubleValue() : null;
             }
-            case VOLUME_SIZE_GB: {
+            case VOLUME_USED_GB: {
                 VolumeStats s = getVolumeStats(resourceId);
                 return s != null ? s.getPhysicalSize() / (1024.0 * 1024.0 * 1024.0) : null;
+            }
+            case VOLUME_UTILIZATION: {
+                VolumeStats s = getVolumeStats(resourceId);
+                if (s == null || s.getVirtualSize() <= 0) return null;
+                return ((double) s.getPhysicalSize() / s.getVirtualSize()) * 100.0;
             }
             case LOAD_AVERAGE: {
                 HostStats s = statsCollector.getHostStats(resourceId);
