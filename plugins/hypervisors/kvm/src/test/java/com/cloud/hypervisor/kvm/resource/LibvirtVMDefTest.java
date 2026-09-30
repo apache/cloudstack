@@ -597,4 +597,22 @@ public class LibvirtVMDefTest extends TestCase {
                 "<backend type='emulator' version='2.0'/>\n" +
                 "</tpm>\n", tpmDef.toString());
     }
+
+    @Test
+    public void testMemBalloonWithReclaimDisabled() {
+        LibvirtVMDef.setGlobalQemuVersion(5001000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(6009000L);
+
+        LibvirtVMDef.MemBalloonDef memBalloonDef = new LibvirtVMDef.MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+        memBalloonDef.disableMemoryReclaim();
+
+        String xml = memBalloonDef.toString();
+        assertFalse("a VM that must hold its memory should not report free pages back",
+                xml.contains("freePageReporting"));
+        assertFalse(xml.contains("autodeflate"));
+        assertTrue("the balloon device stays so memory statistics keep working",
+                xml.contains("<memballoon model='virtio'"));
+        assertTrue("statistics are still collected", xml.contains("<stats period='60'/>"));
+    }
 }

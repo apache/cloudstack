@@ -163,6 +163,12 @@ public interface CapacityManager {
     void updateCapacityForHost(Host host);
 
     /**
+     * Expresses a VM's request in the units capacity is counted in, taking account of any overcommit
+     * ratio its service offering sets in place of its cluster's.
+     */
+    long scaleRequestForOffering(long serviceOfferingId, long clusterId, long requested, boolean forCpu);
+
+    /**
      * @param pool storage pool
      * @param templateForVmCreation template that will be used for vm creation
      * @return total allocated capacity for the storage pool
