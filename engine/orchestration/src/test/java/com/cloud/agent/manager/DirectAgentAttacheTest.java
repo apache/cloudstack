@@ -28,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.hypervisor.Hypervisor;
@@ -86,28 +87,32 @@ public class DirectAgentAttacheTest {
     @Test
     public void testCancelRunningTaskStopsTheResourceThenTheThread() throws Exception {
         final Request request = submitRunning(101L);
+        directAgentAttache.registerListener(101L, waiter());
         Mockito.doReturn(true).when(_resource).isRequestSequenceCancellable(101L);
         Mockito.doReturn(true).when(_resource).cancelRequestSequence(101L);
 
         Assert.assertTrue(directAgentAttache.isExecutionCancellable(101L));
-        directAgentAttache.cancelExecution(101L);
+        Assert.assertTrue(directAgentAttache.cancelExecution(101L));
 
         Mockito.verify(_resource).cancelRequestSequence(101L);
         Mockito.verify(runningTask).cancel(true);
         Assert.assertTrue(request.isCancelled());
+        Assert.assertFalse(directAgentAttache._waitForList.containsKey(101L));
     }
 
     @Test
     public void testCancelLeavesNonCancellableRunningTaskAlone() throws Exception {
         final Request request = submitRunning(303L);
+        directAgentAttache.registerListener(303L, waiter());
         Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(303L);
 
         Assert.assertFalse(directAgentAttache.isExecutionCancellable(303L));
-        directAgentAttache.cancelExecution(303L);
+        Assert.assertFalse(directAgentAttache.cancelExecution(303L));
 
         Mockito.verify(_resource, Mockito.never()).cancelRequestSequence(Mockito.anyLong());
         Mockito.verify(runningTask, Mockito.never()).cancel(Mockito.anyBoolean());
         Assert.assertFalse(request.isCancelled());
+        Assert.assertTrue(directAgentAttache._waitForList.containsKey(303L));
     }
 
     @Test
@@ -119,6 +124,12 @@ public class DirectAgentAttacheTest {
         final Request request = new Request(_id, -1, new CheckHealthCommand(), false);
         request.setSequence(seq);
         return request;
+    }
+
+    private Listener waiter() {
+        final Listener listener = Mockito.mock(Listener.class);
+        Mockito.when(listener.getTimeout()).thenReturn(-1);
+        return listener;
     }
 
     private Request submitRunning(final long seq) throws Exception {
