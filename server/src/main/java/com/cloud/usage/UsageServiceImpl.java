@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.usage;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -527,11 +525,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         if (cmd.getDuration() != null) {
-            ZoneId systemZoneId = ZoneId.systemDefault();
-            LocalDateTime nowLocal = LocalDateTime.now();
-            ZonedDateTime nowZoned = nowLocal.atZone(systemZoneId);
-            ZonedDateTime lastDateTimeZoned = nowZoned.minusHours(cmd.getDuration());
-            Date lastDate = Date.from(lastDateTimeZoned.toInstant());
+            // Usage job timestamps are GMT; anchoring the window in the system zone would shift it
+            // by the offset on any management server that is not on UTC.
+            Date lastDate = new Date(DateUtil.currentGMTTime().getTime() - TimeUnit.HOURS.toMillis(cmd.getDuration()));
 
             SearchCriteria<UsageJobVO> scc = _usageJobDao.createSearchCriteria();
             scc.addOr("startDate", SearchCriteria.Op.GTEQ, lastDate);

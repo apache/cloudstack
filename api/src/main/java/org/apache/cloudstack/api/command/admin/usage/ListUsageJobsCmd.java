@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UsageJobResponse;
 
 @APICommand(name = "listUsageJobs", description = "Lists the usage jobs.", responseObject = UsageJobResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0")
 public class ListUsageJobsCmd extends BaseListCmd {
 
     /////////////////////////////////////////////////////
