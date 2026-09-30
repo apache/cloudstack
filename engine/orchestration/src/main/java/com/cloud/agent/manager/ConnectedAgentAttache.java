@@ -56,11 +56,7 @@ public class ConnectedAgentAttache extends AgentAttache {
         return _link == null;
     }
 
-    /**
-     * The command is executing on a remote agent, so only the agent can say whether its backend work
-     * can be stopped; ask it. An agent that does not understand the question (an older one, or a
-     * resource with nothing to stop) answers unsupported, which is a no.
-     */
+    /** Only the agent knows whether its backend work can be stopped; an agent that does not understand the question answers unsupported. */
     @Override
     protected boolean isExecutionCancellable(final long seq) {
         return askAgentToCancel(seq, true);

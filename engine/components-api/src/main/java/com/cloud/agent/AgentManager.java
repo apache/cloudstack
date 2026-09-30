@@ -183,10 +183,7 @@ public interface AgentManager extends JobCancellationHandler {
 
     Long getAsyncJobId();
 
-    /**
-     * True when the given job has been cancelled. Answered from an in-memory view refreshed by the
-     * cancelled-jobs poller, so it is cheap enough to consult on the command path.
-     */
+    /** Answered from an in-memory view kept by the cancelled-jobs poller. */
     boolean isJobCancelled(Long jobId);
 
 }

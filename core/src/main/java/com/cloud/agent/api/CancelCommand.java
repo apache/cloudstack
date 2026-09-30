@@ -19,14 +19,7 @@
 
 package com.cloud.agent.api;
 
-/**
- * Asks whoever is executing a request sequence to stop it.
- *
- * Between management servers this travels as a control request and drops the peer's bookkeeping for
- * the sequence. Sent to an agent as an ordinary command, it asks the agent to stop the backend work
- * the sequence has in flight; with checkOnly set it only asks whether that would be possible, which is
- * what lets the job layer refuse a cancellation it cannot honour instead of recording it.
- */
+/** Asks the executor of a request sequence to stop it; between management servers as a control request, to an agent as an ordinary command (checkOnly = just ask). */
 public class CancelCommand extends Command {
     protected long sequence;
     protected String reason;

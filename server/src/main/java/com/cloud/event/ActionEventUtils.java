@@ -209,11 +209,7 @@ public class ActionEventUtils {
         return event;
     }
 
-    /**
-     * The API job on whose behalf this thread is working, or null outside a job. VM work jobs run on
-     * behalf of an API job (their "related" id); that parent is what the user can see and list, so it
-     * is the one recorded.
-     */
+    /** The API job this thread works for (a VM work job's parent), or null outside a job. */
     private static Long currentJobId() {
         final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
         if (context == null || context.getJob() == null) {

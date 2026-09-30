@@ -25,15 +25,7 @@ import org.apache.logging.log4j.Logger;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.ManagedObjectReference;
 
-/**
- * Tracks the vCenter tasks a resource is waiting on, per agent request sequence, so a request can be
- * cancelled by cancelling the tasks it created.
- *
- * One instance per resource (one per host), so two hosts cannot collide on a sequence number. The
- * resource opens a request scope for the executing thread; {@link VmwareClient#waitForTask} then reports
- * every task it waits on through that scope. Registering at that single chokepoint is what gives complete
- * coverage: every task the resource ever waits on passes through it.
- */
+/** Per agent request sequence, the vCenter tasks a resource is waiting on; one instance per host. VmwareClient.waitForTask is the single registration point. */
 public class VmwareTaskRegistry {
     private static final Logger LOGGER = LogManager.getLogger(VmwareTaskRegistry.class);
 
@@ -66,10 +58,7 @@ public class VmwareTaskRegistry {
         }
     }
 
-    /**
-     * Marks the current thread as executing the given request. A null sequence (a command that did not
-     * arrive through the agent layer) leaves the thread unscoped, so nothing is tracked for it.
-     */
+    /** A null sequence (not from the agent layer) leaves the thread unscoped. */
     public void beginRequest(final Long sequence) {
         if (sequence == null) {
             return;
@@ -93,11 +82,7 @@ public class VmwareTaskRegistry {
         return state != null && state.cancelRequested;
     }
 
-    /**
-     * Called by the client when it starts waiting on a task. Returns true when the request this thread is
-     * executing has already been cancelled, so the caller can cancel the newly created task straight away
-     * instead of letting it run.
-     */
+    /** Returns true when the request was already cancelled, so the caller cancels the new task at once. */
     static boolean taskStarted(final ManagedObjectReference mor, final VmwareClient client) {
         final RequestScope scope = CURRENT.get();
         if (scope == null || mor == null) {
@@ -122,11 +107,7 @@ public class VmwareTaskRegistry {
         }
     }
 
-    /**
-     * Whether the request can be stopped. Unknown sequences are not cancellable: we have nothing to stop
-     * and no way to know what the backend is doing. A request with no task in flight can be stopped by
-     * interrupting its thread; one with tasks in flight only if vCenter will cancel every one of them.
-     */
+    /** Unknown sequences are not cancellable; with tasks in flight, every one must be cancelable on vCenter. */
     public boolean isCancellable(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {
@@ -146,11 +127,7 @@ public class VmwareTaskRegistry {
         return true;
     }
 
-    /**
-     * Cancels every task the request has in flight and marks the request so that any task it creates
-     * afterwards is cancelled as soon as the client starts waiting on it. Returns true only if every
-     * in-flight task was actually cancelled.
-     */
+    /** Cancels the in-flight tasks and marks the request so later tasks are cancelled on arrival. */
     public boolean cancel(final long sequence) {
         final RequestState state = requests.get(sequence);
         if (state == null) {

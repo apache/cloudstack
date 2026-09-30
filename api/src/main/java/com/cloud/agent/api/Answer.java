@@ -21,8 +21,7 @@ import com.cloud.utils.exception.ExceptionUtil;
 public class Answer extends Command {
     protected boolean result;
     protected String details;
-    // Set when the command was stopped because its async job was cancelled, so callers can tell a
-    // cancellation from an ordinary failure without matching on the detail text.
+    // set when the command was stopped because its async job was cancelled
     protected boolean cancelled;
 
     protected Answer() {
