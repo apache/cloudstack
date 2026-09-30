@@ -1586,17 +1586,36 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Invalid Kubernetes version associated with cluster : %s",
                     kubernetesCluster.getName()));
         }
-        final ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
-        if (serviceOffering == null) {
-            throw new CloudRuntimeException(String.format("Invalid service offering associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
+        // Determine the effective service offering for hardware validation.
+        // Prefer the dedicated node offering (4.21+) over the legacy service offering.
+        // If neither is set, the cluster is in an inconsistent state.
+        Long offeringId = kubernetesCluster.getNodeOfferingId();
+        if (offeringId == null) {
+            offeringId = kubernetesCluster.getServiceOfferingId();
         }
+
+        if (offeringId == null) {
+            throw new CloudRuntimeException(String.format(
+                    "Neither node offering nor service offering is associated with Kubernetes cluster : %s. " +
+                    "The cluster is in an inconsistent state and cannot be upgraded.",
+                    kubernetesCluster.getName()));
+        }
+
+        final ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(offeringId);
+        if (serviceOffering == null) {
+            throw new CloudRuntimeException(String.format(
+                    "Offering ID %d associated with Kubernetes cluster : %s could not be resolved. " +
+                    "The offering may have been deleted.",
+                    offeringId, kubernetesCluster.getName()));
+        }
+
         if (serviceOffering.getCpu() < upgradeVersion.getMinimumCpu()) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be upgraded with Kubernetes version : %s which needs minimum %d vCPUs while associated service offering : %s offers only %d vCPUs",
-                    kubernetesCluster.getName(), upgradeVersion.getName(), upgradeVersion.getMinimumCpu(), serviceOffering.getName(), serviceOffering.getCpu()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be upgraded with Kubernetes version : %s which needs minimum %d vCPUs while the associated offering : %s (ID: %d) offers only %d vCPUs",
+                    kubernetesCluster.getName(), upgradeVersion.getName(), upgradeVersion.getMinimumCpu(), serviceOffering.getName(), offeringId, serviceOffering.getCpu()));
         }
         if (serviceOffering.getRamSize() < upgradeVersion.getMinimumRamSize()) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be upgraded with Kubernetes version : %s which needs minimum %d MB RAM while associated service offering : %s offers only %d MB RAM",
-                    kubernetesCluster.getName(), upgradeVersion.getName(), upgradeVersion.getMinimumRamSize(), serviceOffering.getName(), serviceOffering.getRamSize()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be upgraded with Kubernetes version : %s which needs minimum %d MB RAM while the associated offering : %s (ID: %d) offers only %d MB RAM",
+                    kubernetesCluster.getName(), upgradeVersion.getName(), upgradeVersion.getMinimumRamSize(), serviceOffering.getName(), offeringId, serviceOffering.getRamSize()));
         }
         // Check upgradeVersion is either patch upgrade or immediate minor upgrade
         try {
