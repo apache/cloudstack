@@ -42,6 +42,12 @@ public class CancelCommandTest {
     }
 
     @Test
+    public void testCheckOnlyDefaultsToFalse() {
+        assertFalse(cc.isCheckOnly());
+        assertTrue(new CancelCommand(1L, "probe", true).isCheckOnly());
+    }
+
+    @Test
     public void testExecuteInSequence() {
         boolean b = cc.executeInSequence();
         assertFalse(b);
