@@ -64,7 +64,7 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MAX_HOSTS_PER_CLUSTER, type = CommandType.INTEGER, description = "The maximum number of the hypervisor hosts per cluster ", since = "4.16.0")
     private Integer maxHostsPerClusterLimit;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ENABELD, type = CommandType.BOOLEAN, description = "Set true to enable Instance Snapshots for this hypervisor", since = "4.16.0")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ENABLED, type = CommandType.BOOLEAN, description = "Set true to enable Instance Snapshots for this hypervisor", since = "4.16.0")
     private Boolean vmSnapshotEnabled;
 
     /////////////////////////////////////////////////////

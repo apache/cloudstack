@@ -92,7 +92,7 @@ export default {
     return {
       usageList: [
         'vm', 'cpu', 'memory', 'gpu', 'primarystorage', 'volume', 'ip', 'network',
-        'vpc', 'secondarystorage', 'snapshot', 'template', 'project', 'backup', 'backupstorage', 'bucket', 'objectstorage'
+        'vpc', 'secondarystorage', 'snapshot', 'instancesnapshot', 'template', 'project', 'backup', 'backupstorage', 'bucket', 'objectstorage'
       ],
       taggedUsage: {},
       tagData: {},

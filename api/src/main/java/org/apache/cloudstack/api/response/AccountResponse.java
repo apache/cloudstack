@@ -151,6 +151,18 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total backup storage space (in GiB) available to the account", since = "4.21.0")
     private String backupStorageAvailable;
 
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_LIMIT)
+    @Param(description = "The total number of Instance Snapshots that this Account can own")
+    private String instanceSnapshotLimit;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_TOTAL)
+    @Param(description = "The number of Instance Snapshots owned by this Account")
+    private Long instanceSnapshotTotal;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_AVAILABLE)
+    @Param(description = "The number of Instance Snapshots available for this Account")
+    private String instanceSnapshotAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "The total number of Templates which can be created by this Account")
     private String templateLimit;
@@ -474,6 +486,21 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setBackupStorageAvailable(String backupStorageAvailable) {
         this.backupStorageAvailable = backupStorageAvailable;
+    }
+
+    @Override
+    public void setInstanceSnapshotLimit(String instanceSnapshotLimit) {
+        this.instanceSnapshotLimit = instanceSnapshotLimit;
+    }
+
+    @Override
+    public void setInstanceSnapshotTotal(Long instanceSnapshotTotal) {
+        this.instanceSnapshotTotal = instanceSnapshotTotal;
+    }
+
+    @Override
+    public void setInstanceSnapshotAvailable(String instanceSnapshotAvailable) {
+        this.instanceSnapshotAvailable = instanceSnapshotAvailable;
     }
 
     @Override
