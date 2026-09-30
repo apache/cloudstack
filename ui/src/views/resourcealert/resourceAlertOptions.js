@@ -63,3 +63,16 @@ export const SEVERITY_LABELS = {
   MEDIUM: 'Medium',
   LOW: 'Low'
 }
+
+const LABELS_BY_FIELD = {
+  resourcetype: RESOURCE_TYPE_LABELS,
+  metric: METRIC_LABELS,
+  metrictype: METRIC_LABELS,
+  condition: CONDITION_LABELS,
+  severity: SEVERITY_LABELS
+}
+
+export function resourceAlertLabel (field, value) {
+  const labels = LABELS_BY_FIELD[field]
+  return (labels && labels[value]) || value
+}

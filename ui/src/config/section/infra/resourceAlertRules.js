@@ -18,6 +18,9 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { i18n } from '@/locales'
+import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
+
+const label = (field) => ({ [field]: (record) => resourceAlertLabel(field, record[field]) })
 
 export default {
   name: 'resourcealerts',
@@ -25,9 +28,9 @@ export default {
   icon: 'BellOutlined',
   permission: ['listResourceAlertRules'],
   columns: () => {
-    const cols = ['name', 'resourcetype', {
+    const cols = ['name', label('resourcetype'), {
       resourcename: (record) => record.resourceid ? record.resourcename : i18n.global.t('label.resource.alert.all.resources')
-    }, 'metric', 'condition', 'threshold', 'severity']
+    }, label('metric'), label('condition'), 'threshold', label('severity')]
     if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) cols.push('account')
     return cols
   },
