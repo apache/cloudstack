@@ -33,15 +33,23 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.BootMode;
 import org.apache.cloudstack.api.ApiConstants.BootType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.NetworkService;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.network.Network;
@@ -479,5 +487,47 @@ public class DeployVMCmdTest {
             cmd.getDataDiskTemplateToDiskOfferingMap();
         });
         assertTrue(thrownException.getMessage().contains("Unable to translate and find entity with datadisktemplateid"));
+    }
+
+    @After
+    public void tearDownCallContext() {
+        CallContext.unregisterAll();
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionAccountCause() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        CallContext.current().putErrorContextParameter("resourceLimitCause", Resource.ResourceOwnerType.Account);
+        ResourceAllocationException ex = new ResourceAllocationException("limit exceeded", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertEquals("vm.deploy.resourcelimit.exceeded.account", thrown.getMessageKey());
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionDomainCause() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        CallContext.current().putErrorContextParameter("resourceLimitCause", Resource.ResourceOwnerType.Domain);
+        ResourceAllocationException ex = new ResourceAllocationException("limit exceeded", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertEquals("vm.deploy.resourcelimit.exceeded.domain", thrown.getMessageKey());
+    }
+
+    @Test
+    public void testHandleCreateResourceAllocationExceptionNoCauseFallsBackToPlainMessage() {
+        CallContext.register(mock(User.class), mock(Account.class));
+        // no "resourceLimitCause" error context parameter set
+        ResourceAllocationException ex = new ResourceAllocationException("some other allocation failure", Resource.ResourceType.cpu);
+
+        ServerApiException thrown = assertThrows(ServerApiException.class, () -> cmd.handleCreateResourceAllocationException(ex));
+
+        assertEquals(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, thrown.getErrorCode());
+        assertNull(thrown.getMessageKey());
+        assertEquals(ex.getMessage(), thrown.getDescription());
     }
 }
