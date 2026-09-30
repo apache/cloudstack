@@ -875,7 +875,7 @@ public class ResourceAlertManagerImplTest {
 
         manager.evaluateRules();
 
-        verify(volumeDao).listIdsByAccountOrDomainsAndState(null, null, Volume.State.Ready);
+        verify(volumeDao).listUserVolumeIdsByAccountOrDomainsAndState(null, null, Volume.State.Ready);
     }
 
     @Test

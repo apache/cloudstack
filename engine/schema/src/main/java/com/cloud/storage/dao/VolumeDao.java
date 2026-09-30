@@ -34,7 +34,10 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByAccount(long accountId);
 
-    List<Long> listIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state);
+    /**
+     * Lists IDs of volumes that are detached or attached to user VMs, leaving out system VM and router volumes.
+     */
+    List<Long> listUserVolumeIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, Volume.State state);
 
     List<VolumeVO> findIncludingRemovedByAccount(long accountId);
 
