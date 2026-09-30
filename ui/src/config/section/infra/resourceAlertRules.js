@@ -38,7 +38,7 @@ export default {
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'firedalerts',
-    component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceAlertFiredTab.vue'))),
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceAlertsTab.vue'))),
     show: () => { return 'listResourceAlerts' in store.getters.apis }
   }],
   actions: [
