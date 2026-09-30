@@ -267,11 +267,13 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.hypervisor.vmware.util.VmwareTaskRegistry;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.router.VirtualRouterAutoScale;
+import com.cloud.resource.RequestExecutionContext;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
@@ -429,6 +431,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected volatile long _cmdSequence = 1;
 
+    // One registry per resource, so tasks are tracked per host and two hosts cannot collide on a
+    // request sequence number.
+    private final VmwareTaskRegistry taskRegistry = new VmwareTaskRegistry();
+
     protected StorageSubsystemCommandHandler storageHandler;
     private VmwareStorageProcessor _storageProcessor;
 
@@ -467,6 +473,32 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public Answer executeRequest(Command cmd) {
+        final Long requestSequence = RequestExecutionContext.getRequestSequence();
+        taskRegistry.beginRequest(requestSequence);
+        try {
+            Answer answer = executeRequestInternal(cmd);
+            // The command handlers report a cancelled vCenter task as an ordinary failure; mark it so
+            // the agent layer can tell a cancellation from a failure.
+            if (answer != null && !answer.getResult() && taskRegistry.wasCancelRequested(requestSequence)) {
+                answer.setCancelled(true);
+            }
+            return answer;
+        } finally {
+            taskRegistry.endRequest(requestSequence);
+        }
+    }
+
+    @Override
+    public boolean isRequestSequenceCancellable(long sequence) {
+        return taskRegistry.isCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(long sequence) {
+        return taskRegistry.cancel(sequence);
+    }
+
+    private Answer executeRequestInternal(Command cmd) {
         logCommand(cmd);
         Answer answer;
         ThreadContext.push(getCommandLogTitle(cmd));
