@@ -612,4 +612,53 @@ public class ResourceAlertServiceImplTest {
 
         assertEquals(ResourceAlertRule.ResourceType.VirtualMachine, persistedRuleCapture().getResourceType());
     }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListAlertsFailsOnInvalidSeverity() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getSeverity()).thenReturn("bogus");
+
+        service.listResourceAlerts(cmd);
+    }
+
+    @Test
+    public void testListAlertsNormalizesSeverity() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getSeverity()).thenReturn("high");
+        when(alertDao.searchAndCountByFilters(any(), any(), eq("HIGH"), any(), any(), any(), any()))
+                .thenReturn(new Pair<>(List.of(), 0));
+
+        service.listResourceAlerts(cmd);
+
+        verify(alertDao).searchAndCountByFilters(any(), any(), eq("HIGH"), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testListAlertsKeywordWithNoMatchingRuleReturnsEmpty() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getKeyword()).thenReturn("zzzz");
+        when(ruleDao.listIdsByNameLike("zzzz")).thenReturn(List.of());
+
+        ListResponse<ResourceAlertResponse> response = service.listResourceAlerts(cmd);
+
+        assertEquals(Integer.valueOf(0), response.getCount());
+        verify(alertDao, never()).searchAndCountByFilters(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testListAlertsKeywordFiltersByRuleName() {
+        ListResourceAlertsCmd cmd = mock(ListResourceAlertsCmd.class);
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getKeyword()).thenReturn("cpu");
+        when(ruleDao.listIdsByNameLike("cpu")).thenReturn(List.of(5L, 6L));
+        when(alertDao.searchAndCountByFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new Pair<>(List.of(), 0));
+
+        service.listResourceAlerts(cmd);
+
+        verify(alertDao).searchAndCountByFilters(eq(List.of(5L, 6L)), any(), any(), any(), any(), any(), any());
+    }
 }
