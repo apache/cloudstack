@@ -4442,5 +4442,6 @@
 "label.single": "Single",
 "label.cancel.job": "Cancel job",
 "message.confirm.cancel.job": "Please confirm that you want to cancel this job. Where the hypervisor supports it, the operation in progress is stopped as well; if it cannot be stopped, the request is refused and the job is left to finish.",
-"message.cancel.job.success": "Job cancelled"
+"message.cancel.job.success": "Job cancelled",
+"label.activity": "Activity"
 }
