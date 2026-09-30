@@ -1477,6 +1477,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
+    void cancelQueuedChildJobs(final long parentJobId, final String reason) {
+        for (final AsyncJobVO child : _jobDao.listChildJobs(parentJobId)) {
+            if (child.getStatus() != null && child.getStatus().done()) {
+                continue;
+            }
+            final Long queueItemId = _queueItemDao.getQueueItemIdByContentIdAndType(child.getId(), SyncQueueItem.AsyncJobContentType);
+            if (queueItemId == null) {
+                continue;
+            }
+            final SyncQueueItemVO item = _queueItemDao.findById(queueItemId);
+            if (item == null || item.getLastProcessMsid() != null) {
+                // dequeued already: it is executing, and the in-flight path owns it
+                continue;
+            }
+            logger.info("Cancelling queued job-{}, its parent job-{} was cancelled before it was scheduled", child.getId(), parentJobId);
+            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason + " (parent job cancelled before this job was scheduled)");
+            _jobMonitor.unregisterByJobId(child.getId());
+            _queueMgr.purgeItem(queueItemId);
+        }
+    }
+
     /** A queued VM work job whose parent already finished is completed with the parent's status instead of run. */
     private boolean isChildOfFinishedJob(final SyncQueueItemVO item) {
         if (!SyncQueueItem.AsyncJobContentType.equalsIgnoreCase(item.getContentType())) {
@@ -1563,6 +1584,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final Long executingMsid = job.getExecutingMsid();
             final boolean finalizeNow = executingMsid == null || executingMsid == getMsid();
             completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, finalizeNow);
+            cancelQueuedChildJobs(jobId, reason);
             return "";
         } catch (final Throwable t) {
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
