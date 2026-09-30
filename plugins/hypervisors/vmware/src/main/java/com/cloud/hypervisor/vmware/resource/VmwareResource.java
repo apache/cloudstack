@@ -62,10 +62,7 @@ import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
-import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.CreateObjectCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
@@ -470,20 +467,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public Answer executeRequest(Command cmd) {
-        if (Thread.currentThread().isInterrupted()) {
-            String msg = "Command " + cmd.getClass().getSimpleName() + " was cancelled before execution";
-            logger.warn(msg);
-            return new Answer(cmd, false, msg);
-        }
-
         logCommand(cmd);
         Answer answer;
         ThreadContext.push(getCommandLogTitle(cmd));
         try {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedException("Command execution cancelled");
-            }
-
             long cmdSequence = _cmdSequence++;
             Date startTime = DateUtil.currentGMTTime();
             PropertyMapDynamicBean mbean = new PropertyMapDynamicBean();
@@ -512,33 +499,24 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == CheckHealthCommand.class) {
                 answer = execute((CheckHealthCommand) cmd);
             } else if (clz == StopCommand.class) {
-                String vmName = ((StopCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((StopCommand) cmd);
             } else if (clz == RebootRouterCommand.class) {
                 answer = execute((RebootRouterCommand) cmd);
             } else if (clz == RebootCommand.class) {
-                String vmName = ((RebootCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((RebootCommand) cmd);
             } else if (clz == CheckVirtualMachineCommand.class) {
                 answer = execute((CheckVirtualMachineCommand) cmd);
             } else if (clz == PrepareForMigrationCommand.class) {
                 answer = execute((PrepareForMigrationCommand) cmd);
             } else if (clz == MigrateCommand.class) {
-                String vmName = ((MigrateCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((MigrateCommand) cmd);
             } else if (clz == MigrateVmToPoolCommand.class) {
                 answer = execute((MigrateVmToPoolCommand) cmd);
             } else if (clz == MigrateWithStorageCommand.class) {
                 answer = execute((MigrateWithStorageCommand) cmd);
             } else if (clz == MigrateVolumeCommand.class) {
-                setTaskContext(cmdSequence, cmd, null);
                 answer = execute((MigrateVolumeCommand) cmd);
             } else if (clz == DestroyCommand.class) {
-                String vmName = ((DestroyCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((DestroyCommand) cmd);
             } else if (clz == CreateStoragePoolCommand.class) {
                 return execute((CreateStoragePoolCommand) cmd);
@@ -587,8 +565,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == NetworkUsageCommand.class) {
                 answer = execute((NetworkUsageCommand) cmd);
             } else if (clz == StartCommand.class) {
-                String vmName = ((StartCommand) cmd).getVirtualMachine().getName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 answer = execute((StartCommand) cmd);
             } else if (clz == CheckSshCommand.class) {
                 answer = execute((CheckSshCommand) cmd);
@@ -601,16 +577,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == UnPlugNicCommand.class) {
                 answer = execute((UnPlugNicCommand) cmd);
             } else if (cmd instanceof CreateVMSnapshotCommand) {
-                String vmName = ((CreateVMSnapshotCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((CreateVMSnapshotCommand) cmd);
             } else if (cmd instanceof DeleteVMSnapshotCommand) {
-                String vmName = ((DeleteVMSnapshotCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((DeleteVMSnapshotCommand) cmd);
             } else if (cmd instanceof RevertToVMSnapshotCommand) {
-                String vmName = ((RevertToVMSnapshotCommand) cmd).getVmName();
-                setTaskContext(cmdSequence, cmd, vmName);
                 return execute((RevertToVMSnapshotCommand) cmd);
             } else if (clz == ResizeVolumeCommand.class) {
                 return execute((ResizeVolumeCommand) cmd);
@@ -619,15 +589,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == CleanupVMCommand.class) {
                 return execute((CleanupVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
-                if (cmd instanceof CreateObjectCommand) {
-                    setTaskContext(cmdSequence, cmd, null);
-                } if (cmd instanceof AttachCommand) {
-                    String vmName = ((AttachCommand) cmd).getVmName();
-                    setTaskContext(cmdSequence, cmd, vmName);
-                } else if (cmd instanceof DettachCommand) {
-                    String vmName = ((DettachCommand) cmd).getVmName();
-                    setTaskContext(cmdSequence, cmd, vmName);
-                }
                 checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand) cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {
@@ -686,12 +647,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         logger.trace("Unable to register JMX monitoring due to exception " + ExceptionUtil.toString(e));
                 }
             }
-        } catch (InterruptedException e) {
-            logger.warn("Command execution interrupted: {}", cmd.getClass().getSimpleName());
-            Thread.currentThread().interrupt(); // Restore interrupt status
-            return new Answer(cmd, false, "Command execution was cancelled: " + e.getMessage());
+
         } finally {
-            VmwareHelper.clearTaskContext();
             recycleServiceContext();
             ThreadContext.pop();
         }
@@ -700,23 +657,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
-    }
-
-    private void setTaskContext(long cmdSequence, Command cmd, String vmName) {
-        String commandType = cmd.getClass().getSimpleName();
-        VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
-    }
-
-    @Override
-    public boolean isRequestSequenceCancellable(long sequence) {
-        logger.info("Check if request sequence: {} is cancellable or not", sequence);
-        return VmwareHelper.isActiveVmTaskCancellable(sequence);
-    }
-
-    @Override
-    public boolean cancelRequestSequence(long sequence) {
-        logger.info("Cancel request sequence: {}", sequence);
-        return VmwareHelper.cancelActiveVmTask(sequence);
     }
 
     private ExecutionResult getSystemVmVersionAndChecksum(String controlIp) {
@@ -2713,12 +2653,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             return startAnswer;
         } catch (Throwable e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-                logger.warn("StartCommand interrupted");
-                return new StartAnswer(cmd, "StartCommand cancelled: " + e.getMessage());
-            }
-
             StartAnswer startAnswer = new StartAnswer(cmd, createLogMessageException(e, cmd));
             if (vmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
@@ -2736,12 +2670,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
             }
             return startAnswer;
-        }
-    }
-
-    private void checkCancellation() throws InterruptedException {
-        if (Thread.currentThread().isInterrupted()) {
-            throw new InterruptedException("Command cancelled");
         }
     }
 

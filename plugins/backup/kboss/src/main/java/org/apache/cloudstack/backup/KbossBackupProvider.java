@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.OperationCancelledException;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -553,7 +552,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         Answer[] deleteAnswers;
         try {
             deleteAnswers = sendBackupCommands(endPoint.getId(), deleteCommands);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException(e);
         }
 
@@ -653,7 +652,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         try {
             answers = sendBackupCommands(host.getId(), commands);
-        } catch (OperationTimedoutException | AgentUnavailableException | OperationCancelledException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException e) {
             throw new CloudRuntimeException(e);
         }
 
@@ -979,7 +978,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         Answer[] answers;
         try {
             answers = sendBackupCommands(hostId, commands);
-        } catch (AgentUnavailableException | OperationTimedoutException | OperationCancelledException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException(e);
         }
 
@@ -2629,7 +2628,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         return agentManager.easySend(hostId, cmd);
     }
 
-    protected Answer[] sendBackupCommands(Long hostId, Commands cmds) throws OperationTimedoutException, AgentUnavailableException, OperationCancelledException {
+    protected Answer[] sendBackupCommands(Long hostId, Commands cmds) throws OperationTimedoutException, AgentUnavailableException {
         for (Command cmd : cmds) {
             cmd.setWait(backupTimeout.value());
         }

@@ -28,7 +28,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.ha.FenceBuilder;
 import com.cloud.host.Host;
@@ -98,12 +97,6 @@ public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
                                 + h.toString() + " is unavailable", e);
                     }
                     continue;
-                } catch (OperationCancelledException e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Not moving on to the next host because "
-                                + h.toString() + " is unavailable, and operation cancelled", e);
-                    }
-                    break;
                 }
                 if (answer != null && answer.getResult()) {
                     return true;
