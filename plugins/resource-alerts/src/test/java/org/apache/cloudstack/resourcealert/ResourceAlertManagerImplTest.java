@@ -1069,4 +1069,26 @@ public class ResourceAlertManagerImplTest {
 
         verify(alertDao, times(1)).persist(any());
     }
+
+    private ResourceAlertVO firedSecondsAgo(long seconds) {
+        ResourceAlertVO last = mock(ResourceAlertVO.class);
+        when(last.getAlertTimestamp()).thenReturn(new Date(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(seconds)));
+        return last;
+    }
+
+    @Test
+    public void testCooldownEqualToCheckIntervalFiresOnNextCheck() {
+        ResourceAlertVO last = firedSecondsAgo(59);
+        when(alertDao.findLastFiredForRule(1L, VM_ID)).thenReturn(last);
+
+        assertTrue(manager.canFire(1L, VM_ID, 60));
+    }
+
+    @Test
+    public void testCooldownStillBlocksWellBeforeItEnds() {
+        ResourceAlertVO last = firedSecondsAgo(50);
+        when(alertDao.findLastFiredForRule(1L, VM_ID)).thenReturn(last);
+
+        assertFalse(manager.canFire(1L, VM_ID, 60));
+    }
 }
