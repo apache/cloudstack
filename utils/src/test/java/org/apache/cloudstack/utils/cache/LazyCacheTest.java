@@ -73,6 +73,21 @@ public class LazyCacheTest {
             Assert.fail(String.format("Exception occurred: %s", ie.getMessage()));
         }
         cache.get(key);
+        // refreshAfterWrite triggers an async reload on the first get after the interval;
+        // wait for it deterministically instead of sleeping a fixed duration.
+        Mockito.verify(mockLoader, Mockito.timeout(2000).times(2)).apply(key);
+    }
+
+    @Test
+    public void testExpireAfterWriteModeReloadsSynchronously() throws InterruptedException {
+        // refreshAfterWrite=false -> the entry expires and the next get blocks to load a fresh value,
+        // so the second load is observed synchronously (no async wait needed).
+        LazyCache<String, String> expiringCache = new LazyCache<>(4, expireSeconds, false, mockLoader);
+        String key = "expireKey";
+        expiringCache.get(key);
+        Thread.sleep((long) (1.1 * expireSeconds * 1000));
+        String value = expiringCache.get(key);
+        assertEquals(cacheValuePrefix + key, value);
         Mockito.verify(mockLoader, Mockito.times(2)).apply(key);
     }
 

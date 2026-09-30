@@ -70,4 +70,6 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     void invalidateCache();
 
     List<ConfigurationVO> searchPartialConfigurations();
+
+    String getValueByKey(String key);
 }
