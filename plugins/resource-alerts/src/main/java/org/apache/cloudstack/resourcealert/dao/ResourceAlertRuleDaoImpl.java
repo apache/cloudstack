@@ -36,6 +36,7 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
     private final SearchBuilder<ResourceAlertRuleVO> activeByAccountAndNameSearch;
     private final SearchBuilder<ResourceAlertRuleVO> specificRuleSearch;
     private final SearchBuilder<ResourceAlertRuleVO> resourceTypeSearch;
+    private final SearchBuilder<ResourceAlertRuleVO> nameLikeSearch;
 
     public ResourceAlertRuleDaoImpl() {
         activeSearch = createSearchBuilder();
@@ -73,6 +74,10 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         resourceTypeSearch = createSearchBuilder();
         resourceTypeSearch.and("resourceType", resourceTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         resourceTypeSearch.done();
+
+        nameLikeSearch = createSearchBuilder();
+        nameLikeSearch.and("name", nameLikeSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        nameLikeSearch.done();
     }
 
     @Override
@@ -132,6 +137,13 @@ public class ResourceAlertRuleDaoImpl extends GenericDaoBase<ResourceAlertRuleVO
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("accountId", accountId);
         return getCount(sc) > 0;
+    }
+
+    @Override
+    public List<Long> listIdsByNameLike(String keyword) {
+        SearchCriteria<ResourceAlertRuleVO> sc = nameLikeSearch.create();
+        sc.setParameters("name", "%" + keyword + "%");
+        return listBy(sc).stream().map(ResourceAlertRuleVO::getId).collect(Collectors.toList());
     }
 
     @Override

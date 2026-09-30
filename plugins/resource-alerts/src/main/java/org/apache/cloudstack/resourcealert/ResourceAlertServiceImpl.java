@@ -247,13 +247,22 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
                 alertRuleIds.retainAll(typeRuleIds);
             }
         }
+        if (StringUtils.isNotBlank(cmd.getKeyword())) {
+            List<Long> matchingRuleIds = ruleDao.listIdsByNameLike(cmd.getKeyword());
+            if (alertRuleIds == null) {
+                alertRuleIds = new ArrayList<>(matchingRuleIds);
+            } else {
+                alertRuleIds.retainAll(matchingRuleIds);
+            }
+        }
+        String severity = StringUtils.isNotBlank(cmd.getSeverity()) ? parseSeverity(cmd.getSeverity()).name() : null;
         if (alertRuleIds != null && alertRuleIds.isEmpty()) {
             ListResponse<ResourceAlertResponse> empty = new ListResponse<>();
             empty.setResponses(new ArrayList<>(), 0);
             return empty;
         }
         Pair<List<ResourceAlertVO>, Integer> alerts = alertDao.searchAndCountByFilters(
-                alertRuleIds, resourceId, cmd.getSeverity(), cmd.getStartDate(), cmd.getEndDate(),
+                alertRuleIds, resourceId, severity, cmd.getStartDate(), cmd.getEndDate(),
                 cmd.getStartIndex(), cmd.getPageSizeVal());
 
         Map<Long, ResourceAlertRuleVO> rules = new HashMap<>();
