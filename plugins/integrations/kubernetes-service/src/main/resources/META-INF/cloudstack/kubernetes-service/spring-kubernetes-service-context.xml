@@ -34,6 +34,7 @@
     <bean id="kubernetesClusterVmMapDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDaoImpl" />
     <bean id="kubernetesClusterAffinityGroupMapDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDaoImpl" />
     <bean id="kubernetesClusterManagerImpl" class="com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl" />
+    <bean id="kubernetesClusterNodeCapacityReconciler" class="com.cloud.kubernetes.cluster.utils.KubernetesClusterNodeCapacityReconcilerImpl" />
 
     <bean id="kubernetesServiceHelper" class="com.cloud.kubernetes.cluster.KubernetesServiceHelperImpl" >
         <property name="name" value="KubernetesServiceHelper" />
