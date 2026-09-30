@@ -3258,7 +3258,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cmd.getManagementServerId() != null) {
-            sb.and("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+            // a completed job keeps only the server that completed it
+            sb.and().op("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+            sb.or("completeMsid", sb.entity().getCompleteMsid(), SearchCriteria.Op.EQ);
+            sb.cp();
         }
 
         Object keyword = cmd.getKeyword();
@@ -3325,6 +3328,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Unable to find a management server with the specified id");
             }
             sc.setParameters("executingMsid", msHost.getMsid());
+            sc.setParameters("completeMsid", msHost.getMsid());
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter, includeRemoved);
