@@ -18,6 +18,8 @@ package org.apache.cloudstack.engine.orchestration;
 
 import static org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService.NetworkLockTimeout;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -77,7 +79,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -1017,41 +1018,83 @@ public class NetworkOrchestratorTest extends TestCase {
     }
 
     @Test
-    public void testAllocateNicWithFreeDeviceIdLocksVmRowBeforeReadingFreeDeviceId() throws Exception {
-        final long vmId = 100L;
-        final int freeDeviceId = 5;
-
-        VirtualMachine vm = mock(VirtualMachine.class);
-        when(vm.getId()).thenReturn(vmId);
+    public void testAllocateNicWithFreeDeviceIdLeavesDeviceIdToThePersist() throws Exception {
         VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
-        when(vmProfile.getId()).thenReturn(vmId);
-        when(vmProfile.getVirtualMachine()).thenReturn(vm);
-
         Network network = mock(Network.class);
         NicProfile requested = mock(NicProfile.class);
         NicProfile allocated = mock(NicProfile.class);
-
-        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(freeDeviceId);
-        Mockito.doReturn(new Pair<>(allocated, freeDeviceId)).when(testOrchestrator)
-                .allocateNic(requested, network, false, freeDeviceId, vmProfile);
+        Mockito.doReturn(new Pair<>(allocated, NetworkOrchestrator.FREE_DEVICE_ID)).when(testOrchestrator)
+                .allocateNic(requested, network, false, NetworkOrchestrator.FREE_DEVICE_ID, vmProfile);
 
         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
-            // run the callback body so the lock/read/allocate ordering is exercised
-            transactionMocked.when(() -> Transaction.execute(any(TransactionCallbackWithException.class)))
-                    .thenAnswer(invocation -> {
-                        TransactionCallbackWithException<NicProfile, InsufficientCapacityException> cb = invocation.getArgument(0);
-                        return cb.doInTransaction(mock(TransactionStatus.class));
-                    });
+            assertEquals(allocated, testOrchestrator.allocateNicWithFreeDeviceId(requested, network, false, vmProfile));
 
-            NicProfile result = testOrchestrator.allocateNicWithFreeDeviceId(requested, network, false, vmProfile);
-
-            assertEquals(allocated, result);
-            // the vm_instance row must be locked before the free device id is read,
-            // otherwise two concurrent adds pick the same id (issue #11710)
-            InOrder inOrder = Mockito.inOrder(testOrchestrator._vmDao, testOrchestrator._nicDao);
-            inOrder.verify(testOrchestrator._vmDao).lockRow(vmId, true);
-            inOrder.verify(testOrchestrator._nicDao).getFreeDeviceId(vmId);
-            verify(testOrchestrator, times(1)).allocateNic(requested, network, false, freeDeviceId, vmProfile);
+            // No transaction may be held across the allocation: the nic has to be committed as soon as
+            // it is written, or its ip stays invisible to the race check of other vms in the network.
+            transactionMocked.verifyNoInteractions();
+            verify(testOrchestrator._nicDao, never()).getFreeDeviceId(anyLong());
         }
+    }
+
+    private NicVO persistNicInTransaction(NicVO nic, NicProfile profile, int deviceId, long vmId) {
+        // a mocked Integer getter returns 0, which would read as a device id the profile asks for
+        when(profile.getDeviceId()).thenReturn(null);
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class)))
+                    .thenAnswer(invocation -> {
+                        TransactionCallback<NicVO> callback = invocation.getArgument(0);
+                        return callback.doInTransaction(mock(TransactionStatus.class));
+                    });
+            NicVO persisted = testOrchestrator.persistNic(nic, 10L, profile, deviceId, vmId);
+            transactionMocked.verify(() -> Transaction.execute(any(TransactionCallback.class)), times(1));
+            return persisted;
+        }
+    }
+
+    @Test
+    public void testPersistNicChoosesFreeDeviceIdUnderVmRowLock() {
+        final long vmId = 100L;
+        final int freeDeviceId = 5;
+        NicVO nic = mock(NicVO.class);
+        NicProfile profile = mock(NicProfile.class);
+        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(freeDeviceId);
+        when(testOrchestrator._nicDao.persist(nic)).thenReturn(nic);
+
+        assertEquals(nic, persistNicInTransaction(nic, profile, NetworkOrchestrator.FREE_DEVICE_ID, vmId));
+
+        // the vm_instance row must be locked before the free device id is read, and the nic written in
+        // the same transaction, otherwise two concurrent adds pick the same id (issue #11710)
+        InOrder inOrder = Mockito.inOrder(testOrchestrator._vmDao, testOrchestrator._nicDao, nic);
+        inOrder.verify(testOrchestrator._vmDao).lockRow(vmId, true);
+        inOrder.verify(testOrchestrator._nicDao).getFreeDeviceId(vmId);
+        inOrder.verify(nic).setDeviceId(freeDeviceId);
+        inOrder.verify(testOrchestrator._nicDao).persist(nic);
+    }
+
+    @Test
+    public void testPersistNicKeepsGivenDeviceIdWithoutLocking() {
+        NicVO nic = mock(NicVO.class);
+        NicProfile profile = mock(NicProfile.class);
+        when(testOrchestrator._nicDao.persist(nic)).thenReturn(nic);
+
+        assertEquals(nic, persistNicInTransaction(nic, profile, 2, 100L));
+
+        verify(nic).setDeviceId(2);
+        verify(testOrchestrator._vmDao, never()).lockRow(anyLong(), anyBoolean());
+        verify(testOrchestrator._nicDao, never()).getFreeDeviceId(anyLong());
+    }
+
+    @Test
+    public void testPersistNicReturnsNullWhenRaceCheckFindsIpTaken() {
+        NicVO nic = mock(NicVO.class);
+        NicProfile profile = mock(NicProfile.class);
+        when(profile.getIpv4AllocationRaceCheck()).thenReturn(true);
+        when(profile.getIPv4Address()).thenReturn("10.1.1.5");
+        when(testOrchestrator._nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.5", 10L)).thenReturn(mock(NicVO.class));
+
+        assertNull(persistNicInTransaction(nic, profile, NetworkOrchestrator.FREE_DEVICE_ID, 100L));
+
+        verify(testOrchestrator._nicDao, never()).persist(any(NicVO.class));
+        verify(testOrchestrator._vmDao, never()).lockRow(anyLong(), anyBoolean());
     }
 }
