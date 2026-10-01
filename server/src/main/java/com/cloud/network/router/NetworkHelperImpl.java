@@ -945,26 +945,8 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 }
             } else if (LbStickinessMethod.StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                String length = null; // optional
-                String holdTime = null; // optional
-
-                for (final Pair<String, String> paramKV : paramsList) {
-                    final String key = paramKV.first();
-                    final String value = paramKV.second();
-                    if ("length".equalsIgnoreCase(key)) {
-                        length = value;
-                    }
-                    if ("holdtime".equalsIgnoreCase(key)) {
-                        holdTime = value;
-                    }
-                }
-
-                if (length != null && !containsOnlyNumbers(length, null)) {
-                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: length is not a number: %s", rule.getLb(), length));
-                }
-                if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
-                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: holdtime is not in timeformat: %s", rule.getLb(), holdTime));
-                }
+                throw new InvalidParameterValueException(String.format("Failed LB in validation rule: %s Cause: AppCookie based stickiness "
+                        + "(HAProxy 'appsession') is not supported on a Virtual Router, as this directive was removed in HAProxy 1.6", rule.getLb()));
             }
         }
         return true;
