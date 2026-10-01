@@ -636,6 +636,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             true, false, false, false, false, null, null, null, true, null, null, false);
                 }
 
+                //#4-2 - default isolated offering with Source nat service and egress traffic allowed by default
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed,
+                            "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, null, false, Availability.Optional, null,
+                            defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, true, null,
+                            true, false, false, false, false, null, null, null, true, null, null, false);
+                }
+
                 //#5 - default vpc offering with LB service
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,

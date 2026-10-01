@@ -70,6 +70,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public static final String DEFAULT_ROUTED_NSX_OFFERING = "DefaultRoutedNSXNetworkOffering";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
+    public final static String DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed = "DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
     public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
     public final static String DefaultIsolatedNetworkOffering = "DefaultIsolatedNetworkOffering";
