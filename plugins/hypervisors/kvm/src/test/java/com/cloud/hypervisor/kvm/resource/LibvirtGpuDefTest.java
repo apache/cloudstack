@@ -116,6 +116,145 @@ public class LibvirtGpuDefTest extends TestCase {
     }
 
     @Test
+    public void testGpuDef_withFullPciAddressDomainZero() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "0000:00:02.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withFullPciAddressNonZeroDomain() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "0001:65:00.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0001' bus='0x65' slot='0x00' function='0x0'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withNvidiaStyleEightDigitDomain() {
+        // nvidia-smi reports PCI addresses with an 8-digit domain (e.g. "00000001:af:00.1").
+        // generatePciXml must normalize it to the canonical 4-digit form "0x0001".
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "00000001:af:00.1",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0001' bus='0xaf' slot='0x00' function='0x1'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withFullPciAddressVfNonZeroDomain() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo vfGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "VF-Profile",
+                "VF-Profile",
+                "0002:81:00.3",
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(vfGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        // Non-passthrough NVIDIA VFs should be unmanaged
+        assertTrue(gpuXml.contains("<hostdev mode='subsystem' type='pci' managed='no' display='off'>"));
+        assertTrue(gpuXml.contains("<address domain='0x0002' bus='0x81' slot='0x00' function='0x3'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withLegacyShortBdfDefaultsDomainToZero() {
+        // Backward compatibility: short BDF with no domain segment must still
+        // produce a valid libvirt address with domain 0x0000.
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "af:00.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0000' bus='0xaf' slot='0x00' function='0x0'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withInvalidBusAddressThrows() {
+        String[] invalidAddresses = {
+                "notahex:00.0",          // non-hex bus
+                "gg:00:02.0",            // non-hex domain
+                "00:02:03:04",           // too many colon-separated parts
+                "00",                    // missing slot/function
+                "00:02",                 // missing function (no dot)
+                "00:02.0.1",             // extra dot in ss.f
+        };
+        for (String addr : invalidAddresses) {
+            LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+            VgpuTypesInfo info = new VgpuTypesInfo(
+                    GpuDevice.DeviceType.PCI,
+                    "passthrough",
+                    "passthrough",
+                    addr,
+                    "10de",
+                    "NVIDIA Corporation",
+                    "1b38",
+                    "Tesla T4"
+            );
+            gpuDef.defGpu(info);
+            try {
+                String ignored = gpuDef.toString();
+                fail("Expected IllegalArgumentException for address: " + addr + " but got: " + ignored);
+            } catch (IllegalArgumentException e) {
+                assertTrue("Exception message should contain the bad address",
+                        e.getMessage().contains(addr));
+            }
+        }
+    }
+
+    @Test
     public void testGpuDef_withNullDeviceType() {
         LibvirtGpuDef gpuDef = new LibvirtGpuDef();
         VgpuTypesInfo nullTypeGpuInfo = new VgpuTypesInfo(

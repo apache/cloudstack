@@ -43,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -832,7 +833,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLifecycle;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -875,7 +875,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
-public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
+public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final String FOR_SYSTEMVMS = "forsystemvms";
@@ -1500,6 +1500,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      */
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> getTechnicallyCompatibleHosts(
             final VirtualMachine vm,
+            final Host srcHost,
             final Long startIndex,
             final Long pageSize,
             final String keyword) {
@@ -1508,31 +1509,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             logger.info("Live Migration of GPU enabled VM : {} is not supported", vm);
             return new Ternary<>(new Pair<>(new ArrayList<>(), 0), new ArrayList<>(), new HashMap<>());
-        }
-
-        final long srcHostId = vm.getHostId();
-        final Host srcHost = _hostDao.findById(srcHostId);
-        if (srcHost == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Unable to find the host with ID: " + srcHostId + " of this Instance: " + vm);
-            }
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
-            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-
-        String srcHostVersion = srcHost.getHypervisorVersion();
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
-            srcHostVersion = "";
-        }
-
-        // Check if the vm can be migrated with storage.
-        boolean canMigrateWithStorage = false;
-
-        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
-        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
-            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1548,12 +1524,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
         if (!canMigrateWithStorage && usesLocal) {
             throw new InvalidParameterValueException("Unsupported operation, instance uses Local storage, cannot migrate");
         }
 
         validateVgpuProfileForVmMigration(vmProfile);
 
+        final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair;
         List<HostVO> allHosts;
@@ -1627,6 +1605,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         filteredHosts = uefiFilteredResult.second();
 
         return new Ternary<>(allHostsPairResult, filteredHosts, requiresStorageMotion);
+    }
+
+    protected boolean isStorageMigrationSupported(final VirtualMachine vm, final Host srcHost) {
+        final List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.VMware, HypervisorType.KVM);
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
+            final String srcHostVersion = getHypervisorVersionOfHost(srcHost);
+            return _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
+        }
+        return false;
+    }
+
+    protected String getHypervisorVersionOfHost(final Host host) {
+        final String version = host.getHypervisorVersion();
+        if (version == null && HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return "";
+        }
+        return version;
     }
 
     /**
@@ -1725,9 +1720,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         validateVmForHostMigration(vm);
 
+        final long srcHostId = vm.getHostId();
+        final Host srcHost = _hostDao.findById(srcHostId);
+        if (srcHost == null) {
+            logger.debug("Unable to find the host with ID: {} of this Instance: {}", srcHostId, vm);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified ID) of instance with specified ID");
+            ex.addProxyObject(String.valueOf(srcHostId), "hostId");
+            ex.addProxyObject(vm.getUuid(), "vmId");
+            throw ex;
+        }
+
         // Get technically compatible hosts (storage, hypervisor, UEFI)
         Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> compatibilityResult =
-            getTechnicallyCompatibleHosts(vm, startIndex, pageSize, keyword);
+            getTechnicallyCompatibleHosts(vm, srcHost, startIndex, pageSize, keyword);
 
         Pair<List<? extends Host>, Integer> allHostsPair = compatibilityResult.first();
         List<? extends Host> filteredHosts = compatibilityResult.second();
@@ -1740,9 +1745,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Create deployment plan and VM profile
-        final Host srcHost = _hostDao.findById(vm.getHostId());
-        final DataCenterDeployment plan = new DataCenterDeployment(
-            srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
+        final DataCenterDeployment plan = createDeploymentPlanForMigrationListing(vm, srcHost);
         final VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(
             vm, null, _offeringDao.findById(vm.getId(), vm.getServiceOfferingId()), null, null);
 
@@ -1765,6 +1768,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
             }
         }
+    }
+
+    protected DataCenterDeployment createDeploymentPlanForMigrationListing(final VirtualMachine vm, final Host srcHost) {
+        final boolean canMigrateWithStorage = isStorageMigrationSupported(vm, srcHost);
+        if (canMigrateWithStorage) {
+            return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), null, null, null, null);
+        }
+        return new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
     }
 
     /**
@@ -2898,7 +2909,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Long id = cmd.getId();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
@@ -2906,7 +2917,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long pageSize = cmd.getPageSizeVal();
         Boolean forDisplay = cmd.getDisplay();
 
-        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, ids, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override
@@ -3033,32 +3044,45 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
-        //throw exception if hypervisor name is not passed, but version is
+        //throw exception if hypervisor name is not passed, but a version is
         if (hypervisorVersion != null && (hypervisor == null || hypervisor.isEmpty())) {
             throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
         }
 
-        final SearchCriteria<GuestOSHypervisorVO> sc = _guestOSHypervisorDao.createSearchCriteria();
+        SearchBuilder<GuestOSHypervisorVO> sb = _guestOSHypervisorDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("guestOsName", sb.entity().getGuestOsName(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.LIKE);
+        sb.and(guestOsId, sb.entity().getGuestOsId(), SearchCriteria.Op.EQ);
+        SearchBuilder<GuestOSVO> guestOSSearch = _guestOSDao.createSearchBuilder();
+        guestOSSearch.and("display", guestOSSearch.entity().isDisplay(), SearchCriteria.Op.LIKE);
+        sb.join("guestOSSearch", guestOSSearch, sb.entity().getGuestOsId(), guestOSSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        final SearchCriteria<GuestOSHypervisorVO> sc = sb.create();
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (osTypeId != null) {
-            sc.addAnd(guestOsId, SearchCriteria.Op.EQ, osTypeId);
+            sc.setParameters(guestOsId, osTypeId);
         }
 
         if (osNameForHypervisor != null) {
-            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osNameForHypervisor + "%");
+            sc.setParameters("guestOsName", "%" + osNameForHypervisor + "%");
         }
 
         if (hypervisor != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.LIKE, "%" + hypervisor + "%");
+            sc.setParameters("hypervisorType", "%" + hypervisor + "%");
         }
 
         if (hypervisorVersion != null) {
-            sc.addAnd("hypervisorVersion", SearchCriteria.Op.LIKE, "%" + hypervisorVersion + "%");
+            sc.setParameters("hypervisorVersion", "%" + hypervisorVersion + "%");
         }
+
+        // Exclude the mappings for guest OS marked as display = false
+        sc.setJoinParameters("guestOSSearch", "display", true);
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);

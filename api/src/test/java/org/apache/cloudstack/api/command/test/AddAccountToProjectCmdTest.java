@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import com.cloud.exception.ResourceAllocationException;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -149,6 +150,8 @@ public class AddAccountToProjectCmdTest extends TestCase {
             addAccountToProjectCmd.execute();
         } catch (InvalidParameterValueException exception) {
             Assert.assertEquals("Either accountName or email is required", exception.getLocalizedMessage());
+        } catch (ResourceAllocationException exception) {
+            Assert.fail();
         }
 
     }

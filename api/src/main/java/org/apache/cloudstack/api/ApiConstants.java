@@ -452,6 +452,7 @@ public class ApiConstants {
     public static final String CURRENT_PASSWORD = "currentpassword";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String PASSWORD_ENABLED = "passwordenabled";
+    public static final String RESET_PASSWORD = "resetpassword";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String PATH_READY = "pathready";
@@ -502,6 +503,7 @@ public class ApiConstants {
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
@@ -621,6 +623,7 @@ public class ApiConstants {
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
+    public static final String USE_VDDK = "usevddk";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
@@ -1405,7 +1408,7 @@ public class ApiConstants {
     }
 
     public enum HostDetails {
-        all, capacity, events, stats, min;
+        all, capacity, core, events, stats, min;
     }
 
     public enum VMDetails {

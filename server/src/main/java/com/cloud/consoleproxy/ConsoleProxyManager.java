@@ -69,9 +69,6 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<String> ConsoleProxyCapacityScanInterval = new ConfigKey<>(String.class, "consoleproxy.capacityscan.interval", "Console Proxy", "30000",
             "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", false, null);
 
-    ConfigKey<Integer> ConsoleProxyCmdPort = new ConfigKey<>(Integer.class, "consoleproxy.cmd.port", "Console Proxy", String.valueOf(DEFAULT_PROXY_CMD_PORT),
-            "Console proxy command port that is used to communicate with management server", false, ConfigKey.Scope.Zone, null);
-
     ConfigKey<Boolean> ConsoleProxyRestart = new ConfigKey<>(Boolean.class, "consoleproxy.restart", "Console Proxy", "true",
             "Console proxy restart flag, defaults to true", true, ConfigKey.Scope.Zone, null);
 
@@ -86,6 +83,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
             "disable rp_filter on console proxy VM public interface", true, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Long> ConsoleProxySessionReconnectionWindow = new ConfigKey<>(Long.class, "consoleproxy.session.reconnection.window", "Console Proxy", "0",
+            "Reconnection window (in milliseconds) for client IPs to the same session on console proxy VM", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> ConsoleProxyLaunchMax = new ConfigKey<>(Integer.class, "consoleproxy.launch.max", "Console Proxy", "10",
             "maximum number of console proxy instances per zone can be launched", false, ConfigKey.Scope.Zone, null);

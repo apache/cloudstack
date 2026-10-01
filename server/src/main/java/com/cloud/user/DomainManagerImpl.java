@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -104,6 +105,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.commons.lang3.StringUtils;
@@ -364,6 +366,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         _accountMgr.checkAccess(caller, domain);
+        // Check across the domain hierarchy (current + children) for any delete-protected instances
+        validateNoDeleteProtectedVmsForDomain(domain);
 
         return deleteDomain(domain, cleanup);
     }
@@ -722,6 +726,22 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         return success && deleteDomainSuccess;
+    }
+
+    private void validateNoDeleteProtectedVmsForDomain(Domain parentDomain) {
+        Set<Long> allDomainIds = getDomainChildrenIds(parentDomain.getPath());
+        List<VMInstanceVO> deleteProtectedVms = vmInstanceDao.listDeleteProtectedVmsByDomainIds(allDomainIds);
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
+            return;
+        }
+        if (logger.isDebugEnabled()) {
+            List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
+            logger.debug("Cannot delete Domain {}, it has delete protection enabled for Instances: {}", parentDomain, vmUuids);
+        }
+
+        throw new InvalidParameterValueException(
+                String.format("Cannot delete Domain '%s'. One or more Instances have delete protection enabled.",
+                        parentDomain.getName()));
     }
 
     @Override

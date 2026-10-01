@@ -108,6 +108,13 @@ public interface UserVmManager extends UserVmService {
             "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
             true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
+    ConfigKey<Boolean> AllowDifferentHostTagsOfferingsForVmScale = new ConfigKey<>("Advanced", Boolean.class, "allow.different.host.tags.offerings.for.vm.scale", "false",
+            "Enables/Disable allowing to change a VM offering to offerings with different host tags", true);
+
+    ConfigKey<Boolean> ResetPasswordOnRestoreFromBackup = new ConfigKey<Boolean>("Advanced", Boolean.class, "restore.vm.from.backup.reset.password", "true",
+            "For a password enabled template, whether to generate a new password and expose it in the API response when creating/restoring an Instance from a backup. " +
+                    "Can be overridden per call with the createVMFromBackup API's resetpassword parameter.", true, ConfigKey.Scope.Zone);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
@@ -198,5 +205,10 @@ public interface UserVmManager extends UserVmService {
     boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
+
+    /**
+     * @return true if the VM is part of a CKS cluster, false otherwise.
+     */
+    boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
 
 }

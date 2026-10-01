@@ -19,6 +19,8 @@
 
 package com.cloud.utils;
 
+import static com.cloud.utils.UriUtils.USER_AGENT;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -32,6 +34,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
+
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 
 public class HttpUtils {
 
@@ -161,6 +165,7 @@ public class HttpUtils {
         try {
             URL url = new URL(fileURL);
             httpConn = (HttpURLConnection) url.openConnection();
+            httpConn.setRequestProperty(USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
             int responseCode = httpConn.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 int contentLength = httpConn.getContentLength();

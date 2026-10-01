@@ -150,6 +150,11 @@ public class DirectAgentAttache extends AgentAttache {
         }
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     protected class PingTask extends ManagedContextRunnable {
         @Override
         protected synchronized void runInContext() {

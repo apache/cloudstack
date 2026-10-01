@@ -45,6 +45,11 @@ public class ListGuestOsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "List by OS type ID")
     private Long id;
 
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
+            entityType = GuestOSResponse.class, since = "4.22.1",
+            description = "Comma separated list of OS types")
+    private List<Long> ids;
+
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "List by OS Category ID")
     private Long osCategoryId;
 
@@ -61,6 +66,10 @@ public class ListGuestOsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 
     public Long getOsCategoryId() {

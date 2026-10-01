@@ -205,7 +205,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#getSupportedHypervisorTypes(long, boolean, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forVirtualRouter, final Long podId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forSystemVm, final Long podId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -315,6 +315,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     @Override
     public boolean executeUserRequest(final long hostId, final Event event) throws AgentUnavailableException {
         // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean executeUserRequest(long hostId, Event event, boolean isForced, boolean isForceDeleteStorage) throws AgentUnavailableException {
         return false;
     }
 

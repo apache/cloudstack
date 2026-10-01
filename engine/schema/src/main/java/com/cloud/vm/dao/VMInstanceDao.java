@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
@@ -192,4 +193,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds);
 
     List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids);
+
+    List<VMInstanceVO> listDeleteProtectedVmsByAccountId(long accountId);
+
+    List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(Set<Long> domainIds);
 }

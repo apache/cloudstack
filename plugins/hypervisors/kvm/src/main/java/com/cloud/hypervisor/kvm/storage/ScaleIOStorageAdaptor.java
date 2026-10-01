@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import com.cloud.agent.api.PrepareStorageClientCommand;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
@@ -644,18 +645,30 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             // Assuming SDC service is started, add mdms
             String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
             String[] mdmAddresses = mdms.split(",");
-            if (mdmAddresses.length > 0) {
-                if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
-                    return new Ternary<>(true, getSDCDetails(details), "MDM added, no need to prepare the SDC client");
-                }
-
-                ScaleIOUtil.addMdms(mdmAddresses);
-                if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
-                    return new Ternary<>(false, null, "Failed to add MDMs");
+            // remove MDMs already present in the config and added to the SDC
+            String[] mdmAddressesToAdd = Arrays.stream(mdmAddresses)
+                    .filter(Predicate.not(ScaleIOUtil::isMdmPresent))
+                    .toArray(String[]::new);
+            // if all MDMs are already in the config and added to the SDC
+            if (mdmAddressesToAdd.length < 1 && mdmAddresses.length > 0) {
+                String msg = String.format("MDMs %s of the storage pool %s are already added", mdms, uuid);
+                logger.debug(msg);
+                return new Ternary<>(true, getSDCDetails(details), msg);
+            } else if (mdmAddressesToAdd.length > 0) {
+                ScaleIOUtil.addMdms(mdmAddressesToAdd);
+                String[] missingMdmAddresses = Arrays.stream(mdmAddressesToAdd)
+                        .filter(Predicate.not(ScaleIOUtil::isMdmPresent))
+                        .toArray(String[]::new);
+                if (missingMdmAddresses.length > 0) {
+                    String msg = String.format("Failed to add MDMs %s of the storage pool %s", String.join(", ", missingMdmAddresses), uuid);
+                    logger.debug(msg);
+                    return new Ternary<>(false, null, msg);
                 } else {
-                    logger.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
+                    logger.debug("MDMs {} of the storage pool {} are added", mdmAddressesToAdd, uuid);
                     applyMdmsChangeWaitTime(details);
                 }
+            } else {
+                return new Ternary<>(false, getSDCDetails(details), "No MDM addresses provided");
             }
         }
 

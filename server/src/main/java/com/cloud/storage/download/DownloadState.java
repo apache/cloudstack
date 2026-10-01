@@ -26,7 +26,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 
 public abstract class DownloadState {
     public static enum DownloadEvent {
-        DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, TIMEOUT_CHECK, DISCONNECT
+        DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, LIMIT_REACHED, TIMEOUT_CHECK, DISCONNECT
     };
 
     protected Logger logger = LogManager.getLogger(getClass());
@@ -51,6 +51,8 @@ public abstract class DownloadState {
                 return handleAnswer(answer);
             case ABANDON_DOWNLOAD:
                 return handleAbort();
+            case LIMIT_REACHED:
+                return handleLimitReached();
             case TIMEOUT_CHECK:
                 Date now = new Date();
                 long update = now.getTime() - dl.getLastUpdated().getTime();
@@ -77,6 +79,8 @@ public abstract class DownloadState {
     public abstract String handleTimeout(long updateMs);
 
     public abstract String handleAbort();
+
+    public abstract String handleLimitReached();
 
     public abstract String handleDisconnect();
 

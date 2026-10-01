@@ -23,11 +23,29 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 
 import com.cloud.utils.db.GenericDao;
 
+import javax.annotation.Nullable;
+
 public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 
     AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
 
     List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
+
+    /**
+     * Finds async job matching the given parameters.
+     * Non-null parameters are added to search criteria.
+     * Returns the most recent job by creation date.
+     * <p>
+     * When searching by resourceId and resourceType, only one active job
+     * is expected per resource, so returning a single result is sufficient.
+     *
+     * @param id           job ID
+     * @param resourceId   resource ID (instanceId)
+     * @param resourceType resource type (instanceType)
+     * @return matching job or null
+     */
+    @Nullable
+    AsyncJobVO findJob(Long id, Long resourceId, String resourceType);
 
     AsyncJobVO findPseudoJob(long threadId, long msid);
 

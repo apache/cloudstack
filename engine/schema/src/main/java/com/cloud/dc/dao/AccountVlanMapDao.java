@@ -27,6 +27,6 @@ public interface AccountVlanMapDao extends GenericDao<AccountVlanMapVO, Long> {
 
     public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId);
 
-    public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId);
+    public AccountVlanMapVO findAccountVlanMap(Long accountId, long vlanDbId);
 
 }

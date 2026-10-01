@@ -24,7 +24,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,8 +96,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public static final int RBD_FEATURES = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
 
-    private static final Set<StoragePoolType> poolTypesThatEnableCreateDiskFromTemplateBacking = new HashSet<>(Arrays.asList(StoragePoolType.NetworkFilesystem,
-      StoragePoolType.Filesystem));
+    private static final Set<StoragePoolType> QEMU_IMG_MANAGED_POOL_TYPES = Set.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint);
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
         _storageLayer = storage;
@@ -134,8 +132,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String volumeDesc = String.format("volume [%s], with template backing [%s], in pool [%s] (%s), with size [%s] and encryption is %s", name, template.getName(), destPool.getUuid(),
           destPool.getType(), size, passphrase != null && passphrase.length > 0);
 
-        if (!poolTypesThatEnableCreateDiskFromTemplateBacking.contains(destPool.getType())) {
-            logger.info(String.format("Skipping creation of %s due to pool type is none of the following types %s.", volumeDesc, poolTypesThatEnableCreateDiskFromTemplateBacking.stream()
+        if (!QEMU_IMG_MANAGED_POOL_TYPES.contains(destPool.getType())) {
+            logger.info(String.format("Skipping creation of %s due to pool type is none of the following types %s.", volumeDesc, QEMU_IMG_MANAGED_POOL_TYPES.stream()
               .map(type -> type.toString()).collect(Collectors.joining(", "))));
 
             return null;
@@ -979,7 +977,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      *         </ul>
      *     </li>
      *     <li>
-     *         {@link StoragePoolType#NetworkFilesystem} and {@link StoragePoolType#Filesystem}
+     *         {@link StoragePoolType#NetworkFilesystem}, {@link StoragePoolType#Filesystem} and {@link StoragePoolType#SharedMountPoint}
      *         <ul>
      *             <li>
      *                 If the format is {@link PhysicalDiskFormat#QCOW2} or {@link PhysicalDiskFormat#RAW}, utilizes QemuImg to create the physical disk through the method
@@ -1010,7 +1008,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             return (dataPool == null) ?  createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
                     createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
-        } else if (StoragePoolType.NetworkFilesystem.equals(poolType) || StoragePoolType.Filesystem.equals(poolType)) {
+        } else if (QEMU_IMG_MANAGED_POOL_TYPES.contains(poolType)) {
             switch (format) {
                 case QCOW2:
                 case RAW:
@@ -1080,7 +1078,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         destFile.setFormat(format);
         destFile.setSize(size);
         Map<String, String> options = new HashMap<String, String>();
-        if (List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem).contains(pool.getType())) {
+        if (QEMU_IMG_MANAGED_POOL_TYPES.contains(pool.getType())) {
             options.put(QemuImg.PREALLOCATION, QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
         }
 
@@ -1350,6 +1348,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = template.getPool();
+        Map<String, String> destDetails = destPool.getDetails();
+        String dataPool = (destDetails == null) ? null : destDetails.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
         KVMPhysicalDisk disk = null;
         String newUuid = name;
 
@@ -1398,6 +1398,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
+                    if (dataPool != null) {
+                        logger.debug("Setting RBD data pool to " + dataPool + " for the new image " + disk.getName());
+                        r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+                    }
                     r.connect();
                     logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
@@ -1476,6 +1480,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
+                    if (dataPool != null) {
+                        logger.debug("Setting RBD data pool to " + dataPool + " on the destination cluster for the new image " + disk.getName());
+                        rDest.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
+                    }
                     rDest.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 

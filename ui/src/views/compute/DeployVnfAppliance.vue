@@ -272,7 +272,7 @@
                 </template>
               </a-step>
               <a-step
-                v-else-if="vm.templateid && template.templatetype !== 'VNF'"
+                v-else-if="vm.templateid && template && template.templatetype !== 'VNF'"
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>

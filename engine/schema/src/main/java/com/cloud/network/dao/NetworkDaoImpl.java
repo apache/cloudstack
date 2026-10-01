@@ -193,6 +193,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         PersistentNetworkSearch.and("id", PersistentNetworkSearch.entity().getId(), Op.NEQ);
         PersistentNetworkSearch.and("guestType", PersistentNetworkSearch.entity().getGuestType(), Op.IN);
         PersistentNetworkSearch.and("broadcastUri", PersistentNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        PersistentNetworkSearch.and("dc", PersistentNetworkSearch.entity().getDataCenterId(), Op.EQ);
         PersistentNetworkSearch.and("removed", PersistentNetworkSearch.entity().getRemoved(), Op.NULL);
         final SearchBuilder<NetworkOfferingVO> persistentNtwkOffJoin = _ntwkOffDao.createSearchBuilder();
         persistentNtwkOffJoin.and("persistent", persistentNtwkOffJoin.entity().isPersistent(), Op.EQ);

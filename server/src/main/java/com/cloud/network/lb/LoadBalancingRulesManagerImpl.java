@@ -1715,7 +1715,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress systemIp = null;
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        if (srcPortStart == DNS_PORT && ipVO.isSourceNat()) {
+        if (srcPortStart == DNS_PORT && ipVO != null && ipVO.isSourceNat()) {
             List<NetworkOfferingServiceMapVO> offeringServices = _networkOfferingServiceDao.listByNetworkOfferingId(network.getNetworkOfferingId());
             for (NetworkOfferingServiceMapVO serviceMapVo: offeringServices) {
                 if (serviceMapVo.getService().equals(Service.Dns.getName())) {
@@ -1737,6 +1737,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         } else if (ipVO.isOneToOneNat()) {
             throw new NetworkRuleConflictException("Can't do load balance on IP address: " + ipVO.getAddress());
         }
+
+        verifyLoadBalancerRuleNetwork(name, network, ipVO);
 
         String cidrString = generateCidrString(cidrList);
 
@@ -1790,7 +1792,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         return result;
     }
-   /**
+
+    protected void verifyLoadBalancerRuleNetwork(String lbName, Network network, IPAddressVO ipVO) {
+        if (ipVO.getAssociatedWithNetworkId() != null && network.getId() != ipVO.getAssociatedWithNetworkId()) {
+            String msg = String.format("Cannot create Load Balancer rule %s as the IP address %s is not associated " +
+                    "with the network %s (ID=%s)", lbName, ipVO.getAddress(), network.getName(), network.getUuid());
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+    }
+
+    /**
     * Transforms the cidrList from a List of Strings to a String which contains all the CIDRs from cidrList separated by whitespaces. This is used to facilitate both the persistence
     * in the DB and also later when building the configuration String in the getRulesForPool method of the HAProxyConfigurator class.
    */
