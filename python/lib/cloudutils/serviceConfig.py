@@ -722,6 +722,7 @@ class libvirtConfigUbuntu(serviceCfgBase):
         elif os.path.exists("/etc/default/libvirtd"):
             cfo = configFileOps("/etc/default/libvirtd", self)
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+            cfo.replace_or_add_line("LIBVIRTD_ARGS=","LIBVIRTD_ARGS=\"--listen\"")
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
                 bash("/bin/systemctl mask \
                     libvirtd.socket \
