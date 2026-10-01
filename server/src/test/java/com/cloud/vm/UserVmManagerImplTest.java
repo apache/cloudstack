@@ -77,12 +77,19 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.GetVmNetworkStatsAnswer;
+import com.cloud.agent.api.GetVmNetworkStatsCommand;
+import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
@@ -151,13 +158,18 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.vm.dao.NicDao;
@@ -262,6 +274,15 @@ public class UserVmManagerImplTest {
 
     @Mock
     HostDao hostDao;
+
+    @Mock
+    AgentManager agentManager;
+
+    @Mock
+    VlanDao vlanDao;
+
+    @Mock
+    UserStatisticsDao userStatsDao;
 
     @Mock
     private VolumeVO volumeVOMock;
@@ -3200,5 +3221,51 @@ public class UserVmManagerImplTest {
 
         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+    }
+
+    @Test
+    public void collectVmNetworkStatisticsSkipsANonDirectAttachedNicAndStillUpdatesTheNextOne() {
+        long hostId = 1L;
+        String vmName = "i-2-3-VM";
+        Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(userVmVoMock.getHostId()).thenReturn(hostId);
+        Mockito.when(userVmVoMock.getInstanceName()).thenReturn(vmName);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(Mockito.mock(HostVO.class));
+
+        HashMap<String, List<VmNetworkStatsEntry>> statsByVm = new HashMap<>();
+        statsByVm.put(vmName, List.of(new VmNetworkStatsEntry(vmName, "02:00:00:00:00:01", 100L, 200L),
+                new VmNetworkStatsEntry(vmName, "02:00:00:00:00:02", 300L, 400L)));
+        GetVmNetworkStatsAnswer answer = Mockito.mock(GetVmNetworkStatsAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getVmNetworkStatsMap()).thenReturn(statsByVm);
+        Mockito.when(agentManager.easySend(Mockito.eq(hostId), Mockito.any(GetVmNetworkStatsCommand.class))).thenReturn(answer);
+
+        NicVO isolatedNic = Mockito.mock(NicVO.class);
+        Mockito.when(isolatedNic.getNetworkId()).thenReturn(10L);
+        NicVO sharedNic = Mockito.mock(NicVO.class);
+        Mockito.when(sharedNic.getNetworkId()).thenReturn(20L);
+        SearchCriteria<NicVO> nicSearch = Mockito.mock(SearchCriteria.class);
+        Mockito.when(nicDao.createSearchCriteria()).thenReturn(nicSearch);
+        Mockito.when(nicDao.search(nicSearch, null)).thenReturn(List.of(isolatedNic), List.of(sharedNic));
+
+        VlanVO directAttachedVlan = Mockito.mock(VlanVO.class);
+        Mockito.when(directAttachedVlan.getVlanType()).thenReturn(Vlan.VlanType.DirectAttached);
+        Mockito.when(vlanDao.listVlansByNetworkId(10L)).thenReturn(new ArrayList<>());
+        Mockito.when(vlanDao.listVlansByNetworkId(20L)).thenReturn(List.of(directAttachedVlan));
+
+        UserStatisticsVO sharedNicStatistics = Mockito.mock(UserStatisticsVO.class);
+        Mockito.when(userStatsDao.findBy(Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(20L), Mockito.nullable(String.class), Mockito.anyLong(), Mockito.eq("UserVm")))
+                .thenReturn(sharedNicStatistics);
+        Mockito.when(userStatsDao.lock(Mockito.anyLong(), Mockito.anyLong(), Mockito.eq(20L), Mockito.nullable(String.class), Mockito.anyLong(), Mockito.eq("UserVm")))
+                .thenReturn(sharedNicStatistics);
+
+        try (MockedStatic<Transaction> transaction = Mockito.mockStatic(Transaction.class)) {
+            transaction.when(() -> Transaction.execute(Mockito.any(TransactionCallback.class)))
+                    .thenAnswer(invocation -> ((TransactionCallback<?>) invocation.getArgument(0)).doInTransaction(null));
+            userVmManagerImpl.collectVmNetworkStatistics(userVmVoMock);
+        }
+
+        Mockito.verify(sharedNicStatistics).setCurrentBytesSent(300L);
+        Mockito.verify(userStatsDao).update(Mockito.anyLong(), Mockito.eq(sharedNicStatistics));
     }
 }
