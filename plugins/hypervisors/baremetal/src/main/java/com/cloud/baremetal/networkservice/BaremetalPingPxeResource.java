@@ -46,6 +46,7 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
     private static final String Name = "BaremetalPingPxeResource";
+    private static final String SENSITIVE_VALUE_MASK = "*****";
     String _storageServer;
     String _pingDir;
     String _share;
@@ -157,8 +158,11 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             String script =
                 String.format("python /usr/bin/prepare_tftp_bootfile.py restore %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
                     _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
-                return new PreparePxeServerAnswer(cmd, "prepare PING at " + _ip + " failed, command:" + script);
+            String maskedScript =
+                String.format("python /usr/bin/prepare_tftp_bootfile.py restore %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
+                    _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, SENSITIVE_VALUE_MASK, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script, maskedScript)) {
+                return new PreparePxeServerAnswer(cmd, "prepare PING at " + _ip + " failed, command:" + maskedScript);
             }
             logger.debug("Prepare Ping PXE server successfully");
 
@@ -185,8 +189,11 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             String script =
                 String.format("python /usr/bin/prepare_tftp_bootfile.py backup %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
                     _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
-                return new Answer(cmd, false, "prepare for creating template failed, command:" + script);
+            String maskedScript =
+                String.format("python /usr/bin/prepare_tftp_bootfile.py backup %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
+                    _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, SENSITIVE_VALUE_MASK, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script, maskedScript)) {
+                return new Answer(cmd, false, "prepare for creating template failed, command:" + maskedScript);
             }
             logger.debug("Prepare for creating template successfully");
 
@@ -219,6 +226,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
         try {
             List<String[]> vmData = cmd.getVmData();
             StringBuilder sb = new StringBuilder();
+            StringBuilder maskedSb = new StringBuilder();
             for (String[] data : vmData) {
                 String folder = data[0];
                 String file = data[1];
@@ -231,8 +239,17 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
                 sb.append(",");
                 sb.append(contents);
                 sb.append(";");
+                maskedSb.append(cmd.getVmIpAddress());
+                maskedSb.append(",");
+                maskedSb.append(folder);
+                maskedSb.append(",");
+                maskedSb.append(file);
+                maskedSb.append(",");
+                maskedSb.append(SENSITIVE_VALUE_MASK);
+                maskedSb.append(";");
             }
             String arg = StringUtils.stripEnd(sb.toString(), ";");
+            String maskedArg = StringUtils.stripEnd(maskedSb.toString(), ";");
 
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
@@ -241,8 +258,9 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
             }
 
             String script = String.format("python /usr/bin/baremetal_user_data.py '%s'", arg);
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
-                return new Answer(cmd, false, "Failed to add user data, command:" + script);
+            String maskedScript = String.format("python /usr/bin/baremetal_user_data.py '%s'", maskedArg);
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script, maskedScript)) {
+                return new Answer(cmd, false, "Failed to add user data, command:" + maskedScript);
             }
 
             return new Answer(cmd, true, "Success");
