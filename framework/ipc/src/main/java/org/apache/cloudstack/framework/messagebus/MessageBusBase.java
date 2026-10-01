@@ -21,23 +21,45 @@ package org.apache.cloudstack.framework.messagebus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+/**
+ * MessageBus implementation based on a hierarchical topic tree.
+ *
+ * Locking model:
+ *   Multiple publishers can run concurrently - publish() takes a read lock,
+ *   which only blocks when someone is modifying the subscriber tree (subscribe,
+ *   unsubscribe, clearAll, prune). This means a pod restart with hundreds of
+ *   hosts reconnecting and firing events simultaneously will not serialize
+ *   through a single bottleneck.
+ *
+ * Subscriber callbacks are intentionally called OUTSIDE the read lock.
+ *   Holding a lock during external callbacks is a classic source of production
+ *   outages: a slow subscriber (DB call, GC pause, hypervisor roundtrip) would
+ *   block ALL other publishers and eventually starve write lock holders
+ *   (subscribe/unsubscribe). Instead we snapshot the subscriber list under
+ *   the lock and release it before calling anyone.
+ */
 public class MessageBusBase implements MessageBus {
 
-    private final Gate _gate;
-    private final List<ActionRecord> _pendingActions;
+    // Fair mode: a queued writer (subscribe/unsubscribe/prune/clearAll) is served ahead of
+    // newly arriving readers, so a steady stream of publish() read locks cannot starve writers.
+    private final ReadWriteLock _lock = new ReentrantReadWriteLock(true);
 
     private final SubscriptionNode _subscriberRoot;
     private MessageSerializer _messageSerializer;
@@ -45,9 +67,6 @@ public class MessageBusBase implements MessageBus {
     protected Logger logger = LogManager.getLogger(getClass());
 
     public MessageBusBase() {
-        _gate = new Gate();
-        _pendingActions = new ArrayList<ActionRecord>();
-
         _subscriberRoot = new SubscriptionNode(null, "/", null);
     }
 
@@ -65,82 +84,54 @@ public class MessageBusBase implements MessageBus {
     public void subscribe(String subject, MessageSubscriber subscriber) {
         assert (subject != null);
         assert (subscriber != null);
-        if (_gate.enter()) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter gate in message bus subscribe");
-            }
-            try {
-                SubscriptionNode current = locate(subject, null, true);
-                assert (current != null);
-                current.addSubscriber(subscriber);
-            } finally {
-                _gate.leave();
-            }
-        } else {
-            synchronized (_pendingActions) {
-                _pendingActions.add(new ActionRecord(ActionType.Subscribe, subject, subscriber));
-            }
+        _lock.writeLock().lock();
+        try {
+            logger.trace("Acquired write lock in message bus subscribe");
+            SubscriptionNode current = locate(subject, null, true);
+            assert (current != null);
+            current.addSubscriber(subscriber);
+        } finally {
+            _lock.writeLock().unlock();
         }
     }
 
     @Override
     public void unsubscribe(String subject, MessageSubscriber subscriber) {
-        if (_gate.enter()) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter gate in message bus unsubscribe");
+        _lock.writeLock().lock();
+        try {
+            logger.trace("Acquired write lock in message bus unsubscribe");
+            if (subject != null) {
+                SubscriptionNode current = locate(subject, null, false);
+                if (current != null)
+                    current.removeSubscriber(subscriber, false);
+            } else {
+                _subscriberRoot.removeSubscriber(subscriber, true);
             }
-            try {
-                if (subject != null) {
-                    SubscriptionNode current = locate(subject, null, false);
-                    if (current != null)
-                        current.removeSubscriber(subscriber, false);
-                } else {
-                    _subscriberRoot.removeSubscriber(subscriber, true);
-                }
-            } finally {
-                _gate.leave();
-            }
-        } else {
-            synchronized (_pendingActions) {
-                _pendingActions.add(new ActionRecord(ActionType.Unsubscribe, subject, subscriber));
-            }
+        } finally {
+            _lock.writeLock().unlock();
         }
     }
 
     @Override
     public void clearAll() {
-        if (_gate.enter()) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter gate in message bus clearAll");
-            }
-            try {
-                _subscriberRoot.clearAll();
-                doPrune();
-            } finally {
-                _gate.leave();
-            }
-        } else {
-            synchronized (_pendingActions) {
-                _pendingActions.add(new ActionRecord(ActionType.ClearAll, null, null));
-            }
+        _lock.writeLock().lock();
+        try {
+            logger.trace("Acquired write lock in message bus clearAll");
+            _subscriberRoot.clearAll();
+            doPrune();
+        } finally {
+            _lock.writeLock().unlock();
         }
     }
 
     @Override
     public void prune() {
-        if (_gate.enter()) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter gate in message bus prune");
-            }
-            try {
-                doPrune();
-            } finally {
-                _gate.leave();
-            }
-        } else {
-            synchronized (_pendingActions) {
-                _pendingActions.add(new ActionRecord(ActionType.Prune, null, null));
-            }
+        _lock.writeLock().lock();
+        try {
+            logger.trace("Acquired write lock in message bus prune");
+            doPrune();
+        } finally {
+            _lock.writeLock().unlock();
         }
     }
 
@@ -163,66 +154,36 @@ public class MessageBusBase implements MessageBus {
     @Override
     public void publish(String senderAddress, String subject, PublishScope scope, Object args) {
         // publish cannot be in DB transaction, which may hold DB lock too long, and we are guarding this here
-        if (!noDbTxn()){
+        if (!noDbTxn()) {
             String errMsg = "NO EVENT PUBLISH CAN BE WRAPPED WITHIN DB TRANSACTION!";
             logger.error(errMsg, new CloudRuntimeException(errMsg));
         }
-        if (_gate.enter(true)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Enter gate in message bus publish");
-            }
-            try {
-                List<SubscriptionNode> chainFromTop = new ArrayList<SubscriptionNode>();
-                SubscriptionNode current = locate(subject, chainFromTop, false);
+        // Collect subscribers under read lock (fast - just tree traversal and list copy),
+        // then release the lock before calling any callbacks.
+        // LinkedHashSet deduplicates: a subscriber registered on both "Host" and "Host.123"
+        // gets exactly one callback when "Host.123" is published.
+        Set<MessageSubscriber> toNotify = new LinkedHashSet<>();
+        _lock.readLock().lock();
+        try {
+            logger.trace("Acquired read lock in message bus publish");
+            List<SubscriptionNode> chainFromTop = new ArrayList<>();
+            SubscriptionNode current = locate(subject, chainFromTop, false);
 
-                if (current != null)
-                    current.notifySubscribers(senderAddress, subject, args);
+            if (current != null)
+                current.collectSubscribers(toNotify);
 
-                Collections.reverse(chainFromTop);
-                for (SubscriptionNode node : chainFromTop)
-                    node.notifySubscribers(senderAddress, subject, args);
-            } finally {
-                _gate.leave();
-            }
+            Collections.reverse(chainFromTop);
+            for (SubscriptionNode node : chainFromTop)
+                node.collectSubscribers(toNotify);
+        } finally {
+            _lock.readLock().unlock();
         }
-    }
 
-    private void onGateOpen() {
-        synchronized (_pendingActions) {
-            ActionRecord record = null;
-            while (_pendingActions.size() > 0) {
-                record = _pendingActions.remove(0);
-                switch (record.getType()) {
-                    case Subscribe: {
-                        SubscriptionNode current = locate(record.getSubject(), null, true);
-                        assert (current != null);
-                        current.addSubscriber(record.getSubscriber());
-                    }
-                        break;
-
-                    case Unsubscribe:
-                        if (record.getSubject() != null) {
-                            SubscriptionNode current = locate(record.getSubject(), null, false);
-                            if (current != null)
-                                current.removeSubscriber(record.getSubscriber(), false);
-                        } else {
-                            _subscriberRoot.removeSubscriber(record.getSubscriber(), true);
-                        }
-                        break;
-
-                    case ClearAll:
-                        _subscriberRoot.clearAll();
-                        break;
-
-                    case Prune:
-                        doPrune();
-                        break;
-
-                    default:
-                        assert (false);
-                        break;
-
-                }
+        for (MessageSubscriber subscriber : toNotify) {
+            try {
+                subscriber.onPublishMessage(senderAddress, subject, args);
+            } catch (Throwable t) {
+                logger.error("Subscriber threw an exception during publish of subject: " + subject + " scope: " + scope + " args: " + args, t);
             }
         }
     }
@@ -272,95 +233,6 @@ public class MessageBusBase implements MessageBus {
     //
     // Support inner classes
     //
-    private static enum ActionType {
-        Subscribe, Unsubscribe, ClearAll, Prune
-    }
-
-    private static class ActionRecord {
-        private final ActionType _type;
-        private final String _subject;
-        private final MessageSubscriber _subscriber;
-
-        public ActionRecord(ActionType type, String subject, MessageSubscriber subscriber) {
-            _type = type;
-            _subject = subject;
-            _subscriber = subscriber;
-        }
-
-        public ActionType getType() {
-            return _type;
-        }
-
-        public String getSubject() {
-            return _subject;
-        }
-
-        public MessageSubscriber getSubscriber() {
-            return _subscriber;
-        }
-    }
-
-    private class Gate {
-        private int _reentranceCount;
-        private Thread _gateOwner;
-
-        public Gate() {
-            _reentranceCount = 0;
-            _gateOwner = null;
-        }
-
-        public boolean enter() {
-            return enter(false);
-        }
-
-        public boolean enter(boolean wait) {
-            while (true) {
-                synchronized (this) {
-                    if (_reentranceCount == 0) {
-                        assert (_gateOwner == null);
-
-                        _reentranceCount++;
-                        _gateOwner = Thread.currentThread();
-                        return true;
-                    } else {
-                        if (wait) {
-                            try {
-                                wait();
-                            } catch (InterruptedException e) {
-                                logger.debug("[ignored] interrupted while guarding re-entrance on message bus.");
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public void leave() {
-            synchronized (this) {
-                if (_reentranceCount > 0) {
-                    try {
-                        assert (_gateOwner == Thread.currentThread());
-
-                        onGateOpen();
-                    } finally {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Open gate of message bus");
-                        }
-                        _reentranceCount--;
-                        assert (_reentranceCount == 0);
-                        _gateOwner = null;
-
-                        notifyAll();
-                    }
-                }
-            }
-        }
-    }
-
     private static class SubscriptionNode {
         private final String _nodeKey;
         private final List<MessageSubscriber> _subscribers;
@@ -437,10 +309,8 @@ public class MessageBusBase implements MessageBus {
                 trimNodes.add(this);
         }
 
-        public void notifySubscribers(String senderAddress, String subject, Object args) {
-            for (MessageSubscriber subscriber : _subscribers) {
-                subscriber.onPublishMessage(senderAddress, subject, args);
-            }
+        public void collectSubscribers(Collection<MessageSubscriber> target) {
+            target.addAll(_subscribers);
         }
 
         public boolean isTrimmable() {
