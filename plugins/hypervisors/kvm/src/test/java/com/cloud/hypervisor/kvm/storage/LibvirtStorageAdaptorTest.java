@@ -17,6 +17,9 @@
 
 package com.cloud.hypervisor.kvm.storage;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,11 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -233,5 +239,68 @@ public class LibvirtStorageAdaptorTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    /**
+     * Holds a delete of {@code deleteUuid} part way through its teardown, then starts a create of
+     * {@code createUuid} and reports whether that create completed while the delete was still held.
+     */
+    private boolean createRanDuringDelete(String deleteUuid, String createUuid) throws Exception {
+        final LibvirtStorageAdaptor adaptor = Mockito.spy(new LibvirtStorageAdaptor(null));
+        final CountDownLatch deleteEntered = new CountDownLatch(1);
+        final CountDownLatch releaseDelete = new CountDownLatch(1);
+        final AtomicBoolean deleteFinished = new AtomicBoolean();
+        final AtomicBoolean createRanBeforeDeleteFinished = new AtomicBoolean();
+
+        Mockito.doAnswer(invocation -> {
+            deleteEntered.countDown();
+            releaseDelete.await();
+            deleteFinished.set(true);
+            return true;
+        }).when(adaptor).deleteStoragePoolLocked(deleteUuid);
+        Mockito.doAnswer(invocation -> {
+            createRanBeforeDeleteFinished.set(!deleteFinished.get());
+            return mockPool;
+        }).when(adaptor).createStoragePoolLocked(Mockito.eq(createUuid), any(), anyInt(), any(), any(), any(), any(), anyBoolean());
+
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            final Future<Boolean> delete = executor.submit(() -> adaptor.deleteStoragePool(deleteUuid));
+            Assert.assertTrue("delete never started", deleteEntered.await(30, TimeUnit.SECONDS));
+
+            final Future<KVMStoragePool> create = executor.submit(() -> adaptor.createStoragePool(createUuid, "127.0.0.1", 0,
+                    "/export/secondary", null, Storage.StoragePoolType.NetworkFilesystem, null, false));
+            try {
+                create.get(2, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                // still waiting on the delete, which is what a create of the same pool must do
+            }
+
+            releaseDelete.countDown();
+            Assert.assertTrue(delete.get(30, TimeUnit.SECONDS));
+            Assert.assertSame(mockPool, create.get(30, TimeUnit.SECONDS));
+            return createRanBeforeDeleteFinished.get();
+        } finally {
+            releaseDelete.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test(timeout = 120000)
+    public void testCreateStoragePoolWaitsForDeleteOfSamePool() throws Exception {
+        /*
+         * A delete that has dropped the last reference goes on to destroy and unmount the pool. A
+         * create that found the still active pool and took a reference in between would have it torn
+         * down underneath it, so the create has to wait for the teardown to finish.
+         */
+        final String uuid = String.valueOf(UUID.randomUUID());
+        Assert.assertFalse("create of a pool ran while that pool was being deleted",
+                createRanDuringDelete(uuid, new String(uuid)));
+    }
+
+    @Test(timeout = 120000)
+    public void testCreateStoragePoolDoesNotWaitForDeleteOfAnotherPool() throws Exception {
+        Assert.assertTrue("create of one pool waited for the delete of another",
+                createRanDuringDelete(String.valueOf(UUID.randomUUID()), String.valueOf(UUID.randomUUID())));
     }
 }
