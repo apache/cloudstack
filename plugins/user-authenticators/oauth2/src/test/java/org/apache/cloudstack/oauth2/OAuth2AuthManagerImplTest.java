@@ -121,6 +121,23 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testRegisterRejectsBuiltinNameWithType() {
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("oidc", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("google", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("google");
+        when(cmd.getType()).thenReturn("oidc");
+        when(cmd.getDomainId()).thenReturn(null);
+        try {
+            _authManager.registerOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("reserved by a built-in"));
+        }
+    }
+
+    @Test
     public void testUpdateOauthProvider() {
         Long id = 1L;
         String description = "updated description";
