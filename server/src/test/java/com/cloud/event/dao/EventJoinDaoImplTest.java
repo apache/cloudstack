@@ -19,17 +19,20 @@ package com.cloud.event.dao;
 
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -61,5 +64,18 @@ public class EventJoinDaoImplTest {
         Assert.assertEquals(response.getResourceId(), resourceUuid);
         Assert.assertEquals(response.getResourceType(), resourceType);
         Assert.assertEquals(response.getResourceName(), resourceName);
+    }
+
+    @Test
+    public void testSearchByIdsOrdersNewestFirst() {
+        EventJoinDaoImpl spyDao = Mockito.spy(dao);
+        ArgumentCaptor<Filter> filterCaptor = ArgumentCaptor.forClass(Filter.class);
+        Mockito.doReturn(new ArrayList<EventJoinVO>()).when(spyDao)
+                .searchIncludingRemoved(Mockito.any(), filterCaptor.capture(), Mockito.any(), Mockito.anyBoolean());
+
+        spyDao.searchByIds(1L, 2L, 3L);
+
+        Assert.assertNotNull("searchByIds must pass an ordering filter", filterCaptor.getValue());
+        Assert.assertEquals(" ORDER BY event_view.created DESC , event_view.id DESC ", filterCaptor.getValue().getOrderBy());
     }
 }
