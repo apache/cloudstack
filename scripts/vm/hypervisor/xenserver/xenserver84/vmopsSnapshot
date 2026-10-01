@@ -29,9 +29,7 @@ if os.path.exists("/usr/lib/xcp/sm"):
 
 import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
-import vhdutil
 import shutil
-import lvhdutil
 import errno
 import subprocess
 import xs_errors
@@ -40,6 +38,30 @@ import stat
 import random
 import cloudstack_pluginlib as lib
 import logging
+
+try:
+    # sm >= 3.2.12-18 (e.g. XCP-ng 8.3), where lvhdutil was folded into
+    # constants/lvmcowutil and vhdutil became a class
+    from constants import VG_PREFIX, VG_LOCATION
+    from lvmcowutil import LvmCowUtil
+    from vhdutil import VhdUtil
+    _vhdutil = VhdUtil()
+    lvhdutil_extractUuid = LvmCowUtil.extractUuid
+    vhdutil_getParent = _vhdutil.getParent
+    vhdutil_getVHDInfoLVM = _vhdutil.getInfoFromLVM
+    vhdutil_getSizePhys = _vhdutil.getSizePhys
+    vhdutil_setHidden = _vhdutil.setHidden
+except ImportError:
+    # older sm (XenServer and XCP-ng releases prior to the 8.3 SM refactor)
+    import vhdutil
+    import lvhdutil
+    VG_PREFIX = lvhdutil.VG_PREFIX
+    VG_LOCATION = lvhdutil.VG_LOCATION
+    lvhdutil_extractUuid = lvhdutil.extractUuid
+    vhdutil_getParent = vhdutil.getParent
+    vhdutil_getVHDInfoLVM = vhdutil.getVHDInfoLVM
+    vhdutil_getSizePhys = vhdutil.getSizePhys
+    vhdutil_setHidden = vhdutil.setHidden
 
 lib.setup_logging("/var/log/cloud/cloud.log")
 
@@ -242,7 +264,7 @@ def scanParent(path):
         lvName = os.path.basename(path)
         dirname = os.path.dirname(path)
         vgName = os.path.basename(dirname)
-        vhdInfo = vhdutil.getVHDInfoLVM(lvName, lvhdutil.extractUuid, vgName)
+        vhdInfo = vhdutil_getVHDInfoLVM(lvName, lvhdutil_extractUuid, vgName)
         parentUUID = vhdInfo.parentUuid
     except:
         errMsg = "Could not get vhd parent of " + path
@@ -254,9 +276,9 @@ def getParent(path, isISCSI):
     parentUUID = ''
     try :
         if isISCSI:
-            parentUUID = vhdutil.getParent(path, lvhdutil.extractUuid)
+            parentUUID = vhdutil_getParent(path, lvhdutil_extractUuid)
         else:
-            parentUUID = vhdutil.getParent(path, cleanup.FileVDI.extractUuid)
+            parentUUID = vhdutil_getParent(path, cleanup.FileVDI.extractUuid)
     except:
         errMsg = "Could not get vhd parent of " + path
         logging.debug(errMsg)
@@ -392,8 +414,8 @@ def unmountSnapshotsDir(session, args):
 
 def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
     if isISCSI:
-        primarySRDir = lvhdutil.VG_PREFIX + primaryStorageSRUuid
-        return os.path.join(lvhdutil.VG_LOCATION, primarySRDir)
+        primarySRDir = VG_PREFIX + primaryStorageSRUuid
+        return os.path.join(VG_LOCATION, primarySRDir)
     else:
         return os.path.join(SR.MOUNT_BASE, primaryStorageSRUuid)
 
@@ -507,7 +529,7 @@ def getSnapshotSize(session, args):
 
     snapshotVHD  = getVHD(snapshotUuid, isISCSI)
     snapshotPath = os.path.join(primarySRPath, snapshotVHD)
-    physicalSize = vhdutil.getSizePhys(snapshotPath)
+    physicalSize = vhdutil_getSizePhys(snapshotPath)
     return str(physicalSize)
 
 def backupSnapshot(session, args):
@@ -537,7 +559,7 @@ def backupSnapshot(session, args):
     prevBackupUuid = prevBackupUuid.split("/")[-1]
     # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
-    physicalSize = vhdutil.getSizePhys(baseCopyPath)
+    physicalSize = vhdutil_getSizePhys(baseCopyPath)
     if prevBackupUuid:
         # Check existence of prevBackupFile
         prevBackupVHD = getBackupVHD(prevBackupUuid)
@@ -549,7 +571,7 @@ def backupSnapshot(session, args):
     backupFile = os.path.join(backupsDir, backupVHD)
     logging.debug("Back up " + baseCopyUuid + " to Secondary Storage as " + backupUuid)
     copyfile(baseCopyPath, backupFile, isISCSI)
-    vhdutil.setHidden(backupFile, False)
+    vhdutil_setHidden(backupFile, False)
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
