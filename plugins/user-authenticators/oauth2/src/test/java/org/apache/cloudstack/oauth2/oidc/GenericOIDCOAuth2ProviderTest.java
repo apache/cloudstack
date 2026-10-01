@@ -221,6 +221,29 @@ public class GenericOIDCOAuth2ProviderTest {
                 provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com"), registration, metadata()));
     }
 
+    @Test
+    public void testKeyWithoutAlgorithmFallsBackToTheTokenHeader() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        JsonWebKey key = JwkUtils.fromRSAPublicKey((RSAPublicKey) keys.getPublic(), "RS256");
+        key.setAlgorithm(null);
+        key.setKeyId("key-1");
+        doReturn(JwkUtils.jwkSetToJson(new JsonWebKeys(key))).when(provider).httpGet(eq(ISSUER + "/jwks"), anyString());
+
+        assertEquals("user@example.com",
+                provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com"), registration, metadata()));
+    }
+
+    @Test
+    public void testSigningKeysAreCachedAcrossVerifications() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+
+        provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com"), registration, metadata());
+        provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com"), registration, metadata());
+
+        verify(provider, times(1)).httpGet(eq(ISSUER + "/jwks"), anyString());
+    }
+
     @Test(expected = CloudAuthenticationException.class)
     public void testTokenWithAlteredClaimsIsRejected() throws Exception {
         KeyPair keys = rsaKeyPair();

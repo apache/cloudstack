@@ -34,6 +34,7 @@ import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
 import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
@@ -50,6 +51,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.utils.component.AdapterBase;
@@ -91,6 +94,14 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
                     .expireAfterWrite(VERIFIED_EMAIL_CACHE_SECONDS, TimeUnit.SECONDS)
                     .maximumSize(1024)
                     .build();
+
+    private final Cache<String, JsonWebKeys> jwksCache =
+            Caffeine.newBuilder()
+                    .expireAfterWrite(METADATA_CACHE_MINUTES, TimeUnit.MINUTES)
+                    .maximumSize(64)
+                    .build();
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public GenericOIDCOAuth2Provider() {
         this(HttpClientBuilder.create()
@@ -236,7 +247,8 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         try (CloseableHttpResponse response = httpClient.execute(post)) {
             String body = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new CloudRuntimeException(String.format("%s error during token generation: %s", provider.getProvider(), body));
+                logger.warn("{} returned an error during the token exchange: {}", provider.getProvider(), body);
+                throw new CloudRuntimeException(String.format("The %s identity provider rejected the token exchange", provider.getProvider()));
             }
 
             JsonElement fetchedIdToken = JsonParser.parseString(body).getAsJsonObject().get("id_token");
@@ -276,16 +288,36 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
                     "Provider %s has no JWKS endpoint, so the id_token signature cannot be verified", provider.getProvider()));
         }
 
-        JsonWebKeys keys = readJwkSet(metadata.getJwksUri());
+        String jwksUri = metadata.getJwksUri();
         String keyId = consumer.getJwsHeaders().getKeyId();
 
-        JsonWebKey key = StringUtils.isNotBlank(keyId) ? keys.getKey(keyId) : singleKey(keys);
+        JsonWebKeys keys = jwksCache.get(jwksUri, this::readJwkSet);
+        JsonWebKey key = selectKey(keys, keyId);
+        if (key == null && StringUtils.isNotBlank(keyId)) {
+            keys = readJwkSet(jwksUri);
+            jwksCache.put(jwksUri, keys);
+            key = selectKey(keys, keyId);
+        }
         if (key == null) {
             throw new CloudAuthenticationException("No matching signing key was published by the identity provider");
         }
-        if (!consumer.verifySignatureWith(key)) {
+        if (!consumer.verifySignatureWith(key, resolveAlgorithm(consumer, key))) {
             throw new CloudAuthenticationException("The id_token signature is not valid");
         }
+    }
+
+    private JsonWebKey selectKey(JsonWebKeys keys, String keyId) {
+        return StringUtils.isNotBlank(keyId) ? keys.getKey(keyId) : singleKey(keys);
+    }
+
+    private SignatureAlgorithm resolveAlgorithm(JwsJwtCompactConsumer consumer, JsonWebKey key) {
+        SignatureAlgorithm algorithm = key.getAlgorithm() != null
+                ? SignatureAlgorithm.getAlgorithm(key.getAlgorithm())
+                : consumer.getJwsHeaders().getSignatureAlgorithm();
+        if (algorithm == null) {
+            throw new CloudAuthenticationException("The id_token does not name a signature algorithm");
+        }
+        return algorithm;
     }
 
     protected JsonWebKeys readJwkSet(String jwksUri) {
