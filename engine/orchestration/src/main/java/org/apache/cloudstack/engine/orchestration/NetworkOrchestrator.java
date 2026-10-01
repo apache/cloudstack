@@ -276,6 +276,12 @@ import com.googlecode.ipv6.IPv6Address;
  */
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
 
+    /**
+     * Device id that asks {@link #allocateNic} to put the nic on the first device id the vm has free,
+     * chosen atomically with the write of the nic. See {@link #allocateNicWithFreeDeviceId}.
+     */
+    protected static final int FREE_DEVICE_ID = -1;
+
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -1063,18 +1069,36 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    private NicVO persistNicAfterRaceCheck(final NicVO nic, final Long networkId, final NicProfile profile, int deviceId) {
+    /**
+     * Persist {@code nic} in a transaction of its own, so it is committed, and visible to other
+     * allocations, as soon as it is written.
+     *
+     * With {@link NicProfile#getIpv4AllocationRaceCheck()} set, the guru picked the ip from the
+     * committed nics of the network, so the nic is only written if no other nic has taken that ip in
+     * the meantime; null is returned otherwise and the caller allocates again.
+     *
+     * With {@code deviceId} set to {@link #FREE_DEVICE_ID}, the first unused device id of the vm is
+     * chosen here, under the {@code vm_instance} row lock and in the same transaction as the write,
+     * so that two nics added to one vm at the same time cannot both take it (issue #11710). The lock
+     * is held only for the read and the write: holding it across the whole allocation would leave
+     * the nic uncommitted, and its ip invisible to the race check of other vms in the network, for
+     * as long as the rest of the allocation takes.
+     */
+    protected NicVO persistNic(final NicVO nic, final long networkId, final NicProfile profile, final int deviceId, final long vmId) {
         return Transaction.execute(new TransactionCallback<>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
-                NicVO vo = _nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(profile.getIPv4Address(), networkId);
-                if (vo == null) {
-                    applyProfileToNic(nic, profile, deviceId);
-                    vo = _nicDao.persist(nic);
-                    return vo;
-                } else {
+                if (profile.getIpv4AllocationRaceCheck() &&
+                        _nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(profile.getIPv4Address(), networkId) != null) {
                     return null;
                 }
+                int nicDeviceId = deviceId;
+                if (deviceId == FREE_DEVICE_ID) {
+                    _vmDao.lockRow(vmId, true);
+                    nicDeviceId = _nicDao.getFreeDeviceId(vmId);
+                }
+                applyProfileToNic(nic, profile, nicDeviceId);
+                return _nicDao.persist(nic);
             }
         });
     }
@@ -1121,12 +1145,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 configureNicProfileBasedOnRequestedIp(requested, profile, network);
             }
 
-            if (profile.getIpv4AllocationRaceCheck()) {
-                vo = persistNicAfterRaceCheck(vo, network.getId(), profile, deviceId);
-            } else {
-                applyProfileToNic(vo, profile, deviceId);
-                vo = _nicDao.persist(vo);
-            }
+            vo = persistNic(vo, network.getId(), profile, deviceId, vm.getId());
 
             if (vo == null) {
                 if (requested.getRequestedIPv4() != null) {
@@ -1139,6 +1158,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } while (retryIpAllocation);
 
         return vo;
+    }
+
+    /**
+     * Allocate a nic for {@code vm} on {@code network} on the first device id the vm has free.
+     *
+     * {@link NicDao#getFreeDeviceId(long)} picks the first unused device id by reading the vm's
+     * existing nics. Read before the allocation, as it used to be, two nics being added to the same vm
+     * concurrently (e.g. several tiers of a VPC brought up in parallel, each attaching the shared
+     * redundant VR) would both read the same free id and land on the same {@code ethN}, corrupting
+     * the VR config and, for a redundant VPC, driving both routers PRIMARY (issue #11710). Passing
+     * {@link #FREE_DEVICE_ID} has {@link #persistNic} choose the id under the {@code vm_instance} row
+     * lock, in the transaction that writes the nic.
+     */
+    protected NicProfile allocateNicWithFreeDeviceId(final NicProfile requested, final Network network, final boolean isDefaultNic, final VirtualMachineProfile vm)
+            throws InsufficientCapacityException, ConcurrentOperationException {
+        return allocateNic(requested, network, isDefaultNic, FREE_DEVICE_ID, vm).first();
     }
 
     @DB
@@ -4510,11 +4545,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
-            final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
+            final boolean isDefaultNic = getNicProfileDefaultNic(requested);
 
-            boolean isDefaultNic = getNicProfileDefaultNic(requested);
-
-            nic = allocateNic(requested, network, isDefaultNic, deviceId, vmProfile).first();
+            nic = allocateNicWithFreeDeviceId(requested, network, isDefaultNic, vmProfile);
 
             if (nic == null) {
                 throw new CloudRuntimeException("Failed to allocate nic for Instance " + vm + " in network " + network);
