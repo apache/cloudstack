@@ -36,7 +36,7 @@ export default {
     return fields
   },
   details: () => {
-    var fields = ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename']
+    var fields = ['name', 'id', 'url', 'protocol', 'provider', 'scope', 'zonename', 'endpoint', 'bucket']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
       fields.push('readonly')
     }
