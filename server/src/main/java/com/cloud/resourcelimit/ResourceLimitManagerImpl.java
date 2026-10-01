@@ -966,7 +966,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 throw new PermissionDeniedException("Cannot update resource limit for ROOT domain " + domainId + ", permission denied");
             }
 
-            if ((caller.getDomainId() == domainId) && caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+            if ((caller.getDomainId() == domainId) && (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN)) {
                 // if the admin is trying to update their own domain, disallow...
                 throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
             }
