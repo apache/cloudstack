@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 import java.text.MessageFormat;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -79,7 +80,7 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                         + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
 
                 final String vmUuid = vm.getUUIDString();
-                final Object[] args = new Object[] {snapshotName, vmUuid};
+                final Object[] args = new Object[] {StringEscapeUtils.escapeXml(snapshotName), vmUuid};
                 final String snapshot = snapshotXML.format(args);
                 logger.debug(snapshot);
                 if (command.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
