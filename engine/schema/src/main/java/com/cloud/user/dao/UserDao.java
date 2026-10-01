@@ -18,6 +18,7 @@ package com.cloud.user.dao;
 
 import java.util.List;
 
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -36,6 +37,13 @@ public interface UserDao extends GenericDao<UserVO, Long> {
     List<UserVO> findUsersLike(String username);
 
     List<UserVO> listByAccount(long accountId);
+
+    /**
+     * Bulk-fetches, in a single query, the ids of every account in {@code accountIds} that has
+     * at least one user with the given {@code source}; avoids one {@link #listByAccount(long)}
+     * call per account when checking many accounts at once.
+     */
+    List<Long> listAccountIdsBySource(List<Long> accountIds, User.Source source);
 
     /**
      * Finds a user based on the secret key provided.

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user.dao;
 
+import java.util.Collections;
 import java.util.List;
 
 
@@ -23,9 +24,11 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -39,6 +42,7 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> AccountIdSearch;
     protected SearchBuilder<UserVO> SecretKeySearch;
     protected SearchBuilder<UserVO> RegistrationTokenSearch;
+    protected GenericSearchBuilder<UserVO, Long> AccountIdsBySourceSearch;
 
     @Inject
     private AccountDao accountDao;
@@ -72,6 +76,12 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         RegistrationTokenSearch = createSearchBuilder();
         RegistrationTokenSearch.and("registrationToken", RegistrationTokenSearch.entity().getRegistrationToken(), SearchCriteria.Op.EQ);
         RegistrationTokenSearch.done();
+
+        AccountIdsBySourceSearch = createSearchBuilder(Long.class);
+        AccountIdsBySourceSearch.selectFields(AccountIdsBySourceSearch.entity().getAccountId());
+        AccountIdsBySourceSearch.and("accountIds", AccountIdsBySourceSearch.entity().getAccountId(), SearchCriteria.Op.IN);
+        AccountIdsBySourceSearch.and("source", AccountIdsBySourceSearch.entity().getSource(), SearchCriteria.Op.EQ);
+        AccountIdsBySourceSearch.done();
     }
 
     @Override
@@ -140,6 +150,17 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SearchCriteria<UserVO> sc = UsernameSearch.create();
         sc.setParameters("username", username);
         return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listAccountIdsBySource(List<Long> accountIds, User.Source source) {
+        if (accountIds == null || accountIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<Long> sc = AccountIdsBySourceSearch.create();
+        sc.setParameters("accountIds", accountIds.toArray());
+        sc.setParameters("source", source);
+        return customSearch(sc, null);
     }
 
 }
