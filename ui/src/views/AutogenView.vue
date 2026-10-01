@@ -1085,7 +1085,9 @@ export default {
           dataIndex: key,
           sorter: (a, b) => genericCompare(a[key] || '', b[key] || '')
         })
-        this.selectedColumns.push(key)
+        if (!(this.$route.meta.optionalColumns && key in this.$route.meta.optionalColumns)) {
+          this.selectedColumns.push(key)
+        }
       }
       this.allColumns = this.columns
 
@@ -1101,6 +1103,8 @@ export default {
           this.updateSelectedColumns()
         }
       }
+
+      this.applyOptionalColumns()
 
       this.chosenColumns = this.columns.filter(column => {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
@@ -1994,6 +1998,50 @@ export default {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
+    },
+    // A section's optionalColumns start unticked and are ticked automatically, once, when their
+    // condition first holds. The decision is remembered per user and route, so a viewer who then
+    // unticks the column keeps it hidden, and one who ticked it by hand is left alone.
+    applyOptionalColumns () {
+      const optional = this.$route.meta.optionalColumns
+      if (!optional || store.getters.metrics) {
+        return
+      }
+      const userId = this.$store.getters.userInfo.id
+      const markerKey = this.$route.path + '#optionalcolumns'
+      const route = this.$route.path
+      // a viewer with no saved column choices is shown every column, so hide the unselected ones
+      if (this.columns.some(c => c.dataIndex in optional && !this.selectedColumns.includes(c.dataIndex))) {
+        this.updateSelectedColumns()
+      }
+      Object.keys(optional).forEach(column => {
+        const custom = this.$store.getters.customColumns[userId] || {}
+        const decided = custom[markerKey] || []
+        if (decided.includes(column)) {
+          return
+        }
+        if (this.selectedColumns.includes(column)) {
+          this.rememberOptionalColumn(userId, markerKey, column)
+          return
+        }
+        Promise.resolve(optional[column]()).then(show => {
+          if (!show || this.$route.path !== route) {
+            return
+          }
+          if (!this.selectedColumns.includes(column)) {
+            this.updateSelectedColumns(column)
+          }
+          this.rememberOptionalColumn(userId, markerKey, column)
+        }).catch(() => {})
+      })
+    },
+    rememberOptionalColumn (userId, markerKey, column) {
+      const customColumns = this.$store.getters.customColumns
+      if (!customColumns[userId]) {
+        customColumns[userId] = {}
+      }
+      customColumns[userId][markerKey] = [...new Set([...(customColumns[userId][markerKey] || []), column])]
+      this.$store.dispatch('SetCustomColumns', customColumns)
     },
     updateSelectedColumns (name) {
       if (name) {

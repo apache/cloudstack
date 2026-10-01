@@ -147,6 +147,12 @@
           <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
             {{ dataResource[item].join(', ') }}
           </div>
+          <div v-else-if="item === 'credentialscope' && dataResource[item]">
+            {{ $t('label.credentialscope.' + dataResource[item]) }}
+          </div>
+          <div v-else-if="item === 'perbucketcredentialsready'">
+            {{ dataResource[item] ? $t('label.ready') : $t('label.not.ready') }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -489,7 +495,7 @@ export default {
       }
 
       if (typeof details === 'function') {
-        details = details()
+        details = details(this.resource)
       }
 
       let detailsKeys = []

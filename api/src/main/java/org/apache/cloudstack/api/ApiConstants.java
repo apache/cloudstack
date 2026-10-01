@@ -1382,6 +1382,10 @@ public class ApiConstants {
     public static final String BUCKET_LIMIT = "bucketlimit";
     public static final String BUCKET_TOTAL = "buckettotal";
     public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String KEY_SLOT = "keyslot";
+    public static final String LAST_USED = "lastused";
+    public static final String CREDENTIAL_SCOPE = "credentialscope";
+    public static final String CREDENTIAL_KEYS = "keys";
     public static final String OBJECT_STORAGE = "objectstore";
     public static final String OBJECT_STORAGE_AVAILABLE = "objectstorageavailable";
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";

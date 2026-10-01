@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { getAPI } from '@/api'
 import { isZoneCreated } from '@/utils/zone'
 import { isAdmin } from '@/role'
 
@@ -625,12 +626,33 @@ export default {
       title: 'label.buckets',
       icon: 'funnel-plot-outlined',
       permission: ['listBuckets'],
-      columns: ['name', 'state', 'objectstore', 'size', 'account'],
-      details: ['id', 'name', 'state', 'objectstore', 'size', 'url', 'accesskey', 'usersecretkey', 'account', 'domain', 'created', 'quota', 'encryption', 'versioning', 'objectlocking', 'policy'],
+      columns: ['name', 'state', 'objectstore', 'credentialscope', 'size', 'account'],
+      // unticked until any bucket the viewer can see has its own credential: before that every
+      // row would read "Account". Ticked once automatically, after which the viewer's own choice rules.
+      optionalColumns: {
+        credentialscope: () => getAPI('listBuckets', { credentialscope: 'bucket', listall: true, page: 1, pagesize: 1 })
+          .then(json => (json.listbucketsresponse?.count || 0) > 0)
+      },
+      searchFilters: ['name', 'account', 'domainid', 'credentialscope'],
+      details: (record) => {
+        const fields = ['id', 'name', 'state', 'objectstore', 'size', 'url', 'accesskey', 'usersecretkey', 'credentialscope', 'account', 'domain', 'created', 'quota', 'encryption', 'versioning', 'objectlocking', 'policy']
+        // a bucket with its own credential keeps its keys in the Keys tab, which shows every
+        // slot; the fields here mirror one of them and would be a second, partial source of truth
+        if (record && record.credentialscope === 'bucket') {
+          return fields.filter(field => !['accesskey', 'usersecretkey'].includes(field))
+        }
+        return fields
+      },
       tabs: [
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'keys',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/BucketKeysTab.vue'))),
+          show: (record) => { return record.credentialscope === 'bucket' }
         },
         {
           name: 'browser',
@@ -665,6 +687,19 @@ export default {
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateBucket.vue'))),
           show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'migrateBucketCredential',
+          icon: 'lock-outlined',
+          label: 'label.bucket.credential.migrate',
+          message: 'message.bucket.credential.migrate',
+          dataView: true,
+          popup: true,
+          // hidden while the account itself is not set up for per-bucket credentials on this
+          // store, so the action cannot be opened in a state where it would be refused. A
+          // response without the field at all (an older management server) is treated as
+          // unknown rather than "no", so version skew cannot hide a valid action.
+          show: (record) => { return record.state === 'Created' && record.credentialscope === 'account' && record.accountcredentialscope !== 'account' && 'migrateBucketCredential' in store.getters.apis }
         },
         {
           api: 'deleteBucket',

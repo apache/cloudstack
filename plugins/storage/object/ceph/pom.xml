@@ -48,5 +48,10 @@
             <artifactId>radosgw-admin4j</artifactId>
             <version>2.0.9</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-iam</artifactId>
+            <version>${cs.aws.sdk.version}</version>
+        </dependency>
     </dependencies>
 </project>

@@ -7523,6 +7523,48 @@ class Bucket:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.updateBucket(cmd)
 
+    def rotate_key(self, apiclient, keyslot=None):
+        """Create a new key pair in one slot of the bucket's dedicated credential"""
+
+        cmd = rotateBucketKey.rotateBucketKeyCmd()
+        cmd.id = self.id
+        if keyslot is not None:
+            cmd.keyslot = keyslot
+        return apiclient.rotateBucketKey(cmd)
+
+    def revoke_key(self, apiclient, keyslot):
+        """Revoke the key pair in one slot of the bucket's dedicated credential"""
+
+        cmd = revokeBucketKey.revokeBucketKeyCmd()
+        cmd.id = self.id
+        cmd.keyslot = keyslot
+        return apiclient.revokeBucketKey(cmd)
+
+    def migrate_credential(self, apiclient):
+        """Give a bucket that uses the account credential a dedicated credential"""
+
+        cmd = migrateBucketCredential.migrateBucketCredentialCmd()
+        cmd.id = self.id
+        return apiclient.migrateBucketCredential(cmd)
+
+    @classmethod
+    def migrate_account(cls, apiclient, accountid, objectstorageid):
+        """Migrate an account's identity on an object store for per-bucket credentials (admin)"""
+
+        cmd = migrateObjectStoreAccount.migrateObjectStoreAccountCmd()
+        cmd.accountid = accountid
+        cmd.objectstorageid = objectstorageid
+        return apiclient.migrateObjectStoreAccount(cmd)
+
+    @classmethod
+    def rotate_account_key(cls, apiclient, accountid, objectstorageid):
+        """Rotate the account-level key on an object store once no bucket uses it (admin)"""
+
+        cmd = rotateObjectStoreAccountKey.rotateObjectStoreAccountKeyCmd()
+        cmd.accountid = accountid
+        cmd.objectstorageid = objectstorageid
+        return apiclient.rotateObjectStoreAccountKey(cmd)
+
 class Webhook:
     """Manage Webhook Life cycle"""
 

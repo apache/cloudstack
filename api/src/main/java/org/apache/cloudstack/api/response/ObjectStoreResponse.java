@@ -50,6 +50,30 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "the allocated size of the object store")
     private Long storageAllocated;
 
+    @SerializedName("perbucketcredentialsready")
+    @Param(description = "whether this store can provide per-bucket credentials right now; root admin only", since = "24.0.0")
+    private Boolean perBucketCredentialsReady;
+
+    @SerializedName("perbucketcredentialsissue")
+    @Param(description = "what has to be resolved before this store can provide per-bucket credentials, absent when it can; root admin only", since = "24.0.0")
+    private String perBucketCredentialsIssue;
+
+    @SerializedName("perbucketcredentialssupported")
+    @Param(description = "only with accountid: whether this store supports per-bucket credentials at all; when false the account cannot be migrated on it", since = "24.0.0")
+    private Boolean perBucketCredentialsSupported;
+
+    @SerializedName("accountcredentialscope")
+    @Param(description = "only with accountid: 'bucket' when the account has been migrated for per-bucket credentials on this store, 'account' otherwise", since = "24.0.0")
+    private String accountCredentialScope;
+
+    @SerializedName("accountkeyrotationpending")
+    @Param(description = "only with accountid: true when the account was migrated from a pre-existing identity and its original key has not been rotated yet", since = "24.0.0")
+    private Boolean accountKeyRotationPending;
+
+    @SerializedName("legacybuckets")
+    @Param(description = "only with accountid: number of the account's buckets on this store that still use the account-level key", since = "24.0.0")
+    private Long legacyBuckets;
+
     @SerializedName("storageused")
     @Param(description = "the object store currently used size")
     private Long storageUsed;
@@ -116,5 +140,29 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
 
     public void setStorageUsed(Long storageUsed) {
         this.storageUsed = storageUsed;
+    }
+
+    public void setPerBucketCredentialsReady(Boolean perBucketCredentialsReady) {
+        this.perBucketCredentialsReady = perBucketCredentialsReady;
+    }
+
+    public void setPerBucketCredentialsIssue(String perBucketCredentialsIssue) {
+        this.perBucketCredentialsIssue = perBucketCredentialsIssue;
+    }
+
+    public void setPerBucketCredentialsSupported(Boolean perBucketCredentialsSupported) {
+        this.perBucketCredentialsSupported = perBucketCredentialsSupported;
+    }
+
+    public void setAccountCredentialScope(String accountCredentialScope) {
+        this.accountCredentialScope = accountCredentialScope;
+    }
+
+    public void setLegacyBuckets(Long legacyBuckets) {
+        this.legacyBuckets = legacyBuckets;
+    }
+
+    public void setAccountKeyRotationPending(Boolean accountKeyRotationPending) {
+        this.accountKeyRotationPending = accountKeyRotationPending;
     }
 }

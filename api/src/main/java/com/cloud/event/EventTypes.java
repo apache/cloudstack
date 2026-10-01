@@ -816,6 +816,11 @@ public class EventTypes {
     public static final String EVENT_BUCKET_CREATE = "BUCKET.CREATE";
     public static final String EVENT_BUCKET_DELETE = "BUCKET.DELETE";
     public static final String EVENT_BUCKET_UPDATE = "BUCKET.UPDATE";
+    public static final String EVENT_BUCKET_KEY_ROTATE = "BUCKET.KEY.ROTATE";
+    public static final String EVENT_BUCKET_KEY_REVOKE = "BUCKET.KEY.REVOKE";
+    public static final String EVENT_BUCKET_CREDENTIAL_MIGRATE = "BUCKET.CREDENTIAL.MIGRATE";
+    public static final String EVENT_OBJECT_STORE_ACCOUNT_MIGRATE = "OBJECTSTORE.ACCOUNT.MIGRATE";
+    public static final String EVENT_OBJECT_STORE_ACCOUNT_KEY_ROTATE = "OBJECTSTORE.ACCOUNT.KEY.ROTATE";
 
     // Quota
     public static final String EVENT_QUOTA_TARIFF_CREATE = "QUOTA.TARIFF.CREATE";
@@ -1395,6 +1400,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_BUCKET_CREATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_UPDATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_DELETE, Bucket.class);
+        entityEventDetails.put(EVENT_BUCKET_KEY_ROTATE, Bucket.class);
+        entityEventDetails.put(EVENT_BUCKET_KEY_REVOKE, Bucket.class);
+        entityEventDetails.put(EVENT_BUCKET_CREDENTIAL_MIGRATE, Bucket.class);
+        entityEventDetails.put(EVENT_OBJECT_STORE_ACCOUNT_MIGRATE, Account.class);
+        entityEventDetails.put(EVENT_OBJECT_STORE_ACCOUNT_KEY_ROTATE, Account.class);
 
         // Quota
         entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);

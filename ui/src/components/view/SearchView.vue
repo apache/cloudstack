@@ -337,7 +337,8 @@ export default {
           'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
-          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'hsmprofileid', 'kmskeyid', 'status'].includes(item)
+          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'hsmprofileid', 'kmskeyid', 'status',
+          'credentialscope'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -391,6 +392,13 @@ export default {
         this.fields[stateIndex].loading = true
         this.fields[stateIndex].opts = this.fetchState()
         this.fields[stateIndex].loading = false
+      }
+
+      if (arrayField.includes('credentialscope')) {
+        const credentialScopeIndex = this.fields.findIndex(item => item.name === 'credentialscope')
+        this.fields[credentialScopeIndex].loading = true
+        this.fields[credentialScopeIndex].opts = this.fetchCredentialScope()
+        this.fields[credentialScopeIndex].loading = false
       }
 
       if (arrayField.includes('level')) {
@@ -1366,6 +1374,12 @@ export default {
         })
       }
       return types
+    },
+    fetchCredentialScope () {
+      return [
+        { id: 'bucket', name: 'label.credentialscope.bucket' },
+        { id: 'account', name: 'label.credentialscope.account' }
+      ]
     },
     fetchScope () {
       const scope = []

@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
+import org.apache.cloudstack.api.response.BucketKeyResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -163,6 +164,7 @@ import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.BucketCredentialKey;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
@@ -591,6 +593,8 @@ public interface ResponseGenerator {
     ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
 
     BucketResponse createBucketResponse(Bucket bucket);
+
+    BucketKeyResponse createBucketKeyResponse(BucketCredentialKey key);
 
     ASNRangeResponse createASNumberRangeResponse(ASNumberRange asnRange);
 
