@@ -126,17 +126,17 @@ class TestHostHA(cloudstackTestCase):
         cmd = listHostHAResources.listHostHAResourcesCmd()
         cmd.hostid = self.getHost().id
         return cmd
-
-
+        
     def configureAndEnableHostHa(self, initialize=True):
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         response = self.apiclient.enableHAForHost(self.getHostHaEnableCmd())
         self.assertEqual(response.haenable, True)
         if initialize:
             self.configureSimulatorHAProviderState(True, True, True, False)
 
-
     def configureAndDisableHostHa(self, hostId):
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaDisableCmd()
         cmd.hostid = hostId
@@ -241,6 +241,7 @@ class TestHostHA(cloudstackTestCase):
         cmd = self.getHostHaConfigCmd()
         cmd.provider = 'randomDriverThatDoesNotExist'
         try:
+            self.setupDummyOOBM()
             response = self.apiclient.configureHAForHost(cmd)
         except Exception:
             pass
@@ -254,6 +255,7 @@ class TestHostHA(cloudstackTestCase):
             Tests host-ha configuration with valid data
         """
         cmd = self.getHostHaConfigCmd()
+        self.setupDummyOOBM()
         response = self.apiclient.configureHAForHost(cmd)
         self.assertEqual(response.hostid, cmd.hostid)
         self.assertEqual(response.haprovider, cmd.provider.lower())
@@ -323,6 +325,7 @@ class TestHostHA(cloudstackTestCase):
         """
             Tests host-ha enable feature with valid options
         """
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
         response = self.apiclient.enableHAForHost(cmd)
@@ -646,6 +649,7 @@ class TestHostHA(cloudstackTestCase):
         """
 
         # Enable ha for host
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
         response = self.apiclient.enableHAForHost(cmd)
@@ -665,6 +669,7 @@ class TestHostHA(cloudstackTestCase):
 
         # Call the configure HA provider API with not supported provider for HA
         try:
+            self.setupDummyOOBM()
             self.apiclient.configureHAForHost(conf_ha_cmd)
         except Exception:
             pass
@@ -679,6 +684,7 @@ class TestHostHA(cloudstackTestCase):
         """
 
         # Enable ha for host
+        self.setupDummyOOBM()
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
         cmd = self.getHostHaEnableCmd()
         response = self.apiclient.enableHAForHost(cmd)
@@ -698,6 +704,7 @@ class TestHostHA(cloudstackTestCase):
         conf_ha_cmd.hostid = cmd.hostid
 
         # Call the configure HA provider API with not supported provider for HA
+        self.setupDummyOOBM()
         response = self.apiclient.configureHAForHost(conf_ha_cmd)
 
         # Check the response contains the set provider and hostID
@@ -714,6 +721,7 @@ class TestHostHA(cloudstackTestCase):
 
     def configureHaProvider(self):
         cmd = self.getHostHaConfigCmd(self.getHaProvider(self.getHost()))
+        self.setupDummyOOBM()
         return self.apiclient.configureHAForHost(cmd)
 
 
