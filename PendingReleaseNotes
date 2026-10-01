@@ -92,4 +92,3 @@ example.ver.1 > example.ver.2:
     accepted since 4.19.0 but never filtered, so any caller passing it received
     every bucket. Those callers will now receive only the buckets on that object
     store.
-
