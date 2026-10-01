@@ -137,7 +137,9 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         }
         SearchCriteria<EventJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+        Filter filter = new Filter(EventJoinVO.class, "createDate", false);
+        filter.addOrderBy(EventJoinVO.class, "id", false);
+        return searchIncludingRemoved(sc, filter, null, false);
     }
 
     @Override
