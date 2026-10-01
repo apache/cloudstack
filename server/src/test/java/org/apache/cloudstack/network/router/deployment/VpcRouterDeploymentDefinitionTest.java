@@ -173,7 +173,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
 
     protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
         // Prepare
-        when(vpcMgr.isSrcNatIpRequired(mockVpc.getVpcOfferingId())).thenReturn(isPublicNw);
+        when(vpcMgr.isSrcNatIpRequiredForVpcVr(mockVpc.getVpcOfferingId())).thenReturn(isPublicNw);
 
         // Execute
         final boolean canProceedDeployment = deployment.prepareDeployment();
