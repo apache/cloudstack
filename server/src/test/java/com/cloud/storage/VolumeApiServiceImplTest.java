@@ -1215,6 +1215,58 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
+    public void deleteVolumeTestVolumeStateAllocatedWithoutStorage() throws InterruptedException, ExecutionException, NoTransitionException {
+        Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
+        Mockito.doReturn(null).when(volumeVoMock).getPoolId();
+        Mockito.doReturn(accountMockId).when(volumeVoMock).getAccountId();
+        Mockito.doReturn(true).when(volumeVoMock).isDisplay();
+        Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
+        Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findByIdIncludingRemoved(diskOfferingMockId);
+
+        Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+        Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
+
+        boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeDaoMock, Mockito.times(1)).remove(volumeMockId);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).destroyVolumeIfPossible(volumeVoMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
+    }
+
+    @Test
+    public void destroyVolumeByIdTestAllocatedWithoutStorageIsRemovedDirectly() {
+        Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
+        Mockito.doReturn(null).when(volumeVoMock).getPoolId();
+        Mockito.doReturn(accountMockId).when(volumeVoMock).getAccountId();
+        Mockito.doReturn(true).when(volumeVoMock).isDisplay();
+        Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
+        Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findByIdIncludingRemoved(diskOfferingMockId);
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+        Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
+
+        volumeApiServiceImpl.destroyVolume(volumeMockId);
+
+        Mockito.verify(volumeDaoMock, Mockito.times(1)).remove(volumeMockId);
+        Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock);
+        Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
+    }
+
+    @Test
+    public void destroyVolumeByIdTestAllocatedWithStorageGoesThroughStorageFlow() {
+        Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
+
+        volumeApiServiceImpl.destroyVolume(volumeMockId);
+
+        Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
+        Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
+    }
+
+    @Test
     public void deleteVolumeTestVolumeStateReady() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
 

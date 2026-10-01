@@ -1742,7 +1742,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
     /**
      * Executes the removal of the volume. After the removal in the database, we will try to remove the volume from both primary and secondary storage.
-     * Volumes in the {@link Volume.State#Allocated} state are routed through the same destroy/expunge flow; storage cleanup is skipped only when the volume has no backing storage pool
+     * Volumes in the {@link Volume.State#Allocated} state that have a backing storage pool are routed through the same destroy/expunge flow so their
+     * backend storage is removed; those without a pool are soft-deleted directly.
      */
     public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
         Volume volume = destroyVolume(volumeId, caller, true, true, null);
@@ -1898,6 +1899,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    /**
+     * Directly soft-deletes an {@link Volume.State#Allocated} volume that has no backing storage pool and releases its
+     * resource count. Volumes with poolID are left to the normal destroy/expunge flow
+     * @return true when the volume was handled here and no further destroy processing is required.
+     */
+    protected boolean removeAllocatedVolumeWithoutStorage(VolumeVO volume, Boolean enforceResourceLimitOnDisplayFalse) {
+        if (volume.getState() != Volume.State.Allocated || volume.getPoolId() != null) {
+            return false;
+        }
+        removeVolume(volume.getId());
+        _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
+                volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), enforceResourceLimitOnDisplayFalse);
+        return true;
+    }
+
     public boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
@@ -1927,6 +1943,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateDestroyVolume(volume, caller, expunge, forceExpunge);
 
+        if (expunge && removeAllocatedVolumeWithoutStorage(volume, enforceResourceLimitOnDisplayFalse)) {
+            return volume;
+        }
+
         destroyVolumeIfPossible(volume);
 
         if (expunge) {
@@ -1943,6 +1963,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
     public void destroyVolume(long volumeId) {
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume != null && removeAllocatedVolumeWithoutStorage(volume, null)) {
+            return;
+        }
         volService.destroyVolume(volumeId);
     }
 
