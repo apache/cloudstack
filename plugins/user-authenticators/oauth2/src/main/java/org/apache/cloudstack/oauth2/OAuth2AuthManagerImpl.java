@@ -196,6 +196,11 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             throw new CloudRuntimeException(String.format("No OAuth2 provider plugin is available for the type %s", type));
         }
 
+        if (StringUtils.isNotBlank(type) && userOAuth2AuthenticationProvidersMap.containsKey(provider.toLowerCase())) {
+            throw new CloudRuntimeException(String.format(
+                    "The name %s is reserved by a built-in OAuth2 provider, so the type would be ignored; use a different name for an OIDC registration", provider));
+        }
+
         // Check for existing provider with same name and domain
         OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomain(provider, domainId);
         if (providerVO != null) {
