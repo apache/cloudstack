@@ -86,6 +86,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
     private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
+    /*
+     * One monitor per pool, held across the whole of createStoragePool and deleteStoragePool. The
+     * refcount alone cannot keep a pool alive: deleteStoragePool decides to tear the pool down when
+     * the count reaches zero and then destroys and unmounts it, and a createStoragePool that finds the
+     * still active pool and takes a reference in between would have it torn down underneath it.
+     * Entries are never removed, as there is one per pool the host has ever used.
+     */
+    private static final ConcurrentHashMap<String, Object> storagePoolLocks = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private static final int RBD_FEATURE_LAYERING = 1;
@@ -727,8 +735,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return adjustStoragePoolRefCount(uuid, -1) > 0;
     }
 
+    private static Object getStoragePoolLock(String uuid) {
+        return storagePoolLocks.computeIfAbsent(uuid, k -> new Object());
+    }
+
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
+        synchronized (getStoragePoolLock(name)) {
+            return createStoragePoolLocked(name, host, port, path, userInfo, type, details, isPrimaryStorage);
+        }
+    }
+
+    protected KVMStoragePool createStoragePoolLocked(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         logger.info("Attempting to create storage pool {} ({}) in libvirt", name, type);
         StoragePool sp;
         Connect conn;
@@ -900,6 +918,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deleteStoragePool(String uuid) {
+        synchronized (getStoragePoolLock(uuid)) {
+            return deleteStoragePoolLocked(uuid);
+        }
+    }
+
+    protected boolean deleteStoragePoolLocked(String uuid) {
         logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
 
         // decrement and check if storage pool still in use
