@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcelimit.Reserver;
@@ -57,6 +58,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -73,8 +75,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
@@ -123,6 +127,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     UserVmDao userVmDao;
     @Mock
     SnapshotDataStoreDao snapshotDataStoreDao;
+    @Mock
+    EntityManager entityManager;
 
     private List<String> hostTags = List.of("htag1", "htag2", "htag3");
     private List<String> storageTags = List.of("stag1", "stag2");
@@ -1177,5 +1183,23 @@ public class ResourceLimitManagerImplTest extends TestCase {
                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCountWithTag(accountId, Resource.ResourceType.memory, tag, Long.valueOf(memory));
+    }
+
+    @Test
+    public void updateResourceLimitRejectsAFiniteLimitForRootAdminEvenWhenItsLowBitsLookUnlimited() {
+        long rootAdminAccountId = 2L;
+        Account rootAdmin = Mockito.mock(Account.class);
+        Mockito.when(rootAdmin.getId()).thenReturn(rootAdminAccountId);
+        Mockito.when(entityManager.findById(Account.class, rootAdminAccountId)).thenReturn(rootAdmin);
+        Mockito.when(accountManager.isRootAdmin(rootAdminAccountId)).thenReturn(true);
+
+        CallContext.register(Mockito.mock(User.class), rootAdmin);
+        try {
+            InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class, () ->
+                    resourceLimitManager.updateResourceLimit(rootAdminAccountId, null, Resource.ResourceType.user_vm.getOrdinal(), 65535L, null));
+            Assert.assertEquals("Only -1 limit is supported for Root Admin accounts", e.getMessage());
+        } finally {
+            CallContext.unregister();
+        }
     }
 }
