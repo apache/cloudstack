@@ -128,6 +128,13 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
     protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
                                                                     List<String> destinationStoragePools,
                                                                     KVMStoragePoolManager storagePoolMgr) {
+        return moveTemporaryDisksToDestination(temporaryDisks, destinationStoragePools, null, storagePoolMgr);
+    }
+
+    protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
+                                                                    List<String> destinationStoragePools,
+                                                                    List<Storage.StoragePoolType> destinationStoragePoolTypes,
+                                                                    KVMStoragePoolManager storagePoolMgr) {
         List<KVMPhysicalDisk> targetDisks = new ArrayList<>();
         if (temporaryDisks.size() != destinationStoragePools.size()) {
             String warn = String.format("Discrepancy between the converted instance disks (%s) " +
@@ -136,14 +143,10 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
         }
         for (int i = 0; i < temporaryDisks.size(); i++) {
             String poolPath = destinationStoragePools.get(i);
-            KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolPath);
+            Storage.StoragePoolType poolType = getDestinationStoragePoolType(destinationStoragePoolTypes, i);
+            KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(poolType, poolPath);
             if (destinationPool == null) {
                 String err = String.format("Could not find a storage pool by URI: %s", poolPath);
-                logger.error(err);
-                continue;
-            }
-            if (destinationPool.getType() != Storage.StoragePoolType.NetworkFilesystem) {
-                String err = String.format("Storage pool by URI: %s is not an NFS storage", poolPath);
                 logger.error(err);
                 continue;
             }
@@ -157,11 +160,16 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
             String destinationName = UUID.randomUUID().toString();
 
             try {
-                if (destinationPool.getAvailable() < sourceDisk.getSize()) {
+                if (destinationPool.getType() != Storage.StoragePoolType.RBD
+                        && destinationPool.getAvailable() < sourceDisk.getSize()) {
                     String msg = String.format("Not enough space on destination pool %s (%s bytes) to copy disk %s (size %s)",
                             destinationPool.getUuid(), destinationPool.getAvailable(), sourceDisk.getName(), sourceDisk.getSize());
                     logger.error(msg);
                     throw new CloudRuntimeException(msg);
+                }
+
+                if (destinationPool.getType() == Storage.StoragePoolType.RBD) {
+                    probeRbdQemuAccess(destinationPool, destinationName);
                 }
 
                 KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
@@ -175,6 +183,40 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
             }
         }
         return targetDisks;
+    }
+
+    private Storage.StoragePoolType getDestinationStoragePoolType(List<Storage.StoragePoolType> destinationStoragePoolTypes, int index) {
+        if (CollectionUtils.isEmpty(destinationStoragePoolTypes) || destinationStoragePoolTypes.size() <= index || destinationStoragePoolTypes.get(index) == null) {
+            return Storage.StoragePoolType.NetworkFilesystem;
+        }
+        return destinationStoragePoolTypes.get(index);
+    }
+
+    private void probeRbdQemuAccess(KVMStoragePool pool, String destinationName) {
+        String probeName = destinationName + "-probe";
+        String rbdImagePath = pool.getSourceDir() + "/" + probeName;
+        String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(pool, rbdImagePath);
+        try {
+            Script qemuImg = new Script("qemu-img", 120000, logger);
+            qemuImg.add("create", "-f", "raw", qemuRbdPath, "4194304");
+            qemuImg.execute();
+            if (qemuImg.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-img could not create RBD probe image %s", rbdImagePath));
+            }
+
+            Script qemuIo = new Script("qemu-io", 120000, logger);
+            qemuIo.add("-f", "raw", "-c", "write -P 0x5a 0 4k", "-c", "read -P 0x5a 0 4k", qemuRbdPath);
+            qemuIo.execute();
+            if (qemuIo.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-io could not verify RBD probe image %s", rbdImagePath));
+            }
+        } finally {
+            try {
+                pool.deletePhysicalDisk(probeName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("Failed to delete RBD probe image {} from pool {}: {}", probeName, pool.getUuid(), e.getMessage());
+            }
+        }
     }
 
     private void cleanupMovedDisksOnDestinationPool(List<KVMPhysicalDisk> targetDisks) {
@@ -220,9 +262,20 @@ public abstract class LibvirtBaseConvertCommandWrapper <T extends Command, A ext
             KVMStoragePool storagePool = physicalDisk.getPool();
             UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
             disk.setPosition(i);
-            Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
-            disk.setDatastoreHost(storagePoolHostAndPath.first());
-            disk.setDatastorePath(storagePoolHostAndPath.second());
+            if (storagePool.getType() == Storage.StoragePoolType.RBD) {
+                disk.setDatastoreHost(storagePool.getSourceHost());
+                disk.setDatastorePath(storagePool.getSourceDir());
+                disk.setImagePath(physicalDisk.getName());
+            } else if (storagePool.getType() == Storage.StoragePoolType.Linstor) {
+                // Linstor pools expose no local mount path; the management server resolves the
+                // pool by its UUID (datastore name), and the volume by its disk name (path).
+                disk.setDatastoreHost(storagePool.getSourceHost());
+                disk.setImagePath(physicalDisk.getName());
+            } else {
+                Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
+                disk.setDatastoreHost(storagePoolHostAndPath.first());
+                disk.setDatastorePath(storagePoolHostAndPath.second());
+            }
             disk.setDatastoreName(storagePool.getUuid());
             disk.setDatastoreType(storagePool.getType().name());
             disk.setCapacity(physicalDisk.getVirtualSize());
