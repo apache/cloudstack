@@ -74,8 +74,8 @@ public class UpdateLoadBalancerTest {
         _lbMgr._autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
         _lbMgr._networkDao = netDao;
         _lbMgr._networkModel = netModel;
-        _lbMgr._lb2healthcheckDao = Mockito.mock(LBHealthCheckPolicyDao.class);
-        _lbMgr._lb2stickinesspoliciesDao = Mockito.mock(LBStickinessPolicyDao.class);
+        _lbMgr._lb2HealthCheckDao = Mockito.mock(LBHealthCheckPolicyDao.class);
+        _lbMgr._lb2StickinessPoliciesDao = Mockito.mock(LBStickinessPolicyDao.class);
         _lbMgr._lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
         _lbMgr._lbCertMapDao = Mockito.mock(LoadBalancerCertMapDao.class);
         _lbMgr._lbDao = lbDao;
