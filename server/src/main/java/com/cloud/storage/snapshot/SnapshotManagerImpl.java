@@ -1721,6 +1721,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (snapshotName == null)
             snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 
+        if (_snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, snapshotName, Snapshot.State.Destroyed, Snapshot.State.Error) != null) {
+            throw new InvalidParameterValueException(String.format("A snapshot with name [%s] already exists for volume %s.", snapshotName, volume));
+        }
+
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
         if (storagePool.getScope() == ScopeType.ZONE) {
