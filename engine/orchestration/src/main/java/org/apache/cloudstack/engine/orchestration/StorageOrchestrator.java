@@ -144,9 +144,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     Integer numConcurrentCopyTasksPerSSVM = 2;
 
-    private final Map<Long, ThreadPoolExecutor> zoneExecutorMap = new HashMap<>();
-    private final Map<Long, Integer> zonePendingWorkCountMap = new HashMap<>();
-    private final Map<Long, ThreadPoolExecutor> zoneKvmIncrementalResourcesExecutorMap = new ConcurrentHashMap<>();
+    private final Map<Long, ThreadPoolExecutor> zoneExecutorMapSecondaryStorageVm = new HashMap<>();
+    private final Map<Long, Integer> zonePendingWorkCountMapSecondaryStorageVm = new HashMap<>();
+    private final Map<Long, ThreadPoolExecutor> zoneExecutorMapKvmAgent = new ConcurrentHashMap<>();
+    private final Map<Long, Integer> zonePendingWorkCountMapKvmAgent = new ConcurrentHashMap<>();
 
     @Override
     public String getConfigComponentName() {
@@ -389,8 +390,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
         if (isKvmIncrementalSnapshot) {
             MigrateKvmIncrementalSnapshotTask task = new MigrateKvmIncrementalSnapshotTask(chosenFileForMigration, snapshotChains, srcDatastore, destDataStore, snapshotIdsToMigrate);
-            futures.add(submitKvmIncrementalMigration(srcDatastore.getScope().getScopeId(), task));
-            logger.debug("Incremental snapshot migration {} submitted to incremental pool.", chosenFileForMigration.getUuid());
+            futures.add(submitMigrationOnKvmAgent(srcDatastore.getScope().getScopeId(), task));
+            logger.debug("Incremental snapshot migration {} submitted to KVM Agent pool.", chosenFileForMigration.getUuid());
         } else {
             createMigrateDataTask(chosenFileForMigration, snapshotChains, templateChains, srcDatastore, destDataStore, futures);
         }
@@ -452,10 +453,17 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    protected <T> Future<T> submitKvmIncrementalMigration(Long zoneId, Callable<T> task) {
-        ThreadPoolExecutor threadPoolExecutor = zoneKvmIncrementalResourcesExecutorMap.computeIfAbsent(zoneId, id -> new ThreadPoolExecutor(1, 1, 0L,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()));
-        return threadPoolExecutor.submit(task);
+    protected <T> Future<T> submitMigrationOnKvmAgent(Long zoneId, Callable<T> task) {
+        ThreadPoolExecutor executor;
+        synchronized (zoneExecutorMapKvmAgent) {
+            if (!zoneExecutorMapKvmAgent.containsKey(zoneId)) {
+                zoneExecutorMapKvmAgent.put(zoneId, new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()));
+                zonePendingWorkCountMapKvmAgent.put(zoneId, 0);
+            }
+            zonePendingWorkCountMapKvmAgent.merge(zoneId, 1, Integer::sum);
+            executor = zoneExecutorMapKvmAgent.get(zoneId);
+        }
+        return executor.submit(task);
     }
 
     private HostVO getAvailableHost(long zoneId) throws AgentUnavailableException, OperationTimedoutException {
@@ -482,14 +490,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     protected <T> Future<T> submit(Long zoneId, Callable<T> task) {
         ThreadPoolExecutor executor;
         synchronized (this) {
-            if (!zoneExecutorMap.containsKey(zoneId)) {
-                zoneExecutorMap.put(zoneId, new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM,
+            if (!zoneExecutorMapSecondaryStorageVm.containsKey(zoneId)) {
+                zoneExecutorMapSecondaryStorageVm.put(zoneId, new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM,
                         30, TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM)));
-                zonePendingWorkCountMap.put(zoneId, 0);
+                zonePendingWorkCountMapSecondaryStorageVm.put(zoneId, 0);
             }
-            zonePendingWorkCountMap.merge(zoneId, 1, Integer::sum);
+            zonePendingWorkCountMapSecondaryStorageVm.merge(zoneId, 1, Integer::sum);
             scaleExecutorIfNecessary(zoneId);
-            executor = zoneExecutorMap.get(zoneId);
+            executor = zoneExecutorMapSecondaryStorageVm.get(zoneId);
         }
         return executor.submit(task);
 
@@ -498,7 +506,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     protected void scaleExecutorIfNecessary(Long zoneId) {
         long activeSsvms = migrationHelper.activeSSVMCount(zoneId);
         long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
-        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
+        ThreadPoolExecutor executor = zoneExecutorMapSecondaryStorageVm.get(zoneId);
         if (totalJobs > executor.getCorePoolSize()) {
             logger.debug("Scaling up executor of zone [{}] from [{}] to [{}] threads.", zoneId, executor.getCorePoolSize(),
                     totalJobs);
@@ -508,45 +516,45 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     protected synchronized void tryCleaningUpExecutor(Long zoneId) {
-        if (!zoneExecutorMap.containsKey(zoneId)) {
+        if (!zoneExecutorMapSecondaryStorageVm.containsKey(zoneId)) {
             logger.debug("No executor exists for zone [{}].", zoneId);
             return;
         }
 
-        zonePendingWorkCountMap.merge(zoneId, -1, Integer::sum);
-        Integer pendingWorkCount = zonePendingWorkCountMap.get(zoneId);
+        zonePendingWorkCountMapSecondaryStorageVm.merge(zoneId, -1, Integer::sum);
+        Integer pendingWorkCount = zonePendingWorkCountMapSecondaryStorageVm.get(zoneId);
         if (pendingWorkCount > 0) {
             logger.debug("Not cleaning executor of zone [{}] yet, as there is [{}] pending work.", zoneId, pendingWorkCount);
             return;
         }
 
         logger.debug("Cleaning executor of zone [{}].", zoneId);
-        ThreadPoolExecutor executor = zoneExecutorMap.get(zoneId);
-        zoneExecutorMap.remove(zoneId);
+        ThreadPoolExecutor executor = zoneExecutorMapSecondaryStorageVm.get(zoneId);
+        zoneExecutorMapSecondaryStorageVm.remove(zoneId);
         executor.shutdown();
     }
 
-    protected void tryCleaningUpKvmIncrementalExecutor(Long zoneId) {
-        if (!zoneKvmIncrementalResourcesExecutorMap.containsKey(zoneId)) {
-            logger.debug("No executor for KVM incremental resources exists for zone [{}].", zoneId);
-            return;
-        }
-
-        synchronized (zoneKvmIncrementalResourcesExecutorMap) {
-            ThreadPoolExecutor executor = zoneKvmIncrementalResourcesExecutorMap.get(zoneId);
-
-            int activeTasks = executor.getActiveCount();
-            if (activeTasks > 1) {
-                logger.debug("Not cleaning executor for KVM incremental resources of zone [{}] yet, as there are [{}] active tasks.", zoneId, activeTasks);
+    protected void tryCleaningUpKvmAgentExecutor(Long zoneId) {
+        synchronized (zoneExecutorMapKvmAgent) {
+            if (!zoneExecutorMapKvmAgent.containsKey(zoneId)) {
+                logger.debug("No executor for KVM Agent exists for zone [{}].", zoneId);
                 return;
             }
 
-            logger.debug("Cleaning executor for KVM incremental resources of zone [{}].", zoneId);
-            zoneKvmIncrementalResourcesExecutorMap.remove(zoneId);
+            zonePendingWorkCountMapKvmAgent.merge(zoneId, -1, Integer::sum);
+            Integer pendingWorkCount = zonePendingWorkCountMapKvmAgent.get(zoneId);
+            if (pendingWorkCount > 0) {
+                logger.debug("Not cleaning executor for KVM Agent of zone [{}] yet, as there is [{}] pending work.",
+                        zoneId, pendingWorkCount);
+                return;
+            }
+
+            logger.debug("Cleaning executor for KVM Agent of zone [{}].", zoneId);
+            ThreadPoolExecutor executor = zoneExecutorMapKvmAgent.get(zoneId);
+            zoneExecutorMapKvmAgent.remove(zoneId);
             executor.shutdown();
         }
     }
-
 
     private MigrationResponse handleResponse(List<Future<DataObjectResult>> futures, MigrationPolicy migrationPolicy, String message, boolean success) {
         int successCount = 0;
@@ -820,7 +828,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 result.setResult(e.toString());
                 return result;
             } finally {
-                tryCleaningUpKvmIncrementalExecutor(srcDataStore.getScope().getScopeId());
+                tryCleaningUpKvmAgentExecutor(srcDataStore.getScope().getScopeId());
             }
         }
     }
