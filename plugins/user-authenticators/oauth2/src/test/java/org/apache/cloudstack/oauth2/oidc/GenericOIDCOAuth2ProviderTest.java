@@ -200,6 +200,7 @@ public class GenericOIDCOAuth2ProviderTest {
         claims.setSubject("12345");
         claims.setExpiryTime(System.currentTimeMillis() / 1000L + 3600);
         claims.setClaim("email", email);
+        claims.setClaim("email_verified", true);
         JwsHeaders headers = new JwsHeaders(SignatureAlgorithm.RS256);
         headers.setKeyId(keyId);
         return new JwsJwtCompactProducer(headers, claims)
@@ -242,6 +243,25 @@ public class GenericOIDCOAuth2ProviderTest {
         provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com"), registration, metadata());
 
         verify(provider, times(1)).httpGet(eq(ISSUER + "/jwks"), anyString());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testUnverifiedEmailIsRejected() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(ISSUER);
+        claims.setAudiences(Collections.singletonList(CLIENT_ID));
+        claims.setSubject("12345");
+        claims.setExpiryTime(System.currentTimeMillis() / 1000L + 3600);
+        claims.setClaim("email", "user@example.com");
+        claims.setClaim("email_verified", false);
+        JwsHeaders headers = new JwsHeaders(SignatureAlgorithm.RS256);
+        headers.setKeyId("key-1");
+        String token = new JwsJwtCompactProducer(headers, claims)
+                .signWith(JwsUtils.getPrivateKeySignatureProvider(keys.getPrivate(), SignatureAlgorithm.RS256));
+
+        provider.validateAndExtractEmail(token, registration, metadata());
     }
 
     @Test(expected = CloudAuthenticationException.class)
