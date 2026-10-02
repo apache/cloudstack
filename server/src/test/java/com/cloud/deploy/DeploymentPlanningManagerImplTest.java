@@ -234,9 +234,6 @@ public class DeploymentPlanningManagerImplTest {
     @Mock
     NicDao nicDao;
 
-    @Mock
-    HostDetailsDao hostDetailsDao;
-
     @Inject
     HostPodDao _podDao;
 
