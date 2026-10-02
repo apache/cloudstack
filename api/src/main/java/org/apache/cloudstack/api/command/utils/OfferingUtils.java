@@ -23,8 +23,12 @@ public class OfferingUtils {
     private OfferingUtils() {
     }
 
+    public static boolean isNetris(String provider) {
+        return "Netris".equalsIgnoreCase(provider);
+    }
+
     public static boolean isNetrisNatted(String provider, String networkMode) {
-        return "Netris".equalsIgnoreCase(provider) &&
+        return isNetris(provider) &&
                NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(networkMode);
     }
 
@@ -33,6 +37,6 @@ public class OfferingUtils {
     }
 
     public static boolean isNetrisRouted(String provider, String networkMode) {
-        return "Netris".equalsIgnoreCase(provider) && NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(networkMode);
+        return isNetris(provider) && NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(networkMode);
     }
 }
