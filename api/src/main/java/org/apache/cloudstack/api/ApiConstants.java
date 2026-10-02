@@ -439,6 +439,7 @@ public class ApiConstants {
     public static final String NEW_NAME = "newname";
     public static final String NIC = "nic";
     public static final String NICS = "nics";
+    public static final String NONCE = "nonce";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
     public static final String NIC_NETWORKS_LIST = "nicnetworkslist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";

@@ -75,6 +75,16 @@ public interface UserOAuth2Authenticator extends Adapter {
     }
 
     /**
+     * Verifies the secret code against the registration identified by providerName and fetches email,
+     * additionally binding the id_token to the nonce sent in the authorization request. Implementations
+     * that do not support a nonce ignore it.
+     * @return email for the specified registration
+     */
+    default String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName, String nonce) {
+        return verifySecretCodeAndFetchEmail(secretCode, domainId, providerName);
+    }
+
+    /**
      * Fetches email using the accessToken
      * @return returns email
      */
