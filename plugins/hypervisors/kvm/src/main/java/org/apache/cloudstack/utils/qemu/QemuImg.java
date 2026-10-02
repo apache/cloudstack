@@ -66,6 +66,7 @@ public class QemuImg {
     private String cloudQemuImgPath = "cloud-qemu-img";
     private long timeout;
     private boolean skipZero = false;
+    private boolean writeZeroRanges = false;
     private boolean skipTargetVolumeCreation = false;
     private boolean noCache = false;
     private long version;
@@ -520,6 +521,11 @@ public class QemuImg {
             script.add("1M");
         } else if (skipTargetVolumeCreation) {
             script.add("-n");
+        }
+
+        if (writeZeroRanges) {
+            script.add("-S");
+            script.add("0");
         }
 
         if (destImageOpts == null) {
@@ -1023,6 +1029,14 @@ public class QemuImg {
 
     public void setSkipZero(boolean skipZero) {
         this.skipZero = skipZero;
+    }
+
+    /**
+     * Make convert write the source's zero ranges to the destination ({@code -S 0}) instead of
+     * leaving them unallocated.
+     */
+    public void setWriteZeroRanges(boolean writeZeroRanges) {
+        this.writeZeroRanges = writeZeroRanges;
     }
 
     public void setSkipTargetVolumeCreation(boolean skipTargetVolumeCreation) {

@@ -144,6 +144,36 @@ public class RbdEncryptionTest {
     }
 
     @Test
+    public void copyTemplateDenseWritesZeroRangesAndLeavesTheCopyPlaintext() throws Exception {
+        RbdEncryption spy = Mockito.spy(new RbdEncryption());
+        QemuImg qemuImg = Mockito.mock(QemuImg.class);
+        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
+
+        spy.copyTemplateDense("1.2.3.4", 6789, "cloudstack", "secret", "cloudstack", "tmpl", "cloudstack-base-snap");
+
+        // without -S 0 the template keeps its holes
+        Mockito.verify(qemuImg).setWriteZeroRanges(true);
+
+        ArgumentCaptor<QemuImageOptions> srcOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+        ArgumentCaptor<QemuImageOptions> destOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+        Mockito.verify(qemuImg).convertIntoExistingTarget(Mockito.any(QemuImgFile.class), Mockito.isNull(),
+                Mockito.isNull(), srcOpts.capture(), destOpts.capture(), Mockito.eq(false));
+
+        String src = String.join(" ", srcOpts.getValue().toCommandFlag());
+        Assert.assertTrue(src, src.startsWith("--image-opts "));
+        Assert.assertTrue(src, src.contains("pool=cloudstack"));
+        Assert.assertTrue(src, src.contains("image=tmpl"));
+        Assert.assertTrue(src, src.contains("snapshot=cloudstack-base-snap"));
+
+        String dest = String.join(" ", destOpts.getValue().toCommandFlag(QemuImg.TARGET_IMAGE_OPTS_FLAG));
+        Assert.assertTrue(dest, dest.startsWith(QemuImg.TARGET_IMAGE_OPTS_FLAG + " "));
+        Assert.assertTrue(dest, dest.contains("image=tmpl"));
+        // the template is written to itself, not to a snapshot, and stays plaintext
+        Assert.assertFalse(dest, dest.contains("snapshot="));
+        Assert.assertFalse(dest, dest.contains("encrypt."));
+    }
+
+    @Test
     public void formatRejectsEmptyPassphrase() {
         Assert.assertThrows(CloudRuntimeException.class, () -> rbdEncryption.format(
                 "1.2.3.4", 6789, "cloudstack", "secret", "cloudstack", "img",

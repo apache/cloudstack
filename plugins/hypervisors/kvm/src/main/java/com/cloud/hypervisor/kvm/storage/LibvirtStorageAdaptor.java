@@ -1573,7 +1573,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      */
     private KVMPhysicalDisk createEncryptedRootCoWClone(KVMPhysicalDisk template, KVMStoragePool destPool,
             String newUuid, KVMPhysicalDisk disk, byte[] passphrase) {
-        String luksReservedSnapshotName = rbdTemplateSnapName + "-luks";
+        // not "-luks": templates prepared before carry a snapshot of that name that still has holes
+        String luksReservedSnapshotName = rbdTemplateSnapName + "-luks2";
         Rados radosConnection = null;
         IoCTX ioContext = null;
         Rbd rbdClient = null;
@@ -1596,8 +1597,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             if (!luksSnapshotExists) {
                 templateImage.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
-                templateImage.snapCreate(luksReservedSnapshotName);
-                templateImage.snapProtect(luksReservedSnapshotName);
+                // fill the template's holes first: an encrypted clone reads a hole in its parent as
+                // garbage once a guest write copies up the object around it
+                new RbdEncryption().copyTemplateDense(destPool.getSourceHost(), destPool.getSourcePort(),
+                        destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
+                        template.getName(), rbdTemplateSnapName);
+                try {
+                    templateImage.snapCreate(luksReservedSnapshotName);
+                    templateImage.snapProtect(luksReservedSnapshotName);
+                } catch (RbdException e) {
+                    // fine if another host prepared the same template at the same time
+                    if (!templateImage.snapIsProtected(luksReservedSnapshotName)) {
+                        throw e;
+                    }
+                }
                 logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksReservedSnapshotName);
             }
             rbdClient.clone(template.getName(), luksReservedSnapshotName, ioContext, newUuid, RBD_FEATURES, rbdOrder);
