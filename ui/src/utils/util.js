@@ -132,3 +132,12 @@ export function isValidIPv4Cidr (rule, value) {
     resolve()
   })
 }
+
+// Adds the projectid of a project-scoped resource to the given API params, so
+// that listing calls are correctly scoped to the resource's project.
+export function addProjectFilter (params, resource) {
+  if (resource?.projectid) {
+    params.projectid = resource.projectid
+  }
+  return params
+}

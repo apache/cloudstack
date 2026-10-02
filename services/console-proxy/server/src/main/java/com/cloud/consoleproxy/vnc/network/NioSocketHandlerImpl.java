@@ -28,10 +28,12 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     private NioSocketInputStream inputStream;
     private NioSocketOutputStream outputStream;
     private boolean isTLS = false;
+    private final NioSocket socket;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
     public NioSocketHandlerImpl(NioSocket socket) {
+        this.socket = socket;
         this.inputStream = new NioSocketInputStream(ConsoleProxy.defaultBufferSize, socket);
         this.outputStream = new NioSocketOutputStream(ConsoleProxy.defaultBufferSize, socket);
     }
@@ -108,5 +110,10 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     @Override
     public NioSocketOutputStream getOutputStream() {
         return outputStream;
+    }
+
+    @Override
+    public void close() {
+        socket.close();
     }
 }
