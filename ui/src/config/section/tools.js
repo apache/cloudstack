@@ -17,20 +17,6 @@
 import store from '@/store'
 import { shallowRef, defineAsyncComponent } from 'vue'
 
-const vmImportExportApis = [
-  'listUnmanagedInstances',
-  'importUnmanagedInstance',
-  'listVmwareDcVms',
-  'listVmsForImport',
-  'importVm',
-  'listImportVmTasks',
-  'listVmwareCbtMigrations',
-  'startVmwareCbtMigration'
-]
-
-const hasApi = apiName => Object.prototype.hasOwnProperty.call(store.getters.apis, apiName)
-const hasAnyApi = apiNames => apiNames.some(apiName => hasApi(apiName))
-
 export default {
   name: 'tools',
   title: 'label.tools',
@@ -89,8 +75,7 @@ export default {
       icon: 'interaction-outlined',
       docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
-      show: () => hasAnyApi(vmImportExportApis),
-      permission: [],
+      permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
     },
     {

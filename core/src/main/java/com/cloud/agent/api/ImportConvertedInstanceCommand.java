@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
-import com.cloud.storage.Storage;
 
 import java.util.List;
 
@@ -26,7 +25,6 @@ public class ImportConvertedInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
     private List<String> destinationStoragePools;
-    private List<Storage.StoragePoolType> destinationStoragePoolTypes;
     private DataStoreTO conversionTemporaryLocation;
     private String temporaryConvertUuid;
     private boolean forceConvertToPool;
@@ -36,22 +34,13 @@ public class ImportConvertedInstanceCommand extends Command {
 
     public ImportConvertedInstanceCommand(RemoteInstanceTO sourceInstance,
                                           List<String> destinationStoragePools,
-                                          List<Storage.StoragePoolType> destinationStoragePoolTypes,
                                           DataStoreTO conversionTemporaryLocation, String temporaryConvertUuid,
                                           boolean forceConvertToPool) {
         this.sourceInstance = sourceInstance;
         this.destinationStoragePools = destinationStoragePools;
-        this.destinationStoragePoolTypes = destinationStoragePoolTypes;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
         this.temporaryConvertUuid = temporaryConvertUuid;
         this.forceConvertToPool = forceConvertToPool;
-    }
-
-    public ImportConvertedInstanceCommand(RemoteInstanceTO sourceInstance,
-                                          List<String> destinationStoragePools,
-                                          DataStoreTO conversionTemporaryLocation, String temporaryConvertUuid,
-                                          boolean forceConvertToPool) {
-        this(sourceInstance, destinationStoragePools, null, conversionTemporaryLocation, temporaryConvertUuid, forceConvertToPool);
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -60,10 +49,6 @@ public class ImportConvertedInstanceCommand extends Command {
 
     public List<String> getDestinationStoragePools() {
         return destinationStoragePools;
-    }
-
-    public List<Storage.StoragePoolType> getDestinationStoragePoolTypes() {
-        return destinationStoragePoolTypes;
     }
 
     public DataStoreTO getConversionTemporaryLocation() {
