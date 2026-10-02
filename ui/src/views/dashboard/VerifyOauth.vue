@@ -46,8 +46,17 @@ export default {
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
       const provider = this.$localStorage.get(OAUTH_PROVIDER)
+      let nonce = null
+      try {
+        nonce = sessionStorage.getItem('oauthNonce')
+        sessionStorage.removeItem('oauthNonce')
+      } catch (ignored) { /* sessionStorage may be unavailable */ }
       this.state.loginBtn = true
-      getAPI('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code, domain: this.$localStorage.get(OAUTH_DOMAIN) }).then(response => {
+      const verifyParams = { provider: provider, secretcode: code, domain: this.$localStorage.get(OAUTH_DOMAIN) }
+      if (nonce) {
+        verifyParams.nonce = nonce
+      }
+      getAPI('verifyOAuthCodeAndGetUser', verifyParams).then(response => {
         const email = response.verifyoauthcodeandgetuserresponse.oauthemail.email
         const loginParams = {}
         loginParams.email = email

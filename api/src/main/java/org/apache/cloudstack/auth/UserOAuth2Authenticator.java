@@ -57,6 +57,44 @@ public interface UserOAuth2Authenticator extends Adapter {
     String verifySecretCodeAndFetchEmail(String secretCode, Long domainId);
 
     /**
+     * Verifies the user against the registration identified by providerName. Implementations that
+     * serve a single registration ignore the name; implementations shared by several registrations
+     * use it to select the one to authenticate against.
+     * @return true if it's a valid user, otherwise false
+     */
+    default boolean verifyUser(String email, String secretCode, Long domainId, String providerName) {
+        return verifyUser(email, secretCode, domainId);
+    }
+
+    /**
+     * Verifies the secret code against the registration identified by providerName and fetches email.
+     * @return email for the specified registration
+     */
+    default String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName) {
+        return verifySecretCodeAndFetchEmail(secretCode, domainId);
+    }
+
+    /**
+     * Verifies the secret code against the registration identified by providerName and fetches email,
+     * additionally binding the id_token to the nonce sent in the authorization request. Implementations
+     * that do not support a nonce ignore it.
+     * @return email for the specified registration
+     */
+    default String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName, String nonce) {
+        return verifySecretCodeAndFetchEmail(secretCode, domainId, providerName);
+    }
+
+    /**
+     * Resolves the authorization endpoint for the registration whose issuer URL is given, so the UI can
+     * redirect without reading the discovery document from the browser. Implementations that do not use
+     * discovery return null.
+     * @return the authorization endpoint, or null
+     */
+    default String discoverAuthorizeEndpoint(String issuerUrl) {
+        return null;
+    }
+
+    /**
      * Fetches email using the accessToken
      * @return returns email
      */

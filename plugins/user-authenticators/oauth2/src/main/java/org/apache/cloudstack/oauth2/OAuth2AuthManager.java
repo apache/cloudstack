@@ -55,7 +55,19 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
      */
     UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName);
 
+    /**
+     * Finds the user OAuth2 provider serving the named registration within a domain scope. A name
+     * that matches no provider plugin is resolved through the type of its registration, so that a
+     * generic provider can serve registrations under administrator chosen names.
+     * @param providerName name of the registration
+     * @param domainId domain id, or null for global
+     * @return OAuth2 provider
+     */
+    UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName, final Long domainId);
+
     String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId);
+
+    String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId, String nonce);
 
     OauthProviderVO registerOauthProvider(RegisterOAuthProviderCmd cmd);
 

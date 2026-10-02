@@ -419,6 +419,7 @@ public class ApiConstants {
     public static final String NEW_NAME = "newname";
     public static final String NIC = "nic";
     public static final String NICS = "nics";
+    public static final String NONCE = "nonce";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NIC_MULTIQUEUE_NUMBER = "nicmultiqueuenumber";
@@ -1363,6 +1364,7 @@ public class ApiConstants {
     public static final String CLIENT_ID = "clientid";
     public static final String REDIRECT_URI = "redirecturi";
     public static final String TOKEN_URL = "tokenurl";
+    public static final String ISSUER_URL = "issuerurl";
 
     public static final String IS_TAG_A_RULE = "istagarule";
 

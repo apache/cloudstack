@@ -46,6 +46,7 @@ import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiServer;
@@ -184,8 +185,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), secretKeyAllowed ? result.getSecretKey() : null,
                     result.getRedirectUri(), result.getAuthorizeUrl(), result.getTokenUrl(), domain);
+            r.setType(result.getType());
+            r.setIssuerUrl(result.getIssuerUrl());
             boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(result.getDomainId());
-            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            if (oauthEnabled && isServedByPlugin(result, authenticatorPluginNames) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
@@ -200,7 +203,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             for (OauthProviderVO domainProvider : allProviders) {
                 if (domainProvider.getDomainId() != null && domainProvider.isEnabled()
                         && OAuth2AuthManager.isPluginEnabledForDomain(domainProvider.getDomainId())
-                        && authenticatorPluginNames.contains(domainProvider.getProvider())) {
+                        && isServedByPlugin(domainProvider, authenticatorPluginNames)) {
                     totalEnabledCount++;
                 }
             }
@@ -212,6 +215,11 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         setResponseObject(response);
 
         return ApiResponseSerializer.toSerializedString(response, responseType);
+    }
+
+    protected boolean isServedByPlugin(OauthProviderVO provider, List<String> authenticatorPluginNames) {
+        return authenticatorPluginNames.contains(provider.getProvider())
+                || (StringUtils.isNotBlank(provider.getType()) && authenticatorPluginNames.contains(provider.getType()));
     }
 
     @Override

@@ -174,11 +174,11 @@
           </a-input>
         </a-form-item>
         <div
-          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider) && !form.oauthDomain"
+          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthGenericProviders.length) && !form.oauthDomain"
           style="text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;">
           Enter your domain to see domain-specific providers
         </div>
-        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider || oauthGenericProviders.length">
           <div class="social-auth" v-if="oauthGithubProvider">
             <a-button
               @click="handleGithubProviderAndDomain"
@@ -213,6 +213,16 @@
               style="height: 38px; width: 185px; padding: 0" >
               <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
               <a-typography-text>Sign in with Keycloak</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-for="provider in oauthGenericProviders" :key="provider.provider">
+            <a-button
+              @click="loginWithGenericOidc(provider)"
+              color="primary"
+              class="auth-btn"
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+              <img src="/assets/oidc.svg" alt="OpenID Connect" style="width: 32px; padding: 5px" />
+              <a-typography-text>{{ $t('label.login.with', { provider: provider.provider }) }}</a-typography-text>
             </a-button>
           </div>
         </div>
@@ -294,6 +304,8 @@ export default {
       oauthGithubRedirectUri: '',
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
+      oauthGenericProviders: [],
+      globalGenericProviders: [],
       oauthLoading: false,
       oauthDomainQueried: false,
       loginType: 0,
@@ -393,7 +405,9 @@ export default {
       getAPI('listOauthProvider', params).then(response => {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+          this.oauthGenericProviders = oauthproviders.filter(item => item.type === 'oidc' && (item.enabled === true || item.enabled === 'true'))
           if (!domain) {
+            this.globalGenericProviders = this.oauthGenericProviders
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
                 this.googleprovider = item.enabled
@@ -486,6 +500,7 @@ export default {
         this.fetchOauthProviders(domain)
       } else {
         this.oauthDomainQueried = false
+        this.oauthGenericProviders = this.globalGenericProviders
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
@@ -509,6 +524,47 @@ export default {
     handleKeycloakProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
+    randomToken () {
+      const bytes = new Uint8Array(16)
+      window.crypto.getRandomValues(bytes)
+      return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+    },
+    loginWithGenericOidc (provider) {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', provider.provider)
+      const redirectToProvider = (authorizationEndpoint) => {
+        const state = this.randomToken()
+        const nonce = this.randomToken()
+        try {
+          sessionStorage.setItem('oauthState', state)
+          sessionStorage.setItem('oauthNonce', nonce)
+        } catch (ignored) { /* sessionStorage may be unavailable */ }
+        const options = {
+          client_id: provider.clientid,
+          redirect_uri: provider.redirecturi,
+          response_type: 'code',
+          scope: 'openid email',
+          state: state,
+          nonce: nonce
+        }
+        const authorizeUrl = new URL(authorizationEndpoint)
+        Object.entries(options).forEach(([key, value]) => authorizeUrl.searchParams.set(key, value))
+        window.location.href = authorizeUrl.toString()
+      }
+      if (provider.authorizeurl) {
+        redirectToProvider(provider.authorizeurl)
+        return
+      }
+      const discoveryUrl = provider.issuerurl.replace(/\/$/, '') + '/.well-known/openid-configuration'
+      return fetch(discoveryUrl).then(response => response.json()).then(config => {
+        redirectToProvider(config.authorization_endpoint)
+      }).catch(() => {
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.oauth.provider.unreachable')
+        })
+      })
     },
     handleDomain () {
       const values = toRaw(this.form)
