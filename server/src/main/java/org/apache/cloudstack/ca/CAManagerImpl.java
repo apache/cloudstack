@@ -325,6 +325,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             provisionCertificateViaSsh(sshConnection, hostIp, host.getName(), caProvider);
 
             String sudoPrefix = "root".equals(username) ? "" : "sudo ";
+            reloadVncTlsCertificateOnRunningVmsViaSsh(sshConnection, sudoPrefix, hostIp);
             SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart libvirtd");
             SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart cloudstack-agent");
 
@@ -336,6 +337,22 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             if (sshConnection != null) {
                 sshConnection.close();
             }
+        }
+    }
+
+    /**
+     * Live-reloads the VNC TLS certificate on every running VM via SSH, since a libvirtd/cloudstack-agent restart
+     * alone does not affect VMs already running. Per-VM failures are tolerated and logged, not thrown.
+     */
+    private void reloadVncTlsCertificateOnRunningVmsViaSsh(final Connection sshConnection, final String sudoPrefix, final String hostIp) {
+        final String cmd = sudoPrefix + "virsh -c qemu:///system list --name --state-running | while read -r vm; do " +
+                "[ -z \"$vm\" ] && continue; " +
+                sudoPrefix + "virsh -c qemu:///system qemu-monitor-command \"$vm\" " +
+                "'{\"execute\":\"display-reload\",\"arguments\":{\"type\":\"vnc\",\"tls-certs\":true}}' >/dev/null 2>&1 " +
+                "|| echo \"failed to reload VNC TLS certificate for VM $vm\" >&2; done";
+        final SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection, cmd);
+        if (!result.isSuccess()) {
+            logger.warn("Failed to reload VNC TLS certificate on running VMs via SSH on host: {}, error: {}", hostIp, result.getStdErr());
         }
     }
 
