@@ -1768,7 +1768,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    protected boolean copySnapshotOnPool(SnapshotInfo snapshot, SnapshotStrategy snapshotStrategy, Long storagePoolId) {
+    boolean copySnapshotOnPool(SnapshotInfo snapshot, SnapshotStrategy snapshotStrategy, Long storagePoolId) {
         DataStore store = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         SnapshotInfo snapshotOnStore =  (SnapshotInfo) store.create(snapshot);
 
