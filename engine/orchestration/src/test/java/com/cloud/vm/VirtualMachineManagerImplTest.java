@@ -60,6 +60,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
@@ -1409,6 +1410,49 @@ public class VirtualMachineManagerImplTest {
         verify(hostDetailsDao, Mockito.atLeastOnce()).findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED);
         verify(_stateMachine, Mockito.atLeastOnce()).transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 2L), vmInstanceDaoMock);
         assertEquals(vmInstance.getPodIdToDeployIn(), (Long) destPod.getId());
+    }
+
+    private VMInstanceVO mockVmWithId(long id) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(id);
+        return vm;
+    }
+
+    private NicVO mockVlanNic(int vlan, boolean multiNetwork) {
+        NicVO nic = mock(NicVO.class);
+        when(nic.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+        when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        return nic;
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseWhenDestSupportsTrunkXml() {
+        DetailVO trunkXmlSupported = mock(DetailVO.class);
+        when(trunkXmlSupported.getValue()).thenReturn("true");
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(trunkXmlSupported);
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+        verify(_nicsDao, Mockito.never()).listByVmId(anyLong());
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipTrueForTrunkNicOnNonTrunkXmlDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO trunkNic = mockVlanNic(100, true);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(trunkNic));
+
+        Assert.assertTrue(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
+    }
+
+    @Test
+    public void vmNeedsPostMigrationVlanTrunkMembershipFalseForOrdinaryNicWithoutVlanFilteringDest() {
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+        NicVO ordinaryNic = mockVlanNic(100, false);
+        when(_nicsDao.listByVmId(1L)).thenReturn(java.util.Collections.singletonList(ordinaryNic));
+
+        Assert.assertFalse(virtualMachineManagerImpl.vmNeedsPostMigrationVlanTrunkMembership(mockVmWithId(1L), 2L));
     }
 
     @Test

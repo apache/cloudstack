@@ -3375,7 +3375,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void executePostMigrationCommand(VMInstanceVO vm, VirtualMachineTO to, long dstHostId) {
-        if (!(vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId()))) {
+        if (vm.getHypervisorType() != HypervisorType.KVM
+                || !(hasClvmVolumes(vm.getId()) || vmNeedsPostMigrationVlanTrunkMembership(vm, dstHostId))) {
             return;
         }
         final String dstHostUuid = _hostDao.findById(dstHostId).getUuid();
@@ -3432,6 +3433,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.debug("Setting CPU shares to [{}] as part of migrate command for VM [{}].", newVmCpuShares, virtualMachineTO);
             migrateCommand.setNewVmCpuShares(newVmCpuShares);
         }
+
+        VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, prepareForMigrationAnswer, hostDetailsDao, destination.getHost().getId());
 
         return migrateCommand;
     }
@@ -6568,6 +6571,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumes.stream()
             .map(v -> _storagePoolDao.findById(v.getPoolId()))
             .anyMatch(pool -> pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType()));
+    }
+
+    boolean vmNeedsPostMigrationVlanTrunkMembership(VMInstanceVO vm, long dstHostId) {
+        return VlanTrunkMigrationHelper.vmNeedsPostMigrationVlanTrunkMembership(vm.getId(), dstHostId, _nicsDao, hostDetailsDao);
     }
 
     private void executePreMigrationCommand(VMInstanceVO vm, VirtualMachineTO to, long srcHostId) {

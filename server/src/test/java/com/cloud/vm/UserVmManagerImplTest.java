@@ -137,10 +137,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -342,6 +344,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     HostDao hostDao;
+
+    @Mock
+    private HostDetailsDao hostDetailsDao;
 
     @Mock
     private VolumeVO volumeVOMock;
@@ -576,11 +581,16 @@ public class UserVmManagerImplTest {
         }
     }
 
+    private NicVO mockNicWithId(long id) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getId()).thenReturn(id);
+        return nic;
+    }
+
     @Test
     public void syncNicNetworkAssociationDhcpEntriesIsNoOpForANicWithoutAssociations() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
-        NicVO nic = Mockito.mock(NicVO.class);
-        Mockito.when(nic.getId()).thenReturn(11L);
+        NicVO nic = mockNicWithId(11L);
 
         userVmManagerImpl.syncNicNetworkAssociationDhcpEntries(vm, nic);
 
@@ -591,8 +601,7 @@ public class UserVmManagerImplTest {
     @Test
     public void syncNicNetworkAssociationDhcpEntriesPushesDhcpEntryForAnActiveAssociation() throws Exception {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
-        NicVO nic = Mockito.mock(NicVO.class);
-        Mockito.when(nic.getId()).thenReturn(11L);
+        NicVO nic = mockNicWithId(11L);
         NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L, "10.1.1.50", null);
         Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.singletonList(association));
         NetworkVO associatedNetwork = Mockito.mock(NetworkVO.class);
@@ -611,8 +620,7 @@ public class UserVmManagerImplTest {
     @Test
     public void syncNicNetworkAssociationDhcpEntriesCleansUpARemovedAssociation() throws Exception {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
-        NicVO nic = Mockito.mock(NicVO.class);
-        Mockito.when(nic.getId()).thenReturn(11L);
+        NicVO nic = mockNicWithId(11L);
         NicNetworkMapVO removedAssociation = new NicNetworkMapVO(11L, 207L, "10.1.1.60", null);
         Mockito.when(nicNetworkMapDao.listRemovedByNicId(11L)).thenReturn(Collections.singletonList(removedAssociation));
         NetworkVO removedNetwork = Mockito.mock(NetworkVO.class);
@@ -626,6 +634,55 @@ public class UserVmManagerImplTest {
         Mockito.verify(commandSetupHelper).createDhcpEntryCommand(Mockito.eq(router), Mockito.eq(vm), Mockito.any(), Mockito.eq("10.1.1.60"),
                 Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(207L), Mockito.eq(false), Mockito.eq(true), Mockito.any());
         Mockito.verify(nwHelper).sendCommandsToRouter(Mockito.eq(router), Mockito.any());
+    }
+
+    private VMInstanceVO mockVmWithId(long id) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(id);
+        return vm;
+    }
+
+    private NicVO mockNicWithMultiNetwork(boolean multiNetwork) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getMultiNetwork()).thenReturn(multiNetwork);
+        return nic;
+    }
+
+    @Test
+    public void isHostReadyForMultiNetworkNicsIsReadyForAVmWithNoTrunkNic() {
+        VMInstanceVO vm = mockVmWithId(1L);
+        NicVO ordinaryNic = mockNicWithMultiNetwork(false);
+        Mockito.when(nicDao.listByVmId(1L)).thenReturn(Collections.singletonList(ordinaryNic));
+        Host host = Mockito.mock(Host.class);
+
+        Assert.assertTrue(userVmManagerImpl.isHostReadyForMultiNetworkNics(vm, host));
+        Mockito.verifyNoInteractions(hostDetailsDao);
+    }
+
+    @Test
+    public void isHostReadyForMultiNetworkNicsRejectsATrunkNicVmOnAHostWithoutVlanFiltering() {
+        VMInstanceVO vm = mockVmWithId(1L);
+        NicVO trunkNic = mockNicWithMultiNetwork(true);
+        Mockito.when(nicDao.listByVmId(1L)).thenReturn(Collections.singletonList(trunkNic));
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getId()).thenReturn(2L);
+        Mockito.when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(null);
+
+        Assert.assertFalse(userVmManagerImpl.isHostReadyForMultiNetworkNics(vm, host));
+    }
+
+    @Test
+    public void isHostReadyForMultiNetworkNicsAcceptsATrunkNicVmOnAHostWithVlanFiltering() {
+        VMInstanceVO vm = mockVmWithId(1L);
+        NicVO trunkNic = mockNicWithMultiNetwork(true);
+        Mockito.when(nicDao.listByVmId(1L)).thenReturn(Collections.singletonList(trunkNic));
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getId()).thenReturn(2L);
+        DetailVO detail = Mockito.mock(DetailVO.class);
+        Mockito.when(detail.getValue()).thenReturn("true");
+        Mockito.when(hostDetailsDao.findDetail(2L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(detail);
+
+        Assert.assertTrue(userVmManagerImpl.isHostReadyForMultiNetworkNics(vm, host));
     }
 
     @Test

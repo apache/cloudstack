@@ -30,6 +30,9 @@ public class PrepareForMigrationAnswer extends Answer {
 
     private Integer newVmCpuShares = null;
 
+    // destination bridge name per nic MAC, computed by the destination's own local capability
+    private Map<String, String> nicBridgeMapping = new HashMap<>();
+
     protected PrepareForMigrationAnswer() {
     }
 
@@ -59,5 +62,13 @@ public class PrepareForMigrationAnswer extends Answer {
 
     public void setNewVmCpuShares(Integer newVmCpuShares) {
         this.newVmCpuShares = newVmCpuShares;
+    }
+
+    public Map<String, String> getNicBridgeMapping() {
+        return nicBridgeMapping;
+    }
+
+    public void setNicBridgeMapping(Map<String, String> nicBridgeMapping) {
+        this.nicBridgeMapping = nicBridgeMapping;
     }
 }

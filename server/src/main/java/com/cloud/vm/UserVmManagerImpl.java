@@ -271,10 +271,12 @@ import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
@@ -454,6 +456,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private ResourceScheduleManager resourceScheduleManager;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao _hostDetailsDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -7718,6 +7722,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
+        if (!isHostReadyForMultiNetworkNics(vm, destinationHost)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Cannot migrate VM, VM has a multi-VLAN trunk nic but destination host: %s does not have VLAN filtering enabled", destinationHost));
+        }
+
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
         validateStrictHostTagCheck(vm, destinationHostVO);
@@ -7747,6 +7756,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Found no ongoing snapshots on volumes associated with the vm {}", vm);
 
         return dest;
+    }
+
+    // A multi-VLAN trunk nic can only be plugged on a host with VLAN filtering enabled - true (ready) for a VM with no such nic.
+    boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
+        boolean hasMultiNetworkNic = _nicDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!hasMultiNetworkNic) {
+            return true;
+        }
+        DetailVO detail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {

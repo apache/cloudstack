@@ -46,6 +46,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -184,7 +185,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
     private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
             throws InternalErrorException {
         for (NicTO nic : nics) {
-            if (!nic.isTrunkVlan()) {
+            if (nic.getBroadcastType() != BroadcastDomainType.Vlan) {
                 continue;
             }
             try {

@@ -27,6 +27,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -68,7 +69,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             }
             vm.attachDevice(interfaceDef.toString());
 
-            if (nic.isTrunkVlan()) {
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
                 try {
                     final InterfaceDef liveInterfaceDef = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
                     vifDriver.ensureVlanTrunkMembership(liveInterfaceDef, nic);

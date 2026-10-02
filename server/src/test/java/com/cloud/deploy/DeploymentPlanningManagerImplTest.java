@@ -40,7 +40,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VgpuProfileDao;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -132,6 +131,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -518,14 +518,8 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(hostDao.listEnabledIdsByDataCenterId(dataCenterId))
                 .thenReturn(Arrays.asList(readyHostId, notReadyHostId, noDetailHostId));
 
-        DetailVO readyDetail = Mockito.mock(DetailVO.class);
-        Mockito.when(readyDetail.getHostId()).thenReturn(readyHostId);
-        Mockito.when(readyDetail.getValue()).thenReturn("true");
-        DetailVO notReadyDetail = Mockito.mock(DetailVO.class);
-        Mockito.when(notReadyDetail.getHostId()).thenReturn(notReadyHostId);
-        Mockito.when(notReadyDetail.getValue()).thenReturn("false");
-        Mockito.when(hostDetailsDao.findByName(Host.HOST_VLAN_FILTERING_ENABLED))
-                .thenReturn(Arrays.asList(readyDetail, notReadyDetail));
+        Mockito.when(hostDetailsDao.findHostIdsWithVlanFilteringEnabled())
+                .thenReturn(Collections.singleton(readyHostId));
 
         _dpm.avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
 

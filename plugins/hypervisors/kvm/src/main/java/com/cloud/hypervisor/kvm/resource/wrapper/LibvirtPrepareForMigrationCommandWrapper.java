@@ -42,7 +42,9 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
+import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.Networks;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
@@ -68,6 +70,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         final NicTO[] nics = vm.getNics();
 
         Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+        Map<String, String> nicBridgeMapping = new HashMap<>();
 
         boolean skipDisconnect = false;
 
@@ -78,7 +81,8 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
 
             for (final NicTO nic : nics) {
-                LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
+                LibvirtVMDef.InterfaceDef interfaceDef = vifDriver.plug(nic, null, "", vm.getExtraConfig());
                 if (vm.getDetails() != null) {
                     libvirtComputingResource.setInterfaceDefQueueSettings(vm.getDetails(), vm.getCpus(), interfaceDef);
                 }
@@ -86,6 +90,9 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
                     logger.debug("Configured DPDK interface for VM {}", vm.getName());
+                }
+                if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && interfaceDef != null) {
+                    nicBridgeMapping.put(nic.getMac(), interfaceDef.getBrName());
                 }
             }
 
@@ -139,7 +146,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             }
 
             logger.info("Successfully prepared destination host for migration of VM {}", vm.getName());
-            return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, libvirtComputingResource, vm);
+            return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, nicBridgeMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                 for (DpdkTO to : dpdkInterfaceMapping.values()) {
@@ -155,12 +162,17 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
     }
 
     protected PrepareForMigrationAnswer createPrepareForMigrationAnswer(PrepareForMigrationCommand command, Map<String, DpdkTO> dpdkInterfaceMapping,
+                                                                        Map<String, String> nicBridgeMapping,
                                                                         LibvirtComputingResource libvirtComputingResource, VirtualMachineTO vm) {
         PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
 
         if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
             logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
             answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        if (MapUtils.isNotEmpty(nicBridgeMapping)) {
+            answer.setNicBridgeMapping(nicBridgeMapping);
         }
 
         int newCpuShares = libvirtComputingResource.calculateCpuShares(vm);

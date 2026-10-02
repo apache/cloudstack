@@ -480,7 +480,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      * that were never going to work - which matters once a zone has more not-ready hosts than the start.retry budget.
      * No-op, and the candidate set is untouched, for a VM with no multi-VLAN trunk nic - the common case.
      */
-    protected void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+    @Override
+    public void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         boolean hasMultiNetworkNic = _nicDao.listByVmId(vmProfile.getId()).stream().anyMatch(NicVO::getMultiNetwork);
         if (!hasMultiNetworkNic) {
             return;
@@ -489,10 +490,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (CollectionUtils.isEmpty(candidateHostIds)) {
             return;
         }
-        Set<Long> readyHostIds = _hostDetailsDao.findByName(Host.HOST_VLAN_FILTERING_ENABLED).stream()
-                .filter(detail -> Boolean.parseBoolean(detail.getValue()))
-                .map(DetailVO::getHostId)
-                .collect(Collectors.toSet());
+        Set<Long> readyHostIds = _hostDetailsDao.findHostIdsWithVlanFilteringEnabled();
         List<Long> notReadyHostIds = candidateHostIds.stream()
                 .filter(hostId -> !readyHostIds.contains(hostId))
                 .collect(Collectors.toList());
