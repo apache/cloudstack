@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -137,5 +138,28 @@ public class BridgeVifDriverTest {
 
         Assert.assertEquals("breth1-100", createdBridge);
         Mockito.verify(driver).deleteVnetBr(createdBridge, true);
+    }
+
+    private Script deleteVxlanBridge(String vxlanPif) {
+        Mockito.doReturn(vxlanPif).when(driver).getVxlanPif("5000");
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> commands = Mockito.mockConstruction(Script.class)) {
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brvx-5000")).thenReturn("brif");
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brvx-5000/brif | tr '\n' ' '")).thenReturn("vxlan5000 ");
+            driver.deleteVnetBr("brvx-5000", true);
+            return commands.constructed().get(0);
+        }
+    }
+
+    @Test
+    public void deleteVnetBrPassesThePifFromTheVxlanDevice() {
+        Script command = deleteVxlanBridge("eth0");
+        Mockito.verify(command).add("-p", "eth0");
+    }
+
+    @Test
+    public void deleteVnetBrKeepsTheParsedPifWhenTheVxlanDeviceHasNone() {
+        Script command = deleteVxlanBridge(null);
+        Mockito.verify(command).add("-p", "vx");
     }
 }
