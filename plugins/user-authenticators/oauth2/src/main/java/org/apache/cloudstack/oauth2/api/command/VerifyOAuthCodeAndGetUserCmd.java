@@ -67,6 +67,10 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
             description = "Domain path for domain-specific OAuth provider lookup. Ignored when Domain ID is passed.", since = "4.23.0")
     private String domainPath;
 
+    @Parameter(name = ApiConstants.NONCE, type = CommandType.STRING,
+            description = "Nonce sent in the authorization request, verified against the id_token for OpenID Connect providers", since = "24.0.0")
+    private String nonce;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -110,9 +114,13 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
+        final String[] nonceArray = (String[])params.get(ApiConstants.NONCE);
+        if (ArrayUtils.isNotEmpty(nonceArray)) {
+            nonce = nonceArray[0];
+        }
         domainId = _oauth2mgr.resolveDomainId(params);
 
-        String email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId);
+        String email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId, nonce);
         if (email != null) {
             UserResponse response = new UserResponse();
             response.setEmail(email);

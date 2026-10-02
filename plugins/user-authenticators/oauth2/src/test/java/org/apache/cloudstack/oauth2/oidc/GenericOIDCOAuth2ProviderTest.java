@@ -264,6 +264,38 @@ public class GenericOIDCOAuth2ProviderTest {
         provider.validateAndExtractEmail(token, registration, metadata());
     }
 
+    @Test
+    public void testMatchingNonceIsAccepted() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+
+        assertEquals("user@example.com",
+                provider.validateAndExtractEmail(signedTokenWithNonce(keys, "n-123"), registration, metadata(), "n-123"));
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testMismatchedNonceIsRejected() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+
+        provider.validateAndExtractEmail(signedTokenWithNonce(keys, "n-123"), registration, metadata(), "different");
+    }
+
+    private String signedTokenWithNonce(KeyPair keys, String nonce) {
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(ISSUER);
+        claims.setAudiences(Collections.singletonList(CLIENT_ID));
+        claims.setSubject("12345");
+        claims.setExpiryTime(System.currentTimeMillis() / 1000L + 3600);
+        claims.setClaim("email", "user@example.com");
+        claims.setClaim("email_verified", true);
+        claims.setClaim("nonce", nonce);
+        JwsHeaders headers = new JwsHeaders(SignatureAlgorithm.RS256);
+        headers.setKeyId("key-1");
+        return new JwsJwtCompactProducer(headers, claims)
+                .signWith(JwsUtils.getPrivateKeySignatureProvider(keys.getPrivate(), SignatureAlgorithm.RS256));
+    }
+
     @Test(expected = CloudAuthenticationException.class)
     public void testTokenWithAlteredClaimsIsRejected() throws Exception {
         KeyPair keys = rsaKeyPair();

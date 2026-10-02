@@ -67,6 +67,8 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
 
     String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId);
 
+    String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId, String nonce);
+
     OauthProviderVO registerOauthProvider(RegisterOAuthProviderCmd cmd);
 
     List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId);

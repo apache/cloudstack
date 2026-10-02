@@ -177,6 +177,16 @@ router.beforeEach((to, from, next) => {
       currentURL = new URL(window.location.href)
       urlParams = new URLSearchParams(currentURL.search)
       code = urlParams.get('code')
+      const returnedOauthState = urlParams.get('state')
+      let expectedOauthState = null
+      try { expectedOauthState = sessionStorage.getItem('oauthState') } catch (ignored) { /* sessionStorage may be unavailable */ }
+      if (expectedOauthState) {
+        try { sessionStorage.removeItem('oauthState') } catch (ignored) { /* sessionStorage may be unavailable */ }
+        if (returnedOauthState !== expectedOauthState) {
+          next({ path: '/user/login' })
+          return
+        }
+      }
       urlParams.delete('verifyOauth')
       urlParams.delete('state')
       currentURL.search = '?code=' + code

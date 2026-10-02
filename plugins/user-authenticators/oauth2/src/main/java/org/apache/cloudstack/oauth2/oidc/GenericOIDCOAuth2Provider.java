@@ -166,17 +166,26 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
 
     @Override
     public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName) {
-        String email = resolveEmail(secretCode, domainId, providerName);
+        return verifySecretCodeAndFetchEmail(secretCode, domainId, providerName, null);
+    }
+
+    @Override
+    public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName, String nonce) {
+        String email = resolveEmail(secretCode, domainId, providerName, nonce);
         verifiedEmailCache.put(verifiedEmailKey(providerName, secretCode, domainId), email);
         return email;
     }
 
     protected String resolveEmail(String secretCode, Long domainId, String providerName) {
+        return resolveEmail(secretCode, domainId, providerName, null);
+    }
+
+    protected String resolveEmail(String secretCode, Long domainId, String providerName, String nonce) {
         OauthProviderVO provider = findRegistration(providerName, domainId);
         OIDCMetadata metadata = getMetadata(provider);
         String idToken = exchangeAuthorizationCode(secretCode, provider, metadata);
 
-        return validateAndExtractEmail(idToken, provider, metadata);
+        return validateAndExtractEmail(idToken, provider, metadata, nonce);
     }
 
     @Override
@@ -262,6 +271,10 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
     }
 
     protected String validateAndExtractEmail(String idToken, OauthProviderVO provider, OIDCMetadata metadata) {
+        return validateAndExtractEmail(idToken, provider, metadata, null);
+    }
+
+    protected String validateAndExtractEmail(String idToken, OauthProviderVO provider, OIDCMetadata metadata, String nonce) {
         JwsJwtCompactConsumer consumer = new JwsJwtCompactConsumer(idToken);
 
         verifySignature(consumer, metadata, provider);
@@ -274,6 +287,10 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
             throw new CloudAuthenticationException("Audience mismatch");
         }
         JwtUtils.validateJwtExpiry(claims, CLOCK_SKEW_SECONDS, true);
+
+        if (StringUtils.isNotBlank(nonce) && !nonce.equals(claims.getClaim("nonce"))) {
+            throw new CloudAuthenticationException("The id_token nonce does not match the login request");
+        }
 
         String email = (String) claims.getClaim("email");
         if (StringUtils.isBlank(email)) {
