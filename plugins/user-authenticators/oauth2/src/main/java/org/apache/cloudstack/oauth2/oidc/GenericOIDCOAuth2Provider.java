@@ -155,7 +155,7 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
 
         String verifiedEmail = verifiedEmailCache.asMap().remove(verifiedEmailKey(providerName, secretCode, domainId));
         if (verifiedEmail == null) {
-            verifiedEmail = resolveEmail(secretCode, domainId, providerName);
+            verifiedEmail = resolveEmail(secretCode, domainId, providerName, null);
         }
         if (StringUtils.isBlank(verifiedEmail) || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");

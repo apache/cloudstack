@@ -103,7 +103,7 @@ public class GenericOIDCOAuth2ProviderTest {
         String payload = "{"
                 + "\"iss\":\"" + issuer + "\","
                 + "\"aud\":[\"" + audience + "\"],"
-                + (email == null ? "" : "\"email\":\"" + email + "\",")
+                + (email == null ? "" : "\"email\":\"" + email + "\",\"email_verified\":true,")
                 + "\"exp\":" + (System.currentTimeMillis() / 1000L + expiresInSeconds) + ","
                 + "\"sub\":\"12345\""
                 + "}";
@@ -378,8 +378,8 @@ public class GenericOIDCOAuth2ProviderTest {
         doReturn(metadata()).when(provider).getMetadata(registration);
         doReturn("token-for-first").when(provider).exchangeAuthorizationCode(eq("first-code"), any(), any());
         doReturn("token-for-second").when(provider).exchangeAuthorizationCode(eq("second-code"), any(), any());
-        doReturn("first@example.com").when(provider).validateAndExtractEmail(eq("token-for-first"), any(), any());
-        doReturn("second@example.com").when(provider).validateAndExtractEmail(eq("token-for-second"), any(), any());
+        doReturn("first@example.com").when(provider).validateAndExtractEmail(eq("token-for-first"), any(), any(), any());
+        doReturn("second@example.com").when(provider).validateAndExtractEmail(eq("token-for-second"), any(), any(), any());
 
         assertEquals("first@example.com", provider.verifySecretCodeAndFetchEmail("first-code", null, REGISTRATION));
         assertEquals("second@example.com", provider.verifySecretCodeAndFetchEmail("second-code", null, REGISTRATION));
@@ -391,7 +391,7 @@ public class GenericOIDCOAuth2ProviderTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserRejectsAnEmailThatDoesNotMatchTheToken() {
         when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
-        doReturn("someone-else@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        doReturn("someone-else@example.com").when(provider).resolveEmail("code", null, REGISTRATION, null);
 
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
     }
@@ -402,29 +402,29 @@ public class GenericOIDCOAuth2ProviderTest {
      */
     @Test
     public void testLoginAfterVerificationDoesNotRedeemTheCodeAgain() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION, null);
 
         assertEquals("user@example.com", provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION));
         assertTrue(provider.verifyUser("user@example.com", "code", null, REGISTRATION));
 
-        verify(provider, times(1)).resolveEmail("code", null, REGISTRATION);
+        verify(provider, times(1)).resolveEmail("code", null, REGISTRATION, null);
     }
 
     @Test
     public void testVerifiedCodeIsServedFromTheCacheOnlyOnce() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION, null);
 
         provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
 
-        verify(provider, times(2)).resolveEmail("code", null, REGISTRATION);
+        verify(provider, times(2)).resolveEmail("code", null, REGISTRATION, null);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testAnotherCodeIsNeverAnsweredFromTheCache() {
-        doReturn("user@example.com").when(provider).resolveEmail("user-code", null, REGISTRATION);
-        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("unrelated-code", null, REGISTRATION);
+        doReturn("user@example.com").when(provider).resolveEmail("user-code", null, REGISTRATION, null);
+        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("unrelated-code", null, REGISTRATION, null);
 
         provider.verifySecretCodeAndFetchEmail("user-code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "unrelated-code", null, REGISTRATION);
@@ -432,8 +432,8 @@ public class GenericOIDCOAuth2ProviderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testCachedCodeIsScopedToItsRegistration() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
-        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("code", null, "other-idp");
+        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION, null);
+        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("code", null, "other-idp", null);
 
         provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, "other-idp");
