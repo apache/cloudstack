@@ -143,9 +143,9 @@ public interface QueryService {
     ConfigKey<Boolean> BypassTemplateView = new ConfigKey<>("Advanced", Boolean.class, "template.list.bypass.view",
             "false",
             "If true, uses an optimized query path for listing templates and ISOs, which can improve performance on " +
-                    "deployments with large numbers of templates. Automatically falls back to the standard query when" +
-                    " filtering by tags, using the shared, featured, or community template filters, or when including" +
-                    " removed templates.", true, ConfigKey.Scope.Global);
+                    "deployments with large numbers of templates. Automatically falls back to the standard query when " +
+                    "filtering by tags, using the shared, featured, or community template filters, or when including " +
+                    "removed templates.", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ResponseObject.ResponseView responseView, ListUsersCmd cmd) throws PermissionDeniedException;
 

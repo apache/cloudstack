@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -711,45 +710,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
     }
 
-    // ============================================================================
-    // The standard Phase 1 path runs `SELECT DISTINCT temp_zone_pair FROM
-    // template_view WHERE ...` against a 13-table view.
-    //
-    // This bypass path issues hand-tuned SQL against only the 6 tables needed
-    // to compute the (template_id, data_center_id) pair: vm_template, account,
-    // template_store_ref, image_store, template_zone_ref, data_center. The OR
-    // join is replaced with COALESCE.
-    //
-    // Hard filters (tags, sharedAccountIds, featured/community
-    // domain hierarchy) are not implemented here — TemplateListFilter#canBypass()
-    // returns false in those cases and the dispatcher falls back to the
-    // SearchBuilder path.
-
-    private static final Field TEMPLATE_JOIN_ID_FIELD;
-    private static final Field TEMPLATE_JOIN_PAIR_FIELD;
-
-    static {
-        try {
-            TEMPLATE_JOIN_ID_FIELD = findFieldUpHierarchy(TemplateJoinVO.class, "id");
-            TEMPLATE_JOIN_PAIR_FIELD = findFieldUpHierarchy(TemplateJoinVO.class, "tempZonePair");
-            TEMPLATE_JOIN_ID_FIELD.setAccessible(true);
-            TEMPLATE_JOIN_PAIR_FIELD.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
-    private static Field findFieldUpHierarchy(Class<?> clazz, String name) throws NoSuchFieldException {
-        Class<?> c = clazz;
-        while (c != null) {
-            try {
-                return c.getDeclaredField(name);
-            } catch (NoSuchFieldException ignored) {
-                c = c.getSuperclass();
-            }
-        }
-        throw new NoSuchFieldException(name + " on " + clazz);
-    }
+    // Bypass path: queries only the 6 tables needed for the (template, zone) pair instead of template_view.
 
     @Override
     public Pair<List<TemplateJoinVO>, Integer> findDistinctTempZonePairs(TemplateListFilter filter) {
@@ -977,14 +938,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 while (rs.next()) {
                     TemplateJoinVO vo = new TemplateJoinVO();
                     if (showUnique) {
-                        TEMPLATE_JOIN_ID_FIELD.setLong(vo, rs.getLong(1));
+                        vo.setId(rs.getLong(1));
                     } else {
-                        TEMPLATE_JOIN_PAIR_FIELD.set(vo, rs.getString(1));
+                        vo.setTempZonePair(rs.getString(1));
                     }
                     out.add(vo);
                 }
             }
-        } catch (SQLException | IllegalAccessException e) {
+        } catch (SQLException e) {
             throw new CloudRuntimeException("findDistinctTempZonePairs data query failed: " + sql, e);
         }
         return out;
