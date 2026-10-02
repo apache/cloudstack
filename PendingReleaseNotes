@@ -53,3 +53,12 @@ example.ver.1 > example.ver.2:
     the guest while the NVRAM sidecar is copied, so that the captured firmware
     state is consistent with the disk snapshot. Non-UEFI VMs are unaffected and
     continue to snapshot live.
+
+4.23.0.0 > 24.0.0:
+  * KVM/Ceph: RBD volumes can now be encrypted at rest using native librbd
+    LUKS2 (<encryption format='luks2' engine='librbd'>), for both data disks
+    and root disks. Encryption is transparent to the guest and reuses the
+    existing CloudStack volume-encryption passphrase handling, so no
+    additional key store is required. Note: attaching an encrypted RBD volume
+    to a running Instance requires libvirt >= 10.1.0; booting an Instance from
+    an encrypted RBD root disk works on older libvirt.

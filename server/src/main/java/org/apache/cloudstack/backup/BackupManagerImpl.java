@@ -1764,10 +1764,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to find Instance Backup Offering");
         }
 
-        if (!StringUtils.equals(KBOSS_BACKUP_PROVIDER, offering.getProvider()) && !VirtualMachine.PowerState.PowerOff.equals(vm.getPowerState())) {
-            throw new CloudRuntimeException(String.format("VM [%s] needs to be powered off to restore the volume [%s].", vm.getUuid(), backedUpVolumeUuid));
-        }
-
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         VolumeVO backedUpVolume = volumeDao.findByUuidIncludingRemoved(backedUpVolumeUuid);
         Pair<HostVO, StoragePoolVO> restoreInfo;

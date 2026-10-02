@@ -154,6 +154,20 @@
                 <version>${cs.exec-maven-plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>test-templateConfig</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/</workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>test_templateConfig.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>systemvm-template-metadata</id>
                         <phase>package</phase>
                         <goals>
