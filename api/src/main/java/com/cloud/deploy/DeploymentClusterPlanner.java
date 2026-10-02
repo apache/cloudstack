@@ -59,7 +59,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             ConfigKey.Scope.Global);
     // Reserve spare cluster capacity for HA failover.
     static final ConfigKey<Float> ClusterHAFailoverReserveThreshold =
-        new ConfigKey<Float>(
+        new ConfigKey<>(
             Float.class,
             ClusterHAFailoverReserveThresholdCK,
             "Alert",
