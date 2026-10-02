@@ -35,9 +35,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(MockitoJUnitRunner.class)
-public class Upgrade42010to42100Test {
+public class Upgrade42040to42100Test {
     @Spy
-    Upgrade42010to42100 upgrade;
+    Upgrade42040to42100 upgrade;
 
     @Mock
     private Connection conn;

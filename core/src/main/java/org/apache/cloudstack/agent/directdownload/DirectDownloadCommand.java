@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.agent.directdownload;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -44,15 +45,14 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private Integer connectionRequestTimeout;
     private Long templateSize;
     private Storage.ImageFormat format;
-
     private boolean followRedirects;
+    private List<String> allowedCidrs;
 
     protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool,
              final String checksum, final Map<String, String> headers, final Integer connectTimeout,
              final Integer soTimeout, final Integer connectionRequestTimeout, final boolean followRedirects) {
         this.url = url;
         this.templateId = templateId;
-        this.destData = destData;
         this.destPool = destPool;
         this.checksum = checksum;
         this.headers = headers;
@@ -149,5 +149,13 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public void setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;
+    }
+
+    public List<String> getAllowedCidrs() {
+        return allowedCidrs;
+    }
+
+    public void setAllowedCidrs(List<String> allowedCidrs) {
+        this.allowedCidrs = allowedCidrs;
     }
 }

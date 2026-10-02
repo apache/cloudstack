@@ -175,12 +175,20 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) throws IOException, InterruptedException {
-        String sessionSourceIp = session.getRemoteAddress().getAddress().getHostAddress();
-        logger.debug("Closing WebSocket session [source IP: {}, status code: {}].", sessionSourceIp, statusCode);
         if (viewer != null) {
-            ConsoleProxy.removeViewer(viewer);
+            viewer.closeClient();
         }
-        logger.debug("WebSocket session [source IP: {}, status code: {}] closed successfully.", sessionSourceIp, statusCode);
+        String sessionSourceIp = getRemoteAddressSafely(session);
+        logger.debug("WebSocket session [source IP: {}, status code: {}, reason: {}] closed successfully.", sessionSourceIp, statusCode, reason);
+    }
+
+    private String getRemoteAddressSafely(Session session) {
+        try {
+            return session.getRemoteAddress().getAddress().getHostAddress();
+        } catch (Exception e) {
+            logger.debug("Failed to get remote address from WebSocket session", e);
+            return "unknown";
+        }
     }
 
     @OnWebSocketFrame

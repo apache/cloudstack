@@ -54,9 +54,16 @@ public class ConsoleProxyNoVNCServer {
     }
 
     public ConsoleProxyNoVNCServer() {
-        this.server = new Server(WS_PORT);
+        this.server = new Server();
         ConsoleProxyNoVNCHandler handler = new ConsoleProxyNoVNCHandler();
         this.server.setHandler(handler);
+
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setSendServerVersion(false);
+
+        final ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
+        connector.setPort(WS_PORT);
+        server.addConnector(connector);
     }
 
     public ConsoleProxyNoVNCServer(byte[] ksBits, String ksPassword) {
@@ -68,6 +75,7 @@ public class ConsoleProxyNoVNCServer {
             final HttpConfiguration httpConfig = new HttpConfiguration();
             httpConfig.setSecureScheme("https");
             httpConfig.setSecurePort(WSS_PORT);
+            httpConfig.setSendServerVersion(false);
 
             final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
             httpsConfig.addCustomizer(new SecureRequestCustomizer());
