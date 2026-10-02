@@ -52,6 +52,9 @@ public final class TemplateListFilter {
     public final ImageFormat format;         // EQ for ISO, NEQ for non-ISO
     public final boolean isIso;
     public final boolean excludeSystemTemplates;  // templateType NEQ SYSTEM
+    public final String templateType;        // templateType EQ when non-null
+    public final Boolean isVnf;              // templateType EQ VNF (true) / NEQ VNF (false) when non-null
+    public final Boolean forCks;             // forCks EQ when non-null
     public final Boolean publicTemplate;     // EQ when non-null (forced by featured/community/all-non-admin paths)
     public final Boolean featured;           // EQ when non-null (true=featured, false=community)
     public final Boolean bootable;           // EQ when non-null
@@ -81,7 +84,7 @@ public final class TemplateListFilter {
 
     // hard filters — presence forces fallback to the SearchBuilder path
     public final List<Long> sharedAccountIds;        // sharedexecutable / shared / all-non-admin
-    public final String domainPathLike;              // domain admin scoping
+    public final String domainPathLike;              // domain scoping; modeled by the bypass SQL (joins domain)
     public final List<Long> domainIdsForFeaturedCommunity; // featured/community related-domain hierarchy
     public final Map<String, String> tags;
     public final boolean requiresViewFallback;       // catch-all flag for templateFilter combinations the bypass SQL doesn't model
@@ -96,6 +99,9 @@ public final class TemplateListFilter {
         this.format = b.format;
         this.isIso = b.isIso;
         this.excludeSystemTemplates = b.excludeSystemTemplates;
+        this.templateType = b.templateType;
+        this.isVnf = b.isVnf;
+        this.forCks = b.forCks;
         this.publicTemplate = b.publicTemplate;
         this.featured = b.featured;
         this.bootable = b.bootable;
@@ -161,6 +167,9 @@ public final class TemplateListFilter {
         private ImageFormat format;
         private boolean isIso;
         private boolean excludeSystemTemplates;
+        private String templateType;
+        private Boolean isVnf;
+        private Boolean forCks;
         private Boolean publicTemplate;
         private Boolean featured;
         private Boolean bootable;
@@ -194,6 +203,9 @@ public final class TemplateListFilter {
         public Builder format(ImageFormat v) { this.format = v; return this; }
         public Builder isIso(boolean v) { this.isIso = v; return this; }
         public Builder excludeSystemTemplates(boolean v) { this.excludeSystemTemplates = v; return this; }
+        public Builder templateType(String v) { this.templateType = v; return this; }
+        public Builder isVnf(Boolean v) { this.isVnf = v; return this; }
+        public Builder forCks(Boolean v) { this.forCks = v; return this; }
         public Builder publicTemplate(Boolean v) { this.publicTemplate = v; return this; }
         public Builder featured(Boolean v) { this.featured = v; return this; }
         public Builder bootable(Boolean v) { this.bootable = v; return this; }

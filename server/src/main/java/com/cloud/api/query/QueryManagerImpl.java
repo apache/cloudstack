@@ -5152,7 +5152,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 buildTemplateListFilter(templateId, ids, name, keyword, templateFilter, isIso, bootable,
                         pageSize, startIndex, zoneId, hyperType, hypers, showDomr, onlyReady,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
-                        parentTemplateId, showUnique));
+                        parentTemplateId, showUnique, templateType, isVnf, forCks));
     }
 
     /**
@@ -5348,7 +5348,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * Build the immutable filter the bypass-the-view DAO consumes. Mirrors the
      * SearchCriteria construction in {@link #searchForTemplatesInternal}; the
      * SearchBuilder path is unchanged. The "hard" markers (sharedAccountIds,
-     * domainPathLike, domainIdsForFeaturedCommunity, tags) drive
+     * domainIdsForFeaturedCommunity, tags, requiresViewFallback) drive
      * {@link TemplateListFilter#canBypass()} — when any are populated,
      * {@code templateChecks} routes to the legacy view-based path instead.
      */
@@ -5359,7 +5359,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                                                        List<Account> permittedAccounts, Account caller,
                                                        ListProjectResourcesCriteria listProjectResourcesCriteria,
                                                        Map<String, String> tags, boolean showRemovedTmpl, Long parentTemplateId,
-                                                       Boolean showUnique) {
+                                                       Boolean showUnique, String templateType, Boolean isVnf, Boolean forCks) {
         TemplateListFilter.Builder b = TemplateListFilter.builder()
                 .templateId(templateId)
                 .ids(ids == null ? null : new ArrayList<>(ids))
@@ -5374,6 +5374,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 .zoneId(zoneId)
                 .onlyReady(onlyReady)
                 .excludeSystemTemplates(!showDomr)
+                .templateType(templateType)
+                .isVnf(isVnf)
+                .forCks(forCks)
                 .showUnique(showUnique != null && showUnique)
                 .startIndex(startIndex)
                 .pageSize(pageSize)

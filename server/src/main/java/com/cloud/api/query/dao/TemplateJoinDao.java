@@ -58,7 +58,7 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
      * template_store_ref, image_store, template_zone_ref, data_center) instead
      * of going through {@code template_view}. Caller must check
      * {@link TemplateListFilter#canBypass()} first; this method does not handle
-     * tags, sharedAccountIds, domainPath, or featured/community-style domainId
+     * tags, sharedAccountIds, or featured/community-style domainId
      * filters and will throw IllegalArgumentException if those are populated.
      *
      * Returns TemplateJoinVO objects with only {@code id} (when

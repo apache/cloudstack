@@ -720,7 +720,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     // template_store_ref, image_store, template_zone_ref, data_center. The OR
     // join is replaced with COALESCE.
     //
-    // Hard filters (tags, sharedAccountIds, domainPath, featured/community
+    // Hard filters (tags, sharedAccountIds, featured/community
     // domain hierarchy) are not implemented here — TemplateListFilter#canBypass()
     // returns false in those cases and the dispatcher falls back to the
     // SearchBuilder path.
@@ -755,7 +755,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     public Pair<List<TemplateJoinVO>, Integer> findDistinctTempZonePairs(TemplateListFilter filter) {
         if (!filter.canBypass()) {
             throw new IllegalArgumentException(
-                    "findDistinctTempZonePairs called with unsupported filter (tags / sharedAccountIds / domainPath / domainIds populated). Caller should fall back to searchAndDistinctCount.");
+                    "findDistinctTempZonePairs called with unsupported filter (tags / sharedAccountIds / domainIds populated). Caller should fall back to searchAndDistinctCount.");
         }
 
         List<Object> params = new ArrayList<>();
@@ -768,11 +768,15 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 ? "vt.id"
                 : "CONCAT(vt.id, '_', IFNULL(dc.id, 0))";
 
+        // Tie-break on the "<id>_<zone>" string like the view path so pages line up; with showUnique
+        // the zone part is dropped as it is not in the DISTINCT select list.
+        String tieBreakExpr = filter.showUnique ? "CONCAT(vt.id, '_')" : "distinct_key";
+
         String dataSql = "SELECT DISTINCT " + selectExpr + " AS distinct_key, vt.sort_key"
                 + " FROM " + fromClause
                 + where
                 + " ORDER BY vt.sort_key " + (filter.sortAscending ? "ASC" : "DESC")
-                + ", distinct_key " + (filter.sortAscending ? "ASC" : "DESC")
+                + ", " + tieBreakExpr + " " + (filter.sortAscending ? "ASC" : "DESC")
                 + buildLimitClause(filter);
 
         String countSql = "SELECT COUNT(DISTINCT " + selectExpr + ")"
@@ -809,7 +813,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         return from.toString();
     }
 
-    private void appendCommonWhere(StringBuilder where, List<Object> params, TemplateListFilter filter) {
+    void appendCommonWhere(StringBuilder where, List<Object> params, TemplateListFilter filter) {
         if (filter.templateId != null) {
             where.append(" AND vt.id = ?");
             params.add(filter.templateId);
@@ -870,6 +874,20 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             where.append(" AND vt.type != 'SYSTEM'");
         }
 
+        if (filter.templateType != null) {
+            where.append(" AND vt.type = ?");
+            params.add(filter.templateType);
+        }
+
+        if (filter.isVnf != null) {
+            where.append(filter.isVnf ? " AND vt.type = 'VNF'" : " AND vt.type != 'VNF'");
+        }
+
+        if (filter.forCks != null) {
+            where.append(" AND vt.for_cks = ?");
+            params.add(filter.forCks ? 1 : 0);
+        }
+
         if (filter.accountTypeNeq != null) {
             where.append(" AND a.type != ?");
             params.add(filter.accountTypeNeq.ordinal());
@@ -915,8 +933,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         if (filter.onlyReady) {
-            // mirrors templateChecks(): tsr Ready OR BAREMETAL format OR (ISO + PERHOST)
-            where.append(" AND (tsr.state = 'Ready' OR vt.format = 'BAREMETAL' OR (vt.format = 'ISO' AND vt.type = 'PERHOST'))");
+            // mirrors templateChecks(): tsr Ready OR BAREMETAL/EXTERNAL format OR (ISO + PERHOST)
+            where.append(" AND (tsr.state = 'Ready' OR vt.format IN ('BAREMETAL', 'EXTERNAL') OR (vt.format = 'ISO' AND vt.type = 'PERHOST'))");
         }
 
         if (!filter.showRemoved) {
