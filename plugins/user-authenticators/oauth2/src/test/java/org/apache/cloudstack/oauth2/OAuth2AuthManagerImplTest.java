@@ -138,6 +138,23 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testRegisterNormalizesTypeCasing() {
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("oidc", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("corp-idp");
+        when(cmd.getType()).thenReturn("OIDC");
+        when(cmd.getDomainId()).thenReturn(null);
+        when(_authManager._oauthProviderDao.findByProviderAndDomain(Mockito.anyString(), Mockito.isNull())).thenReturn(null);
+        org.mockito.ArgumentCaptor<OauthProviderVO> captor = org.mockito.ArgumentCaptor.forClass(OauthProviderVO.class);
+        when(_authManager._oauthProviderDao.persist(captor.capture())).thenReturn(new OauthProviderVO());
+
+        _authManager.registerOauthProvider(cmd);
+
+        assertEquals("oidc", captor.getValue().getType());
+    }
+
+    @Test
     public void testUpdateOauthProvider() {
         Long id = 1L;
         String description = "updated description";

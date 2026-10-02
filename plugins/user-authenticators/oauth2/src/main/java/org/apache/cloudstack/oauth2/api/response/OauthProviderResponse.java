@@ -71,11 +71,11 @@ public class OauthProviderResponse extends BaseResponse {
     private String domainPath;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "Type of the provider, for example oidc for a generic OpenID Connect provider. Empty for the built in providers", since = "4.24.0")
+    @Param(description = "Type of the provider, for example oidc for a generic OpenID Connect provider. Empty for the built in providers", since = "24.0.0")
     private String type;
 
     @SerializedName(ApiConstants.ISSUER_URL)
-    @Param(description = "Issuer URL of the OpenID Connect provider, used for discovery", since = "4.24.0")
+    @Param(description = "Issuer URL of the OpenID Connect provider, used for discovery", since = "24.0.0")
     private String issuerUrl;
 
     @SerializedName(ApiConstants.AUTHORIZE_URL)
