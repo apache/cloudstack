@@ -388,6 +388,27 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 logger.warn(warnMessageForClusterReachedCapacityThreshold);
             }
 
+            excludeClustersCrossingHAReserve(capacity, cpu_requested, ram_requested, plan, avoid, clusterListForVmAllocation);
+
+        }
+    }
+
+    /**
+     * Excludes clusters that would cross the HA failover reserve threshold, reserving capacity for
+     * HA-triggered restarts. The threshold is Cluster-scoped, resolved per-cluster by the DAO.
+     */
+    private void excludeClustersCrossingHAReserve(short capacity, int cpu_requested, long ram_requested,
+            DeploymentPlan plan, ExcludeList avoid, List<Long> clusterListForVmAllocation) {
+        long haRequested = (capacity == Capacity.CAPACITY_TYPE_CPU) ? cpu_requested : ram_requested;
+        List<Long> clustersCrossingHAReserve = capacityDao.listClustersCrossingThreshold(
+                capacity, plan.getDataCenterId(), ClusterHAFailoverReserveThreshold.key(), haRequested);
+        if (clustersCrossingHAReserve != null && !clustersCrossingHAReserve.isEmpty()) {
+            avoid.addClusterList(clustersCrossingHAReserve);
+            clusterListForVmAllocation.removeAll(clustersCrossingHAReserve);
+            logger.warn(String.format(
+                    "HA admission control: excluding clusters %s from new deployments; their %s allocation would cross the HA failover reserve threshold [%s], reserving capacity for HA failover",
+                    clustersCrossingHAReserve, CapacityVO.getCapacityName(capacity),
+                    ClusterHAFailoverReserveThreshold.key()));
         }
     }
 
@@ -694,6 +715,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, ClusterHAFailoverReserveThreshold, VmAllocationAlgorithm};
     }
 }
