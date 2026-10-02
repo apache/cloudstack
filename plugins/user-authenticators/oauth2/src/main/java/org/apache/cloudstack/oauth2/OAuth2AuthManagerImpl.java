@@ -315,7 +315,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setAuthorizeUrl(authorizeUrl);
         oauthProviderVO.setTokenUrl(tokenUrl);
-        oauthProviderVO.setType(type);
+        oauthProviderVO.setType(StringUtils.lowerCase(type));
         oauthProviderVO.setIssuerUrl(issuerUrl);
         oauthProviderVO.setEnabled(true);
 

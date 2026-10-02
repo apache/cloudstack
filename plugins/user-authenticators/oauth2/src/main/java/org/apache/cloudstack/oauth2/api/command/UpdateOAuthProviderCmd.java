@@ -69,7 +69,7 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     private String tokenUrl;
 
     @Parameter(name = ApiConstants.ISSUER_URL, type = CommandType.STRING,
-            description = "Issuer URL of the OpenID Connect provider, used to read its discovery document", since = "4.24.0")
+            description = "Issuer URL of the OpenID Connect provider, used to read its discovery document", since = "24.0.0")
     private String issuerUrl;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
