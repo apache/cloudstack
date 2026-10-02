@@ -63,6 +63,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Backup date")
     private Date date;
 
+    @SerializedName(ApiConstants.REMOVED)
+    @Param(description = "backup deletion date")
+    private Date removed;
+
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "Backup size in bytes")
     private Long size;
@@ -107,6 +111,14 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Account name")
     private String account;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "project id")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "project name")
+    private String projectName;
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "Domain ID")
     private String domainId;
@@ -142,6 +154,30 @@ public class BackupResponse extends BaseResponse {
     @SerializedName(ApiConstants.FROM_CHECKPOINT_ID)
     @Param(description = "Previous active checkpoint ID for incremental backups", since = "4.23.0")
     private String fromCheckpointId;
+
+    @SerializedName(ApiConstants.FAILURE_REASON)
+    @Param(description = "The reason for the backup failure, as reported by the provider.")
+    private String failureReason;
+
+    @SerializedName(ApiConstants.LOGID)
+    @Param(description = "The logid of the backup creation process.")
+    private String logid;
+
+    @SerializedName(ApiConstants.ATTEMPTS)
+    @Param(description = "Number of attempts on the backup service job.")
+    private String attempts;
+
+    @SerializedName(ApiConstants.JOB_TYPE)
+    @Param(description = "Type of backup service job executed.")
+    private String jobType;
+
+    @SerializedName(ApiConstants.START_DATE)
+    @Param(description = "Start date of the backup service job.")
+    private Date startDate;
+
+    @SerializedName(ApiConstants.END_DATE)
+    @Param(description = "End date of the backup service job.")
+    private Date endDate;
 
     @SerializedName(ApiConstants.TO_CHECKPOINT_ID)
     @Param(description = "Next checkpoint ID for incremental backups", since = "4.23.0")
@@ -377,6 +413,82 @@ public class BackupResponse extends BaseResponse {
 
     public String getToCheckpointId() {
         return this.toCheckpointId;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public String getLogid() {
+        return logid;
+    }
+
+    public void setLogid(String logid) {
+        this.logid = logid;
+    }
+
+    public String getBackupOfferingName() {
+        return backupOfferingName;
+    }
+
+    public void setBackupOfferingName(String backupOfferingName) {
+        this.backupOfferingName = backupOfferingName;
+    }
+
+    public String getAttempts() {
+        return attempts;
+    }
+
+    public void setAttempts(String attempts) {
+        this.attempts = attempts;
+    }
+
+    public String getJobType() {
+        return jobType;
+    }
+
+    public void setJobType(String jobType) {
+        this.jobType = jobType;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     public void setHostId(String hostId) {

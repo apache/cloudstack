@@ -17,20 +17,13 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.backup.BackupReportKbossJoinVO;
+
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.backup.BackupScheduleVO;
+public interface BackupReportKbossJoinDao extends GenericDao<BackupReportKbossJoinVO, Long> {
 
-import com.cloud.utils.db.GenericDao;
-
-public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    List<BackupScheduleVO> listByVM(Long vmId);
-
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
-
-    List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
-
-    List<BackupScheduleVO> getSchedulesToExecuteForDomainAndAccount(Date currentTimestamp, Long zoneId, Long domainId, Long accountId);
+    List<BackupReportKbossJoinVO> listByZoneAndDomainAndAccountAndBetweenDates(Long zoneId, Long domainId, Long accountId, Date start, Date end);
 }

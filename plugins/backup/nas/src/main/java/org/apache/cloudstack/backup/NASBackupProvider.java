@@ -65,6 +65,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
@@ -679,7 +680,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setName(backupManager.getBackupNameFromVM(vm));
         Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
         backup.setDetails(details);
-
+        backup.setLogid(ThreadContext.get("logcontextid"));
         return backupDao.persist(backup);
     }
 
