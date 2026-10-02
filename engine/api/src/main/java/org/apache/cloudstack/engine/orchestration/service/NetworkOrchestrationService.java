@@ -98,6 +98,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
+    ConfigKey<Boolean> MultiNetworkNicEnabled = new ConfigKey<>("Advanced", Boolean.class, "multi.network.nic.enabled", "false",
+            "Allow a NIC to be associated with more than one network (multi-VLAN trunk NICs)", true, ConfigKey.Scope.Zone);
+
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<>("Advanced", Boolean.class, "network.mac.address.changes", "true",
             "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);
 

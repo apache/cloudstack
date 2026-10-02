@@ -94,6 +94,14 @@ public class NicResponse extends BaseResponse {
     @Param(description = "The Secondary IPv4 addr of NIC")
     private List<NicSecondaryIpResponse> secondaryIps;
 
+    @SerializedName(ApiConstants.TRUNKED)
+    @Param(description = "True if this nic is a multi-VLAN trunk nic (associated with additional networks beyond its primary)", since = "24.0.0")
+    private Boolean trunked;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORKS)
+    @Param(description = "The additional networks this nic is associated with as a multi-VLAN trunk", since = "24.0.0")
+    private List<NicNetworkMapResponse> associatedNetworks;
+
     @SerializedName(ApiConstants.EXTRA_DHCP_OPTION)
     @Param(description = "The extra DHCP options on the NIC", since = "4.11.0")
     private List<NicExtraDhcpOptionResponse> extraDhcpOptions;
@@ -269,6 +277,14 @@ public class NicResponse extends BaseResponse {
         this.secondaryIps = ipList;
     }
 
+    public void setTrunked(Boolean trunked) {
+        this.trunked = trunked;
+    }
+
+    public void setAssociatedNetworks(List<NicNetworkMapResponse> associatedNetworks) {
+        this.associatedNetworks = associatedNetworks;
+    }
+
     public void setNsxLogicalSwitch(String nsxLogicalSwitch) {
         this.nsxLogicalSwitch = nsxLogicalSwitch;
     }
@@ -335,6 +351,14 @@ public class NicResponse extends BaseResponse {
 
     public List<NicSecondaryIpResponse> getSecondaryIps() {
         return secondaryIps;
+    }
+
+    public Boolean getTrunked() {
+        return trunked;
+    }
+
+    public List<NicNetworkMapResponse> getAssociatedNetworks() {
+        return associatedNetworks;
     }
 
     public String getDeviceId() {

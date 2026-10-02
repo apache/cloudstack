@@ -133,7 +133,10 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -1651,6 +1654,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
                 excludeNonDPDKEnabledHosts((DataCenterDeployment) plan, excludes);
             }
         }
+
+        _dpMgr.avoidHostsNotReadyForMultiNetworkNics(vmProfile, _dcDao.findById(plan.getDataCenterId()), excludes);
 
         // call affinitygroup chain
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
@@ -4355,6 +4360,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListPublicIpAddressesCmdByAdmin.class);
         cmdList.add(CreateNetworkCmdByAdmin.class);
         cmdList.add(UpdateNetworkCmdByAdmin.class);
+        cmdList.add(AssociateNetworkToNicCmd.class);
+        cmdList.add(DisassociateNetworkFromNicCmd.class);
+        cmdList.add(ChangeNicPrimaryNetworkCmd.class);
         cmdList.add(ListNetworksCmdByAdmin.class);
         cmdList.add(CreateVPCCmdByAdmin.class);
         cmdList.add(ListVPCsCmdByAdmin.class);

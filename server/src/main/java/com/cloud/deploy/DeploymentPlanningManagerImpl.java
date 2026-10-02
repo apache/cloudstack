@@ -151,6 +151,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -188,6 +190,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     HostDetailsDao _hostDetailsDao;
     @Inject
     private VMTemplateDao templateDao;
+    @Inject
+    protected NicDao _nicDao;
 
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
@@ -336,6 +340,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         avoidDisabledResources(vmProfile, dc, avoids);
         avoidDifferentArchResources(vmProfile, dc, avoids);
+        avoidHostsNotReadyForMultiNetworkNics(vmProfile, dc, avoids);
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         String uefiFlag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.UefiFlag);
@@ -467,6 +472,34 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 List<Long> clusterIds = avoidClusters.stream().map(x -> x.getId()).collect(Collectors.toList());
                 avoids.addClusterList(clusterIds);
             }
+        }
+    }
+
+    /**
+     * A multi-VLAN trunk nic can only be plugged on a host with VLAN filtering enabled on its guest bridge - this is
+     * a hard capability requirement, not a preference. Excluding every not-ready host up front, in one pass, avoids
+     * burning retries in the caller's exclude-and-retry loop (VirtualMachineManagerImpl#orchestrateStart) on hosts
+     * that were never going to work - which matters once a zone has more not-ready hosts than the start.retry budget.
+     * No-op, and the candidate set is untouched, for a VM with no multi-VLAN trunk nic - the common case.
+     */
+    @Override
+    public void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+        boolean hasMultiNetworkNic = _nicDao.listByVmId(vmProfile.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!hasMultiNetworkNic) {
+            return;
+        }
+        List<Long> candidateHostIds = _hostDao.listEnabledIdsByDataCenterId(dc.getId());
+        if (CollectionUtils.isEmpty(candidateHostIds)) {
+            return;
+        }
+        Set<Long> readyHostIds = _hostDetailsDao.findHostIdsWithVlanFilteringEnabled();
+        List<Long> notReadyHostIds = candidateHostIds.stream()
+                .filter(hostId -> !readyHostIds.contains(hostId))
+                .collect(Collectors.toList());
+        if (!notReadyHostIds.isEmpty()) {
+            logger.debug("Excluding {} host(s) without VLAN filtering enabled, since VM [{}] has a multi-VLAN trunk nic",
+                    notReadyHostIds.size(), vmProfile);
+            avoids.addHostList(notReadyHostIds);
         }
     }
 

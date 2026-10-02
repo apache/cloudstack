@@ -24,6 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +90,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
@@ -96,7 +98,12 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import junit.framework.TestCase;
 
@@ -143,6 +150,8 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator._ipAddrMgr = mock(IpAddressManager.class);
         testOrchestrator._entityMgr = mock(EntityManager.class);
         testOrchestrator.extensionHelper = mock(ExtensionHelper.class);
+        testOrchestrator._userVmDao = mock(UserVmDao.class);
+        testOrchestrator._nicNetworkMapDao = mock(NicNetworkMapDao.class);
         networkExtensionElement = mock(NetworkExtensionElement.class);
         ReflectionTestUtils.setField(testOrchestrator, "networkExtensionElement", networkExtensionElement);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
@@ -210,6 +219,42 @@ public class NetworkOrchestratorTest extends TestCase {
         verify(testOrchestrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
         verify(testOrchestrator._networksDao, times(1)).findById(nic.getNetworkId());
     }
+
+    @Test
+    public void removeNicCleansUpOrphanedNicNetworkMapAssociations() {
+        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+        NicVO nic = mock(NicVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+
+        when(vm.getType()).thenReturn(Type.DomainRouter);
+        when(nic.getId()).thenReturn(25L);
+        when(network.getGuruName()).thenReturn(guruName);
+        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+        NicNetworkMapVO association = new NicNetworkMapVO(25L, 210L, "10.1.1.50", null);
+        when(testOrchestrator._nicNetworkMapDao.listByNicId(25L)).thenReturn(Collections.singletonList(association));
+
+        testOrchestrator.removeNic(vm, nic);
+
+        verify(testOrchestrator._nicNetworkMapDao).remove(association.getId());
+    }
+
+    @Test
+    public void removeNicsCleansUpOrphanedNicNetworkMapAssociations() {
+        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+        NicVO nic = mock(NicVO.class);
+
+        when(vm.getId()).thenReturn(13L);
+        when(nic.getId()).thenReturn(25L);
+        when(testOrchestrator._nicDao.listByVmId(13L)).thenReturn(Collections.singletonList(nic));
+        NicNetworkMapVO association = new NicNetworkMapVO(25L, 210L, "10.1.1.50", null);
+        when(testOrchestrator._nicNetworkMapDao.listByNicId(25L)).thenReturn(Collections.singletonList(association));
+
+        testOrchestrator.removeNics(vm);
+
+        verify(testOrchestrator._nicNetworkMapDao).remove(association.getId());
+        verify(testOrchestrator._nicDao).remove(25L);
+    }
+
     @Test
     public void testDontRemoveDhcpServiceWhenNotProvided() {
         // make local mocks
@@ -1072,5 +1117,55 @@ public class NetworkOrchestratorTest extends TestCase {
 
         assertNotNull(result);
         assertEquals(1, result.size());
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    @Test
+    public void destroyNetworkFailsWhenActivelyAssociatedAsSecondaryNetwork() throws Exception {
+        overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "true");
+        try {
+            NetworkVO network = mock(NetworkVO.class);
+            when(network.getId()).thenReturn(1L);
+            when(network.getDataCenterId()).thenReturn(1L);
+            when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
+            when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
+            when(testOrchestrator._nicNetworkMapDao.listByNetworkId(1L)).thenReturn(Collections.singletonList(mock(NicNetworkMapVO.class)));
+
+            boolean result = testOrchestrator.destroyNetwork(1L, mock(ReservationContext.class), false);
+
+            assertFalse(result);
+            verify(testOrchestrator._networksDao, never()).getActiveNicsIn(ArgumentMatchers.anyLong());
+        } finally {
+            overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
+        }
+    }
+
+    @Test
+    public void destroyNetworkSkipsAssociationCheckWhenFeatureDisabledInZone() throws Exception {
+        overrideDefaultConfigValue(NetworkOrchestrationService.MultiNetworkNicEnabled, "_defaultValue", "false");
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getId()).thenReturn(1L);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(testOrchestrator._networksDao.findById(1L)).thenReturn(network);
+        when(testOrchestrator._userVmDao.listByNetworkIdAndStates(1L)).thenReturn(new ArrayList<UserVmVO>());
+        DataCenter zone = mock(DataCenter.class);
+        when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        when(testOrchestrator._entityMgr.findById(DataCenter.class, 1L)).thenReturn(zone);
+
+        try {
+            testOrchestrator.destroyNetwork(1L, mock(ReservationContext.class), false);
+        } catch (Exception ignored) {
+            // destroyNetwork continues well beyond what this test cares about (network element shutdown, etc.,
+            // none of it mocked here) - only the association-check skip behavior matters for this test
+        }
+
+        verify(testOrchestrator._nicNetworkMapDao, never()).listByNetworkId(ArgumentMatchers.anyLong());
+        verify(testOrchestrator._networksDao).getActiveNicsIn(1L);
     }
 }

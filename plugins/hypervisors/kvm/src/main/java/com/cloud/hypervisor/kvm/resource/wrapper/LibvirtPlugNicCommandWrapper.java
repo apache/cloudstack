@@ -27,8 +27,10 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -66,6 +68,15 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), null, interfaceDef);
             }
             vm.attachDevice(interfaceDef.toString());
+
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+                try {
+                    final InterfaceDef liveInterfaceDef = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+                    vifDriver.ensureVlanTrunkMembership(liveInterfaceDef, nic);
+                } catch (CloudRuntimeException e) {
+                    throw new InternalErrorException("Failed to locate live tap for trunk nic " + nic.getMac() + ": " + e.getMessage());
+                }
+            }
 
             // apply default network rules on new nic
             if (vmType == VirtualMachine.Type.User && nic.isSecurityGroupEnabled()) {
