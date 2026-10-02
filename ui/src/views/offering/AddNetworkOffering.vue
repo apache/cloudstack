@@ -60,7 +60,7 @@
             <a-radio-button value="isolated">
               {{ $t('label.isolated') }}
             </a-radio-button>
-            <a-radio-button value="l2" v-if="form.provider !== 'NSX'">
+            <a-radio-button value="l2" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               {{ $t('label.l2') }}
             </a-radio-button>
             <a-radio-button value="shared" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
@@ -1021,7 +1021,7 @@ export default {
         SourceNat: externalProvider,
         StaticNat: externalProvider,
         PortForwarding: externalProvider,
-        Vpn: this.forVpc ? this.VPCVR : this.VR,
+        ...(!isNsxProvider && { Vpn: this.forVpc ? this.VPCVR : this.VR }),
         ...((!isNsxProvider || this.form.nsxsupportlb) && { Lb: externalProvider })
       }
 

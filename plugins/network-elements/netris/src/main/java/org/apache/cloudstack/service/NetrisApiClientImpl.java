@@ -396,13 +396,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             NatGetBody existingNatRule = netrisNatRuleExists(natRuleName);
             // Backward compatibility: rules created before the public-IP suffix was added use the legacy name
             if (existingNatRule == null && "STATICNAT".equals(cmd.getNatRuleType())) {
-                String legacyName = getLegacyStaticNatRuleName(natRuleName);
-                if (legacyName != null) {
-                    logger.debug("Static NAT rule not found with name '{}', falling back to legacy name '{}'", natRuleName, legacyName);
-                    existingNatRule = netrisNatRuleExists(legacyName);
-                    if (existingNatRule != null) {
-                        natRuleName = legacyName;
-                    }
+                existingNatRule = findLegacyStaticNatRule(natRuleName, cmd.getNatIp());
+                if (existingNatRule != null) {
+                    natRuleName = existingNatRule.getName();
                 }
             }
             boolean ruleExists = Objects.nonNull(existingNatRule);
@@ -1170,6 +1166,14 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return getVpcByNameAndTenant(l2VpcName);
     }
 
+    private void rollbackL2Vpc(VPCListing l2Vpc) {
+        try {
+            deleteVpcInternal(l2Vpc);
+        } catch (Exception e) {
+            logger.error("Failed to rollback L2 VPC {} after vNet creation failure - manual cleanup may be required: {}", l2Vpc.getName(), e.getMessage());
+        }
+    }
+
     private VPCListing getVpcByNameAndTenant(String vpcName) {
         try {
             List<VPCListing> vpcListings = listVPCs();
@@ -1256,9 +1260,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisV6IpamAllocationName = null;
         String netrisV6SubnetName = null;
         boolean createdIpv6Allocation = false;
+        boolean createdL2Vpc = false;
 
         try {
             if (isL2) {
+                createdL2Vpc = getVpcByNameAndTenant(getL2VpcName(cmd, cmd.getName())) == null;
                 associatedVpc = getOrCreateL2Vpc(cmd);
                 if (associatedVpc == null) {
                     logger.error("Failed to get or create dedicated L2 VPC to create the corresponding vNet for L2 network {}", networkName);
@@ -1309,6 +1315,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 if (!isL2) {
                     rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
                             createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+                } else if (createdL2Vpc) {
+                    rollbackL2Vpc(associatedVpc);
                 }
                 return false;
             }
@@ -1316,6 +1324,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (!isL2 && associatedVpc != null) {
                 rollbackVnetResources(associatedVpc, netrisSubnetName, netrisV6SubnetName,
                         createdIpv6Allocation ? netrisV6IpamAllocationName : null, networkName);
+            } else if (isL2 && createdL2Vpc && associatedVpc != null) {
+                rollbackL2Vpc(associatedVpc);
             }
             throw new CloudRuntimeException(String.format("Failed to create Netris vNet %s", networkName), e);
         }
@@ -1710,9 +1720,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 return true;
             }
             // Backward compatibility: rule with legacy naming convention (no public IP post-fixed) exists - don't create a duplicate
-            String legacyName = getLegacyStaticNatRuleName(staticNatRuleName);
-            if (legacyName != null && netrisNatRuleExists(legacyName) != null) {
-                logger.debug("Legacy static NAT rule '{}' already exists on Netris, skipping creation of '{}'", legacyName, staticNatRuleName);
+            NatGetBody legacyRule = findLegacyStaticNatRule(staticNatRuleName, cmd.getNatIp());
+            if (legacyRule != null) {
+                logger.debug("Legacy static NAT rule '{}' already exists on Netris, skipping creation of '{}'", legacyRule.getName(), staticNatRuleName);
                 return true;
             }
             // Create a /32 subnet for the DNAT IP
@@ -2192,6 +2202,21 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             return null;
         }
         return newName.substring(0, idx + "-STATICNAT".length());
+    }
+
+    /**
+     * Returns the legacy-named static NAT rule only if it was created for the given public IP.
+     */
+    private NatGetBody findLegacyStaticNatRule(String newName, String natIp) {
+        String legacyName = getLegacyStaticNatRuleName(newName);
+        if (legacyName == null) {
+            return null;
+        }
+        NatGetBody legacyRule = netrisNatRuleExists(legacyName);
+        if (legacyRule == null || !(natIp + "/32").equals(legacyRule.getDestinationAddress())) {
+            return null;
+        }
+        return legacyRule;
     }
 
     private VPCListing getNetrisVpcResource(String netrisVpcName) {
