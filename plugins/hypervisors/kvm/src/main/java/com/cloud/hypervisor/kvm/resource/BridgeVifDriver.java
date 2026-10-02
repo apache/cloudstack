@@ -383,6 +383,11 @@ public class BridgeVifDriver extends VifDriverBase {
             String scriptPath = null;
             if (cmdout != null && cmdout.contains("vxlan")) {
                 scriptPath = _modifyVxlanPath;
+                // Read the pif from the VXLAN device.
+                String vxlanPif = getVxlanPif(vNetId);
+                if (vxlanPif != null) {
+                    pName = vxlanPif;
+                }
             } else {
                 scriptPath = _modifyVlanPath;
             }
@@ -401,6 +406,10 @@ public class BridgeVifDriver extends VifDriverBase {
                 logger.debug("Delete bridge " + brName + " failed: " + result);
             }
         }
+    }
+
+    protected String getVxlanPif(String vxlanId) {
+        return Script.runSimpleBashScript("ip -d link show vxlan" + vxlanId + " | grep -o 'dev [^ ]*' | cut -d' ' -f2");
     }
 
     private void deleteExistingLinkLocalRouteTable(String linkLocalBr) {
