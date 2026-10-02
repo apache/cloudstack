@@ -21,8 +21,7 @@ from netaddr import *
 from random import randint
 import json
 import fcntl
-import shutil
-import tempfile
+import time
 from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
@@ -32,6 +31,7 @@ LEASES = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
 DHCP_OPTS = "/etc/dhcpopts.txt"
 CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
+DNSMASQ_MANAGED_LEASE = "/var/cache/cloud/dnsmasq_managed_lease"
 
 
 class CsDhcp(CsDataBag):
@@ -164,22 +164,40 @@ class CsDhcp(CsDataBag):
                 macs_dhcphosts.append(host.split(',')[0])
 
             removed = 0
-            for leaseline in open(LEASES):
+            # read it all first: dnsmasq and remove_lease rewrite the file in place
+            with open(LEASES) as fp:
+                leaselines = fp.readlines()
+            for leaseline in leaselines:
                 lease = leaseline.split(' ')
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
                     logging.info("Releasing DHCP lease for IP: %s, mac: %s", ip, mac)
-                    cmd = "dhcp_release $(ip route get %s | grep eth | head -1 | awk '{print $3}') %s %s" % (ip, ip, mac)
-                    logging.info(cmd)
-                    CsHelper.execute(cmd)
+                    if not self.cl.is_redundant() or self.cl.is_primary():
+                        self.release_lease(ip, mac)
                     if self.ensure_lease_removed(ip):
-                        logging.info("Lease for %s still existed after dhcp_release; removed manually", ip)
+                        logging.info("Lease for %s still existed after the release; removed manually", ip)
                     removed = removed + 1
                     self.del_host(ip)
             logging.info("Deleted %s entries from dnsmasq.leases file" % str(removed))
         except Exception as e:
             logging.error("Caught error while trying to delete entries from dnsmasq.leases file: %s" % e)
+
+    def release_lease(self, ip, mac):
+        # dnsmasq identifies itself with the address it listens on in the network of ip
+        listen = []
+        for line in open(CLOUD_CONF):
+            if line.startswith("listen-address="):
+                listen = line.strip().split("=", 1)[1].split(",")
+        for dev in self.devinfo:
+            if IPAddress(ip) in dev['network']:
+                for address in listen:
+                    if address != "127.0.0.1" and IPAddress(address) in dev['network']:
+                        try:
+                            CsHelper.send_dhcp_release(dev['dev'], address, ip, mac)
+                        except (IOError, OSError) as e:
+                            logging.error("Failed to release DHCP lease for %s: %s", ip, e)
+                        return
 
     def lease_exists(self, ip):
         if not os.path.exists(LEASES):
@@ -193,51 +211,51 @@ class CsDhcp(CsDataBag):
 
         return False
 
-    def remove_lease(self, ip):
+    def dnsmasq_writes_leases(self):
+        # dnsmasq does not run on a backup router, and does not touch a read-only leases file
+        # (leasefile-ro, kept on routers with IPv6 on the guest NIC, see setup_dnsmasq)
+        if self.cl.is_redundant() and not self.cl.is_primary():
+            return False
+        try:
+            with open(DNSMASQ_MANAGED_LEASE) as fp:
+                return fp.read().strip() != "0"
+        except IOError:
+            return True
+
+    def remove_lease(self, ip, restart_dnsmasq=True):
         if not os.path.exists(LEASES):
             return False
 
-        removed = False
-
         with open(LEASES, "r+") as fp:
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
-            lines = fp.readlines()
-
-            fd, tmp_path = tempfile.mkstemp(
-                prefix="dnsmasq.leases.",
-                dir=os.path.dirname(LEASES)
-            )
-
             try:
-                with os.fdopen(fd, "w") as tmp:
-                    for line in lines:
-                        fields = line.split()
-
-                        if len(fields) >= 3 and fields[2] == ip:
-                            removed = True
-                            continue
-
-                        tmp.write(line)
-
-                if removed:
-                    shutil.move(tmp_path, LEASES)
-
-                    # reload dnsmasq
-                    try:
-                        CsHelper.service("dnsmasq", "reload")
-                    except Exception:
-                        pass
-                else:
-                    os.remove(tmp_path)
+                lines = fp.readlines()
+                kept = [line for line in lines if not (len(line.split()) >= 3 and line.split()[2] == ip)]
+                if len(kept) == len(lines):
+                    return False
+                # rewrite in place: dnsmasq keeps the file it opened at start
+                fp.seek(0)
+                fp.writelines(kept)
+                fp.truncate()
             finally:
                 fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
 
-        return removed
+        if restart_dnsmasq:
+            # dnsmasq reads the leases file only when it starts
+            CsHelper.service("dnsmasq", "try-restart")
+        return True
 
     def ensure_lease_removed(self, ip):
-        if self.lease_exists(ip):
-            return self.remove_lease(ip)
-        return False
+        if not self.dnsmasq_writes_leases():
+            # nothing else takes the line out of the file
+            self.remove_lease(ip, restart_dnsmasq=False)
+            return False
+        # give dnsmasq time to drop the released lease from the file
+        for _ in range(20):
+            if not self.lease_exists(ip):
+                return False
+            time.sleep(0.1)
+        return self.remove_lease(ip)
 
     def preseed(self):
         self.add_host("127.0.0.1", "localhost")
