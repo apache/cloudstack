@@ -1783,7 +1783,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, snapshot.getSize());
             if (CallContext.current().getCallingAccountId() != Account.ACCOUNT_ID_SYSTEM) {
                 SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshot.getSnapshotId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, CallContext.current().getCallingAccountId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, snapshot.getAccountId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
             }
         } catch (InterruptedException | ExecutionException e) {
