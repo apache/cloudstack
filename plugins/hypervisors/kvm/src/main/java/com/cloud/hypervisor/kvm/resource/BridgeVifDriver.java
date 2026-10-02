@@ -468,7 +468,7 @@ public class BridgeVifDriver extends VifDriverBase {
     @Override
     public void deleteBr(NicTO nic) {
         if (Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vxlan) {
-            // VXLAN bridges are named after the VNI alone, so no physical interface lookup is needed
+            // VXLAN bridges are named after the VNI alone. deleteVnetBr reads the pif from the VXLAN device.
             String vxlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
             if (vxlanId != null) {
                 deleteVnetBr(generateVxnetBrName(null, vxlanId), true);
