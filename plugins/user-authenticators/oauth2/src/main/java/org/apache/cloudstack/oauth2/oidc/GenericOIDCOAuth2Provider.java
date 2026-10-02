@@ -153,7 +153,7 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
             throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
         }
 
-        String verifiedEmail = verifiedEmailCache.asMap().remove(verifiedEmailKey(providerName, secretCode));
+        String verifiedEmail = verifiedEmailCache.asMap().remove(verifiedEmailKey(providerName, secretCode, domainId));
         if (verifiedEmail == null) {
             verifiedEmail = resolveEmail(secretCode, domainId, providerName);
         }
@@ -167,7 +167,7 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
     @Override
     public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName) {
         String email = resolveEmail(secretCode, domainId, providerName);
-        verifiedEmailCache.put(verifiedEmailKey(providerName, secretCode), email);
+        verifiedEmailCache.put(verifiedEmailKey(providerName, secretCode, domainId), email);
         return email;
     }
 
@@ -184,8 +184,8 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         return null;
     }
 
-    private String verifiedEmailKey(String providerName, String secretCode) {
-        return DigestUtils.sha256Hex(providerName + ":" + secretCode);
+    private String verifiedEmailKey(String providerName, String secretCode, Long domainId) {
+        return DigestUtils.sha256Hex(providerName + ":" + domainId + ":" + secretCode);
     }
 
     protected OauthProviderVO findRegistration(String providerName, Long domainId) {
@@ -279,7 +279,18 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         if (StringUtils.isBlank(email)) {
             throw new CloudAuthenticationException("The id_token carries no email claim");
         }
+        if (!isEmailVerified(claims)) {
+            throw new CloudAuthenticationException("The identity provider has not verified the email address in the id_token");
+        }
         return email;
+    }
+
+    private boolean isEmailVerified(JwtClaims claims) {
+        Object verified = claims.getClaim("email_verified");
+        if (verified instanceof Boolean) {
+            return (Boolean) verified;
+        }
+        return verified instanceof String && Boolean.parseBoolean((String) verified);
     }
 
     protected void verifySignature(JwsJwtCompactConsumer consumer, OIDCMetadata metadata, OauthProviderVO provider) {

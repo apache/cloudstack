@@ -79,12 +79,12 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
             description = "Type of the provider implementation serving this registration, for example oidc for any OpenID Connect compliant provider. "
-                    + "When set, the name in provider is a label chosen by the administrator rather than a built in provider name.", since = "4.24.0")
+                    + "When set, the name in provider is a label chosen by the administrator rather than a built in provider name.", since = "24.0.0")
     private String type;
 
     @Parameter(name = ApiConstants.ISSUER_URL, type = CommandType.STRING,
             description = "Issuer URL of the OpenID Connect provider, required for type oidc. The token endpoint and the keys that sign "
-                    + "its tokens are read from the issuer's discovery document", since = "4.24.0")
+                    + "its tokens are read from the issuer's discovery document", since = "24.0.0")
     private String issuerUrl;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
