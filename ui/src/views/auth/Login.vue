@@ -522,17 +522,29 @@ export default {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
     },
+    randomToken () {
+      const bytes = new Uint8Array(16)
+      window.crypto.getRandomValues(bytes)
+      return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+    },
     loginWithGenericOidc (provider) {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', provider.provider)
       const discoveryUrl = provider.issuerurl.replace(/\/$/, '') + '/.well-known/openid-configuration'
       return fetch(discoveryUrl).then(response => response.json()).then(config => {
+        const state = this.randomToken()
+        const nonce = this.randomToken()
+        try {
+          sessionStorage.setItem('oauthState', state)
+          sessionStorage.setItem('oauthNonce', nonce)
+        } catch (ignored) { /* sessionStorage may be unavailable */ }
         const options = {
           client_id: provider.clientid,
           redirect_uri: provider.redirecturi,
           response_type: 'code',
           scope: 'openid email',
-          state: this.from || 'cloudstack'
+          state: state,
+          nonce: nonce
         }
         window.location.href = `${config.authorization_endpoint}?${new URLSearchParams(options).toString()}`
       }).catch(() => {

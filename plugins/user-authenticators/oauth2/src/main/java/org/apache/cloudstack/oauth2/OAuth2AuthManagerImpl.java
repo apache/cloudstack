@@ -169,10 +169,13 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId) {
-        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider, domainId);
-        String email = authenticator.verifySecretCodeAndFetchEmail(code, domainId, provider);
+        return verifySecretCodeAndFetchEmail(code, provider, domainId, null);
+    }
 
-        return email;
+    @Override
+    public String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId, String nonce) {
+        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider, domainId);
+        return authenticator.verifySecretCodeAndFetchEmail(code, domainId, provider, nonce);
     }
 
     @Override
