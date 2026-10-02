@@ -85,6 +85,16 @@ public interface UserOAuth2Authenticator extends Adapter {
     }
 
     /**
+     * Resolves the authorization endpoint for the registration whose issuer URL is given, so the UI can
+     * redirect without reading the discovery document from the browser. Implementations that do not use
+     * discovery return null.
+     * @return the authorization endpoint, or null
+     */
+    default String discoverAuthorizeEndpoint(String issuerUrl) {
+        return null;
+    }
+
+    /**
      * Fetches email using the accessToken
      * @return returns email
      */
