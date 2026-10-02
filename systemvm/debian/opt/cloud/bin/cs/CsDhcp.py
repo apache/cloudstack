@@ -31,6 +31,7 @@ LEASES = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
 DHCP_OPTS = "/etc/dhcpopts.txt"
 CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
+DNSMASQ_MANAGED_LEASE = "/var/cache/cloud/dnsmasq_managed_lease"
 
 
 class CsDhcp(CsDataBag):
@@ -163,13 +164,17 @@ class CsDhcp(CsDataBag):
                 macs_dhcphosts.append(host.split(',')[0])
 
             removed = 0
-            for leaseline in open(LEASES):
+            # read it all first: dnsmasq and remove_lease rewrite the file in place
+            with open(LEASES) as fp:
+                leaselines = fp.readlines()
+            for leaseline in leaselines:
                 lease = leaseline.split(' ')
                 mac = lease[1]
                 ip = lease[2]
                 if mac not in macs_dhcphosts:
                     logging.info("Releasing DHCP lease for IP: %s, mac: %s", ip, mac)
-                    self.release_lease(ip, mac)
+                    if not self.cl.is_redundant() or self.cl.is_primary():
+                        self.release_lease(ip, mac)
                     if self.ensure_lease_removed(ip):
                         logging.info("Lease for %s still existed after the release; removed manually", ip)
                     removed = removed + 1
@@ -206,7 +211,18 @@ class CsDhcp(CsDataBag):
 
         return False
 
-    def remove_lease(self, ip):
+    def dnsmasq_writes_leases(self):
+        # dnsmasq does not run on a backup router, and does not touch a read-only leases file
+        # (leasefile-ro, kept on routers with IPv6 on the guest NIC, see setup_dnsmasq)
+        if self.cl.is_redundant() and not self.cl.is_primary():
+            return False
+        try:
+            with open(DNSMASQ_MANAGED_LEASE) as fp:
+                return fp.read().strip() != "0"
+        except IOError:
+            return True
+
+    def remove_lease(self, ip, restart_dnsmasq=True):
         if not os.path.exists(LEASES):
             return False
 
@@ -224,11 +240,16 @@ class CsDhcp(CsDataBag):
             finally:
                 fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
 
-        # dnsmasq reads the leases file only when it starts
-        CsHelper.service("dnsmasq", "try-restart")
+        if restart_dnsmasq:
+            # dnsmasq reads the leases file only when it starts
+            CsHelper.service("dnsmasq", "try-restart")
         return True
 
     def ensure_lease_removed(self, ip):
+        if not self.dnsmasq_writes_leases():
+            # nothing else takes the line out of the file
+            self.remove_lease(ip, restart_dnsmasq=False)
+            return False
         # give dnsmasq time to drop the released lease from the file
         for _ in range(20):
             if not self.lease_exists(ip):
