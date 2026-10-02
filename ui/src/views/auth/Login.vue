@@ -305,6 +305,7 @@ export default {
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
       oauthGenericProviders: [],
+      globalGenericProviders: [],
       oauthLoading: false,
       oauthDomainQueried: false,
       loginType: 0,
@@ -406,6 +407,7 @@ export default {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           this.oauthGenericProviders = oauthproviders.filter(item => item.type === 'oidc' && (item.enabled === true || item.enabled === 'true'))
           if (!domain) {
+            this.globalGenericProviders = this.oauthGenericProviders
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
                 this.googleprovider = item.enabled
@@ -498,6 +500,7 @@ export default {
         this.fetchOauthProviders(domain)
       } else {
         this.oauthDomainQueried = false
+        this.oauthGenericProviders = this.globalGenericProviders
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
@@ -530,8 +533,7 @@ export default {
     loginWithGenericOidc (provider) {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', provider.provider)
-      const discoveryUrl = provider.issuerurl.replace(/\/$/, '') + '/.well-known/openid-configuration'
-      return fetch(discoveryUrl).then(response => response.json()).then(config => {
+      const redirectToProvider = (authorizationEndpoint) => {
         const state = this.randomToken()
         const nonce = this.randomToken()
         try {
@@ -546,7 +548,17 @@ export default {
           state: state,
           nonce: nonce
         }
-        window.location.href = `${config.authorization_endpoint}?${new URLSearchParams(options).toString()}`
+        const authorizeUrl = new URL(authorizationEndpoint)
+        Object.entries(options).forEach(([key, value]) => authorizeUrl.searchParams.set(key, value))
+        window.location.href = authorizeUrl.toString()
+      }
+      if (provider.authorizeurl) {
+        redirectToProvider(provider.authorizeurl)
+        return
+      }
+      const discoveryUrl = provider.issuerurl.replace(/\/$/, '') + '/.well-known/openid-configuration'
+      return fetch(discoveryUrl).then(response => response.json()).then(config => {
+        redirectToProvider(config.authorization_endpoint)
       }).catch(() => {
         this.$notification.error({
           message: this.$t('label.error'),

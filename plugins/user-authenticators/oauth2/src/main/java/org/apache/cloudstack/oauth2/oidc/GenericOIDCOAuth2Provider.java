@@ -208,6 +208,14 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         return provider;
     }
 
+    @Override
+    public String discoverAuthorizeEndpoint(String issuerUrl) {
+        if (StringUtils.isBlank(issuerUrl)) {
+            return null;
+        }
+        return metadataCache.get(StringUtils.trim(issuerUrl), this::discover).getAuthorizationEndpoint();
+    }
+
     protected OIDCMetadata getMetadata(OauthProviderVO provider) {
         String issuerUrl = StringUtils.trimToNull(provider.getIssuerUrl());
         if (issuerUrl == null) {

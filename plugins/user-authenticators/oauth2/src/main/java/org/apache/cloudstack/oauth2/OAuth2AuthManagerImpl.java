@@ -214,6 +214,13 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             }
         }
 
+        if (StringUtils.isNotBlank(type) && StringUtils.isBlank(authorizeUrl) && StringUtils.isNotBlank(issuerUrl)) {
+            UserOAuth2Authenticator authenticator = userOAuth2AuthenticationProvidersMap.get(type.toLowerCase());
+            if (authenticator != null) {
+                authorizeUrl = authenticator.discoverAuthorizeEndpoint(issuerUrl);
+            }
+        }
+
         return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId, type, issuerUrl);
     }
 
