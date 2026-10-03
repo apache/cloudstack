@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
@@ -64,6 +65,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
@@ -96,7 +98,9 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -798,6 +802,30 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getHostName(), response.getHostName());
             Assert.assertEquals(expected.getVmId(), response.getVmId());
             Assert.assertEquals(expected.getVmName(), response.getVmName());
+        }
+    }
+
+    @Test
+    public void showVmInfoForSharedNetworksTestSkipsPlaceHolderNic() {
+        IpAddress ipAddress = Mockito.mock(IpAddress.class);
+        Mockito.when(ipAddress.getAddress()).thenReturn(new Ip("10.1.1.10"));
+        Mockito.when(ipAddress.getNetworkId()).thenReturn(1L);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getVmType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        Mockito.when(nic.getInstanceId()).thenReturn(2L);
+        Mockito.when(vmInstanceVOMock.getUuid()).thenReturn("router-uuid");
+        Mockito.when(vmInstanceVOMock.getHostName()).thenReturn("r-2-VM");
+        Mockito.when(vmInstanceVOMock.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        IPAddressResponse response = new IPAddressResponse();
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsStaticMock = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.10", 1L)).thenReturn(nic);
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findVMInstanceById(2L)).thenReturn(vmInstanceVOMock);
+
+            ReflectionTestUtils.invokeMethod(apiResponseHelper, "showVmInfoForSharedNetworks", false, ipAddress, response);
+
+            apiDBUtilsStaticMock.verify(() -> ApiDBUtils.findByIp4AddressAndNetworkId(Mockito.anyString(), Mockito.anyLong()), Mockito.never());
+            Assert.assertEquals("router-uuid", ReflectionTestUtils.getField(response, "virtualMachineId"));
         }
     }
 }
