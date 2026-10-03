@@ -2447,7 +2447,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 templateType = TemplateType.valueOf(newType.toUpperCase());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
-                    org.apache.commons.lang3.StringUtils.join(",", TemplateApiType.values())));
+                    org.apache.commons.lang3.StringUtils.join(TemplateApiType.values(), ",")));
             }
         }
         if (templateType != null) {
