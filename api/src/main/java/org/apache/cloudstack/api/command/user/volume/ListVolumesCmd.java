@@ -102,7 +102,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
             authorized = { RoleType.Admin })
     private Boolean listSystemVms;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
+    @Parameter(name = ApiConstants.STATE,
+            type = CommandType.STRING,
+            allowedValues = {"Ready", "Allocated", "Destroy", "Expunging", "Expunged"},
+            description = "State of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
     @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",

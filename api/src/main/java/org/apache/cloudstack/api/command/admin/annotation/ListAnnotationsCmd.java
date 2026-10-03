@@ -51,7 +51,9 @@ public class ListAnnotationsCmd extends BaseListCmd {
     private String userUuid;
 
     @Parameter(name = ApiConstants.ANNOTATION_FILTER,
-            type = CommandType.STRING, since = "4.16.0",
+            type = CommandType.STRING,
+            allowedValues = {"self", "all"},
+            since = "4.16.0",
             description = "Possible values are \"self\" and \"all\". "
                     + "* self : annotations that have been created by the calling user. "
                     + "* all : all the annotations the calling user can access")
