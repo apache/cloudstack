@@ -1237,7 +1237,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     protected void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
         if (!forVirtualNetworks) {
-            NicVO nic = ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+            NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
 
             if (nic == null) {  // find in nic_secondary_ips, user vm only
                 NicSecondaryIpVO secondaryIp =
@@ -1267,11 +1267,18 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 }
             } else if (nic.getVmType() == Type.DomainRouter) {
                 ipResponse.setIsSystem(true);
-                VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
-                if (vm != null) {
-                    ipResponse.setVirtualMachineId(vm.getUuid());
-                    ipResponse.setVirtualMachineName(vm.getHostName());
-                    ipResponse.setVirtualMachineType(vm.getType().toString());
+                // The lookup above returns either the router's nic or its placeholder, whichever the db returns first.
+                NicVO routerNic = nic;
+                if (nic.getReservationStrategy() == Nic.ReservationStrategy.PlaceHolder) {  // found a placeholder nic, get the router's real nic
+                    routerNic = ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+                }
+                if (routerNic != null) {  // continue if we have the router's real nic, i.e. the router exists
+                    VirtualMachine vm = ApiDBUtils.findVMInstanceById(routerNic.getInstanceId());
+                    if (vm != null) {
+                        ipResponse.setVirtualMachineId(vm.getUuid());
+                        ipResponse.setVirtualMachineName(vm.getHostName());
+                        ipResponse.setVirtualMachineType(vm.getType().toString());
+                    }
                 }
             } else if (nic.getVmType().isUsedBySystem()) {
                 ipResponse.setIsSystem(true);
