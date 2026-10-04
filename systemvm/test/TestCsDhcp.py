@@ -81,7 +81,7 @@ class TestCsDhcp(unittest.TestCase):
         self.assertEqual(inode, os.stat(self.leases).st_ino)
         with open(self.leases) as f:
             self.assertEqual("0 02:00:00:00:00:02 10.1.1.72 vm-b *\n", f.read())
-        service.assert_called_once_with("dnsmasq", "try-restart")
+        service.assert_not_called()
 
     def router(self, redundant=False, primary=True):
         csdhcp = CsDhcp("dhcpentry", {})
@@ -92,17 +92,28 @@ class TestCsDhcp(unittest.TestCase):
 
     @mock.patch("cs.CsDhcp.time.sleep")
     @mock.patch("cs.CsDhcp.CsHelper.service")
-    def test_lease_left_by_dnsmasq_is_removed_and_dnsmasq_restarted(self, service, sleep):
-        self.assertTrue(self.router().ensure_lease_removed("10.1.1.71"))
+    def test_leases_left_by_dnsmasq_are_removed_with_one_wait_and_one_restart(self, service, sleep):
+        self.router().ensure_leases_removed(["10.1.1.71", "10.1.1.72"])
         self.assertEqual(20, sleep.call_count)
         service.assert_called_once_with("dnsmasq", "try-restart")
+        with open(self.leases) as f:
+            self.assertEqual("", f.read())
+
+    @mock.patch("cs.CsDhcp.time.sleep")
+    @mock.patch("cs.CsDhcp.CsHelper.service")
+    def test_released_leases_need_no_wait_or_restart(self, service, sleep):
+        with open(self.leases, "w") as f:
+            f.write("")
+        self.router().ensure_leases_removed(["10.1.1.71", "10.1.1.72"])
+        sleep.assert_not_called()
+        service.assert_not_called()
 
     @mock.patch("cs.CsDhcp.time.sleep")
     @mock.patch("cs.CsDhcp.CsHelper.service")
     def test_read_only_leases_file_is_cleaned_without_wait_or_restart(self, service, sleep):
         with open(self.managed_lease, "w") as f:
             f.write("0\n")
-        self.router().ensure_lease_removed("10.1.1.71")
+        self.router().ensure_leases_removed(["10.1.1.71"])
         sleep.assert_not_called()
         service.assert_not_called()
         with open(self.leases) as f:
@@ -137,6 +148,9 @@ class TestCsDhcp(unittest.TestCase):
             open(os.path.join(self.tmpdir, "dhcphosts.txt"), "w").close()
             csdhcp.delete_leases()
         self.assertEqual(1000, csdhcp.release_lease.call_count)
+        # none of them was released (release_lease is a mock): still one wait and one restart
+        self.assertEqual(20, sleep.call_count)
+        service.assert_called_once_with("dnsmasq", "try-restart")
         with open(self.leases) as f:
             self.assertEqual("", f.read())
 
