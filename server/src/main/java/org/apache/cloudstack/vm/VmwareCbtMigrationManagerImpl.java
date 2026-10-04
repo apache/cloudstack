@@ -2695,6 +2695,22 @@ public class VmwareCbtMigrationManagerImpl implements VmwareCbtMigrationManager,
     }
 
     private void sendCleanupCommand(VmwareCbtMigrationVO migration, boolean failOnCleanupError, int waitSeconds) {
+        // Import may finish after cancellation and record the VM without changing the Cancelled state.
+        // Its target disks now belong to that VM, so neither cancel nor delete may remove them.
+        // This does not prevent source snapshot cleanup or deletion of the migration record.
+        Long importedVmId = migration.getVmId();
+        if (importedVmId == null) {
+            // Re-read before cleanup: an import may have recorded its VM since this caller loaded the migration.
+            VmwareCbtMigrationVO storedMigration = vmwareCbtMigrationDao.findById(migration.getId());
+            if (storedMigration != null) {
+                importedVmId = storedMigration.getVmId();
+            }
+        }
+        if (importedVmId != null) {
+            LOGGER.info("Skipping target disk cleanup for VMware CBT migration {} because it references imported VM {}.",
+                    migration.getUuid(), importedVmId);
+            return;
+        }
         if (!hasCleanupTargetDisks(migration)) {
             return;
         }
