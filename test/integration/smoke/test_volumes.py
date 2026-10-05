@@ -825,29 +825,35 @@ class TestVolumes(cloudstackTestCase):
         self.assertTrue(hasattr(root_volume, "vmname"))
         self.assertEqual(root_volume.vmname, list_vm.name)
 
-        self.assertTrue(hasattr(root_volume, "clustername"))
-        self.assertTrue(root_volume.clustername is not None)
-
-        self.assertTrue(hasattr(root_volume, "clusterid"))
-        self.assertTrue(root_volume.clusterid is not None)
-
         self.assertTrue(hasattr(root_volume, "storageid"))
         self.assertTrue(root_volume.storageid is not None)
 
         self.assertTrue(hasattr(root_volume, "storage"))
         self.assertTrue(root_volume.storage is not None)
 
+        volume_pool = list_storage_pools(self.apiclient, id=root_volume.storageid)[0]
+        if volume_pool.scope == "ZONE":
+            # A zone-wide storage pool isn't bound to a single pod/cluster,
+            # so volumes on it have no pod/cluster association.
+            self.debug("Skipping pod/cluster checks: storage pool %s is zone-wide" % volume_pool.id)
+        else:
+            self.assertTrue(hasattr(root_volume, "clustername"))
+            self.assertTrue(root_volume.clustername is not None)
+
+            self.assertTrue(hasattr(root_volume, "clusterid"))
+            self.assertTrue(root_volume.clusterid is not None)
+
+            self.assertTrue(hasattr(root_volume, "podid"))
+            self.assertEqual(root_volume.podid, list_pods.id)
+
+            self.assertTrue(hasattr(root_volume, "podname"))
+            self.assertEqual(root_volume.podname, list_pods.name)
+
         self.assertTrue(hasattr(root_volume, "zoneid"))
         self.assertEqual(root_volume.zoneid, self.zone.id)
 
         self.assertTrue(hasattr(root_volume, "zonename"))
         self.assertEqual(root_volume.zonename, self.zone.name)
-
-        self.assertTrue(hasattr(root_volume, "podid"))
-        self.assertEqual(root_volume.podid, list_pods.id)
-
-        self.assertTrue(hasattr(root_volume, "podname"))
-        self.assertEqual(root_volume.podname, list_pods.name)
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_11_attach_volume_with_unstarted_vm(self):
