@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import com.cloud.dc.dao.DataCenterDao;
 
@@ -150,8 +151,8 @@ public class PrometheusExporterImplTest {
         // First call
         exporter.updateMetrics();
 
-        // Simulate that the min interval has already elapsed by resetting lastMetricsUpdateTime
-        setField(exporter, "lastMetricsUpdateTime", 0L);
+        // Simulate that the min interval has already elapsed by rewinding lastMetricsUpdateNanos
+        setField(exporter, "lastMetricsUpdateNanos", System.nanoTime() - TimeUnit.DAYS.toNanos(1));
 
         // Second call should now trigger recomputation
         exporter.updateMetrics();

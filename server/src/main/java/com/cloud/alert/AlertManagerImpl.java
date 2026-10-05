@@ -286,6 +286,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    private int capacityExecutorServiceWorkers = -1;
+
     /**
      * Shared, long-lived pool for capacity recalculation, reused across every
      * recalculateHostCapacities()/recalculateStorageCapacities() call instead of creating and
@@ -294,12 +296,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
      * full recalculation on every scrape, see https://github.com/apache/cloudstack/issues/13586).
      * Lazily created so this remains safe for callers that invoke the recalculate methods directly
      * without going through configure()/start() (e.g. unit tests).
+     * CapacityCalculateWorkers is a dynamic setting, so the pool is recreated whenever its value
+     * changes rather than requiring a management server restart to take effect.
      */
     private synchronized ExecutorService getCapacityExecutorService() {
-        if (capacityExecutorService == null || capacityExecutorService.isShutdown()) {
-            capacityExecutorService = Executors.newFixedThreadPool(
-                    Math.max(1, CapacityManager.CapacityCalculateWorkers.value()),
-                    new NamedThreadFactory("Capacity-Calculator"));
+        int configuredWorkers = Math.max(1, CapacityManager.CapacityCalculateWorkers.value());
+        if (capacityExecutorService == null || capacityExecutorService.isShutdown() || configuredWorkers != capacityExecutorServiceWorkers) {
+            if (capacityExecutorService != null) {
+                capacityExecutorService.shutdown();
+            }
+            capacityExecutorService = Executors.newFixedThreadPool(configuredWorkers, new NamedThreadFactory("Capacity-Calculator"));
+            capacityExecutorServiceWorkers = configuredWorkers;
         }
         return capacityExecutorService;
     }

@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.mail.MessagingException;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -331,6 +332,31 @@ public class AlertManagerImplTest {
         Assert.assertTrue(result);
         verify(timerMock).cancel();
         assertNull(getCapacityExecutorService());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesRecreatesExecutorWhenWorkerCountChanges() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "1");
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService firstExecutor = getCapacityExecutorService();
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "4");
+        alertManagerImplMock.recalculateHostCapacities();
+        ExecutorService secondExecutor = getCapacityExecutorService();
+
+        Assert.assertNotEquals("the pool should be recreated when the configured worker count changes",
+                firstExecutor, secondExecutor);
+        Assert.assertTrue("the stale pool should be shut down rather than leaked", firstExecutor.isShutdown());
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws Exception {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
     }
 
     private ExecutorService getCapacityExecutorService() throws Exception {

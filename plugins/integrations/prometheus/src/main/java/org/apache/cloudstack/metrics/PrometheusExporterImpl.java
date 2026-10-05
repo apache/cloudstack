@@ -102,7 +102,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     }
 
     private static List<Item> metricsItems = new ArrayList<>();
-    private volatile long lastMetricsUpdateTime = 0L;
+    private volatile long lastMetricsUpdateNanos = System.nanoTime() - TimeUnit.DAYS.toNanos(1);
 
     @Inject
     private DataCenterDao dcDao;
@@ -491,14 +491,15 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
     @Override
     public synchronized void updateMetrics() {
-        final long minIntervalMs = TimeUnit.SECONDS.toMillis(PrometheusExporterServer.PrometheusExporterMinRefreshInterval.value());
-        final long now = System.currentTimeMillis();
-        if (now - lastMetricsUpdateTime < minIntervalMs) {
-            logger.debug("Skipping metrics recomputation, last update was {}ms ago (min interval: {}ms)", now - lastMetricsUpdateTime, minIntervalMs);
+        final long minIntervalNanos = TimeUnit.SECONDS.toNanos(PrometheusExporterServer.PrometheusExporterMinRefreshInterval.value());
+        final long startNanos = System.nanoTime();
+        final long elapsedSinceLastUpdateNanos = startNanos - lastMetricsUpdateNanos;
+        if (elapsedSinceLastUpdateNanos < minIntervalNanos) {
+            logger.debug("Skipping metrics recomputation, last update was {}ms ago (min interval: {}ms)",
+                    TimeUnit.NANOSECONDS.toMillis(elapsedSinceLastUpdateNanos), TimeUnit.NANOSECONDS.toMillis(minIntervalNanos));
             return;
         }
 
-        final long startNanos = System.nanoTime();
         final List<Item> latestMetricsItems = new ArrayList<Item>();
         try {
             for (final DataCenterVO dc : dcDao.listAll()) {
@@ -523,7 +524,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             logger.info("Prometheus metrics update completed in {} ms", elapsedMs);
         }
         metricsItems = latestMetricsItems;
-        lastMetricsUpdateTime = System.currentTimeMillis();
+        lastMetricsUpdateNanos = System.nanoTime();
     }
 
     @Override
