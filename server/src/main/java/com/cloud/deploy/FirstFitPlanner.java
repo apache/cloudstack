@@ -397,9 +397,9 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
      * Excludes clusters that would cross the HA failover reserve threshold, reserving capacity for
      * HA-triggered restarts. The threshold is Cluster-scoped, resolved per-cluster by the DAO.
      */
-    private void excludeClustersCrossingHAReserve(short capacity, int cpu_requested, long ram_requested,
+    private void excludeClustersCrossingHAReserve(short capacity, int cpuRequested, long ramRequested,
             DeploymentPlan plan, ExcludeList avoid, List<Long> clusterListForVmAllocation) {
-        long haRequested = (capacity == Capacity.CAPACITY_TYPE_CPU) ? cpu_requested : ram_requested;
+        long haRequested = (capacity == Capacity.CAPACITY_TYPE_CPU) ? cpuRequested : ramRequested;
         List<Long> clustersCrossingHAReserve = capacityDao.listClustersCrossingThreshold(
                 capacity, plan.getDataCenterId(), ClusterHAFailoverReserveThreshold.key(), haRequested);
         if (clustersCrossingHAReserve != null && !clustersCrossingHAReserve.isEmpty()) {
