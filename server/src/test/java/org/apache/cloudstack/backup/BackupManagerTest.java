@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -68,6 +70,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
+import org.apache.cloudstack.backup.dao.BackupUsageMetricDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
@@ -151,6 +154,9 @@ public class BackupManagerTest {
 
     @Mock
     BackupDetailsDao backupDetailsDao;
+
+    @Mock
+    BackupUsageMetricDao backupUsageMetricDao;
 
     @Mock
     BackupProvider backupProvider;
@@ -898,6 +904,133 @@ public class BackupManagerTest {
         }
     }
 
+    private void verifyBackupUsageMetricPublished(MockedStatic<UsageEventUtils> usageEventUtilsMocked, int times, Long size, Long protectedSize) {
+        usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.eq(size), Mockito.eq(protectedSize),
+                Mockito.any(), Mockito.any()), times(times));
+    }
+
+    private DataCenterVO mockZoneWithBackedUpVm(Long dataCenterId, Long vmId, Long offeringId, Long size, Long protectedSize) {
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getBackupOfferingId()).thenReturn(offeringId);
+        when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(List.of(vmId));
+        when(vmInstanceDao.listByIdsIncludingRemoved(List.of(vmId))).thenReturn(List.of(vm));
+        when(vmInstanceDao.listByZoneAndBackupOffering(dataCenterId, null)).thenReturn(List.of(vm));
+
+        BackupVO backup = new BackupVO();
+        backup.setBackupOfferingId(offeringId);
+        backup.setSize(size);
+        backup.setProtectedSize(protectedSize);
+        when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(backup));
+        return dataCenter;
+    }
+
+    @Test
+    public void updateBackupUsageRecordsPublishesAndStoresMetricWhenNoneWasPublished() {
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(null);
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 1, 100L, 1000L);
+            ArgumentCaptor<BackupUsageMetricVO> captor = ArgumentCaptor.forClass(BackupUsageMetricVO.class);
+            verify(backupUsageMetricDao).persist(captor.capture());
+            Assert.assertEquals(2L, captor.getValue().getVmId());
+            Assert.assertEquals(3L, captor.getValue().getBackupOfferingId());
+            Assert.assertEquals(100L, captor.getValue().getSize());
+            Assert.assertEquals(1000L, captor.getValue().getProtectedSize());
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsSkipsUnchangedMetric() {
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(new BackupUsageMetricVO(2L, 3L, 100L, 1000L, new Date()));
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 0, 100L, 1000L);
+            verify(backupUsageMetricDao, never()).persist(any(BackupUsageMetricVO.class));
+            verify(backupUsageMetricDao, never()).update(Mockito.anyLong(), any(BackupUsageMetricVO.class));
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsPublishesWhenAnotherServerPublishedADifferentValue() {
+        // Another management server published 200 and went down; the size is back to 100.
+        DataCenterVO dataCenter = mockZoneWithBackedUpVm(1L, 2L, 3L, 100L, 1000L);
+        BackupUsageMetricVO lastPublished = new BackupUsageMetricVO(2L, 3L, 200L, 1000L, new Date());
+        when(backupUsageMetricDao.findByVmAndOffering(2L, 3L)).thenReturn(lastPublished);
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            verifyBackupUsageMetricPublished(usageEventUtilsMocked, 1, 100L, 1000L);
+            verify(backupUsageMetricDao).update(lastPublished.getId(), lastPublished);
+            Assert.assertEquals(100L, lastPublished.getSize());
+        }
+    }
+
+    @Test
+    public void backupSyncTaskSkipsZoneSyncedByAnotherServer() {
+        Long dataCenterId = 1L;
+        overrideBackupFrameworkConfigValue();
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        when(dataCenterDao.listAllZones()).thenReturn(List.of(dataCenter));
+        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider(dataCenterId);
+        mockedGlobalLocks.add("backup.sync." + dataCenterId);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupManager.new BackupSyncTask(backupManager).runInContext();
+
+            verify(backupProvider, never()).syncBackupStorageStats(dataCenterId);
+            verify(vmInstanceDao, never()).listByZoneAndBackupOffering(dataCenterId, null);
+            verify(backupDao, never()).listVmIdsWithBackupsInZone(dataCenterId);
+        }
+    }
+
+    @Test
+    public void updateBackupUsageRecordsReportsCurrentOfferingWithoutBackups() {
+        Long dataCenterId = 1L;
+        Long vmId = 2L;
+        Long oldOfferingId = 3L;
+        Long currentOfferingId = 4L;
+
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getBackupOfferingId()).thenReturn(currentOfferingId);
+        when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(List.of(vmId));
+        when(vmInstanceDao.listByIdsIncludingRemoved(List.of(vmId))).thenReturn(List.of(vm));
+        when(vmInstanceDao.listByZoneAndBackupOffering(dataCenterId, null)).thenReturn(List.of(vm));
+
+        // Backups kept from an offering the VM had before; none for its current offering.
+        BackupVO oldBackup = new BackupVO();
+        oldBackup.setBackupOfferingId(oldOfferingId);
+        oldBackup.setSize(100L);
+        oldBackup.setProtectedSize(1000L);
+        when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(oldBackup));
+
+        BackupManagerImpl.BackupSyncTask backupSyncTask = backupManager.new BackupSyncTask(backupManager);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            backupSyncTask.updateBackupUsageRecords(mock(BackupProvider.class), dataCenter);
+
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                    Mockito.anyLong(), Mockito.eq(vmId), Mockito.any(), Mockito.eq(currentOfferingId), Mockito.any(), Mockito.eq(0L), Mockito.eq(0L),
+                    Mockito.any(), Mockito.any()));
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(Mockito.eq(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC), Mockito.anyLong(),
+                    Mockito.anyLong(), Mockito.eq(vmId), Mockito.any(), Mockito.eq(oldOfferingId), Mockito.any(), Mockito.eq(100L), Mockito.eq(1000L),
+                    Mockito.any(), Mockito.any()));
+        }
+    }
+
     @Test
     public void checkCallerAccessToBackupScheduleVmTestExecuteAccessCheckMethods() {
         long vmId = 1L;
@@ -1277,6 +1410,7 @@ public class BackupManagerTest {
             verify(backupScheduleDao, times(1)).remove(backupScheduleId);
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     offeringId, null, null, Backup.class.getSimpleName(), vmUuid));
+            verify(backupUsageMetricDao).removeByVmAndOffering(vmId, offeringId);
         }
     }
 
@@ -1581,6 +1715,7 @@ public class BackupManagerTest {
             verify(backupDao).remove(backupId);
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
+            verify(backupUsageMetricDao).removeByVmAndOffering(vmId, backupOfferingId);
         }
     }
 

@@ -18,3 +18,15 @@
 --;
 -- Schema upgrade from 4.22.1.0 to 4.22.2.0
 --;
+
+-- Last backup usage metric published per VM and backup offering
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_usage_metric` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `vm_id` bigint unsigned NOT NULL COMMENT 'VM ID',
+    `backup_offering_id` bigint unsigned NOT NULL COMMENT 'Backup offering ID',
+    `size` bigint unsigned NOT NULL COMMENT 'Backup size last published',
+    `protected_size` bigint unsigned NOT NULL COMMENT 'Protected size last published',
+    `updated` datetime NOT NULL COMMENT 'Date the metric was last published',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_backup_usage_metric__vm_id__backup_offering_id` (`vm_id`, `backup_offering_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
