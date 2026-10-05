@@ -4004,6 +4004,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 migrateNetworkToPhysicalNetwork(tier, oldNtwkOff, newNtwkOff, vpcId, vpcCopyId, newPhysicalNetworkId, account, callerUser);
             }
         }
+        _networkMigrationManager.copyVpcDetails(vpcId, vpcCopyId);
         _networkMigrationManager.deleteCopyOfVpc(vpcId, vpcCopyId);
         return _vpcDao.findById(vpcCopyId);
     }

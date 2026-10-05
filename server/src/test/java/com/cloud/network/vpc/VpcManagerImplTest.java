@@ -71,7 +71,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
-import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -86,6 +85,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -496,18 +496,41 @@ public class VpcManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcOfferingRejectsNegativeNetworkRate() {
+    public void testCreateVpcOfferingRejectsNetworkRateBelowMinusOne() {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         Mockito.when(cmd.getPublicNetworkRate()).thenReturn(-5);
         manager.createVpcOffering(cmd);
     }
 
-    @Test(expected = InvalidParameterValueException.class)
-    public void testUpdateVpcOfferingRejectsNegativeNetworkRate() {
-        UpdateVPCOfferingCmd cmd = Mockito.mock(UpdateVPCOfferingCmd.class);
-        Mockito.when(cmd.getId()).thenReturn(1L);
-        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(-5);
-        manager.updateVpcOffering(cmd);
+    private Integer createVpcOfferingAndCaptureStoredRate(Integer requestedRate) {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getPublicNetworkRate()).thenReturn(requestedRate);
+        VpcManagerImpl spyManager = Mockito.spy(manager);
+        ArgumentCaptor<Integer> rateCaptor = ArgumentCaptor.forClass(Integer.class);
+        doReturn(Mockito.mock(VpcOffering.class)).when(spyManager).createVpcOffering(any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), anyBoolean(), anyBoolean(), rateCaptor.capture());
+        spyManager.createVpcOffering(cmd);
+        return rateCaptor.getValue();
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresZeroNetworkRateAsUnlimited() {
+        Assert.assertEquals(Integer.valueOf(-1), createVpcOfferingAndCaptureStoredRate(0));
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresUnlimitedNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(-1), createVpcOfferingAndCaptureStoredRate(-1));
+    }
+
+    @Test
+    public void testCreateVpcOfferingStoresPositiveNetworkRate() {
+        Assert.assertEquals(Integer.valueOf(200), createVpcOfferingAndCaptureStoredRate(200));
+    }
+
+    @Test
+    public void testCreateVpcOfferingKeepsNetworkRateUnsetWhenNotSpecified() {
+        Assert.assertNull(createVpcOfferingAndCaptureStoredRate(null));
     }
 
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {

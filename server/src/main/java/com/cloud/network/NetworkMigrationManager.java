@@ -68,6 +68,14 @@ public interface NetworkMigrationManager {
     void deleteCopyOfNetwork(long networkCopyId, long originalNetworkId);
 
     /**
+     * Copies the details of the source vpc to the destination vpc, once the migration of the vpc to the new vpc offering is done.
+     * Details derived from the vpc offering (like the public network rate) are not copied, the destination vpc keeps its own.
+     * @param srcVpcId the vpc id of the vpc to copy the details from
+     * @param dstVpcId the vpc id of the vpc to copy the details to
+     */
+    void copyVpcDetails(long srcVpcId, long dstVpcId);
+
+    /**
      * Deletes the copy of a vpc which was previously created by the networkMigrationManager
      * For deletion the copy of the old UUID of the original vpc is used to assure that plugins, using the UUID, clean up the vpc correctly.
      * @param vpcCopyId the vpc id of the copied vpc

@@ -600,8 +600,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String routingModeString = cmd.getRoutingMode();
         boolean conserveMode = cmd.isConserveMode();
         Integer publicNetworkRate = cmd.getPublicNetworkRate();
-        if (publicNetworkRate != null && publicNetworkRate < 0) {
-            throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as 0 (unlimited) or more");
+        if (publicNetworkRate != null) {
+            if (publicNetworkRate < -1) {
+                throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as -1 or 0 (unlimited) or a positive value");
+            }
+            // 0 and -1 both mean unlimited
+            if (publicNetworkRate == 0) {
+                publicNetworkRate = -1;
+            }
         }
 
         // check if valid domain
@@ -1448,7 +1454,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_UPDATE, eventDescription = "updating vpc offering")
     public VpcOffering updateVpcOffering(long vpcOffId, String vpcOfferingName, String displayText, String state) {
-        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null, null);
+        return updateVpcOfferingInternal(vpcOffId, vpcOfferingName, displayText, state, null, null, null);
     }
 
     @Override
@@ -1461,10 +1467,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final Integer sortKey = cmd.getSortKey();
-        final Integer publicNetworkRate = cmd.getPublicNetworkRate();
-        if (publicNetworkRate != null && publicNetworkRate < 0) {
-            throw new InvalidParameterValueException("Failed to update VPC offering " + offeringId + ": specify the public network rate value as 0 (unlimited) or more");
-        }
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -1483,11 +1485,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds, publicNetworkRate);
+        return updateVpcOfferingInternal(offeringId, vpcOfferingName, displayText, state, sortKey, domainIds, zoneIds);
     }
 
-    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds,
-                                                   Integer publicNetworkRate) {
+    private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
         if (offeringToUpdate == null) {
@@ -1512,7 +1513,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         Collections.sort(filteredZoneIds);
 
-        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null || publicNetworkRate != null;
+        final boolean updateNeeded = vpcOfferingName != null || displayText != null || state != null || sortKey != null;
 
         final VpcOfferingVO offering = _vpcOffDao.createForUpdate(vpcOffId);
 
@@ -1537,9 +1538,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
             if (sortKey != null) {
                 offering.setSortKey(sortKey);
-            }
-            if (publicNetworkRate != null) {
-                offering.setPublicNetworkRate(publicNetworkRate);
             }
 
             if (!_vpcOffDao.update(vpcOffId, offering)) {

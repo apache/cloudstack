@@ -312,7 +312,6 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             swapUuids(vpc, copyVpcVO);
             reassignACLRulesToNewVpc(vpcId, copyOfVpcId);
             reassignPublicIpsToNewVpc(vpcId, copyOfVpc);
-            copyVpcDetails(vpcId, copyOfVpcId);
             reassignGatewayToNewVpc(vpcId, copyOfVpcId);
             copyVpcResourceTagsToNewVpc(vpcId, copyOfVpcId);
             if (logger.isDebugEnabled()) {
@@ -338,11 +337,16 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     }
 
 
-    private void copyVpcDetails(long srcVpcId, long dstVpcId) {
+    @Override
+    public void copyVpcDetails(long srcVpcId, long dstVpcId) {
         List<VpcDetailVO> vpcDetails = _vpcDetailsDao.listDetails(srcVpcId);
 
         for (VpcDetailVO vpcDetail : vpcDetails) {
-            _vpcDetailsDao.persist(new VpcDetailVO(dstVpcId, vpcDetail.getName(), vpcDetail.getValue(), vpcDetail.isDisplay()));
+            // The public network rate is derived from the vpc offering, and was already set on the destination vpc from its (new) offering
+            if (ApiConstants.PUBLIC_NETWORK_RATE.equals(vpcDetail.getName())) {
+                continue;
+            }
+            _vpcDetailsDao.addDetail(dstVpcId, vpcDetail.getName(), vpcDetail.getValue(), vpcDetail.isDisplay());
         }
     }
 

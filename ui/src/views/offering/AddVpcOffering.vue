@@ -769,7 +769,7 @@ export default {
       this.$emit('close-action')
     },
     async validateNetworkRate (rule, value) {
-      if (value && (isNaN(value) || value < 0)) {
+      if (value && (isNaN(value) || value < -1)) {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()

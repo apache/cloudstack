@@ -21,4 +21,4 @@
 
 ALTER TABLE `cloud`.`nics` ADD COLUMN `network_rate` int DEFAULT NULL COMMENT 'effective network rate in Mb/s for this NIC, -1 means unlimited';
 
-ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` int unsigned DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` int DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';

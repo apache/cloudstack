@@ -597,7 +597,7 @@ export default {
         icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
-        args: ['name', 'displaytext', 'publicnetworkrate']
+        args: ['name', 'displaytext']
       }, {
         api: 'updateVPCOffering',
         icon: 'play-circle-outlined',

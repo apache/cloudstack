@@ -1529,6 +1529,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
                 }
             }
+            if (NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.key().equalsIgnoreCase(name)) {
+                if (val < -1) {
+                    return String.format("Please enter -1 or 0 (unlimited) or a positive value for the configuration parameter: [%s].", name);
+                }
+            }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||
                     UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {
                 if (val < -1 || val > 10) {
@@ -9080,9 +9085,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             networkRate = NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.valueIn(dataCenterId);
         }
 
-        // networkRate is unsigned int in vpc_offerings table, and can't be
-        // set to -1
-        // so 0 means unlimited; we convert it to -1, so we are consistent with
+        // 0 also means unlimited; we convert it to -1, so we are consistent with
         // all our other resources where -1 means unlimited
         if (networkRate == 0) {
             networkRate = -1;

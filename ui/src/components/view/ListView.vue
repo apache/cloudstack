@@ -424,11 +424,8 @@
           {{ isNaN(text) ? text : (parseFloat(text) / 1024.0).toFixed(2) + ' GB' }}
         </span>
       </template>
-      <template v-if="column.key === 'networkrate'">
+      <template v-if="['networkrate', 'publicnetworkrate'].includes(column.key)">
         <span>{{ String(text) === '-1' ? $t('label.unlimited') : text }}</span>
-      </template>
-      <template v-if="column.key === 'publicnetworkrate'">
-        <span>{{ ['-1', '0'].includes(String(text)) ? $t('label.unlimited') : text }}</span>
       </template>
       <template v-if="column.key === 'physicalnetworkname'">
         <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
