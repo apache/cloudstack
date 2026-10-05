@@ -645,10 +645,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
-            } else {
-                backupVO.setStatus(Backup.Status.Failed);
-                backupDao.remove(backupVO.getId());
+                // The row is kept, so return it for the caller to record its schedule.
+                return new Pair<>(false, backupVO);
             }
+            backupVO.setStatus(Backup.Status.Failed);
+            backupDao.remove(backupVO.getId());
             return new Pair<>(false, null);
         }
     }

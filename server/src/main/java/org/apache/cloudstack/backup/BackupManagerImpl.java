@@ -826,18 +826,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     true, 0);
 
             Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM());
+            Backup backup = result.second();
             if (!result.first()) {
+                if (backup != null) {
+                    updateBackupFromCmd(backup.getId(), cmd, backupScheduleId);
+                }
                 throw new CloudRuntimeException("Failed to create VM backup");
             }
-            Backup backup = result.second();
             if (backup != null) {
-                BackupVO vmBackup = backupDao.findById(result.second().getId());
-                vmBackup.setBackupScheduleId(backupScheduleId);
-                if (cmd.getName() != null) {
-                    vmBackup.setName(cmd.getName());
-                }
-                vmBackup.setDescription(cmd.getDescription());
-                backupDao.update(vmBackup.getId(), vmBackup);
+                updateBackupFromCmd(backup.getId(), cmd, backupScheduleId);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             }
@@ -848,6 +845,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
             throw e;
         }
+    }
+
+    private void updateBackupFromCmd(long backupId, CreateBackupCmd cmd, Long backupScheduleId) {
+        BackupVO vmBackup = backupDao.findById(backupId);
+        vmBackup.setBackupScheduleId(backupScheduleId);
+        if (cmd.getName() != null) {
+            vmBackup.setName(cmd.getName());
+        }
+        vmBackup.setDescription(cmd.getDescription());
+        backupDao.update(vmBackup.getId(), vmBackup);
     }
 
     /**
