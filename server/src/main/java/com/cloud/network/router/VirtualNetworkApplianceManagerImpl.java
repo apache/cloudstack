@@ -1076,18 +1076,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         @Override
         protected void runInContext() {
             try {
-                final List<DomainRouterVO> routers = _routerDao.listIsolatedByHostId(null);
-                logger.debug("Found " + routers.size() + " routers to update status. ");
-
-                updateSite2SiteVpnConnectionState(routers);
-
+                // Site-to-site VPN connections only exist on VPC routers, so check every VPC router,
+                // including ones with no tier in use (no running VMs)
+                final List<DomainRouterVO> routers = new ArrayList<>();
                 List<NetworkVO> networks = new ArrayList<>();
                 for (Vpc vpc : _vpcDao.listAll()) {
+                    routers.addAll(_routerDao.listByVpcId(vpc.getId()));
                     List<NetworkVO> vpcNetworks = _networkDao.listByVpc(vpc.getId());
                     if (!vpcNetworks.isEmpty()) {
                         networks.add(vpcNetworks.get(0));
                     }
                 }
+                logger.debug("Found " + routers.size() + " routers to update status. ");
+                updateSite2SiteVpnConnectionState(routers);
+
                 logger.debug("Found " + networks.size() + " VPC's to update Redundant State. ");
                 pushToUpdateQueue(networks);
 
