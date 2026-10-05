@@ -103,6 +103,7 @@ public class GenericOIDCOAuth2ProviderTest {
         String payload = "{"
                 + "\"iss\":\"" + issuer + "\","
                 + "\"aud\":[\"" + audience + "\"],"
+                + "\"email_verified\":true,"
                 + (email == null ? "" : "\"email\":\"" + email + "\",")
                 + "\"exp\":" + (System.currentTimeMillis() / 1000L + expiresInSeconds) + ","
                 + "\"sub\":\"12345\""
