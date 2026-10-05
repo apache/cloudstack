@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.exception.CloudException;
 import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
@@ -42,19 +43,50 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
-    public void updateMetrics(final Long vmId, Long backupOfferingId, final Long size, final Long virtualSize) {
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
-            SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
-            sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
-            sc.addAnd("backupOfferingId", SearchCriteria.Op.EQ, backupOfferingId);
-            UsageBackupVO vo = findOneBy(sc);
-            if (vo != null) {
-                vo.setSize(size);
-                vo.setProtectedSize(virtualSize);
-                update(vo.getId(), vo);
+    public List<UsageBackupVO> listActiveUsage(Long vmId, Long backupOfferingId) {
+        SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
+        sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+        sc.addAnd("backupOfferingId", SearchCriteria.Op.EQ, backupOfferingId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        return listBy(sc, new Filter(UsageBackupVO.class, "created", false));
+    }
+
+    @Override
+    public void updateMetrics(final Long vmId, final Long backupOfferingId, final Long size, final Long virtualSize, final Date eventDate) {
+        final long newSize = size != null ? size : 0L;
+        final long newProtectedSize = virtualSize != null ? virtualSize : 0L;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        try {
+            txn.start();
+            List<UsageBackupVO> activeUsage = listActiveUsage(vmId, backupOfferingId);
+            if (activeUsage.isEmpty()) {
+                logger.warn("No active backup usage for VM [{}] and backup offering [{}], ignoring backup metrics of size [{}] and protected size [{}].",
+                        vmId, backupOfferingId, newSize, newProtectedSize);
+                txn.commit();
+                return;
             }
+
+            UsageBackupVO latest = activeUsage.get(0);
+            if (activeUsage.size() == 1 && latest.getSize() == newSize && latest.getProtectedSize() == newProtectedSize) {
+                txn.commit();
+                return;
+            }
+
+            // Close the active rows and open one with the new size; this also merges duplicates.
+            for (UsageBackupVO usage : activeUsage) {
+                usage.setRemoved(eventDate);
+                update(usage.getId(), usage);
+            }
+            UsageBackupVO newUsage = new UsageBackupVO(latest.getZoneId(), latest.getAccountId(), latest.getDomainId(), vmId, backupOfferingId, eventDate);
+            newUsage.setSize(newSize);
+            newUsage.setProtectedSize(newProtectedSize);
+            persist(newUsage);
+            txn.commit();
         } catch (final Exception e) {
+            txn.rollback();
             logger.error("Error updating backup metrics: " + e.getMessage(), e);
+        } finally {
+            txn.close();
         }
     }
 

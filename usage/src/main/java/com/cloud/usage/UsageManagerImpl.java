@@ -2053,7 +2053,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED.equals(event.getType())) {
             usageBackupDao.removeUsage(accountId, vmId, backupOfferingId, event.getCreateDate());
         } else if (EventTypes.EVENT_VM_BACKUP_USAGE_METRIC.equals(event.getType())) {
-            usageBackupDao.updateMetrics(vmId, backupOfferingId, event.getSize(), event.getVirtualSize());
+            usageBackupDao.updateMetrics(vmId, backupOfferingId, event.getSize(), event.getVirtualSize(), created);
         }
     }
 
