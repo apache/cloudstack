@@ -195,4 +195,28 @@ public class InstanceBootGroupMembershipGuardTest {
 
         guard.validateVmNotInBootGroup(vm);
     }
+
+    // ---------------------------------------------------------------- removeInstanceGroupBootGroupMembershipIfPresent
+
+    @Test
+    public void testRemoveInstanceGroupBootGroupMembershipIfPresentExpungesExistingMember() {
+        InstanceBootGroupMemberVO member = mock(InstanceBootGroupMemberVO.class);
+        when(member.getId()).thenReturn(999L);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID))
+                .thenReturn(member);
+
+        guard.removeInstanceGroupBootGroupMembershipIfPresent(FIRST_GROUP_ID);
+
+        org.mockito.Mockito.verify(instanceBootGroupMemberDao).expunge(999L);
+    }
+
+    @Test
+    public void testRemoveInstanceGroupBootGroupMembershipIfPresentNoOpWhenNotAMember() {
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID))
+                .thenReturn(null);
+
+        guard.removeInstanceGroupBootGroupMembershipIfPresent(FIRST_GROUP_ID);
+
+        org.mockito.Mockito.verify(instanceBootGroupMemberDao, org.mockito.Mockito.never()).expunge(org.mockito.ArgumentMatchers.anyLong());
+    }
 }

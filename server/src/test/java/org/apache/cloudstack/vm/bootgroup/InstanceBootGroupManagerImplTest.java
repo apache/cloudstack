@@ -55,6 +55,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -701,6 +702,57 @@ public class InstanceBootGroupManagerImplTest {
         manager.stopInstanceBootGroup(group, false);
 
         verify(userVmService, never()).stopVirtualMachine(anyLong(), any(Boolean.class));
+    }
+
+    @Test
+    public void testStopInstanceBootGroupContinuesToNextTierAfterAFailure() {
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
+        InstanceBootGroupMemberVO member1 = newMember(MEMBER_ID_1, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID_1, 1);
+        InstanceBootGroupMemberVO member2 = newMember(MEMBER_ID_2, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID_2, 2);
+        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(List.of(member1, member2));
+
+        UserVmVO vm1 = mock(UserVmVO.class);
+        when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID_1)).thenReturn(vm1);
+
+        UserVmVO vm2 = mock(UserVmVO.class);
+        when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID_2)).thenReturn(vm2);
+        Mockito.doThrow(new CloudRuntimeException("stop failed")).when(userVmService).stopVirtualMachine(VM_ID_2, false);
+
+        // Tier 2 (vm2) is stopped first (reverse order) and fails; tier 1 (vm1) must still be attempted
+        // rather than the whole operation aborting, per stopInstanceBootGroup's documented contract.
+        manager.stopInstanceBootGroup(group, false);
+
+        verify(userVmService).stopVirtualMachine(VM_ID_2, false);
+        verify(userVmService).stopVirtualMachine(VM_ID_1, false);
+    }
+
+    @Test
+    public void testStopInstanceBootGroupToleratesNonPositiveConcurrency() {
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1");
+        InstanceBootGroupMemberVO member1 = newMember(MEMBER_ID_1, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID_1, 1);
+        InstanceBootGroupMemberVO member2 = newMember(MEMBER_ID_2, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID_2, 1);
+        when(instanceBootGroupMemberDao.listByBootGroupId(GROUP_ID)).thenReturn(List.of(member1, member2));
+
+        UserVmVO vm1 = mock(UserVmVO.class);
+        when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID_1)).thenReturn(vm1);
+        UserVmVO vm2 = mock(UserVmVO.class);
+        when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID_2)).thenReturn(vm2);
+
+        ReflectionTestUtils.setField(InstanceBootGroupManagerImpl.ReadinessCheckConcurrency, "_value", 0L);
+        try {
+            // Executors.newFixedThreadPool throws IllegalArgumentException for a non-positive pool
+            // size; a misconfigured (<=0) concurrency setting must not be able to take down a stop.
+            manager.stopInstanceBootGroup(group, false);
+        } finally {
+            ReflectionTestUtils.setField(InstanceBootGroupManagerImpl.ReadinessCheckConcurrency, "_value", null);
+        }
+
+        verify(userVmService).stopVirtualMachine(VM_ID_1, false);
+        verify(userVmService).stopVirtualMachine(VM_ID_2, false);
     }
 
     @Test

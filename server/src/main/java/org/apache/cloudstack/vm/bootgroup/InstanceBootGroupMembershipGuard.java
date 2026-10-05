@@ -135,4 +135,18 @@ public class InstanceBootGroupMembershipGuard {
             validateVmEligibleForGroupMembership(member.getInstanceId());
         }
     }
+
+    /**
+     * Removes the boot-group membership row for an Instance Group being deleted, if any, so the
+     * delete doesn't leave a stale member pointing at a group that no longer exists. Cascades
+     * silently rather than blocking the delete, since {@code UserVmManagerImpl.deleteVmGroup} is
+     * also invoked during account cleanup, where a hard failure here would be worse than the group
+     * simply dropping out of its boot group.
+     */
+    public void removeInstanceGroupBootGroupMembershipIfPresent(long instanceGroupId) {
+        InstanceBootGroupMemberVO member = instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, instanceGroupId);
+        if (member != null) {
+            instanceBootGroupMemberDao.expunge(member.getId());
+        }
+    }
 }

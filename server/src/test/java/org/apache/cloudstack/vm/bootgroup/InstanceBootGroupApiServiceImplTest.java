@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.user.bootgroup.DeleteInstanceBootGroupC
 import org.apache.cloudstack.api.command.user.bootgroup.DeleteInstanceBootGroupReadinessRuleCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.ListInstanceBootGroupMembersCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.ListInstanceBootGroupReadinessRulesCmd;
+import org.apache.cloudstack.api.command.user.bootgroup.ListInstanceBootGroupsCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.RebootInstanceBootGroupCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.RemoveInstanceBootGroupMemberCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.StartInstanceBootGroupCmd;
@@ -51,9 +52,11 @@ import org.apache.cloudstack.api.command.user.bootgroup.UpdateInstanceBootGroupC
 import org.apache.cloudstack.api.command.user.bootgroup.UpdateInstanceBootGroupMemberCmd;
 import org.apache.cloudstack.api.command.user.bootgroup.UpdateInstanceBootGroupReadinessRuleCmd;
 import org.apache.cloudstack.api.query.dao.InstanceBootGroupJoinDao;
+import org.apache.cloudstack.api.query.vo.InstanceBootGroupJoinVO;
 import org.apache.cloudstack.api.response.InstanceBootGroupMemberChildResponse;
 import org.apache.cloudstack.api.response.InstanceBootGroupMemberResponse;
 import org.apache.cloudstack.api.response.InstanceBootGroupReadinessRuleResponse;
+import org.apache.cloudstack.api.response.InstanceBootGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.bootgroup.readiness.InstanceBootGroupReadinessRule;
@@ -75,6 +78,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.InstanceGroupVMMapVO;
@@ -372,6 +377,74 @@ public class InstanceBootGroupApiServiceImplTest {
 
         assertEquals(group, result);
         verify(accountManager).checkAccess(callerMock, null, true, group);
+    }
+
+    // ---------------------------------------------------------------- listInstanceBootGroups
+
+    private ListInstanceBootGroupsCmd baseListGroupsCmd(Long virtualMachineId, Long instanceGroupId) {
+        ListInstanceBootGroupsCmd cmd = mock(ListInstanceBootGroupsCmd.class);
+        when(cmd.getVirtualMachineId()).thenReturn(virtualMachineId);
+        when(cmd.getInstanceGroupId()).thenReturn(instanceGroupId);
+        return cmd;
+    }
+
+    private SearchBuilder<InstanceBootGroupJoinVO> mockSearchBuilder() {
+        @SuppressWarnings("unchecked")
+        SearchBuilder<InstanceBootGroupJoinVO> sb = mock(SearchBuilder.class);
+        @SuppressWarnings("unchecked")
+        SearchCriteria<InstanceBootGroupJoinVO> sc = mock(SearchCriteria.class);
+        when(sb.entity()).thenReturn(new InstanceBootGroupJoinVO());
+        when(sb.create()).thenReturn(sc);
+        when(instanceBootGroupJoinDao.createSearchBuilder()).thenReturn(sb);
+        return sb;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListInstanceBootGroupsBothVmAndInstanceGroupIdThrows() {
+        ListInstanceBootGroupsCmd cmd = baseListGroupsCmd(VM_ID, INSTANCE_GROUP_ID);
+        service.listInstanceBootGroups(cmd);
+    }
+
+    @Test
+    public void testListInstanceBootGroupsByVirtualMachineIdNotAMemberReturnsEmpty() {
+        ListInstanceBootGroupsCmd cmd = baseListGroupsCmd(VM_ID, null);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID)).thenReturn(null);
+
+        ListResponse<InstanceBootGroupResponse> response = service.listInstanceBootGroups(cmd);
+
+        assertEquals(0, response.getCount().intValue());
+        assertTrue(response.getResponses().isEmpty());
+        verify(instanceBootGroupJoinDao, never()).createSearchBuilder();
+    }
+
+    @Test
+    public void testListInstanceBootGroupsByVirtualMachineIdFiltersToMemberBootGroup() {
+        ListInstanceBootGroupsCmd cmd = baseListGroupsCmd(VM_ID, null);
+        InstanceBootGroupMemberVO member = newMember(MEMBER_ID, GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID, 0);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID)).thenReturn(member);
+
+        SearchBuilder<InstanceBootGroupJoinVO> sb = mockSearchBuilder();
+        InstanceBootGroupJoinVO joinVO = new InstanceBootGroupJoinVO();
+        ReflectionTestUtils.setField(joinVO, "id", GROUP_ID);
+        ReflectionTestUtils.setField(joinVO, "name", "group1");
+        when(instanceBootGroupJoinDao.searchAndCount(any(), any()))
+                .thenReturn(new com.cloud.utils.Pair<>(Collections.singletonList(joinVO), 1));
+
+        ListResponse<InstanceBootGroupResponse> response = service.listInstanceBootGroups(cmd);
+
+        assertEquals(1, response.getResponses().size());
+        verify(sb.create()).setParameters("memberBootGroupId", GROUP_ID);
+    }
+
+    @Test
+    public void testListInstanceBootGroupsByInstanceGroupIdNotAMemberReturnsEmpty() {
+        ListInstanceBootGroupsCmd cmd = baseListGroupsCmd(null, INSTANCE_GROUP_ID);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, INSTANCE_GROUP_ID)).thenReturn(null);
+
+        ListResponse<InstanceBootGroupResponse> response = service.listInstanceBootGroups(cmd);
+
+        assertEquals(0, response.getCount().intValue());
+        verify(instanceBootGroupJoinDao, never()).createSearchBuilder();
     }
 
     // ---------------------------------------------------------------- addMemberToInstanceBootGroup

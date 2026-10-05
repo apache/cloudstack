@@ -201,7 +201,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
                         userVmService.startVirtualMachine(vm, null);
                     }
                     anchorInitialDelay(group, progressByVmId.get(vmId), vm, alreadyRunning);
-                });
+                }, true);
             } catch (CloudRuntimeException e) {
                 halt(group, "Failed to start a VM in tier " + tierOrder + ": " + e.getMessage());
                 throw e;
@@ -489,7 +489,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
                 if (vm != null && vm.getState() != com.cloud.vm.VirtualMachine.State.Stopped) {
                     userVmService.stopVirtualMachine(vmId, forced);
                 }
-            });
+            }, false);
         }
 
         logger.info("{} stop completed ({}ms)", group, System.currentTimeMillis() - groupStoppedAtMs);
@@ -503,12 +503,17 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
     }
 
     /**
-     * Runs {@code action} for every VM in a tier concurrently and aborts on the first failure. Each
-     * thread gets a copied {@link CallContext} — without one, a VM lifecycle action routed through
-     * the job-queue path fails to submit its sub-job ("no lock found").
+     * Runs {@code action} for every VM in a tier concurrently. Each thread gets a copied
+     * {@link CallContext} — without one, a VM lifecycle action routed through the job-queue path
+     * fails to submit its sub-job ("no lock found").
+     *
+     * @param haltOnFailure when true (start), the first per-VM failure aborts immediately so the
+     *                      caller can halt the whole boot group; when false (stop, which continues
+     *                      through every tier regardless per its own documented contract), every
+     *                      VM's action is still attempted and failures are logged, not thrown.
      */
     private void runTierConcurrently(List<Long> vmIds, InstanceBootGroupVO group,
-                                     String actionName, VmAction action) {
+                                     String actionName, VmAction action, boolean haltOnFailure) {
         if (vmIds.isEmpty()) {
             return;
         }
@@ -517,7 +522,7 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
                 actionName, group, vmIds.size(), vmIds);
         long actionStartedAtMs = System.currentTimeMillis();
         CallContext callerContext = CallContext.current();
-        int threadCount = Math.min(vmIds.size(), ReadinessCheckConcurrency.value().intValue());
+        int threadCount = Math.max(1, Math.min(vmIds.size(), ReadinessCheckConcurrency.value().intValue()));
         ExecutorService executor = Executors.newFixedThreadPool(
                 threadCount, new NamedThreadFactory("InstanceBootGroup-" + actionName));
 
@@ -541,23 +546,33 @@ public class InstanceBootGroupManagerImpl extends ManagerBase implements Instanc
                 }));
             }
 
+            List<String> failures = new ArrayList<>();
             for (Future<?> future : futures) {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
-                    throw new CloudRuntimeException(
-                            String.format("Failed to %s a VM in boot group %s: %s",
-                                    actionName, group.getName(), cause.getMessage()),
-                            cause);
-
+                    String message = String.format("Failed to %s a VM in boot group %s: %s",
+                            actionName, group.getName(), cause.getMessage());
+                    if (haltOnFailure) {
+                        throw new CloudRuntimeException(message, cause);
+                    }
+                    logger.warn(message, cause);
+                    failures.add(message);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new CloudRuntimeException(
-                            String.format("Interrupted while waiting to %s VMs in boot group %s",
-                                    actionName, group.getName()),
-                            e);
+                    String message = String.format("Interrupted while waiting to %s VMs in boot group %s",
+                            actionName, group.getName());
+                    if (haltOnFailure) {
+                        throw new CloudRuntimeException(message, e);
+                    }
+                    logger.warn(message, e);
+                    failures.add(message);
                 }
+            }
+            if (!failures.isEmpty()) {
+                logger.warn("'{}' action for a tier of {} completed with {} failure(s) out of {} VM(s)",
+                        actionName, group, failures.size(), vmIds.size());
             }
         } finally {
             executor.shutdown();

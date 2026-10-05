@@ -261,6 +261,11 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         final Account caller = ctx.getCallingAccount();
         final Long id = cmd.getId();
         final String keyword = cmd.getKeyword();
+        final Long virtualMachineId = cmd.getVirtualMachineId();
+        final Long instanceGroupId = cmd.getInstanceGroupId();
+        if (virtualMachineId != null && instanceGroupId != null) {
+            throw new InvalidParameterValueException("Only one of virtualmachineid or instancegroupid may be specified");
+        }
 
         List<InstanceBootGroupResponse> responsesList = new ArrayList<>();
         List<Long> permittedAccounts = new ArrayList<>();
@@ -272,12 +277,30 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
+        // A VM or Instance Group belongs to at most one boot group (unique per member), so this filter
+        // resolves to either exactly one boot group id, or no results at all.
+        Long memberBootGroupId = null;
+        if (virtualMachineId != null || instanceGroupId != null) {
+            InstanceBootGroupMember.MemberType memberType = virtualMachineId != null
+                    ? InstanceBootGroupMember.MemberType.VirtualMachine
+                    : InstanceBootGroupMember.MemberType.InstanceGroup;
+            long memberId = virtualMachineId != null ? virtualMachineId : instanceGroupId;
+            InstanceBootGroupMemberVO member = instanceBootGroupMemberDao.findByMember(memberType, memberId);
+            if (member == null) {
+                ListResponse<InstanceBootGroupResponse> emptyResponse = new ListResponse<>();
+                emptyResponse.setResponses(new ArrayList<>(), 0);
+                return emptyResponse;
+            }
+            memberBootGroupId = member.getBootGroupId();
+        }
+
         Filter searchFilter = new Filter(InstanceBootGroupJoinVO.class, "id", true, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
         SearchBuilder<InstanceBootGroupJoinVO> sb = instanceBootGroupJoinDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("memberBootGroupId", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         SearchCriteria<InstanceBootGroupJoinVO> sc = sb.create();
@@ -288,6 +311,9 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         }
         if (id != null) {
             sc.setParameters("id", id);
+        }
+        if (memberBootGroupId != null) {
+            sc.setParameters("memberBootGroupId", memberBootGroupId);
         }
         Pair<List<InstanceBootGroupJoinVO>, Integer> bootGroupsAndCount = instanceBootGroupJoinDao.searchAndCount(sc, searchFilter);
         for (InstanceBootGroupJoinVO bootGroup : bootGroupsAndCount.first()) {

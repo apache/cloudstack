@@ -526,9 +526,15 @@ public class InstanceBootGroupReadinessRuleManagerImpl extends ManagerBase imple
         }
         try {
             if ("PERCENTAGE".equalsIgnoreCase(thresholdType)) {
-                Double.parseDouble(thresholdValue);
+                double percentage = Double.parseDouble(thresholdValue);
+                if (percentage < 0) {
+                    throw new InvalidParameterValueException(THRESHOLD_VALUE_KEY + " must not be negative: " + thresholdValue);
+                }
             } else {
-                Long.parseLong(thresholdValue);
+                long count = Long.parseLong(thresholdValue);
+                if (count < 0) {
+                    throw new InvalidParameterValueException(THRESHOLD_VALUE_KEY + " must not be negative: " + thresholdValue);
+                }
             }
         } catch (NumberFormatException e) {
             throw new InvalidParameterValueException("Invalid " + THRESHOLD_VALUE_KEY + ": " + thresholdValue);

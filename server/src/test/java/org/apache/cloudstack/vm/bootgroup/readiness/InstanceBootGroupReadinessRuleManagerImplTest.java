@@ -289,6 +289,24 @@ public class InstanceBootGroupReadinessRuleManagerImplTest {
         manager.createReadinessRule(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.MemberQuorum, null, true, details);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void createReadinessRuleRejectsNegativeCountMemberQuorumThreshold() {
+        stubGroupDirectMember(GROUP_ID);
+        Map<String, String> details = new HashMap<>();
+        details.put("threshold_type", "COUNT");
+        details.put("threshold_value", "-1");
+        manager.createReadinessRule(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.MemberQuorum, null, true, details);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void createReadinessRuleRejectsNegativePercentageMemberQuorumThreshold() {
+        stubGroupDirectMember(GROUP_ID);
+        Map<String, String> details = new HashMap<>();
+        details.put("threshold_type", "PERCENTAGE");
+        details.put("threshold_value", "-5.5");
+        manager.createReadinessRule(BOOT_GROUP_ID, MemberType.InstanceGroup, GROUP_ID, RuleType.MemberQuorum, null, true, details);
+    }
+
     @Test
     public void createReadinessRuleGeneratesDefaultNameWhenBlank() {
         stubVmDirectMember(VM_ID);
