@@ -2657,14 +2657,20 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVlan(vlan);
         }
 
-        // return network details only to Root admin
+        int networkRate;
+        // return network details only to Root admin, and take the network rate from them to save a lookup
         if (view == ResponseView.Full) {
             Map<String, String> details = new HashMap<>();
             for (NetworkDetailVO detail: networkDetailsDao.listDetails(network.getId())) {
                 details.put(detail.getName(),detail.getValue());
             }
             response.setDetails(details);
+            networkRate = NumberUtils.toInt(details.get(ApiConstants.NETWORKRATE), -1);
+        } else {
+            NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
+            networkRate = networkRateDetail != null ? NumberUtils.toInt(networkRateDetail.getValue(), -1) : -1;
         }
+        response.setNetworkRate(networkRate > 0 ? networkRate : -1);
 
         Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
         if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
@@ -2720,9 +2726,6 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setNetworkDomain(network.getNetworkDomain());
         response.setPublicMtu(network.getPublicMtu());
         response.setPrivateMtu(network.getPrivateMtu());
-        NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
-        int networkRate = networkRateDetail != null ? NumberUtils.toInt(networkRateDetail.getValue(), -1) : -1;
-        response.setNetworkRate(networkRate > 0 ? networkRate : -1);
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());

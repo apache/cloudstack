@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,7 +40,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -64,6 +64,8 @@ public class NetworkRateBackfill {
     private static final int DEFAULT_THROTTLING_RATE = 200;
     private static final int UNLIMITED_RATE = -1;
 
+    private final Connection conn;
+
     private final VMInstanceDao vmInstanceDao = new VMInstanceDaoImpl();
     private final NetworkDao networkDao = new NetworkDaoImpl();
     private final NetworkDetailsDao networkDetailsDao = new NetworkDetailsDaoImpl();
@@ -71,6 +73,10 @@ public class NetworkRateBackfill {
     private final ServiceOfferingDao serviceOfferingDao = new ServiceOfferingDaoImpl();
     private final DataCenterDetailsDaoImpl dataCenterDetailsDao = new DataCenterDetailsDaoImpl();
     private final ConfigurationDao configurationDao = new ConfigurationDaoImpl();
+
+    public NetworkRateBackfill(Connection conn) {
+        this.conn = conn;
+    }
 
     public void backfillNetworkRates() {
         backfillNicNetworkRates();
@@ -81,7 +87,7 @@ public class NetworkRateBackfill {
     private void backfillNicNetworkRates() {
         final String sql = "SELECT id, network_id, instance_id, default_nic FROM nics " +
                 "WHERE removed IS NULL AND network_rate IS NULL AND instance_id IS NOT NULL";
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
                 final long nicId = rs.getLong("id");
@@ -103,7 +109,7 @@ public class NetworkRateBackfill {
     }
 
     private void updateNicNetworkRate(long nicId, int rate) throws SQLException {
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "UPDATE nics SET network_rate = ? WHERE id = ?")) {
             pstmt.setInt(1, rate);
             pstmt.setLong(2, nicId);
@@ -142,7 +148,7 @@ public class NetworkRateBackfill {
     private Integer findRouterGuestNetworkRate(long routerInstanceId, long dataCenterId) {
         final String sql = "SELECT n.network_offering_id FROM nics ni JOIN networks n ON ni.network_id = n.id " +
                 "WHERE ni.instance_id = ? AND ni.removed IS NULL AND n.traffic_type = 'Guest' LIMIT 1";
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, routerInstanceId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -159,7 +165,7 @@ public class NetworkRateBackfill {
         final String sql = "SELECT n.id, n.network_offering_id, n.data_center_id FROM networks n " +
                 "WHERE n.removed IS NULL AND NOT EXISTS " +
                 "(SELECT 1 FROM network_details d WHERE d.network_id = n.id AND d.name = ?)";
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, NETWORKRATE_DETAIL_NAME);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -186,7 +192,7 @@ public class NetworkRateBackfill {
         final String sql = "SELECT v.id FROM vpc v " +
                 "WHERE v.removed IS NULL AND NOT EXISTS " +
                 "(SELECT 1 FROM vpc_details d WHERE d.vpc_id = v.id AND d.name = ?)";
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, PUBLIC_NETWORK_RATE_DETAIL_NAME);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -224,7 +230,7 @@ public class NetworkRateBackfill {
 
     // NetworkOfferingDaoImpl's constructor is protected, so it can't be instantiated here directly.
     private Integer getNetworkOfferingRateMbps(long networkOfferingId) {
-        try (PreparedStatement pstmt = TransactionLegacy.currentTxn().prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT nw_rate FROM network_offerings WHERE id = ?")) {
             pstmt.setLong(1, networkOfferingId);
             try (ResultSet rs = pstmt.executeQuery()) {

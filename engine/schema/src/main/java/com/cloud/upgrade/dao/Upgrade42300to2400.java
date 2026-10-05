@@ -46,6 +46,6 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
 
     @Override
     public void performDataMigration(Connection conn) {
-        new NetworkRateBackfill().backfillNetworkRates();
+        new NetworkRateBackfill(conn).backfillNetworkRates();
     }
 }
