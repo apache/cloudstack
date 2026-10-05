@@ -530,7 +530,7 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /usr/bin/systemctl restart libvirtd
 /usr/bin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 /usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
-/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rng-tools > /dev/null 2>&1 || true
 
 # if saved agent.properties from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
