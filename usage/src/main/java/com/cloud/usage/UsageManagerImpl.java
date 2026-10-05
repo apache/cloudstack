@@ -2038,7 +2038,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-    private void createBackupEvent(final UsageEventVO event) {
+    protected void createBackupEvent(final UsageEventVO event) {
         Long vmId = event.getResourceId();
         Long zoneId = event.getZoneId();
         Long accountId = event.getAccountId();
@@ -2048,6 +2048,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Date created = event.getCreateDate();
 
         if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
+            // Removing the offering while keeping the backups leaves the usage active, so re-assigning the
+            // same offering must not add a second row that bills the same backups again.
+            if (!usageBackupDao.listActiveUsage(vmId, backupOfferingId).isEmpty()) {
+                logger.debug("VM [{}] already has active usage for backup offering [{}], not creating another usage entry.", vmId, backupOfferingId);
+                return;
+            }
             final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
             usageBackupDao.persist(backupVO);
         } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED.equals(event.getType())) {
