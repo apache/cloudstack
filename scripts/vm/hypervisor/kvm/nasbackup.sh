@@ -267,9 +267,15 @@ print(len(files))
   fi
 
   local thaw=0
+  local freeze_ok=0
   if [[ ${QUIESCE} == "true" ]]; then
-    if qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
-      thaw=1
+    # Always thaw after a freeze attempt: a freeze that times out on the host can still
+    # complete inside the guest, and nothing else would unfreeze it.
+    thaw=1
+    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
+      freeze_ok=1
+    else
+      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
     fi
   fi
 
@@ -292,9 +298,14 @@ print(len(files))
 
   if [[ $thaw -eq 1 ]]; then
     if ! response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
-      echo "Failed to thaw the filesystem for vm $VM: $response"
-      cleanup
-      exit 1
+      if [[ $freeze_ok -eq 1 ]]; then
+        echo "Failed to thaw the filesystem for vm $VM: $response"
+        cleanup
+        exit 1
+      fi
+      # The freeze failed too, usually because the guest agent is unavailable, so this
+      # backup is already unquiesced and the failed thaw does not affect it.
+      log -e "Failed to thaw the filesystem for vm $VM after a failed freeze: $response"
     fi
   fi
 
