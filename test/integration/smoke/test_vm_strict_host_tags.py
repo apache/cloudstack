@@ -310,7 +310,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
             vm.start(self.apiclient)
             self.fail("VM should not be be able scale and start")
         except Exception as e:
-            self.assertTrue("Unable to orchestrate the start of Instance" in str(e))
+            self.assertTrue("vm.start.orchestrate.failed" in str(e))
 
 
 class TestRestoreVMStrictTags(cloudstackTestCase):
@@ -423,7 +423,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
             self.fail("VM should not be restored")
         except Exception as e:
-            self.assertTrue("Unable to start the Instance" in str(e))
+            self.assertTrue("vm.restore.start.failed" in str(e))
 
 
 class TestMigrateVMStrictTags(cloudstackTestCase):
