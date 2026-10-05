@@ -45,6 +45,7 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
+BACKUP_JOB_ACTIVE=0
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -285,6 +286,9 @@ print(len(files))
       backup_begin=1;
     fi
   fi
+  if [[ $backup_begin -eq 1 ]]; then
+    BACKUP_JOB_ACTIVE=1
+  fi
 
   if [[ $thaw -eq 1 ]]; then
     if ! response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
@@ -309,10 +313,13 @@ print(len(files))
     status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
     case "$status" in
       Completed)
+        BACKUP_JOB_ACTIVE=0
         break ;;
       Failed)
+        BACKUP_JOB_ACTIVE=0
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        exit 1 ;;
     esac
     sleep 5
   done
@@ -512,8 +519,32 @@ mount_operation() {
   fi
 }
 
+abort_backup_job() {
+  [[ $BACKUP_JOB_ACTIVE -eq 1 ]] || return 0
+
+  # The push backup job writes into $dest until it ends, so it must be gone before the
+  # destination is removed or unmounted.
+  virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>>"$logFile" || true
+  local i job
+  for ((i = 0; i < 60; i++)); do
+    job=$(virsh -c qemu:///system domjobinfo "$VM" 2>/dev/null | awk '/Job type:/ {print $3}')
+    if [[ -z "$job" || "$job" == "None" ]]; then
+      BACKUP_JOB_ACTIVE=0
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 cleanup() {
   local status=0
+
+  if ! abort_backup_job; then
+    echo "Backup job for vm $VM is still running after abort, leaving $dest mounted at $mount_point"
+    echo "Backup cleanup failed"
+    exit $EXIT_CLEANUP_FAILED
+  fi
 
   rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
   umount "$mount_point" || { echo "Failed to unmount $mount_point"; status=1; }
