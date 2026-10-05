@@ -130,7 +130,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 removedPools.add(uuid);
             }
 
-            logger.debug("Found NFS storage pool [{}] in libvirt, continuing.", uuid);
+            logger.debug("Found storage pool [{}] in libvirt, continuing.", uuid);
 
         } catch (LibvirtException e) {
             logger.debug("Failed to lookup libvirt storage pool [{}].", uuid, e);
