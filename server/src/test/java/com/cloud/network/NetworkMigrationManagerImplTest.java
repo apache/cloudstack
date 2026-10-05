@@ -23,18 +23,26 @@ import java.util.Arrays;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkMigrationManagerImplTest {
 
     @Mock
     private VpcDetailsDao vpcDetailsDao;
+
+    @Mock
+    private NetworkDetailsDao networkDetailsDao;
 
     @InjectMocks
     private NetworkMigrationManagerImpl networkMigrationManager;
@@ -52,5 +60,21 @@ public class NetworkMigrationManagerImplTest {
         Mockito.verify(vpcDetailsDao, Mockito.never()).addDetail(Mockito.eq(dstVpcId), Mockito.eq(ApiConstants.PUBLIC_NETWORK_RATE),
                 Mockito.anyString(), Mockito.anyBoolean());
         Mockito.verify(vpcDetailsDao).addDetail(dstVpcId, "someKey", "someValue", false);
+    }
+
+    @Test
+    public void testCopyNetworkDetailsSkipsNetworkRate() {
+        final long srcNetworkId = 20L;
+        final long dstNetworkId = 21L;
+        Mockito.when(networkDetailsDao.listDetails(srcNetworkId)).thenReturn(Arrays.asList(
+                new NetworkDetailVO(srcNetworkId, ApiConstants.NETWORKRATE, "100", true),
+                new NetworkDetailVO(srcNetworkId, "someKey", "someValue", false)));
+
+        networkMigrationManager.copyNetworkDetails(srcNetworkId, dstNetworkId);
+
+        ArgumentCaptor<NetworkDetailVO> captor = ArgumentCaptor.forClass(NetworkDetailVO.class);
+        Mockito.verify(networkDetailsDao, Mockito.times(1)).persist(captor.capture());
+        Assert.assertEquals("someKey", captor.getValue().getName());
+        Assert.assertEquals(dstNetworkId, captor.getValue().getResourceId());
     }
 }

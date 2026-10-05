@@ -247,10 +247,14 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     }
 
     @DB
-    private void copyNetworkDetails(long srcNetworkId, long dstNetworkId) {
+    protected void copyNetworkDetails(long srcNetworkId, long dstNetworkId) {
         List<NetworkDetailVO> networkDetails = _networkDetailsDao.listDetails(srcNetworkId);
 
         for (NetworkDetailVO networkDetail : networkDetails) {
+            // the network rate of the copy is already set from its offering, and it is updated when the migrated network moves to the new offering
+            if (ApiConstants.NETWORKRATE.equals(networkDetail.getName())) {
+                continue;
+            }
             _networkDetailsDao.persist(new NetworkDetailVO(dstNetworkId, networkDetail.getName(), networkDetail.getValue(), networkDetail.isDisplay()));
         }
     }
