@@ -172,6 +172,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
@@ -317,6 +318,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private ImageStoreDao imageStoreDao;
     @Inject
     private DataStoreManager dataStoreManager;
+    @Inject
+    private VolumeImportUnmanageService volumeImportUnmanageService;
     @Inject
     private ImportVmTasksManager importVmTasksManager;
 
@@ -816,6 +819,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
                 storagePool.getId(), storagePool.getPoolType(), diskPath, null, diskProfile, format);
 
+        notifyStorageDriverOfVolumeImport(storagePool, profile.getVolumeId());
+
         return new Pair<>(profile, storagePool);
     }
 
@@ -828,7 +833,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
                 poolId, storagePool.getPoolType(), diskPath, null, diskProfile, format);
 
+        notifyStorageDriverOfVolumeImport(storagePool, profile.getVolumeId());
+
         return new Pair<>(profile, storagePool);
+    }
+
+    private void notifyStorageDriverOfVolumeImport(StoragePool pool, long volumeId) {
+        Volume volume = volumeDao.findById(volumeId);
+        volumeImportUnmanageService.notifyStorageDriverOfVolumeManagementChange(pool, volume, true);
     }
 
     /**
@@ -2959,6 +2971,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             // check then runs against whichever pool that cluster does have. Both are null for a zone
             // wide pool, which every host can see.
             StoragePoolVO importStoragePool = primaryDataStoreDao.findById(poolId);
+            if (importStoragePool == null) {
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Storage pool with id: %s not found", userVm.getInstanceName(), poolId));
+            }
             final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), importStoragePool.getPodId(),
                     importStoragePool.getClusterId(), hostId, poolId, null);
             DeployDestination dest = null;
@@ -3006,6 +3022,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             try {
                 long deviceId = 1L;
                 Storage.ImageFormat diskFormat = getImageFormatFromVolumeDetails(checkVolumeAnswer.getVolumeDetails());
+                if (storagePool.getPoolType() == Storage.StoragePoolType.StorPool) {
+                    diskFormat = Storage.ImageFormat.QCOW2;
+                }
                 if(ImportSource.SHARED == importSource) {
                     diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
                             template, deviceId, poolId, diskPath, diskProfile, diskFormat));

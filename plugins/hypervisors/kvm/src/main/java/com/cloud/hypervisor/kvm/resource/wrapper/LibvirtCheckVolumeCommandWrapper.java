@@ -51,7 +51,15 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.SharedMountPoint,
-            Storage.StoragePoolType.RBD);
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.StorPool);
+
+    private static final List<Storage.StoragePoolType> RAW_BLOCK_STORAGE_POOL_TYPES = Arrays.asList(
+            Storage.StoragePoolType.RBD,
+            Storage.StoragePoolType.StorPool);
+
+    private static final List<Storage.StoragePoolType> POOL_NEEDS_TO_EXPOSE_THE_VOLUME = Arrays.asList(
+            Storage.StoragePoolType.StorPool);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -63,27 +71,37 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
 
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
-                final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
-                final String path = vol.getPath();
-                final boolean isRbd = Storage.StoragePoolType.RBD.equals(storageFilerTO.getType());
-
-                Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
-                if (MapUtils.isEmpty(volumeDetails)) {
-                    return new Answer(command, false, "Unable to read the volume on the storage pool");
+                final boolean shouldAttachTheVolume = POOL_NEEDS_TO_EXPOSE_THE_VOLUME.contains(storageFilerTO.getType());
+                if (shouldAttachTheVolume && !pool.connectPhysicalDisk(srcFile, new HashMap<>())) {
+                    return new Answer(command, false, "Unable to attach the volume on the storage pool");
                 }
+                try {
+                    final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
+                    final String path = vol.getPath();
+                    final boolean isRawBlockPool = RAW_BLOCK_STORAGE_POOL_TYPES.contains(storageFilerTO.getType());
 
-                if (!isRbd) {
-                    try {
-                        KVMPhysicalDisk.checkQcow2File(path);
-                    } catch (final CloudRuntimeException e) {
-                        return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
+                    Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
+                    if (MapUtils.isEmpty(volumeDetails)) {
+                        return new Answer(command, false, "Unable to read the volume on the storage pool");
+                    }
+
+                    if (!isRawBlockPool) {
+                        try {
+                            KVMPhysicalDisk.checkQcow2File(path);
+                        } catch (final CloudRuntimeException e) {
+                            return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
+                        }
+                    }
+
+                    // Images on RBD are raw and the path is an image name that qemu-img cannot open
+                    // without the rbd: URI, so take the size libvirt already reported for the volume
+                    long size = isRawBlockPool ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
+                    return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
+                } finally {
+                    if (shouldAttachTheVolume) {
+                        pool.disconnectPhysicalDisk(srcFile);
                     }
                 }
-
-                // Images on RBD are raw and the path is an image name that qemu-img cannot open
-                // without the rbd: URI, so take the size libvirt already reported for the volume.
-                long size = isRbd ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
-                return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
