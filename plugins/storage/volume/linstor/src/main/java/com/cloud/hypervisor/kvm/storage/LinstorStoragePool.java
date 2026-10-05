@@ -28,6 +28,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -103,6 +104,11 @@ public class LinstorStoragePool implements KVMStoragePool {
     public List<KVMPhysicalDisk> listPhysicalDisks()
     {
         return _storageAdaptor.listPhysicalDisks(_uuid, this);
+    }
+
+    @Override
+    public List<VolumeOnStorageTO> getVolumesForImport(String path) {
+        return ((LinstorStorageAdaptor) _storageAdaptor).getVolumesForImport(this, path);
     }
 
     @Override

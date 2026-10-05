@@ -62,6 +62,9 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -134,6 +137,26 @@ public class VolumeImportUnmanageManagerImplTest {
     private VolumeApiService volumeApiService;
     @Mock
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Mock
+    private DataStoreManager dataStoreManager;
+
+    @Test
+    public void linstorWrongGroupIsRejectedBeforeAgentInspection() {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        DataStore store = mock(DataStore.class);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        when(pool.getId()).thenReturn(42L);
+        when(dataStoreManager.getPrimaryDataStore(42L)).thenReturn(store);
+        when(store.getDriver()).thenReturn(driver);
+        doThrow(new CloudRuntimeException("resource group mismatch")).when(driver).validateVolumeForImport(pool, "disk");
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> volumeImportUnmanageManager.listVolumesForImportInternal(pool, "disk", null));
+
+        verify(driver).validateVolumeForImport(pool, "disk");
+        Mockito.verifyNoInteractions(agentManager, volumeManager);
+    }
 
     @Mock
     StoragePoolVO storagePoolVO;

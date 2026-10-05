@@ -181,6 +181,34 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
 
+    @Test
+    public void linstorRootImportRejectsWrongGroupThroughDriver() {
+        com.cloud.storage.StoragePool pool = Mockito.mock(com.cloud.storage.StoragePool.class);
+        org.apache.cloudstack.engine.subsystem.api.storage.DataStore store = Mockito.mock(
+                org.apache.cloudstack.engine.subsystem.api.storage.DataStore.class);
+        org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver driver = Mockito.mock(
+                org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver.class);
+        Mockito.when(pool.getPoolType()).thenReturn(com.cloud.storage.Storage.StoragePoolType.Linstor);
+        Mockito.when(pool.getId()).thenReturn(42L);
+        Mockito.when(dataStoreManager.getPrimaryDataStore(42L)).thenReturn(store);
+        Mockito.when(store.getDriver()).thenReturn(driver);
+        Mockito.doThrow(new com.cloud.utils.exception.CloudRuntimeException("resource group mismatch"))
+                .when(driver).validateVolumeForImport(pool, "disk");
+
+        Assert.assertThrows(com.cloud.utils.exception.CloudRuntimeException.class,
+                () -> unmanagedVMsManager.validateStorageVolumeForImport(pool, "disk"));
+
+        Mockito.verify(driver).validateVolumeForImport(pool, "disk");
+    }
+
+    @Test
+    public void nonLinstorRootImportDoesNotInvokeBackendOwnershipValidation() {
+        com.cloud.storage.StoragePool pool = Mockito.mock(com.cloud.storage.StoragePool.class);
+        Mockito.when(pool.getPoolType()).thenReturn(com.cloud.storage.Storage.StoragePoolType.RBD);
+        unmanagedVMsManager.validateStorageVolumeForImport(pool, "disk");
+        Mockito.verifyNoInteractions(dataStoreManager);
+    }
+
     @Spy
     @InjectMocks
     private UnmanagedVMsManagerImpl unmanagedVMsManager;

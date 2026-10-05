@@ -24,6 +24,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.joda.time.Duration;
 
 import com.cloud.agent.api.to.HostTO;
@@ -55,6 +56,11 @@ public interface KVMStoragePool {
     boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format);
 
     List<KVMPhysicalDisk> listPhysicalDisks();
+
+    /** Read-only backend import metadata; null path requests all volumes in this pool. */
+    default List<VolumeOnStorageTO> getVolumesForImport(String path) {
+        throw new UnsupportedOperationException("Backend import metadata is not supported by this storage pool");
+    }
 
     String getUuid();
 

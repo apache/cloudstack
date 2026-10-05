@@ -168,6 +168,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -1310,6 +1311,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor [%s].", cluster.getHypervisorType().toString()));
         }
         return cluster;
+    }
+
+    protected void validateStorageVolumeForImport(StoragePool pool, String path) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, path);
+        }
     }
 
     @Override
@@ -3238,6 +3246,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException("Disk image is already in use");
             }
 
+            validateStorageVolumeForImport(storagePool, diskPath);
+
             DiskOffering diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
 
             if (diskOffering != null && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
@@ -3530,6 +3540,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Map<Volume, StoragePool> storage = dest.getStorageForDisks();
             Volume volume = volumeDao.findById(diskProfile.getVolumeId());
             StoragePool storagePool = storage.get(volume);
+            try {
+                validateStorageVolumeForImport(storagePool, diskPath);
+            } catch (RuntimeException e) {
+                cleanupFailedImportVM(userVm);
+                throw e;
+            }
             CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
             checkVolumeCommand.setSrcFile(diskPath);
             StorageFilerTO storageTO = new StorageFilerTO(storagePool);

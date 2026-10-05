@@ -56,7 +56,6 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String result = null;
         String srcFile = command.getSrcFile();
         StorageFilerTO storageFilerTO = command.getStorageFilerTO();
         KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -64,31 +63,17 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
 
         try {
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
+                if (Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
+                    List<VolumeOnStorageTO> volumes = pool.getVolumesForImport(srcFile);
+                    if (volumes == null || volumes.size() != 1 || !srcFile.equals(volumes.get(0).getPath())) {
+                        return new CheckVolumeAnswer(command, false, "LINSTOR volume not found", 0, null);
+                    }
+                    VolumeOnStorageTO volume = volumes.get(0);
+                    return new CheckVolumeAnswer(command, true, "", volume.getVirtualSize(), volume.getDetails());
+                }
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
-                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())
-                        || Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
-                    // RBD and Linstor volumes are raw block devices, not local qcow2 files:
-                    // inspect them through qemu-img (RBD by its rbd: URI, Linstor by its
-                    // /dev/drbd device path) rather than checkQcow2File, which would reject
-                    // a raw device.
-                    //
-                    // A Linstor volume only materialises as a local /dev/drbd device once the
-                    // resource is made available on THIS host (a diskless DRBD assignment). RBD
-                    // needs no such step — qemu-img reaches it over the network by its rbd: URI.
-                    // So for Linstor we connect the resource here before qemu-img inspects it and
-                    // release the diskless assignment afterwards; the replicated data on the
-                    // storage nodes is untouched (disconnect only drops a local diskless copy).
-                    boolean linstorConnected = false;
-                    if (Storage.StoragePoolType.Linstor.equals(storageFilerTO.getType())) {
-                        linstorConnected = poolMgr.connectPhysicalDisk(storageFilerTO.getType(), storageFilerTO.getUuid(), srcFile, null);
-                    }
-                    try {
-                        return checkRbdVolume(command, pool, vol);
-                    } finally {
-                        if (linstorConnected) {
-                            poolMgr.disconnectPhysicalDisk(storageFilerTO.getType(), storageFilerTO.getUuid(), srcFile);
-                        }
-                    }
+                if (Storage.StoragePoolType.RBD.equals(storageFilerTO.getType())) {
+                    return checkRbdVolume(command, pool, vol);
                 }
                 final String path = vol.getPath();
                 try {
@@ -104,7 +89,7 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             }
         } catch (final Exception e) {
             logger.error("Error while checking the disk: {}", e.getMessage());
-            return new Answer(command, false, result);
+            return new Answer(command, false, e.getMessage());
         }
     }
 
