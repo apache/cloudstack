@@ -65,7 +65,7 @@ public class VMSnapshotUsageParser extends UsageParser {
             long zoneId = usageRec.getZoneId();
             Long volId = usageRec.getVolumeId();
             long vmId = usageRec.getVmId();
-            String key = vmId + ":" + volId;
+            String key = vmId + ":" + volId + ":" + usageRec.getVmSnapshotId();
             if (usageRec.getCreated().before(startDate)) {
                 unprocessedUsage.put(key, usageRec);
                 continue;
@@ -85,7 +85,7 @@ public class VMSnapshotUsageParser extends UsageParser {
             long duration = (createDate.getTime() - previousCreated.getTime()) + 1;
 
             createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, previousCreated, createDate, account, volId, zoneId, previousEvent.getDiskOfferingId(), vmId,
-                previousEvent.getSize(), usageRec.getVmSnapshotId());
+                previousEvent.getSize(), previousEvent.getVmSnapshotId());
             previousEvent.setProcessed(new Date());
             usageVMSnapshotDao.update(previousEvent);
 
