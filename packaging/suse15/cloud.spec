@@ -466,7 +466,7 @@ else
 fi
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
-/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rng-tools > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
