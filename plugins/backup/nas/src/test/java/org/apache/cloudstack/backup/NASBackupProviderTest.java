@@ -277,7 +277,8 @@ public class NASBackupProviderTest {
         BackupAnswer answer = mock(BackupAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(false);
         Mockito.when(answer.getNeedsCleanup()).thenReturn(true);
-        Mockito.when(agentManager.send(anyLong(), Mockito.any(TakeBackupCommand.class))).thenReturn(answer);
+        ArgumentCaptor<TakeBackupCommand> commandCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), commandCaptor.capture())).thenReturn(answer);
 
         Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -287,6 +288,10 @@ public class NASBackupProviderTest {
         Assert.assertNotNull(result.second());
         Assert.assertEquals(Backup.Status.Error, result.second().getStatus());
         Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
+
+        TakeBackupCommand command = commandCaptor.getValue();
+        Assert.assertTrue(command.getQuiesce());
+        Assert.assertEquals(Integer.valueOf(30), command.getQuiesceTimeout());
     }
 
     @Test

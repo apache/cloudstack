@@ -32,6 +32,7 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
@@ -132,6 +133,14 @@ get_linstor_uuid_from_device() {
   # Without a by-res symlink we cannot derive the volume UUID. Falling back to the
   # raw device name would produce a backup that restore cannot find, so fail hard.
   return 1
+}
+
+qemu_agent_command() {
+  local timeout_args=()
+  if [[ -n "$QUIESCE_TIMEOUT" ]]; then
+    timeout_args=(--timeout "$QUIESCE_TIMEOUT")
+  fi
+  virsh -c qemu:///system qemu-agent-command "$VM" "${timeout_args[@]}" "$1"
 }
 
 backup_running_vm() {
@@ -258,7 +267,7 @@ print(len(files))
 
   local thaw=0
   if [[ ${QUIESCE} == "true" ]]; then
-    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
+    if qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
       thaw=1
     fi
   fi
@@ -278,7 +287,7 @@ print(len(files))
   fi
 
   if [[ $thaw -eq 1 ]]; then
-    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
+    if ! response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
       echo "Failed to thaw the filesystem for vm $VM: $response"
       cleanup
       exit 1
@@ -519,6 +528,7 @@ cleanup() {
 function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
+  echo "         [--quiesce-timeout <seconds>]"
   echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
@@ -566,6 +576,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q|--quiesce)
       QUIESCE="$2"
+      shift
+      shift
+      ;;
+    --quiesce-timeout)
+      QUIESCE_TIMEOUT="$2"
       shift
       shift
       ;;

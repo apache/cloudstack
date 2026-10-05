@@ -117,6 +117,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             ConfigKey.Scope.Zone,
             NASBackupIncrementalEnabled.key());
 
+    ConfigKey<Integer> NASBackupQuiesceAgentTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.quiesce.agent.timeout",
+            "30",
+            "Timeout in seconds for the guest agent filesystem freeze and thaw commands of a quiesced NAS backup. " +
+                    "Set to 0 to use the libvirt default (5 seconds unless changed on the host).",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
     @Inject
     private BackupDao backupDao;
 
@@ -578,6 +587,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
+        command.setQuiesceTimeout(NASBackupQuiesceAgentTimeout.valueIn(vm.getDataCenterId()));
         command.setMode(decision.mode);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
@@ -645,7 +655,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
-                // The row is kept, so return it for the caller to record its schedule.
+                // Return the row to the caller to record its schedule - e.g. Scheduled or Manual.
                 return new Pair<>(false, backupVO);
             }
             backupVO.setStatus(Backup.Status.Failed);
@@ -1255,7 +1265,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return new ConfigKey[]{
                 NASBackupRestoreMountTimeout,
                 NASBackupFullEvery,
-                NASBackupIncrementalEnabled
+                NASBackupIncrementalEnabled,
+                NASBackupQuiesceAgentTimeout
         };
     }
 
