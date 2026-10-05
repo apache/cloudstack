@@ -103,4 +103,6 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
     long batchExpungeForResources(List<Long> ids, Long batchSize);
 
     String getActualValue(ResourceDetail resourceDetail);
+
+    List<R> listDetailsForResourceIdsAndKey(List<Long> resourceIds, String key);
 }

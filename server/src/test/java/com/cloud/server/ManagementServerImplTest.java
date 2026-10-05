@@ -20,6 +20,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -227,7 +228,7 @@ public class ManagementServerImplTest {
         apiDBUtilsMock = Mockito.mockStatic(ApiDBUtils.class);
         // Return empty list to avoid architecture filtering in most tests
         apiDBUtilsMock.when(() -> ApiDBUtils.listZoneClustersArchs(Mockito.anyLong()))
-            .thenReturn(new ArrayList<>());
+                .thenReturn(new ArrayList<>());
     }
 
     @After
@@ -246,7 +247,7 @@ public class ManagementServerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testDuplicateRegistraitons(){
+    public void testDuplicateRegistrations() {
         String accountName = "account";
         String publicKeyString = "ssh-rsa very public";
         String publicKeyMaterial = spy.getPublicKeyFromKeyKeyMaterial(publicKeyString);
@@ -826,9 +827,13 @@ public class ManagementServerImplTest {
     @Test
     public void testListHostsForMigrationOfVMGpuEnabled() {
         VMInstanceVO vm = mockRunningVM(1L, HypervisorType.KVM);
+        long hostId = vm.getHostId();
+        HostVO srcHost = mockHost(hostId, 4L, 5L, 6L, HypervisorType.KVM);
         Account caller = mockRootAdminAccount();
+
         Mockito.doReturn(caller).when(spy).getCaller();
         Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
+        Mockito.doReturn(srcHost).when(hostDao).findById(hostId);
 
         // Mock GPU detail
         Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
@@ -888,7 +893,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify storage motion capability was checked
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.VMware, null);
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.VMware, null);
 
         // Verify result structure and data
         Assert.assertNotNull(result);
@@ -952,7 +957,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify hypervisor capabilities were checked
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.KVM, "");
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.KVM, "");
 
         // Verify result contains expected hosts
         Assert.assertNotNull(result);
@@ -1097,7 +1102,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify KVM null version was converted to empty string
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.KVM, "");
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.KVM, "");
 
         // Verify result data
         Assert.assertNotNull(result);
@@ -1416,7 +1421,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify storage motion capability was checked for User VM
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.VMware, null);
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.VMware, null);
 
         // Verify response data
         Assert.assertNotNull(result);
@@ -1481,7 +1486,7 @@ public class ManagementServerImplTest {
                 spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
             // Verify hypervisor is in supported hypervisors list
-            Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(hypervisorType, version);
+            Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(hypervisorType, version);
 
             // Verify validation passed for this hypervisor
             Assert.assertNotNull("Result should not be null for " + hypervisorType, result);
@@ -1508,8 +1513,6 @@ public class ManagementServerImplTest {
         Account caller = mockRootAdminAccount();
         Mockito.doReturn(caller).when(spy).getCaller();
         Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
         Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(null);
 
         spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
@@ -1589,7 +1592,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify that storage motion capability was checked for system VM (VMware is in hypervisorTypes list)
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.VMware, null);
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.VMware, null);
 
         // Verify response structure
         Assert.assertNotNull(result);
@@ -1642,7 +1645,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify User VM can migrate with storage (User VM type always checks)
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.KVM, "");
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.KVM, "");
 
         // Verify response data
         Assert.assertNotNull(result);
@@ -1695,7 +1698,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify XenServer without storage motion was checked
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.XenServer, null);
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.XenServer, null);
         // Verify cluster-scoped search was used (not zone-wide)
         Mockito.verify(spy).searchForServers(
             Mockito.eq(0L), Mockito.eq(20L), Mockito.isNull(), Mockito.any(Type.class),
@@ -1845,14 +1848,14 @@ public class ManagementServerImplTest {
         Mockito.doReturn(caller).when(spy).getCaller();
         Mockito.when(vmInstanceDao.findById(1L)).thenReturn(vm);
         Mockito.when(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()))
-            .thenReturn(null);
+                .thenReturn(null);
 
         HostVO srcHost = mockHost(100L, 1L, 1L, 1L, HypervisorType.VMware);
         Mockito.when(hostDao.findById(vm.getHostId())).thenReturn(srcHost);
 
         // VMware with DomainRouter should still check storage motion
         Mockito.when(hypervisorCapabilitiesDao.isStorageMotionSupported(HypervisorType.VMware, null))
-            .thenReturn(true);
+                .thenReturn(true);
 
         ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(offeringDao.findById(vm.getId(), vm.getServiceOfferingId())).thenReturn(offering);
@@ -1880,7 +1883,7 @@ public class ManagementServerImplTest {
             spy.listHostsForMigrationOfVM(1L, 0L, 20L, null);
 
         // Verify VMware always checks storage motion (hypervisorTypes list includes VMware)
-        Mockito.verify(hypervisorCapabilitiesDao).isStorageMotionSupported(HypervisorType.VMware, null);
+        Mockito.verify(hypervisorCapabilitiesDao, Mockito.atLeastOnce()).isStorageMotionSupported(HypervisorType.VMware, null);
 
         // Verify response
         Assert.assertNotNull(result);
@@ -2073,5 +2076,33 @@ public class ManagementServerImplTest {
         Mockito.when(diskOffering.getId()).thenReturn(id);
         Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(false);
         return diskOffering;
+    }
+
+    @Test
+    public void createDeploymentPlanForMigrationListingTestAllocatesInAnyClusterWhenStorageMigrationIsSupported() {
+        VMInstanceVO vm = mockRunningVM(1L, HypervisorType.KVM);
+        HostVO srcHost = mockHost(vm.getHostId(), 1L, 2L, 3L, HypervisorType.KVM);
+
+        Mockito.doReturn(true).when(spy).isStorageMigrationSupported(vm, srcHost);
+
+        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm, srcHost);
+
+        Assert.assertEquals(3L, deploymentPlan.getDataCenterId());
+        Assert.assertEquals(2L, (long) deploymentPlan.getPodId());
+        Assert.assertNull(deploymentPlan.getClusterId());
+    }
+
+    @Test
+    public void createDeploymentPlanForMigrationListingTestAllocatesInSourceClusterWhenStorageMigrationIsNotSupported() {
+        VMInstanceVO vm = mockRunningVM(1L, HypervisorType.XenServer);
+        HostVO srcHost = mockHost(vm.getHostId(), 4L, 5L, 6L, HypervisorType.XenServer);
+
+        Mockito.doReturn(false).when(spy).isStorageMigrationSupported(vm, srcHost);
+
+        DataCenterDeployment deploymentPlan = spy.createDeploymentPlanForMigrationListing(vm, srcHost);
+
+        Assert.assertEquals(6L, deploymentPlan.getDataCenterId());
+        Assert.assertEquals(5L, (long) deploymentPlan.getPodId());
+        Assert.assertEquals(4L, (long) deploymentPlan.getClusterId());
     }
 }

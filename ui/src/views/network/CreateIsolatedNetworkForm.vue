@@ -96,6 +96,11 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
+            <a-alert type="warning" v-if="!this.hasVPC">
+              <template #message>
+                <span v-html="$t('message.warn.vpc.offerings')"/>
+              </template>
+            </a-alert>
           </a-form-item>
           <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
             <template #label>
@@ -369,7 +374,8 @@ export default {
       setMTU: false,
       asNumberLoading: false,
       selectedAsNumber: 0,
-      asNumbersZone: []
+      asNumbersZone: [],
+      hasVPC: true
     }
   },
   watch: {
@@ -515,13 +521,17 @@ export default {
       if (this.vpc !== null) { // from VPC section
         this.fetchNetworkOfferingData(true)
       } else { // from guest network section
-        var params = {}
+        const params = {
+          account: this.owner.account,
+          projectid: this.owner.projectid,
+          domainid: this.owner.domainid
+        }
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
           api('listVPCs', params).then(json => {
             const listVPCs = json.listvpcsresponse.vpc
-            var vpcAvailable = this.arrayHasItems(listVPCs)
-            if (vpcAvailable === false) {
+            this.hasVPC = this.arrayHasItems(listVPCs)
+            if (!this.hasVPC) {
               this.fetchNetworkOfferingData(false)
             } else {
               this.fetchNetworkOfferingData()
@@ -534,7 +544,7 @@ export default {
     },
     fetchNetworkOfferingData (forVpc) {
       this.networkOfferingLoading = true
-      var params = {
+      const params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
         state: 'Enabled'
@@ -577,7 +587,7 @@ export default {
     },
     fetchVpcData () {
       this.vpcLoading = true
-      var params = {
+      const params = {
         listAll: true,
         details: 'min'
       }
@@ -600,14 +610,14 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
-        var params = {
+        const params = {
           zoneId: this.selectedZone.id,
           name: values.name,
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
-        for (var field of usefulFields) {
+        const usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        for (const field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
           }

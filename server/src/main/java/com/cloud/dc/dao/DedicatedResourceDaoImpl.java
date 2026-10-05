@@ -75,6 +75,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
 
     protected SearchBuilder<DedicatedResourceVO> ListByAccountId;
     protected SearchBuilder<DedicatedResourceVO> ListByDomainId;
+    protected SearchBuilder<DedicatedResourceVO> ListAllByDomainId;
     protected SearchBuilder<DedicatedResourceVO> ListByAffinityGroupId;
     protected SearchBuilder<DedicatedResourceVO> ZoneByDomainIdsSearch;
 
@@ -204,6 +205,10 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
         ListByDomainId.and("accountId", ListByDomainId.entity().getAccountId(), SearchCriteria.Op.NULL);
         ListByDomainId.and("domainId", ListByDomainId.entity().getDomainId(), SearchCriteria.Op.EQ);
         ListByDomainId.done();
+
+        ListAllByDomainId = createSearchBuilder();
+        ListAllByDomainId.and("domainId", ListAllByDomainId.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ListAllByDomainId.done();
 
         ListByAffinityGroupId = createSearchBuilder();
         ListByAffinityGroupId.and("affinityGroupId", ListByAffinityGroupId.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
@@ -352,6 +357,13 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     @Override
     public List<DedicatedResourceVO> listByDomainId(Long domainId) {
         SearchCriteria<DedicatedResourceVO> sc = ListByDomainId.create();
+        sc.setParameters("domainId", domainId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DedicatedResourceVO> listAllByDomainId(Long domainId) {
+        SearchCriteria<DedicatedResourceVO> sc = ListAllByDomainId.create();
         sc.setParameters("domainId", domainId);
         return listBy(sc);
     }

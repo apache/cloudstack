@@ -20,6 +20,7 @@ import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'network',
@@ -681,7 +682,7 @@ export default {
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }

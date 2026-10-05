@@ -335,6 +335,49 @@ public class StatsCollectorTest {
         Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
     }
 
+    private void setVmDiskStatsMaxRetentionTimeValue(String value) {
+        StatsCollector.vmDiskStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", value,
+                "The maximum time (in minutes) for keeping Volume stats records in the database. The Volume stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
+    }
+
+    @Test
+    public void cleanUpVolumeStatsTestIsDisabled() {
+        setVmDiskStatsMaxRetentionTimeValue("0");
+
+        statsCollector.cleanUpVolumeStats();
+
+        Mockito.verify(volumeStatsDao, Mockito.never()).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void cleanUpVolumeStatsTestIsEnabled() {
+        setVmDiskStatsMaxRetentionTimeValue("1");
+
+        statsCollector.cleanUpVolumeStats();
+
+        Mockito.verify(volumeStatsDao).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
+    }
+
+    @Test
+    public void vmStatsCleanerTestCatchesCloudRuntimeExceptionAndKeepsRunning() {
+        Mockito.doThrow(new CloudRuntimeException("Communications link failure")).when(statsCollector).cleanUpVirtualMachineStats();
+        StatsCollector.VmStatsCleaner vmStatsCleaner = statsCollector.new VmStatsCleaner();
+
+        vmStatsCleaner.run();
+
+        Mockito.verify(statsCollector).cleanUpVirtualMachineStats();
+    }
+
+    @Test
+    public void volumeStatsCleanerTestCatchesCloudRuntimeExceptionAndKeepsRunning() {
+        Mockito.doThrow(new CloudRuntimeException("Communications link failure")).when(statsCollector).cleanUpVolumeStats();
+        StatsCollector.VolumeStatsCleaner volumeStatsCleaner = statsCollector.new VolumeStatsCleaner();
+
+        volumeStatsCleaner.run();
+
+        Mockito.verify(statsCollector).cleanUpVolumeStats();
+    }
+
     @Test
     public void persistVirtualMachineStatsTestPersistsSuccessfully() {
         statsCollector.msId = 1L;

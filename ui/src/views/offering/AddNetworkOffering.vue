@@ -689,7 +689,6 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
-        serviceofferingid: [{ required: true, message: this.$t('message.error.select') }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
           type: 'array',

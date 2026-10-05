@@ -440,7 +440,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     @Override
     public boolean start() {
         managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
-        return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
+        return loadRootCAKeyPair() && loadManagementKeyStore();
     }
 
     @Override

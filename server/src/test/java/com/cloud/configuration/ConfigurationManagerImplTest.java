@@ -449,6 +449,7 @@ public class ConfigurationManagerImplTest {
         Assert.assertNotNull(offering);
     }
 
+    @Test
     public void testValidateInvalidConfiguration() {
         Mockito.doReturn(null).when(configDao).findByName(Mockito.anyString());
         String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Global.toString());

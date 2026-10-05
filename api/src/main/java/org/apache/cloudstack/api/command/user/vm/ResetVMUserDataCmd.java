@@ -65,6 +65,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
             length = 1048576)
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata")
     private Long userdataId;
 

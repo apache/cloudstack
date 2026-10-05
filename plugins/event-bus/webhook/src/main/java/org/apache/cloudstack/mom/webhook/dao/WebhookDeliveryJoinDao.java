@@ -27,7 +27,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface WebhookDeliveryJoinDao extends GenericDao<WebhookDeliveryJoinVO, Long> {
-    Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByListApiParameters(Long id,
-         List<Long> webhookIds, Long managementServerId, final String keyword, final Date startDate,
-         final Date endDate, final String eventType, Filter searchFilter);
+    Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByListApiParameters(Long id, List<Long> webhookIds,
+         Long managementServerId, String keyword, Date startDate, Date endDate, String eventType, Filter searchFilter,
+         boolean isRootAdmin);
 }
