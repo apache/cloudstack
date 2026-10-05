@@ -2851,6 +2851,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     return false;
                 }
                 reconfigStaticNatForVpcVr(vpcId);
+                // only after a cleanup: the VR is recreated and its public NIC gets the new rate
                 saveVpcNetworkRateInDetails(vpc);
                 return true;
             }
@@ -2868,7 +2869,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return false;
             }
             logger.debug("VPC " + vpc + " was restarted successfully");
-            saveVpcNetworkRateInDetails(vpc);
             return true;
         } finally {
             logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);

@@ -502,6 +502,28 @@ public class VpcManagerImplTest {
         manager.createVpcOffering(cmd);
     }
 
+    @Test
+    public void testRestartVpcWithoutCleanupDoesNotRefreshPublicNetworkRate() throws Exception {
+        final long vpcId = 5L;
+        Vpc vpc = Mockito.mock(Vpc.class);
+        Mockito.when(vpcDao.getActiveVpcById(vpcId)).thenReturn(vpc);
+        Mockito.when(vpc.isRedundant()).thenReturn(false);
+        User user = Mockito.mock(User.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        Mockito.when(accountManager.getActiveAccountById(1L)).thenReturn(Mockito.mock(Account.class));
+        Mockito.when(networkModel.listNetworksByVpc(vpcId)).thenReturn(Collections.emptyList());
+        VpcVO vpcVO = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpcVO);
+        VpcManagerImpl spyManager = Mockito.spy(manager);
+        doReturn(true).when(spyManager).startVpc(vpcId, false);
+
+        Assert.assertTrue(spyManager.restartVpc(vpcId, false, false, false, user));
+
+        // the VR is not recreated, so its public NIC keeps the old rate: the stored rate must not change either
+        Mockito.verify(vpcDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        Mockito.verify(configMgr, Mockito.never()).getVpcOfferingNetworkRate(Mockito.anyLong(), Mockito.any());
+    }
+
     private Integer createVpcOfferingAndCaptureStoredRate(Integer requestedRate) {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         Mockito.when(cmd.getPublicNetworkRate()).thenReturn(requestedRate);
