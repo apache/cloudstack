@@ -3613,15 +3613,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     if (disk.getDeviceType() == DeviceType.DISK) {
                         if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
                             busT = DiskDef.DiskBus.SCSI;
-                        } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIOBLK) {
-                            busT = DiskDef.DiskBus.VIRTIOBLK;
                         }
                         break;
                     }
                 }
 
                 diskdef = new DiskDef();
-                if (busT == DiskDef.DiskBus.SCSI || busT == DiskDef.DiskBus.VIRTIOBLK) {
+                if (busT == DiskDef.DiskBus.SCSI) {
                     diskdef.setQemuDriver(true);
                     diskdef.setDiscard(DiscardType.UNMAP);
                 }

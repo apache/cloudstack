@@ -1544,8 +1544,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
             if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
                 return DiskDef.DiskBus.SCSI;
-            } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIOBLK) {
-                return DiskDef.DiskBus.VIRTIOBLK;
             }
         }
         if (deviceId != 0 && DiskDef.DiskBus.VIRTIOBLK == DiskDef.DiskBus.fromValue(
