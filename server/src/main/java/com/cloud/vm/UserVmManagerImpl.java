@@ -7011,8 +7011,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (volume != null) {
             if (!isSnapshot
                     && (volume.getDataStore() == null
-                    || !ScopeType.ZONE.equals(volume.getDataStore().getScope().getScopeType()))) {
-                throw new InvalidParameterValueException("Deployment of virtual machine is supported only for Zone-wide storage pools");
+                    || (!ScopeType.ZONE.equals(volume.getDataStore().getScope().getScopeType())
+                        && !ScopeType.CLUSTER.equals(volume.getDataStore().getScope().getScopeType())))) {
+                throw new InvalidParameterValueException("Deployment of virtual machine is supported only for Zone-wide or Cluster-wide storage pools");
             }
             checkIfVolumeTemplateIsTheSameAsTheProvided(volume, templateId);
             if (volume.getInstanceId() != null && !isSnapshot) {
