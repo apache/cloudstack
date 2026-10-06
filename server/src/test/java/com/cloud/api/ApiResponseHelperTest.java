@@ -92,6 +92,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -1411,6 +1412,167 @@ public class ApiResponseHelperTest {
         // Assert
         assertVmDiskUsageResponse(response, resourceDetails, "Disk I/O write bytes", "vm-disk-bytes-write-volume-uuid", "vm-disk-bytes-write-volume", 28L);
         verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, 28L);
+    }
+
+    @Test
+    @DisplayName("createUsageResponse dispatches all usage types through public entry point")
+    public void createUsageResponseDispatchesAllUsageTypes() {
+        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "account-uuid");
+        account.setId(1L);
+
+        DomainVO domain = new DomainVO();
+        domain.setName("test-domain");
+        domain.setUuid("domain-uuid");
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getCpu()).thenReturn(1);
+        when(serviceOffering.getSpeed()).thenReturn(1000);
+        when(serviceOffering.getRamSize()).thenReturn(1024);
+
+        int[] usageTypes = {
+                UsageTypes.RUNNING_VM,
+                UsageTypes.ALLOCATED_VM,
+                UsageTypes.IP_ADDRESS,
+                UsageTypes.NETWORK_BYTES_SENT,
+                UsageTypes.NETWORK_BYTES_RECEIVED,
+                UsageTypes.VM_DISK_IO_READ,
+                UsageTypes.VM_DISK_IO_WRITE,
+                UsageTypes.VM_DISK_BYTES_READ,
+                UsageTypes.VM_DISK_BYTES_WRITE,
+                UsageTypes.VOLUME,
+                UsageTypes.TEMPLATE,
+                UsageTypes.ISO,
+                UsageTypes.SNAPSHOT,
+                UsageTypes.LOAD_BALANCER_POLICY,
+                UsageTypes.PORT_FORWARDING_RULE,
+                UsageTypes.NETWORK_OFFERING,
+                UsageTypes.VPN_USERS,
+                UsageTypes.SECURITY_GROUP,
+                UsageTypes.BACKUP,
+                UsageTypes.VM_SNAPSHOT,
+                UsageTypes.VOLUME_SECONDARY,
+                UsageTypes.VM_SNAPSHOT_ON_PRIMARY,
+                UsageTypes.BUCKET
+        };
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsStaticMock = Mockito.mockStatic(ApiDBUtils.class)) {
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findAccountById(1L)).thenReturn(account);
+            apiDBUtilsStaticMock.when(() -> ApiDBUtils.findDomainById(1L)).thenReturn(domain);
+            when(entityManagerMock.findByIdIncludingRemoved(ServiceOfferingVO.class, 2000L)).thenReturn(serviceOffering);
+
+            for (int usageType : usageTypes) {
+                UsageVO usageRecord = mock(UsageVO.class);
+                Long usageId = 1000L + usageType;
+
+                when(usageRecord.getAccountId()).thenReturn(1L);
+                when(usageRecord.getUsageType()).thenReturn(usageType);
+                when(usageRecord.getUsageId()).thenReturn(usageId);
+                when(usageRecord.getVmInstanceId()).thenReturn(null);
+                when(usageRecord.getTemplateId()).thenReturn(null);
+                when(usageRecord.getZoneId()).thenReturn(null);
+                when(usageRecord.getDescription()).thenReturn("description");
+                when(usageRecord.getUsageDisplay()).thenReturn("usage");
+                when(usageRecord.getRawUsage()).thenReturn(0D);
+                when(usageRecord.getSize()).thenReturn(0L);
+                when(usageRecord.getVirtualSize()).thenReturn(0L);
+                when(usageRecord.getType()).thenReturn("UserVm");
+                when(usageRecord.getOfferingId()).thenReturn(2000L);
+
+                if (usageType == UsageTypes.BACKUP
+                        || usageType == UsageTypes.VM_SNAPSHOT
+                        || usageType == UsageTypes.VM_SNAPSHOT_ON_PRIMARY) {
+                    when(usageRecord.getUsageId()).thenReturn(null);
+                    when(usageRecord.getOfferingId()).thenReturn(null);
+                }
+
+                Mockito.clearInvocations(entityManagerMock);
+
+                UsageRecordResponse response = helper.createUsageResponse(usageRecord);
+
+                Assertions.assertNotNull(response);
+
+                switch (usageType) {
+                    case UsageTypes.RUNNING_VM:
+                    case UsageTypes.ALLOCATED_VM:
+                        verify(entityManagerMock).findByIdIncludingRemoved(ServiceOfferingVO.class, 2000L);
+                        break;
+
+                    case UsageTypes.IP_ADDRESS:
+                        verify(entityManagerMock).findByIdIncludingRemoved(IPAddressVO.class, usageId);
+                        break;
+
+                    case UsageTypes.NETWORK_BYTES_SENT:
+                    case UsageTypes.NETWORK_BYTES_RECEIVED:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VMInstanceVO.class, usageId);
+                        break;
+
+                    case UsageTypes.VM_DISK_IO_READ:
+                    case UsageTypes.VM_DISK_IO_WRITE:
+                    case UsageTypes.VM_DISK_BYTES_READ:
+                    case UsageTypes.VM_DISK_BYTES_WRITE:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId);
+                        break;
+
+                    case UsageTypes.VOLUME:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId);
+                        verify(entityManagerMock).findByIdIncludingRemoved(DiskOfferingVO.class, 2000L);
+                        break;
+
+                    case UsageTypes.TEMPLATE:
+                    case UsageTypes.ISO:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VMTemplateVO.class, usageId);
+                        break;
+
+                    case UsageTypes.SNAPSHOT:
+                        verify(entityManagerMock).findByIdIncludingRemoved(SnapshotVO.class, usageId);
+                        break;
+
+                    case UsageTypes.LOAD_BALANCER_POLICY:
+                        verify(entityManagerMock).findByIdIncludingRemoved(LoadBalancerVO.class, usageId);
+                        break;
+
+                    case UsageTypes.PORT_FORWARDING_RULE:
+                        verify(entityManagerMock).findByIdIncludingRemoved(PortForwardingRuleVO.class, usageId);
+                        break;
+
+                    case UsageTypes.NETWORK_OFFERING:
+                        verify(entityManagerMock).findByIdIncludingRemoved(NetworkOfferingVO.class, 2000L);
+                        break;
+
+                    case UsageTypes.VPN_USERS:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VpnUserVO.class, usageId);
+                        break;
+
+                    case UsageTypes.SECURITY_GROUP:
+                        verify(entityManagerMock).findByIdIncludingRemoved(SecurityGroupVO.class, usageId);
+                        break;
+
+                    case UsageTypes.BACKUP:
+                        assertDescriptionContains(response, "Backup usage");
+                        break;
+
+                    case UsageTypes.VM_SNAPSHOT:
+                        assertDescriptionContains(response, "VMSnapshot usage");
+                        break;
+
+                    case UsageTypes.VOLUME_SECONDARY:
+                        verify(entityManagerMock).findByIdIncludingRemoved(VolumeVO.class, usageId);
+                        assertDescriptionContains(response, "Volume on secondary storage usage");
+                        break;
+
+                    case UsageTypes.VM_SNAPSHOT_ON_PRIMARY:
+                        assertDescriptionContains(response, "VMSnapshot on primary storage usage");
+                        break;
+
+                    case UsageTypes.BUCKET:
+                        verify(entityManagerMock).findByIdIncludingRemoved(BucketVO.class, usageId);
+                        break;
+
+                    default:
+                        throw new AssertionError("Unhandled usage type: " + usageType);
+                }
+            }
+        }
     }
 
     private Object invokeUsageDetailsHelper(String methodName, Class<?>[] parameterTypes, Object... args) throws Exception {

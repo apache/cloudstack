@@ -44,6 +44,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.dao.RoleDao;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -306,6 +308,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
@@ -381,6 +384,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
@@ -424,8 +428,11 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ApiKeyPairState;
 
 import com.cloud.user.SSHKeyPair;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
@@ -543,6 +550,17 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    Site2SiteVpnManager site2SiteVpnManager;
+
+    @Inject
+    private RoleDao roleDao;
+
+    @Inject
+    private AccountDao accountDao;
+
+    @Inject
+    private DomainDao domainDao;
 
     @Inject
     ResourceIconManager resourceIconManager;
@@ -621,6 +639,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         if (domain.getChildCount() > 0) {
             domainResponse.setHasChild(true);
         }
+        populateDomainTags(domain.getUuid(), domainResponse);
         domainResponse.setObjectName("domain");
         return domainResponse;
     }
@@ -1706,6 +1725,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
+        response.setNetworkName(guestNtwk.getName());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
 
@@ -1933,6 +1953,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                             vmResponse.setPublicNetmask(singleNicProfile.getIPv4Netmask());
                             vmResponse.setGateway(singleNicProfile.getIPv4Gateway());
                         }
+                    } else if (network.getTrafficType() == TrafficType.Storage) {
+                        vmResponse.setStorageIp(singleNicProfile.getIPv4Address());
                     }
                 }
             }
@@ -2923,7 +2945,10 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN &&
+                network.getVpcId() == null && network.getGuestType() == Network.GuestType.Isolated) {
+            response.setKeepMacAddressOnPublicNic(network.getKeepMacAddressOnPublicNic());
+        }
 
         response.setObjectName("network");
         return response;
@@ -3596,7 +3621,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
-
+            response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
@@ -3692,7 +3717,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
         }
 
-
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            response.setKeepMacAddressOnPublicNic(vpc.getKeepMacAddressOnPublicNic());
+        }
         response.setObjectName("vpc");
         return response;
     }
@@ -3987,7 +4014,14 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
 
-
+        Set<String> obsoleteParameters = site2SiteVpnManager.getObsoleteVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(obsoleteParameters)) {
+            response.setContainsObsoleteParameters(obsoleteParameters.toString());
+        }
+        Set<String> excludedParameters = site2SiteVpnManager.getExcludedVpnGatewayParameters(result);
+        if (CollectionUtils.isNotEmpty(excludedParameters)) {
+            response.setContainsExcludedParameters(excludedParameters.toString());
+        }
 
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
@@ -4362,7 +4396,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateNetworkBytesUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Device Type
-        resourceDetails.resourceType = ResourceObjectType.UserVm;
+        resourceDetails.resourceType = null;
         usageRecResponse.setType(usageRecord.getType());
         VMInstanceVO vm = null;
         HostVO host = null;
@@ -4640,7 +4674,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
             usageRecResponse.setDescription(builder.toString());
         }
-        return new UsageResourceDetails();
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        return resourceDetails;
     }
 
     private UsageResourceDetails populateSecurityGroupUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
@@ -4760,7 +4795,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             }
             usageRecResponse.setDescription(builder.toString());
         }
-        return new UsageResourceDetails();
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        return resourceDetails;
     }
 
     private UsageResourceDetails populateVmSnapshotOnPrimaryUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat, VMInstanceVO vmInstance) {
@@ -4799,7 +4835,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             usageRecResponse.setUsageId(bucket.getUuid());
             usageRecResponse.setResourceName(bucket.getName());
         }
-        return new UsageResourceDetails();
+        UsageResourceDetails resourceDetails = new UsageResourceDetails();
+        return resourceDetails;
     }
 
     private static class UsageResourceDetails {
@@ -4912,6 +4949,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
+        response.setDescription(result.getDescription());
 
         response.setObjectName("nicsecondaryip");
         return response;
@@ -4999,6 +5037,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
+                    ipRes.setDescription(ip.getDescription());
 
                     setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
@@ -5030,6 +5069,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcName(vpc.getName());
         }
 
+        response.setEnabled(result.isEnabled());
         return response;
     }
 
@@ -5273,52 +5313,60 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
     @Override
     public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
-        ApiKeyPairResponse response = new ApiKeyPairResponse();
-        if (keyPair == null) {
-            return response;
-        }
-        response.setId(keyPair.getUuid());
-        response.setName(keyPair.getName());
-        response.setApiKey(keyPair.getApiKey());
-        response.setSecretKey(keyPair.getSecretKey());
-        response.setDescription(keyPair.getDescription());
-        response.setStartDate(keyPair.getStartDate());
-        response.setEndDate(keyPair.getEndDate());
-        response.setCreated(keyPair.getCreated());
+        ApiKeyPairResponse apiKeyPairResponse = new ApiKeyPairResponse();
+        populateApiKeyPairInApiKeyPairResponse(keyPair, apiKeyPairResponse);
+        populateUserInApiKeyPairResponse(keyPair, apiKeyPairResponse);
 
-        // populate account
-        try {
-            Account account = ApiDBUtils.findAccountById(keyPair.getAccountId());
-            if (account != null && account.getType() != Account.Type.PROJECT) {
-                response.setAccountName(account.getAccountName());
-            }
-        } catch (Exception e) {
-            logger.debug("Unable to populate account for ApiKeyPairResponse", e);
-        }
+        AccountVO account = accountDao.findByIdIncludingRemoved(keyPair.getAccountId());
+        apiKeyPairResponse.setAccountId(account.getUuid());
+        apiKeyPairResponse.setAccountName(account.getAccountName());
+        apiKeyPairResponse.setAccountType(account.getType().toString());
 
-        try {
-            Domain domain = ApiDBUtils.findDomainById(keyPair.getDomainId());
-            if (domain != null) {
-                response.setDomainId(domain.getUuid());
-                response.setDomainName(domain.getName());
-                response.setDomainPath(getPrettyDomainPath(domain.getPath()));
-            }
-        } catch (Exception e) {
-            logger.debug("Unable to populate domain for ApiKeyPairResponse", e);
-        }
+        populateDomainInApiKeyPairResponse(account.getDomainId(), apiKeyPairResponse);
+        populateRoleInApiKeyPairResponse(account.getRoleId(), apiKeyPairResponse);
 
-        // user
-        try {
-            User user = ApiDBUtils.findUserById(keyPair.getUserId());
-            if (user != null) {
-                response.setUserId(user.getUuid());
-                response.setUsername(user.getUsername());
-            }
-        } catch (Exception e) {
-            logger.debug("Unable to populate user for ApiKeyPairResponse", e);
-        }
+        return apiKeyPairResponse;
+    }
 
-        return response;
+    protected void populateRoleInApiKeyPairResponse(Long roleId, ApiKeyPairResponse apiKeyPairResponse) {
+        RoleVO roleVO = roleDao.findById(roleId);
+        apiKeyPairResponse.setRoleId(roleVO.getUuid());
+        apiKeyPairResponse.setRoleName(roleVO.getName());
+        apiKeyPairResponse.setRoleType(roleVO.getRoleType().name());
+    }
+
+    protected static void populateApiKeyPairInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        apiKeyPairResponse.setName(keyPair.getName());
+        apiKeyPairResponse.setApiKey(keyPair.getApiKey());
+        apiKeyPairResponse.setSecretKey(keyPair.getSecretKey());
+        apiKeyPairResponse.setDescription(keyPair.getDescription());
+        apiKeyPairResponse.setId(keyPair.getUuid());
+        apiKeyPairResponse.setCreated(keyPair.getCreated());
+        apiKeyPairResponse.setStartDate(keyPair.getStartDate());
+        apiKeyPairResponse.setEndDate(keyPair.getEndDate());
+
+        ApiKeyPairState state = ApiKeyPairState.ENABLED;
+        if (keyPair.getRemoved() != null) {
+            state = ApiKeyPairState.REMOVED;
+        } else if (keyPair.hasEndDatePassed()) {
+            state = ApiKeyPairState.EXPIRED;
+        }
+        apiKeyPairResponse.setState(state);
+    }
+
+    protected void populateUserInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        User user = ApiDBUtils.findUserById(keyPair.getUserId());
+        apiKeyPairResponse.setUserId(user.getUuid());
+        apiKeyPairResponse.setUsername(user.getUsername());
+    }
+
+    protected void populateDomainInApiKeyPairResponse(Long domainId, ApiKeyPairResponse apiKeyPairResponse) {
+        DomainVO domainVO = domainDao.findById(domainId);
+        apiKeyPairResponse.setDomainId(domainVO.getUuid());
+        apiKeyPairResponse.setDomainName(domainVO.getName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(domainVO.getPath())).deleteCharAt(domainPath.length() - 1);
+        apiKeyPairResponse.setDomainPath(domainPath.toString());
     }
 
     @Override
