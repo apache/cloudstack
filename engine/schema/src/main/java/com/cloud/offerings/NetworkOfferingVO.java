@@ -492,6 +492,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         return eipAssociatePublicIp;
     }
 
+    public void setAssociatePublicIP(boolean associatePublicIP) {
+        this.eipAssociatePublicIp = associatePublicIP;
+    }
+
     @Override
     public boolean isElasticLb() {
         return elasticLb;
