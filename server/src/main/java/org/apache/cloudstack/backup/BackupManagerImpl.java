@@ -546,10 +546,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
                 final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
                 if (backups.size() == 0) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                            "Backup-" + vm.getHostName() + "-" + vm.getUuid(), backupOfferingId, null, null,
-                            Backup.class.getSimpleName(), vm.getUuid());
-                    backupUsageMetricDao.removeByVmAndOffering(vm.getId(), backupOfferingId);
+                    publishBackupOfferingUsageRemoved(vm, backupOfferingId);
                 }
                 final List<BackupScheduleVO> backupSchedules = backupScheduleDao.listByVM(vm.getId());
                 for(BackupSchedule backupSchedule: backupSchedules) {
@@ -1657,12 +1654,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId())) {
             List<Backup> backups = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), backup.getBackupOfferingId());
             if (backups.size() == 0) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, vm.getAccountId(),
-                        vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
-                        backup.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
-                backupUsageMetricDao.removeByVmAndOffering(vm.getId(), backup.getBackupOfferingId());
+                publishBackupOfferingUsageRemoved(vm, backup.getBackupOfferingId());
             }
         }
+    }
+
+    private void publishBackupOfferingUsageRemoved(final VirtualMachine vm, final long backupOfferingId) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, vm.getAccountId(),
+                        vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
+                        backupOfferingId, null, null, Backup.class.getSimpleName(), vm.getUuid());
+                backupUsageMetricDao.removeByVmAndOffering(vm.getId(), backupOfferingId);
+            }
+        });
     }
 
     @Override
