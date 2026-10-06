@@ -449,7 +449,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     @Override
     public boolean unassignAccountFromProject(long projectId, long accountId) {
-        ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
+        ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, accountId, null);
         if (projectAccount == null) {
             logger.debug("Account id=" + accountId + " is not assigned to project id=" + projectId + " so no need to unassign");
             return true;
