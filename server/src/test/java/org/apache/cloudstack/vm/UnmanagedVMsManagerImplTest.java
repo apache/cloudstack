@@ -469,7 +469,7 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void importUnmanagedVmwareInstanceForwardsDuplicateMacPolicy() {
+    public void importUnmanagedVmwareInstanceForwardsDuplicateMacPolicy() throws Exception {
         ImportUnmanagedInstanceCmd cmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(cmd.getName()).thenReturn("TestInstance");
         when(cmd.getDomainId()).thenReturn(null);
@@ -672,29 +672,36 @@ public class UnmanagedVMsManagerImplTest {
         unmanagedVMsManager.listVmsForImport(cmd);
     }
     @Test
-    public void testImportFromExternalDefaultsToReplacingConflictingMac() throws InsufficientServerCapacityException {
+    public void testImportFromExternalDefaultsToReplacingConflictingMac() throws Exception {
         ImportVmCmd cmd = createExternalImportCmd(null, false);
         importExternalKvmVm(cmd);
         verifyExternalKvmMacPolicy(true, false);
     }
 
     @Test
-    public void testImportFromExternalForwardsExplicitForcedTrue() throws InsufficientServerCapacityException {
+    public void testImportFromExternalForwardsExplicitForcedTrue() throws Exception {
         ImportVmCmd cmd = createExternalImportCmd(true, false);
         importExternalKvmVm(cmd);
         verifyExternalKvmMacPolicy(true, false);
     }
 
     @Test
-    public void testImportFromExternalForwardsExplicitForcedFalse() throws InsufficientServerCapacityException {
+    public void testImportFromExternalForwardsExplicitForcedFalse() throws Exception {
         ImportVmCmd cmd = createExternalImportCmd(false, false);
         importExternalKvmVm(cmd);
         verifyExternalKvmMacPolicy(false, false);
     }
 
     @Test
-    public void testImportFromExternalForwardsDuplicateMacAllowance() throws InsufficientServerCapacityException {
+    public void testImportFromExternalForwardsDuplicateMacAllowance() throws Exception {
         ImportVmCmd cmd = createExternalImportCmd(false, true);
+        importExternalKvmVm(cmd);
+        verifyExternalKvmMacPolicy(false, true);
+    }
+
+    @Test
+    public void testImportFromExternalForwardsDuplicateMacAllowanceWhenForcedIsOmitted() throws Exception {
+        ImportVmCmd cmd = createExternalImportCmd(null, true);
         importExternalKvmVm(cmd);
         verifyExternalKvmMacPolicy(false, true);
     }
@@ -751,7 +758,7 @@ public class UnmanagedVMsManagerImplTest {
         }
     }
 
-    private void verifyExternalKvmMacPolicy(boolean forced, boolean allowDuplicateMacAddresses) {
+    private void verifyExternalKvmMacPolicy(boolean forced, boolean allowDuplicateMacAddresses) throws Exception {
         verify(networkOrchestrationService).importNic(Mockito.eq(instance.getNics().get(0).getMacAddress()), anyInt(),
                 any(Network.class), anyBoolean(), any(VirtualMachine.class), nullable(Network.IpAddresses.class),
                 any(DataCenter.class), Mockito.eq(forced), Mockito.eq(allowDuplicateMacAddresses));
