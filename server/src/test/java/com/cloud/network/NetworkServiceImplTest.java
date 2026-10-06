@@ -80,6 +80,12 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
@@ -1377,5 +1383,32 @@ public class NetworkServiceImplTest {
         Mockito.when(networkOfferingVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
 
         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+    }
+
+    @Test
+    public void clearMigrationIpDetailsRemovesTheDetailFromZoneKvmHosts() {
+        service._physicalNetworkDao = mock(PhysicalNetworkDao.class);
+        service._hostDao = mock(HostDao.class);
+        service._hostDetailsDao = mock(HostDetailsDao.class);
+
+        PhysicalNetworkVO pn = mock(PhysicalNetworkVO.class);
+        when(pn.getDataCenterId()).thenReturn(5L);
+        when(service._physicalNetworkDao.findById(11L)).thenReturn(pn);
+
+        HostVO h1 = mock(HostVO.class);
+        when(h1.getId()).thenReturn(101L);
+        HostVO h2 = mock(HostVO.class);
+        when(h2.getId()).thenReturn(102L);
+        when(service._hostDao.listByDataCenterIdAndHypervisorType(5L, Hypervisor.HypervisorType.KVM)).thenReturn(Arrays.asList(h1, h2));
+
+        DetailVO detail = mock(DetailVO.class);
+        when(detail.getId()).thenReturn(201L);
+        when(service._hostDetailsDao.findDetail(101L, Host.HOST_MIGRATION_IP)).thenReturn(detail);
+        when(service._hostDetailsDao.findDetail(102L, Host.HOST_MIGRATION_IP)).thenReturn(null);
+
+        service.clearMigrationIpDetails(11L);
+
+        Mockito.verify(service._hostDetailsDao, times(1)).remove(201L);
+        Mockito.verify(service._hostDetailsDao, times(1)).remove(anyLong());
     }
 }

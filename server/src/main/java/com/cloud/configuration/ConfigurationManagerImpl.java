@@ -410,6 +410,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     ClusterDao _clusterDao;
     @Inject
+    VirtualMachineManager _vmMgr;
+    @Inject
     AlertManager _alertMgr;
     @Inject
     DomainHelper domainHelper;
@@ -770,6 +772,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
+    /**
+     * Resolves a cluster CPU baseline value of "auto" to the common-denominator model computed from the
+     * cluster's reachable hosts, so the persisted value is a stable model rather than "auto". Any other
+     * name/value is returned unchanged.
+     */
+    protected String resolveClusterCpuBaselineAuto(final String name, final String value, final ConfigKey.Scope scope, final Long resourceId) {
+        if (!VirtualMachineManager.CLUSTER_CPU_BASELINE_MODEL_KEY.equalsIgnoreCase(name) || !"auto".equalsIgnoreCase(StringUtils.trimToEmpty(value))) {
+            return value;
+        }
+        if (!ConfigKey.Scope.Cluster.equals(scope) || resourceId == null) {
+            throw new InvalidParameterValueException("A CPU baseline of 'auto' can only be set at cluster scope.");
+        }
+        final String computed = _vmMgr.computeClusterCpuBaseline(resourceId);
+        if (StringUtils.isBlank(computed)) {
+            throw new InvalidParameterValueException(
+                    "Could not compute a CPU baseline for this cluster: no reachable KVM host returned a CPU definition.");
+        }
+        logger.info("Resolved cluster [{}] CPU baseline 'auto' to computed model [{}].", resourceId, computed);
+        return computed;
+    }
+
     @Override
     @DB
     public String updateConfiguration(final long userId, final String name, final String category, String value, ConfigKey.Scope scope, final Long resourceId) {
@@ -781,6 +804,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (validationMsg != null) {
             logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
+        }
+
+        // The CPU baseline model is interpolated into libvirt CPU XML, so reject anything but a model-name token
+        // regardless of scope (the per-cluster host-compatibility check below additionally runs for cluster scope).
+        if (VirtualMachineManager.CLUSTER_CPU_BASELINE_MODEL_KEY.equalsIgnoreCase(name) && StringUtils.isNotBlank(value)
+                && !value.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+            throw new InvalidParameterValueException(String.format(
+                    "Invalid CPU baseline model [%s]: only letters, digits, dot, underscore and hyphen are allowed.", value));
         }
 
         ConfigKey<?> configKey = _configDepot.get(name);
@@ -815,6 +846,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
                 resourceType = ApiCommandResourceType.Cluster;
+                if (VirtualMachineManager.CLUSTER_CPU_BASELINE_MODEL_KEY.equalsIgnoreCase(name) && StringUtils.isNotBlank(value)) {
+                    List<String> incompatibleHosts = _vmMgr.findHostsIncompatibleWithCpuModel(resourceId, value);
+                    if (!incompatibleHosts.isEmpty()) {
+                        throw new InvalidParameterValueException(String.format(
+                                "Cannot set CPU baseline model [%s] on cluster [%s]: these hosts do not support it: %s",
+                                value, cluster.getName(), incompatibleHosts));
+                    }
+                }
                 String newName = name;
                 if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
                     newName = "cpuOvercommitRatio";
@@ -1138,6 +1177,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
+
+        // Resolve a cluster CPU baseline of "auto" to the concrete computed model here, before the value is
+        // persisted and compared below, so the stored and verified value is the model rather than "auto".
+        value = resolveClusterCpuBaselineAuto(name, value, scope, id);
 
         value = getNormalizedEmptyValueForConfig(name, value, id);
 

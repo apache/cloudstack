@@ -124,10 +124,12 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -444,6 +446,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     AgentManager _agentMgr;
     @Inject
     HostDao _hostDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -4469,6 +4473,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
             final String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
             final String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
+            final String migrationName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Migration, hypervisorType);
             // String controlName = _pNTrafficTypeDao._networkModel.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
             final PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
             info.setPhysicalNetworkId(pNtwk.getId());
@@ -4476,6 +4481,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             info.setPrivateNetworkName(privateName);
             info.setPublicNetworkName(publicName);
             info.setStorageNetworkName(storageName);
+            info.setMigrationNetworkName(migrationName);
             final PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
             if (mgmtTraffic != null) {
                 final String vlan = mgmtTraffic.getVlan();
@@ -4504,8 +4510,33 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (answer.needReconnect()) {
                 throw new ConnectionException(false, "Reinitialize agent after network setup.");
             }
+            persistMigrationIp(host, answer.getMigrationIp());
             logger.debug("Network setup is correct on Agent");
             return;
+        }
+    }
+
+    /**
+     * Records the IP the host resolved on its dedicated migration network as the {@link Host#HOST_MIGRATION_IP}
+     * host detail, or clears it when the host no longer resolves one, so that a migration network added or removed
+     * at the zone level takes effect on the next host connect without any per host configuration.
+     */
+    protected void persistMigrationIp(final Host host, final String migrationIp) {
+        // The migration IP is an informational host detail, so a failure to record it must never fail the
+        // host connect (processConnect runs on the connect critical path); log it and carry on.
+        try {
+            final DetailVO existing = _hostDetailsDao.findDetail(host.getId(), Host.HOST_MIGRATION_IP);
+            if (StringUtils.isNotBlank(migrationIp)) {
+                if (existing == null || !migrationIp.equals(existing.getValue())) {
+                    _hostDetailsDao.persist(host.getId(), Collections.singletonMap(Host.HOST_MIGRATION_IP, migrationIp));
+                    logger.debug("Host {} will use {} for live migration traffic", host, migrationIp);
+                }
+            } else if (existing != null) {
+                _hostDetailsDao.remove(existing.getId());
+                logger.debug("Host {} no longer has a dedicated migration network; live migration will use the management address", host);
+            }
+        } catch (final Exception e) {
+            logger.warn("Could not record the migration IP for host {}; live migration will use the management address until the next host connect", host, e);
         }
     }
 

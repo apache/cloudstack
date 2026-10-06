@@ -118,6 +118,9 @@ public interface VmDetailConstants {
     // CPU mode and model, ADMIN only
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
+    // Fallback policy for a custom CPU model ("allow" or "forbid"). "forbid" refuses a host that
+    // cannot provide the exact model instead of silently degrading it; set by the cluster CPU baseline.
+    String GUEST_CPU_MODEL_FALLBACK = "guest.cpu.model.fallback";
 
     // Lease related
     String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";

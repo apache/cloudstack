@@ -19,34 +19,29 @@
 
 package com.cloud.agent.api;
 
-public class CheckNetworkAnswer extends Answer {
-    // indicate if agent reconnect is needed after setupNetworkNames command
-    private boolean _reconnect;
-    // the local IP the host resolved on its dedicated migration network, if one is configured
-    private String migrationIp;
+import java.util.List;
 
-    public CheckNetworkAnswer() {
+/**
+ * Runs {@code virsh cpu-baseline} over the given per-host {@code <cpu>} elements and returns the
+ * most feature-rich CPU compatible with all of them: the common-denominator cluster baseline.
+ */
+public class BaselineCpuCommand extends Command {
+
+    private List<String> hostCpuXmls;
+
+    protected BaselineCpuCommand() {
     }
 
-    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details, boolean reconnect) {
-        super(cmd, result, details);
-        _reconnect = reconnect;
+    public BaselineCpuCommand(List<String> hostCpuXmls) {
+        this.hostCpuXmls = hostCpuXmls;
     }
 
-    public CheckNetworkAnswer(CheckNetworkCommand cmd, boolean result, String details) {
-        this(cmd, result, details, false);
+    public List<String> getHostCpuXmls() {
+        return hostCpuXmls;
     }
 
-    public boolean needReconnect() {
-        return _reconnect;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
-
-    public String getMigrationIp() {
-        return migrationIp;
-    }
-
-    public void setMigrationIp(String migrationIp) {
-        this.migrationIp = migrationIp;
-    }
-
 }

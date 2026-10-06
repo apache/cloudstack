@@ -68,6 +68,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import com.cloud.agent.api.MigrateCommand;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
@@ -2239,6 +2240,69 @@ public class VirtualMachineManagerImplTest {
         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+    }
+
+    @Test
+    public void vmMigrationEncryptionPolicyConfigKeyDefaultAndCommandRoundTrip() {
+        // MS-central migration-encryption policy defaults to Disabled and round-trips on MigrateCommand.
+        Assert.assertEquals("Disabled", VirtualMachineManager.VmMigrationEncryptionPolicy.defaultValue());
+        MigrateCommand mc = new MigrateCommand("vm", "1.1.1.1", false, null, false);
+        mc.setMigrationEncryptionPolicy("Required");
+        Assert.assertEquals("Required", mc.getMigrationEncryptionPolicy());
+    }
+
+    @Test
+    public void computeClusterCpuBaselineReturnsComputedModel() throws Exception {
+        HostVO host = mock(HostVO.class);
+        when(host.getStatus()).thenReturn(com.cloud.host.Status.Up);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(host.getId()).thenReturn(11L);
+        doReturn(Arrays.asList(host)).when(hostDaoMock).findByClusterId(5L, Host.Type.Routing);
+
+        when(agentManagerMock.send(eq(11L), any(com.cloud.agent.api.GetHostCpuModelCommand.class)))
+                .thenReturn(new com.cloud.agent.api.Answer(null, true, "<cpu><model>Skylake-Server</model></cpu>"));
+        when(agentManagerMock.send(eq(11L), any(com.cloud.agent.api.BaselineCpuCommand.class)))
+                .thenReturn(new com.cloud.agent.api.Answer(null, true, "<cpu mode='custom'><model fallback='allow'>Haswell-noTSX</model></cpu>"));
+
+        Assert.assertEquals("Haswell-noTSX", virtualMachineManagerImpl.computeClusterCpuBaseline(5L));
+    }
+
+    @Test
+    public void computeClusterCpuBaselineReturnsNullWhenNoHostAnswers() throws Exception {
+        HostVO host = mock(HostVO.class);
+        when(host.getStatus()).thenReturn(com.cloud.host.Status.Up);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(host.getId()).thenReturn(11L);
+        doReturn(Arrays.asList(host)).when(hostDaoMock).findByClusterId(5L, Host.Type.Routing);
+
+        when(agentManagerMock.send(eq(11L), any(com.cloud.agent.api.GetHostCpuModelCommand.class)))
+                .thenReturn(new com.cloud.agent.api.Answer(null, false, "error"));
+
+        Assert.assertNull(virtualMachineManagerImpl.computeClusterCpuBaseline(5L));
+    }
+
+    @Test
+    public void computeClusterCpuBaselineSkipsPreFeatureAgent() throws Exception {
+        // an old agent returns an UnsupportedAnswer for the new command; it is skipped, so with it as the only
+        // host no CPU is collected and the computation returns null rather than failing.
+        HostVO host = mock(HostVO.class);
+        when(host.getStatus()).thenReturn(com.cloud.host.Status.Up);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(host.getId()).thenReturn(11L);
+        doReturn(Arrays.asList(host)).when(hostDaoMock).findByClusterId(5L, Host.Type.Routing);
+
+        when(agentManagerMock.send(eq(11L), any(com.cloud.agent.api.GetHostCpuModelCommand.class)))
+                .thenReturn(new com.cloud.agent.api.UnsupportedAnswer(null, "unsupported command"));
+
+        Assert.assertNull(virtualMachineManagerImpl.computeClusterCpuBaseline(5L));
+    }
+
+    @Test
+    public void parseModelFromCpuXmlExtractsModelIgnoringAttributes() {
+        Assert.assertEquals("Haswell-noTSX",
+                virtualMachineManagerImpl.parseModelFromCpuXml("<cpu mode='custom'><model fallback='allow'>Haswell-noTSX</model></cpu>"));
+        Assert.assertNull(virtualMachineManagerImpl.parseModelFromCpuXml("error: command not found"));
+        Assert.assertNull(virtualMachineManagerImpl.parseModelFromCpuXml(null));
     }
 
 }
