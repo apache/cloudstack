@@ -110,17 +110,12 @@ encrypt_backup() {
     return 1
   fi
   log -ne "Encrypting backup files with LUKS"
-  # Preserve compression if it was requested upstream — otherwise the
-  # encrypt-step re-convert produces an uncompressed (but encrypted) qcow2,
-  # silently discarding the compression work done earlier.
-  local compress_flag=""
-  if [[ "$COMPRESS" == "true" ]]; then
-    compress_flag="-c"
-  fi
+  # No -c here: qcow2 cannot compress and encrypt the same image, so the combination is
+  # rejected before the backup starts (see the check before the operation dispatch).
   for img in "$backup_dir"/*.qcow2; do
     [[ -f "$img" ]] || continue
     local tmp_img="${img}.luks"
-    if qemu-img convert $compress_flag -O qcow2 \
+    if qemu-img convert -O qcow2 \
         --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
         -o "encrypt.format=luks,encrypt.key-secret=sec0" \
         "$img" "$tmp_img" >> "$logFile" 2>&1; then
@@ -147,26 +142,42 @@ verify_backup() {
   fi
   for img in "$backup_dir"/*.qcow2; do
     [[ -f "$img" ]] || continue
-    local check_ok=0
+    local check_rc=0
     if [[ ${#check_secret[@]} -gt 0 ]]; then
       qemu-img check "${check_secret[@]}" --image-opts \
         "driver=qcow2,file.filename=$img,encrypt.key-secret=sec0" \
-        > /dev/null 2>&1 && check_ok=1
+        > /dev/null 2>&1 || check_rc=$?
     else
-      qemu-img check "$img" > /dev/null 2>&1 && check_ok=1
+      qemu-img check "$img" > /dev/null 2>&1 || check_rc=$?
     fi
-    if [[ $check_ok -eq 1 ]]; then
-      log -ne "Backup verification passed: $img"
-    else
-      echo "Backup verification failed for $img"
-      log -ne "Backup verification FAILED: $img"
-      failed=1
-    fi
+    # qemu-img check: 0 = clean, 3 = leaked clusters only (wasted space, data intact),
+    # 2 = corruption, 1 = check could not complete, 63 = format cannot be checked.
+    case $check_rc in
+      0)
+        log -ne "Backup verification passed: $img" ;;
+      3)
+        log -ne "Backup verification passed with leaked clusters (wasted space only, data intact): $img" ;;
+      *)
+        echo "Backup verification failed for $img (qemu-img check exit code $check_rc)"
+        log -ne "Backup verification FAILED (qemu-img check exit code $check_rc): $img"
+        failed=1 ;;
+    esac
   done
   if [[ $failed -ne 0 ]]; then
     echo "One or more backup files failed verification"
     return 1
   fi
+}
+
+# qemu-img convert -r (rate limit) arrived in QEMU 5.2; older hosts reject the option. Probe it on
+# a throwaway 1 MiB image rather than parsing --help, whose format differs between releases.
+qemu_img_supports_rate_limit() {
+  local probe_dir rc=0
+  probe_dir=$(mktemp -d) || return 1
+  { qemu-img create -q -f qcow2 "$probe_dir/src.qcow2" 1M &&
+    qemu-img convert -r 1G -O qcow2 "$probe_dir/src.qcow2" "$probe_dir/dst.qcow2"; } > /dev/null 2>&1 || rc=$?
+  rm -rf "$probe_dir"
+  return $rc
 }
 
 ### Operation methods ###
@@ -373,12 +384,19 @@ print(len(files))
     exit 1
   fi
 
-  # Throttle backup bandwidth if requested (MiB/s per disk)
+  # Throttle backup bandwidth if requested (MiB/s per disk). Log what actually happened per disk:
+  # a failed set-speed leaves that disk unthrottled, and the log must not claim otherwise.
   if [[ -n "$BANDWIDTH" ]]; then
-    for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
-      virsh -c qemu:///system blockjob $VM $disk --bandwidth "${BANDWIDTH}" 2>/dev/null || true
+    local throttled=0 not_throttled=0 bw_out
+    for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '$2=="disk"{print $3}'); do
+      if bw_out=$(virsh -c qemu:///system blockjob $VM $disk --bandwidth "${BANDWIDTH}" 2>&1); then
+        throttled=$((throttled + 1))
+      else
+        not_throttled=$((not_throttled + 1))
+        log -ne "WARNING: could not limit backup bandwidth on $VM disk $disk, it runs unthrottled: $bw_out"
+      fi
     done
-    log -ne "Backup bandwidth limited to ${BANDWIDTH} MiB/s per disk for $VM"
+    log -ne "Backup bandwidth limit of ${BANDWIDTH} MiB/s applied to $throttled disk(s) of $VM; $not_throttled disk(s) unthrottled"
   fi
 
   # Backup domain information
@@ -547,6 +565,22 @@ backup_stopped_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
+  # Optional convert flags. ionice and -r only apply when a bandwidth limit is configured, so
+  # backups without the new settings run exactly as before.
+  local convert_opts=() io_prio=()
+  if [[ "$COMPRESS" == "true" ]]; then
+    convert_opts+=(-c)
+  fi
+  if [[ -n "$BANDWIDTH" ]]; then
+    io_prio=(ionice -c 3)
+    if qemu_img_supports_rate_limit; then
+      convert_opts+=(-r "${BANDWIDTH}M")
+      log -ne "Backup bandwidth limited to ${BANDWIDTH} MiB/s per disk for $VM"
+    else
+      log -ne "WARNING: qemu-img on this host does not support convert -r (QEMU >= 5.2 required); $VM is backed up without the ${BANDWIDTH} MiB/s limit, at idle I/O priority only"
+    fi
+  fi
+
   IFS=","
 
   name="root"
@@ -565,7 +599,7 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! ionice -c 3 qemu-img convert $([[ "$COMPRESS" == "true" ]] && echo "-c") $([[ -n "$BANDWIDTH" ]] && echo "-r" "${BANDWIDTH}M") -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
+    if ! "${io_prio[@]}" qemu-img convert "${convert_opts[@]}" -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
       return 1
@@ -760,6 +794,13 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# qcow2 cannot compress and encrypt the same image. Refuse the combination before anything is
+# mounted or written, so no partial backup is created and then deleted.
+if [[ "$OP" == "backup" && "$COMPRESS" == "true" && -n "$ENCRYPT_PASSFILE" ]]; then
+  echo "Compression and encryption cannot be combined: qcow2 does not support both on one image"
+  exit 1
+fi
 
 # Perform initial environment sanity checks (QEMU/libvirt version).
 sanity_checks
