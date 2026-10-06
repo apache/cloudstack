@@ -55,9 +55,14 @@ public class CertificateHelperTest {
         Assert.assertArrayEquals(keyPair.getPrivate().getEncoded(), key.getEncoded());
     }
 
-    @Test(expected = InvalidKeySpecException.class)
+    @Test
     public void testBuildPrivateKeyInvalid() throws Exception {
-        CertificateHelper.buildPrivateKey(Base64.encodeBase64String("not a key".getBytes()));
+        try {
+            CertificateHelper.buildPrivateKey(Base64.encodeBase64String("not a key".getBytes()));
+            Assert.fail("Expected InvalidKeySpecException");
+        } catch (final InvalidKeySpecException e) {
+            Assert.assertEquals("Private key is not one of the supported types: RSA, EC, DSA", e.getMessage());
+        }
     }
 
     @Test

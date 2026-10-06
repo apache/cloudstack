@@ -144,7 +144,7 @@ public class CertificateHelper {
                 lastException = e;
             }
         }
-        throw lastException;
+        throw new InvalidKeySpecException("Private key is not one of the supported types: " + String.join(", ", PRIVATE_KEY_ALGORITHMS), lastException);
     }
 
     public static List<Certificate> parseChain(final String chain) throws IOException, CertificateException {
