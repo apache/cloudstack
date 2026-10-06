@@ -97,19 +97,19 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
     static final String ALERT_EVENT_TYPE = "RESOURCE.ALERT";
 
     static final ConfigKey<Integer> EVAL_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
-            "resourcealert.evaluation.interval", "60",
+            "resource.alert.evaluation.interval", "60",
             "Interval in seconds between resource alert rule evaluations", false);
 
     public static final ConfigKey<Integer> RULES_PER_ACCOUNT_LIMIT = new ConfigKey<>("Advanced", Integer.class,
-            "resourcealert.per.user.limit", "20",
+            "resource.alert.per.user.limit", "20",
             "Maximum number of resource alert rules an account can own; 0 = unlimited", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<Integer> HISTORY_RETENTION_DAYS = new ConfigKey<>("Advanced", Integer.class,
-            "resourcealert.history.retention.days", "30",
+            "resource.alert.history.retention.days", "30",
             "Number of days to keep fired resource alerts; 0 keeps them forever", true);
 
     public static final ConfigKey<Integer> DEFAULT_RESET_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
-            "resourcealert.repeat.interval.default", "600",
+            "resource.alert.repeat.interval.default", "600",
             "Default minimum seconds between repeat firings of a resource alert rule, used when a rule does not set one", true);
 
     @Inject ResourceAlertRuleDao ruleDao;

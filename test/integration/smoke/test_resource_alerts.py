@@ -41,7 +41,7 @@ import _thread
 _multiprocess_shared_ = True
 deliveries_received = []
 
-# Rules are checked every resourcealert.evaluation.interval (60s by default) and VM stats every
+# Rules are checked every resource.alert.evaluation.interval (60s by default) and VM stats every
 # vm.stats.interval, so the first alert can take a few minutes after a rule is created.
 ALERT_WAIT_SECONDS = 420
 POLL_SECONDS = 15

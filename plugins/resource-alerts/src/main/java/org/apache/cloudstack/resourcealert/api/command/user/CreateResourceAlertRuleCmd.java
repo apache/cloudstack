@@ -82,7 +82,7 @@ public class CreateResourceAlertRuleCmd extends BaseCmd {
     private Boolean email;
 
     @Parameter(name = ApiConstants.RESET_INTERVAL, type = CommandType.INTEGER,
-            description = "minimum seconds between repeat firings of this rule; defaults to resourcealert.repeat.interval.default")
+            description = "minimum seconds between repeat firings of this rule; defaults to resource.alert.repeat.interval.default")
     private Integer resetInterval;
 
     @Parameter(name = ApiConstants.WEBHOOK_IDS, type = CommandType.LIST, collectionType = CommandType.STRING,
