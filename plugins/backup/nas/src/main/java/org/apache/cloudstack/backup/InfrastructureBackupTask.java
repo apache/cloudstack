@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.GlobalLock;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -24,11 +25,9 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,7 +59,8 @@ import java.util.zip.GZIPOutputStream;
  *   <li>SSL certificates and keystores</li>
  * </ul>
  *
- * Database credentials are read from /etc/cloudstack/management/db.properties.
+ * Database credentials come from the management server's db.properties (via {@link DbProperties},
+ * which decrypts ENC(...) values when db.properties encryption is in use).
  * Backups are stored under {nasBackupPath}/infra-backup/{timestamp}/ with
  * automatic retention management.
  */
@@ -68,7 +68,6 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
 
     private static final Logger LOG = LogManager.getLogger(InfrastructureBackupTask.class);
 
-    private static final String DB_PROPERTIES_PATH = "/etc/cloudstack/management/db.properties";
     private static final String MANAGEMENT_CONFIG_PATH = "/etc/cloudstack/management";
     private static final String AGENT_CONFIG_PATH = "/etc/cloudstack/agent";
     private static final String SSL_CERT_PATH = "/etc/cloudstack/management/cert";
@@ -137,7 +136,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         try {
             File dir = new File(backupDir);
             if (!dir.exists() && !dir.mkdirs()) {
-                LOG.error("Failed to create backup directory: {}", backupDir);
+                LOG.error(describeDirectoryCreationFailure(backupDir, nasBackupPath));
                 return;
             }
 
@@ -154,6 +153,19 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         } finally {
             releaseRunLock(lock);
         }
+    }
+
+    /**
+     * Error text for a backup directory that could not be created. The usual cause is that the location
+     * (typically a NAS mount) is owned by root while the management server runs as an unprivileged user,
+     * so the message names that user and the fix.
+     */
+    protected String describeDirectoryCreationFailure(String backupDir, String location) {
+        String user = System.getProperty("user.name", "cloud");
+        return String.format("Failed to create infrastructure backup directory %s. The management server runs as user '%s', "
+                + "which needs write access to %s (nas.infra.backup.location); for example, run 'chown %s %s' on the management "
+                + "server after mounting the NAS there. Also check that the NAS is mounted at that path.",
+                backupDir, user, location, user, location);
     }
 
     /**
@@ -189,7 +201,7 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
         Properties dbProps = loadDbProperties();
         if (dbProps == null) {
-            LOG.error("Database backup requested but failed to load properties from {}, skipping DB component", DB_PROPERTIES_PATH);
+            LOG.error("Database backup requested but the management server's db.properties could not be loaded, skipping DB component");
             return;
         }
         String dbHost = dbProps.getProperty("db.cloud.host", "localhost");
@@ -229,19 +241,21 @@ public class InfrastructureBackupTask extends ManagedContextRunnable implements 
         }
     }
 
+    /**
+     * The management server's database properties, already decrypted: when db.properties holds ENC(...)
+     * values, reading the file directly would hand mysqldump the encrypted string and fail with
+     * "Access denied". {@link DbProperties} applies the same decryption the server uses for its own pool.
+     */
     protected Properties loadDbProperties() {
-        File propsFile = new File(DB_PROPERTIES_PATH);
-        if (!propsFile.exists()) {
-            LOG.warn("Database properties file not found: {}", DB_PROPERTIES_PATH);
-            return null;
-        }
-
-        Properties props = new Properties();
-        try (BufferedReader reader = new BufferedReader(new FileReader(propsFile))) {
-            props.load(reader);
+        try {
+            Properties props = DbProperties.getDbProperties();
+            if (props == null || props.isEmpty()) {
+                LOG.warn("The management server's db.properties is empty or could not be found");
+                return null;
+            }
             return props;
-        } catch (IOException e) {
-            LOG.error("Failed to read database properties: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            LOG.error("Failed to load database properties: {}", e.getMessage());
             return null;
         }
     }
