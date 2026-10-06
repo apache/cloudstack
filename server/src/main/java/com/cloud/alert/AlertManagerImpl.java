@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.inject.Inject;
 import javax.mail.MessagingException;
@@ -161,7 +162,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private final ExecutorService _executor;
 
-    private ExecutorService capacityExecutorService;
+    private ThreadPoolExecutor capacityExecutorService;
 
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
@@ -286,8 +287,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
-    private int capacityExecutorServiceWorkers = -1;
-
     /**
      * Shared, long-lived pool for capacity recalculation, reused across every
      * recalculateHostCapacities()/recalculateStorageCapacities() call instead of creating and
@@ -296,19 +295,33 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
      * full recalculation on every scrape, see https://github.com/apache/cloudstack/issues/13586).
      * Lazily created so this remains safe for callers that invoke the recalculate methods directly
      * without going through configure()/start() (e.g. unit tests).
-     * CapacityCalculateWorkers is a dynamic setting, so the pool is recreated whenever its value
-     * changes rather than requiring a management server restart to take effect.
+     * CapacityCalculateWorkers is a dynamic setting, so the pool is resized in place whenever its
+     * value changes rather than requiring a management server restart to take effect.
      */
     private synchronized ExecutorService getCapacityExecutorService() {
         int configuredWorkers = Math.max(1, CapacityManager.CapacityCalculateWorkers.value());
-        if (capacityExecutorService == null || capacityExecutorService.isShutdown() || configuredWorkers != capacityExecutorServiceWorkers) {
-            if (capacityExecutorService != null) {
-                capacityExecutorService.shutdown();
-            }
-            capacityExecutorService = Executors.newFixedThreadPool(configuredWorkers, new NamedThreadFactory("Capacity-Calculator"));
-            capacityExecutorServiceWorkers = configuredWorkers;
+        if (capacityExecutorService == null || capacityExecutorService.isShutdown()) {
+            capacityExecutorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(configuredWorkers, new NamedThreadFactory("Capacity-Calculator"));
+        } else if (configuredWorkers != capacityExecutorService.getCorePoolSize()) {
+            resizePool(capacityExecutorService, configuredWorkers);
         }
         return capacityExecutorService;
+    }
+
+    /**
+     * Resizes a fixed-size pool's core and maximum sizes in place. The order of the two calls
+     * matters: ThreadPoolExecutor rejects setCorePoolSize(x) when x exceeds the current maximum,
+     * and setMaximumPoolSize(x) when x is below the current core, so the size that is moving away
+     * from the other bound must be set first.
+     */
+    private static void resizePool(ThreadPoolExecutor pool, int desiredSize) {
+        if (desiredSize > pool.getMaximumPoolSize()) {
+            pool.setMaximumPoolSize(desiredSize);
+            pool.setCorePoolSize(desiredSize);
+        } else {
+            pool.setCorePoolSize(desiredSize);
+            pool.setMaximumPoolSize(desiredSize);
+        }
     }
 
     /**

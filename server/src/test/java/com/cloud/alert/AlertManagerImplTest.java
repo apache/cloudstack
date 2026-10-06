@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.mail.MessagingException;
 
@@ -335,22 +336,46 @@ public class AlertManagerImplTest {
     }
 
     @Test
-    public void testRecalculateHostCapacitiesRecreatesExecutorWhenWorkerCountChanges() throws Exception {
+    public void testRecalculateHostCapacitiesResizesExecutorWhenWorkerCountIncreases() throws Exception {
         when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
         HostVO hostMock = mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(hostMock);
 
         overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "1");
         alertManagerImplMock.recalculateHostCapacities();
-        ExecutorService firstExecutor = getCapacityExecutorService();
+        ThreadPoolExecutor firstExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+        assertEquals(1, firstExecutor.getCorePoolSize());
 
         overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "4");
         alertManagerImplMock.recalculateHostCapacities();
-        ExecutorService secondExecutor = getCapacityExecutorService();
+        ThreadPoolExecutor secondExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
 
-        Assert.assertNotEquals("the pool should be recreated when the configured worker count changes",
+        assertEquals("a dynamic worker count change should resize the existing pool rather than replace it",
                 firstExecutor, secondExecutor);
-        Assert.assertTrue("the stale pool should be shut down rather than leaked", firstExecutor.isShutdown());
+        Assert.assertFalse("the pool should remain usable, not shut down, after a resize", secondExecutor.isShutdown());
+        assertEquals(4, secondExecutor.getCorePoolSize());
+        assertEquals(4, secondExecutor.getMaximumPoolSize());
+    }
+
+    @Test
+    public void testRecalculateHostCapacitiesResizesExecutorWhenWorkerCountDecreases() throws Exception {
+        when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(List.of(1L));
+        HostVO hostMock = mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(hostMock);
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "4");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor firstExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+        assertEquals(4, firstExecutor.getCorePoolSize());
+
+        overrideDefaultConfigValue(CapacityManager.CapacityCalculateWorkers, "_defaultValue", "1");
+        alertManagerImplMock.recalculateHostCapacities();
+        ThreadPoolExecutor secondExecutor = (ThreadPoolExecutor) getCapacityExecutorService();
+
+        assertEquals("a dynamic worker count change should resize the existing pool rather than replace it",
+                firstExecutor, secondExecutor);
+        assertEquals(1, secondExecutor.getCorePoolSize());
+        assertEquals(1, secondExecutor.getMaximumPoolSize());
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws Exception {
