@@ -65,16 +65,6 @@ import java.util.stream.Collectors;
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
 
-    @Inject
-    private BackupDao backupDao;
-
-    @Inject
-    private BackupRepositoryDao backupRepositoryDao;
-
-    @Inject
-    private BackupOfferingDao backupOfferingDao;
-
-    @Inject
     public static final ConfigKey<Boolean> NASBackupParallelExecution = new ConfigKey<>("Advanced", Boolean.class,
             "backup.nas.parallel.execution.enabled",
             "true",
@@ -86,8 +76,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public static final ConfigKey<Integer> NASBackupParallelMaxPerHost = new ConfigKey<>("Advanced", Integer.class,
             "backup.nas.parallel.max.per.host",
             "2",
-            "Maximum number of NAS take-backup commands in flight on one KVM host when parallel execution is enabled; further backups "
-            + "for that host wait on the management server. Keep it below the agent's worker thread count (default 5) so start, stop, "
+            "Maximum number of NAS take-backup commands each management server keeps in flight on one KVM host when parallel "
+            + "execution is enabled; further backups for that host wait on that management server. The count is kept per management "
+            + "server, so with several management servers a host can see up to this value times the number of management servers. "
+            + "Keep that product below the agent's worker thread count (workers in agent.properties, default 5) so start, stop, "
             + "reboot and migrate commands are never queued behind backups.",
             true, ConfigKey.Scope.Zone);
 
@@ -104,6 +96,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         private int inFlight;
     }
 
+    @Inject
+    private BackupDao backupDao;
+
+    @Inject
+    private BackupRepositoryDao backupRepositoryDao;
+
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
+
+    @Inject
     private HostDao hostDao;
 
     @Inject

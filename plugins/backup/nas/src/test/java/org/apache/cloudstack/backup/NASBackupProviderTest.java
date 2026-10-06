@@ -17,14 +17,18 @@
 package org.apache.cloudstack.backup;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.cloud.host.dao.HostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NASBackupProviderTest {
@@ -110,5 +114,26 @@ public class NASBackupProviderTest {
         final NASBackupProvider provider = new NASBackupProvider();
         provider.releaseHostBackupSlot(404L);
         Assert.assertEquals(0, provider.getInFlightBackups(404L));
+    }
+
+    /**
+     * Spring ignores @Inject on static fields, so an annotation that drifts onto a ConfigKey constant
+     * silently leaves the DAO it used to belong to unset (hostDao was null here once).
+     */
+    @Test
+    public void everyInjectedFieldIsAnInstanceFieldAndHostDaoIsInjected() throws Exception {
+        for (final Field field : NASBackupProvider.class.getDeclaredFields()) {
+            if (field.isAnnotationPresent(Inject.class)) {
+                Assert.assertFalse("@Inject on static field " + field.getName() + " is ignored by Spring",
+                        Modifier.isStatic(field.getModifiers()));
+            }
+            if (field.getType().getSimpleName().endsWith("Dao") || field.getType().getSimpleName().endsWith("Manager")) {
+                Assert.assertTrue("dependency field " + field.getName() + " is not annotated with @Inject",
+                        field.isAnnotationPresent(Inject.class));
+            }
+        }
+        final Field hostDao = NASBackupProvider.class.getDeclaredField("hostDao");
+        Assert.assertEquals(HostDao.class, hostDao.getType());
+        Assert.assertTrue(hostDao.isAnnotationPresent(Inject.class));
     }
 }
