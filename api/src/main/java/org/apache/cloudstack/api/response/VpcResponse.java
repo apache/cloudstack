@@ -78,7 +78,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private Boolean vpcOfferingConserveMode;
 
     @SerializedName(ApiConstants.PUBLIC_NETWORK_RATE)
-    @Param(description = "Data transfer rate in megabits per second allowed for this VPC's public gateway (internet-facing network); -1 if unlimited", since = "24.0")
+    @Param(description = "Data transfer rate in megabits per second allowed for this VPC's public gateway (internet-facing network); -1 if unlimited", since = "24.0.0")
     private Integer publicNetworkRate;
 
     @SerializedName(ApiConstants.CREATED)

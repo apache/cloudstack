@@ -312,7 +312,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private Integer privateMtu;
 
     @SerializedName(ApiConstants.NETWORKRATE)
-    @Param(description = "Network rate (in Mb/s) configured for the Guest interface of this network; -1 if unlimited", since = "24.0")
+    @Param(description = "Network rate (in Mb/s) configured for the Guest interface of this network; -1 if unlimited", since = "24.0.0")
     private Integer networkRate;
 
     @SerializedName(ApiConstants.IP6_DNS1)

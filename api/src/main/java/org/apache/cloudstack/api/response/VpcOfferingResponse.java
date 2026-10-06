@@ -107,7 +107,7 @@ public class VpcOfferingResponse extends BaseResponse {
     private Boolean conserveMode;
 
     @SerializedName(ApiConstants.PUBLIC_NETWORK_RATE)
-    @Param(description = "Data transfer rate in megabits per second allowed for a VPC's public gateway (internet-facing network), created with this offering; -1 if unlimited. Not returned if no rate is set on the offering, in which case VPCs created with it use the zone level setting vpc.public.network.throttling.rate", since = "24.0")
+    @Param(description = "Data transfer rate in megabits per second allowed for a VPC's public gateway (internet-facing network), created with this offering; -1 if unlimited. Not returned if no rate is set on the offering, in which case VPCs created with it use the zone level setting vpc.public.network.throttling.rate", since = "24.0.0")
     private Integer publicNetworkRate;
 
     public void setId(String id) {
