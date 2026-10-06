@@ -258,6 +258,66 @@ public class ConfigDepotImplTest {
     }
 
     @Test
+    public void testInvalidateConfigCacheDropsTheInheritedValueOfAChildScope() {
+        String keyName = "test.key";
+        ConfigKey<String> key = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
+                keyName, "default-value", "test", true, List.of(ConfigKey.Scope.Cluster, ConfigKey.Scope.Zone));
+
+        Long clusterId = 1L;
+        Long zoneId = 2L;
+        String zoneValue = "zone-value";
+        String newZoneValue = "new-zone-value";
+
+        ScopedConfigStorage clusterStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(clusterStorage.getScope()).thenReturn(ConfigKey.Scope.Cluster);
+        Mockito.when(clusterStorage.getConfigValue(clusterId, keyName)).thenReturn(null);
+        Mockito.when(clusterStorage.getParentScope(clusterId)).thenReturn(new Pair<>(ConfigKey.Scope.Zone, zoneId));
+
+        ScopedConfigStorage zoneStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(zoneStorage.getScope()).thenReturn(ConfigKey.Scope.Zone);
+        Mockito.when(zoneStorage.getConfigValue(zoneId, keyName)).thenReturn(zoneValue);
+
+        configDepotImpl.setScopedStorages(List.of(clusterStorage, zoneStorage));
+
+        // the cluster has no value of its own, so the zone value is cached under the cluster scope key
+        Assert.assertEquals(zoneValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+
+        // an administrator gives the zone a new value, which makes the entry of the cluster stale as well
+        Mockito.when(zoneStorage.getConfigValue(zoneId, keyName)).thenReturn(newZoneValue);
+        configDepotImpl.invalidateConfigCache(keyName, ConfigKey.Scope.Zone, zoneId);
+
+        Assert.assertEquals(newZoneValue, key.valueInScope(ConfigKey.Scope.Cluster, clusterId));
+        Assert.assertEquals(newZoneValue, key.valueInScope(ConfigKey.Scope.Zone, zoneId));
+    }
+
+    @Test
+    public void testInvalidateConfigCacheDropsTheGlobalValueCachedForAnAccount() {
+        // the scenario of test_enable_account_settings_for_domain.py: a configuration of one scope only, where an
+        // account with no value of its own gets the global value, and an administrator then changes the global value
+        String keyName = "vmsnapshot.expire.interval";
+        ConfigKey<Integer> key = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+                keyName, "-1", "test", true, ConfigKey.Scope.Account);
+
+        Long accountId = 1L;
+        Integer globalValue = 10;
+        Integer newGlobalValue = 20;
+
+        ScopedConfigStorage accountStorage = Mockito.mock(ScopedConfigStorage.class);
+        Mockito.when(accountStorage.getScope()).thenReturn(ConfigKey.Scope.Account);
+        Mockito.when(accountStorage.getConfigValue(accountId, keyName)).thenReturn(null);
+        Mockito.when(_configDao.getValueByKey(keyName)).thenReturn(String.valueOf(globalValue));
+
+        configDepotImpl.setScopedStorages(List.of(accountStorage));
+
+        Assert.assertEquals(globalValue, key.valueInScope(ConfigKey.Scope.Account, accountId));
+
+        Mockito.when(_configDao.getValueByKey(keyName)).thenReturn(String.valueOf(newGlobalValue));
+        configDepotImpl.invalidateConfigCache(keyName, ConfigKey.Scope.Global, null);
+
+        Assert.assertEquals(newGlobalValue, key.valueInScope(ConfigKey.Scope.Account, accountId));
+    }
+
+    @Test
     public void getParentScopeWithValidScope() {
         ConfigKey.Scope scope = ConfigKey.Scope.Cluster;
         ScopedConfigStorage scopedConfigStorage = Mockito.mock(ScopedConfigStorage.class);

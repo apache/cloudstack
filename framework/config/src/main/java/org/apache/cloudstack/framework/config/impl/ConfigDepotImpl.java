@@ -376,10 +376,22 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin, Configura
         configCache.put(getConfigCacheKey(key, scope, scopeId), value);
     }
 
+    /**
+     * Removes the cached values of a configuration after its value changed in one scope.
+     *
+     * A scope with no value of its own holds the value of its parent scope in the cache, and that entry has the
+     * scope key of the child. Therefore a change in one scope makes the entries of the other scopes of the same
+     * configuration stale, and all of them are removed. The cost is small, because only an administrator command
+     * changes a configuration value.
+     *
+     * The scope and the scope ID tell where the change was made. They are kept for the log, because the cache is
+     * cleared for the whole configuration.
+     */
     @Override
     public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
         ensureCacheInitialized();
-        configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
+        logger.debug(String.format("Invalidating the cached values of config key=%s after a change in scope=%s, scopeId=%s", key, scope, scopeId));
+        configCache.invalidateKeysMatching(cacheKey -> key.equals(cacheKey.first()));
     }
 
     public List<ScopedConfigStorage> getScopedStorages() {

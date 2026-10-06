@@ -113,6 +113,25 @@ public class LazyCacheTest {
     }
 
     @Test
+    public void testInvalidateKeysMatching() {
+        String matchingKey1 = "group.one";
+        String matchingKey2 = "group.two";
+        String otherKey = "other.one";
+        cache.get(matchingKey1);
+        cache.get(matchingKey2);
+        cache.get(otherKey);
+
+        cache.invalidateKeysMatching(key -> key.startsWith("group."));
+
+        cache.get(matchingKey1);
+        cache.get(matchingKey2);
+        cache.get(otherKey);
+        Mockito.verify(mockLoader, Mockito.times(2)).apply(matchingKey1);
+        Mockito.verify(mockLoader, Mockito.times(2)).apply(matchingKey2);
+        Mockito.verify(mockLoader, Mockito.times(1)).apply(otherKey);
+    }
+
+    @Test
     public void testMaximumSize() {
         String key = "key7";
         cache.get(key);

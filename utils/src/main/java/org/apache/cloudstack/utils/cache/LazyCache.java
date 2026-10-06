@@ -19,6 +19,7 @@ package org.apache.cloudstack.utils.cache;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -65,6 +66,14 @@ public class LazyCache<K, V> {
 
     public void invalidate(K key) {
         cache.invalidate(key);
+    }
+
+    /**
+     * Removes every entry whose key matches the predicate. Use it when one change makes a group of
+     * entries stale and the keys of that group are not known to the caller.
+     */
+    public void invalidateKeysMatching(Predicate<K> keyPredicate) {
+        cache.asMap().keySet().removeIf(keyPredicate);
     }
 
     public void clear() {
