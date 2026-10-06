@@ -2763,8 +2763,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         allPoolsByTags.addAll(_storagePoolDao.findPoolsByAccessGroupsForHostConnection(dcId, podId, clusterId, ScopeType.CLUSTER, storageAccessGroups));
         allPoolsByTags.addAll(_storagePoolDao.findZoneWideStoragePoolsByAccessGroupsForHostConnection(dcId, storageAccessGroups));
         if (includeEmptyTags) {
-            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null));
-            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null));
+            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null, StoragePoolStatus.Up));
+            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null, StoragePoolStatus.Up));
         }
 
         return allPoolsByTags;
@@ -2772,8 +2772,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private List<StoragePoolVO> getStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId) {
         List<StoragePoolVO> allPoolsByTags = new ArrayList<>();
-        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null));
-        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null));
+        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null, StoragePoolStatus.Up));
+        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null, StoragePoolStatus.Up));
 
         return allPoolsByTags;
     }
