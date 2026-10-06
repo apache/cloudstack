@@ -64,7 +64,7 @@ public final class LinstorImportHelper {
         List<String> names = path == null ? Collections.emptyList() : Collections.singletonList(resourceName(path));
         List<ResourceDefinition> result = new ArrayList<>();
         for (int offset = 0; ; offset += PAGE_SIZE) {
-            List<ResourceDefinition> page = api.resourceDefinitionList(names, true, null, PAGE_SIZE, offset);
+            List<ResourceDefinition> page = api.resourceDefinitionList(names, true, null, offset, PAGE_SIZE);
             if (page == null) {
                 throw new CloudRuntimeException("Cannot read LINSTOR resource definitions");
             }
@@ -103,7 +103,7 @@ public final class LinstorImportHelper {
         List<ResourceWithVolumes> result = new ArrayList<>();
         for (int offset = 0; ; offset += PAGE_SIZE) {
             List<ResourceWithVolumes> page = api.viewResources(Collections.emptyList(), names,
-                    Collections.emptyList(), null, PAGE_SIZE, offset);
+                    Collections.emptyList(), null, offset, PAGE_SIZE);
             if (page == null) {
                 throw new CloudRuntimeException("Cannot read LINSTOR resource usage");
             }
@@ -122,7 +122,7 @@ public final class LinstorImportHelper {
     private static Set<String> onlineNodes(DevelopersApi api) throws ApiException {
         Set<String> result = new HashSet<>();
         for (int offset = 0; ; offset += PAGE_SIZE) {
-            List<Node> page = api.nodeList(Collections.emptyList(), Collections.emptyList(), PAGE_SIZE, offset);
+            List<Node> page = api.nodeList(Collections.emptyList(), Collections.emptyList(), offset, PAGE_SIZE);
             if (page == null) {
                 throw new CloudRuntimeException("Cannot verify LINSTOR satellite connectivity");
             }

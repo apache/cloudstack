@@ -50,7 +50,7 @@ public class LinstorImportHelperTest {
     @Before
     public void setup() throws Exception {
         api = mock(DevelopersApi.class);
-        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 0))
+        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000))
                 .thenReturn(Collections.singletonList(new Node().name("remote-node").connectionStatus(Node.ConnectionStatusEnum.ONLINE)));
     }
 
@@ -69,8 +69,8 @@ public class LinstorImportHelperTest {
     }
 
     private void respond(List<ResourceDefinition> definitions, List<ResourceWithVolumes> resources) throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0))).thenReturn(definitions);
-        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(1000), eq(0))).thenReturn(resources);
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000))).thenReturn(definitions);
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(0), eq(1000))).thenReturn(resources);
     }
 
     private List<VolumeOnStorageTO> list(String path) {
@@ -88,9 +88,9 @@ public class LinstorImportHelperTest {
         assertEquals("RAW", volumes.get(0).getFormat());
         assertEquals(1024L * 1024L, volumes.get(0).getVirtualSize());
         assertEquals("false", volumes.get(0).getDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
-        verify(api).resourceDefinitionList(Collections.emptyList(), true, null, 1000, 0);
-        verify(api).viewResources(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null, 1000, 0);
-        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 0);
+        verify(api).resourceDefinitionList(Collections.emptyList(), true, null, 0, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null, 0, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000);
         verifyNoMoreInteractions(api); // In particular: no make-available, delete or property changes.
     }
 
@@ -98,9 +98,9 @@ public class LinstorImportHelperTest {
     public void singleVolumeIsReadOnlyAndUsesExactResourceName() throws Exception {
         respond(Collections.singletonList(definition("x", "rg-ssd")), Collections.singletonList(resource("x", false)));
         assertEquals("x", list("x").get(0).getPath());
-        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 1000, 0);
-        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 1000, 0);
-        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 0);
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 0, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000);
         verifyNoMoreInteractions(api);
     }
 
@@ -133,7 +133,7 @@ public class LinstorImportHelperTest {
     @Test
     public void offlineSatelliteCannotReportAFreeVolume() throws Exception {
         respond(Collections.singletonList(definition("x", "rg-ssd")), Collections.singletonList(resource("x", false)));
-        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 0)).thenReturn(Collections.emptyList());
+        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000)).thenReturn(Collections.emptyList());
         assertEquals("true", list("x").get(0).getDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
     }
 
@@ -154,42 +154,42 @@ public class LinstorImportHelperTest {
 
     @Test
     public void wrongGroupIsRejectedBeforeReadingUsage() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0)))
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
                 .thenReturn(Collections.singletonList(definition("x", "rg-hdd")));
         CloudRuntimeException error = assertThrows(CloudRuntimeException.class, () -> list("x"));
         assertTrue(error.getMessage().contains("rg-hdd"));
         assertTrue(error.getMessage().contains("rg-ssd"));
-        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 1000, 0);
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
         verifyNoMoreInteractions(api);
     }
 
     @Test
     public void managerValidationRejectsWrongGroupEvenWithoutRunningVm() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0)))
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
                 .thenReturn(Collections.singletonList(definition("x", "rg-hdd")));
         assertThrows(CloudRuntimeException.class, () -> LinstorImportHelper.validateResourceGroup(api, "rg-ssd", "x"));
-        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 1000, 0);
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
         verifyNoMoreInteractions(api);
     }
 
     @Test
     public void managerValidationAcceptsMatchingGroup() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0)))
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
                 .thenReturn(Collections.singletonList(definition("x", "rg-ssd")));
         LinstorImportHelper.validateResourceGroup(api, "rg-ssd", "x");
-        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 1000, 0);
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
         verifyNoMoreInteractions(api);
     }
 
     @Test
     public void missingDefinitionIsRejected() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0))).thenReturn(Collections.emptyList());
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000))).thenReturn(Collections.emptyList());
         assertThrows(CloudRuntimeException.class, () -> list("x"));
     }
 
     @Test
     public void unavailableControllerFailsClosed() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0)))
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
                 .thenThrow(new ApiException("unreachable"));
         assertThrows(CloudRuntimeException.class, () -> list("x"));
         assertThrows(CloudRuntimeException.class, () -> LinstorImportHelper.validateResourceGroup(api, "rg-ssd", "x"));
@@ -203,7 +203,7 @@ public class LinstorImportHelperTest {
 
     @Test
     public void nullDefinitionsFailClosed() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0))).thenReturn(null);
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000))).thenReturn(null);
         assertThrows(CloudRuntimeException.class, () -> list("x"));
     }
 
@@ -236,17 +236,71 @@ public class LinstorImportHelperTest {
     }
 
     @Test
-    public void batchReadsFollowPagination() throws Exception {
-        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(0)))
+    public void batchReadsFollowThreePagesWithConstantLimit() throws Exception {
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
                 .thenReturn(Collections.nCopies(1000, definition("foreign", "rg-hdd")));
         when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(1000), eq(1000)))
+                .thenReturn(Collections.nCopies(1000, definition("foreign", "rg-hdd")));
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(2000), eq(1000)))
                 .thenReturn(Collections.singletonList(definition("x", "rg-ssd")));
-        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(1000), eq(0)))
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(0), eq(1000)))
                 .thenReturn(Collections.nCopies(1000, resource("foreign", false)));
         when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(1000), eq(1000)))
+                .thenReturn(Collections.nCopies(1000, resource("foreign", false)));
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(2000), eq(1000)))
                 .thenReturn(Collections.singletonList(resource("x", false)));
-        assertEquals("x", list(null).get(0).getPath());
+
+        List<VolumeOnStorageTO> volumes = list(null);
+        assertEquals(1, volumes.size());
+        assertEquals("x", volumes.get(0).getPath());
+        assertEquals("false", volumes.get(0).getDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
+        verify(api).resourceDefinitionList(Collections.emptyList(), true, null, 0, 1000);
         verify(api).resourceDefinitionList(Collections.emptyList(), true, null, 1000, 1000);
+        verify(api).resourceDefinitionList(Collections.emptyList(), true, null, 2000, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null, 0, 1000);
         verify(api).viewResources(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null, 1000, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null, 2000, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000);
+        verifyNoMoreInteractions(api);
+    }
+
+    @Test
+    public void onlineSatelliteOnThirdPageAllowsImport() throws Exception {
+        respond(Collections.singletonList(definition("x", "rg-ssd")), Collections.singletonList(resource("x", false)));
+        Node unrelatedNode = new Node().name("unrelated-node").connectionStatus(Node.ConnectionStatusEnum.ONLINE);
+        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000))
+                .thenReturn(Collections.nCopies(1000, unrelatedNode));
+        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 1000))
+                .thenReturn(Collections.nCopies(1000, unrelatedNode));
+        when(api.nodeList(Collections.emptyList(), Collections.emptyList(), 2000, 1000))
+                .thenReturn(Collections.singletonList(new Node().name("remote-node").connectionStatus(Node.ConnectionStatusEnum.ONLINE)));
+
+        assertEquals("false", list("x").get(0).getDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 0, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 1000, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 2000, 1000);
+        verifyNoMoreInteractions(api);
+    }
+
+    @Test
+    public void busyReplicaOnThirdPageStillLocksVolume() throws Exception {
+        when(api.resourceDefinitionList(anyList(), eq(true), isNull(), eq(0), eq(1000)))
+                .thenReturn(Collections.singletonList(definition("x", "rg-ssd")));
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(0), eq(1000)))
+                .thenReturn(Collections.nCopies(1000, resource("x", false)));
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(1000), eq(1000)))
+                .thenReturn(Collections.nCopies(1000, resource("x", false)));
+        when(api.viewResources(anyList(), anyList(), anyList(), isNull(), eq(2000), eq(1000)))
+                .thenReturn(Collections.singletonList(resource("x", true)));
+
+        assertEquals("true", list("x").get(0).getDetails().get(VolumeOnStorageTO.Detail.IS_LOCKED));
+        verify(api).resourceDefinitionList(Collections.singletonList("cs-x"), true, null, 0, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 0, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 1000, 1000);
+        verify(api).viewResources(Collections.emptyList(), Collections.singletonList("cs-x"), Collections.emptyList(), null, 2000, 1000);
+        verify(api).nodeList(Collections.emptyList(), Collections.emptyList(), 0, 1000);
+        verifyNoMoreInteractions(api);
     }
 }
