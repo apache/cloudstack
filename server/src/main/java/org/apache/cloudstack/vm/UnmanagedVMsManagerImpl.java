@@ -2648,6 +2648,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long poolId = cmd.getStoragePoolId();
         Long networkId = cmd.getNetworkId();
 
+        boolean forced = false;
+        boolean allowDuplicateMacAddress = false;
+        if (ImportSource.EXTERNAL == importSource) {
+            Boolean requestedForced = cmd.getForced();
+            allowDuplicateMacAddress = cmd.isAllowDuplicateMacAddresses();
+            if (BooleanUtils.isTrue(requestedForced) && allowDuplicateMacAddress) {
+                throw new InvalidParameterValueException(String.format("%s and %s are mutually exclusive", ApiConstants.FORCED, ApiConstants.ALLOW_DUPLICATE_MAC_ADDRESSES));
+            }
+            forced = !allowDuplicateMacAddress && (requestedForced == null || requestedForced);
+        }
+
         UnmanagedInstanceTO unmanagedInstanceTO = null;
         if (ImportSource.EXTERNAL == importSource) {
             if (StringUtils.isBlank(cmd.getUsername())) {
@@ -2715,7 +2726,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 userVm = importExternalKvmVirtualMachine(unmanagedInstanceTO, instanceName, zone,
                         template, displayName, hostName, caller, owner, userId,
                         serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details);
+                        nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details,
+                        forced, allowDuplicateMacAddress);
             } else if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
                 try {
                     userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
@@ -2747,7 +2759,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                    final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                    final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                   final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details) throws ResourceAllocationException {
+                                                   final String remoteUrl, String username, String password, String tmpPath, final Map<String, String> details,
+                                                   final boolean forced, final boolean allowDuplicateMacAddress) throws ResourceAllocationException {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
@@ -2845,7 +2858,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                     Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                     Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true, false);
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced, allowDuplicateMacAddress);
                     nicIndex++;
                 }
             } catch (Exception e) {

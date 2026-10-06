@@ -284,6 +284,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         return BooleanUtils.isTrue(forced);
     }
 
+    public Boolean getForced() {
+        return forced;
+    }
+
     public boolean isAllowDuplicateMacAddresses() {
         return BooleanUtils.isTrue(allowDuplicateMacAddresses);
     }

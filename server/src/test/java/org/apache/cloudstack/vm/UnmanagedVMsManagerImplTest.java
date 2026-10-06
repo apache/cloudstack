@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -467,6 +468,24 @@ public class UnmanagedVMsManagerImplTest {
         }
     }
 
+    @Test
+    public void importUnmanagedVmwareInstanceForwardsDuplicateMacPolicy() {
+        ImportUnmanagedInstanceCmd cmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+        when(cmd.getName()).thenReturn("TestInstance");
+        when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.isAllowDuplicateMacAddresses()).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.importUnmanagedInstance(cmd);
+        }
+
+        verify(networkOrchestrationService).importNic(Mockito.eq(instance.getNics().get(0).getMacAddress()), anyInt(),
+                any(Network.class), anyBoolean(), any(VirtualMachine.class), nullable(Network.IpAddresses.class),
+                any(DataCenter.class), Mockito.eq(false), Mockito.eq(true));
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void importUnmanagedInstanceInvalidHostnameTest() {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
@@ -653,15 +672,63 @@ public class UnmanagedVMsManagerImplTest {
         unmanagedVMsManager.listVmsForImport(cmd);
     }
     @Test
-    public void testImportFromExternalTest() throws InsufficientServerCapacityException {
-        String vmname = "TestInstance";
+    public void testImportFromExternalDefaultsToReplacingConflictingMac() throws InsufficientServerCapacityException {
+        ImportVmCmd cmd = createExternalImportCmd(null, false);
+        importExternalKvmVm(cmd);
+        verifyExternalKvmMacPolicy(true, false);
+    }
+
+    @Test
+    public void testImportFromExternalForwardsExplicitForcedTrue() throws InsufficientServerCapacityException {
+        ImportVmCmd cmd = createExternalImportCmd(true, false);
+        importExternalKvmVm(cmd);
+        verifyExternalKvmMacPolicy(true, false);
+    }
+
+    @Test
+    public void testImportFromExternalForwardsExplicitForcedFalse() throws InsufficientServerCapacityException {
+        ImportVmCmd cmd = createExternalImportCmd(false, false);
+        importExternalKvmVm(cmd);
+        verifyExternalKvmMacPolicy(false, false);
+    }
+
+    @Test
+    public void testImportFromExternalForwardsDuplicateMacAllowance() throws InsufficientServerCapacityException {
+        ImportVmCmd cmd = createExternalImportCmd(false, true);
+        importExternalKvmVm(cmd);
+        verifyExternalKvmMacPolicy(false, true);
+    }
+
+    @Test
+    public void testImportFromExternalRejectsIncompatibleMacOptionsBeforeImportSideEffects() {
+        ImportVmCmd cmd = createExternalImportCmd(true, true);
+
+        try {
+            unmanagedVMsManager.importVm(cmd);
+            Assert.fail("Expected incompatible MAC address conflict options to be rejected");
+        } catch (InvalidParameterValueException expected) {
+            Assert.assertTrue(expected.getMessage().contains(ApiConstants.FORCED));
+            Assert.assertTrue(expected.getMessage().contains(ApiConstants.ALLOW_DUPLICATE_MAC_ADDRESSES));
+        }
+
+        verify(agentManager, never()).easySend(anyLong(), any(GetRemoteVmsCommand.class));
+        verify(volumeManager, never()).allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+    }
+
+    private ImportVmCmd createExternalImportCmd(Boolean forced, boolean allowDuplicateMacAddresses) {
         ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
-        when(cmd.getName()).thenReturn(vmname);
+        when(cmd.getName()).thenReturn("TestInstance");
         when(cmd.getUsername()).thenReturn("user");
         when(cmd.getPassword()).thenReturn("pass");
         when(cmd.getImportSource()).thenReturn("external");
         when(cmd.getDomainId()).thenReturn(null);
+        when(cmd.getForced()).thenReturn(forced);
+        when(cmd.isAllowDuplicateMacAddresses()).thenReturn(allowDuplicateMacAddresses);
+        return cmd;
+    }
+
+    private void importExternalKvmVm(ImportVmCmd cmd) throws InsufficientServerCapacityException {
         HostVO host = Mockito.mock(HostVO.class);
         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
@@ -682,6 +749,12 @@ public class UnmanagedVMsManagerImplTest {
              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             unmanagedVMsManager.importVm(cmd);
         }
+    }
+
+    private void verifyExternalKvmMacPolicy(boolean forced, boolean allowDuplicateMacAddresses) {
+        verify(networkOrchestrationService).importNic(Mockito.eq(instance.getNics().get(0).getMacAddress()), anyInt(),
+                any(Network.class), anyBoolean(), any(VirtualMachine.class), nullable(Network.IpAddresses.class),
+                any(DataCenter.class), Mockito.eq(forced), Mockito.eq(allowDuplicateMacAddresses));
     }
 
     private void baseBasicParametersCheckForImportInstance(String name, Long domainId, String accountName) {

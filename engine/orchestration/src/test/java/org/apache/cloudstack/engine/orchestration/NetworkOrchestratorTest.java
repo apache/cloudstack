@@ -82,6 +82,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -945,6 +946,23 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false, false);
     }
 
+    @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+    public void testImportNicDuplicateMacAllowanceDoesNotBypassIpAllocation() throws Exception {
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        long dataCenterId = 1L;
+        Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn("10.1.10.10");
+        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
+        Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+
+        testOrchestrator.importNic("02:01:01:82:00:01", 0, network, true, vm, ipAddresses, dataCenter, false, true);
+    }
+
     @Test
     public void testImportNicNoIP4Address() throws Exception {
         DataCenter dataCenter = Mockito.mock(DataCenter.class);
@@ -1018,6 +1036,70 @@ public class NetworkOrchestratorTest extends TestCase {
             assertEquals(networkRate, nicProfile.getNetworkRate());
             assertFalse(nicProfile.isSecurityGroupEnabled());
             assertEquals("testtag", nicProfile.getName());
+        }
+    }
+
+    @Test
+    public void testImportNicReplacesConflictingMacWhenForced() throws Exception {
+        String sourceMacAddress = "02:01:01:82:00:01";
+        String replacementMacAddress = "02:01:01:82:00:02";
+        when(testOrchestrator._networkModel.getNextAvailableMacAddressInNetwork(1L)).thenReturn(replacementMacAddress);
+
+        NicProfile nicProfile = importNicWithMacPolicy(sourceMacAddress, true, true, false);
+
+        assertEquals(replacementMacAddress, nicProfile.getMacAddress());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportNicRejectsConflictingMacWhenNotForced() throws Exception {
+        importNicWithMacPolicy("02:01:01:82:00:01", true, false, false);
+    }
+
+    @Test
+    public void testImportNicPreservesAllowedDuplicateMac() throws Exception {
+        String sourceMacAddress = "02:01:01:82:00:01";
+
+        NicProfile nicProfile = importNicWithMacPolicy(sourceMacAddress, true, false, true);
+
+        assertEquals(sourceMacAddress, nicProfile.getMacAddress());
+        verify(testOrchestrator._networkModel, never()).getNextAvailableMacAddressInNetwork(1L);
+    }
+
+    @Test
+    public void testImportNicPreservesUnusedSourceMac() throws Exception {
+        String sourceMacAddress = "02:01:01:82:00:01";
+
+        NicProfile nicProfile = importNicWithMacPolicy(sourceMacAddress, false, true, false);
+
+        assertEquals(sourceMacAddress, nicProfile.getMacAddress());
+        verify(testOrchestrator._networkModel, never()).getNextAvailableMacAddressInNetwork(1L);
+    }
+
+    @SuppressWarnings("unchecked")
+    private NicProfile importNicWithMacPolicy(String macAddress, boolean macAddressExists, boolean forced,
+                                               boolean allowDuplicateMacAddress) throws Exception {
+        long networkId = 1L;
+        long vmId = 1L;
+        DataCenter dataCenter = mock(DataCenter.class);
+        Network network = mock(Network.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(network.getId()).thenReturn(networkId);
+        when(network.getGuestType()).thenReturn(GuestType.L2);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getType()).thenReturn(Type.User);
+        when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        if (macAddressExists) {
+            when(testOrchestrator._nicDao.findByNetworkIdAndMacAddress(networkId, macAddress)).thenReturn(mock(NicVO.class));
+        }
+        when(testOrchestrator._nicDao.persist(any(NicVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenAnswer(invocation -> {
+                TransactionCallback<NicVO> callback = invocation.getArgument(0);
+                return callback.doInTransaction(mock(TransactionStatus.class));
+            });
+            return testOrchestrator.importNic(macAddress, 0, network, true, vm, null, dataCenter,
+                    forced, allowDuplicateMacAddress).first();
         }
     }
 

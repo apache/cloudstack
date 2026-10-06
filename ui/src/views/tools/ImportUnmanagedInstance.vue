@@ -470,6 +470,12 @@ import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import {
+  getDefaultMacAddressConflictOptions,
+  getMacAddressConflictApiParams,
+  selectAllowDuplicateMacAddressesOption,
+  selectForcedMacAddressConflictOption
+} from '@/utils/importVmMacAddressPolicy'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -690,6 +696,9 @@ export default {
       }
       return false
     },
+    isExternalKvmImport () {
+      return this.isExternalImport && this.hypervisor?.toLowerCase() === 'kvm'
+    },
     isKVMUnmanage () {
       return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
     },
@@ -813,6 +822,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
+      const macAddressConflictOptions = getDefaultMacAddressConflictOptions(this.isExternalKvmImport)
+      this.switches.forced = macAddressConflictOptions.forced
+      this.switches.allowDuplicateMacAddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.form = reactive({
         rootdiskid: 0,
         usevddk: false,
@@ -1194,20 +1206,18 @@ export default {
       this.resetStorageOptionsForConversion()
     },
     onForcedMacConflictChange (val) {
-      this.switches.forced = val
-      this.form.forced = val
-      if (val) {
-        this.switches.allowDuplicateMacAddresses = false
-        this.form.allowduplicatemacaddresses = false
-      }
+      const options = selectForcedMacAddressConflictOption(this.switches, val)
+      this.switches.forced = options.forced
+      this.switches.allowDuplicateMacAddresses = options.allowDuplicateMacAddresses
+      this.form.forced = options.forced
+      this.form.allowduplicatemacaddresses = options.allowDuplicateMacAddresses
     },
     onAllowDuplicateMacAddressesChange (val) {
-      this.switches.allowDuplicateMacAddresses = val
-      this.form.allowduplicatemacaddresses = val
-      if (val) {
-        this.switches.forced = false
-        this.form.forced = false
-      }
+      const options = selectAllowDuplicateMacAddressesOption(this.switches, val)
+      this.switches.forced = options.forced
+      this.switches.allowDuplicateMacAddresses = options.allowDuplicateMacAddresses
+      this.form.forced = options.forced
+      this.form.allowduplicatemacaddresses = options.allowDuplicateMacAddresses
     },
     onUseVddkChange (val, isUserChange = true) {
       if (isUserChange) {
@@ -1364,12 +1374,10 @@ export default {
           }
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'osid']
-        if (this.showMacConflictOptions) {
-          keys.push('forced')
-        }
-        if (this.showAllowDuplicateMacAddresses) {
-          keys.push('allowduplicatemacaddresses')
-        }
+        Object.assign(params, getMacAddressConflictApiParams({
+          forced: values.forced,
+          allowDuplicateMacAddresses: values.allowduplicatemacaddresses
+        }, this.isExternalKvmImport, this.showMacConflictOptions, this.showAllowDuplicateMacAddresses))
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1483,11 +1491,14 @@ export default {
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
+      const macAddressConflictOptions = getDefaultMacAddressConflictOptions(this.isExternalKvmImport)
+      this.switches.forced = macAddressConflictOptions.forced
+      this.switches.allowDuplicateMacAddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.form.usevddk = false
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false
-      this.form.forced = false
-      this.form.allowduplicatemacaddresses = false
+      this.form.forced = macAddressConflictOptions.forced
+      this.form.allowduplicatemacaddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.userModifiedVddkSetting = false
       this.resetStorageOptionsForConversion()
     },
