@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.db.GlobalLock;
 
 import java.io.File;
@@ -33,6 +35,8 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class InfrastructureBackupTaskTest {
 
@@ -58,6 +62,8 @@ public class InfrastructureBackupTaskTest {
         boolean databaseIncluded = false;
         boolean usageDbIncluded = true;
         Properties dbProps;
+        boolean useRealDbPropertiesLoader = false;
+        final List<String> databaseBackupPasswords = new ArrayList<>();
         final List<String> databaseBackupNames = new ArrayList<>();
         final List<String> directoryBackupNames = new ArrayList<>();
         final AtomicInteger retentionCalls = new AtomicInteger(0);
@@ -80,13 +86,14 @@ public class InfrastructureBackupTaskTest {
 
         @Override
         protected Properties loadDbProperties() {
-            return dbProps;
+            return useRealDbPropertiesLoader ? super.loadDbProperties() : dbProps;
         }
 
         @Override
         protected void backupDatabase(String dbName, String backupDir, String timestamp,
                                       String dbHost, String dbUser, String dbPassword) {
             databaseBackupNames.add(dbName);
+            databaseBackupPasswords.add(dbPassword);
         }
 
         @Override
@@ -347,6 +354,74 @@ public class InfrastructureBackupTaskTest {
         // The symlink target and its contents MUST survive — the delete must not follow the link out.
         Assert.assertTrue("symlink target directory must survive", outside.exists());
         Assert.assertTrue("file behind the symlink must survive", precious.exists());
+    }
+
+    @Test
+    public void encryptedDbPasswordIsDecryptedBeforeMysqldump() {
+        // db.properties with db.cloud.encryption.type=file: the password is stored as ENC(...).
+        EncryptionSecretKeyChecker.initEncryptor("unit-test-key");
+        try {
+            Properties onDisk = stubDbProps();
+            onDisk.setProperty("db.cloud.password", "ENC(" + EncryptionSecretKeyChecker.getEncryptor().encrypt("s3cret") + ")");
+            Properties loadedByServer = new Properties();
+            loadedByServer.putAll(onDisk);
+            EncryptionSecretKeyChecker.decryptAnyProperties(loadedByServer);
+
+            RecordingTask task = new RecordingTask();
+            task.location = tmpRoot.toString();
+            task.databaseIncluded = true;
+            task.usageDbIncluded = true;
+            task.useRealDbPropertiesLoader = true;
+            try (MockedStatic<DbProperties> dbProperties = Mockito.mockStatic(DbProperties.class)) {
+                dbProperties.when(DbProperties::getDbProperties).thenReturn(loadedByServer);
+                task.runInContext();
+            }
+
+            Assert.assertEquals(Arrays.asList("cloud", "cloud_usage"), task.databaseBackupNames);
+            Assert.assertEquals("mysqldump must get the decrypted password, not the ENC(...) value",
+                    Arrays.asList("s3cret", "s3cret"), task.databaseBackupPasswords);
+        } finally {
+            EncryptionSecretKeyChecker.resetEncryptor();
+        }
+    }
+
+    @Test
+    public void missingDbPropertiesSkipsOnlyTheDatabase() {
+        RecordingTask task = new RecordingTask();
+        task.location = tmpRoot.toString();
+        task.databaseIncluded = true;
+        task.useRealDbPropertiesLoader = true;
+        try (MockedStatic<DbProperties> dbProperties = Mockito.mockStatic(DbProperties.class)) {
+            dbProperties.when(DbProperties::getDbProperties).thenThrow(new IllegalStateException("Failed to load db.properties"));
+            task.runInContext();
+        }
+
+        Assert.assertTrue(task.databaseBackupNames.isEmpty());
+        Assert.assertEquals("configs, certs and retention still run", 1, task.retentionCalls.get());
+    }
+
+    @Test
+    public void unwritableLocationStopsTheRunWithAnActionableMessage() {
+        Assume.assumeFalse("root can write anywhere", "root".equals(System.getProperty("user.name")));
+        File readOnly = tmpRoot.toFile();
+        Assert.assertTrue(readOnly.setWritable(false));
+        try {
+            RecordingTask task = new RecordingTask();
+            task.location = readOnly.getAbsolutePath();
+
+            task.runInContext();
+
+            Assert.assertTrue("nothing is archived when the directory cannot be created", task.directoryBackupNames.isEmpty());
+            Assert.assertEquals(0, task.retentionCalls.get());
+        } finally {
+            readOnly.setWritable(true);
+        }
+
+        String message = new InfrastructureBackupTask().describeDirectoryCreationFailure("/mnt/nas-backup/infra-backup/ms-a/20260909-130348", "/mnt/nas-backup");
+        String user = System.getProperty("user.name");
+        Assert.assertTrue(message, message.contains("runs as user '" + user + "'"));
+        Assert.assertTrue(message, message.contains("write access to /mnt/nas-backup"));
+        Assert.assertTrue(message, message.contains("chown " + user + " /mnt/nas-backup"));
     }
 
     private void deleteRecursively(File f) {

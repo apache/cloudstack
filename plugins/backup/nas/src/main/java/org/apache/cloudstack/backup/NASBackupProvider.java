@@ -127,7 +127,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             "nas.infra.backup.location",
             "",
             "NAS mount path where infrastructure backups are stored (e.g. /mnt/nas-backup). " +
-            "Backups will be written to {location}/infra-backup/{timestamp}/.",
+            "Backups will be written to {location}/infra-backup/{management-server-host}/{timestamp}/. " +
+            "The path must be writable by the user the management server runs as (normally 'cloud'), " +
+            "e.g. chown cloud:cloud on the mounted path; a root-owned mount makes every run fail.",
             true,
             ConfigKey.Scope.Global,
             BackupFrameworkEnabled.key());
