@@ -97,7 +97,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     ConfigKey<Boolean> NASBackupCompressionEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.compression.enabled",
             "false",
-            "Enable qcow2 compression for NAS backup files.",
+            "Enable qcow2 compression for NAS backup files. Cannot be combined with nas.backup.encryption.enabled "
+            + "(qcow2 cannot compress and encrypt the same image); backups fail with a clear error if both are on.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -118,7 +119,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     ConfigKey<Boolean> NASBackupEncryptionEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.encryption.enabled",
             "false",
-            "Enable LUKS encryption for NAS backup files.",
+            "Enable LUKS encryption for NAS backup files. Cannot be combined with nas.backup.compression.enabled.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -126,7 +127,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     ConfigKey<String> NASBackupEncryptionPassphrase = new ConfigKey<>("Secure", String.class,
             "nas.backup.encryption.passphrase",
             "",
-            "Passphrase for LUKS encryption of NAS backup files. Required when encryption is enabled.",
+            "Passphrase for LUKS encryption of NAS backup files. Required when encryption is enabled. Restores use the "
+            + "current value, so changing it makes backups taken with the old passphrase unrestorable until it is set back.",
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
@@ -622,8 +624,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // (libvirt backup-begin requires a running QEMU process).
         ChainDecision decision = decideChain(vm);
 
-        BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
+        // Validate and apply the zone's enhancement settings before any backup row exists, so a
+        // misconfiguration (encryption without a passphrase, compression together with encryption)
+        // fails the request without leaving a backup stuck in BackingUp.
+        applyBackupEnhancementDetails(command, vm.getDataCenterId());
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
@@ -633,9 +638,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);
 
-        // Pass optional backup enhancement settings from zone-scoped configs
-        applyBackupEnhancementDetails(command, vm.getDataCenterId());
-
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
@@ -644,6 +646,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             command.setVolumePaths(volumePoolsAndPaths.second());
         }
 
+        BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
@@ -709,9 +712,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     /**
      * Translates the zone-scoped backup-enhancement settings (compression, encryption,
      * bandwidth limit, integrity check) into details on the {@link TakeBackupCommand}.
-     * Fails fast if encryption is enabled without a configured passphrase.
+     * Fails fast, before any backup row is created, if encryption is enabled without a configured
+     * passphrase or together with compression (qcow2 cannot compress and encrypt the same image).
      */
     protected void applyBackupEnhancementDetails(TakeBackupCommand command, Long zoneId) {
+        if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))
+                && Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
+            throw new CloudRuntimeException(String.format("%s and %s are both enabled for zone %d, but qcow2 cannot compress and "
+                    + "encrypt the same image. Disable one of them for this zone; no backup was taken.",
+                    NASBackupCompressionEnabled.key(), NASBackupEncryptionEnabled.key(), zoneId));
+        }
         if (Boolean.TRUE.equals(NASBackupCompressionEnabled.valueIn(zoneId))) {
             command.addDetail(TakeBackupCommand.DETAIL_COMPRESSION, "true");
         }

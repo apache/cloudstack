@@ -578,21 +578,44 @@ public class NASBackupProviderTest {
         VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
         setupHostAndRepo(hostId, backupOfferingId);
 
-        VolumeVO volume = mock(VolumeVO.class);
-        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
-        Mockito.when(volume.getSize()).thenReturn(100L);
-        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
-
         overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "true");
         overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");
-
-        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         try {
             nasBackupProvider.takeBackup(vm, false);
         } finally {
             overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
+            // the misconfiguration must be caught before a backup row exists: nothing may be left in BackingUp
+            Mockito.verify(backupDao, Mockito.never()).persist(Mockito.any(BackupVO.class));
+            Mockito.verify(agentManager, Mockito.never()).send(anyLong(), Mockito.any(TakeBackupCommand.class));
         }
+    }
+
+    @Test
+    public void testTakeBackupRejectsCompressionWithEncryptionBeforeCreatingBackup() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        overrideConfigValue(nasBackupProvider.NASBackupCompressionEnabled, "true");
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "true");
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "my-secret-passphrase");
+        try {
+            nasBackupProvider.takeBackup(vm, false);
+            Assert.fail("compression together with encryption must be rejected");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("nas.backup.compression.enabled"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("nas.backup.encryption.enabled"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("no backup was taken"));
+        } finally {
+            overrideConfigValue(nasBackupProvider.NASBackupCompressionEnabled, "false");
+            overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
+            overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");
+        }
+        Mockito.verify(backupDao, Mockito.never()).persist(Mockito.any(BackupVO.class));
+        Mockito.verify(agentManager, Mockito.never()).send(anyLong(), Mockito.any(TakeBackupCommand.class));
     }
 
     @Test
