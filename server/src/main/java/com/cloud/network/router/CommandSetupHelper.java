@@ -285,14 +285,21 @@ public class CommandSetupHelper {
 
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
         createDhcpEntryCommand(router, vm, nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getIPv4Gateway(), nic.getIPv6Gateway(),
-                nic.getNetworkId(), nic.isDefaultNic(), remove, cmds);
+                nic.getNetworkId(), nic.isDefaultNic(), remove, false, cmds);
     }
 
     // Same as createDhcpEntryCommand(router, vm, NicVO, ...), but for a nic's association with a network other
     // than its primary (multi-VLAN trunk nics) - takes the addressing explicitly, since a nic's own DB row only
-    // ever carries its primary network's IP/gateway.
+    // ever carries its primary network's IP/gateway. Always called with isAssociatedNetwork=true: this is the
+    // one overload every trunk-association DHCP push goes through, directly (never via the NicVO overload above).
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
             final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final Commands cmds) {
+        createDhcpEntryCommand(router, vm, macAddress, ip4Address, ip6Address, ip4Gateway, ip6Gateway, networkId, isDefaultNic, remove, true, cmds);
+    }
+
+    private void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final boolean isAssociatedNetwork,
+            final Commands cmds) {
         final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(macAddress, ip4Address, vm.getHostName(), ip6Address,
                 _networkModel.getExecuteInSeqNtwkElmtCmd());
 
@@ -308,6 +315,7 @@ public class CommandSetupHelper {
         dhcpCommand.setDefaultDns(ipaddress);
         dhcpCommand.setDuid(NetUtils.getDuidLL(macAddress));
         dhcpCommand.setDefault(isDefaultNic);
+        dhcpCommand.setAssociatedNetwork(isAssociatedNetwork);
         dhcpCommand.setRemove(remove);
 
         // Set DHCP lease timeout from zone-scoped config (0 = infinite)
