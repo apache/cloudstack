@@ -3209,7 +3209,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             DiskDef.DiskBus diskBusTypeData = getDataDiskModelFromVMDetail(vmSpec);
             if (diskBusTypeData == null) {
-                diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+                diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIOBLK) ? diskBusType : DiskDef.DiskBus.VIRTIO;
             }
 
             final DiskDef disk = new DiskDef();

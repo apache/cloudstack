@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
@@ -486,5 +487,49 @@ public class KVMStorageProcessorTest {
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
+    }
+
+    private LibvirtVMDef.DiskDef diskWithBus(LibvirtVMDef.DiskDef.DiskBus bus) {
+        LibvirtVMDef.DiskDef disk = new LibvirtVMDef.DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, bus, LibvirtVMDef.DiskDef.DiskFmtType.QCOW2);
+        return disk;
+    }
+
+    @Test
+    public void getAttachDiskBusTypeUsesTheDataDiskControllerWhenItIsSet() {
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.DATA_DISK_CONTROLLER, "virtio-blk");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIOBLK,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.VIRTIO)), controllerInfo));
+    }
+
+    @Test
+    public void getAttachDiskBusTypeFollowsAVirtioBlkRootForDataDisks() {
+        // a virtio-blk disk renders with libvirt's 'virtio' bus, so scanning the domain XML cannot
+        // tell the two apart; without this the hot-plugged disk loses discard until the next start
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIOBLK,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.VIRTIO)), controllerInfo));
+    }
+
+    @Test
+    public void getAttachDiskBusTypeKeepsVirtioForAVirtioRoot() {
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIO,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.VIRTIO)), controllerInfo));
+    }
+
+    @Test
+    public void getAttachDiskBusTypeStillDetectsScsiFromTheRunningDisks() {
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.SCSI,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.SCSI)), Map.of()));
+    }
+
+    @Test
+    public void getAttachDiskBusTypePrefersTheRunningScsiDisksOverAVirtioBlkRootDetail() {
+        // the detail can be changed on a running VM; the disks it actually runs on win, so a SCSI VM
+        // does not get a virtio disk hot-plugged next to its sd* ones
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.SCSI,
+                storageProcessor.getAttachDiskBusType(1, List.of(diskWithBus(LibvirtVMDef.DiskDef.DiskBus.SCSI)), controllerInfo));
     }
 }
