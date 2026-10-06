@@ -132,16 +132,32 @@ public class NetworkRateBackfill {
                 if (TrafficType.Guest.equals(network.getTrafficType())) {
                     return getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
                 } else if (TrafficType.Public.equals(network.getTrafficType())) {
+                    // the public side of a VPC was never throttled before this release
+                    if (isVpcRouter(vm.getId())) {
+                        return UNLIMITED_RATE;
+                    }
                     final Integer rate = findRouterGuestNetworkRate(vm.getId(), network.getDataCenterId());
                     if (rate != null) {
                         return rate;
                     }
                 }
             } else if (vm.getType() == VirtualMachine.Type.ConsoleProxy || vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-                return -1;
+                return UNLIMITED_RATE;
             }
         }
         return getNetworkOfferingNetworkRate(network.getNetworkOfferingId(), network.getDataCenterId());
+    }
+
+    private boolean isVpcRouter(long routerInstanceId) {
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM domain_router WHERE id = ? AND vpc_id IS NOT NULL")) {
+            pstmt.setLong(1, routerInstanceId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            LOGGER.warn("Failed to check whether router id=" + routerInstanceId + " belongs to a VPC: " + e.getMessage());
+            return false;
+        }
     }
 
     // Raw SQL instead of NicDao.listByVmId(): its SearchBuilder isn't safe to use on a DAO built outside Spring here.
