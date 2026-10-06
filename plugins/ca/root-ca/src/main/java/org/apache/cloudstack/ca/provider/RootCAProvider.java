@@ -620,7 +620,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                     signedByCA = true;
                     break;
                 } catch (final GeneralSecurityException e) {
-                    // try the next CA certificate
+                    logger.debug(String.format("Management certificate is not signed by CA [%s], trying the next CA certificate: %s",
+                            ca.getSubjectX500Principal(), e.getMessage()));
                 }
             }
             if (!signedByCA) {

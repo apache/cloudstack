@@ -65,7 +65,8 @@ public final class RootCACustomTrustManager implements X509TrustManager {
                 certificate.verify(ca.getPublicKey());
                 return true;
             } catch (final GeneralSecurityException e) {
-                // try the next CA certificate
+                logger.debug(String.format("Client certificate from address=%s is not signed by CA [%s], trying the next CA certificate: %s",
+                        clientAddress, ca.getSubjectX500Principal(), e.getMessage()));
             }
         }
         return false;
