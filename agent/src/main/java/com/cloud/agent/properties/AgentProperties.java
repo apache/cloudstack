@@ -147,6 +147,63 @@ public class AgentProperties{
     public static final Property<String> QEMU_SOCKETS_PATH = new Property<>("qemu.sockets.path", "/var/lib/libvirt/qemu");
 
     /**
+     * Policy for encrypting the live-migration data stream (guest RAM, and disk contents
+     * during storage migration) using QEMU-native TLS (VIR_MIGRATE_TLS). Values: "Disabled"
+     * (default, plaintext TCP) or "Required" (encrypt, and fail the migration if the host has no
+     * TLS migration environment). Required needs migrate_tls_x509_cert_dir / default_tls_x509_cert_dir
+     * configured in qemu.conf on every host.
+     * Data type: String.<br>
+     * Default value: "Disabled".
+     */
+    public static final Property<String> MIGRATE_ENCRYPTION_POLICY = new Property<>("migrate.encryption.policy", "Disabled");
+
+    /**
+     * Use multiple parallel TCP streams (multifd) for live migration to saturate fast NICs
+     * (25/40/100GbE). Single-stream migration cannot fill such links. Requires libvirt 5.2.0+.
+     * Data type: Boolean.<br>
+     * Default value: false.
+     */
+    public static final Property<Boolean> MIGRATE_PARALLEL_ENABLED = new Property<>("migrate.parallel.enabled", false);
+
+    /**
+     * Number of parallel connections (multifd channels) to use for live migration when migrate.parallel.enabled
+     * is set. 0 lets libvirt/QEMU choose its default. To spread migration across more than one physical NIC,
+     * bond the NICs (for example LACP) under the migration bridge; libvirt sends all channels to a single
+     * destination address, so it cannot bind them to separate NICs itself.<br>
+     * Data type: Integer.<br>
+     * Default value: 0.
+     */
+    public static final Property<Integer> MIGRATE_PARALLEL_CONNECTIONS = new Property<>("migrate.parallel.connections", 0);
+
+    /**
+     * Allow live migration of a VM whose disk cache mode libvirt considers unsafe (anything
+     * other than none/directsync), by setting VIR_MIGRATE_UNSAFE. Safe only on coherent shared
+     * storage such as Ceph RBD, where writeback caching does not risk data loss on migration.
+     * Data type: Boolean.<br>
+     * Default value: false.
+     */
+    public static final Property<Boolean> MIGRATE_ALLOW_UNSAFE = new Property<>("migrate.allow.unsafe", false);
+
+    /**
+     * Run a CPU-compatibility precheck (virsh cpu-compare against the destination host) before
+     * a live migration, so an incompatible destination fails fast with a clear message instead of a
+     * cryptic mid-migration libvirt error. Best-effort and fail-open: if the check cannot run it does
+     * not block the migration. Requires the source host's virsh to reach the destination libvirt.
+     * Data type: Boolean.<br>
+     * Default value: false.
+     */
+    public static final Property<Boolean> MIGRATE_CPU_PRECHECK_ENABLED = new Property<>("migrate.cpu.precheck.enabled", false);
+
+    /**
+     * Migration memory-compression method, "xbzrle" or "mt". Empty (default) leaves libvirt's
+     * own default method in effect. Only takes effect when compression is enabled (libvirt &gt;= 1.0.3,
+     * which sets VIR_MIGRATE_COMPRESSED) and is skipped under multifd.
+     * Data type: String.<br>
+     * Default value: "" (empty).
+     */
+    public static final Property<String> MIGRATE_COMPRESSION_METHOD = new Property<>("migrate.compression.method", "");
+
+    /**
      * MANDATORY: The UUID for the local storage pool.<br>
      * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
