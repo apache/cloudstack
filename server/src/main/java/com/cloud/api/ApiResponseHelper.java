@@ -4396,7 +4396,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private UsageResourceDetails populateNetworkBytesUsageResponse(Usage usageRecord, UsageRecordResponse usageRecResponse, boolean oldFormat) {
         UsageResourceDetails resourceDetails = new UsageResourceDetails();
         //Device Type
-        resourceDetails.resourceType = null;
+        resourceDetails.resourceType = ResourceObjectType.UserVm;
         usageRecResponse.setType(usageRecord.getType());
         VMInstanceVO vm = null;
         HostVO host = null;
