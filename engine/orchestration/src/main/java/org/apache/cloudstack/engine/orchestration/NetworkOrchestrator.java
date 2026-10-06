@@ -1058,7 +1058,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    private NicVO persistNicAfterRaceCheck(final NicVO nic, final Long networkId, final NicProfile profile, int deviceId) {
+    protected NicVO persistNicAfterRaceCheck(final NicVO nic, final Long networkId, final NicProfile profile, int deviceId) {
         return Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
@@ -1074,7 +1074,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         });
     }
 
-    private NicVO checkForRaceAndAllocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
+    protected NicVO checkForRaceAndAllocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         final NetworkVO ntwkVO = _networksDao.findById(network.getId());
         logger.debug("Allocating NIC for Instance {} in Network {} with requested profile {}", vm.getVirtualMachine(), network, requested);
@@ -1120,10 +1120,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             if (vo == null) {
-                if (requested.getRequestedIPv4() != null) {
-                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire requested Guest IP address " + requested.getRequestedIPv4() + " for network " + network, DataCenter.class, dcVo.getId());
-                } else {
-                    requested.setIPv4Address(null);
+                if (requested != null) {
+                    if (requested.getRequestedIPv4() != null) {
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire requested Guest IP address " + requested.getRequestedIPv4() + " for network " + network, DataCenter.class, dcVo.getId());
+                    } else {
+                        requested.setIPv4Address(null);
+                    }
                 }
                 retryIpAllocation = true;
             }
