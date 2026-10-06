@@ -60,6 +60,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
     /** id of the qemu secret object that carries the LUKS passphrase on the qemu-img command line. */
     private static final String LUKS_SECRET_ID = "sec0";
+    /** qemu-img check exit status for an image with leaked clusters only (no corruption). */
+    private static final int QEMU_IMG_CHECK_LEAKS = 3;
 
     // Flattens the backing-file chain into a single self-contained qcow2 written to the
     // destination volume path. Used when the source backup is an incremental whose qcow2
@@ -293,22 +295,41 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private boolean checkBackupFileImage(String backupPath, File keyFile) {
+        int exitValue;
         if (!isEncryptedImage(backupPath)) {
-            int exitValue = Script.runSimpleBashScriptForExitValue(String.format("qemu-img check %s", backupPath));
-            return exitValue == 0;
+            exitValue = Script.runSimpleBashScriptForExitValue(String.format("qemu-img check %s", backupPath));
+        } else {
+            List<String> cmd = new ArrayList<>(List.of("qemu-img", "check"));
+            cmd.addAll(encryptedSourceArgs(backupPath, keyFile));
+            exitValue = Script.executeCommandForExitValue(cmd.toArray(new String[0]));
         }
-        List<String> cmd = new ArrayList<>(List.of("qemu-img", "check"));
-        cmd.addAll(encryptedSourceArgs(backupPath, keyFile));
-        return Script.executeCommandForExitValue(cmd.toArray(new String[0])) == 0;
+        return isQemuImgCheckPass(exitValue, backupPath);
+    }
+
+    /**
+     * qemu-img check exits 0 for a clean image and 3 for leaked clusters, which waste space but leave the
+     * data intact; both are a pass. 2 (corruption), 1 (check could not complete) and anything else fail.
+     */
+    private boolean isQemuImgCheckPass(int exitValue, String backupPath) {
+        if (exitValue == QEMU_IMG_CHECK_LEAKS) {
+            logger.warn("qemu-img check found leaked clusters in backup file {}; the data is intact, continuing", backupPath);
+        }
+        return exitValue == 0 || exitValue == QEMU_IMG_CHECK_LEAKS;
     }
 
     /**
      * True when qemu reports the backup qcow2 as encrypted (LUKS, produced by nasbackup.sh {@code -e}).
-     * Reading the header needs no secret, so this works before any passphrase is involved.
+     * Reading the header needs no secret, so this works before any passphrase is involved. Fails closed:
+     * when qemu-img cannot read the header at all, the restore stops here instead of treating the file as
+     * plain and copying a possibly encrypted image onto the volume.
      */
     private boolean isEncryptedImage(String backupPath) {
         String info = Script.executeCommand("qemu-img", "info", "--output=json", backupPath);
-        return info != null && info.replaceAll("\\s", "").contains("\"encrypted\":true");
+        if (info == null || !info.contains("\"format\"")) {
+            throw new CloudRuntimeException(String.format("Could not read the image header of backup file [%s] with qemu-img info, "
+                    + "so it is not known whether it is encrypted; refusing to restore it.", backupPath));
+        }
+        return info.replaceAll("\\s", "").contains("\"encrypted\":true");
     }
 
     /**
