@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -95,6 +96,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
@@ -153,6 +155,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     HostJoinDao hostJoinDao;
+
+    @Inject
+    AgentManager agentManager;
 
     @Inject
     VMInstanceDao vmInstanceDao;
@@ -1123,29 +1128,36 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             return;
         }
 
+        // Resolve the concrete VM/destination pairs to migrate this poll (bounded by the DRS migration budget)
+        // before starting any event, so the start event is only opened when there is real work to do.
         int maxMigrations = ClusterDrsMaxMigrations.valueIn(cluster.getId());
-        logger.info("DRS power management: cluster [{}] is under-utilized; draining host [{}] ({} VMs left, up to {} per poll) to power it off.",
-                cluster.getId(), candidate.getId(), plan.size(), maxMigrations);
-        long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                EventTypes.EVENT_VM_MIGRATE,
-                String.format("DRS power management draining host %d in cluster %s", candidate.getId(), cluster.getUuid()),
-                candidate.getId(), ApiCommandResourceType.Host.toString(), true, 0);
-        int submitted = 0;
+        Map<VirtualMachine, HostVO> batch = new LinkedHashMap<>();
         for (Map.Entry<Long, Long> entry : plan.entrySet()) {
-            if (submitted >= maxMigrations) {
+            if (batch.size() >= maxMigrations) {
                 break;
             }
             VirtualMachine vm = vmInstanceDao.findById(entry.getKey());
             HostVO destination = hostDao.findById(entry.getValue());
             if (vm != null && destination != null) {
-                createMigrateVMAsyncJob(vm, destination, eventId);
-                submitted++;
+                batch.put(vm, destination);
             }
         }
-        if (submitted > 0) {
-            setPowerMarker(candidate.getId(), DRS_POWER_STATE_DRAINING);
-            drainingVmCountByHost.put(candidate.getId(), current);
+        if (batch.isEmpty()) {
+            return;
         }
+        logger.info("DRS power management: cluster [{}] is under-utilized; draining host [{}] ({} VMs left, {} this poll) to power it off.",
+                cluster.getId(), candidate.getId(), plan.size(), batch.size());
+        // One start event for the batch. Each migration job carries it as its start event id and completes it, as in
+        // executeDrsPlan, so the event is never left open; opening it only when the batch is non-empty avoids an orphan.
+        long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                EventTypes.EVENT_VM_MIGRATE,
+                String.format("DRS power management draining host %d in cluster %s", candidate.getId(), cluster.getUuid()),
+                candidate.getId(), ApiCommandResourceType.Host.toString(), true, 0);
+        for (Map.Entry<VirtualMachine, HostVO> migration : batch.entrySet()) {
+            createMigrateVMAsyncJob(migration.getKey(), migration.getValue(), eventId);
+        }
+        setPowerMarker(candidate.getId(), DRS_POWER_STATE_DRAINING);
+        drainingVmCountByHost.put(candidate.getId(), current);
     }
 
     protected double vmResourceNeed(VMInstanceVO vm, boolean useCpu) {
@@ -1353,6 +1365,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         DetailVO marker = new DetailVO(host.getId(), DRS_POWER_STATE_DETAIL, DRS_POWER_STATE_OFF);
         hostDetailsDao.persist(marker);
         try {
+            // Detach the agent without investigation first so the imminent link drop from cutting power is not
+            // reported as a host-down failure (the host is intentionally going away, and it is already empty).
+            agentManager.disconnectWithoutInvestigation(host.getId(), Status.Event.ShutdownRequested);
             outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.OFF, null);
         } catch (Exception e) {
             // Power-off failed: undo the marker and the disable so the host stays in service.

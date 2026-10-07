@@ -22,6 +22,8 @@ import java.util.Collections;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
+import com.cloud.agent.AgentManager;
+import com.cloud.host.Status;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,6 +60,8 @@ public class ClusterDrsPowerOrchestrationTest {
     private HostDetailsDao hostDetailsDao;
     @Mock
     private ClusterDrsPlanDao drsPlanDao;
+    @Mock
+    private AgentManager agentManager;
 
     @InjectMocks
     private ClusterDrsServiceImpl drs = new ClusterDrsServiceImpl();
@@ -154,10 +158,12 @@ public class ClusterDrsPowerOrchestrationTest {
         drs.powerOffHost(h, cluster(1L));
 
         // the durable wake marker must be written BEFORE the irreversible power-off, so a crash in between
-        // still leaves a host that can be recognised and powered back on.
-        InOrder inOrder = Mockito.inOrder(hostDao, hostDetailsDao, outOfBandManagementService);
+        // still leaves a host that can be recognised and powered back on; and the agent is detached without
+        // investigation before the power is cut so the link drop is not reported as a host-down failure.
+        InOrder inOrder = Mockito.inOrder(hostDao, hostDetailsDao, agentManager, outOfBandManagementService);
         inOrder.verify(hostDao).updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h);
         inOrder.verify(hostDetailsDao).persist(Mockito.any(DetailVO.class));
+        inOrder.verify(agentManager).disconnectWithoutInvestigation(30L, Status.Event.ShutdownRequested);
         inOrder.verify(outOfBandManagementService).executePowerOperation(Mockito.eq(h), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
     }
 
