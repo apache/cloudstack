@@ -104,38 +104,6 @@ if [ ! -w "$MountPoint" ]; then
   echo "Mount point is not writable: $MountPoint" >&2
   exit 1
 fi
-#delete VMs on this mountpoint (best-effort)
-deleteVMs() {
-  local mountPoint=$1
-  # ensure it ends with a single trailing slash
-  mountPoint="${mountPoint%/}/"
-
-  vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
-
-  if [ -z "$vmPids" ]
-  then
-     return
-  fi
-
-  for pid in $vmPids
-  do
-     kill -9 $pid &> /dev/null
-  done
-}
-
-#checking is the filesystem of $MountPoint mounted?
-if is_on_mounted_fs "$MountPoint"
-then
-   # mount exists; nothing to do here; keep for compatibility with original flow
-   :
-else
-   # mount point not present
-   # if not in read-check mode, consider deleting VMs similar to original behavior
-   if [ "$rflag" == "0" ]
-   then
-     deleteVMs $MountPoint
-   fi
-fi
 
 hbFolder="$MountPoint/KVMHA"
 hbFile="$hbFolder/hb-$HostIP"
