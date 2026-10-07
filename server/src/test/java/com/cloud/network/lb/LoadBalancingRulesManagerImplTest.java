@@ -494,4 +494,81 @@ public class LoadBalancingRulesManagerImplTest{
         Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT);
         Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
     }
+
+    /**
+     * Backs the details dao with a map, so a value written and then rolled back can be seen.
+     */
+    private Map<String, String> fakeConnectionSettings(Map<String, String> initial) {
+        Map<String, String> store = new HashMap<>(initial);
+        when(_firewallRuleDetailsDao.findDetail(Mockito.eq(lbRuleId), Mockito.anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(1);
+            String value = store.get(key);
+            return value == null ? null : new FirewallRuleDetailVO(lbRuleId, key, value, true);
+        });
+        Mockito.doAnswer(invocation -> store.remove(invocation.<String>getArgument(1)))
+                .when(_firewallRuleDetailsDao).removeDetail(Mockito.eq(lbRuleId), Mockito.anyString());
+        Mockito.doAnswer(invocation -> store.put(invocation.getArgument(1), invocation.getArgument(2)))
+                .when(_firewallRuleDetailsDao).addDetail(Mockito.eq(lbRuleId), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+        return store;
+    }
+
+    @Test
+    public void testUpdateLoadBalancerRuleRollsBackSettingsWhenApplyFails() throws Exception {
+        setupUpdateLoadBalancerRule();
+        Map<String, String> before = Map.of(LoadBalancer.KEEPALIVE, "true", LoadBalancer.IDLE_TIMEOUT, "5000");
+        Map<String, String> store = fakeConnectionSettings(before);
+
+        // Drop keepalive, change idletimeout, add keepalivetimeout, then fail to reach the router
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "algorithm", "roundrobin");
+        ReflectionTestUtils.setField(cmd, "lbProtocol", NetUtils.SSL_PROTO);
+        ReflectionTestUtils.setField(cmd, "idleTimeout", 2000L);
+        ReflectionTestUtils.setField(cmd, "keepAliveTimeout", 1000L);
+        ReflectionTestUtils.setField(cmd, "cleanupConnectionSettings", true);
+        when(loadBalancerMock.getAlgorithm()).thenReturn("roundrobin");
+        when(loadBalancerMock.getLbProtocol()).thenReturn(NetUtils.SSL_PROTO);
+        Mockito.doThrow(ResourceUnavailableException.class).when(lbr).applyLoadBalancerConfig(lbRuleId);
+        when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb))
+                .thenReturn(Collections.singletonList(Network.Provider.VirtualRouter));
+
+        try {
+            lbr.updateLoadBalancerRule(cmd);
+            Assert.fail("Expected the update to fail when the router is unavailable");
+        } catch (CloudRuntimeException e) {
+            // expected
+        }
+
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
+        Assert.assertEquals(before, store);
+    }
+
+    @Test
+    public void testUpdateLoadBalancerRuleLeavesSettingsAloneWhenValidationFails() {
+        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(accountId);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        when(_lbDao.findById(lbRuleId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+        when(_networkDao.findById(networkId)).thenReturn(networkMock);
+        LoadBalancingRule loadBalancingRule = Mockito.mock(LoadBalancingRule.class);
+        Mockito.doReturn(loadBalancingRule).when(lbr).getLoadBalancerRuleToApply(loadBalancerMock);
+        Mockito.doReturn(false).when(lbr).validateLbRule(loadBalancingRule);
+
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "idleTimeout", 2000L);
+
+        try {
+            lbr.updateLoadBalancerRule(cmd);
+            Assert.fail("Expected the provider to reject the update");
+        } catch (InvalidParameterValueException e) {
+            // expected
+        }
+
+        verifyNoConnectionSettingWrites();
+    }
 }
