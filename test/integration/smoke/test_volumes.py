@@ -1024,9 +1024,6 @@ class TestVolumes(cloudstackTestCase):
 
         self.virtual_machine.attach_volume(self.apiclient, volume=volume)
 
-        if self.virtual_machine.hypervisor == "KVM":
-            self.virtual_machine.stop(self.apiclient)
-
         pools = StoragePool.listForMigration(
             self.apiclient,
             id=volume.id
@@ -1039,12 +1036,23 @@ class TestVolumes(cloudstackTestCase):
         else:
             raise self.skipTest("Not enough storage pools found, skipping test")
 
+        # KVM can live migrate a volume of a running VM only between RBD pools;
+        # any other KVM source/destination combination needs the VM stopped first.
+        current_vol = Volume.list(self.apiclient, id=volume.id)[0]
+        source_pool = list_storage_pools(self.apiclient, id=current_vol.storageid)[0]
+        kvm_rbd_live_migration = source_pool.type == 'RBD' and pool.type == 'RBD'
+
+        if self.virtual_machine.hypervisor == "KVM" and not kvm_rbd_live_migration:
+            self.virtual_machine.stop(self.apiclient)
+
         if hasattr(pool, 'tags'):
             StoragePool.update(self.apiclient, id=pool.id, tags="")
 
         self.debug("Migrating Volume-ID: %s to Pool: %s" % (volume.id, pool.id))
         livemigrate = False
         if self.virtual_machine.hypervisor.lower() == "vmware" or self.virtual_machine.hypervisor.lower() == 'xenserver':
+            livemigrate = True
+        elif self.virtual_machine.hypervisor == "KVM" and kvm_rbd_live_migration:
             livemigrate = True
 
         Volume.migrate(
@@ -1054,7 +1062,7 @@ class TestVolumes(cloudstackTestCase):
             newdiskofferingid=large_offering.id,
             livemigrate=livemigrate
         )
-        if self.virtual_machine.hypervisor == "KVM":
+        if self.virtual_machine.hypervisor == "KVM" and not kvm_rbd_live_migration:
             self.virtual_machine.start(self.apiclient)
         migrated_vol = Volume.list(
             self.apiclient,
