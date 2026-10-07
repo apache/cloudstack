@@ -74,6 +74,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1061,5 +1062,271 @@ public class ClusterDrsServiceImplTest {
         clusterDrsService.triggerEventDrivenDrsForVm(100L);
 
         Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+    }
+
+    @Test
+    public void testHandleVmPowerStateEventIgnoresNonLongArg() {
+        clusterDrsService.handleVmPowerStateEvent("subject", "sender", "not-a-long");
+        Mockito.verify(clusterDrsService, Mockito.never()).triggerEventDrivenDrsForVm(Mockito.anyLong());
+    }
+
+    @Test
+    public void testHandleVmPowerStateEventForwardsTheVmId() {
+        Mockito.doNothing().when(clusterDrsService).triggerEventDrivenDrsForVm(100L);
+        clusterDrsService.handleVmPowerStateEvent("subject", "sender", 100L);
+        Mockito.verify(clusterDrsService, Mockito.times(1)).triggerEventDrivenDrsForVm(100L);
+    }
+
+    @Test
+    public void testHandleVmPowerStateEventSwallowsErrors() {
+        Mockito.doThrow(new RuntimeException("boom")).when(clusterDrsService).triggerEventDrivenDrsForVm(100L);
+        // an error must not propagate out of the message-bus handler
+        clusterDrsService.handleVmPowerStateEvent("subject", "sender", 100L);
+        Mockito.verify(clusterDrsService, Mockito.times(1)).triggerEventDrivenDrsForVm(100L);
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmNullVmId() {
+        clusterDrsService.triggerEventDrivenDrsForVm(null);
+        Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmUnknownVm() {
+        Mockito.when(vmInstanceDao.findById(100L)).thenReturn(null);
+        clusterDrsService.triggerEventDrivenDrsForVm(100L);
+        Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmVmHasNoHost() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getHostId()).thenReturn(null);
+        Mockito.when(vmInstanceDao.findById(100L)).thenReturn(vm);
+        clusterDrsService.triggerEventDrivenDrsForVm(100L);
+        Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmUnknownHost() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getHostId()).thenReturn(10L);
+        Mockito.when(vmInstanceDao.findById(100L)).thenReturn(vm);
+        Mockito.when(hostDao.findById(10L)).thenReturn(null);
+        clusterDrsService.triggerEventDrivenDrsForVm(100L);
+        Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+    }
+
+    @Test
+    public void testTriggerEventDrivenDrsForVmClusterNotFound() throws Exception {
+        String origDrs = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        String origEvt = getConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, "true");
+            VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+            Mockito.when(vm.getHostId()).thenReturn(10L);
+            HostVO host = Mockito.mock(HostVO.class);
+            Mockito.when(host.getClusterId()).thenReturn(1L);
+            Mockito.when(vmInstanceDao.findById(100L)).thenReturn(vm);
+            Mockito.when(hostDao.findById(10L)).thenReturn(host);
+            Mockito.when(clusterDao.findById(1L)).thenReturn(null);
+
+            clusterDrsService.triggerEventDrivenDrsForVm(100L);
+
+            Mockito.verify(clusterDrsService, Mockito.never()).submitEventDrivenDrs(Mockito.any(ClusterVO.class), Mockito.anyInt());
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, origDrs);
+            setConfigDefault(clusterDrsService.ClusterDrsEventDrivenEnabled, origEvt);
+        }
+    }
+
+    @Test
+    public void testSubmitEventDrivenDrsRunsPlanGeneration() {
+        ExecutorService direct = Mockito.mock(ExecutorService.class);
+        Mockito.when(direct.submit(Mockito.any(Runnable.class))).thenAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        });
+        ReflectionTestUtils.setField(clusterDrsService, "eventDrsExecutor", direct);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.doNothing().when(clusterDrsService).generateDrsPlanForCluster(cluster, 5);
+
+        clusterDrsService.submitEventDrivenDrs(cluster, 5);
+
+        Mockito.verify(clusterDrsService, Mockito.times(1)).generateDrsPlanForCluster(cluster, 5);
+    }
+
+    @Test
+    public void testSubmitEventDrivenDrsSwallowsPlanErrors() {
+        ExecutorService direct = Mockito.mock(ExecutorService.class);
+        Mockito.when(direct.submit(Mockito.any(Runnable.class))).thenAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        });
+        ReflectionTestUtils.setField(clusterDrsService, "eventDrsExecutor", direct);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.doThrow(new RuntimeException("plan failed")).when(clusterDrsService).generateDrsPlanForCluster(cluster, 5);
+
+        // the background task must swallow the failure, not propagate it
+        clusterDrsService.submitEventDrivenDrs(cluster, 5);
+
+        Mockito.verify(clusterDrsService, Mockito.times(1)).generateDrsPlanForCluster(cluster, 5);
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterSkipsWhenClusterDisabled() {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
+
+        clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+
+        Mockito.verify(drsPlanDao, Mockito.never()).listLatestPlanForClusterId(Mockito.anyLong());
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterSkipsWhenPlanIsReady() throws Exception {
+        String orig = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(1L);
+            Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+            ClusterDrsPlanVO lastPlan = Mockito.mock(ClusterDrsPlanVO.class);
+            Mockito.when(lastPlan.getStatus()).thenReturn(ClusterDrsPlan.Status.READY);
+            Mockito.when(drsPlanDao.listLatestPlanForClusterId(1L)).thenReturn(lastPlan);
+
+            clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+
+            Mockito.verify(clusterDrsService, Mockito.never()).getDrsPlan(Mockito.any(), Mockito.anyInt());
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, orig);
+        }
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterGeneratesAndSavesPlan() throws Exception {
+        String orig = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(2L);
+            Mockito.when(cluster.getUuid()).thenReturn("cluster-uuid");
+            Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+            Mockito.when(drsPlanDao.listLatestPlanForClusterId(2L)).thenReturn(null);
+
+            GlobalLock lock = Mockito.mock(GlobalLock.class);
+            Mockito.when(lock.lock(30)).thenReturn(true);
+            Mockito.when(GlobalLock.getInternLock("drs.plan.cluster.2")).thenReturn(lock);
+
+            Mockito.doReturn(Collections.emptyList()).when(clusterDrsService).getDrsPlan(Mockito.eq(cluster), Mockito.anyInt());
+            Mockito.doReturn(null).when(clusterDrsService).savePlan(Mockito.anyLong(), Mockito.anyList(), Mockito.anyLong(),
+                    Mockito.any(), Mockito.any());
+
+            try (MockedStatic<ActionEventUtils> actionEvents = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionEvents.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                        Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                        Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
+
+                clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+            }
+
+            Mockito.verify(clusterDrsService, Mockito.times(1)).getDrsPlan(Mockito.eq(cluster), Mockito.anyInt());
+            Mockito.verify(clusterDrsService, Mockito.times(1)).savePlan(Mockito.eq(2L), Mockito.anyList(), Mockito.anyLong(),
+                    Mockito.any(), Mockito.any());
+            Mockito.verify(lock, Mockito.times(1)).unlock();
+            Mockito.verify(lock, Mockito.times(1)).releaseRef();
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, orig);
+        }
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterSkipsWhenPlanInProgress() throws Exception {
+        String orig = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(1L);
+            Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+            ClusterDrsPlanVO lastPlan = Mockito.mock(ClusterDrsPlanVO.class);
+            Mockito.when(lastPlan.getStatus()).thenReturn(ClusterDrsPlan.Status.IN_PROGRESS);
+            Mockito.when(drsPlanDao.listLatestPlanForClusterId(1L)).thenReturn(lastPlan);
+
+            clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+
+            Mockito.verify(clusterDrsService, Mockito.never()).getDrsPlan(Mockito.any(), Mockito.anyInt());
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, orig);
+        }
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterSkipsWhenRecentlyCompleted() throws Exception {
+        String orig = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(1L);
+            Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+            ClusterDrsPlanVO lastPlan = Mockito.mock(ClusterDrsPlanVO.class);
+            Mockito.when(lastPlan.getStatus()).thenReturn(ClusterDrsPlan.Status.COMPLETED);
+            // created just now, so it is inside the debounce window and must be skipped
+            Mockito.when(lastPlan.getCreated()).thenReturn(new Date());
+            Mockito.when(drsPlanDao.listLatestPlanForClusterId(1L)).thenReturn(lastPlan);
+
+            clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+
+            Mockito.verify(clusterDrsService, Mockito.never()).getDrsPlan(Mockito.any(), Mockito.anyInt());
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, orig);
+        }
+    }
+
+    @Test
+    public void testGenerateDrsPlanForClusterHandlesPlanGenerationFailure() throws Exception {
+        String orig = getConfigDefault(clusterDrsService.ClusterDrsEnabled);
+        try {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, "true");
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(2L);
+            Mockito.when(cluster.getUuid()).thenReturn("cluster-uuid");
+            Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+            Mockito.when(drsPlanDao.listLatestPlanForClusterId(2L)).thenReturn(null);
+
+            GlobalLock lock = Mockito.mock(GlobalLock.class);
+            Mockito.when(lock.lock(30)).thenReturn(true);
+            Mockito.when(GlobalLock.getInternLock("drs.plan.cluster.2")).thenReturn(lock);
+
+            Mockito.doThrow(new RuntimeException("planning failed")).when(clusterDrsService).getDrsPlan(Mockito.eq(cluster), Mockito.anyInt());
+
+            try (MockedStatic<ActionEventUtils> actionEvents = Mockito.mockStatic(ActionEventUtils.class)) {
+                actionEvents.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                        Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                        Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
+
+                // a planning failure must be caught, and the lock still released
+                clusterDrsService.generateDrsPlanForCluster(cluster, 5);
+            }
+
+            Mockito.verify(clusterDrsService, Mockito.never()).savePlan(Mockito.anyLong(), Mockito.anyList(), Mockito.anyLong(),
+                    Mockito.any(), Mockito.any());
+            Mockito.verify(lock, Mockito.times(1)).unlock();
+            Mockito.verify(lock, Mockito.times(1)).releaseRef();
+        } finally {
+            setConfigDefault(clusterDrsService.ClusterDrsEnabled, orig);
+        }
+    }
+
+    @Test
+    public void testGenerateDrsPlanForAllClustersIteratesEachCluster() {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(clusterDao.listAll()).thenReturn(List.of(cluster));
+        Mockito.doNothing().when(clusterDrsService).generateDrsPlanForCluster(Mockito.eq(cluster), Mockito.anyInt());
+
+        clusterDrsService.generateDrsPlanForAllClusters();
+
+        Mockito.verify(clusterDrsService, Mockito.times(1)).generateDrsPlanForCluster(Mockito.eq(cluster), Mockito.anyInt());
     }
 }
