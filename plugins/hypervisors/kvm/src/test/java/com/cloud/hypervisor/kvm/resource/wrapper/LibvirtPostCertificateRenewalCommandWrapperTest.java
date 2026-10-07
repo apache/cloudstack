@@ -69,8 +69,12 @@ public class LibvirtPostCertificateRenewalCommandWrapperTest {
     public void testExecuteReloadsVncTlsCertificateForEachRunningVm() throws Exception {
         final Domain vm1 = mock(Domain.class);
         when(vm1.getName()).thenReturn("i-2-3-VM");
+        when(vm1.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vencrypt+x509+vnc\"}}");
         final Domain vm2 = mock(Domain.class);
         when(vm2.getName()).thenReturn("i-4-5-VM");
+        when(vm2.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vencrypt+x509+none\"}}");
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
@@ -82,8 +86,8 @@ public class LibvirtPostCertificateRenewalCommandWrapperTest {
 
         assertTrue(answer.getResult());
         final ArgumentCaptor<String> monitorCommandCaptor = ArgumentCaptor.forClass(String.class);
-        verify(vm1, times(1)).qemuMonitorCommand(monitorCommandCaptor.capture(), Mockito.eq(0));
-        verify(vm2, times(1)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
+        verify(vm1, times(2)).qemuMonitorCommand(monitorCommandCaptor.capture(), Mockito.eq(0));
+        verify(vm2, times(2)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
         final String capturedCommand = monitorCommandCaptor.getValue();
         assertTrue(capturedCommand.contains("display-reload"));
         assertTrue(capturedCommand.contains("\"type\":\"vnc\""));
@@ -96,9 +100,14 @@ public class LibvirtPostCertificateRenewalCommandWrapperTest {
     public void testExecuteContinuesWithOtherVmsWhenOneReloadFails() throws Exception {
         final Domain failingVm = mock(Domain.class);
         when(failingVm.getName()).thenReturn("i-2-3-VM");
-        when(failingVm.qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0))).thenThrow(mock(LibvirtException.class));
+        when(failingVm.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vencrypt+x509+vnc\"}}");
+        when(failingVm.qemuMonitorCommand(Mockito.contains("display-reload"), Mockito.eq(0)))
+                .thenThrow(mock(LibvirtException.class));
         final Domain workingVm = mock(Domain.class);
         when(workingVm.getName()).thenReturn("i-4-5-VM");
+        when(workingVm.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vencrypt+x509+none\"}}");
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
@@ -109,7 +118,7 @@ public class LibvirtPostCertificateRenewalCommandWrapperTest {
         final Answer answer = executeWithScriptMocked();
 
         assertTrue(answer.getResult());
-        verify(workingVm, times(1)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
+        verify(workingVm, times(2)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
         verify(failingVm, times(1)).free();
         verify(workingVm, times(1)).free();
     }
@@ -143,5 +152,33 @@ public class LibvirtPostCertificateRenewalCommandWrapperTest {
 
         assertTrue(answer.getResult());
         verifyNoInteractions(libvirtUtilitiesHelper);
+    }
+
+    @Test
+    public void testExecuteSkipsVncCertReloadWhenVncTlsDisabled() throws Exception {
+        final Domain tlsEnabledVm = mock(Domain.class);
+        when(tlsEnabledVm.getName()).thenReturn("i-2-3-VM");
+        when(tlsEnabledVm.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vencrypt+x509+vnc\"}}");
+        final Domain tlsDisabledVm = mock(Domain.class);
+        when(tlsDisabledVm.getName()).thenReturn("i-4-5-VM");
+        when(tlsDisabledVm.qemuMonitorCommand("{\"execute\":\"query-vnc\"}", 0))
+                .thenReturn("{\"return\":{\"enabled\":true,\"auth\":\"vnc\"}}");
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+        when(connect.listDomains()).thenReturn(new int[]{1, 2});
+        when(connect.domainLookupByID(1)).thenReturn(tlsEnabledVm);
+        when(connect.domainLookupByID(2)).thenReturn(tlsDisabledVm);
+
+        final Answer answer = executeWithScriptMocked();
+
+        assertTrue(answer.getResult());
+        // TLS enabled VM should get display-reload call (2 calls: query-vnc + display-reload)
+        verify(tlsEnabledVm, times(2)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
+        // TLS disabled VM should only get query-vnc call (1 call), not display-reload
+        verify(tlsDisabledVm, times(1)).qemuMonitorCommand(Mockito.anyString(), Mockito.eq(0));
+        verify(tlsEnabledVm, times(1)).free();
+        verify(tlsDisabledVm, times(1)).free();
     }
 }
