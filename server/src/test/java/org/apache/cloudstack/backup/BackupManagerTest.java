@@ -782,7 +782,8 @@ public class BackupManagerTest {
 
             Mockito.verify(backupVO, times(1)).setBackupScheduleId(scheduleId);
             Mockito.verify(backupDao, times(1)).update(backupId, backupVO);
-            Mockito.verify(resourceLimitMgr, Mockito.never()).incrementResourceCount(accountId, Resource.ResourceType.backup);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
+            Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, 0L);
             Mockito.verify(backupManager, Mockito.never()).deleteOldestBackupFromScheduleIfRequired(vmId, scheduleId);
         }
     }
