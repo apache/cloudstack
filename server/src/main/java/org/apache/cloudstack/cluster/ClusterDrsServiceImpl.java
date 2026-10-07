@@ -692,11 +692,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             Map<Long, List<? extends Host>> vmToCompatibleHostsCache,
             Map<Long, Map<Host, Boolean>> vmToStorageMotionCache,
             Map<Long, ExcludeList> vmToExcludesMap) throws ConfigurationException {
-        // Pre-calculate cluster imbalance once per iteration (same for all VM-host combinations)
+        // Pre-calculate cluster imbalance once per iteration (same for all VM-host combinations).
+        // Use the algorithm's own "both" aggregation so the pre-imbalance matches its post-imbalance.
         Double preImbalance = getClusterImbalance(cluster.getId(),
                 new ArrayList<>(hostCpuCapacityMap.values()),
                 new ArrayList<>(hostMemoryCapacityMap.values()),
-                null);
+                null, algorithm::combineBothMetrics);
 
         // Pre-calculate base metrics array once per iteration for optimized imbalance calculation
         String metricType = getClusterDrsMetric(cluster.getId());

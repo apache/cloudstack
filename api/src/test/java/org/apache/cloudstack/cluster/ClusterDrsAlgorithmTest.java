@@ -104,7 +104,7 @@ public class ClusterDrsAlgorithmTest extends TestCase {
     }
 
     @Test
-    public void testGetClusterImbalanceUsesWorseOfCpuAndMemoryForBothMetric() throws Exception {
+    public void testGetClusterImbalanceAppliesBothCombiner() throws Exception {
         Field defaultValueField = ConfigKey.class.getDeclaredField("_defaultValue");
         defaultValueField.setAccessible(true);
         Object originalMetric = defaultValueField.get(ClusterDrsService.ClusterDrsMetric);
@@ -119,17 +119,23 @@ public class ClusterDrsAlgorithmTest extends TestCase {
             defaultValueField.set(ClusterDrsService.ClusterDrsMetric, "memory");
             double memory = ClusterDrsAlgorithm.getClusterImbalance(1L, cpuList, memoryList, null);
             defaultValueField.set(ClusterDrsService.ClusterDrsMetric, "both");
-            double both = ClusterDrsAlgorithm.getClusterImbalance(1L, cpuList, memoryList, null);
 
-            // "both" must return the worse (max) of the per-resource imbalances
-            assertEquals(Math.max(cpu, memory), both, 0.0001);
+            // the default aggregation (and balanced) takes the worse, higher of the per-resource imbalances
+            double defaultBoth = ClusterDrsAlgorithm.getClusterImbalance(1L, cpuList, memoryList, null);
+            assertEquals(Math.max(cpu, memory), defaultBoth, 0.0001);
+
+            // the combiner overload controls how the two resources are reduced: condensed passes min, balanced max
+            double maxBoth = ClusterDrsAlgorithm.getClusterImbalance(1L, cpuList, memoryList, null, Math::max);
+            double minBoth = ClusterDrsAlgorithm.getClusterImbalance(1L, cpuList, memoryList, null, Math::min);
+            assertEquals(Math.max(cpu, memory), maxBoth, 0.0001);
+            assertEquals(Math.min(cpu, memory), minBoth, 0.0001);
         } finally {
             defaultValueField.set(ClusterDrsService.ClusterDrsMetric, originalMetric);
         }
     }
 
     @Test
-    public void testGetImbalancePostMigrationForBothMetric() throws Exception {
+    public void testGetImbalancePostMigrationRoutesBothThroughCombineBothMetrics() throws Exception {
         Field defaultValueField = ConfigKey.class.getDeclaredField("_defaultValue");
         defaultValueField.setAccessible(true);
         Object originalMetric = defaultValueField.get(ClusterDrsService.ClusterDrsMetric);
@@ -150,16 +156,24 @@ public class ClusterDrsAlgorithmTest extends TestCase {
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap = Map.of(
                     1L, new Ternary<>(50L, 0L, 100L), 2L, new Ternary<>(50L, 0L, 100L));
 
-            ClusterDrsAlgorithm algorithm = new TestAlgorithm();
+            // the "both" branch must defer to combineBothMetrics; a sentinel override proves it is the reducer used
+            ClusterDrsAlgorithm algorithm = new TestAlgorithm() {
+                @Override
+                public double combineBothMetrics(double cpuImbalance, double memoryImbalance) {
+                    return SENTINEL;
+                }
+            };
             // the "both" branch evaluates the cpu and memory maps directly, so the base array and index map are unused
             Double imbalance = algorithm.getImbalancePostMigration(vm, destHost, 1L, serviceOffering, null, null,
                     hostCpuMap, hostMemoryMap);
 
-            assertNotNull(imbalance);
+            assertEquals(SENTINEL, imbalance, 0.0);
         } finally {
             defaultValueField.set(ClusterDrsService.ClusterDrsMetric, originalMetric);
         }
     }
+
+    private static final double SENTINEL = 0.4242;
 
     private static class TestAlgorithm extends AdapterBase implements ClusterDrsAlgorithm {
         @Override

@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleBinaryOperator;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricType;
@@ -85,6 +86,22 @@ public interface ClusterDrsAlgorithm extends Adapter {
             double[] baseMetricsArray, Map<Long, Integer> hostIdToIndexMap) throws ConfigurationException;
 
     /**
+     * Combines the per-resource (cpu and memory) imbalance values into a single cluster
+     * imbalance for the "both" metric. Balanced takes the worse (higher) of the two so a
+     * cluster counts as imbalanced while either resource is imbalanced. Condensed overrides
+     * this to take the lower of the two: a higher imbalance there means more packed, so using
+     * the max would let the cluster count as packed as soon as a single resource is packed,
+     * while the other is still spread out. Using the min keeps packing until both are packed.
+     *
+     * @param cpuImbalance the cpu imbalance
+     * @param memoryImbalance the memory imbalance
+     * @return the combined imbalance for the "both" metric
+     */
+    default double combineBothMetrics(double cpuImbalance, double memoryImbalance) {
+        return Math.max(cpuImbalance, memoryImbalance);
+    }
+
+    /**
      * Calculates the cluster imbalance after migrating a VM to a destination host.
      *
      * @param vm the virtual machine being migrated
@@ -99,12 +116,13 @@ public interface ClusterDrsAlgorithm extends Adapter {
             Host destHost, Long clusterId, ServiceOffering serviceOffering, double[] baseMetricsArray,
             Map<Long, Integer> hostIdToIndexMap, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
-        // Metric "both": return the worse of the cpu and memory post-migration imbalance. The
-        // baseMetricsArray fast path is single-metric, so evaluate both maps directly instead.
+        // Metric "both": combine the cpu and memory post-migration imbalance the same way the
+        // algorithm combines them pre-migration. The baseMetricsArray fast path is single-metric,
+        // so evaluate both maps directly instead.
         if ("both".equals(getClusterDrsMetric(clusterId))) {
             long vmCpuMetric = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
             long vmMemMetric = serviceOffering.getRamSize() * 1024L * 1024L;
-            return Math.max(
+            return combineBothMetrics(
                     imbalancePostMigrationForMap(vm, destHost, clusterId, vmCpuMetric, hostCpuMap),
                     imbalancePostMigrationForMap(vm, destHost, clusterId, vmMemMetric, hostMemoryMap));
         }
@@ -290,6 +308,14 @@ public interface ClusterDrsAlgorithm extends Adapter {
      */
     static Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
             List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
+        // Default "both" aggregation is the worse (higher) of the two resources; an algorithm
+        // that reads imbalance in the opposite direction passes its own combiner below.
+        return getClusterImbalance(clusterId, cpuList, memoryList, skipThreshold, Math::max);
+    }
+
+    static Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
+            List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold,
+            DoubleBinaryOperator bothCombiner) throws ConfigurationException {
         String metric = getClusterDrsMetric(clusterId);
         List<Double> list;
         switch (metric) {
@@ -300,7 +326,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
                 list = getMetricList(clusterId, memoryList, skipThreshold);
                 break;
             case "both":
-                return Math.max(
+                return bothCombiner.applyAsDouble(
                         getImbalance(getMetricList(clusterId, cpuList, skipThreshold)),
                         getImbalance(getMetricList(clusterId, memoryList, skipThreshold)));
             default:

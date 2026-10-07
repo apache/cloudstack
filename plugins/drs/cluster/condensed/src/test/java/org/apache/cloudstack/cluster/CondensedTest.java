@@ -111,6 +111,13 @@ public class CondensedTest {
         hostMemoryFreeMap.put(2L, new Ternary<>(2048L * 1024L * 1024L, 0L, 8192L * 1024L * 1024L));
     }
 
+    @Test
+    public void combineBothMetricsTakesTheLower() {
+        // condensed reads a higher imbalance as more packed, so "both" must keep the lower of cpu and memory
+        assertEquals(0.2, condensed.combineBothMetrics(0.2, 0.7), 0.0);
+        assertEquals(0.3, condensed.combineBothMetrics(0.9, 0.3), 0.0);
+    }
+
     private void overrideDefaultConfigValue(final ConfigKey configKey,
             final String name,
             final Object o) throws IllegalAccessException, NoSuchFieldException {
