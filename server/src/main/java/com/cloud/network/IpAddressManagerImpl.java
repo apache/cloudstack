@@ -420,22 +420,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     private IPAddressVO assignIpAddressWithLock(IPAddressVO possibleAddr) {
-        IPAddressVO finalAddress = null;
-        IPAddressVO userIp = _ipAddressDao.acquireInLockTable(possibleAddr.getId());
-        if (userIp != null) {
-            logger.debug("locked row for ip address {} (id: {})", possibleAddr.getAddress(), possibleAddr.getUuid());
-            if (userIp.getState() == State.Free) {
-                possibleAddr.setState(State.Allocating);
-                if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
-                    logger.info("successfully allocated ip address {}", possibleAddr.getAddress());
-                    finalAddress = possibleAddr;
-                }
-            } else {
-                logger.debug("locked ip address {} is not free {}", possibleAddr.getAddress(), userIp.getState());
-            }
-            _ipAddressDao.releaseFromLockTable(possibleAddr.getId());
+        IPAddressVO userIp = _ipAddressDao.lockRow(possibleAddr.getId(), true);
+        if (userIp == null) {
+            return null;
         }
-        return finalAddress;
+        logger.debug("locked row for ip address {} (id: {})", possibleAddr.getAddress(), possibleAddr.getUuid());
+        if (userIp.getState() != State.Free) {
+            logger.debug("locked ip address {} is not free {}", possibleAddr.getAddress(), userIp.getState());
+            return null;
+        }
+        possibleAddr.setState(State.Allocating);
+        if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
+            logger.info("successfully allocated ip address {}", possibleAddr.getAddress());
+            return possibleAddr;
+        }
+        return null;
     }
 
     @Override
