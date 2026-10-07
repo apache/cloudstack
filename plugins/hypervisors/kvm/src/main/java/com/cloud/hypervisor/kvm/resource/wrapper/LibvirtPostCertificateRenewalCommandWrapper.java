@@ -44,6 +44,9 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
     /** Minimum QEMU version supporting {@link #QEMU_MONITOR_DISPLAY_RELOAD_VNC_TLS_CERTS_COMMAND}. */
     private static final long MIN_QEMU_VERSION_FOR_VNC_TLS_CERT_RELOAD = 6000000L;
 
+    /** QMP {@code query-vnc} command to check the VNC server configuration and auth method. */
+    private static final String QEMU_MONITOR_QUERY_VNC_COMMAND = "{\"execute\":\"query-vnc\"}";
+
     @Override
     public Answer execute(final PostCertificateRenewalCommand command, final LibvirtComputingResource serverResource) {
         if (command != null) {
@@ -66,8 +69,8 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
     /**
      * The VNC TLS certificate on KVM is the host's agent certificate, applied host-wide via libvirtd's
      * {@code vnc_tls_x509_cert_dir} setting. Restarting libvirtd does not affect VMs already running, since QEMU
-     * only loads that certificate once, at VM start - so reload it live on every running VM here, instead of
-     * leaving them on the previous (possibly expired) certificate until stopped/started or migrated.
+     * only loads that certificate once, at VM start - so reload it live on every running VM (that has VNC TLS enabled)
+     * here, instead of leaving them on the previous (possibly expired) certificate until stopped/started or migrated.
      */
     private void pushRenewedVncCertificateToRunningVms(final LibvirtComputingResource serverResource) {
         final long qemuVersion = serverResource.getHypervisorQemuVersion();
@@ -94,6 +97,13 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
             try {
                 vm = conn.domainLookupByID(domainId);
                 vmName = vm.getName();
+
+                // Only reload VNC TLS certificate if VNC is enabled with TLS auth (vencrypt+x509)
+                if (!isVncTlsEnabled(vm)) {
+                    logger.debug("VNC TLS is not enabled for VM [{}], skipping certificate reload", vmName);
+                    continue;
+                }
+
                 vm.qemuMonitorCommand(QEMU_MONITOR_DISPLAY_RELOAD_VNC_TLS_CERTS_COMMAND, 0);
                 logger.debug("Reloaded VNC TLS certificate for VM [{}]", vmName);
             } catch (final Exception e) {
@@ -108,6 +118,17 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
                     }
                 }
             }
+        }
+    }
+
+    private boolean isVncTlsEnabled(final Domain vm) {
+        try {
+            final String response = vm.qemuMonitorCommand(QEMU_MONITOR_QUERY_VNC_COMMAND, 0);
+            // Check if the auth field starts with "vencrypt+x509"
+            return response != null && response.contains("\"auth\":\"vencrypt+x509");
+        } catch (final Exception e) {
+            logger.trace("Unable to query VNC status for VM, assuming TLS not enabled", e);
+            return false;
         }
     }
 }
