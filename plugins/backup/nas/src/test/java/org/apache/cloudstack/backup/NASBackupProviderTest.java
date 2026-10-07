@@ -36,6 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
@@ -124,6 +125,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private DataStoreManager dataStoreMgr;
+
+    @Mock
+    private AlertManager alertManager;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -273,10 +277,14 @@ public class NASBackupProviderTest {
     @Test
     public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
+        HostVO host = hostDao.findById(2L);
+        Mockito.when(host.getName()).thenReturn("kvm01");
+        Mockito.when(host.getPodId()).thenReturn(7L);
 
         BackupAnswer answer = mock(BackupAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(false);
         Mockito.when(answer.getNeedsCleanup()).thenReturn(true);
+        Mockito.when(answer.getDetails()).thenReturn("leaving /tmp/csbackup.abcde/i-2-3-VM mounted at /tmp/csbackup.abcde");
         ArgumentCaptor<TakeBackupCommand> commandCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
         Mockito.when(agentManager.send(anyLong(), commandCaptor.capture())).thenReturn(answer);
 
@@ -292,6 +300,13 @@ public class NASBackupProviderTest {
         TakeBackupCommand command = commandCaptor.getValue();
         Assert.assertTrue(command.getQuiesce());
         Assert.assertEquals(Integer.valueOf(30), command.getQuiesceTimeout());
+
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE), Mockito.eq(6L), Mockito.eq(7L),
+                subjectCaptor.capture(), bodyCaptor.capture());
+        Assert.assertTrue(subjectCaptor.getValue().contains("kvm01"));
+        Assert.assertTrue(bodyCaptor.getValue().contains("/tmp/csbackup.abcde"));
     }
 
     @Test
@@ -310,6 +325,7 @@ public class NASBackupProviderTest {
         Assert.assertFalse(result.first());
         Assert.assertNull(result.second());
         Mockito.verify(backupDao).remove(Mockito.anyLong());
+        Mockito.verifyNoInteractions(alertManager);
     }
 
     @Test

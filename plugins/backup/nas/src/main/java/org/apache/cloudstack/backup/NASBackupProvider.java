@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
@@ -179,6 +180,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private BackupDetailsDao backupDetailsDao;
+
+    @Inject
+    private AlertManager alertManager;
 
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
@@ -653,6 +657,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             logger.error("Failed to take backup for VM {}: {}", vm.getInstanceName(), answer != null ? answer.getDetails() : "No answer received");
             if (answer != null && answer.getNeedsCleanup()) {
                 logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state. Backup should be manually deleted to free up the space", vm.getInstanceName());
+                sendBackupCleanupFailedAlert(vm, host, answer.getDetails());
                 backupVO.setStatus(Backup.Status.Error);
                 backupDao.update(backupVO.getId(), backupVO);
                 // Return the row to the caller to record its schedule - e.g. Scheduled or Manual.
@@ -662,6 +667,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupDao.remove(backupVO.getId());
             return new Pair<>(false, null);
         }
+    }
+
+    /**
+     * Alerts when nasbackup.sh could not clean up after a failed backup. The script's output
+     * names the backup repository mount point it left on the host.
+     */
+    private void sendBackupCleanupFailedAlert(VirtualMachine vm, Host host, String details) {
+        String subject = String.format("NAS backup cleanup failed for VM %s on host %s", vm.getInstanceName(), host.getName());
+        String body = String.format("A failed backup of VM %s could not be cleaned up on host %s (%s). " +
+                "The backup repository may still be mounted on that host. Script output: %s",
+                vm.getInstanceName(), host.getName(), host.getPrivateIpAddress(), details);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE, vm.getDataCenterId(), host.getPodId(), subject, body);
     }
 
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
