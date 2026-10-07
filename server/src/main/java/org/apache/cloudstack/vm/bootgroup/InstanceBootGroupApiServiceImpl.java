@@ -388,6 +388,7 @@ public class InstanceBootGroupApiServiceImpl implements InstanceBootGroupService
         }
         validateMemberAccount(vm.getAccountId(), group.getAccountId());
         instanceBootGroupMembershipGuard.validateVmEligibleForGroupMembership(vm.getId());
+        instanceBootGroupMembershipGuard.validateVmNotIndirectlyBootGroupManaged(vm.getId());
         return vm;
     }
 

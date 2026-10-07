@@ -39,6 +39,7 @@ import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.InstanceBootGroupMemberDao;
+import com.cloud.vm.dao.InstanceBootGroupReadinessRuleDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -49,6 +50,7 @@ public class InstanceBootGroupMembershipGuardTest {
     private static final long TEMPLATE_ID = 200L;
     private static final long FIRST_GROUP_ID = 10L;
     private static final long SECOND_GROUP_ID = 20L;
+    private static final long BOOT_GROUP_ID = 1000L;
 
     @InjectMocks
     InstanceBootGroupMembershipGuard guard;
@@ -67,6 +69,9 @@ public class InstanceBootGroupMembershipGuardTest {
 
     @Mock
     InstanceGroupVMMapDao instanceGroupVMMapDao;
+
+    @Mock
+    InstanceBootGroupReadinessRuleDao instanceBootGroupReadinessRuleDao;
 
     @Mock
     UserVmVO vm;
@@ -115,9 +120,27 @@ public class InstanceBootGroupMembershipGuardTest {
     }
 
     @Test
+    public void testEligibleForGroupMembershipIgnoresCurrentInstanceGroupBootGroupStatus() {
+        // validateVmEligibleForGroupMembership no longer looks at the VM's CURRENT instance group
+        // membership at all (that's validateVmNotIndirectlyBootGroupManaged's job), so it must pass
+        // even when instanceGroupVMMapDao/instanceBootGroupMemberDao are never stubbed to return
+        // anything for the VM's groups.
+        guard.validateVmEligibleForGroupMembership(VM_ID);
+        org.mockito.Mockito.verifyNoInteractions(instanceGroupVMMapDao);
+    }
+
+    // ---------------------------------------------------------------- validateVmNotIndirectlyBootGroupManaged
+
+    @Test
+    public void testIndirectlyManagedVmNotFoundThrows() {
+        when(userVmDao.findById(VM_ID)).thenReturn(null);
+        assertThrows(InvalidParameterValueException.class, () -> guard.validateVmNotIndirectlyBootGroupManaged(VM_ID));
+    }
+
+    @Test
     public void testNoInstanceGroupMappingsPasses() {
         when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.emptyList());
-        guard.validateVmEligibleForGroupMembership(VM_ID);
+        guard.validateVmNotIndirectlyBootGroupManaged(VM_ID);
     }
 
     @Test
@@ -128,7 +151,7 @@ public class InstanceBootGroupMembershipGuardTest {
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID))
                 .thenReturn(mock(InstanceBootGroupMemberVO.class));
 
-        assertThrows(InvalidParameterValueException.class, () -> guard.validateVmEligibleForGroupMembership(VM_ID));
+        assertThrows(InvalidParameterValueException.class, () -> guard.validateVmNotIndirectlyBootGroupManaged(VM_ID));
     }
 
     /**
@@ -148,7 +171,7 @@ public class InstanceBootGroupMembershipGuardTest {
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, SECOND_GROUP_ID))
                 .thenReturn(mock(InstanceBootGroupMemberVO.class));
 
-        assertThrows(InvalidParameterValueException.class, () -> guard.validateVmEligibleForGroupMembership(VM_ID));
+        assertThrows(InvalidParameterValueException.class, () -> guard.validateVmNotIndirectlyBootGroupManaged(VM_ID));
     }
 
     @Test
@@ -162,7 +185,38 @@ public class InstanceBootGroupMembershipGuardTest {
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID)).thenReturn(null);
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, SECOND_GROUP_ID)).thenReturn(null);
 
-        guard.validateVmEligibleForGroupMembership(VM_ID);
+        guard.validateVmNotIndirectlyBootGroupManaged(VM_ID);
+    }
+
+    // ---------------------------------------------------------------- validateInstanceGroupEligibleForBootGroupMembership
+
+    @Test
+    public void testInstanceGroupEligibleWhenNoMembersDisqualified() {
+        InstanceGroupVMMapVO member = mock(InstanceGroupVMMapVO.class);
+        when(member.getInstanceId()).thenReturn(VM_ID);
+        when(instanceGroupVMMapDao.listByGroupId(FIRST_GROUP_ID)).thenReturn(Collections.singletonList(member));
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.emptyList());
+
+        guard.validateInstanceGroupEligibleForBootGroupMembership(FIRST_GROUP_ID);
+    }
+
+    /**
+     * A member VM already indirectly governed via some OTHER Instance Group (one that's already a
+     * boot-group member) must disqualify the whole group, not just the VNF/CKS/AutoScale checks.
+     */
+    @Test
+    public void testInstanceGroupNotEligibleWhenMemberAlreadyIndirectlyManaged() {
+        InstanceGroupVMMapVO member = mock(InstanceGroupVMMapVO.class);
+        when(member.getInstanceId()).thenReturn(VM_ID);
+        when(instanceGroupVMMapDao.listByGroupId(FIRST_GROUP_ID)).thenReturn(Collections.singletonList(member));
+
+        InstanceGroupVMMapVO otherMapping = mock(InstanceGroupVMMapVO.class);
+        when(otherMapping.getGroupId()).thenReturn(SECOND_GROUP_ID);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(otherMapping));
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, SECOND_GROUP_ID))
+                .thenReturn(mock(InstanceBootGroupMemberVO.class));
+
+        assertThrows(InvalidParameterValueException.class, () -> guard.validateInstanceGroupEligibleForBootGroupMembership(FIRST_GROUP_ID));
     }
 
     // ---------------------------------------------------------------- validateVmNotInBootGroup
@@ -177,15 +231,40 @@ public class InstanceBootGroupMembershipGuardTest {
     }
 
     @Test
-    public void testValidateVmNotInBootGroupInInstanceGroupMemberThrows() {
+    public void testValidateVmNotInBootGroupInInstanceGroupMemberWithOwnRuleThrows() {
         when(vm.getId()).thenReturn(VM_ID);
         InstanceGroupVMMapVO mapping = mock(InstanceGroupVMMapVO.class);
         when(mapping.getGroupId()).thenReturn(FIRST_GROUP_ID);
         when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(mapping));
+        InstanceBootGroupMemberVO groupMember = mock(InstanceBootGroupMemberVO.class);
+        when(groupMember.getBootGroupId()).thenReturn(BOOT_GROUP_ID);
         when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID))
-                .thenReturn(mock(InstanceBootGroupMemberVO.class));
+                .thenReturn(groupMember);
+        when(instanceBootGroupReadinessRuleDao.listByItem(BOOT_GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID))
+                .thenReturn(Collections.singletonList(mock(InstanceBootGroupReadinessRuleVO.class)));
 
         assertThrows(InvalidParameterValueException.class, () -> guard.validateVmNotInBootGroup(vm));
+    }
+
+    /**
+     * Being in an Instance Group that is itself a boot-group member is NOT, on its own, a reason to
+     * block destroy — boot group orchestration resolves the group's VMs dynamically, so only a VM
+     * with its own readiness rule(s) registered in the boot group is actually at risk of going stale.
+     */
+    @Test
+    public void testValidateVmNotInBootGroupInInstanceGroupMemberWithoutOwnRulePasses() {
+        when(vm.getId()).thenReturn(VM_ID);
+        InstanceGroupVMMapVO mapping = mock(InstanceGroupVMMapVO.class);
+        when(mapping.getGroupId()).thenReturn(FIRST_GROUP_ID);
+        when(instanceGroupVMMapDao.listByInstanceId(VM_ID)).thenReturn(Collections.singletonList(mapping));
+        InstanceBootGroupMemberVO groupMember = mock(InstanceBootGroupMemberVO.class);
+        when(groupMember.getBootGroupId()).thenReturn(BOOT_GROUP_ID);
+        when(instanceBootGroupMemberDao.findByMember(InstanceBootGroupMember.MemberType.InstanceGroup, FIRST_GROUP_ID))
+                .thenReturn(groupMember);
+        when(instanceBootGroupReadinessRuleDao.listByItem(BOOT_GROUP_ID, InstanceBootGroupMember.MemberType.VirtualMachine, VM_ID))
+                .thenReturn(Collections.emptyList());
+
+        guard.validateVmNotInBootGroup(vm);
     }
 
     @Test

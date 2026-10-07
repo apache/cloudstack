@@ -472,6 +472,25 @@ public class InstanceBootGroupApiServiceImplTest {
         assertEquals(InstanceBootGroupMember.MemberType.VirtualMachine, result.getMemberType());
         assertEquals(VM_ID, result.getMemberId());
         verify(instanceBootGroupMembershipGuard).validateVmEligibleForGroupMembership(VM_ID);
+        verify(instanceBootGroupMembershipGuard).validateVmNotIndirectlyBootGroupManaged(VM_ID);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddMemberToInstanceBootGroupVirtualMachineIndirectlyManagedThrows() {
+        AddMemberToInstanceBootGroupCmd cmd = mock(AddMemberToInstanceBootGroupCmd.class);
+        when(cmd.getId()).thenReturn(GROUP_ID);
+        when(cmd.getOrder()).thenReturn(0);
+        when(cmd.getVirtualMachineId()).thenReturn(VM_ID);
+        when(cmd.getInstanceGroupId()).thenReturn(null);
+
+        InstanceBootGroupVO group = newGroup(GROUP_ID, "group1", ACCOUNT_ID);
+        when(instanceBootGroupDao.findById(GROUP_ID)).thenReturn(group);
+        UserVmVO vm = newVm(VM_ID, "vm1", "vm1host", ACCOUNT_ID, VirtualMachine.State.Running);
+        when(userVmDao.findById(VM_ID)).thenReturn(vm);
+        org.mockito.Mockito.doThrow(new InvalidParameterValueException("already indirectly managed"))
+                .when(instanceBootGroupMembershipGuard).validateVmNotIndirectlyBootGroupManaged(VM_ID);
+
+        service.addMemberToInstanceBootGroup(cmd);
     }
 
     @Test
