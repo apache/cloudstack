@@ -144,7 +144,10 @@ public class UsageEventUtils {
         }
     }
 
-    private static void publishNicNetworkOfferingUsageEvent(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
+    // Public so a single association can be billed immediately outside the nic-wide loop above - e.g. a live
+    // associateNetworkToNic/disassociateNetworkFromNic on a Running VM, where only the one network just
+    // (dis)associated should be billed, not every network the nic already has.
+    public static void publishNicNetworkOfferingUsageEvent(String usageType, long accountId, long zoneId, long vmId, String entityType, String entityUUID,
             long nicId, NetworkVO network, long isDefault, boolean displayResource) {
         Map<String, String> details = Collections.singletonMap(UsageEventVO.DynamicParameters.networkId.name(), String.valueOf(network.getId()));
         publishUsageEventWithDetails(usageType, accountId, zoneId, vmId, Long.toString(nicId), network.getNetworkOfferingId(), null, isDefault, entityType, entityUUID,

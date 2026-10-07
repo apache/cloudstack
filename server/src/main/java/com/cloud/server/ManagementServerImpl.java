@@ -1766,6 +1766,20 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
+    @Override
+    public String getMultiNetworkNicUnsuitableReason(final VirtualMachine vm, final Host host) {
+        boolean vmHasMultiNetworkNic = nicDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!vmHasMultiNetworkNic) {
+            return null;
+        }
+        final DetailVO detail = _detailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        final boolean vlanFilteringEnabled = detail != null && Boolean.parseBoolean(detail.getValue());
+        if (!vlanFilteringEnabled) {
+            return "Instance has a multi-VLAN trunk NIC, but this host does not have VLAN filtering enabled";
+        }
+        return null;
+    }
+
     private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
         // Validate if the VM is using a vGPU profile that supports migration.
         ServiceOffering serviceOffering = vmProfile.getServiceOffering();

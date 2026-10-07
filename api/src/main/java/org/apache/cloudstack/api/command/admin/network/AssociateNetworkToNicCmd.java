@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,7 +46,8 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "associateNetworkToNic", description = "Associates one or more additional networks with an existing NIC, delivering them as a multi-VLAN trunk",
-        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0")
+        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0",
+        authorized = {RoleType.Admin})
 public class AssociateNetworkToNicCmd extends BaseAsyncCmd {
     private static final String s_name = "associatenetworktonicresponse";
 

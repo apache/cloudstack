@@ -699,9 +699,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             throws ParserConfigurationException, IOException, SAXException, TransformerException {
         NicTO[] nics = command.getVirtualMachine().getNics();
         boolean sourceVlanFilteringEnabled = libvirtComputingResource.hostSupportsVlanFiltering();
+        // destination-shared-bridge is also a rewrite trigger: a legacy-source nic's bridge name (breth1-<vid>)
+        // doesn't exist on a shared-bridge destination, needs rewriting to cloudbr1 just as much as the reverse
+        boolean destVlanFilteringEnabled = Boolean.TRUE.equals(command.getDestVlanFilteringEnabled());
         boolean anyNicNeedsHandling = false;
         for (NicTO nic : nics) {
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || nic.isTrunkVlan())) {
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
                 anyNicNeedsHandling = true;
                 break;
             }
@@ -732,7 +735,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 String mac = findInterfaceMacAddress(interfaceElement);
                 NicTO nic = mac == null ? null : findNicByMac(nics, mac);
                 if (nic == null || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan
-                        || !(sourceVlanFilteringEnabled || nic.isTrunkVlan())) {
+                        || !(sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
                     continue;
                 }
                 replaceVlanTrunkInterface(doc, interfaceElement, nic, command);

@@ -448,9 +448,12 @@
                         v-if="networks.length > 0"
                         :items="networks"
                         :preFillContent="dataPreFill"
+                        :canTrunkNics="canTrunkNics"
+                        :zoneId="zoneId"
                         @update-network-config="($event) => updateNetworkConfig($event)"
                         @handler-error="($event) => hasError = $event"
                         @select-default-network-item="($event) => updateDefaultNetworks($event)"
+                        @update-trunk-groups="($event) => updateTrunkGroups($event)"
                       ></network-configuration>
                     </div>
                   </div>
@@ -1159,6 +1162,7 @@ export default {
       selectedZone: '',
       formModel: {},
       nicToNetworkSelection: [],
+      trunkGroups: {},
       selectedArchitecture: null,
       isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
       showLeaseOptions: false,
@@ -1184,6 +1188,9 @@ export default {
   computed: {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+    },
+    canTrunkNics () {
+      return this.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis)
     },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
@@ -2240,6 +2247,9 @@ export default {
     updateNetworkConfig (networks) {
       this.networkConfig = networks
     },
+    updateTrunkGroups (trunkGroups) {
+      this.trunkGroups = trunkGroups
+    },
     updateSshKeyPairs (names) {
       this.form.keypairs = names
       this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
@@ -2524,9 +2534,48 @@ export default {
               deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
-            const arrNetwork = []
             networkIds = values.networkids
-            if (networkIds.length > 0) {
+            if (!networkIds || networkIds.length === 0) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.step.4.continue')
+              })
+              this.loading.deploy = false
+              return
+            }
+            const groupedAwayNetworkIds = Object.values(this.trunkGroups || {}).flat()
+            const hasTrunkGroups = groupedAwayNetworkIds.length > 0
+            if (hasTrunkGroups) {
+              // one or more nics group several networks onto a single nic (multi-VLAN trunk) - mutually
+              // exclusive with iptonetworklist at the API level, so every nic (grouped or not) goes
+              // through nicnetworkslist here instead.
+              const ownNicNetworkIds = networkIds.filter(id => !groupedAwayNetworkIds.includes(id))
+              const orderedNicNetworkIds = []
+              for (const id of ownNicNetworkIds) {
+                if (id === this.defaultnetworkid) {
+                  orderedNicNetworkIds.unshift(id)
+                } else {
+                  orderedNicNetworkIds.push(id)
+                }
+              }
+              for (let j = 0; j < orderedNicNetworkIds.length; j++) {
+                const primaryNetworkId = orderedNicNetworkIds[j]
+                const groupNetworkIds = [primaryNetworkId, ...(this.trunkGroups[primaryNetworkId] || [])]
+                deployVmData['nicnetworkslist[' + j + '].networkids'] = groupNetworkIds.join(',')
+                if (this.networkConfig.length > 0) {
+                  const networkConfig = this.networkConfig.filter((item) => item.key === primaryNetworkId)
+                  if (networkConfig && networkConfig.length > 0) {
+                    if (networkConfig[0].ipAddress) {
+                      deployVmData['nicnetworkslist[' + j + '].ip4address'] = networkConfig[0].ipAddress
+                    }
+                    if (networkConfig[0].macAddress) {
+                      deployVmData['nicnetworkslist[' + j + '].macaddress'] = networkConfig[0].macAddress
+                    }
+                  }
+                }
+              }
+            } else {
+              const arrNetwork = []
               for (let i = 0; i < networkIds.length; i++) {
                 if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
@@ -2540,21 +2589,14 @@ export default {
                   arrNetwork.push(ipToNetwork)
                 }
               }
-            } else {
-              this.$notification.error({
-                message: this.$t('message.request.failed'),
-                description: this.$t('message.step.4.continue')
-              })
-              this.loading.deploy = false
-              return
-            }
-            for (let j = 0; j < arrNetwork.length; j++) {
-              deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
-              if (this.networkConfig.length > 0) {
-                const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
-                if (networkConfig && networkConfig.length > 0) {
-                  deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                  deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+              for (let j = 0; j < arrNetwork.length; j++) {
+                deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
+                if (this.networkConfig.length > 0) {
+                  const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
+                  if (networkConfig && networkConfig.length > 0) {
+                    deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
+                    deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+                  }
                 }
               }
             }

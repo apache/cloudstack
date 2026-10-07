@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +36,8 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "disassociateNetworkFromNic", description = "Disassociates a network from an existing NIC, shrinking its multi-VLAN trunk",
-        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0")
+        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0",
+        authorized = {RoleType.Admin})
 public class DisassociateNetworkFromNicCmd extends BaseAsyncCmd {
     private static final String s_name = "disassociatenetworkfromnicresponse";
 

@@ -194,7 +194,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private Map ipToNetworkList;
 
     @Parameter(name = ApiConstants.NIC_NETWORKS_LIST, type = CommandType.MAP, since = "24.0.0",
-            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin},
+            authorized = {RoleType.Admin},
             description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk. The first network id in each entry is the nic's primary network."
                     + " Can't be specified with networkIds or ipToNetworkList parameters."
                     + " Optional ip4addresses/ip6addresses request specific IPs for the entry's associated (non-primary) networks - comma-separated,"

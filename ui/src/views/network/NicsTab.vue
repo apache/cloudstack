@@ -25,7 +25,11 @@
       :disabled="!('addNicToVirtualMachine' in $store.getters.apis) || resource.hypervisor === 'External'">
       <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
     </a-button>
-    <NicsTable :resource="resource" :loading="loading">
+    <NicsTable
+      :resource="resource"
+      :loading="loading"
+      :canManageAssociations="canManageAssociations"
+      @disassociate-network="onDisassociateNetwork">
       <template #actions="record">
         <a-popconfirm
         :title="$t('label.set.default.nic')"
@@ -61,6 +65,12 @@
           icon="edit-outlined"
           :disabled="(!('updateVmNic' in $store.getters.apis))"
           @onClick="onUpdateNic(record)" />
+        <tooltip-button
+          v-if="canManageAssociations && record.nic.type !== 'L2'"
+          tooltipPlacement="bottom"
+          :tooltip="$t('label.associate.network')"
+          icon="apartment-outlined"
+          @onClick="onAssociateNetworks(record)" />
         <a-popconfirm
           :title="$t('message.network.removenic')"
           @confirm="removeNIC(record.nic)"
@@ -143,6 +153,58 @@
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
+
+    <a-modal
+      :visible="showAssociateNetworksModal"
+      :title="$t('label.associate.network')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="closeModals">
+      {{ $t('message.associate.network.desc') }}
+      <a-alert
+        type="warning"
+        show-icon
+        style="margin-top: 10px; margin-bottom: 10px"
+        :message="$t('message.associate.network.loop.warning')" />
+      <a-form
+        @finish="submitAssociateNetworks"
+        v-ctrl-enter="submitAssociateNetworks"
+        layout="vertical">
+        <a-form-item name="networks" ref="networks">
+          <template #label>
+            <tooltip-label :title="$t('label.networks')" :tooltip="$t('message.associate.network.desc')"/>
+          </template>
+          <a-select
+            mode="multiple"
+            :placeholder="$t('label.networks')"
+            v-model:value="associateNetworksData.networkIds"
+            v-focus="true"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="network in associateNetworksData.availableNetworks"
+              :key="network.id"
+              :value="network.id"
+              :label="network.name">
+              <span>
+                <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <apartment-outlined v-else style="margin-right: 5px" />
+                {{ network.name }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitAssociateNetworks">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -288,6 +350,7 @@ import NicsTable from '@/views/network/NicsTable'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import { isMultiNetworkNicEnabledForZone, fetchMultiNetworkNicEnabledForZone } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'NicsTab',
@@ -313,6 +376,7 @@ export default {
       vm: {},
       nic: {},
       showAddNetworkModal: false,
+      showAssociateNetworksModal: false,
       showUpdateIpModal: false,
       showSecondaryIpModal: false,
       showUpdateNicModal: false,
@@ -321,6 +385,11 @@ export default {
         network: '',
         ip: '',
         makedefault: false
+      },
+      associateNetworksData: {
+        nic: {},
+        availableNetworks: [],
+        networkIds: []
       },
       loadingNic: false,
       editIpAddressNic: '',
@@ -338,9 +407,16 @@ export default {
       }
     }
   },
+  computed: {
+    canManageAssociations () {
+      return this.resource.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis) &&
+        isMultiNetworkNicEnabledForZone(this.resource.zoneid)
+    }
+  },
   created () {
     this.vm = this.resource
     this.addNetworkData.apiParams = this.$getApiParams('addNicToVirtualMachine')
+    fetchMultiNetworkNicEnabledForZone(this.resource.zoneid)
   },
   methods: {
     listNetworks () {
@@ -397,6 +473,7 @@ export default {
     },
     closeModals () {
       this.showAddNetworkModal = false
+      this.showAssociateNetworksModal = false
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
       this.showUpdateNicModal = false
@@ -404,9 +481,89 @@ export default {
       this.addNetworkData.ipaddress = ''
       this.addNetworkData.macaddress = ''
       this.addNetworkData.makedefault = false
+      this.associateNetworksData.nic = {}
+      this.associateNetworksData.availableNetworks = []
+      this.associateNetworksData.networkIds = []
       this.editIpAddressValue = ''
       this.newSecondaryIp = ''
       this.newSecondaryIpDescription = ''
+    },
+    onAssociateNetworks (record) {
+      this.associateNetworksData.nic = record.nic
+      this.associateNetworksData.networkIds = []
+      this.showAssociateNetworksModal = true
+      const alreadyUsedNetworkIds = [record.nic.networkid, ...(record.nic.associatednetworks || []).map(n => n.networkid)]
+      getAPI('listNetworks', {
+        listAll: 'true',
+        showicon: true,
+        zoneid: this.vm.zoneid
+      }).then(response => {
+        this.associateNetworksData.availableNetworks = (response.listnetworksresponse.network || [])
+          .filter(network => !alreadyUsedNetworkIds.includes(network.id))
+      })
+    },
+    submitAssociateNetworks () {
+      if (this.loadingNic || this.associateNetworksData.networkIds.length === 0) return
+      this.loadingNic = true
+      this.showAssociateNetworksModal = false
+      postAPI('associateNetworkToNic', {
+        nicid: this.associateNetworksData.nic.id,
+        networkids: this.associateNetworksData.networkIds
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.associatenetworktonicresponse.jobid,
+          successMessage: this.$t('message.success.associate.network'),
+          successMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+            this.$emit('refresh')
+          },
+          errorMessage: this.$t('message.error.associate.network'),
+          errorMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+          },
+          loadingMessage: this.$t('message.associate.network.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+            this.$emit('refresh')
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loadingNic = false
+      })
+    },
+    onDisassociateNetwork ({ nic, network }) {
+      this.loadingNic = true
+      postAPI('disassociateNetworkFromNic', {
+        nicid: nic.id,
+        networkid: network.networkid
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.disassociatenetworkfromnicresponse.jobid,
+          successMessage: this.$t('message.success.disassociate.network'),
+          successMethod: () => {
+            this.loadingNic = false
+            this.$emit('refresh')
+          },
+          errorMessage: this.$t('message.error.disassociate.network'),
+          errorMethod: () => {
+            this.loadingNic = false
+          },
+          loadingMessage: this.$t('message.disassociate.network.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loadingNic = false
+            this.$emit('refresh')
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loadingNic = false
+      })
     },
     onChangeIPAddress (record) {
       this.editNicResource = record.nic

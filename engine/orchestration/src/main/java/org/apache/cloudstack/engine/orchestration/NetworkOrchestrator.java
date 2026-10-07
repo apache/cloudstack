@@ -4130,6 +4130,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 result = _nicDao.listByVmId(vmId);
             } else {
                 result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+                if (networkId != null) {
+                    result = addNicsWithNetworkAssociation(result, vmId, nicId, networkId);
+                }
             }
         } else {
             result = _nicDao.listByVmIdAndKeyword(vmId, keyword);
@@ -4155,6 +4158,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        return result;
+    }
+
+    // A nic whose primary network is something else but is also associated with networkId (multi-VLAN trunk nic)
+    // is invisible to the primary-only search above, so it needs a separate associations-based lookup here.
+    private List<NicVO> addNicsWithNetworkAssociation(final List<NicVO> primaryMatches, final long vmId, final Long nicId, final long networkId) {
+        final List<NicVO> result = new ArrayList<>(primaryMatches);
+        for (final NicVO candidate : _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, null)) {
+            if (!result.contains(candidate) && _nicNetworkMapDao.findByNicIdAndNetworkId(candidate.getId(), networkId) != null) {
+                result.add(candidate);
+            }
+        }
         return result;
     }
 

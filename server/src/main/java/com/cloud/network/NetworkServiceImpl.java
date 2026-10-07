@@ -939,6 +939,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             refreshNicVlanMappingMetadata(nic);
             for (NetworkVO network : newlyAssociatedNetworks) {
                 pushDhcpEntryForAssociation(vm, nic, network);
+                publishAssociationUsageEvent(vm, nic, network, EventTypes.EVENT_NETWORK_OFFERING_ASSIGN);
             }
         }
 
@@ -1006,14 +1007,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             vnfTemplateManager.validateVnfApplianceTrunkNic(template, nic.getDeviceId());
         }
 
-        Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds);
+        Pair<List<NetworkVO>, List<NetworkVO>> networkSets = buildResultingNetworkSet(vm, nic, primaryNetwork, requestedNetworkIds, caller);
         List<NetworkVO> resultingSet = networkSets.first();
         List<NetworkVO> requestedNetworks = networkSets.second();
 
         validateTrunkSet(primaryNetwork, resultingSet);
         validateNoOverlappingCidrs(resultingSet);
         implementRequestedNetworks(requestedNetworks, vm, caller);
-        validateNoDuplicateVlanAfterImplement(resultingSet);
+        validateNoDuplicateVlanAfterImplement(resultingSet, requestedNetworks);
         persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
         return requestedNetworks;
     }
@@ -1059,6 +1060,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (vmRunning) {
             cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
+            NetworkVO targetNetwork = _networksDao.findById(targetNetworkId);
+            if (targetNetwork != null) {
+                publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
+            }
             updateLiveVlanTrunkMembership(vm, nic);
             refreshNicVlanMappingMetadata(nic);
         }
@@ -1148,6 +1153,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         sendDhcpEntryCommandForAssociation(vm, nic, network, association.getIp4Address(), association.getIp6Address(), false);
     }
 
+    // A live associate/disassociate on a Running Instance has no nic-plug/VM-start of its own to piggyback
+    // billing on, so without this the association would go unbilled until the VM's next stop/start. Bills
+    // only the one network just (dis)associated, never isDefault (an association is never a nic's default).
+    private void publishAssociationUsageEvent(VirtualMachine vm, NicVO nic, NetworkVO network, String eventType) {
+        UsageEventUtils.publishNicNetworkOfferingUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                VirtualMachine.class.getName(), vm.getUuid(), nic.getId(), network, 0L, vm.isDisplay());
+    }
+
     // Counterpart to pushDhcpEntryForAssociation, for a Running Instance's disassociate.
     private void cleanupDhcpEntryForAssociation(VirtualMachine vm, NicVO nic, long networkId, String ip4Address, String ip6Address) throws ResourceUnavailableException {
         NetworkVO network = _networksDao.findById(networkId);
@@ -1235,7 +1248,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return vm;
     }
 
-    private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds) {
+    private Pair<List<NetworkVO>, List<NetworkVO>> buildResultingNetworkSet(VirtualMachine vm, NicVO nic, NetworkVO primaryNetwork, List<Long> requestedNetworkIds, Account caller) {
         List<NicNetworkMapVO> existingAssociations = _nicNetworkMapDao.listByNicId(nic.getId());
         Set<Long> associatedNetworkIds = new HashSet<>();
         associatedNetworkIds.add(primaryNetwork.getId());
@@ -1268,6 +1281,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (requestedNetwork == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find network with id %d", requestedNetworkId));
             }
+            _accountMgr.checkAccess(caller, null, true, requestedNetwork);
             requestedNetworks.add(requestedNetwork);
             resultingSet.add(requestedNetwork);
         }
@@ -1329,9 +1343,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 String cidrB = networkCidrs.get(j).second();
                 if (NetUtils.isNetworksOverlap(cidrA, cidrB)) {
                     throw new InvalidParameterValueException(String.format(
-                            "Networks %s and %s have overlapping subnets (%s and %s) and cannot be associated with the same nic; " +
+                            "Networks %s (%s) and %s (%s) have overlapping subnets (%s and %s) and cannot be associated with the same nic; " +
                             "a guest cannot unambiguously route between associated networks that share address space",
-                            networkA.getUuid(), networkB.getUuid(), cidrA, cidrB));
+                            networkA.getName(), networkA.getUuid(), networkB.getName(), networkB.getUuid(), cidrA, cidrB));
                 }
             }
         }
@@ -1344,7 +1358,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateNoDuplicateVlanAfterImplement(List<NetworkVO> resultingSet) {
+    private void validateNoDuplicateVlanAfterImplement(List<NetworkVO> resultingSet, List<NetworkVO> requestedNetworks) {
         // re-fetch: implementNetworkIfNeeded may have just assigned a broadcastUri to one of the requested
         // networks, and existing associations are re-read too rather than trusted stale
         List<NetworkVO> implementedNetworks = new ArrayList<>();
@@ -1355,7 +1369,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             implementedNetworks.add(refreshed);
         }
-        validateNoDuplicateVlan(implementedNetworks);
+        Set<Long> justRequestedIds = new HashSet<>();
+        for (NetworkVO network : requestedNetworks) {
+            justRequestedIds.add(network.getId());
+        }
+        validateNoDuplicateVlan(implementedNetworks, justRequestedIds);
     }
 
     private void persistAssociations(NicVO nic, VirtualMachine vm, List<NetworkVO> requestedNetworks, Map<Long, Network.IpAddresses> requestedIps)
@@ -1422,12 +1440,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateNoDuplicateVlan(List<NetworkVO> resultingSet) {
+    private void validateNoDuplicateVlan(List<NetworkVO> resultingSet, Set<Long> justRequestedIds) {
         Map<URI, NetworkVO> seenBroadcastUris = new HashMap<>();
         for (NetworkVO network : resultingSet) {
             URI broadcastUri = network.getBroadcastUri();
             if (broadcastUri == null) {
-                throw new CloudRuntimeException(String.format("Network %s has no VLAN assigned after implementation; this should not happen", network.getUuid()));
+                if (!justRequestedIds.contains(network.getId())) {
+                    // this call never attempted to implement this network (it's the nic's existing primary,
+                    // untouched here and only implemented later at the VM's actual start; or an association
+                    // that already existed before this call) - whatever reason it currently lacks a VLAN is
+                    // unrelated to this request. It isn't this method's job to flag that; a genuinely missing
+                    // VLAN at actual nic-plug time already fails closed with its own clear error there.
+                    continue;
+                }
+                throw new CloudRuntimeException(String.format("Network %s (%s) has no VLAN assigned after implementation; this should not happen",
+                        network.getName(), network.getUuid()));
             }
             NetworkVO conflicting = seenBroadcastUris.put(broadcastUri, network);
             if (conflicting != null) {

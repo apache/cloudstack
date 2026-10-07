@@ -58,21 +58,23 @@
             {{ record.name }}
           </div>
           <a-select
-            v-if="nicsList.length && selectedVm && selectedVm === record.id"
+            v-if="nicIpOptions.length && selectedVm && selectedVm === record.id"
             class="nic-select"
-            :defaultValue="selectedNic.ipaddress"
+            :defaultValue="selectedNic.ip"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option
-              @click="selectedNic = item"
-              v-for="item in nicsList"
-              :key="item.id"
-              :label="item.ipaddress">
-              {{ item.ipaddress }}
-            </a-select-option>
+            <a-select-opt-group v-for="group in groupedNicIpOptions" :key="group.kind" :label="group.label">
+              <a-select-option
+                @click="selectedNic = item"
+                v-for="item in group.items"
+                :key="item.nicid + '-' + item.ip"
+                :label="item.ip + ' ' + item.networkname">
+                {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+              </a-select-option>
+            </a-select-opt-group>
           </a-select>
         </template>
         <template v-if="column.key === 'state'">
@@ -115,6 +117,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
+import { buildNicIpOptions, groupNicIpOptionsByKind } from '@/utils/multiNetworkNic'
 
 export default {
   props: {
@@ -127,12 +130,17 @@ export default {
     Status
   },
   inject: ['parentFetchData'],
+  computed: {
+    groupedNicIpOptions () {
+      return groupNicIpOptionsByKind(this.nicIpOptions, this.$t)
+    }
+  },
   data () {
     return {
       loading: false,
       vmsList: [],
       selectedVm: null,
-      nicsList: [],
+      nicIpOptions: [],
       searchQuery: null,
       selectedNic: null,
       columns: [
@@ -220,22 +228,15 @@ export default {
     },
     fetchNics (e) {
       this.selectedVm = e.target.value
-      this.nicsList = []
+      this.nicIpOptions = []
       this.loading = true
       getAPI('listNics', {
         virtualmachineid: this.selectedVm,
         networkid: this.resource.associatednetworkid || this.selectedVpcTier
       }).then(response => {
-        this.nicsList = response.listnicsresponse.nic || []
-
-        let secondaryIps = this.nicsList.map(item => item.secondaryip)
-
-        if (secondaryIps[0]) {
-          secondaryIps = secondaryIps[0]
-          this.nicsList = [...this.nicsList, ...secondaryIps]
-        }
-
-        this.selectedNic = this.nicsList[0]
+        const nics = response.listnicsresponse.nic || []
+        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic))
+        this.selectedNic = this.nicIpOptions[0]
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -261,8 +262,8 @@ export default {
       postAPI('enableStaticNat', {
         ipaddressid: this.resource.id,
         virtualmachineid: this.selectedVm,
-        vmguestip: this.selectedNic.ipaddress,
-        networkid: this.selectedVpcTier
+        vmguestip: this.selectedNic.ip,
+        networkid: this.selectedNic.networkid
       }).then(() => {
         this.parentFetchData()
         this.handleClose()
@@ -394,6 +395,10 @@ export default {
     margin-top: 10px;
     margin-right: auto;
     min-width: 150px;
+
+    &__network {
+      color: rgba(0, 0, 0, 0.45);
+    }
   }
 
   .pagination {

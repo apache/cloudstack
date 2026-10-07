@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,8 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "changeNicPrimaryNetwork", description = "Changes a multi-VLAN trunk NIC's primary (native/untagged) network to one of its already-associated networks. "
         + "Only allowed while the owning Instance is stopped. The operator is responsible for confirming the guest will "
         + "reacquire its address on the new primary network (e.g. via DHCP) after the next start - CloudStack cannot verify this from the host side.",
-        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0")
+        responseObject = NicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "24.0.0",
+        authorized = {RoleType.Admin})
 public class ChangeNicPrimaryNetworkCmd extends BaseAsyncCmd {
     private static final String s_name = "changenicprimarynetworkresponse";
 

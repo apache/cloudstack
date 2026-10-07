@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "findHostsForMigration", description = "Find hosts suitable for migrating an Instance.", responseObject = HostForMigrationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -73,6 +74,8 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
         List<? extends Host> hostsWithCapacity = hostsForMigration.second();
         hostsRequiringStorageMotion = hostsForMigration.third();
 
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVirtualMachineId());
+
         response = new ListResponse<HostForMigrationResponse>();
         List<HostForMigrationResponse> hostResponses = new ArrayList<HostForMigrationResponse>();
         for (Host host : result.first()) {
@@ -88,6 +91,10 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
                 hostResponse.setRequiresStorageMotion(true);
             } else {
                 hostResponse.setRequiresStorageMotion(false);
+            }
+
+            if (!suitableForMigration && vm != null) {
+                hostResponse.setUnsuitableReason(_mgr.getMultiNetworkNicUnsuitableReason(vm, host));
             }
 
             hostResponse.setObjectName("host");

@@ -841,6 +841,36 @@ public class CommandSetupHelper {
                 createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
         }
+        createDhcpEntryCommandsForAssociatedNics(router, cmds, guestNetworkId, dc, dnsBasicZoneUpdates);
+    }
+
+    // A nic whose primary network is something else but is also associated with guestNetworkId (multi-VLAN
+    // trunk nic) is invisible to the primary-only lookup above, so a full VR rebuild would otherwise drop its
+    // entry - it would keep its current lease but fail to renew once this VR is the only one it can ask.
+    private void createDhcpEntryCommandsForAssociatedNics(final DomainRouterVO router, final Commands cmds, final long guestNetworkId,
+            final DataCenterVO dc, final String dnsBasicZoneUpdates) {
+        final NetworkVO network = _networkDao.findById(guestNetworkId);
+        if (network == null) {
+            return;
+        }
+        for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNetworkId(guestNetworkId)) {
+            final NicVO nic = _nicDao.findById(association.getNicId());
+            if (nic == null) {
+                continue;
+            }
+            final UserVmVO vm = _userVmDao.findById(nic.getInstanceId());
+            if (vm == null || !(vm.getState() == VirtualMachine.State.Running || vm.getState() == VirtualMachine.State.Migrating
+                    || vm.getState() == VirtualMachine.State.Stopping)) {
+                continue;
+            }
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
+                    && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                continue;
+            }
+            logger.debug("Creating dhcp entry for vm " + vm + "'s association with network " + guestNetworkId + " on domR " + router + ".");
+            createDhcpEntryCommand(router, vm, nic.getMacAddress(), association.getIp4Address(), association.getIp6Address(),
+                    network.getGateway(), network.getIp6Gateway(), guestNetworkId, false, false, cmds);
+        }
     }
 
     public void createDeleteIpAliasCommand(final DomainRouterVO router, final List<IpAliasTO> deleteIpAliasTOs, final List<IpAliasTO> createIpAliasTos, final long networkId,

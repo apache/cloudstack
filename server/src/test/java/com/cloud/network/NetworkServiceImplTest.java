@@ -92,6 +92,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -1748,6 +1749,43 @@ public class NetworkServiceImplTest {
         Nic result = service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
 
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void associateNetworkToNicChecksCallerAccessToRequestedNetwork() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(primaryNetwork.getCidr()).thenReturn("10.1.1.0/24");
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(requestedNetwork.getCidr()).thenReturn("10.1.2.0/24");
+        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(requestedNetwork, null)).thenReturn("10.1.2.50");
+
+        service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
+
+        Mockito.verify(accountManager).checkAccess(accountMock, null, true, requestedNetwork);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void associateNetworkToNicFailsWhenCallerLacksAccessToRequestedNetwork() throws Exception {
+        NicVO nic = mockNic(11L, 5L, 205L, false);
+        Mockito.when(nicDao.findById(11L)).thenReturn(nic);
+        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
+        Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
+        Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
+        NetworkVO requestedNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
+        Mockito.when(networkDao.findById(206L)).thenReturn(requestedNetwork);
+        Mockito.doThrow(new PermissionDeniedException("no access to network 206"))
+                .when(accountManager).checkAccess(accountMock, null, true, requestedNetwork);
+
+        service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
     }
 
     @Test(expected = InvalidParameterValueException.class)
