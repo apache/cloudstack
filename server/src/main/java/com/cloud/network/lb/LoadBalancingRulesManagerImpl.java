@@ -2415,14 +2415,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setCidrList(cidrListStr);
         }
 
-        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout(),
-                cmd.isCleanupConnectionSettings());
-
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
             throw new InvalidParameterValueException(String.format("Modifications in lb rule %s are not supported.", lb));
         }
+
+        // The settings are written straight to the details table, unlike the fields above that wait
+        // for _lbDao.update, so they are stored only once nothing else can reject the update
+        Map<String, String> settingsBackup = getConnectionSettings(lbRuleId);
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout(),
+                cmd.isCleanupConnectionSettings());
 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
@@ -2461,6 +2464,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
+                    if (settingsChanged) {
+                        setConnectionSettings(lbRuleId, settingsBackup);
+                    }
 
                     logger.debug("LB Rollback rule: {} while updating LB rule.", lb);
                 }
