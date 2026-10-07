@@ -567,10 +567,11 @@ abort_backup_job() {
   # The push backup job writes into $dest until it ends, so it must be gone before the
   # destination is removed or unmounted.
   virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>>"$logFile" || true
-  local i job
+  local i info
   for ((i = 0; i < 60; i++)); do
-    job=$(virsh -c qemu:///system domjobinfo "$VM" 2>/dev/null | awk '/Job type:/ {print $3}')
-    if [[ -z "$job" || "$job" == "None" ]]; then
+    # Only a successful query reporting no job proves the job has ended.
+    if info=$(virsh -c qemu:///system domjobinfo "$VM" 2>>"$logFile") \
+        && [[ "$(awk '/Job type:/ {print $3}' <<< "$info")" == "None" ]]; then
       BACKUP_JOB_ACTIVE=0
       return 0
     fi
