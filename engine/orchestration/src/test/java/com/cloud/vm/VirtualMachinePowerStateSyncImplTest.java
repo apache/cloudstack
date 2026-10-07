@@ -271,4 +271,66 @@ public class VirtualMachinePowerStateSyncImplTest {
         Assert.assertFalse(virtualMachinePowerStateSync.reportUnknownInstances(1L,
                 new HashSet<>(Arrays.asList("i-2-2-VM"))));
     }
+
+    /**
+     * A VMware host report lists every VM on the host, in any power state. Worker VMs CloudStack creates for volume
+     * operations, VMs it never created, and powered-off leftovers must not be raised as unknown instances, or every
+     * worker VM coming and going would produce an alert.
+     */
+    @Test
+    public void test_convertVmStateReport_ignoresWorkerAndForeignVms() {
+        Map<String, HostVmStateReportEntry> report = new HashMap<>();
+        report.put("5f1b0c6e2d9a4e7f8b3c1a2d4e6f8a0b", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        report.put("cloud.uuid-5f1b0c6e2d9a4e7f8b3c1a2d4e6f8a0b", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        report.put("VMware vCenter Server", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        report.put("vCLS-12345678-abcd-4ef0-9876-0123456789ab", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        report.put("i-2-5-VM", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOff, "host"));
+        Mockito.when(instanceDao.getNameIdMapForVmInstanceNames(Mockito.anyCollection())).thenReturn(new HashMap<>());
+
+        Map<Long, VirtualMachine.PowerState> result = virtualMachinePowerStateSync.convertVmStateReport(1L, report);
+
+        Assert.assertTrue(result.isEmpty());
+        // nothing was recorded, so an empty set is not a change
+        Assert.assertFalse(virtualMachinePowerStateSync.reportUnknownInstances(1L, new HashSet<>()));
+        Mockito.verify(alertManager, Mockito.never()).sendAlert(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                Mockito.anyString(), Mockito.anyString());
+    }
+
+    /**
+     * Worker VMs appearing and disappearing next to a standing unknown instance must not change the reported set.
+     */
+    @Test
+    public void test_convertVmStateReport_workerVmsDoNotChangeTheReportedSet() {
+        Mockito.when(instanceDao.getNameIdMapForVmInstanceNames(Mockito.anyCollection())).thenReturn(new HashMap<>());
+        Map<String, HostVmStateReportEntry> report = new HashMap<>();
+        report.put("i-2-2-VM", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        virtualMachinePowerStateSync.convertVmStateReport(1L, report);
+
+        report.put("5f1b0c6e2d9a4e7f8b3c1a2d4e6f8a0b", new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host"));
+        virtualMachinePowerStateSync.convertVmStateReport(1L, report);
+
+        Assert.assertFalse(virtualMachinePowerStateSync.reportUnknownInstances(1L,
+                new HashSet<>(Arrays.asList("i-2-2-VM"))));
+    }
+
+    @Test
+    public void test_isRunningCloudStackInstance_cloudStackNames() {
+        HostVmStateReportEntry on = new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host");
+        for (String name : Arrays.asList("i-2-3-VM", "i-2-3-web-01", "r-4-VM", "s-1-VM", "v-2-VM", "b-5-VM", "l-6-VM",
+                "NS-7-Vpx")) {
+            Assert.assertTrue(name, VirtualMachinePowerStateSyncImpl.isRunningCloudStackInstance(name, on));
+        }
+    }
+
+    @Test
+    public void test_isRunningCloudStackInstance_otherNames() {
+        HostVmStateReportEntry on = new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOn, "host");
+        for (String name : Arrays.asList("5f1b0c6e2d9a4e7f8b3c1a2d4e6f8a0b", "cloud.uuid-5f1b0c6e2d9a4e7f8b3c1a2d4e6f8a0b",
+                "vCLS-12345678-abcd-4ef0-9876-0123456789ab", "VMware vCenter Server", "i-2-VM", "i-x-3-VM", "r-4", "web-01")) {
+            Assert.assertFalse(name, VirtualMachinePowerStateSyncImpl.isRunningCloudStackInstance(name, on));
+        }
+        Assert.assertFalse(VirtualMachinePowerStateSyncImpl.isRunningCloudStackInstance("i-2-3-VM",
+                new HostVmStateReportEntry(VirtualMachine.PowerState.PowerOff, "host")));
+        Assert.assertFalse(VirtualMachinePowerStateSyncImpl.isRunningCloudStackInstance(null, on));
+    }
 }

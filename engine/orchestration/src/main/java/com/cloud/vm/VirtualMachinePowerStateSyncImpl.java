@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -54,6 +55,13 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject AlertManager _alertMgr;
 
     protected static final String UNKNOWN_INSTANCES_ALERT_SUBJECT = "Instances running on a host that CloudStack has no record of";
+
+    /**
+     * The names CloudStack gives the instances it creates: i-[account]-[id]-[suffix] for user instances and
+     * [prefix]-[id]-[suffix] for system VMs (r router, s secondary storage, v console proxy, b internal LB,
+     * l elastic LB, NS NetScaler VPX). See VirtualMachineName.
+     */
+    private static final Pattern CLOUDSTACK_INSTANCE_NAME = Pattern.compile("^(i-\\d+-\\d+|(r|s|v|b|l|NS)-\\d+)-.+$");
 
     private final Map<Long, Set<String>> unknownInstancesByHost = new ConcurrentHashMap<>();
 
@@ -220,12 +228,26 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             if (id != null) {
                 map.put(id, entry.getValue().getState());
             } else {
-                unknownInstanceNames.add(entry.getKey());
                 logger.debug("Unable to find matched VM in CloudStack DB. name: {} powerstate: {}", entry.getKey(), entry.getValue());
+                if (isRunningCloudStackInstance(entry.getKey(), entry.getValue())) {
+                    unknownInstanceNames.add(entry.getKey());
+                }
             }
         }
         reportUnknownInstances(hostId, unknownInstanceNames);
         return map;
+    }
+
+    /**
+     * Whether an entry the database has no record of is worth raising. A host report is not limited to CloudStack's
+     * own instances: VMware lists every VM on the host in any power state, including the worker VMs CloudStack creates
+     * and destroys for volume operations (named by a bare UUID) and anything else the vCenter places there, and a KVM
+     * host may run domains of its own. Only a powered-on instance carrying a CloudStack instance name can be one that
+     * CloudStack left running, everything else stays at debug level as before.
+     */
+    protected static boolean isRunningCloudStackInstance(String name, HostVmStateReportEntry entry) {
+        return name != null && entry != null && VirtualMachine.PowerState.PowerOn.equals(entry.getState())
+                && CLOUDSTACK_INSTANCE_NAME.matcher(name).matches();
     }
 
     /**
