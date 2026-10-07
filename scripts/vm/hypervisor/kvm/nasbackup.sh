@@ -144,6 +144,45 @@ qemu_agent_command() {
   virsh -c qemu:///system qemu-agent-command "$VM" "${timeout_args[@]}" "$1"
 }
 
+guest_fsfreeze_status() {
+  local response
+  response=$(qemu_agent_command '{"execute":"guest-fsfreeze-status"}' 2>>"$logFile") || return 1
+  grep -oE 'thawed|frozen' <<< "$response" | head -n 1
+}
+
+guest_agent_connected() {
+  local xml
+  xml=$(virsh -c qemu:///system dumpxml "$VM" 2>/dev/null) || return 1
+  grep -q "name='org.qemu.guest_agent.0' state='connected'" <<< "$xml"
+}
+
+# Thaws the guest filesystems. A thaw that times out on the host can still complete in the
+# guest, so each failure is checked against guest-fsfreeze-status before retrying. Succeeds
+# once the guest reports thawed, or when the freeze failed and the guest agent is not
+# connected, which means the freeze never reached the guest.
+thaw_guest() {
+  local freeze_ok=$1
+  local attempt response state
+  for ((attempt = 1; attempt <= 3; attempt++)); do
+    if response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
+      return 0
+    fi
+    log -e "Thaw attempt $attempt for vm $VM failed: $response"
+    state=$(guest_fsfreeze_status || true)
+    if [[ "$state" == "thawed" ]]; then
+      log -e "Guest filesystem of vm $VM reports thawed after the failed thaw"
+      return 0
+    fi
+    if [[ -z "$state" && $freeze_ok -eq 0 ]] && ! guest_agent_connected; then
+      log -e "Guest agent of vm $VM is not connected, so the failed freeze never reached the guest"
+      return 0
+    fi
+    sleep 5
+  done
+  echo "Failed to thaw the filesystem for vm $VM, guest filesystem state: ${state:-unknown}: $response"
+  return 1
+}
+
 backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
@@ -296,17 +335,9 @@ print(len(files))
     BACKUP_JOB_ACTIVE=1
   fi
 
-  if [[ $thaw -eq 1 ]]; then
-    if ! response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
-      if [[ $freeze_ok -eq 1 ]]; then
-        echo "Failed to thaw the filesystem for vm $VM: $response"
-        cleanup
-        exit 1
-      fi
-      # The freeze failed too, usually because the guest agent is unavailable, so this
-      # backup is already unquiesced and the failed thaw does not affect it.
-      log -e "Failed to thaw the filesystem for vm $VM after a failed freeze: $response"
-    fi
+  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
+    cleanup
+    exit 1
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
