@@ -19,16 +19,24 @@ package org.apache.cloudstack.cluster;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
+import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.vm.VMInstanceVO;
@@ -44,9 +52,21 @@ public class ClusterDrsPowerOrchestrationTest {
     private ServiceOfferingDao serviceOfferingDao;
     @Mock
     private OutOfBandManagementService outOfBandManagementService;
+    @Mock
+    private HostDao hostDao;
+    @Mock
+    private HostDetailsDao hostDetailsDao;
+    @Mock
+    private ClusterDrsPlanDao drsPlanDao;
 
     @InjectMocks
     private ClusterDrsServiceImpl drs = new ClusterDrsServiceImpl();
+
+    private ClusterVO cluster(long id) {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.lenient().when(cluster.getId()).thenReturn(id);
+        return cluster;
+    }
 
     private VMInstanceVO vm(long id, VirtualMachine.Type type, VirtualMachine.State state) {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
@@ -124,5 +144,79 @@ public class ClusterDrsPowerOrchestrationTest {
         HostVO h = host(21L);
         Mockito.when(outOfBandManagementService.isOutOfBandManagementEnabled(h)).thenThrow(new RuntimeException("boom"));
         Assert.assertFalse(drs.isPowerManageable(h));
+    }
+
+    @Test
+    public void powerOffPersistsWakeMarkerBeforeThePowerOff() {
+        HostVO h = host(30L);
+        Mockito.when(hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h)).thenReturn(true);
+
+        drs.powerOffHost(h, cluster(1L));
+
+        // the durable wake marker must be written BEFORE the irreversible power-off, so a crash in between
+        // still leaves a host that can be recognised and powered back on.
+        InOrder inOrder = Mockito.inOrder(hostDao, hostDetailsDao, outOfBandManagementService);
+        inOrder.verify(hostDao).updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h);
+        inOrder.verify(hostDetailsDao).persist(Mockito.any(DetailVO.class));
+        inOrder.verify(outOfBandManagementService).executePowerOperation(Mockito.eq(h), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
+    }
+
+    @Test
+    public void powerOffAbortsWhenTheHostCannotBeDisabled() {
+        HostVO h = host(31L);
+        Mockito.when(hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h)).thenReturn(false);
+
+        drs.powerOffHost(h, cluster(1L));
+
+        // a host that could not be disabled must never be powered off, and must not be marked.
+        Mockito.verify(outOfBandManagementService, Mockito.never()).executePowerOperation(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(hostDetailsDao, Mockito.never()).persist(Mockito.any(DetailVO.class));
+    }
+
+    @Test
+    public void powerOffRollsBackMarkerAndDisableWhenThePowerOffFails() {
+        HostVO h = host(32L);
+        Mockito.when(hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h)).thenReturn(true);
+        Mockito.doThrow(new RuntimeException("oobm down")).when(outOfBandManagementService)
+                .executePowerOperation(Mockito.eq(h), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
+
+        try {
+            drs.powerOffHost(h, cluster(1L));
+            Assert.fail("expected the power-off failure to propagate");
+        } catch (RuntimeException expected) {
+            // expected
+        }
+
+        // on failure the marker is removed and the host is re-enabled, so it is not left disabled-and-marked.
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+        Mockito.verify(hostDao).updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, h);
+    }
+
+    @Test
+    public void powerOnKeepsTheMarkerAndDoesNotEnableUntilTheHostIsUp() {
+        HostVO h = host(33L);
+
+        drs.powerOnHost(h, cluster(1L));
+
+        // the power-on is issued, but the marker is kept and the host is not re-enabled: an unconfirmed power-on
+        // must not look done, or a host that never actually boots is stranded out of the wake set.
+        Mockito.verify(outOfBandManagementService).executePowerOperation(Mockito.eq(h), Mockito.eq(OutOfBandManagement.PowerOperation.ON), Mockito.any());
+        Mockito.verify(hostDetailsDao, Mockito.never()).remove(Mockito.anyLong());
+        Mockito.verify(hostDao, Mockito.never()).updateResourceState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void hasInFlightDrsPlanTrueWhenAPlanIsInProgress() {
+        Mockito.when(drsPlanDao.listByClusterIdAndStatus(5L, ClusterDrsPlan.Status.UNDER_REVIEW)).thenReturn(Collections.emptyList());
+        Mockito.when(drsPlanDao.listByClusterIdAndStatus(5L, ClusterDrsPlan.Status.READY)).thenReturn(Collections.emptyList());
+        Mockito.when(drsPlanDao.listByClusterIdAndStatus(5L, ClusterDrsPlan.Status.IN_PROGRESS))
+                .thenReturn(Collections.singletonList(Mockito.mock(ClusterDrsPlanVO.class)));
+        Assert.assertTrue(drs.hasInFlightDrsPlan(5L));
+    }
+
+    @Test
+    public void hasInFlightDrsPlanFalseWhenNoPlansArePending() {
+        Mockito.when(drsPlanDao.listByClusterIdAndStatus(Mockito.eq(5L), Mockito.any())).thenReturn(Collections.emptyList());
+        Assert.assertFalse(drs.hasInFlightDrsPlan(5L));
     }
 }

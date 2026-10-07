@@ -892,6 +892,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 || Boolean.FALSE.equals(ClusterDrsPowerManagementEnabled.valueIn(cluster.getId()))) {
             return;
         }
+        // Do not power-manage a cluster with a DRS migration plan still in flight: a host that is the source or
+        // destination of a pending or running migration must not be disabled or powered off underneath it.
+        if (hasInFlightDrsPlan(cluster.getId())) {
+            logger.debug("DRS power management: skipping cluster [{}] while a DRS migration plan is in flight.", cluster.getId());
+            return;
+        }
+
         final float lowThreshold = ClusterDrsPowerManagementLowThreshold.valueIn(cluster.getId());
         final float highThreshold = ClusterDrsPowerManagementHighThreshold.valueIn(cluster.getId());
         final boolean useCpu = "cpu".equals(getClusterDrsMetric(cluster.getId()));
@@ -900,14 +907,24 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<HostVO> upHosts = new ArrayList<>();
         List<HostVO> poweredOffByDrs = new ArrayList<>();
         for (HostVO host : routingHosts) {
-            if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
-                // A host that is Up+Enabled is in service; clear any stale DRS power marker left by a power-off
-                // that failed or by a host that came back by another path, so it is not excluded forever.
-                clearStalePowerMarker(host);
-                upHosts.add(host);
-            } else if (host.getStatus() != Status.Up && isPoweredOffByDrs(host)) {
-                // Only a host that is actually down (disconnected) and was powered off by DRS is a wake candidate;
-                // a host still Up while shutting down is in neither list.
+            if (host.getStatus() == Status.Up) {
+                if (isPoweredOffByDrs(host)) {
+                    // Our host is back in service: either a wake completed, or a power-off we issued never took
+                    // effect (command accepted but the host stayed up). Re-enable it if we had disabled it, drop
+                    // the marker, and return it to the capacity pool. Keying only on Up avoids leaving such a host
+                    // stranded Disabled and marked, in neither list, forever.
+                    if (host.getResourceState() == ResourceState.Disabled) {
+                        hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
+                    }
+                    clearStalePowerMarker(host);
+                    upHosts.add(host);
+                } else if (host.getResourceState() == ResourceState.Enabled) {
+                    upHosts.add(host);
+                }
+                // Up but Disabled by someone other than DRS: leave it alone, it is not ours to schedule onto.
+            } else if (isPoweredOffByDrs(host)) {
+                // Down and marked by DRS: a wake candidate. The marker is kept across the wake (power-on is
+                // idempotent) and cleared only once the host is actually Up again, above.
                 poweredOffByDrs.add(host);
             }
         }
@@ -1002,9 +1019,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
             Ternary<Long, Long, Long> cap = capacityMap.get(host.getId());
             if (cap != null) {
-                // Free = total - (used + reserved), consistent with the release decision, so evacuated VMs are not
-                // placed onto capacity another host is holding for HA/allocation reservations.
-                hostFree.put(host.getId(), (double) cap.third() - (cap.first() + cap.second()));
+                // Placeable room = (high threshold of total) - (used + reserved), floored at zero. Capping each
+                // destination at the high threshold keeps per-host placement consistent with the aggregate release
+                // decision, so draining a host never pushes another one past the threshold it is meant to respect.
+                double placeable = (double) highThreshold * cap.third() - (cap.first() + cap.second());
+                hostFree.put(host.getId(), Math.max(0d, placeable));
             }
         }
 
@@ -1216,29 +1235,43 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
     }
 
+    protected boolean hasInFlightDrsPlan(long clusterId) {
+        return !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.UNDER_REVIEW).isEmpty()
+                || !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.READY).isEmpty()
+                || !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.IN_PROGRESS).isEmpty();
+    }
+
     protected void powerOffHost(HostVO host, ClusterVO cluster) {
         logger.info("DRS power management: cluster [{}] is under-utilized; disabling and powering off empty host [{}].", cluster.getId(), host.getId());
         // Disable first so CloudStack stops scheduling to the host and does not treat the imminent agent
-        // disconnect as a failure (host monitor / HA). The host also drops out of the capacity accounting at once.
-        hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, host);
+        // disconnect as a failure (host monitor / HA). Abort if the transition did not take effect, so the
+        // host is never powered off while CloudStack still believes it is schedulable.
+        if (!hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, host)) {
+            logger.warn("DRS power management: could not disable host [{}]; skipping power-off.", host.getId());
+            return;
+        }
+        // Record the durable wake intent BEFORE the irreversible power-off. If the management server dies between
+        // the power-off and here, the host is still recognised on the next poll and powered back on, rather than
+        // left off forever with no marker.
+        DetailVO marker = new DetailVO(host.getId(), DRS_POWER_STATE_DETAIL, DRS_POWER_STATE_OFF);
+        hostDetailsDao.persist(marker);
         try {
             outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.OFF, null);
         } catch (Exception e) {
-            // Power-off failed: undo the disable so the host stays usable, and do not mark it.
+            // Power-off failed: undo the marker and the disable so the host stays in service.
+            hostDetailsDao.remove(marker.getId());
             hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
             throw e;
         }
-        hostDetailsDao.persist(new DetailVO(host.getId(), DRS_POWER_STATE_DETAIL, DRS_POWER_STATE_OFF));
     }
 
     protected void powerOnHost(HostVO host, ClusterVO cluster) {
-        logger.info("DRS power management: cluster [{}] is over-utilized; powering on and re-enabling host [{}].", cluster.getId(), host.getId());
+        logger.info("DRS power management: cluster [{}] is over-utilized; powering on host [{}].", cluster.getId(), host.getId());
+        // Issue the power-on but keep the marker and leave the host Disabled: the host is still down until its
+        // agent reconnects, and an accepted-but-unconfirmed power-on must not look done. The classification loop
+        // re-enables the host and clears the marker only once it is actually Up. Power-on is idempotent, so a host
+        // still booting is simply re-issued the command on a later poll until it connects.
         outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.ON, null);
-        hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
-        DetailVO detail = hostDetailsDao.findDetail(host.getId(), DRS_POWER_STATE_DETAIL);
-        if (detail != null) {
-            hostDetailsDao.remove(detail.getId());
-        }
     }
 
     @Override
