@@ -3755,6 +3755,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         boolean liveMigrateVolume = false;
         boolean srcAndDestOnStorPool = false;
+        boolean srcAndDestOnRBD = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
         VMInstanceVO vm = null;
@@ -3795,12 +3796,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
-                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
+                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo) && isSourceOrDestNotOnRBD(srcStoragePoolVO, destinationStoragePoolVo)) {
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
                     srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
+                    srcAndDestOnRBD = isSourceAndDestOnRBD(srcStoragePoolVO, destinationStoragePoolVo);
                 }
             }
 
@@ -3814,7 +3816,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcAndDestOnRBD && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -3993,6 +3995,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private boolean isSourceAndDestOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
         return storagePoolVO.getPoolType() == Storage.StoragePoolType.StorPool
                 && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.StorPool;
+    }
+
+    private boolean isSourceOrDestNotOnRBD(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
+        return storagePoolVO.getPoolType() != Storage.StoragePoolType.RBD
+                || destinationStoragePoolVo.getPoolType() != Storage.StoragePoolType.RBD;
+    }
+
+    private boolean isSourceAndDestOnRBD(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
+        return storagePoolVO.getPoolType() == Storage.StoragePoolType.RBD
+                && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.RBD;
     }
 
     /**

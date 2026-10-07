@@ -26,6 +26,7 @@ import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.disconnecthook.VolumeMigrationCancelHook;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
@@ -56,6 +58,8 @@ import org.libvirt.TypedUlongParameter;
 import org.libvirt.LibvirtException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -78,8 +82,10 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
 
         MigrateVolumeAnswer answer;
-        if (srcPrimaryDataStore.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        if (Objects.equals(Storage.StoragePoolType.PowerFlex, srcPrimaryDataStore.getPoolType())) {
             answer = migratePowerFlexVolume(command, libvirtComputingResource);
+        } else if (Objects.equals(Storage.StoragePoolType.RBD, srcPrimaryDataStore.getPoolType())) {
+            answer = migrateRBDVolume(command, libvirtComputingResource);
         } else {
             answer = migrateRegularVolume(command, libvirtComputingResource);
         }
@@ -134,7 +140,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 destSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
             }
 
-            String diskdef = generateDestinationDiskXML(dm, srcVolumeId, diskFilePath, destSecretUUID);
+            String diskdef = generateDestinationDiskXMLForPowerFlex(dm, srcVolumeId, diskFilePath, destSecretUUID);
             destDiskLabel = generateDestinationDiskLabel(diskdef);
 
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
@@ -249,7 +255,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         return diskLabel;
     }
 
-    protected String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+    protected String generateDestinationDiskXMLForPowerFlex(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
         final String domXml = dm.getXMLDesc(0);
 
         DocumentBuilderFactory dbFactory = ParserUtils.getSaferDocumentBuilderFactory();
@@ -373,5 +379,200 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         }
 
         return new MigrateVolumeAnswer(command, true, null, destPath);
+    }
+
+
+    protected MigrateVolumeAnswer migrateRBDVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        final String vmName = command.getAttachedVmName();
+
+        VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
+        PrimaryDataStoreTO sourcePool = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
+        final String sourceFilePath = String.format("%s/%s", sourcePool.getPath(), srcVolumeObjectTO.getPath());
+
+        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
+        PrimaryDataStoreTO destPool = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
+        final String destFilePath = String.format("%s/%s", destPool.getPath(), destVolumeObjectTO.getPath());
+
+        String destDiskLabel = null;
+
+        VolumeMigrationCancelHook cancelHook = null;
+
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+
+        Domain dm = null;
+        MigrateVolumeAnswer answer = null;
+        try {
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+            Connect conn = libvirtUtilitiesHelper.getConnection();
+            dm = libvirtComputingResource.getDomain(conn, vmName);
+            if (dm == null) {
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find vm: " + vmName, null);
+            }
+
+            DomainInfo.DomainState domainState = dm.getInfo().state ;
+            if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
+            }
+
+            KVMStoragePool pool = storagePoolMgr.getStoragePool(destPool.getPoolType(), destPool.getUuid());
+            pool.connectPhysicalDisk(destVolumeObjectTO.getPath(), null);
+
+            String srcSecretUUID = null;
+            String destSecretUUID = null;
+            if (ArrayUtils.isNotEmpty(destVolumeObjectTO.getPassphrase())) {
+                srcSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, srcVolumeObjectTO.getPath(), srcVolumeObjectTO.getPassphrase());
+                destSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
+            }
+
+            String diskdef = generateDestinationDiskXMLForRBD(dm, sourceFilePath, destFilePath, destSecretUUID, pool);
+            destDiskLabel = generateDestinationDiskLabel(diskdef);
+
+            TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
+            TypedParameter[] parameters = new TypedParameter[1];
+            parameters[0] = parameter;
+
+            cancelHook = new VolumeMigrationCancelHook(dm, destDiskLabel);
+            libvirtComputingResource.addDisconnectHook(cancelHook);
+
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING_IN_BACKEND);
+
+            dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.SHALLOW);
+            logger.info(String.format("Block copy has started for the volume %s : %s to %s", destDiskLabel, sourceFilePath, destFilePath));
+
+            answer = checkBlockJobStatus(command, dm, destDiskLabel, sourceFilePath, destFilePath, libvirtComputingResource, conn, srcSecretUUID);
+            if (answer != null) {
+                if (answer.getResult()) {
+                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
+                } else {
+                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
+                }
+            }
+            if (answer != null && answer.getResult()) {
+                answer = new MigrateVolumeAnswer(command, true, null, destVolumeObjectTO.getPath());
+            }
+            return answer;
+        } catch (Exception e) {
+            String msg = "Migrate volume failed due to " + e.toString();
+            logger.warn(msg, e);
+            if (destDiskLabel != null) {
+                try {
+                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
+                } catch (LibvirtException ex) {
+                    logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                }
+            }
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
+            return new MigrateVolumeAnswer(command, false, msg, null);
+        } finally {
+            if (cancelHook != null) {
+                libvirtComputingResource.removeDisconnectHook(cancelHook);
+            }
+            if (answer != null && answer.getResult()) {
+                // Remove old volume after successful migration
+                KVMStoragePool libvirtSourcePool = storagePoolMgr.getStoragePool(sourcePool.getPoolType(), sourcePool.getUuid());
+                libvirtSourcePool.deletePhysicalDisk(srcVolumeObjectTO.getPath(), Storage.ImageFormat.RAW);
+            }
+            if (dm != null) {
+                try {
+                    dm.free();
+                } catch (LibvirtException l) {
+                    logger.trace("Ignoring libvirt error.", l);
+                }
+            }
+        }
+    }
+
+    protected String generateDestinationDiskXMLForRBD(Domain dm, String srcVolumePath, String diskFilePath, String destSecretUUID, KVMStoragePool pool) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+        final String domXml = dm.getXMLDesc(0);
+
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.parse(new ByteArrayInputStream(domXml.getBytes("UTF-8")));
+        doc.getDocumentElement().normalize();
+
+        NodeList disks = doc.getElementsByTagName("disk");
+
+        for (int i = 0; i < disks.getLength(); i++) {
+            Node diskNode = disks.item(i);
+            Node diskTypeAttribute = diskNode.getAttributes().getNamedItem("type");
+            if (diskTypeAttribute == null || !diskTypeAttribute.getNodeValue().equalsIgnoreCase(LibvirtVMDef.DiskDef.DiskType.NETWORK.toString())) {
+                continue;
+            }
+
+            NodeList diskChildNodes = diskNode.getChildNodes();
+            boolean found = false;
+            for (int j = 0; j < diskChildNodes.getLength(); j++) {
+                Node diskChildNode = diskChildNodes.item(j);
+
+                if ("source".equals(diskChildNode.getNodeName())) {
+                    NamedNodeMap diskNodeAttributes = diskChildNode.getAttributes();
+                    Node diskNodeAttribute = diskNodeAttributes.getNamedItem("protocol");
+                    if (diskNodeAttribute == null || !diskNodeAttribute.getNodeValue().equalsIgnoreCase(LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString())) {
+                        logger.debug("Skipped disk node with protocol: " + diskNodeAttribute);
+                        continue;
+                    }
+                    diskNodeAttribute = diskNodeAttributes.getNamedItem("name");
+                    if (diskNodeAttribute == null || !diskNodeAttribute.getNodeValue().contains(srcVolumePath)) {
+                        logger.debug("Skipped disk node with name: " + diskNodeAttribute);
+                        continue;
+                    }
+
+                    logger.debug(String.format("Found disk node with source RBD volume path %s: %s", srcVolumePath, diskNodeAttribute));
+                    diskNode.removeChild(diskChildNode);
+                    Element newChildSourceNode = doc.createElement("source");
+                    newChildSourceNode.setAttribute("protocol", LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString().toLowerCase());
+                    newChildSourceNode.setAttribute("name", diskFilePath);
+                    for (String sourceHost : pool.getSourceHost().split(",")) {
+                        Element newChildDiskNodeForHost = doc.createElement("host");
+                        newChildDiskNodeForHost.setAttribute("name", sourceHost);
+                        if (pool.getSourcePort() != 0) {
+                            newChildDiskNodeForHost.setAttribute("port", String.valueOf(pool.getSourcePort()));
+                        }
+                        newChildSourceNode.appendChild(newChildDiskNodeForHost);
+                    }
+                    diskNode.appendChild(newChildSourceNode);
+
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                for (int j = 0; j < diskChildNodes.getLength(); j++) {
+                    Node diskChildNode = diskChildNodes.item(j);
+                    if ("auth".equals(diskChildNode.getNodeName())) {
+                        NamedNodeMap diskNodeAttributes = diskChildNode.getAttributes();
+                        Node diskNodeAttribute = diskNodeAttributes.getNamedItem("username");
+                        if (diskNodeAttribute != null) {
+                            diskNodeAttribute.setNodeValue(pool.getAuthUserName());
+                        }
+                        for (int m = 0;  m < diskChildNode.getChildNodes().getLength(); m++) {
+                            Node authChild = diskChildNode.getChildNodes().item(m);
+                            if ("secret".equals(authChild.getNodeName())) {
+                                NamedNodeMap secretAttributes = authChild.getAttributes();
+                                Node uuidAttribute = secretAttributes.getNamedItem("uuid");
+                                uuidAttribute.setTextContent(pool.getAuthSecretUUID());
+                            }
+                        }
+                    } else if ("encryption".equals(diskChildNode.getNodeName())) {
+                        for (int n = 0; n < diskChildNode.getChildNodes().getLength(); n++) {
+                            Node encryptionChild = diskChildNode.getChildNodes().item(n);
+                            if ("secret".equals(encryptionChild.getNodeName())) {
+                                NamedNodeMap secretAttributes = encryptionChild.getAttributes();
+                                Node uuidAttribute = secretAttributes.getNamedItem("uuid");
+                                uuidAttribute.setTextContent(destSecretUUID);
+                            }
+                        }
+                    }
+                }
+
+                StringWriter diskSection = new StringWriter();
+                Transformer xformer = TransformerFactory.newInstance().newTransformer();
+                xformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+                xformer.transform(new DOMSource(diskNode), new StreamResult(diskSection));
+
+                return diskSection.toString();
+            }
+        }
+        return null;
     }
 }

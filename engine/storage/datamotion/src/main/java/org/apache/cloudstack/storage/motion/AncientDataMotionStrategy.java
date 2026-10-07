@@ -642,6 +642,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
 
+        command.setSrcData(srcData.getTO());
+        command.setDestData(destData.getTO());
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);

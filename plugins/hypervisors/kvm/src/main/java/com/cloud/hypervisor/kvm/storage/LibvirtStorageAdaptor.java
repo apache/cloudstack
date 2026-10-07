@@ -606,6 +606,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     pool.setAuthSecret(secretValue);
                 }
             }
+            pool.setAuthSecretUUID(spd.getSecretUUID());
 
             /**
              * On large (RBD) storage pools it can take up to a couple of minutes
