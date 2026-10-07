@@ -1370,10 +1370,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             agentManager.disconnectWithoutInvestigation(host.getId(), Status.Event.ShutdownRequested);
             outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.OFF, null);
         } catch (Exception e) {
-            // Power-off failed: undo the marker and the disable so the host stays in service.
-            hostDetailsDao.remove(marker.getId());
-            hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
-            throw e;
+            // A failure response does not prove the host is still running: a chassis power-off can take effect and
+            // still report a timeout or error. Rather than roll back (which would strand a host that did power off
+            // as enabled and unmarked), leave it disabled and marked. The next poll reclaims it (re-enable, clear
+            // marker) if it is still up, or treats it as a DRS-powered-off host if it is actually down.
+            logger.warn("DRS power management: power-off command for host [{}] failed; leaving it disabled and marked for reconciliation on the next poll.",
+                    host.getId(), e);
         }
         drainingVmCountByHost.remove(host.getId());
     }

@@ -180,22 +180,18 @@ public class ClusterDrsPowerOrchestrationTest {
     }
 
     @Test
-    public void powerOffRollsBackMarkerAndDisableWhenThePowerOffFails() {
+    public void powerOffLeavesHostDisabledAndMarkedWhenThePowerOffFails() {
         HostVO h = host(32L);
         Mockito.when(hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, h)).thenReturn(true);
         Mockito.doThrow(new RuntimeException("oobm down")).when(outOfBandManagementService)
                 .executePowerOperation(Mockito.eq(h), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
 
-        try {
-            drs.powerOffHost(h, cluster(1L));
-            Assert.fail("expected the power-off failure to propagate");
-        } catch (RuntimeException expected) {
-            // expected
-        }
+        drs.powerOffHost(h, cluster(1L));
 
-        // on failure the marker is removed and the host is re-enabled, so it is not left disabled-and-marked.
-        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
-        Mockito.verify(hostDao).updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, h);
+        // a failed power-off must not roll back: the host stays disabled and marked so the next poll reconciles it,
+        // because the failure does not prove the chassis is still on. No marker removal, no re-enable.
+        Mockito.verify(hostDetailsDao, Mockito.never()).remove(Mockito.anyLong());
+        Mockito.verify(hostDao, Mockito.never()).updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, h);
     }
 
     @Test
