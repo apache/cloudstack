@@ -1720,10 +1720,10 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
-      // Normalize cidrlist: replace spaces with commas and clean up
       this.editRuleDetails.keepalive = this.selectedRule.keepalive
       this.editRuleDetails.idletimeout = this.selectedRule.idletimeout
       this.editRuleDetails.keepalivetimeout = this.selectedRule.keepalivetimeout
+      // Normalize cidrlist: replace spaces with commas and clean up
       this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
         .split(/[\s,]+/) // Split on spaces or commas
         .map(c => c.trim())
@@ -1741,9 +1741,16 @@ export default {
           cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
         })
       }
+      // A blank field sends nothing, which the API reads as keep the current value. When a
+      // field the rule had set is now blank, ask the API to drop the rule's own settings;
+      // the ones still filled in are sent alongside and set again.
+      const isBlank = (value) => value === '' || value === null || value === undefined
       for (const key of ['keepalive', 'idletimeout', 'keepalivetimeout']) {
-        if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
+        if (isBlank(payload[key])) {
           delete payload[key]
+          if (!isBlank(this.selectedRule[key])) {
+            payload.cleanupconnectionsettings = true
+          }
         }
       }
       postAPI('updateLoadBalancerRule', payload).then(response => {
