@@ -695,10 +695,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         advanceStop(vm.getUuid(), VmDestroyForcestop.value());
         vm = _vmDao.findByUuid(vm.getUuid());
-
-        // advanceStop() returns without contacting the host when the database already has the instance as Stopped,
-        // Error, Destroyed or Expunging. The host may still be running it. Expunging is about to release its
-        // addresses and delete its volumes, so make sure no domain is left behind for it.
         ensureInstanceIsStoppedOnLastKnownHost(vm);
 
         try {
@@ -5572,15 +5568,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
 
-            // A missing report is not proof that the instance is gone, only that the host did not list it. Stop it
-            // on the host before giving up its resources, otherwise a still-running instance keeps its NICs and IP
-            // addresses while the database says they are free and they get handed to another instance.
             if (PowerState.PowerOff.equals(vm.getPowerState()) || PowerState.PowerReportMissing.equals(vm.getPowerState())) {
-                // force is false for a missing report. sendStop() swallows AgentUnavailableException and
-                // OperationTimedoutException and answers success when forced, and a host too busy to answer is
-                // exactly the condition that produced the stale report in the first place. Backing off and letting a
-                // later report decide is better than freeing an address on no evidence. A PowerOff report is the
-                // host stating the instance is down, so that path keeps its previous behaviour.
+                // forceStop only if the host reported the instance as powered off, not for a missing report.
                 final boolean forceStop = PowerState.PowerOff.equals(vm.getPowerState());
                 final VirtualMachineGuru vmGuru = getVmGuru(vm);
                 final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
