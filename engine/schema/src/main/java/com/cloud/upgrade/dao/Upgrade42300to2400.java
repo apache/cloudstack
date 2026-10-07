@@ -48,7 +48,6 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     }
 
     private void dropOldIndexes(Connection conn) {
-        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__multiple_columns_for_generic_search");
         DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
     }
 }
