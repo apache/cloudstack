@@ -165,7 +165,7 @@ enable_fwding() {
 enable_passive_ftp() {
   log_it "cloud: enabling passive FTP for guest VMs"
   # Linux 6.0 removed the nf_conntrack_helper sysctl, the ftp helper is
-  # attached to port 21 traffic by a raw table rule from CsAddress.py
+  # attached by raw table rules for static nat and port forwarding
   modprobe nf_nat_ftp
 }
 
