@@ -996,6 +996,8 @@ export default {
       diskOffering: {},
       affinityGroups: [],
       networks: [],
+      // networks seen across all pages, keyed by id - options.networks only holds the current page
+      networksCache: {},
       networksAdd: [],
       zone: {},
       sshKeyPairs: [],
@@ -1441,7 +1443,7 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === vnfAppConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(vnfAppConfig.affinitygroupids, option.id))
-        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(vnfAppConfig.networkids, option.id)))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(Object.values(this.networksCache), (option) => _.includes(vnfAppConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === vnfAppConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === vnfAppConfig.keypair)
@@ -2545,6 +2547,12 @@ export default {
                 }
                 param.opts = response
                 this.options[name] = response
+
+                if (name === 'networks') {
+                  for (const network of response) {
+                    this.networksCache[network.id] = network
+                  }
+                }
 
                 if (name === 'hypervisors') {
                   const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null

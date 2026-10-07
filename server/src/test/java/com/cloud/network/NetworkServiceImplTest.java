@@ -1469,7 +1469,7 @@ public class NetworkServiceImplTest {
         Mockito.when(network.getGuestType()).thenReturn(guestType);
         Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
         Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
-        Mockito.when(network.getVpcId()).thenReturn(vpcId);
+        Mockito.lenient().when(network.getVpcId()).thenReturn(vpcId);
         Mockito.when(network.getBroadcastDomainType()).thenReturn(broadcastType);
         Mockito.when(network.getBroadcastUri()).thenReturn(broadcastUri);
         Mockito.when(network.getState()).thenReturn(Network.State.Implemented);
@@ -1818,8 +1818,11 @@ public class NetworkServiceImplTest {
         service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
     }
 
-    @Test(expected = InvalidParameterValueException.class)
-    public void associateNetworkToNicFailsWhenRequestedIsolatedNetworkIsInADifferentVpc() throws Exception {
+    @Test
+    public void associateNetworkToNicAllowsRequestedIsolatedNetworkInADifferentVpc() throws Exception {
+        // same-VPC restriction was dropped: caller access (checkAccess) is the real authorization boundary here,
+        // identical to the one ordinary addNicToVirtualMachine already relies on, so a tier of an unrelated VPC
+        // (or a non-VPC network) is just as valid an association as a tier of the primary network's own VPC.
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
         UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
@@ -1829,8 +1832,13 @@ public class NetworkServiceImplTest {
         Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());
         NetworkVO otherVpcNetwork = mockNetwork(206L, Network.GuestType.Isolated, 1L, 1L, 901L, Networks.BroadcastDomainType.Vlan, vlanUri(1180));
         Mockito.when(networkDao.findById(206L)).thenReturn(otherVpcNetwork);
+        Mockito.when(ipAddressManagerMock.allocateGuestIP(otherVpcNetwork, null)).thenReturn("10.1.1.51");
 
-        service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
+        Nic result = service.associateNetworkToNic(mockAssociateCmd(11L, Arrays.asList(206L)));
+
+        Assert.assertNotNull(result);
+        Mockito.verify(nicNetworkMapDao).persist(Mockito.argThat(map ->
+                map.getNicId() == 11L && map.getNetworkId() == 206L && "10.1.1.51".equals(map.getIp4Address())));
     }
 
     @Test(expected = InvalidParameterValueException.class)

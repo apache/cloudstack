@@ -1480,11 +1480,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     "All networks associated with one nic must be in the same zone; network %s is not in the same zone as %s",
                     network.getUuid(), primaryNetwork.getUuid()));
         }
-        if (primaryNetwork.getGuestType() == Network.GuestType.Isolated && !Objects.equals(network.getVpcId(), primaryNetwork.getVpcId())) {
-            throw new InvalidParameterValueException(String.format(
-                    "A nic may only be associated with tiers of the same VPC (or all non-VPC networks); network %s does not match the VPC of %s",
-                    network.getUuid(), primaryNetwork.getUuid()));
-        }
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
             throw new InvalidParameterValueException(String.format("Multi-VLAN trunk nics only support VLAN-isolated networks; network %s is %s",
                     network.getUuid(), network.getBroadcastDomainType()));
