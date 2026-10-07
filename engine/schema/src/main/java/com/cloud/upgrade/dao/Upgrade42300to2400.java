@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import java.sql.Connection;
+
 public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
@@ -26,5 +28,27 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     @Override
     public String getUpgradedVersion() {
         return "24.0.0";
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        addIndexes(conn);
+        dropOldIndexes(conn);
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__archived__created__id",
+                "archived", "created", "id");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__account_id__archived__created__id",
+                "account_id", "archived", "created", "id");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__domain_id__archived__created__id",
+                "domain_id", "archived", "created", "id");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__resource_type__resource_id__archived__created__id",
+                "resource_type", "resource_id", "archived", "created", "id");
+    }
+
+    private void dropOldIndexes(Connection conn) {
+        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__multiple_columns_for_generic_search");
+        DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
     }
 }
