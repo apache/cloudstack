@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -153,9 +155,10 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
             throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
         }
 
-        String verifiedEmail = verifiedEmailCache.asMap().remove(verifiedEmailKey(providerName, secretCode, domainId));
+        OauthProviderVO registration = findRegistration(providerName, domainId);
+        String verifiedEmail = verifiedEmailCache.asMap().remove(verifiedEmailKey(registration, secretCode));
         if (verifiedEmail == null) {
-            verifiedEmail = resolveEmail(secretCode, domainId, providerName);
+            verifiedEmail = resolveEmail(registration, secretCode);
         }
         if (StringUtils.isBlank(verifiedEmail) || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
@@ -166,17 +169,17 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
 
     @Override
     public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName) {
-        String email = resolveEmail(secretCode, domainId, providerName);
-        verifiedEmailCache.put(verifiedEmailKey(providerName, secretCode, domainId), email);
+        OauthProviderVO registration = findRegistration(providerName, domainId);
+        String email = resolveEmail(registration, secretCode);
+        verifiedEmailCache.put(verifiedEmailKey(registration, secretCode), email);
         return email;
     }
 
-    protected String resolveEmail(String secretCode, Long domainId, String providerName) {
-        OauthProviderVO provider = findRegistration(providerName, domainId);
-        OIDCMetadata metadata = getMetadata(provider);
-        String idToken = exchangeAuthorizationCode(secretCode, provider, metadata);
+    protected String resolveEmail(OauthProviderVO registration, String secretCode) {
+        OIDCMetadata metadata = getMetadata(registration);
+        String idToken = exchangeAuthorizationCode(secretCode, registration, metadata);
 
-        return validateAndExtractEmail(idToken, provider, metadata);
+        return validateAndExtractEmail(idToken, registration, metadata);
     }
 
     @Override
@@ -184,8 +187,8 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         return null;
     }
 
-    private String verifiedEmailKey(String providerName, String secretCode, Long domainId) {
-        return DigestUtils.sha256Hex(providerName + ":" + domainId + ":" + secretCode);
+    private String verifiedEmailKey(OauthProviderVO registration, String secretCode) {
+        return DigestUtils.sha256Hex(registration.getUuid() + ":" + secretCode);
     }
 
     protected OauthProviderVO findRegistration(String providerName, Long domainId) {
@@ -279,18 +282,38 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         if (StringUtils.isBlank(email)) {
             throw new CloudAuthenticationException("The id_token carries no email claim");
         }
-        if (!isEmailVerified(claims)) {
-            throw new CloudAuthenticationException("The identity provider has not verified the email address in the id_token");
+        Boolean emailVerified = emailVerifiedClaim(claims);
+        if (Boolean.FALSE.equals(emailVerified)) {
+            throw new CloudAuthenticationException("The identity provider has marked the email address in the id_token as not verified");
+        }
+        if (emailVerified == null && isVerifiedEmailRequired(provider)) {
+            throw new CloudAuthenticationException(String.format(
+                    "The identity provider did not assert that the email address is verified; set %s to false for this domain to accept it",
+                    OAuth2AuthManager.OIDCRequireVerifiedEmail.key()));
         }
         return email;
     }
 
-    private boolean isEmailVerified(JwtClaims claims) {
+    private Boolean emailVerifiedClaim(JwtClaims claims) {
         Object verified = claims.getClaim("email_verified");
         if (verified instanceof Boolean) {
             return (Boolean) verified;
         }
-        return verified instanceof String && Boolean.parseBoolean((String) verified);
+        if (verified instanceof String) {
+            String value = ((String) verified).trim();
+            if ("true".equalsIgnoreCase(value)) {
+                return Boolean.TRUE;
+            }
+            if ("false".equalsIgnoreCase(value)) {
+                return Boolean.FALSE;
+            }
+        }
+        return null;
+    }
+
+    protected boolean isVerifiedEmailRequired(OauthProviderVO provider) {
+        return Boolean.TRUE.equals(
+                OAuth2AuthManager.OIDCRequireVerifiedEmail.valueInScope(ConfigKey.Scope.Domain, provider.getDomainId(), false));
     }
 
     protected void verifySignature(JwsJwtCompactConsumer consumer, OIDCMetadata metadata, OauthProviderVO provider) {
@@ -344,7 +367,8 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
             String body = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().getStatusCode() != 200) {
-                throw new CloudRuntimeException(String.format("%s: %s", failureMessage, body));
+                logger.warn("{} (HTTP {}): {}", failureMessage, response.getStatusLine().getStatusCode(), body);
+                throw new CloudRuntimeException(failureMessage);
             }
             return body;
         } catch (IOException e) {

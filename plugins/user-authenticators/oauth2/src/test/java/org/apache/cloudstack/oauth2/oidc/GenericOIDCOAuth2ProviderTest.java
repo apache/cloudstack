@@ -19,8 +19,10 @@
 package org.apache.cloudstack.oauth2.oidc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -48,6 +50,10 @@ import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactProducer;
 import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.After;
 import org.junit.Before;
@@ -360,7 +366,7 @@ public class GenericOIDCOAuth2ProviderTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyUserRejectsAnEmailThatDoesNotMatchTheToken() {
         when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
-        doReturn("someone-else@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        doReturn("someone-else@example.com").when(provider).resolveEmail(registration, "code");
 
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
     }
@@ -371,29 +377,49 @@ public class GenericOIDCOAuth2ProviderTest {
      */
     @Test
     public void testLoginAfterVerificationDoesNotRedeemTheCodeAgain() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
+        doReturn("user@example.com").when(provider).resolveEmail(registration, "code");
 
         assertEquals("user@example.com", provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION));
         assertTrue(provider.verifyUser("user@example.com", "code", null, REGISTRATION));
 
-        verify(provider, times(1)).resolveEmail("code", null, REGISTRATION);
+        verify(provider, times(1)).resolveEmail(registration, "code");
+    }
+
+    /**
+     * verifyOAuthCodeAndGetUser can resolve the code with no domain while the login that follows lands on a
+     * concrete domain. The cached email therefore has to key on the resolved registration, not the request
+     * domain, or the single use authorization code would be redeemed a second time and rejected.
+     */
+    @Test
+    public void testCachedEmailIsReusedWhenTheLoginResolvesToADifferentDomainScope() {
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, 1L)).thenReturn(registration);
+        doReturn("user@example.com").when(provider).resolveEmail(registration, "code");
+
+        assertEquals("user@example.com", provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION));
+        assertTrue(provider.verifyUser("user@example.com", "code", 1L, REGISTRATION));
+
+        verify(provider, times(1)).resolveEmail(registration, "code");
     }
 
     @Test
     public void testVerifiedCodeIsServedFromTheCacheOnlyOnce() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
+        doReturn("user@example.com").when(provider).resolveEmail(registration, "code");
 
         provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, REGISTRATION);
 
-        verify(provider, times(2)).resolveEmail("code", null, REGISTRATION);
+        verify(provider, times(2)).resolveEmail(registration, "code");
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testAnotherCodeIsNeverAnsweredFromTheCache() {
-        doReturn("user@example.com").when(provider).resolveEmail("user-code", null, REGISTRATION);
-        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("unrelated-code", null, REGISTRATION);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
+        doReturn("user@example.com").when(provider).resolveEmail(registration, "user-code");
+        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail(registration, "unrelated-code");
 
         provider.verifySecretCodeAndFetchEmail("user-code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "unrelated-code", null, REGISTRATION);
@@ -401,8 +427,14 @@ public class GenericOIDCOAuth2ProviderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testCachedCodeIsScopedToItsRegistration() {
-        doReturn("user@example.com").when(provider).resolveEmail("code", null, REGISTRATION);
-        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail("code", null, "other-idp");
+        OauthProviderVO other = new OauthProviderVO();
+        other.setProvider("other-idp");
+        other.setType(GenericOIDCOAuth2Provider.OIDC_PROVIDER_TYPE);
+        other.setIssuerUrl(ISSUER);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback(REGISTRATION, null)).thenReturn(registration);
+        when(oauthProviderDao.findByProviderAndDomainWithGlobalFallback("other-idp", null)).thenReturn(other);
+        doReturn("user@example.com").when(provider).resolveEmail(registration, "code");
+        doThrow(new CloudRuntimeException("invalid_grant")).when(provider).resolveEmail(other, "code");
 
         provider.verifySecretCodeAndFetchEmail("code", null, REGISTRATION);
         provider.verifyUser("user@example.com", "code", null, "other-idp");
@@ -411,5 +443,75 @@ public class GenericOIDCOAuth2ProviderTest {
     @Test(expected = CloudAuthenticationException.class)
     public void testVerifyUserRejectsEmptyArguments() {
         provider.verifyUser("", "", null, REGISTRATION);
+    }
+
+    /**
+     * Some conformant providers, such as Microsoft Entra ID, never send the email_verified claim. The domain
+     * can opt out of requiring it, and then a token without the claim is accepted.
+     */
+    @Test
+    public void testAbsentEmailVerifiedIsAcceptedWhenTheDomainDoesNotRequireIt() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+        doReturn(false).when(provider).isVerifiedEmailRequired(registration);
+
+        assertEquals("user@example.com",
+                provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com", null), registration, metadata()));
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testAbsentEmailVerifiedIsRejectedWhenTheDomainRequiresIt() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+        doReturn(true).when(provider).isVerifiedEmailRequired(registration);
+
+        provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com", null), registration, metadata());
+    }
+
+    /**
+     * An explicit email_verified=false is the provider telling us the address is not verified, so it is
+     * rejected regardless of the domain policy.
+     */
+    @Test(expected = CloudAuthenticationException.class)
+    public void testExplicitlyUnverifiedEmailIsRejectedEvenWhenTheDomainDoesNotRequireVerification() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        publishKey(keys, "key-1");
+        doReturn(false).when(provider).isVerifiedEmailRequired(registration);
+
+        provider.validateAndExtractEmail(signedIdToken(keys, "key-1", "user@example.com", false), registration, metadata());
+    }
+
+    @Test
+    public void testHttpGetDoesNotLeakTheProviderBodyOnFailure() throws Exception {
+        CloseableHttpResponse response = Mockito.mock(CloseableHttpResponse.class);
+        StatusLine statusLine = Mockito.mock(StatusLine.class);
+        when(statusLine.getStatusCode()).thenReturn(500);
+        when(response.getStatusLine()).thenReturn(statusLine);
+        when(response.getEntity()).thenReturn(new StringEntity("sensitive idp body"));
+        when(httpClient.execute(any(HttpGet.class))).thenReturn(response);
+
+        try {
+            provider.httpGet(ISSUER + "/jwks", "Unable to read the signing keys from " + ISSUER + "/jwks");
+            fail("expected the fetch to fail");
+        } catch (CloudRuntimeException e) {
+            assertEquals("Unable to read the signing keys from " + ISSUER + "/jwks", e.getMessage());
+            assertFalse(e.getMessage().contains("sensitive idp body"));
+        }
+    }
+
+    private String signedIdToken(KeyPair keys, String keyId, String email, Boolean emailVerified) {
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(ISSUER);
+        claims.setAudiences(Collections.singletonList(CLIENT_ID));
+        claims.setSubject("12345");
+        claims.setExpiryTime(System.currentTimeMillis() / 1000L + 3600);
+        claims.setClaim("email", email);
+        if (emailVerified != null) {
+            claims.setClaim("email_verified", emailVerified);
+        }
+        JwsHeaders headers = new JwsHeaders(SignatureAlgorithm.RS256);
+        headers.setKeyId(keyId);
+        return new JwsJwtCompactProducer(headers, claims)
+                .signWith(JwsUtils.getPrivateKeySignatureProvider(keys.getPrivate(), SignatureAlgorithm.RS256));
     }
 }
