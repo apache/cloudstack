@@ -284,6 +284,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     NicSecondaryIpDao _nicSecondaryIpDao;
 
     private static final int DNS_PORT = 53;
+    private static final List<String> CONNECTION_SETTINGS = List.of(LoadBalancer.KEEPALIVE, LoadBalancer.IDLE_TIMEOUT, LoadBalancer.KEEPALIVE_TIMEOUT);
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
     @Override
@@ -2300,29 +2301,61 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
-    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout) {
+    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup) {
         validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, idleTimeout);
         validateConnectionTimeout(ApiConstants.KEEPALIVE_TIMEOUT, keepAliveTimeout);
 
-        boolean changed = storeDetail(lbRuleId, LoadBalancer.KEEPALIVE, keepAlive == null ? null : keepAlive.toString());
-        changed |= storeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT, idleTimeout == null ? null : idleTimeout.toString());
-        changed |= storeDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout == null ? null : keepAliveTimeout.toString());
-        return changed;
+        Map<String, String> current = getConnectionSettings(lbRuleId);
+        Map<String, String> wanted = cleanup ? new HashMap<>() : new HashMap<>(current);
+        if (keepAlive != null) {
+            wanted.put(LoadBalancer.KEEPALIVE, keepAlive.toString());
+        }
+        if (idleTimeout != null) {
+            wanted.put(LoadBalancer.IDLE_TIMEOUT, idleTimeout.toString());
+        }
+        if (keepAliveTimeout != null) {
+            wanted.put(LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout.toString());
+        }
+        if (wanted.equals(current)) {
+            return false;
+        }
+        setConnectionSettings(lbRuleId, wanted);
+        return true;
     }
 
-    private boolean storeDetail(long lbRuleId, String key, String value) {
-        if (value == null) {
-            return false;
+    /**
+     * The per rule settings the rule holds itself, keyed by detail name. A setting the rule
+     * inherits is absent.
+     */
+    protected Map<String, String> getConnectionSettings(long lbRuleId) {
+        Map<String, String> settings = new HashMap<>();
+        for (String key : CONNECTION_SETTINGS) {
+            FirewallRuleDetailVO detail = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (detail != null) {
+                settings.put(key, detail.getValue());
+            }
         }
-        FirewallRuleDetailVO existing = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
-        if (existing != null && value.equals(existing.getValue())) {
-            return false;
+        return settings;
+    }
+
+    /**
+     * Makes the rule hold exactly these settings: a key in the map is stored, a key missing
+     * from it is removed so the rule inherits it again.
+     */
+    protected void setConnectionSettings(long lbRuleId, Map<String, String> settings) {
+        for (String key : CONNECTION_SETTINGS) {
+            String value = settings.get(key);
+            FirewallRuleDetailVO existing = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (existing != null && Objects.equals(value, existing.getValue())) {
+                continue;
+            }
+            if (existing != null) {
+                _firewallRuleDetailsDao.removeDetail(lbRuleId, key);
+            }
+            if (value != null) {
+                _firewallRuleDetailsDao.addDetail(lbRuleId, key, value, true);
+            }
         }
-        if (existing != null) {
-            _firewallRuleDetailsDao.removeDetail(lbRuleId, key);
-        }
-        _firewallRuleDetailsDao.addDetail(lbRuleId, key, value, true);
-        return true;
     }
 
     @Override
@@ -2382,7 +2415,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setCidrList(cidrListStr);
         }
 
-        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout());
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout(),
+                cmd.isCleanupConnectionSettings());
 
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);

@@ -335,7 +335,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                         getCidrList());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
-            _lbService.updateLoadBalancerConnectionSettings(result.getId(), getKeepAlive(), getIdleTimeout(), getKeepAliveTimeout());
+            _lbService.updateLoadBalancerConnectionSettings(result.getId(), getKeepAlive(), getIdleTimeout(), getKeepAliveTimeout(), false);
         } catch (NetworkRuleConflictException e) {
             logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());

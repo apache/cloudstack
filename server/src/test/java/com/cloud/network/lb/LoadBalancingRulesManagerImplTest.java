@@ -36,6 +36,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,6 +59,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -103,6 +106,9 @@ public class LoadBalancingRulesManagerImplTest{
 
     @Mock
     VpcManager vpcManager;
+
+    @Mock
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
 
     @Spy
     @InjectMocks
@@ -389,5 +395,103 @@ public class LoadBalancingRulesManagerImplTest{
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateConnectionTimeoutRejectsNegative() {
         lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, -1L);
+    }
+
+    private void stubConnectionSettings(String keepAlive, String idleTimeout, String keepAliveTimeout) {
+        stubConnectionSetting(LoadBalancer.KEEPALIVE, keepAlive);
+        stubConnectionSetting(LoadBalancer.IDLE_TIMEOUT, idleTimeout);
+        stubConnectionSetting(LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout);
+    }
+
+    private void stubConnectionSetting(String key, String value) {
+        when(_firewallRuleDetailsDao.findDetail(lbRuleId, key))
+                .thenReturn(value == null ? null : new FirewallRuleDetailVO(lbRuleId, key, value, true));
+    }
+
+    private void verifyNoConnectionSettingWrites() {
+        Mockito.verify(_firewallRuleDetailsDao, never()).removeDetail(anyLong(), Mockito.anyString());
+        Mockito.verify(_firewallRuleDetailsDao, never()).addDetail(anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testConnectionSettingsCleanupResetsAllToInherit() {
+        stubConnectionSettings("true", "5000", "1000");
+
+        Assert.assertTrue(lbr.updateLoadBalancerConnectionSettings(lbRuleId, null, null, null, true));
+
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.KEEPALIVE);
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT);
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT);
+        Mockito.verify(_firewallRuleDetailsDao, never()).addDetail(anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testConnectionSettingsCleanupKeepsValuesPassedAlongside() {
+        stubConnectionSettings("true", "5000", "1000");
+
+        Assert.assertTrue(lbr.updateLoadBalancerConnectionSettings(lbRuleId, null, 5000L, null, true));
+
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.KEEPALIVE);
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT);
+        Mockito.verify(_firewallRuleDetailsDao, never()).removeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT);
+        Mockito.verify(_firewallRuleDetailsDao, never()).addDetail(anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testConnectionSettingsCleanupWithNothingSetIsNoChange() {
+        stubConnectionSettings(null, null, null);
+
+        Assert.assertFalse(lbr.updateLoadBalancerConnectionSettings(lbRuleId, null, null, null, true));
+
+        verifyNoConnectionSettingWrites();
+    }
+
+    @Test
+    public void testConnectionSettingsNullKeepsCurrentValue() {
+        stubConnectionSettings(null, "5000", null);
+
+        Assert.assertTrue(lbr.updateLoadBalancerConnectionSettings(lbRuleId, null, null, 2000L, false));
+
+        Mockito.verify(_firewallRuleDetailsDao).addDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT, "2000", true);
+        Mockito.verify(_firewallRuleDetailsDao, never()).removeDetail(anyLong(), Mockito.anyString());
+    }
+
+    @Test
+    public void testConnectionSettingsSameValueIsNoChange() {
+        stubConnectionSettings(null, "5000", null);
+
+        Assert.assertFalse(lbr.updateLoadBalancerConnectionSettings(lbRuleId, null, 5000L, null, false));
+
+        verifyNoConnectionSettingWrites();
+    }
+
+    @Test
+    public void testConnectionSettingsChangedValueIsReplaced() {
+        stubConnectionSettings("false", null, null);
+
+        Assert.assertTrue(lbr.updateLoadBalancerConnectionSettings(lbRuleId, true, null, null, false));
+
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.KEEPALIVE);
+        Mockito.verify(_firewallRuleDetailsDao).addDetail(lbRuleId, LoadBalancer.KEEPALIVE, "true", true);
+    }
+
+    @Test
+    public void testUpdateLoadBalancerRuleCleanupReappliesConfig() throws Exception {
+        setupUpdateLoadBalancerRule();
+        stubConnectionSettings(null, "5000", null);
+
+        // Only the connection settings change, algorithm and protocol are the same
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "algorithm", "roundrobin");
+        ReflectionTestUtils.setField(cmd, "lbProtocol", NetUtils.SSL_PROTO);
+        ReflectionTestUtils.setField(cmd, "cleanupConnectionSettings", true);
+        when(loadBalancerMock.getAlgorithm()).thenReturn("roundrobin");
+        when(loadBalancerMock.getLbProtocol()).thenReturn(NetUtils.SSL_PROTO);
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(_firewallRuleDetailsDao).removeDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT);
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
     }
 }
