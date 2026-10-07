@@ -2382,8 +2382,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setCidrList(cidrListStr);
         }
 
-        // lb.getId() rather than the id off the command, which is a Long and unboxes badly
-        boolean settingsChanged = updateLoadBalancerConnectionSettings(lb.getId(), cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout());
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout());
 
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
