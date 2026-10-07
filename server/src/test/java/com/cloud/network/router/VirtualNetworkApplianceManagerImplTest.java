@@ -79,6 +79,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.junit.Assert;
@@ -414,5 +415,57 @@ public class VirtualNetworkApplianceManagerImplTest {
         virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
 
         Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
+    }
+
+    @Test
+    public void testNonInternalLbRouterDoesNotExcludeDhcpAndDnsHealthChecks() throws Exception {
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        when(router.getId()).thenReturn(1L);
+        when(router.getInstanceName()).thenReturn("r-1-VM");
+        when(router.getDataCenterId()).thenReturn(1L);
+        when(router.getIsRedundantRouter()).thenReturn(false);
+        when(router.getRole()).thenReturn(VirtualRouter.Role.VIRTUAL_ROUTER);
+        Mockito.lenient().when(_routerControlHelper.getRouterControlIp(1L)).thenReturn("169.254.0.1");
+
+        java.lang.reflect.Method method = VirtualNetworkApplianceManagerImpl.class.getDeclaredMethod(
+                "createMonitorServiceCommand", DomainRouterVO.class, List.class, boolean.class, boolean.class, Map.class);
+        method.setAccessible(true);
+        SetMonitorServiceCommand command = (SetMonitorServiceCommand) method.invoke(
+                virtualNetworkApplianceManagerImpl, router, null, true, true, null);
+
+        String excluded = command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED);
+        Assert.assertTrue("A non internal LB router must not exclude the dhcp and dns checks, got: " + excluded,
+                excluded == null || (!excluded.contains("dhcp_check.py") && !excluded.contains("dns_check.py")));
+    }
+
+    @Test
+    public void testInternalLbRouterAppendsToExistingExcludedHealthChecks() throws Exception {
+        java.lang.reflect.Field defaultValueField = ConfigKey.class.getDeclaredField("_defaultValue");
+        defaultValueField.setAccessible(true);
+        Object original = defaultValueField.get(VirtualNetworkApplianceManager.RouterHealthChecksToExclude);
+        try {
+            defaultValueField.set(VirtualNetworkApplianceManager.RouterHealthChecksToExclude, "custom_check.py");
+
+            DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+            when(router.getId()).thenReturn(1L);
+            when(router.getInstanceName()).thenReturn("r-1-VM");
+            when(router.getDataCenterId()).thenReturn(1L);
+            when(router.getIsRedundantRouter()).thenReturn(false);
+            when(router.getRole()).thenReturn(VirtualRouter.Role.INTERNAL_LB_VM);
+            Mockito.lenient().when(_routerControlHelper.getRouterControlIp(1L)).thenReturn("169.254.0.1");
+
+            java.lang.reflect.Method method = VirtualNetworkApplianceManagerImpl.class.getDeclaredMethod(
+                    "createMonitorServiceCommand", DomainRouterVO.class, List.class, boolean.class, boolean.class, Map.class);
+            method.setAccessible(true);
+            SetMonitorServiceCommand command = (SetMonitorServiceCommand) method.invoke(
+                    virtualNetworkApplianceManagerImpl, router, null, true, true, null);
+
+            String excluded = command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED);
+            Assert.assertNotNull(excluded);
+            Assert.assertTrue("Internal LB VM should append dhcp and dns to the existing exclusions, got: " + excluded,
+                    excluded.contains("custom_check.py") && excluded.contains("dhcp_check.py") && excluded.contains("dns_check.py"));
+        } finally {
+            defaultValueField.set(VirtualNetworkApplianceManager.RouterHealthChecksToExclude, original);
+        }
     }
 }
