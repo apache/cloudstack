@@ -352,9 +352,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                     for (SecurityGroupVMMapVO ngmapVO : allowedInstances) {
                         Nic defaultNic = _networkModel.getDefaultNic(ngmapVO.getInstanceId());
                         if (defaultNic != null) {
-                            String cidr = defaultNic.getIPv4Address();
-                            cidr = cidr + "/32";
-                            cidrs.add(cidr);
+                            if (defaultNic.getIPv4Address() != null) {
+                                cidrs.add(defaultNic.getIPv4Address() + "/32");
+                            }
                             if (defaultNic.getIPv6Address() != null) {
                                 cidrs.add(defaultNic.getIPv6Address() + "/128");
                             }
