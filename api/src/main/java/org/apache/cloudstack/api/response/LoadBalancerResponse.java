@@ -64,15 +64,15 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String networkId;
 
     @SerializedName(ApiConstants.KEEPALIVE)
-    @Param(description = "whether the load balancer keeps client connections open between requests, unset means the network offering's setting is used", since = "4.23.0")
+    @Param(description = "whether the load balancer keeps client connections open between requests, unset means the network offering's setting is used", since = "24.0")
     private Boolean keepAlive;
 
     @SerializedName(ApiConstants.IDLE_TIMEOUT)
-    @Param(description = "how long an idle connection is held open, in milliseconds, unset means the global setting is used", since = "4.23.0")
+    @Param(description = "how long an idle connection is held open, in milliseconds, unset means the global setting is used", since = "24.0")
     private Long idleTimeout;
 
     @SerializedName(ApiConstants.KEEPALIVE_TIMEOUT)
-    @Param(description = "how long an idle keepalive connection is held open waiting for the next request, in milliseconds", since = "4.23.0")
+    @Param(description = "how long an idle keepalive connection is held open waiting for the next request, in milliseconds", since = "24.0")
     private Long keepAliveTimeout;
 
     @SerializedName(ApiConstants.CIDR_LIST)
