@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOfferingVO, Long> implements UsageNetworkOfferingDao {
 
     protected static final String UPDATE_DELETED =
-        "UPDATE usage_network_offering SET deleted = ? WHERE account_id = ? AND vm_instance_id = ? AND network_offering_id = ? and deleted IS NULL";
+        "UPDATE usage_network_offering SET deleted = ? WHERE id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
         "SELECT zone_id, account_id, domain_id, vm_instance_id, network_offering_id, nic_id, is_default, created, deleted, network_id " + "FROM usage_network_offering "
             + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
@@ -63,10 +63,11 @@ public class UsageNetworkOfferingDaoImpl extends GenericDaoBase<UsageNetworkOffe
             if (usage.getDeleted() != null) {
                 try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
                     if (pstmt != null) {
+                        // matches by primary key: the caller already identified the exact row(s) to close via
+                        // search(); a broader (account, vm, offering) match would also close a different nic's
+                        // still-open row for the same offering
                         pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-                        pstmt.setLong(2, usage.getAccountId());
-                        pstmt.setLong(3, usage.getVmInstanceId());
-                        pstmt.setLong(4, usage.getNetworkOfferingId());
+                        pstmt.setLong(2, usage.getId());
                         pstmt.executeUpdate();
                     }
                   }catch (SQLException e) {
