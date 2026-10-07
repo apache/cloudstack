@@ -16,7 +16,8 @@
 # under the License.
 
 import unittest
-from cs.CsAddress import CsAddress
+import mock
+from cs.CsAddress import CsAddress, CsIP
 import merge
 
 
@@ -37,6 +38,21 @@ class TestCsAddress(unittest.TestCase):
 
     def test_get_guest_netmask(self):
         self.assertTrue(self.csaddress.get_guest_netmask() == "255.255.255.0")
+
+    @mock.patch.object(CsIP, 'list')
+    def test_ftp_helper_rule(self, _):
+        ftp_rule = ["raw", "", "-A PREROUTING -p tcp -m tcp --dport 21 -j CT --helper ftp"]
+        for is_vpc in [False, True]:
+            config = mock.MagicMock()
+            config.get_fw.return_value = []
+            config.is_vpc.return_value = is_vpc
+            config.is_routed.return_value = False
+            config.is_dhcp.return_value = False
+            ip = CsIP("eth2", config)
+            ip.setAddress({"nw_type": "public", "public_ip": "10.0.0.2"})
+            ip.fw_router()
+            ip.fw_vpcrouter()
+            self.assertIn(ftp_rule, ip.fw)
 
 
 if __name__ == '__main__':

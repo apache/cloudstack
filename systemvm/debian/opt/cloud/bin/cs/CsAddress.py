@@ -485,6 +485,8 @@ class CsIP:
                         "-A POSTROUTING " +
                         "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
 
+        self.fw.append(["raw", "", "-A PREROUTING -p tcp -m tcp --dport 21 -j CT --helper ftp"])
+
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
@@ -566,6 +568,7 @@ class CsIP:
             return
 
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+        self.fw.append(["raw", "", "-A PREROUTING -p tcp -m tcp --dport 21 -j CT --helper ftp"])
 
         if self.get_type() in ["guest"]:
             self.fw.append(["mangle", "front", "-A PREROUTING " +
