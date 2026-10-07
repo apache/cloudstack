@@ -250,7 +250,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         String cidr = ngmapVO.getGuestIpAddress() + "/32";
                         cidrs.add(cidr);
                         if (ngmapVO.getGuestIpv6Address() != null) {
-                            cidrs.add(ngmapVO.getGuestIpv6Address() + "/64");
+                            cidrs.add(ngmapVO.getGuestIpv6Address() + "/128");
                         }
                     }
                 } else if (rule.getAllowedSourceIpCidr() != null) {
