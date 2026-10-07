@@ -395,6 +395,6 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude};
+        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude, OIDCRequireVerifiedEmail};
     }
 }
