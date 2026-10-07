@@ -2232,6 +2232,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return stpCmd;
     }
 
+    /**
+     * Build a StopCommand that the host carries out even when the instance is running. With checkBeforeCleanup set,
+     * the host refuses a running instance with "vm is still running on host", and a running instance is exactly what
+     * the callers of this need stopped.
+     */
+    protected StopCommand buildUnconditionalStopCommand(final VirtualMachine vm) {
+        return buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
+    }
+
     protected Pair<Boolean, String> sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         final StopCommand stop = buildStopCommand(vm, profile, checkBeforeCleanup);
@@ -5493,8 +5502,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         try {
-            // checkBeforeCleanup is false on purpose: a running domain is what has to be removed here.
-            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
+            final StopCommand stop = buildUnconditionalStopCommand(vm);
             final Answer answer = _agentMgr.send(hostId, stop);
             if (answer != null && answer.getResult()) {
                 return;
@@ -5523,9 +5531,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         try {
-            // checkBeforeCleanup must be false: the instance is known to be running, and that is exactly what
-            // has to be stopped. With it set, the host would refuse and answer "vm is still running on host".
-            final StopCommand stop = buildStopCommand(vm, new VirtualMachineProfileImpl(vm), false);
+            final StopCommand stop = buildUnconditionalStopCommand(vm);
             final Answer answer = _agentMgr.send(powerHostId, stop);
             if (answer != null && answer.getResult()) {
                 logger.info("Stopped unmanaged instance {} on host {}.", vm, powerHostId);
