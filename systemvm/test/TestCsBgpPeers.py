@@ -47,7 +47,7 @@ class TestCsBgpPeers(unittest.TestCase):
         return peer
 
     def _frr_conf(self):
-        return [line.rstrip('\n') for line in self.csbgppeers.frr_conf.new_config]
+        return [line.rstrip('\n') for line in self.csbgppeers.frr_conf.new_config if not line.strip().startswith("#")]
 
     def test_init(self):
         self.assertTrue(self.csbgppeers is not None)
@@ -200,7 +200,7 @@ class TestCsBgpPeers(unittest.TestCase):
         self.csbgppeers._post_set()
 
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "frr-bgppeers-ipv4-ipv6.conf")) as f:
-            expected = [line.rstrip('\n') for line in f]
+            expected = [line.rstrip('\n') for line in f if not line.strip().startswith("#")]
         self.assertEqual(self._frr_conf(), expected)
 
 
