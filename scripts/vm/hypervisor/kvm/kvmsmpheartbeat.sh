@@ -80,12 +80,23 @@ if [ ! -d "$MountPoint" ]; then
   exit 1
 fi
 
-# If the 'mountpoint' utility is available, ensure this is an actual mount
-if command -v mountpoint >/dev/null 2>&1; then
-  if ! mountpoint -q "$MountPoint"; then
-    echo "Mount point is not a mounted filesystem: $MountPoint" >&2
-    exit 1
+# Returns 0 if the given path resides on a mounted filesystem other than the
+# root filesystem. A SharedMountPoint path does not need to be a mount point
+# itself, it may be a subdirectory of a mounted (e.g. clustered) filesystem.
+is_on_mounted_fs() {
+  local target
+  if command -v findmnt >/dev/null 2>&1; then
+    target=$(findmnt -n -o TARGET -T "$1" 2>/dev/null)
+  else
+    target=$(df -P "$1" 2>/dev/null | awk 'NR==2 {print $6}')
   fi
+  [ -n "$target" ] && [ "$target" != "/" ]
+}
+
+# Ensure the path is on a mounted filesystem (not the local root filesystem)
+if ! is_on_mounted_fs "$MountPoint"; then
+  echo "Mount point is not on a mounted filesystem: $MountPoint" >&2
+  exit 1
 fi
 
 # Ensure the mount point is writable
@@ -112,8 +123,8 @@ deleteVMs() {
   done
 }
 
-#checking is there the mount point present under $MountPoint?
-if grep -q "^[^ ]\+ $MountPoint " /proc/mounts
+#checking is the filesystem of $MountPoint mounted?
+if is_on_mounted_fs "$MountPoint"
 then
    # mount exists; nothing to do here; keep for compatibility with original flow
    :
@@ -146,6 +157,9 @@ write_hbLog() {
   timestamp=$(date +%s)
   # Write atomically to avoid partial writes (write to tmp then mv)
   tmpfile="${hbFile}.$$"
+  # remove the temporary file if the script is interrupted (e.g. on timeout)
+  trap 'rm -f "$tmpfile"' EXIT
+  trap 'exit 1' INT TERM
   printf "%s\n" "$timestamp" > "$tmpfile" 2>/dev/null
   if [ $? -ne 0 ]; then
     printf "Failed to write heartbeat to $tmpfile" >&2
@@ -168,12 +182,14 @@ check_hbLog() {
     hb_diff=999998
     return 1
   fi
-  diff=`expr $now - $hb 2>/dev/null`
-  if [ $? -ne 0 ]
-  then
-    hb_diff=999997
-    return 1
-  fi
+  # note: 'expr' exits with 1 when the result is 0, so use shell arithmetic
+  case "$hb" in
+    ''|*[!0-9]*)
+      hb_diff=999997
+      return 1
+      ;;
+  esac
+  diff=$((now - hb))
   if [ -z "$interval" ]; then
     # if no interval provided, consider 0 as success
     if [ $diff -gt 0 ]; then
