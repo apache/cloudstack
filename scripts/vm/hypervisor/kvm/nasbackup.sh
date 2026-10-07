@@ -351,8 +351,21 @@ print(len(files))
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
+  local info query_failures=0
   while true; do
-    status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
+    # A failed query says nothing about the job, so retry before giving up on it.
+    if ! info=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>&1); then
+      log -e "Backup job query $((query_failures + 1)) for vm $VM failed: $info"
+      if (( ++query_failures >= 12 )); then
+        echo "Unable to query the backup job for vm $VM"
+        cleanup
+        exit 1
+      fi
+      sleep 5
+      continue
+    fi
+    query_failures=0
+    status=$(awk '/Job type:/ {print $3}' <<< "$info")
     case "$status" in
       Completed)
         BACKUP_JOB_ACTIVE=0
