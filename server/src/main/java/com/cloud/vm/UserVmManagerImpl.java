@@ -6944,9 +6944,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * the associations that pipeline has no concept of. No live agent update is issued - the vm hasn't started yet,
      * so its first plug already reads these associations fresh.
      */
+    /**
+     * Mirrors the check {@link #addAdditionalNetworksToVm} already runs for a nic's primary network, extended to
+     * an associated network as well - carrying a trunk nic's associations across an account move must not grant
+     * the new account reachability into a network it otherwise couldn't use.
+     */
+    private void checkNewAccountAccessToAssociatedNetworks(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, Account newAccount) {
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : nicNetworksList) {
+            for (Long networkId : grouping.getAssociatedNetworkIds()) {
+                NetworkVO network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find specified Network ID: " + networkId);
+                }
+                _networkModel.checkNetworkPermissions(newAccount, network);
+            }
+        }
+    }
+
     private void persistAdditionalNicNetworkAssociations(BaseDeployVMCmd cmd, UserVm vm)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList = cmd.getNicNetworksList();
+        persistAdditionalNicNetworkAssociations(cmd.getNicNetworksList(), vm);
+    }
+
+    /**
+     * Persists a nicnetworkslist-shaped grouping's additional (non-primary) networks into nic_network_map for
+     * each of the vm's current nics, matched to a grouping by ascending device id. Used both at deploy time
+     * (nics freshly created) and by {@link #moveVmToUser} (nics freshly rebuilt by the account reassignment),
+     * so a trunk nic's associations can be carried across either without being silently flattened.
+     */
+    private void persistAdditionalNicNetworkAssociations(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, UserVm vm)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         if (CollectionUtils.isEmpty(nicNetworksList)) {
             return;
         }
@@ -6954,7 +6981,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         nics.sort(Comparator.comparingInt(NicVO::getDeviceId));
         if (nics.size() != nicNetworksList.size()) {
             throw new CloudRuntimeException(String.format(
-                    "Instance %s was created with %d nic(s) but %d %s entries were requested",
+                    "Instance %s has %d nic(s) but %d %s entries were requested",
                     vm.getUuid(), nics.size(), nicNetworksList.size(), ApiConstants.NIC_NETWORKS_LIST));
         }
         for (int i = 0; i < nics.size(); i++) {
@@ -8331,6 +8358,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Network newNetwork = null;
         if (!cmd.isSkipNetwork()) {
             newNetwork = ensureDestinationNetwork(cmd, vm, newAccount);
+            implementAssociatedNetworksForOwnershipChange(cmd.getNicNetworksList(), vm, caller);
         }
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -8499,6 +8527,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
+     * Implements (deploys a virtual router for, if one doesn't already exist) every network a trunk nic will be
+     * associated with as part of this move, same as {@link #createApplicableNetworkToCreateVm} already does for a
+     * freshly-created primary network. Must run here, before the ownership-change transaction opens: implementing
+     * a network can start a virtual router, which blocks the calling thread on an async VM-work-job outcome that
+     * can never be observed while this thread is holding that transaction open.
+     */
+    protected void implementAssociatedNetworksForOwnershipChange(List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList, UserVmVO vm, Account caller) {
+        if (CollectionUtils.isEmpty(nicNetworksList)) {
+            return;
+        }
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+        for (BaseDeployVMCmd.NicNetworkGrouping grouping : nicNetworksList) {
+            for (Long networkId : grouping.getAssociatedNetworkIds()) {
+                NetworkVO network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find specified Network ID: " + networkId);
+                }
+                if (network.getState() != Network.State.Implemented) {
+                    implementNetwork(caller, zone, network);
+                }
+            }
+        }
+    }
+
+    /**
      * @return a network offering with required availability that will be used to create a new isolated network for the VM
      * assignment process.
      */
@@ -8558,7 +8611,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template);
-        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            if (!cmd.isSkipNetwork()) {
+                checkNewAccountAccessToAssociatedNetworks(cmd.getNicNetworksList(), newAccount);
+                persistAdditionalNicNetworkAssociations(cmd.getNicNetworksList(), vm);
+            }
+        } catch (InsufficientCapacityException | ResourceAllocationException | ResourceUnavailableException | ConcurrentOperationException e) {
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
 

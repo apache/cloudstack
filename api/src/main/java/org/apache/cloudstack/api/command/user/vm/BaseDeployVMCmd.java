@@ -64,6 +64,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.NetworkService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.net.Dhcp;
@@ -691,29 +692,36 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
      * the underlying request map is not guaranteed to preserve insertion order.
      */
     public List<NicNetworkGrouping> getNicNetworksList() {
+        return parseNicNetworksList(nicNetworksList, _networkService);
+    }
+
+    /**
+     * Shared with {@link org.apache.cloudstack.api.command.admin.vm.AssignVMCmd}, which reuses this exact
+     * nicnetworkslist parameter shape so a trunk nic's associations can be carried across an account
+     * reassignment instead of being silently rebuilt as separate nics.
+     */
+    public static List<NicNetworkGrouping> parseNicNetworksList(Map rawNicNetworksList, NetworkService networkService) {
         List<NicNetworkGrouping> groupings = new ArrayList<>();
-        if (MapUtils.isEmpty(nicNetworksList)) {
+        if (MapUtils.isEmpty(rawNicNetworksList)) {
             return groupings;
         }
         // the request-binding framework hands back these keys as Integer, not String - sort on the parsed value
         // directly rather than assuming a type, so this works regardless of which one it actually is
-        List<Object> indices = new ArrayList<>(nicNetworksList.keySet());
+        List<Object> indices = new ArrayList<>(rawNicNetworksList.keySet());
         try {
             indices.sort(Comparator.comparingInt(index -> Integer.parseInt(index.toString())));
         } catch (NumberFormatException e) {
             throw new InvalidParameterValueException(String.format("%s indices must be integers", ApiConstants.NIC_NETWORKS_LIST));
         }
         for (Object index : indices) {
-            HashMap<String, String> entry = (HashMap<String, String>) nicNetworksList.get(index);
+            HashMap<String, String> entry = (HashMap<String, String>) rawNicNetworksList.get(index);
             String networkIdsCsv = entry.get("networkids");
             if (StringUtils.isBlank(networkIdsCsv)) {
                 throw new InvalidParameterValueException(String.format("%s entries must specify networkids", ApiConstants.NIC_NETWORKS_LIST));
             }
             List<Long> resolvedNetworkIds = new ArrayList<>();
             for (String token : networkIdsCsv.split(",")) {
-                HashMap<String, String> networkIdMap = new HashMap<>();
-                networkIdMap.put("networkid", token.trim());
-                resolvedNetworkIds.add(getNetworkIdFomIpMap(networkIdMap));
+                resolvedNetworkIds.add(resolveNetworkId(token.trim(), networkService));
             }
             if (resolvedNetworkIds.size() != new HashSet<>(resolvedNetworkIds).size()) {
                 throw new InvalidParameterValueException(String.format("%s entry lists the same network more than once: %s", ApiConstants.NIC_NETWORKS_LIST, networkIdsCsv));
@@ -724,13 +732,26 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         return groupings;
     }
 
+    @Nonnull
+    private static Long resolveNetworkId(String networkIdOrUuid, NetworkService networkService) {
+        Network network = networkService.getNetwork(networkIdOrUuid);
+        if (network != null) {
+            return network.getId();
+        }
+        try {
+            return Long.parseLong(networkIdOrUuid);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkIdOrUuid);
+        }
+    }
+
     /**
      * Parses a nicnetworkslist[N] entry's optional ip4addresses/ip6addresses - comma-separated, positionally
      * aligned to that entry's networkids starting from its 2nd id (the associated networks; the primary's own
      * ip4address/ip6address is handled separately). A blank token, or a shorter list than the associated-network
      * count, leaves that network to auto-allocate - same as not requesting an IP for it at all.
      */
-    private Map<Long, IpAddresses> parseAssociatedNetworkIps(List<Long> networkIds, String ip4AddressesCsv, String ip6AddressesCsv) {
+    private static Map<Long, IpAddresses> parseAssociatedNetworkIps(List<Long> networkIds, String ip4AddressesCsv, String ip6AddressesCsv) {
         if (StringUtils.isBlank(ip4AddressesCsv) && StringUtils.isBlank(ip6AddressesCsv)) {
             return Collections.emptyMap();
         }
