@@ -58,6 +58,24 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
             " Loopback Pseudo-Interface 1    ipv6         ::1/128\n" + //
             " -     -       ipv4        127.0.0.1/8\n";
 
+    // Windows guest that has not obtained a DHCP lease yet and self-assigned an APIPA address
+    private static String VIRSH_DOMIF_OUTPUT_WINDOWS_APIPA = " Name       MAC address          Protocol     Address\n" + //
+            "-------------------------------------------------------------------------------\n" + //
+            " Ethernet   02:01:00:d0:00:87    ipv6         fe80::df84:2984:e396:8ac3%6/64\n" + //
+            " -          -                    ipv4         169.254.149.120/16\n" + //
+            " Loopback Pseudo-Interface 1                      ipv6         ::1/128\n" + //
+            " -          -                    ipv4         127.0.0.1/8\n";
+
+    // Same Windows guest once the DHCP lease has been obtained
+    private static String VIRSH_DOMIF_OUTPUT_WINDOWS_DHCP = " Name       MAC address          Protocol     Address\n" + //
+            "-------------------------------------------------------------------------------\n" + //
+            " Ethernet   02:01:00:d0:00:87    ipv6         fd00:ac19:0:1910:0:d3fc:4177:2c32/128\n" + //
+            " -          -                    ipv6         fe80::df84:2984:e396:8ac3%6/64\n" + //
+            " -          -                    ipv4         172.25.16.236/22\n" + //
+            " -          -                    ipv4         169.254.149.120/16\n" + //
+            " Loopback Pseudo-Interface 1                      ipv6         ::1/128\n" + //
+            " -          -                    ipv4         127.0.0.1/8\n";
+
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -322,6 +340,38 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
             if (scriptMock != null)
                 scriptMock.close();
         }
+    }
+
+    private Answer executeOnL2Network(String domIfOutput, boolean windows) {
+        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            when(getVmIpAddressCommand.getVmName()).thenReturn("i-2-187-VM");
+            // L2 networks have no CIDR
+            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn(null);
+            when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:01:00:d0:00:87");
+            when(getVmIpAddressCommand.isWindows()).thenReturn(windows);
+            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, domIfOutput));
+
+            return commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+        }
+    }
+
+    @Test
+    public void testExecuteWithWindowsVmOnlyApipaAddressOnL2Network() {
+        Answer answer = executeOnL2Network(VIRSH_DOMIF_OUTPUT_WINDOWS_APIPA, true);
+
+        assertFalse(answer.getResult());
+        assertNull(answer.getDetails());
+    }
+
+    @Test
+    public void testExecuteWithWindowsVmDhcpAndApipaAddressOnL2Network() {
+        Answer answer = executeOnL2Network(VIRSH_DOMIF_OUTPUT_WINDOWS_DHCP, true);
+
+        assertTrue(answer.getResult());
+        assertEquals("172.25.16.236", answer.getDetails());
     }
 
     @Test

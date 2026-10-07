@@ -1039,6 +1039,33 @@ public class NetUtils {
         return "169.254.0.0/16";
     }
 
+    /**
+     * Returns true if the given address is a valid IPv4 link-local (APIPA, RFC 3927) address, i.e. within 169.254.0.0/16.
+     * Such an address is self-assigned by a guest when no DHCP lease has been obtained.
+     */
+    public static boolean isLinkLocalIp4(final String ip) {
+        return isValidIp4(ip) && isIpWithInCidrRange(ip, getLinkLocalCIDR());
+    }
+
+    /**
+     * Returns true if the given address is a valid IPv6 link-local address, i.e. within fe80::/10.
+     * A zone index suffix (e.g. "fe80::1%6") is accepted and ignored.
+     */
+    public static boolean isLinkLocalIp6(final String ip) {
+        if (ip == null) {
+            return false;
+        }
+        final String address = ip.split("%")[0];
+        if (!isValidIp6(address)) {
+            return false;
+        }
+        try {
+            return InetAddress.getByName(address).isLinkLocalAddress();
+        } catch (final UnknownHostException e) {
+            return false;
+        }
+    }
+
     public static String getLinkLocalFirstAddressFromCIDR(final String cidr) {
         SubnetUtils subnetUtils = new SubnetUtils(cidr);
         return subnetUtils.getInfo().getLowAddress();

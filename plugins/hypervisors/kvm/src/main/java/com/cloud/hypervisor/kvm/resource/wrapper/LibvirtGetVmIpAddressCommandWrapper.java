@@ -130,10 +130,20 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             found = true;
             String ipFamily = parts[parts.length - 2];
             String ipPart = parts[parts.length - 1].split("/")[0];
+            // Skip link-local addresses (e.g. Windows APIPA 169.254.0.0/16 before a DHCP lease is obtained),
+            // they are not routable and must not be reported as the instance IP
             if (ipFamily.equals("ipv4")) {
-                ipv4 = ipPart;
+                if (NetUtils.isLinkLocalIp4(ipPart)) {
+                    logger.debug(String.format("Ignoring link-local ipv4 %s with mac address %s", ipPart, macAddress));
+                } else {
+                    ipv4 = ipPart;
+                }
             } else if (ipFamily.equals("ipv6")) {
-                ipv6 = ipPart;
+                if (NetUtils.isLinkLocalIp6(ipPart)) {
+                    logger.debug(String.format("Ignoring link-local ipv6 %s with mac address %s", ipPart, macAddress));
+                } else {
+                    ipv6 = ipPart;
+                }
             }
         }
         logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));

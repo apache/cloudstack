@@ -808,6 +808,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             nic.setIPv4Address(null);
                             _nicDao.update(nicId, nic);
                         }
+                    } else if (NetUtils.isLinkLocalIp4(vmIp)) {
+                        // a link-local (APIPA) address means the guest has not obtained a DHCP lease yet; do not record it,
+                        // clear any previously recorded link-local address and keep retrying within the retry budget
+                        logger.debug("Instance [ID: {}, UUID: {}, name: {}] - ignoring link-local IP {}, DHCP lease not obtained yet",
+                                vmId, vmUuid, vmName, vmIp);
+                        if (nic != null && NetUtils.isLinkLocalIp4(nic.getIPv4Address())) {
+                            nic.setIPv4Address(null);
+                            _nicDao.update(nicId, nic);
+                        }
                     } else if (NetUtils.isValidIp4(vmIp)) {
                         // set this vm ip addr in vm nic.
                         if (nic != null) {
@@ -2522,7 +2531,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
-                    if (nic.getIPv4Address() == null) {
+                    // also retry NICs holding a link-local (APIPA) address recorded before the guest obtained its DHCP lease
+                    if (nic.getIPv4Address() == null || NetUtils.isLinkLocalIp4(nic.getIPv4Address())) {
                         long nicId = nic.getId();
                         long vmId = nic.getInstanceId();
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
