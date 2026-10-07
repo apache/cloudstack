@@ -16,15 +16,21 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -33,16 +39,32 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @DB()
 public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Long> implements PhysicalNetworkDao {
-    final SearchBuilder<PhysicalNetworkVO> ZoneSearch;
+    protected SearchBuilder<PhysicalNetworkVO> ZoneSearch;
+    protected GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> KvmNetworkLabelsInZoneSearch;
 
     @Inject
     protected PhysicalNetworkTrafficTypeDao _trafficTypeDao;
 
     protected PhysicalNetworkDaoImpl() {
         super();
+    }
+
+    @PostConstruct
+    protected void init() {
         ZoneSearch = createSearchBuilder();
         ZoneSearch.and("dataCenterId", ZoneSearch.entity().getDataCenterId(), Op.EQ);
         ZoneSearch.done();
+
+        KvmNetworkLabelsInZoneSearch = _trafficTypeDao.createSearchBuilder(String.class);
+        KvmNetworkLabelsInZoneSearch.selectFields(KvmNetworkLabelsInZoneSearch.entity().getKvmNetworkLabel());
+
+        final SearchBuilder<PhysicalNetworkVO> pnSearch = createSearchBuilder();
+        pnSearch.and("dataCenterId", pnSearch.entity().getDataCenterId(), Op.EQ);
+        pnSearch.and("removed", pnSearch.entity().getRemoved(), Op.NULL);
+
+        KvmNetworkLabelsInZoneSearch.join("pnSearch", pnSearch, KvmNetworkLabelsInZoneSearch.entity().getPhysicalNetworkId(),
+                pnSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        KvmNetworkLabelsInZoneSearch.done();
     }
 
     @Override
@@ -75,5 +97,26 @@ public class PhysicalNetworkDaoImpl extends GenericDaoBase<PhysicalNetworkVO, Lo
         sc.setParameters("dataCenterId", dataCenterId);
 
         return listBy(sc);
+    }
+
+    @Override
+    public Set<String> getKvmNetworkLabelsInZone(long zoneId) {
+        SearchCriteria<String> sc = KvmNetworkLabelsInZoneSearch.create();
+        sc.setJoinParameters("pnSearch", "dataCenterId", zoneId);
+
+        return filterKvmNetworkLabels(_trafficTypeDao.customSearch(sc, null));
+    }
+
+    private Set<String> filterKvmNetworkLabels(List<String> labels) {
+        if (labels == null) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<>();
+        for (String label : labels) {
+            if (StringUtils.isNotBlank(label)) {
+                result.add(label);
+            }
+        }
+        return result;
     }
 }

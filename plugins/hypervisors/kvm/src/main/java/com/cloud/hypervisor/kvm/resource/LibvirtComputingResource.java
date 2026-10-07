@@ -143,6 +143,7 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SetHostParamsCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -589,6 +590,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * 3rd parameter: the absolute path of the base file;
      */
     private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s";
+
+    private volatile Set<String> systemTrafficLabels = Collections.emptySet();
 
     public long getHypervisorLibvirtVersion() {
         return hypervisorLibvirtVersion;
@@ -1676,6 +1679,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
         }
 
+        if (params.get(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS) != null) {
+            setSystemTrafficLabels(parseSystemTrafficLabels(params.get(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS)));
+        }
+
         if (params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()) != null) {
             isReconcileCommandsEnabled = Boolean.parseBoolean(params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()));
         }
@@ -1689,6 +1696,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    public Set<String> getSystemTrafficLabels() {
+        return systemTrafficLabels;
+    }
+
+    protected void setSystemTrafficLabels(Set<String> systemTrafficLabels) {
+        this.systemTrafficLabels = Collections.unmodifiableSet(systemTrafficLabels);
+    }
+
+    protected Set<String> parseSystemTrafficLabels(String labels) {
+        if (StringUtils.isBlank(labels)) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<>();
+        for (String label : labels.split(",")) {
+            if (StringUtils.isNotBlank(label)) {
+                result.add(label.trim());
+            }
+        }
+        return result;
     }
 
     private void configureAgentHooks() {

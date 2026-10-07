@@ -90,6 +90,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -354,6 +355,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     StorageNetworkManager _stnwMgr;
+    @Inject
+    AgentManager _agentManager;
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -5460,6 +5463,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
 
+            _agentManager.propagateSystemTrafficLabelsToAgents(network.getDataCenterId());
             return pNetworktrafficType;
         } catch (Exception ex) {
             logger.warn("Exception: ", ex);
@@ -5542,6 +5546,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             trafficType.setOvm3NetworkLabel(ovm3Label);
         }
         _pNTrafficTypeDao.update(id, trafficType);
+        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(trafficType.getPhysicalNetworkId());
+        if (pNetwork != null) {
+            _agentManager.propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
+        }
         return trafficType;
     }
 
@@ -5565,7 +5573,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new CloudRuntimeException("The Traffic Type is not deletable because there are still some storage network IP addresses in use:" + trafficType.getTrafficType());
             }
         }
-        return _pNTrafficTypeDao.remove(id);
+        PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(trafficType.getPhysicalNetworkId());
+        boolean removed = _pNTrafficTypeDao.remove(id);
+        if (removed && pNetwork != null) {
+            _agentManager.propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
+        }
+        return removed;
     }
 
     @Override
