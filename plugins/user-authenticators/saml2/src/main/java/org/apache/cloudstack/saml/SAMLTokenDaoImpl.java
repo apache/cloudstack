@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.saml;
 
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
@@ -23,10 +24,15 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
+import java.sql.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 @DB
 @Component
 public class SAMLTokenDaoImpl extends GenericDaoBase<SAMLTokenVO, Long> implements SAMLTokenDao {
+
+    protected static final String EXPIRE_TOKENS_SQL = "DELETE FROM `saml_token` WHERE `created` < ?";
+    protected static final long TOKEN_LIFETIME_MILLIS = TimeUnit.HOURS.toMillis(1);
 
     public SAMLTokenDaoImpl() {
         super();
@@ -37,8 +43,9 @@ public class SAMLTokenDaoImpl extends GenericDaoBase<SAMLTokenVO, Long> implemen
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
-            String sql = "DELETE FROM `saml_token` WHERE `created` < (NOW() - INTERVAL 1 HOUR)";
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+            Timestamp cutOff = new Timestamp(DateUtil.currentGMTTime().getTime() - TOKEN_LIFETIME_MILLIS);
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(EXPIRE_TOKENS_SQL);
+            pstmt.setTimestamp(1, cutOff, gmtCalendar());
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
