@@ -219,4 +219,72 @@ public class ClusterDrsPowerOrchestrationTest {
         Mockito.when(drsPlanDao.listByClusterIdAndStatus(Mockito.eq(5L), Mockito.any())).thenReturn(Collections.emptyList());
         Assert.assertFalse(drs.hasInFlightDrsPlan(5L));
     }
+
+    @Test
+    public void hasMigratingVmDetectsAnInFlightMigration() {
+        VMInstanceVO running = vm(1L, VirtualMachine.Type.User, VirtualMachine.State.Running);
+        VMInstanceVO migrating = vm(2L, VirtualMachine.Type.User, VirtualMachine.State.Migrating);
+        Mockito.when(vmInstanceDao.listByHostId(40L)).thenReturn(Arrays.asList(running, migrating));
+        Assert.assertTrue(drs.hasMigratingVm(40L));
+    }
+
+    @Test
+    public void hasMigratingVmFalseWhenNothingIsMigrating() {
+        VMInstanceVO running = vm(1L, VirtualMachine.Type.User, VirtualMachine.State.Running);
+        Mockito.when(vmInstanceDao.listByHostId(40L)).thenReturn(Collections.singletonList(running));
+        Assert.assertFalse(drs.hasMigratingVm(40L));
+    }
+
+    @Test
+    public void isDrainingByDrsTrueOnlyForTheDrainingMarker() {
+        HostVO h = host(41L);
+        Mockito.when(hostDetailsDao.findDetail(41L, "drs.power.state"))
+                .thenReturn(new DetailVO(41L, "drs.power.state", "draining"));
+        Assert.assertTrue(drs.isDrainingByDrs(h));
+    }
+
+    @Test
+    public void drainBatchWaitsWhileAMigrationIsInFlight() {
+        HostVO candidate = host(42L);
+        VMInstanceVO migrating = vm(1L, VirtualMachine.Type.User, VirtualMachine.State.Migrating);
+        Mockito.when(vmInstanceDao.listByHostId(42L)).thenReturn(Collections.singletonList(migrating));
+        drs.drainingVmCountByHost.put(42L, 3);
+
+        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+
+        // a batch is still running: do not touch the marker or the recorded progress, just wait.
+        Mockito.verify(hostDetailsDao, Mockito.never()).remove(Mockito.anyLong());
+        Assert.assertEquals(Integer.valueOf(3), drs.drainingVmCountByHost.get(42L));
+    }
+
+    @Test
+    public void drainBatchAbandonsWhenNoProgressSinceLastBatch() {
+        HostVO candidate = host(43L);
+        VMInstanceVO a = vm(1L, VirtualMachine.Type.User, VirtualMachine.State.Running);
+        VMInstanceVO b = vm(2L, VirtualMachine.Type.User, VirtualMachine.State.Running);
+        Mockito.when(vmInstanceDao.listByHostId(43L)).thenReturn(Arrays.asList(a, b));
+        Mockito.when(hostDetailsDao.findDetail(43L, "drs.power.state"))
+                .thenReturn(new DetailVO(43L, "drs.power.state", "draining"));
+        drs.drainingVmCountByHost.put(43L, 2); // same count as now: the last batch moved nothing
+
+        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+
+        // no progress: the drain is abandoned (marker cleared, progress forgotten) instead of re-submitted forever.
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+        Assert.assertFalse(drs.drainingVmCountByHost.containsKey(43L));
+    }
+
+    @Test
+    public void drainBatchAbandonsWhenTheHostIsAlreadyEmpty() {
+        HostVO candidate = host(44L);
+        Mockito.when(vmInstanceDao.listByHostId(44L)).thenReturn(Collections.emptyList());
+        Mockito.when(hostDetailsDao.findDetail(44L, "drs.power.state"))
+                .thenReturn(new DetailVO(44L, "drs.power.state", "draining"));
+        drs.drainingVmCountByHost.put(44L, 1);
+
+        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+        Assert.assertFalse(drs.drainingVmCountByHost.containsKey(44L));
+    }
 }
