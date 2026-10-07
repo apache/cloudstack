@@ -24,6 +24,7 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
+import com.linbit.linstor.api.model.ResourceMakeAvailable;
 
 import javax.inject.Inject;
 
@@ -35,6 +36,8 @@ import java.util.Map;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -54,6 +57,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -169,11 +173,51 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
         return _volumeDao.persist(newVol);
     }
 
+    private DevelopersApi getLinstorAPI(StoragePoolVO storagePool) {
+        return LinstorUtil.getLinstorAPI(storagePool.getHostAddress(),
+                LinstorConfigurationManager.ApiToken.valueIn(storagePool.getId()),
+                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(storagePool.getId())));
+    }
+
+    /**
+     * Makes the new resource available on the migration target host and returns its device path there.
+     *
+     * <p>The resource is spawned by LINSTOR's auto-placement, which does not know about the target host.
+     * libvirt can only precreate file disks on the target, so if the block device is missing there the
+     * migration fails with "cannot precreate storage for disk type 'block'". The source disk is not on
+     * LINSTOR, so a plain (diskless for DRBD) make-available is enough, no dual-primary needed.</p>
+     */
+    private String makeAvailableOnHost(StoragePoolVO storagePool, String rscName, Host host) {
+        DevelopersApi api = getLinstorAPI(storagePool);
+        try {
+            logger.info("Linstor: make resource {} available on migration target {}", rscName, host.getName());
+            ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, host.getName(), new ResourceMakeAvailable());
+            LinstorUtil.checkLinstorAnswersThrow(answers);
+            return LinstorUtil.getDevicePath(api, rscName);
+        } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - {}", apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    /**
+     * A paused domain (incoming migration still in progress) is reported as PowerUnknown, so this
+     * is only true once the VM really runs on the host.
+     */
+    private boolean isVmRunningOnHost(VirtualMachineTO vmTO, Host host) {
+        try {
+            Answer answer = _agentManager.send(host.getId(), new CheckVirtualMachineCommand(vmTO.getName()));
+            return answer instanceof CheckVirtualMachineAnswer && answer.getResult() &&
+                    VirtualMachine.PowerState.PowerOn.equals(((CheckVirtualMachineAnswer) answer).getState());
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Unable to check if VM [{}] is running on host [{}]", vmTO, host, e);
+            return false;
+        }
+    }
+
     private void removeExactSizeProperty(VolumeInfo volumeInfo) {
         StoragePoolVO destStoragePool = _storagePool.findById(volumeInfo.getDataStore().getId());
-        DevelopersApi api = LinstorUtil.getLinstorAPI(destStoragePool.getHostAddress(),
-                LinstorConfigurationManager.ApiToken.valueIn(destStoragePool.getId()),
-                Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(destStoragePool.getId())));
+        DevelopersApi api = getLinstorAPI(destStoragePool);
 
         ResourceDefinitionModify rdm = new ResourceDefinitionModify();
         rdm.setDeleteProps(Collections.singletonList(LinstorUtil.LIN_PROP_DRBDOPT_EXACT_SIZE));
@@ -266,10 +310,10 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
                             _volumeService.expungeVolumeAsync(destVolumeInfo);
 
                     if (destroyFuture.get().isFailed()) {
-                        logger.debug("Failed to clean up dest volume on storage");
+                        logger.warn("Failed to clean up dest volume {} on storage", destVolumeInfo);
                     }
                 } catch (Exception e) {
-                    logger.debug("Failed to clean up dest volume on storage", e);
+                    logger.warn("Failed to clean up dest volume {} on storage", destVolumeInfo, e);
                 }
             }
         }
@@ -293,9 +337,7 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
     private boolean needsExactSizeProp(VolumeInfo srcVolumeInfo) {
         StoragePoolVO srcStoragePool = _storagePool.findById(srcVolumeInfo.getDataStore().getId());
         if (srcStoragePool.getPoolType() == Storage.StoragePoolType.Linstor) {
-            DevelopersApi api = LinstorUtil.getLinstorAPI(srcStoragePool.getHostAddress(),
-                    LinstorConfigurationManager.ApiToken.valueIn(srcStoragePool.getId()),
-                    Boolean.TRUE.equals(LinstorConfigurationManager.InsecureSsl.valueIn(srcStoragePool.getId())));
+            DevelopersApi api = getLinstorAPI(srcStoragePool);
 
             String rscName = LinstorUtil.RSC_PREFIX + srcVolumeInfo.getPath();
             try {
@@ -335,6 +377,7 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
 
         Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage = new HashMap<>();
         Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
+        boolean migrateCommandSent = false;
 
         try {
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
@@ -351,6 +394,8 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
                 VolumeVO destVolume = createNewVolumeVO(srcVolume, destStoragePool);
 
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
+                // registered right away, so a failure from here on cleans the new volume up again
+                srcVolumeInfoToDestVolumeInfo.put(srcVolumeInfo, destVolumeInfo);
 
                 destVolumeInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationCopyRequested);
                 destVolumeInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded);
@@ -358,13 +403,16 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
 
                 boolean exactSize = needsExactSizeProp(srcVolumeInfo);
 
-                String devPath = LinstorUtil.createResource(
-                        destVolumeInfo, destStoragePool, _storagePoolDao, exactSize);
+                LinstorUtil.createResource(destVolumeInfo, destStoragePool, _storagePoolDao, exactSize);
 
                 _volumeDao.update(destVolume.getId(), destVolume);
                 destVolume = _volumeDao.findById(destVolume.getId());
 
                 destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
+                srcVolumeInfoToDestVolumeInfo.put(srcVolumeInfo, destVolumeInfo);
+
+                String devPath = makeAvailableOnHost(
+                        destStoragePool, LinstorUtil.RSC_PREFIX + destVolumeInfo.getUuid(), destHost);
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(
                         srcVolumeInfo.getPath(),
@@ -375,8 +423,6 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
                 migrateDiskInfoList.add(migrateDiskInfo);
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
-
-                srcVolumeInfoToDestVolumeInfo.put(srcVolumeInfo, destVolumeInfo);
             }
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
@@ -410,16 +456,30 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
-            MigrateAnswer migrateAnswer = (MigrateAnswer) _agentManager.send(srcHost.getId(), migrateCommand);
-            boolean success = migrateAnswer != null && migrateAnswer.getResult();
+            // once the migrate command is sent, the VM may end up running on the new volumes,
+            // so they are only removed if the source host reports the migration as failed
+            migrateCommandSent = true;
+            MigrateAnswer migrateAnswer = null;
+            boolean success;
+            try {
+                migrateAnswer = (MigrateAnswer) _agentManager.send(srcHost.getId(), migrateCommand);
+                success = migrateAnswer != null && migrateAnswer.getResult();
+            } catch (OperationTimedoutException ex) {
+                // no answer from the source host, but the migration may still have finished
+                if (!isVmRunningOnHost(vmTO, destHost)) {
+                    throw ex;
+                }
+                logger.info("VM [{}] is running on the destination host [{}], migration was successful", vmTO, destHost);
+                success = true;
+            }
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
 
-            if (migrateAnswer == null) {
-                throw new CloudRuntimeException("Unable to get an answer to the migrate command");
-            }
+            if (!success) {
+                if (migrateAnswer == null) {
+                    throw new CloudRuntimeException("Unable to get an answer to the migrate command");
+                }
 
-            if (!migrateAnswer.getResult()) {
                 errMsg = migrateAnswer.getDetails();
 
                 throw new CloudRuntimeException(errMsg);
@@ -427,8 +487,17 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
         } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in LinstorDataMotionStrategy.copyAsync. Error message: [%s].",
-                    vmTO, srcHost, destHost, ex.getMessage());
+                    vmTO, volumeDataStoreMap.values(), destHost, ex.getMessage());
             logger.error(errMsg, ex);
+
+            if (!migrateCommandSent && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
+                // failed before the migration was started: remove the already created destination volumes
+                try {
+                    handlePostMigration(false, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
+                } catch (Exception e) {
+                    logger.warn("Failed to clean up the destination volume(s) of VM [{}]", vmTO, e);
+                }
+            }
 
             throw new CloudRuntimeException(errMsg);
         } finally {
