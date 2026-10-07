@@ -83,6 +83,7 @@ public class ClusterDrsPowerOrchestrationTest {
     private HostVO host(long id) {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.lenient().when(host.getId()).thenReturn(id);
+        Mockito.lenient().when(host.getResourceState()).thenReturn(ResourceState.Enabled);
         return host;
     }
 
@@ -277,8 +278,10 @@ public class ClusterDrsPowerOrchestrationTest {
     }
 
     @Test
-    public void drainBatchAbandonsWhenTheHostIsAlreadyEmpty() {
+    public void drainBatchPowersOffAnEmptiedDrainingHost() {
         HostVO candidate = host(44L);
+        // a drained host is already disabled, so powerOffHost must proceed without re-disabling it.
+        Mockito.when(candidate.getResourceState()).thenReturn(ResourceState.Disabled);
         Mockito.when(vmInstanceDao.listByHostId(44L)).thenReturn(Collections.emptyList());
         Mockito.when(hostDetailsDao.findDetail(44L, "drs.power.state"))
                 .thenReturn(new DetailVO(44L, "drs.power.state", "draining"));
@@ -286,7 +289,9 @@ public class ClusterDrsPowerOrchestrationTest {
 
         drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
 
-        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+        // the emptied host is powered off (the empty-host loop never sees it because it is disabled), the draining
+        // marker is replaced by the off marker, and the progress entry is cleared.
+        Mockito.verify(outOfBandManagementService).executePowerOperation(Mockito.eq(candidate), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
         Assert.assertFalse(drs.drainingVmCountByHost.containsKey(44L));
     }
 }

@@ -918,7 +918,19 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<HostVO> routingHosts = hostDao.findByClusterId(cluster.getId(), Host.Type.Routing);
         List<HostVO> upHosts = new ArrayList<>();
         List<HostVO> poweredOffByDrs = new ArrayList<>();
+        List<HostVO> drainingHosts = new ArrayList<>();
         for (HostVO host : routingHosts) {
+            if (isDrainingByDrs(host)) {
+                if (host.getStatus() == Status.Up) {
+                    // still reachable: continue (or finish) the drain below.
+                    drainingHosts.add(host);
+                } else {
+                    // went down or away mid-drain: DRS did not power it off, so stop tracking it and release the
+                    // marker rather than leaking it and blocking a later drain.
+                    abandonDrain(host, "host is no longer up");
+                }
+                continue;
+            }
             if (host.getStatus() == Status.Up) {
                 if (isPoweredOffByDrs(host)) {
                     // Our host is back in service: either a wake completed, or a power-off we issued never took
@@ -940,11 +952,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 poweredOffByDrs.add(host);
             }
         }
-        if (upHosts.isEmpty()) {
+        if (upHosts.isEmpty() && poweredOffByDrs.isEmpty() && drainingHosts.isEmpty()) {
             return;
         }
 
-        Map<Long, Ternary<Long, Long, Long>> capacityMap = getHostCapacityMap(upHosts, useCpu);
+        // Capacity reflects every host still carrying load: the schedulable up hosts plus any host being drained
+        // (its VMs still run until it empties), so utilization is not understated while a drain is in progress.
+        List<HostVO> loadHosts = new ArrayList<>(upHosts);
+        loadHosts.addAll(drainingHosts);
+        Map<Long, Ternary<Long, Long, Long>> capacityMap = getHostCapacityMap(loadHosts, useCpu);
         double clusterUsed = 0d;
         double clusterTotal = 0d;
         for (Ternary<Long, Long, Long> capacity : capacityMap.values()) {
@@ -989,10 +1005,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
         }
 
-        // nothing empty to power off; if the operator opted in, drain a releasable host so a later poll can
-        // power it off once empty.
-        if (Boolean.TRUE.equals(ClusterDrsPowerManagementEvacuate.valueIn(cluster.getId()))) {
-            evacuateReleasableHost(cluster, upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold, useCpu);
+        // Continue a drain already in progress even if evacuation was since turned off, so a host is never stranded
+        // mid-drain; only START a new drain when the operator has opted in and no host is empty to power off.
+        if (!drainingHosts.isEmpty()) {
+            drainHostBatch(cluster, drainingHosts.get(0), upHosts, capacityMap, highThreshold, useCpu);
+        } else if (Boolean.TRUE.equals(ClusterDrsPowerManagementEvacuate.valueIn(cluster.getId()))) {
+            HostVO candidate = selectDrainCandidate(upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold);
+            if (candidate != null) {
+                drainHostBatch(cluster, candidate, upHosts, capacityMap, highThreshold, useCpu);
+            }
         }
     }
 
@@ -1024,32 +1045,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     protected void abandonDrain(HostVO host, String reason) {
         logger.info("DRS power management: abandoning drain of host [{}]: {}", host.getId(), reason);
+        // the host was disabled when the drain started so the scheduler would leave it alone while it emptied;
+        // put it back in service now that the drain is being given up.
+        if (host.getResourceState() == ResourceState.Disabled) {
+            hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
+        }
         clearStalePowerMarker(host);
         drainingVmCountByHost.remove(host.getId());
-    }
-
-    /**
-     * Drives the eviction side of power management when no host is empty yet. Continues a drain already in progress
-     * before starting another, otherwise starts draining the least-loaded releasable host. A drain that stops making
-     * progress across polls (its migrations keep being rejected for affinity, host tags or storage) is abandoned
-     * instead of re-submitted forever, so a host is never left indefinitely half-drained.
-     */
-    protected void evacuateReleasableHost(ClusterVO cluster, List<HostVO> upHosts, Map<Long, Ternary<Long, Long, Long>> capacityMap,
-            double effectiveUsed, double clusterTotal, float lowThreshold, float highThreshold, boolean useCpu) {
-        HostVO candidate = null;
-        for (HostVO host : upHosts) {
-            if (isDrainingByDrs(host)) {
-                candidate = host;
-                break;
-            }
-        }
-        if (candidate == null) {
-            candidate = selectDrainCandidate(upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold);
-        }
-        if (candidate == null) {
-            return;
-        }
-        drainHostBatch(cluster, candidate, upHosts, capacityMap, highThreshold, useCpu);
     }
 
     /**
@@ -1084,8 +1086,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             Map<Long, Ternary<Long, Long, Long>> capacityMap, float highThreshold, boolean useCpu) {
         List<VMInstanceVO> vms = vmInstanceDao.listByHostId(candidate.getId());
         if (vms == null || vms.isEmpty()) {
-            // fully drained; the empty-host power-off path takes it from here.
-            abandonDrain(candidate, "host is empty");
+            // fully drained: power it off now. It was disabled when the drain started, so the empty-host power-off
+            // loop (which only scans enabled up hosts) does not see it; powerOffHost handles the already-disabled case.
+            powerOffHost(candidate, cluster);
             return;
         }
         if (hasMigratingVm(candidate.getId())) {
@@ -1143,6 +1146,14 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
         }
         if (batch.isEmpty()) {
+            return;
+        }
+        // Starting a new drain: disable the host first so the allocator stops placing new VMs on it (it is the
+        // least-loaded host, which the allocator would otherwise prefer, and that would fight the drain). A drain
+        // already in progress is left as is. If the host cannot be disabled, do not start.
+        if (previous == null && candidate.getResourceState() == ResourceState.Enabled
+                && !hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, candidate)) {
+            logger.warn("DRS power management: could not disable host [{}] to begin draining it; skipping.", candidate.getId());
             return;
         }
         logger.info("DRS power management: cluster [{}] is under-utilized; draining host [{}] ({} VMs left, {} this poll) to power it off.",
@@ -1347,10 +1358,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     protected void powerOffHost(HostVO host, ClusterVO cluster) {
         logger.info("DRS power management: cluster [{}] is under-utilized; disabling and powering off empty host [{}].", cluster.getId(), host.getId());
-        // Disable first so CloudStack stops scheduling to the host and does not treat the imminent agent
-        // disconnect as a failure (host monitor / HA). Abort if the transition did not take effect, so the
-        // host is never powered off while CloudStack still believes it is schedulable.
-        if (!hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, host)) {
+        // Disable first so CloudStack stops scheduling to the host and does not treat the imminent agent disconnect
+        // as a failure (host monitor / HA). A host that was being drained is already Disabled, so only transition an
+        // Enabled host, and abort only when that transition does not take effect, so the host is never powered off
+        // while CloudStack still believes it is schedulable.
+        if (host.getResourceState() == ResourceState.Enabled
+                && !hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, host)) {
             logger.warn("DRS power management: could not disable host [{}]; skipping power-off.", host.getId());
             return;
         }
