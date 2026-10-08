@@ -58,6 +58,18 @@ class TestCsAclIpv6(unittest.TestCase):
         egress = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_egress_policy" and 'rule' in r]
         self.assertIn("ip6 daddr 2001:db8:1::/64 meta l4proto 50 accept", egress)
 
+    def test_extension_header_number_rule(self):
+        config = FakeConfig()
+        rules = [{"type": "protocol", "protocol": p, "cidr": "2001:db8::/64", "allowed": False} for p in (0, 43, 44, 60, 135)]
+        obj = {"device": "eth3", "nic_ip": "10.1.1.1", "nic_netmask": "24", "nic_ip6_cidr": "fd00:1::/64",
+               "ingress_rules": rules, "egress_rules": []}
+        acl = CsAcl.AclDevice(obj, config)
+        acl.create()
+
+        ingress = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
+        for name in ("hbh", "rt", "frag", "dst", "mh"):
+            self.assertIn("ip6 saddr 2001:db8::/64 exthdr %s exists drop" % name, ingress)
+
 
 if __name__ == '__main__':
     unittest.main()
