@@ -372,7 +372,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @DB
-    private IPAddressVO assignAndAllocateIpAddressEntry(final Account owner, final VlanType vlanUse, final Long guestNetworkId,
+    protected IPAddressVO assignAndAllocateIpAddressEntry(final Account owner, final VlanType vlanUse, final Long guestNetworkId,
                                                         final boolean sourceNat, final boolean allocate, final boolean isSystem,
                                                         final Long vpcId, final Boolean displayIp,
                                                         final List<IPAddressVO> addressVOS) throws CloudRuntimeException {
@@ -984,6 +984,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             _firewallMgr.addSystemFirewallRules(addr, owner);
         }
 
+        return buildPublicIp(addr);
+    }
+
+    protected PublicIp buildPublicIp(IPAddressVO addr) {
         return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 

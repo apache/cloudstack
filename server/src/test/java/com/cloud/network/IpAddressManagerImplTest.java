@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,11 +26,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.network.IpAddress.State;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.user.Account;
 
 @RunWith(MockitoJUnitRunner.class)
 public class IpAddressManagerImplTest {
@@ -37,6 +42,7 @@ public class IpAddressManagerImplTest {
     @Mock
     IPAddressDao ipAddressDao;
 
+    @Spy
     @InjectMocks
     IpAddressManagerImpl ipAddressManager = new IpAddressManagerImpl();
 
@@ -97,5 +103,32 @@ public class IpAddressManagerImplTest {
 
         Assert.assertNull(result);
         Mockito.verify(ipAddressDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(IPAddressVO.class));
+    }
+
+    @Test
+    public void testFetchNewPublicIpRetriesWhenTheFirstPickIsTakenConcurrently() throws Exception {
+        IPAddressVO taken = Mockito.mock(IPAddressVO.class);     // first pick, lost to a concurrent allocation
+        IPAddressVO allocated = Mockito.mock(IPAddressVO.class); // the free ip the retry succeeds with
+        PublicIp expected = Mockito.mock(PublicIp.class);
+
+        // each selection returns a single candidate (listAvailablePublicIps is called with lockOneRow=true)
+        Mockito.doReturn(Collections.singletonList(taken)).when(ipAddressManager).listAvailablePublicIps(
+                Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+        // the first allocation loses the race (null), the retry gets another ip
+        Mockito.doReturn(null).doReturn(allocated).when(ipAddressManager).assignAndAllocateIpAddressEntry(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(),
+                Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.anyList());
+        Mockito.doReturn(expected).when(ipAddressManager).buildPublicIp(allocated);
+
+        PublicIp result = ipAddressManager.fetchNewPublicIp(1L, null, null, Mockito.mock(Account.class),
+                VlanType.DirectAttached, null, false, true, true, null, null, true, null, null, false);
+
+        // the losing pick did not fail the call; it retried and allocated a different free ip
+        Assert.assertSame(expected, result);
+        Mockito.verify(ipAddressManager, Mockito.times(2)).assignAndAllocateIpAddressEntry(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(),
+                Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.anyList());
     }
 }
