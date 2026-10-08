@@ -62,6 +62,9 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -134,6 +137,26 @@ public class VolumeImportUnmanageManagerImplTest {
     private VolumeApiService volumeApiService;
     @Mock
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Mock
+    private DataStoreManager dataStoreManager;
+
+    @Test
+    public void linstorWrongGroupIsRejectedBeforeAgentInspection() {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        DataStore store = mock(DataStore.class);
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        when(pool.getId()).thenReturn(42L);
+        when(dataStoreManager.getPrimaryDataStore(42L)).thenReturn(store);
+        when(store.getDriver()).thenReturn(driver);
+        doThrow(new CloudRuntimeException("resource group mismatch")).when(driver).validateVolumeForImport(pool, "disk");
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> volumeImportUnmanageManager.listVolumesForImportInternal(pool, "disk", null));
+
+        verify(driver).validateVolumeForImport(pool, "disk");
+        Mockito.verifyNoInteractions(agentManager, volumeManager);
+    }
 
     @Mock
     StoragePoolVO storagePoolVO;
@@ -288,6 +311,55 @@ public class VolumeImportUnmanageManagerImplTest {
             VolumeResponse result = volumeImportUnmanageManager.importVolume(cmd);
             Assert.assertEquals(response, result);
         }
+    }
+
+    @Test
+    public void testImportVolumeForwardsRbdPoolTypeToOrchestrator() throws ResourceAllocationException {
+        ImportVolumeCmd cmd = mock(ImportVolumeCmd.class);
+        when(cmd.getPath()).thenReturn(path);
+        when(cmd.getStorageId()).thenReturn(poolId);
+        when(cmd.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(volumeDao.findByPoolIdAndPath(poolId, path)).thenReturn(null);
+        when(templatePoolDao.findByPoolPath(poolId, path)).thenReturn(null);
+
+        // Import a KVM volume residing on an RBD (Ceph) pool
+        when(storagePoolVO.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, path, name, fullPath,
+                "raw", size, virtualSize);
+        List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
+        volumesOnStorageTO.add(volumeOnStorageTO);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
+
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeHasBackingFile(volumeOnStorageTO);
+
+        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(diskOffering.isCustomized()).thenReturn(true);
+        doReturn(diskOffering).when(volumeImportUnmanageManager).getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+        doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
+        doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
+        doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull());
+        when(diskProfile.getVolumeId()).thenReturn(volumeId);
+        when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
+
+        doNothing().when(resourceLimitService).incrementResourceCount(accountId, Resource.ResourceType.volume);
+        doNothing().when(resourceLimitService).incrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
+
+        VolumeResponse response = mock(VolumeResponse.class);
+        doReturn(response).when(responseGenerator).createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
+            volumeImportUnmanageManager.importVolume(cmd);
+        }
+
+        // The RBD pool type and KVM hypervisor are forwarded to the orchestrator, which is what makes the
+        // imported volume be recorded with RAW format (see VolumeOrchestrator.getSupportedImageFormatForCluster).
+        verify(volumeManager).importVolume(eq(Volume.Type.DATADISK), anyString(), any(), eq(virtualSize), isNull(), isNull(),
+                anyLong(), eq(Hypervisor.HypervisorType.KVM), isNull(), isNull(), any(), isNull(), anyLong(),
+                eq(Storage.StoragePoolType.RBD), anyString(), isNull());
     }
 
     @Test
