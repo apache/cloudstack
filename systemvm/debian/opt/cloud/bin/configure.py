@@ -632,7 +632,9 @@ class CsAcl(CsDataBag):
                 self.dport = ""
                 if 'allowed' in list(rule.keys()) and rule['allowed']:
                     self.action = "ACCEPT"
-                if 'first_port' in list(rule.keys()):
+                # A tcp or udp rule without ports is sent with the range 0:0; like the nft paths, match all ports
+                no_ports = rule.get('first_port', 0) == 0 and rule.get('last_port', 0) == 0
+                if 'first_port' in list(rule.keys()) and not no_ports:
                     self.dport = "-m %s --dport %s" % (self.protocol, rule['first_port'])
                 if 'last_port' in list(rule.keys()) and self.dport and \
                    rule['last_port'] != rule['first_port']:
