@@ -15,22 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.email.template;
 
-import java.util.Date;
-import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.backup.BackupScheduleVO;
+@Entity
+@Table(name = "email_template")
+public class EmailTemplateVO {
+    @Id
+    @Column(name = "id")
+    private long id;
 
-import com.cloud.utils.db.GenericDao;
+    @Column(name = "name")
+    private String name;
 
-public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    List<BackupScheduleVO> listByVM(Long vmId);
+    @Column(name = "template", length = 65535)
+    private String template;
 
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
+    public EmailTemplateVO() {
+    }
 
-    List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
+    public String getName() {
+        return name;
+    }
 
-    List<BackupScheduleVO> getSchedulesToExecuteForDomainAndAccount(Date currentTimestamp, Long zoneId, Long domainId, Long accountId);
+    public String getTemplate() {
+        return template;
+    }
 }
