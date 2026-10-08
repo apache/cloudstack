@@ -625,22 +625,33 @@ export const backupUtilPlugin = {
 
 export const localeErrorUtilPlugin = {
   install (app) {
+    const getRawLocaleMessage = function (key) {
+      const locale = i18n.global.locale
+      const localeMessages = i18n.global.getLocaleMessage(locale) || {}
+      if (Object.prototype.hasOwnProperty.call(localeMessages, key)) {
+        return localeMessages[key]
+      }
+      if (locale !== 'en') {
+        const fallbackMessages = i18n.global.getLocaleMessage('en') || {}
+        if (Object.prototype.hasOwnProperty.call(fallbackMessages, key)) {
+          return fallbackMessages[key]
+        }
+      }
+      return null
+    }
+
     app.config.globalProperties.$toLocaleError = function (msg, key, params) {
       if (!key) {
         return msg
       }
       let localeMsg
       if (!key.endsWith('.admin') && store.getters.userInfo?.roletype === 'Admin') {
-        const adminKey = key + '.admin'
-        const adminMsg = i18n.global.t(adminKey)
-        if (adminMsg && adminMsg !== adminKey) {
-          localeMsg = adminMsg
-        }
+        localeMsg = getRawLocaleMessage(key + '.admin')
       }
       if (!localeMsg) {
-        localeMsg = i18n.global.t(key)
+        localeMsg = getRawLocaleMessage(key)
       }
-      if (!localeMsg || localeMsg === key) {
+      if (!localeMsg) {
         return msg
       }
       if (params && params.constructor === Object) {
