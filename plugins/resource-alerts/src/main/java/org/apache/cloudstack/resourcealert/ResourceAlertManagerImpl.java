@@ -102,11 +102,11 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     public static final ConfigKey<Integer> RULES_PER_ACCOUNT_LIMIT = new ConfigKey<>("Advanced", Integer.class,
             "resource.alert.per.user.limit", "20",
-            "Maximum number of resource alert rules an account can own; 0 = unlimited", true, ConfigKey.Scope.Account);
+            "Maximum number of resource alert rules an account can own; -1 = unlimited", true, ConfigKey.Scope.Account);
 
     static final ConfigKey<Integer> HISTORY_RETENTION_DAYS = new ConfigKey<>("Advanced", Integer.class,
             "resource.alert.history.retention.days", "30",
-            "Number of days to keep fired resource alerts; 0 keeps them forever", true);
+            "Number of days to keep fired resource alerts; -1 keeps them forever", true);
 
     public static final ConfigKey<Integer> DEFAULT_RESET_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
             "resource.alert.repeat.interval.default", "600",
@@ -303,7 +303,7 @@ public class ResourceAlertManagerImpl extends ManagerBase implements ResourceAle
 
     void removeExpiredAlerts() {
         int days = HISTORY_RETENTION_DAYS.value();
-        if (days <= 0) {
+        if (days < 0) {
             return;
         }
         int removed = alertDao.removeOlderThan(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(days)));

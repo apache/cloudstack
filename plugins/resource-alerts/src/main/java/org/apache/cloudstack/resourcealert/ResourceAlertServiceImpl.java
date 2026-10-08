@@ -134,7 +134,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         ResourceAlertRuleVO rule;
         try {
             int limit = ResourceAlertManagerImpl.RULES_PER_ACCOUNT_LIMIT.valueIn(owner.getId());
-            if (limit > 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
+            if (limit >= 0 && ruleDao.countActiveByAccountId(owner.getId()) >= limit) {
                 throw new InvalidParameterValueException(
                         "Account has reached the maximum of " + limit + " resource alert rules");
             }
