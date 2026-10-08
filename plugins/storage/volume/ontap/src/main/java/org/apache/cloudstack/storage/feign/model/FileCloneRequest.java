@@ -46,6 +46,15 @@ public class FileCloneRequest {
     @JsonProperty("overwrite_destination")
     private Boolean overwriteDestination;
 
+    /**
+     * Optional FlexVolume snapshot to clone from. When set, ONTAP clones {@code source_path}
+     * as it existed in that snapshot rather than from the live file/LUN.
+     *
+     * <p>Used by create-volume-from-snapshot (same FlexVol). Omitted for live template-cache clones.</p>
+     */
+    @JsonProperty("snapshot")
+    private SnapshotRef snapshot;
+
     public FileCloneRequest() {
     }
 
@@ -53,6 +62,14 @@ public class FileCloneRequest {
         this.volume = new VolumeRef(flexVolUuid, flexVolName);
         this.sourcePath = sourcePath;
         this.destinationPath = destinationPath;
+    }
+
+    public FileCloneRequest(String flexVolUuid, String flexVolName, String sourcePath, String destinationPath,
+                            String snapshotName) {
+        this(flexVolUuid, flexVolName, sourcePath, destinationPath);
+        if (snapshotName != null && !snapshotName.isEmpty()) {
+            this.snapshot = new SnapshotRef(snapshotName);
+        }
     }
 
     public VolumeRef getVolume() {
@@ -85,6 +102,14 @@ public class FileCloneRequest {
 
     public void setOverwriteDestination(Boolean overwriteDestination) {
         this.overwriteDestination = overwriteDestination;
+    }
+
+    public SnapshotRef getSnapshot() {
+        return snapshot;
+    }
+
+    public void setSnapshot(SnapshotRef snapshot) {
+        this.snapshot = snapshot;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -122,10 +147,37 @@ public class FileCloneRequest {
         }
     }
 
+    /**
+     * Snapshot identity for {@code POST /api/storage/file/clone} when cloning from a FlexVol snapshot.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class SnapshotRef {
+
+        @JsonProperty("name")
+        private String name;
+
+        public SnapshotRef() {
+        }
+
+        public SnapshotRef(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
     @Override
     public String toString() {
         return "FileCloneRequest{volume=" + (volume != null ? volume.getUuid() : null)
                 + ", sourcePath=" + sourcePath
-                + ", destinationPath=" + destinationPath + "}";
+                + ", destinationPath=" + destinationPath
+                + ", snapshot=" + (snapshot != null ? snapshot.getName() : null) + "}";
     }
 }

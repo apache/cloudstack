@@ -79,4 +79,28 @@ public class OntapStorageUtilsTest {
 
         assertEquals(OntapStorageConstants.IGROUP_NAME_MAX_LENGTH, result.length());
     }
+    @Test
+    public void toFlexVolRelativePath_stripsVolPrefix() {
+        assertEquals("lun1", OntapStorageUtils.toFlexVolRelativePath("/vol/vol1/lun1", "vol1"));
+        assertEquals("file-uuid", OntapStorageUtils.toFlexVolRelativePath("file-uuid", "vol1"));
+        assertEquals("file-uuid", OntapStorageUtils.toFlexVolRelativePath("/file-uuid", "vol1"));
+    }
+
+    @Test
+    public void toLunCloneSourcePathInSnapshot_buildsSnapshotQualifiedPath() {
+        assertEquals("/vol/vol1/.snapshot/snap_cs200/source_lun",
+                OntapStorageUtils.toLunCloneSourcePathInSnapshot("/vol/vol1/source_lun", "vol1", "snap_cs200"));
+        assertEquals("/vol/vol1/.snapshot/snap_cs200/source_lun",
+                OntapStorageUtils.toLunCloneSourcePathInSnapshot("source_lun", "vol1", "snap_cs200"));
+    }
+
+    @Test
+    public void toLunCloneSourcePathInSnapshot_rejectsBlankInputs() {
+        org.junit.jupiter.api.Assertions.assertThrows(com.cloud.exception.InvalidParameterValueException.class,
+                () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("/vol/vol1/lun", "vol1", null));
+        org.junit.jupiter.api.Assertions.assertThrows(com.cloud.exception.InvalidParameterValueException.class,
+                () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("/vol/vol1/lun", "", "snap"));
+        org.junit.jupiter.api.Assertions.assertThrows(com.cloud.exception.InvalidParameterValueException.class,
+                () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("", "vol1", "snap"));
+    }
 }

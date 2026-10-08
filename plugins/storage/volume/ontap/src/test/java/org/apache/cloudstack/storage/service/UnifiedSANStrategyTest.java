@@ -76,6 +76,9 @@ class UnifiedSANStrategyTest {
     private SANFeignClient sanFeignClient;
 
     @Mock
+    private org.apache.cloudstack.storage.feign.client.NASFeignClient nasFeignClient;
+
+    @Mock
     private OntapStorage ontapStorage;
 
     @Mock
@@ -104,6 +107,10 @@ class UnifiedSANStrategyTest {
             java.lang.reflect.Field sanFeignClientField = StorageStrategy.class.getDeclaredField("sanFeignClient");
             sanFeignClientField.setAccessible(true);
             sanFeignClientField.set(unifiedSANStrategy, sanFeignClient);
+
+            java.lang.reflect.Field nasFeignClientField = StorageStrategy.class.getDeclaredField("nasFeignClient");
+            nasFeignClientField.setAccessible(true);
+            nasFeignClientField.set(unifiedSANStrategy, nasFeignClient);
 
             // Also inject the storage field from parent class to ensure proper mocking
             java.lang.reflect.Field storageField = StorageStrategy.class.getDeclaredField("storage");
@@ -1032,6 +1039,40 @@ class UnifiedSANStrategyTest {
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.cloneCloudStackVolume(request));
+    }
+
+    @Test
+    void testCloneCloudStackVolume_SnapshotSource_SendsSnapshotQualifiedName() {
+        Lun.Source source = new Lun.Source();
+        source.setName("/vol/vol1/.snapshot/snap_cs200/source_lun");
+        Lun.Clone clone = new Lun.Clone();
+        clone.setSource(source);
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/new_lun");
+        lun.setClone(clone);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        Lun createdLun = new Lun();
+        createdLun.setName("/vol/vol1/new_lun");
+        createdLun.setUuid("new-lun-uuid");
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(createdLun));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class))).thenReturn(response);
+
+            CloudStackVolume result = unifiedSANStrategy.cloneCloudStackVolume(request);
+
+            assertEquals("new-lun-uuid", result.getLun().getUuid());
+            ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+            verify(sanFeignClient).createLun(eq(authHeader), eq(true), lunCaptor.capture());
+            assertEquals("/vol/vol1/.snapshot/snap_cs200/source_lun",
+                    lunCaptor.getValue().getClone().getSource().getName());
+            assertNull(lunCaptor.getValue().getClone().getSource().getUuid());
+        }
     }
 
     @Test

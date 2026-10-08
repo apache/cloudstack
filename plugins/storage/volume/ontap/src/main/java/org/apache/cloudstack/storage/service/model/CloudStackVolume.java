@@ -51,6 +51,12 @@ public class CloudStackVolume {
      */
     private String destinationPath;
 
+    /**
+     * ONTAP FlexVolume snapshot name when cloning a new file/LUN from a snapshot
+     * (create-volume-from-snapshot). Null for live clones (e.g. template cache).
+     */
+    private String snapshotName;
+
     private DataObject volumeInfo; // This is needed as we need DataObject to be passed to agent to create volume
 
     public FileInfo getFile() {
@@ -99,6 +105,14 @@ public class CloudStackVolume {
 
     public void setDestinationPath(String destinationPath) {
         this.destinationPath = destinationPath;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
+    public void setSnapshotName(String snapshotName) {
+        this.snapshotName = snapshotName;
     }
 
 }

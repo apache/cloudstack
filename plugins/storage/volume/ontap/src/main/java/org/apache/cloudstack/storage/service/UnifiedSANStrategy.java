@@ -110,7 +110,9 @@ public class UnifiedSANStrategy extends SANStrategy {
                                                 Map<String, String> details, long sizeInBytes) {
         if (sizeInBytes <= 0) {
             throw new CloudRuntimeException("Unknown virtual size for template [" + templateInfo.getId()
-                    + "]; cannot size the template LUN on pool [" + storagePool.getId() + "]");
+                    + "]; cannot size the template LUN on pool [" + storagePool.getId() + "]. The template size in vm_template"
+                    + " is unset; verify the template was registered/seeded with its virtual size (virtualsize in"
+                    + " template.properties on secondary storage).");
         }
 
         CloudStackVolume request = buildTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes);
@@ -264,7 +266,6 @@ public class UnifiedSANStrategy extends SANStrategy {
             throw new CloudRuntimeException("Failed to clone Lun: " + e.getMessage());
         }
     }
-
 
     /**
      * Ensures ONTAP returned a usable LUN identity from create/clone. Callers in the datastore

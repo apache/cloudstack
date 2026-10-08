@@ -83,6 +83,12 @@ public class OntapStorageConstants {
 
     public static final String VOLUME_PATH_PREFIX = "/vol/";
 
+    /**
+     * Path segment inserted after the FlexVol name when identifying a LUN inside a FlexVol snapshot
+     * for {@code POST /api/storage/luns} clone ({@code /vol/&lt;fv&gt;/.snapshot/&lt;snap&gt;/&lt;lun&gt;}).
+     */
+    public static final String SNAPSHOT_PATH_SEGMENT = "/.snapshot/";
+
     public static final String ONTAP_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9_]*$";
     public static final String KVM = "KVM";
 
@@ -104,6 +110,13 @@ public class OntapStorageConstants {
     public static final String VOLUME_PATH = "volume_path";
     public static final String PRIMARY_POOL_ID = "primary_pool_id";
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
+    /**
+     * Optional {@code snapshot_details} keys: min/max IOPS from the source volume at take-snapshot
+     * time. Persisted only when the volume has configured values; applied to volumes created from
+     * the snapshot in a later change (see TODO on create-from-snapshot).
+     */
+    public static final String MIN_IOPS = "min_iops";
+    public static final String MAX_IOPS = "max_iops";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
 
@@ -120,4 +133,24 @@ public class OntapStorageConstants {
      * with the string used by the orchestrator.
      */
     public static final String CLONE_OF_TEMPLATE = "cloneOfTemplate";
+
+    /**
+     * Key of the {@code volume_details} row that {@code StorageSystemDataMotionStrategy} writes
+     * immediately before {@code createAsync} when a volume is to be created from a CloudStack
+     * snapshot already present on this pool. The value is the CloudStack snapshot id. The literal
+     * must stay in sync with the string used by the orchestrator.
+     */
+    public static final String CLONE_OF_SNAPSHOT = "cloneOfSnapshot";
+
+    /**
+     * Driver capability read by {@code StorageSystemDataMotionStrategy} when copying a snapshot to
+     * secondary storage. The literal must stay in sync with the string used by the orchestrator.
+     */
+    public static final String CAN_DIRECT_ATTACH_SNAPSHOT = "CAN_DIRECT_ATTACH_SNAPSHOT";
+
+    /**
+     * Name prefix of the temporary volume a snapshot is cloned into for createTemplate(snapshotid),
+     * suffixed with the CloudStack snapshot id and volume id.
+     */
+    public static final String TEMP_SNAPSHOT_COPY_NAME_PREFIX = "cs_tmp_snap_";
 }

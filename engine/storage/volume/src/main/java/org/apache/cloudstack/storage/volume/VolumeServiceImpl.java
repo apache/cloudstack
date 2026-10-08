@@ -1003,7 +1003,6 @@ public class VolumeServiceImpl implements VolumeService {
                 } else {
                     errMesg = callback.result.getResult();
                 }
-                templateOnPrimary.processEvent(Event.OperationFailed);
                 throw new CloudRuntimeException(String.format("Unable to create template %s on primary storage %s: %s", templateOnPrimary.getImage(), destPrimaryDataStore, errMesg));
             }
 
@@ -1011,8 +1010,12 @@ public class VolumeServiceImpl implements VolumeService {
 
         } catch (Throwable e) {
             logger.debug("Failed to create template volume on storage", e);
-            templateOnPrimary.processEvent(Event.OperationFailed);
-            throw new CloudRuntimeException(e.getMessage());
+            try {
+                templateOnPrimary.processEvent(Event.OperationFailed);
+            } catch (Exception stateEx) {
+                logger.warn("Unable to mark template {} as failed on primary storage {}: {}", templateOnPrimary.getImage(), destPrimaryDataStore, stateEx.getMessage());
+            }
+            throw new CloudRuntimeException(e.getMessage(), e);
         } finally {
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
