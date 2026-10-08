@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -70,9 +71,10 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
 
             List<String> cidr;
             final StringBuilder sb = new StringBuilder();
-            sb.append(aclTO.getTrafficType().toString()).append(RULE_DETAIL_SEPARATOR).append(aclTO.getProtocol()).append(RULE_DETAIL_SEPARATOR);
-            if ("icmp".compareTo(aclTO.getProtocol()) == 0) {
-                sb.append(aclTO.getIcmpType()).append(RULE_DETAIL_SEPARATOR).append(aclTO.getIcmpCode()).append(RULE_DETAIL_SEPARATOR);
+            final String protocol = normalizeProtocol(aclTO.getProtocol());
+            sb.append(aclTO.getTrafficType().toString()).append(RULE_DETAIL_SEPARATOR).append(protocol).append(RULE_DETAIL_SEPARATOR);
+            if (NetUtils.ICMP_PROTO.equals(protocol)) {
+                sb.append(icmpTypeOrCode(aclTO.getIcmpType())).append(RULE_DETAIL_SEPARATOR).append(icmpTypeOrCode(aclTO.getIcmpCode())).append(RULE_DETAIL_SEPARATOR);
             } else {
                 sb.append(aclTO.getStringPortRange().replace(":", RULE_DETAIL_SEPARATOR)).append(RULE_DETAIL_SEPARATOR);
             }
@@ -95,6 +97,34 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
         }
 
         return result;
+    }
+
+    /**
+     * The VR applies ports only to a rule it is told is tcp or udp, and an ICMP type and code only to
+     * one it is told is icmp; any other protocol goes to it as a bare number. Name those three by their
+     * protocol number too, and whatever the case they were stored in, so their ports or ICMP type are
+     * not dropped.
+     */
+    protected static String normalizeProtocol(String protocol) {
+        if (protocol == null) {
+            return null;
+        }
+        String p = protocol.trim().toLowerCase(Locale.ROOT);
+        switch (p) {
+            case "1":
+                return NetUtils.ICMP_PROTO;
+            case "6":
+                return NetUtils.TCP_PROTO;
+            case "17":
+                return NetUtils.UDP_PROTO;
+            default:
+                return p;
+        }
+    }
+
+    private static int icmpTypeOrCode(Integer value) {
+        // -1 is "any"; a rule stored as protocol 1 may carry no ICMP type or code at all
+        return value == null ? -1 : value;
     }
 
     protected void orderNetworkAclRulesByRuleNumber(List<NetworkACLTO> aclList) {
