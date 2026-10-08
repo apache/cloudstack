@@ -70,20 +70,43 @@ class TestCsAddress(unittest.TestCase):
     def test_get_guest_netmask(self):
         self.assertTrue(self.csaddress.get_guest_netmask() == "255.255.255.0")
 
-    def acl_outbound_rules(self, address):
+    def acl_rules(self, address, chain="ACL_OUTBOUND_eth3", public_network=True, static_routes=None):
         config = FakeConfig()
+        config.has_public_network = lambda: public_network
         with mock.patch.object(CsIP, "list"):
             ip = CsIP("eth3", config)
         ip.setAddress(address)
-        ip.fw_vpcrouter()
-        return [fw for fw in config.fw if "-A ACL_OUTBOUND_eth3 " in fw[2]]
+        routes = mock.Mock()
+        routes.get_bag.return_value = static_routes or {}
+        with mock.patch("cs.CsAddress.CsStaticRoutes", return_value=routes):
+            ip.fw_vpcrouter()
+        return [fw for fw in config.fw if "-A %s " % chain in fw[2]]
+
+    def acl_outbound_rules(self, address):
+        return self.acl_rules(address)
 
     def test_acl_outbound_ends_with_return_on_guest_tier(self):
         # ACL rules are inserted ahead of the last rule of the chain, so that rule must be a
-        # terminal one, or the rule it is would end up behind the ACL rules
+        # terminal one, or it would end up behind the ACL rules
         rules = self.acl_outbound_rules({"nw_type": "guest", "network": "10.0.1.0/24", "gateway": "10.0.1.1"})
         self.assertEqual(rules[-1], ["mangle", "", "-A ACL_OUTBOUND_eth3 -j RETURN"])
         self.assertTrue(all(fw[1] == "front" for fw in rules[:-1]))
+
+    def test_acl_chains_end_with_return_on_static_route_tier_without_public_network(self):
+        # such a tier's ACL chains are only jumped to for the static route, and get no last rule otherwise
+        address = {"nw_type": "guest", "network": "10.0.1.0/24", "gateway": "10.0.1.1", "public_ip": "10.0.1.1"}
+        routes = {"id": "staticroutes", "192.168.50.0/24": {"network": "192.168.50.0/24", "ip_address": "10.0.1.1", "revoke": False}}
+        for chain, table in (("ACL_INBOUND_eth3", "filter"), ("ACL_OUTBOUND_eth3", "mangle")):
+            rules = self.acl_rules(address, chain, public_network=False, static_routes=routes)
+            self.assertEqual(rules, [[table, "", "-A %s -j RETURN" % chain]])
+
+    def test_acl_chains_get_one_last_rule_on_static_route_tier_with_public_network(self):
+        address = {"nw_type": "guest", "network": "10.0.1.0/24", "gateway": "10.0.1.1", "public_ip": "10.0.1.1"}
+        routes = {"id": "staticroutes", "192.168.50.0/24": {"network": "192.168.50.0/24", "ip_address": "10.0.1.1", "revoke": False}}
+        inbound = self.acl_rules(address, "ACL_INBOUND_eth3", static_routes=routes)
+        self.assertEqual([fw[2] for fw in inbound if fw[1] == ""], ["-A ACL_INBOUND_eth3 -j DROP"])
+        outbound = self.acl_rules(address, "ACL_OUTBOUND_eth3", static_routes=routes)
+        self.assertEqual([fw[2] for fw in outbound if fw[1] == ""], ["-A ACL_OUTBOUND_eth3 -j RETURN"])
 
     def test_acl_outbound_ends_with_return_on_private_gateway(self):
         rules = self.acl_outbound_rules({"nw_type": "public", "is_private_gateway": True, "network": "172.16.0.0/24",

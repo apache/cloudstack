@@ -618,6 +618,11 @@ class CsIP:
                     self.fw.append(["filter", "front",
                                     "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
                                     (static_route['network'], self.dev)])
+                    if self.get_type() in ["guest"] and not self.config.has_public_network():
+                        # Without a public network a tier's ACL chains get no last rule of their own, and are
+                        # only jumped to from here; close them too, so the ACL rules stay in order
+                        self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j RETURN" % self.dev])
+                        self.fw.append(["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
 
         if self.is_private_gateway():
             self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
