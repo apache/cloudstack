@@ -626,6 +626,19 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
+    public void validateProtocolTestProtocolNameInAnyCase() {
+        Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
+        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(null);
+        Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(null);
+        Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(null);
+        Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(null);
+        for (String protocol : new String[] {"TCP", "Udp", "ICMP", "All"}) {
+            Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn(protocol);
+            networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
+        }
+    }
+
+    @Test
     public void validateProtocolTestProtocolIsStringValid() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
 
