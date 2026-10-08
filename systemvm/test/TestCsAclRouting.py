@@ -48,15 +48,17 @@ class TestCsAclRouting(unittest.TestCase):
         config = FakeConfig()
         obj = {"device": "eth3", "nic_ip": "10.1.1.1", "nic_netmask": "24", "nic_ip6_cidr": "fd00:1::/64",
                "ingress_rules": [{"type": "protocol", "protocol": 47, "cidr": "1.2.3.4/32,2001:db8::/64", "allowed": True}],
-               "egress_rules": []}
+               "egress_rules": [{"type": "protocol", "protocol": 47, "cidr": "5.6.7.8/32", "allowed": False}]}
         acl = CsAcl.AclDevice(obj, config)
-        acl.process("ingress", acl.ingress, acl.FIXED_RULES_INGRESS, True)
+        acl.create()
 
         # nexthdr is an IPv6 header field, nft rejects it in an ip rule
         ip4 = [r['rule'] for r in config.nft_ipv4_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
         self.assertIn("ip saddr 1.2.3.4/32 ip protocol 47 accept", ip4)
         ip6 = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
         self.assertIn("ip6 saddr 2001:db8::/64 ip6 nexthdr 47 accept", ip6)
+        ip4 = [r['rule'] for r in config.nft_ipv4_acl if r.get('chain') == "eth3_egress_policy" and 'rule' in r]
+        self.assertIn("ip daddr 5.6.7.8/32 ip protocol 47 drop", ip4)
 
 
 if __name__ == '__main__':
