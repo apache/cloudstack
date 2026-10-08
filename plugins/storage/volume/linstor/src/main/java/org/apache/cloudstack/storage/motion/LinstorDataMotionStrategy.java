@@ -40,6 +40,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -78,7 +79,6 @@ import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -426,8 +426,9 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             }
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
+            Answer pfma;
             try {
-                Answer pfma = _agentManager.send(destHost.getId(), pfmc);
+                pfma = _agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -449,8 +450,12 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
             migrateCommand.setMigrateStorage(migrateStorage);
             migrateCommand.setMigrateStorageManaged(true);
-            migrateCommand.setNewVmCpuShares(
-                    vmTO.getCpus() * ObjectUtils.defaultIfNull(vmTO.getMinSpeed(), vmTO.getSpeed()));
+            // the target host scales the shares to its cgroup version (v2 only accepts 1-10000),
+            // the raw cpus * speed value is only valid on cgroup v1
+            Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
+            if (newVmCpuShares != null) {
+                migrateCommand.setNewVmCpuShares(newVmCpuShares);
+            }
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
 
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();

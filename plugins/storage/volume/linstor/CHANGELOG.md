@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live migration with storage into Linstor failed with "cannot precreate storage for disk type 'block'"
   if the auto-placement didn't put a copy of the new resource on the target host; the resource is
   now made available on the target host before the migration starts.
+- Live migration with storage into Linstor failed on cgroup v2 hosts with
+  "shares '<n>' must be in range [1, 10000]" for VMs with more than 10000 cpus * MHz, and smaller
+  VMs ended up with an unscaled CPU weight; the CPU shares calculated by the target host are now used.
 
 ## [2026-06-24]
 
