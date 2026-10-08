@@ -23,6 +23,7 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
 import com.cloud.agent.AgentManager;
+import com.cloud.utils.Ternary;
 import com.cloud.host.Status;
 import org.junit.Assert;
 import org.junit.Test;
@@ -253,7 +254,7 @@ public class ClusterDrsPowerOrchestrationTest {
         Mockito.when(vmInstanceDao.listByHostId(42L)).thenReturn(Collections.singletonList(migrating));
         drs.drainingVmCountByHost.put(42L, 3);
 
-        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0d, 100d, 0.30f, 0.75f, true);
 
         // a batch is still running: do not touch the marker or the recorded progress, just wait.
         Mockito.verify(hostDetailsDao, Mockito.never()).remove(Mockito.anyLong());
@@ -270,7 +271,7 @@ public class ClusterDrsPowerOrchestrationTest {
                 .thenReturn(new DetailVO(43L, "drs.power.state", "draining"));
         drs.drainingVmCountByHost.put(43L, 2); // same count as now: the last batch moved nothing
 
-        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0d, 100d, 0.30f, 0.75f, true);
 
         // no progress: the drain is abandoned (marker cleared, progress forgotten) instead of re-submitted forever.
         Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
@@ -278,20 +279,47 @@ public class ClusterDrsPowerOrchestrationTest {
     }
 
     @Test
-    public void drainBatchPowersOffAnEmptiedDrainingHost() {
+    public void drainBatchPowersOffAnEmptiedDrainingHostWhenStillReleasable() {
         HostVO candidate = host(44L);
+        HostVO other = host(45L);
         // a drained host is already disabled, so powerOffHost must proceed without re-disabling it.
         Mockito.when(candidate.getResourceState()).thenReturn(ResourceState.Disabled);
         Mockito.when(vmInstanceDao.listByHostId(44L)).thenReturn(Collections.emptyList());
-        Mockito.when(hostDetailsDao.findDetail(44L, "drs.power.state"))
-                .thenReturn(new DetailVO(44L, "drs.power.state", "draining"));
+        Mockito.when(outOfBandManagementService.isOutOfBandManagementEnabled(candidate)).thenReturn(true);
+        java.util.Map<Long, Ternary<Long, Long, Long>> capacityMap = new java.util.HashMap<>();
+        capacityMap.put(44L, new Ternary<>(0L, 0L, 100L));
+        capacityMap.put(45L, new Ternary<>(10L, 0L, 100L));
         drs.drainingVmCountByHost.put(44L, 1);
 
-        drs.drainHostBatch(cluster(1L), candidate, Collections.emptyList(), Collections.emptyMap(), 0.75f, true);
+        // cluster at 10/200 = 5% (below low 0.30), remaining after release 10/100 = 10% (below high 0.75): releasable.
+        drs.drainHostBatch(cluster(1L), candidate, Collections.singletonList(other), capacityMap, 10d, 200d, 0.30f, 0.75f, true);
 
-        // the emptied host is powered off (the empty-host loop never sees it because it is disabled), the draining
-        // marker is replaced by the off marker, and the progress entry is cleared.
+        // the emptied host is powered off (the empty-host loop never sees it because it is disabled) and its
+        // progress entry is cleared.
         Mockito.verify(outOfBandManagementService).executePowerOperation(Mockito.eq(candidate), Mockito.eq(OutOfBandManagement.PowerOperation.OFF), Mockito.any());
         Assert.assertFalse(drs.drainingVmCountByHost.containsKey(44L));
+    }
+
+    @Test
+    public void drainBatchReturnsAnEmptiedHostToServiceWhenNoLongerPowerManageable() {
+        HostVO candidate = host(46L);
+        HostVO other = host(47L);
+        Mockito.when(candidate.getResourceState()).thenReturn(ResourceState.Disabled);
+        Mockito.when(vmInstanceDao.listByHostId(46L)).thenReturn(Collections.emptyList());
+        // out-of-band management is no longer available for the drained host.
+        Mockito.when(outOfBandManagementService.isOutOfBandManagementEnabled(candidate)).thenReturn(false);
+        Mockito.when(hostDetailsDao.findDetail(46L, "drs.power.state"))
+                .thenReturn(new DetailVO(46L, "drs.power.state", "draining"));
+        java.util.Map<Long, Ternary<Long, Long, Long>> capacityMap = new java.util.HashMap<>();
+        capacityMap.put(46L, new Ternary<>(0L, 0L, 100L));
+        capacityMap.put(47L, new Ternary<>(10L, 0L, 100L));
+        drs.drainingVmCountByHost.put(46L, 1);
+
+        drs.drainHostBatch(cluster(1L), candidate, Collections.singletonList(other), capacityMap, 10d, 200d, 0.30f, 0.75f, true);
+
+        // it is not powered off; instead it is re-enabled and unmarked so it goes back into the scheduling pool.
+        Mockito.verify(outOfBandManagementService, Mockito.never()).executePowerOperation(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(hostDao).updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, candidate);
+        Assert.assertFalse(drs.drainingVmCountByHost.containsKey(46L));
     }
 }
