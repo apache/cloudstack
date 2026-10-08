@@ -1000,6 +1000,10 @@
                                     <exclude>org.bouncycastle:bcprov-jdk18on</exclude>
                                     <exclude>org.bouncycastle:bcpkix-jdk18on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk18on</exclude>
+                                    <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bctls-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcutil-jdk15on</exclude>
                                     <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
