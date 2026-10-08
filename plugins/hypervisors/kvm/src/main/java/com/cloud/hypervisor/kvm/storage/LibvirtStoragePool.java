@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
@@ -350,20 +351,24 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     /**
-     * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool,
-     * each with the pool's monitor port if one is set (IPv6 addresses are enclosed in square brackets).
+     * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool, trimmed
+     * and without empty entries, each with the pool's monitor port if one is set (IPv6 addresses are enclosed
+     * in square brackets then).
      */
     protected String getRbdMonitors() {
-        if (sourcePort <= 0) {
-            return sourceHost;
-        }
         List<String> monitors = new ArrayList<>();
         for (String monitor : sourceHost.split(",")) {
             monitor = monitor.trim();
-            if (monitor.contains(":") && !monitor.startsWith("[")) {
-                monitor = "[" + monitor + "]";
+            if (monitor.isEmpty()) {
+                continue;
             }
-            monitors.add(monitor + ":" + sourcePort);
+            if (sourcePort > 0) {
+                if (monitor.contains(":") && !monitor.startsWith("[")) {
+                    monitor = "[" + monitor + "]";
+                }
+                monitor = monitor + ":" + sourcePort;
+            }
+            monitors.add(monitor);
         }
         return String.join(",", monitors);
     }
@@ -373,10 +378,15 @@ public class LibvirtStoragePool implements KVMStoragePool {
      * to a heartbeat/VM-activity check {@link Script} for a RBD storage pool. Mirrors the "mon_host"/"id"/"key"
      * options that qemu itself uses to talk to RBD (see {@link KVMPhysicalDisk#RBDStringBuilder}).
      */
-    private void addRbdConnectionArgs(Script cmd) {
+    protected void addRbdConnectionArgs(Script cmd) {
+        boolean hasUser = StringUtils.isNotBlank(authUsername);
+        boolean hasSecret = StringUtils.isNotBlank(authSecret);
+        if (hasUser != hasSecret) {
+            throw new CloudRuntimeException(String.format("The Ceph user and key must be either both set or both unset for the storage pool %s", uuid));
+        }
         cmd.add("-s", getRbdMonitors());
         cmd.add("-o", sourceDir);
-        if (authUsername != null) {
+        if (hasUser) {
             cmd.add("-n", authUsername);
             cmd.add("-k", authSecret);
         }

@@ -34,7 +34,7 @@ help() {
                     -k cephx auth key, base64 (optional, required if -n is set)
                     -h host
                     -u volume (rbd image) uuid list
-                    -t time on ms
+                    -t current time in seconds (accepted for compatibility with kvmvmactivity.sh, not used)
                     -d suspect time\n"
   exit 1
 }
@@ -47,7 +47,6 @@ CephUser=
 CephKey=
 HostIP=
 UUIDList=
-MSTime=
 SuspectTime=
 
 while getopts 's:o:n:k:h:u:t:d:' OPTION
@@ -72,7 +71,7 @@ do
      UUIDList="$OPTARG"
      ;;
   t)
-     MSTime="$OPTARG"
+     # not used, see help
      ;;
   d)
      SuspectTime="$OPTARG"
@@ -89,6 +88,17 @@ then
 fi
 
 if [ -z "$SuspectTime" ]
+then
+   exit 2
+fi
+
+# the host IP names the heartbeat and activity objects
+if [ -z "$HostIP" ]
+then
+   exit 2
+fi
+
+if [ -n "$CephUser" ] && [ -z "$CephKey" ]
 then
    exit 2
 fi
@@ -150,7 +160,7 @@ else
 fi
 
 tmpFile=$(mktemp)
-echo "$SuspectTime:$latestUpdateTime:$MSTime" > "$tmpFile"
+echo "$SuspectTime:$latestUpdateTime" > "$tmpFile"
 rados -p "$PoolName" "${RadosOpts[@]}" put "$acObject" "$tmpFile" &> /dev/null
 rm -f "$tmpFile"
 

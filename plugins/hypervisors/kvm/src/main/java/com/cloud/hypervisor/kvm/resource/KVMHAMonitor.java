@@ -56,7 +56,9 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
                 if (StringUtils.isNotEmpty(pool.getMountDestPath())) {
-                    Script.runSimpleBashScript("umount " + pool.getMountDestPath());
+                    Script umount = new Script("umount", logger);
+                    umount.add(pool.getMountDestPath());
+                    umount.execute();
                 }
                 haStoragePools.remove(uuid);
             }

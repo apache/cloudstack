@@ -84,6 +84,17 @@ then
    exit 1
 fi
 
+# the host IP names the heartbeat object, so it is required except for the self-fencing (-c)
+if [ "$cflag" != "1" ] && [ -z "$HostIP" ]
+then
+   exit 1
+fi
+
+if [ -n "$CephUser" ] && [ -z "$CephKey" ]
+then
+   exit 1
+fi
+
 RadosOpts=(--mon-host "$MonHosts")
 if [ -n "$CephUser" ]
 then
