@@ -56,7 +56,9 @@ class TestCsAclRouting(unittest.TestCase):
         ip4 = [r['rule'] for r in config.nft_ipv4_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
         self.assertIn("ip saddr 1.2.3.4/32 ip protocol 47 accept", ip4)
         ip6 = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
-        self.assertIn("ip6 saddr 2001:db8::/64 ip6 nexthdr 47 accept", ip6)
+        # the IPv4 match must not leak into the IPv6 rule
+        self.assertTrue(any(r.startswith("ip6 saddr 2001:db8::/64 ") and r.endswith(" 47 accept") for r in ip6))
+        self.assertFalse(any("ip protocol" in r for r in ip6))
         ip4 = [r['rule'] for r in config.nft_ipv4_acl if r.get('chain') == "eth3_egress_policy" and 'rule' in r]
         self.assertIn("ip daddr 5.6.7.8/32 ip protocol 47 drop", ip4)
 
