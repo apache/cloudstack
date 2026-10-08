@@ -38,9 +38,8 @@ import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "createVMSnapshot", description = "Creates Snapshot for an Instance. Running KVM UEFI disk-only snapshots briefly suspend the Instance while copying NVRAM state.",
         responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
-
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the Instance")

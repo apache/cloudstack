@@ -30,7 +30,7 @@ import network from '@/config/section/network'
 import image from '@/config/section/image'
 import kms from '@/config/section/kms'
 import project from '@/config/section/project'
-import event from '@/config/section/event'
+import activity from '@/config/section/activity'
 import user from '@/config/section/user'
 import keyPair from '@/config/section/keypair'
 import account from '@/config/section/account'
@@ -221,7 +221,7 @@ export function asyncRouterMap () {
       generateRouterMap(network),
       generateRouterMap(image),
       generateRouterMap(kms),
-      generateRouterMap(event),
+      generateRouterMap(activity),
       generateRouterMap(project),
       generateRouterMap(user),
       generateRouterMap(keyPair),

@@ -20,6 +20,7 @@ package org.apache.cloudstack.framework.jobs.impl;
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -35,8 +36,10 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -60,6 +63,8 @@ import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.jobs.AsyncJobService;
+import org.apache.cloudstack.jobs.JobCancellationHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -114,7 +119,7 @@ import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
+public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable, AsyncJobService {
 
     // Advanced
     public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
@@ -180,6 +185,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private NetworkOrchestrationService networkOrchestrationService;
     @Inject
     private ReconcileCommandService reconcileCommandService;
+    // a list: Spring leaves it empty when no agent layer is present
+    @Inject
+    private List<JobCancellationHandler> jobCancellationHandlers;
 
     private volatile long _executionRunNumber = 1;
 
@@ -198,7 +206,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, CancelledJobInterval};
     }
 
     @Override
@@ -336,6 +344,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
+        completeAsyncJob(jobId, jobStatus, resultCode, resultObject, true);
+    }
+
+    @Override
+    @DB
+    public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject, final boolean remove) {
         String resultObj = null;
         if (logger.isDebugEnabled()) {
             resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
@@ -380,7 +394,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (logger.isDebugEnabled()) {
                     logger.debug("Update db status for job-" + jobId);
                 }
-                job.setCompleteMsid(getMsid());
                 job.setStatus(jobStatus);
                 job.setResultCode(resultCode);
 
@@ -392,8 +405,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                 final Date currentGMTTime = DateUtil.currentGMTTime();
                 job.setLastUpdated(currentGMTTime);
-                job.setRemoved(currentGMTTime);
-                job.setExecutingMsid(null);
+                if (remove) {
+                    job.setCompleteMsid(getMsid());
+                    job.setRemoved(currentGMTTime);
+                    job.setExecutingMsid(null);
+                }
                 _jobDao.update(jobId, job);
 
                 if (logger.isDebugEnabled()) {
@@ -902,6 +918,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
+                            if (isChildOfFinishedJob(item)) {
+                                continue;
+                            }
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Execute sync-queue item: " + item.toString());
                             }
@@ -913,8 +932,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for (Long jobId : standaloneWakeupJobs) {
                         // TODO, we assume that all jobs in this category is API job only
                         AsyncJobVO job = _jobDao.findById(jobId);
-                        if (job != null && (job.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0)
-                            scheduleExecution(job, false);
+                        if (job != null && (job.getPendingSignals() & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0) {
+                            if (job.getStatus() == Status.CANCELLED) {
+                                finalizeCancelledJob(job.getId());
+                            } else {
+                                scheduleExecution(job, false);
+                            }
+                        }
                     }
                 } catch (Throwable e) {
                     logger.error("Unexpected exception when trying to execute queue item, ", e);
@@ -953,7 +977,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             try {
                                 if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
                                     logger.info("Remove Job-" + item.getContentId() + " from Queue-" + item.getId() + " since it has been blocked for too long");
-                                    completeAsyncJob(item.getContentId(), JobInfo.Status.FAILED, 0, "Job is cancelled as it has been blocking others for too long");
+                                    completeAsyncJob(item.getContentId(), JobInfo.Status.CANCELLED, 0, "Job is cancelled as it has been blocking others for too long");
 
                                     _jobMonitor.unregisterByJobId(item.getContentId());
                                 }
@@ -1451,6 +1475,161 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         _apiJobExecutor.shutdown();
         _workerJobExecutor.shutdown();
         return true;
+    }
+
+    void cancelQueuedChildJobs(final long parentJobId, final String reason) {
+        for (final AsyncJobVO child : _jobDao.listChildJobs(parentJobId)) {
+            if (child.getStatus() != null && child.getStatus().done()) {
+                continue;
+            }
+            final Long queueItemId = _queueItemDao.getQueueItemIdByContentIdAndType(child.getId(), SyncQueueItem.AsyncJobContentType);
+            if (queueItemId == null) {
+                continue;
+            }
+            final SyncQueueItemVO item = _queueItemDao.findById(queueItemId);
+            if (item == null || item.getLastProcessMsid() != null) {
+                // dequeued already: it is executing, and the in-flight path owns it
+                continue;
+            }
+            logger.info("Cancelling queued job-{}, its parent job-{} was cancelled before it was scheduled", child.getId(), parentJobId);
+            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason + " (parent job cancelled before this job was scheduled)");
+            _jobMonitor.unregisterByJobId(child.getId());
+            _queueMgr.purgeItem(queueItemId);
+        }
+    }
+
+    /** A queued VM work job whose parent already finished is completed with the parent's status instead of run. */
+    private boolean isChildOfFinishedJob(final SyncQueueItemVO item) {
+        if (!SyncQueueItem.AsyncJobContentType.equalsIgnoreCase(item.getContentType())) {
+            return false;
+        }
+        final AsyncJobVO job = _jobDao.findById(item.getContentId());
+        if (job == null || StringUtils.isBlank(job.getRelated())) {
+            return false;
+        }
+        final AsyncJobVO parentJob = _jobDao.findById(Long.parseLong(job.getRelated()));
+        if (parentJob == null || !parentJob.getStatus().done() || isPseudoJob(parentJob)) {
+            return false;
+        }
+
+        logger.debug("Not executing sync-queue item {}: parent job-{} is already {}", item, parentJob.getId(), parentJob.getStatus());
+        completeAsyncJob(item.getContentId(), parentJob.getStatus(), 0,
+                "Job is not scheduled for execution as the parent job is done. Parent job state: " + parentJob.getStatus());
+        _jobMonitor.unregisterByJobId(item.getContentId());
+        _queueMgr.purgeItem(item.getId());
+        if (parentJob.getStatus() == Status.CANCELLED) {
+            finalizeCancelledJob(parentJob.getId());
+        }
+        return true;
+    }
+
+    private boolean isPseudoJob(final AsyncJob job) {
+        return AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(job.getDispatcher()) && AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE.equals(job.getInstanceType());
+    }
+
+    @Override
+    public String cancelAsyncJob(final long jobId, final String reason) {
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
+        String errMessage;
+        if (job == null) {
+            errMessage = "Cannot cancel, job no longer exists.";
+            logger.debug(errMessage);
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
+            return errMessage;
+        }
+
+        if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
+            try {
+                final Class<?> cmdClass = Class.forName(job.getCmd());
+                final APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
+                if (apiCommand == null || !apiCommand.cancellable()) {
+                    errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
+                    logger.debug(errMessage);
+                    return errMessage;
+                }
+            } catch (final ClassNotFoundException e) {
+                errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
+                logger.error(errMessage, e);
+                return errMessage;
+            }
+        }
+
+        if (job.getStatus() != null && job.getStatus().done()) {
+            errMessage = "Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".";
+            logger.debug(errMessage);
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
+            return errMessage;
+        }
+
+        // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
+        for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
+            if (!handler.isJobExecutionCancellable(jobId)) {
+                errMessage = "Cannot cancel job-" + jobId + ", the operation it is running cannot be stopped at this point.";
+                logger.info(errMessage);
+                return errMessage;
+            }
+        }
+
+        logger.debug("Cancelling job-{} which is in progress.", jobId);
+        try {
+            for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
+                if (!handler.cancelJobExecution(jobId, reason)) {
+                    errMessage = "Cannot cancel job-" + jobId + ", the operation it is running could not be stopped.";
+                    logger.info(errMessage);
+                    return errMessage;
+                }
+            }
+
+            // finalise here unless another management server is executing the job; its poller acknowledges
+            final Long executingMsid = job.getExecutingMsid();
+            final boolean finalizeNow = executingMsid == null || executingMsid == getMsid();
+            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, finalizeNow);
+            cancelQueuedChildJobs(jobId, reason);
+            return "";
+        } catch (final Throwable t) {
+            errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
+            logger.error(errMessage, t);
+        }
+        return errMessage;
+    }
+
+    @Override
+    public List<AsyncJobVO> listCancelledJobsExecutingOn(final long msid) {
+        return _jobDao.getCancelledJobs(msid);
+    }
+
+    @Override
+    public void finalizeCancelledJob(final long jobId) {
+        final AsyncJobVO job = _jobDao.findById(jobId);
+        if (job == null || job.getStatus() != JobInfo.Status.CANCELLED) {
+            return;
+        }
+        final Date now = DateUtil.currentGMTTime();
+        job.setCompleteMsid(getMsid());
+        job.setLastUpdated(now);
+        job.setRemoved(now);
+        job.setExecutingMsid(null);
+        _jobDao.update(jobId, job);
+    }
+
+    private List<JobCancellationHandler> getJobCancellationHandlers() {
+        return jobCancellationHandlers != null ? jobCancellationHandlers : Collections.emptyList();
+    }
+
+    private boolean isActiveJob(final long jobId) {
+        // a VM work child runs on behalf of its API parent
+        final AsyncJobVO relatedJob = _jobDao.getRelatedJob(String.valueOf(jobId));
+        if (relatedJob != null) {
+            return _jobMonitor.isActiveJob(relatedJob.getId());
+        }
+        return _jobMonitor.isActiveJob(jobId);
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        final List<Class<?>> cmdList = new ArrayList<>();
+        cmdList.add(CancelAsyncJobCmd.class);
+        return cmdList;
     }
 
     private GenericSearchBuilder<SyncQueueItemVO, Long> ContentIdsSearch;

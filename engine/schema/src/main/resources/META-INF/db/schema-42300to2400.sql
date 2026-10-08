@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
+
+-- Link every action event to the API job that raised it, so a job can be traced to its events
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event', 'async_job_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT ''The async job that raised this event'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_event__async_job_id', 'cloud.event', '(`async_job_id`)');

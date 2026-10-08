@@ -31,6 +31,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -923,6 +924,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
         Long startId = cmd.getStartId();
+        final Long jobId = cmd.getJobId();
         final String resourceUuid = getResourceUuid(cmd.getResourceId());
         final ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
         final String stateStr = cmd.getState();
@@ -980,6 +982,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         eventSearchBuilder.and("archived", eventSearchBuilder.entity().getArchived(), SearchCriteria.Op.EQ);
         eventSearchBuilder.and("resourceId", eventSearchBuilder.entity().getResourceId(), SearchCriteria.Op.EQ);
         eventSearchBuilder.and("resourceType", eventSearchBuilder.entity().getResourceType(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("asyncJobId", eventSearchBuilder.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             eventSearchBuilder.and().op("keywordType", eventSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
@@ -1006,6 +1009,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (id == null) {
                 sc.setParameters("id", startId);
             }
+        }
+
+        if (jobId != null) {
+            sc.setParameters("asyncJobId", jobId);
         }
 
         if (keyword != null) {
@@ -3208,7 +3215,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<AsyncJobJoinVO>, Integer> searchForAsyncJobsInternal(ListAsyncJobsCmd cmd) {
-
         Account caller = CallContext.current().getCallingAccount();
 
         List<Long> permittedAccounts = new ArrayList<>();
@@ -3219,8 +3225,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
+        // completed jobs are soft-deleted; anything but the pending-only default must include removed rows
+        final boolean filterByStatus = cmd.getJobStatuses() != null;
+        final boolean includeRemoved = filterByStatus || cmd.getEndDate() != null || cmd.getDuration() != null;
+
         Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
+
+        if (filterByStatus) {
+            sb.and("statuses", sb.entity().getStatus(), SearchCriteria.Op.IN);
+        }
         sb.and("instanceTypeNEQ", sb.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         boolean accountJoinIsDone = false;
@@ -3231,7 +3245,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (listProjectResourcesCriteria != null) {
-
             if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
                 sb.and("type", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
             } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
@@ -3245,13 +3258,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cmd.getManagementServerId() != null) {
-            sb.and("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+            // a completed job keeps only the server that completed it
+            sb.and().op("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+            sb.or("completeMsid", sb.entity().getCompleteMsid(), SearchCriteria.Op.EQ);
+            sb.cp();
         }
 
         Object keyword = cmd.getKeyword();
         Object startDate = cmd.getStartDate();
+        Object endDate = cmd.getEndDate();
 
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
+        if (filterByStatus) {
+            sc.setParameters("statuses", cmd.getJobStatuses().toArray());
+        }
         sc.setParameters("instanceTypeNEQ", AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE);
         if (listProjectResourcesCriteria != null) {
             sc.setParameters("type", Account.Type.PROJECT);
@@ -3276,9 +3296,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
         }
 
-        if (cmd.getManagementServerId() != null) {
-            ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
-            sc.setParameters("executingMsid", msHost.getMsid());
+        if (endDate != null) {
+            sc.addAnd("created", SearchCriteria.Op.LTEQ, endDate);
+        }
+
+        if (cmd.getDuration() != null) {
+            // rows are written in GMT
+            Date lastDate = new Date(DateUtil.currentGMTTime().getTime() - TimeUnit.HOURS.toMillis(cmd.getDuration()));
+
+            SearchCriteria<AsyncJobJoinVO> scc = _jobJoinDao.createSearchCriteria();
+            scc.addOr("created", SearchCriteria.Op.GTEQ, lastDate);
+            scc.addOr("removed", SearchCriteria.Op.GTEQ, lastDate);
+            sc.addAnd("created", SearchCriteria.Op.SC, scc);
         }
 
         if (cmd.getResourceType() != null) {
@@ -3293,7 +3322,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
         }
 
-        return _jobJoinDao.searchAndCount(sc, searchFilter);
+        if (cmd.getManagementServerId() != null) {
+            ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
+            if (msHost == null) {
+                throw new InvalidParameterValueException("Unable to find a management server with the specified id");
+            }
+            sc.setParameters("executingMsid", msHost.getMsid());
+            sc.setParameters("completeMsid", msHost.getMsid());
+        }
+
+        return _jobJoinDao.searchAndCount(sc, searchFilter, includeRemoved);
     }
 
     @Override

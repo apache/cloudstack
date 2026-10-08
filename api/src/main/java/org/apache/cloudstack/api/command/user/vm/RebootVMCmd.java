@@ -40,7 +40,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "rebootVirtualMachine", description = "Reboots  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
 public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "rebootvirtualmachineresponse";
 
