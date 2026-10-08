@@ -90,12 +90,12 @@ public class UnifiedSANStrategy extends SANStrategy {
         } catch (FeignException e) {
             logger.error("FeignException occurred while creating LUN: {}, Status: {}, Exception: {}",
                     cloudstackVolume.getLun().getName(), e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage(), e);
         } catch (CloudRuntimeException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Exception occurred while creating LUN: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage(), e);
         }
     }
 
@@ -190,8 +190,25 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     @Override
-    CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        return null;
+    public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getLun() == null
+                || cloudstackVolume.getLun().getUuid() == null) {
+            throw new CloudRuntimeException("Invalid iSCSI volume QoS update request");
+        }
+        Lun lunUpdate = new Lun();
+        lunUpdate.setQosPolicy(cloudstackVolume.getLun().getQosPolicy());
+        try {
+            JobResponse response = sanFeignClient.updateLun(
+                    getAuthHeader(), cloudstackVolume.getLun().getUuid(), lunUpdate);
+            pollJobIfPresent(response, "update QoS policy on LUN [" + cloudstackVolume.getLun().getUuid() + "]");
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to apply QoS policy to LUN: " + e.getMessage(), e);
+        }
+        logger.info("Applied QoS policy [{}] to LUN [{}]",
+                cloudstackVolume.getLun().getQosPolicy() != null
+                        ? cloudstackVolume.getLun().getQosPolicy().getName() : null,
+                cloudstackVolume.getLun().getUuid());
+        return cloudstackVolume;
     }
 
     @Override
@@ -205,7 +222,8 @@ public class UnifiedSANStrategy extends SANStrategy {
             String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             Map<String, Object> queryParams = Map.of("allow_delete_while_mapped", "true");
             try {
-                sanFeignClient.deleteLun(authHeader, cloudstackVolume.getLun().getUuid(), queryParams);
+                JobResponse response = sanFeignClient.deleteLun(authHeader, cloudstackVolume.getLun().getUuid(), queryParams);
+                pollJobIfPresent(response, "delete Lun [" + cloudstackVolume.getLun().getName() + "]");
             } catch (FeignException feignEx) {
                 if (feignEx.status() == 404) {
                     logger.warn("deleteCloudStackVolume: Lun {} does not exist (status 404), skipping deletion", cloudstackVolume.getLun().getName());
@@ -301,12 +319,11 @@ public class UnifiedSANStrategy extends SANStrategy {
             lunSpace.setSize(sizeInBytes);
             Lun patch = new Lun();
             patch.setSpace(lunSpace);
-            sanFeignClient.updateLun(authHeader, lunUuid, patch);
+            JobResponse response = sanFeignClient.updateLun(authHeader, lunUuid, patch);
+            pollJobIfPresent(response, "resize Lun [" + lunUuid + "]");
             logger.debug("resizeCloudStackVolume: Lun {} resized to {} bytes", lunUuid, sizeInBytes);
         } catch (FeignException e) {
-            logger.error("FeignException occurred while resizing LUN: {}, Status: {}, Exception: {}",
-                    lunUuid, e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to resize Lun: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to resize Lun: " + e.getMessage(), e);
         } catch (Exception e) {
             logger.error("Exception occurred while resizing LUN: {}, Exception: {}", lunUuid, e.getMessage());
             throw new CloudRuntimeException("Failed to resize Lun: " + e.getMessage());

@@ -104,8 +104,28 @@ public class UnifiedNASStrategy extends NASStrategy {
                 logger.error("createCloudStackVolume: " + errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
+            if (cloudstackVolume.getFile() != null && cloudstackVolume.getFile().getQosPolicy() != null) {
+                try {
+                    updateCloudStackVolume(cloudstackVolume);
+                } catch (RuntimeException qosError) {
+                    logger.error("createCloudStackVolume: QoS attach failed; deleting leftover NFS volume file", qosError);
+                    try {
+                        Answer cleanup = deleteVolumeOnKVMHost(cloudstackVolume.getVolumeInfo());
+                        if (cleanup == null || !cleanup.getResult()) {
+                            logger.error("createCloudStackVolume: leftover NFS file may remain after QoS attach failure: {}",
+                                    cleanup != null ? cleanup.getDetails() : "null answer");
+                        }
+                    } catch (Exception cleanupError) {
+                        logger.error("createCloudStackVolume: failed to delete leftover NFS volume file after QoS attach failure",
+                                cleanupError);
+                    }
+                    throw qosError;
+                }
+            }
             return cloudstackVolume;
-        }catch (Exception e) {
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             logger.error("createCloudStackVolume: error occured " + e);
             throw new CloudRuntimeException(e);
         }
@@ -126,8 +146,23 @@ public class UnifiedNASStrategy extends NASStrategy {
     }
 
     @Override
-    CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        return null;
+    public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null
+                || cloudstackVolume.getFlexVolumeUuid() == null || cloudstackVolume.getFile() == null) {
+            throw new CloudRuntimeException("Invalid NFS volume QoS update request");
+        }
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setQosPolicy(cloudstackVolume.getFile().getQosPolicy());
+        String filePath = cloudstackVolume.getVolumeInfo().getUuid();
+        try {
+            nasFeignClient.updateFile(getAuthHeader(), cloudstackVolume.getFlexVolumeUuid(), filePath, fileInfo);
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to apply QoS policy to NFS volume file: " + e.getMessage(), e);
+        }
+        logger.info("Applied QoS policy [{}] to NFS volume file [{}]",
+                cloudstackVolume.getFile().getQosPolicy() != null
+                        ? cloudstackVolume.getFile().getQosPolicy().getName() : null, filePath);
+        return cloudstackVolume;
     }
 
     @Override

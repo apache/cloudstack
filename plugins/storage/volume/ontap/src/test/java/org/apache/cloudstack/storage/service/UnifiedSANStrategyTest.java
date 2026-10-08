@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -54,11 +55,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -390,6 +393,28 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
+    void testCreateCloudStackVolume_MinThroughputRejected_PropagatesOntapError() {
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/lun1");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.getMessage()).thenReturn("Bad Request");
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenThrow(feignException);
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.createCloudStackVolume(request));
+            assertTrue(ex.getMessage().contains("Failed to create Lun"));
+        }
+    }
+
+    @Test
     void testDeleteCloudStackVolume_Success() {
         // Setup
         Lun lun = new Lun();
@@ -402,7 +427,7 @@ class UnifiedSANStrategyTest {
             utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
-            doNothing().when(sanFeignClient).deleteLun(eq(authHeader), eq("lun-uuid-123"), anyMap());
+            when(sanFeignClient.deleteLun(eq(authHeader), eq("lun-uuid-123"), anyMap())).thenReturn(null);
 
             // Execute
             unifiedSANStrategy.deleteCloudStackVolume(request);
@@ -1118,7 +1143,6 @@ class UnifiedSANStrategyTest {
         request.setLun(lun);
 
         FeignException feignException = mock(FeignException.class);
-        when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("resize failed");
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
@@ -1191,10 +1215,35 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testUpdateCloudStackVolume_ReturnsNull() {
+    void testUpdateCloudStackVolume_InvalidRequest_ThrowsException() {
         CloudStackVolume request = new CloudStackVolume();
-        CloudStackVolume result = unifiedSANStrategy.updateCloudStackVolume(request);
-        assertNull(result);
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.updateCloudStackVolume(request));
+    }
+
+    @Test
+    void testUpdateCloudStackVolume_AppliesQosPolicyToLun() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
+        qosPolicy.setName("cs_0_to5000_iops_svm1");
+        lun.setQosPolicy(qosPolicy);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class)))
+                    .thenReturn(null);
+
+            CloudStackVolume result = unifiedSANStrategy.updateCloudStackVolume(request);
+
+            assertSame(request, result);
+            verify(sanFeignClient).updateLun(eq(authHeader), eq("lun-uuid-123"), argThat(update ->
+                    update.getQosPolicy() != null
+                            && "cs_0_to5000_iops_svm1".equals(update.getQosPolicy().getName())));
+        }
     }
 
     @Test
@@ -2249,6 +2298,37 @@ class UnifiedSANStrategyTest {
             assertEquals("3", result);
             // Verify createLunMap was NOT called
             verify(sanFeignClient, never()).createLunMap(any(), anyBoolean(), any(LunMap.class));
+        }
+    }
+
+    @Test
+    void testCreateCloudStackVolume_PassesQosPolicyOnLunCreate() {
+        Lun lun = new Lun();
+        lun.setName("/vol/vol1/lun1");
+        VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
+        qosPolicy.setName("cs_100_to200_iops_svm1");
+        lun.setQosPolicy(qosPolicy);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        Lun createdLun = new Lun();
+        createdLun.setName("/vol/vol1/lun1");
+        createdLun.setUuid("lun-uuid-123");
+        OntapResponse<Lun> response = new OntapResponse<>();
+        response.setRecords(List.of(createdLun));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
+                    .thenReturn(response);
+
+            unifiedSANStrategy.createCloudStackVolume(request);
+
+            ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+            verify(sanFeignClient).createLun(eq(authHeader), eq(true), lunCaptor.capture());
+            assertNotNull(lunCaptor.getValue().getQosPolicy());
+            assertEquals("cs_100_to200_iops_svm1", lunCaptor.getValue().getQosPolicy().getName());
         }
     }
 }

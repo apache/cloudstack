@@ -107,6 +107,16 @@ public class OntapStorageConstants {
     public static final String LUN_DOT_NAME = "lun.name";
     public static final String IQN = "iqn";
     public static final String LUN_DOT_UUID = "lun.uuid";
+    public static final String QOS_POLICY_UUID = "qosPolicyUuid";
+    public static final String IS_AFF = "isAFF";
+    public static final String MIN_IOPS_NOT_SUPPORTED_ON_FAS =
+            "Minimum IOPS is not supported on FAS/non-AFF ONTAP platforms; only maximum IOPS is supported";
+    public static final String QOS_POLICY_NONE = "none";
+    public static final String QOS_POLICY_NAME_PREFIX = "cs_";
+    public static final String QOS_POLICY_NAME_TO = "to_";
+    public static final String QOS_POLICY_NAME_IOPS = "iops_";
+    public static final String UUID = "uuid";
+    public static final String QOS_POLICY_OBJECT_COUNT_FIELDS = "uuid,name,object_count";
     public static final String LOGICAL_UNIT_NUMBER = "logical_unit_number";
     public static final String IGROUP_DOT_NAME = "igroup.name";
     public static final String IGROUP_DOT_UUID = "igroup.uuid";

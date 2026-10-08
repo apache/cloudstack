@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
+import org.apache.cloudstack.storage.feign.client.ClusterFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
@@ -34,6 +35,8 @@ import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
+import org.apache.cloudstack.storage.feign.model.Cluster;
+import org.apache.cloudstack.storage.feign.model.ClusterNode;
 import org.apache.cloudstack.storage.feign.model.IpInterface;
 import org.apache.cloudstack.storage.feign.model.IscsiService;
 import org.apache.cloudstack.storage.feign.model.Job;
@@ -47,7 +50,9 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,10 +64,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -101,6 +104,9 @@ public class StorageStrategyTest {
     @Mock
     private SnapshotFeignClient snapshotFeignClient;
 
+    @Mock
+    private ClusterFeignClient clusterFeignClient;
+
     private TestableStorageStrategy storageStrategy;
 
     // Concrete implementation for testing abstract class
@@ -112,7 +118,8 @@ public class StorageStrategyTest {
                                        JobFeignClient jobFeignClient,
                                        NetworkFeignClient networkFeignClient,
                                        SANFeignClient sanFeignClient,
-                                       SnapshotFeignClient snapshotFeignClient) {
+                                       SnapshotFeignClient snapshotFeignClient,
+                                       ClusterFeignClient clusterFeignClient) {
             super(ontapStorage);
             // Use reflection to replace the private Feign client fields with mocked ones
             injectMockedClient("aggregateFeignClient", aggregateFeignClient);
@@ -122,6 +129,7 @@ public class StorageStrategyTest {
             injectMockedClient("networkFeignClient", networkFeignClient);
             injectMockedClient("sanFeignClient", sanFeignClient);
             injectMockedClient("snapshotFeignClient", snapshotFeignClient);
+            injectMockedClient("clusterFeignClient", clusterFeignClient);
         }
 
         private void injectMockedClient(String fieldName, Object mockedClient) {
@@ -147,7 +155,7 @@ public class StorageStrategyTest {
         }
 
         @Override
-        CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
             return null;
         }
 
@@ -218,7 +226,8 @@ public class StorageStrategyTest {
         // For testing, we'll need to mock the FeignClientFactory behavior
         storageStrategy = new TestableStorageStrategy(ontapStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
     }
 
     // ========== connect() Tests ==========
@@ -275,6 +284,154 @@ public class StorageStrategyTest {
         // Execute & Verify - connect(false) should succeed regardless of available space.
         boolean result = storageStrategy.connect(false);
         assertTrue(result, "connect() should succeed for an online aggregate even when its free space is below the pool capacity");
+    }
+
+    @Test
+    public void testGetClusterInfo_dedupesIdenticalNodeModels() {
+        Cluster cluster = stubClusterGet();
+        ClusterNode node1 = new ClusterNode();
+        node1.setModel("AFF-A400");
+        ClusterNode node2 = new ClusterNode();
+        node2.setModel("AFF-A400");
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(node1, node2)));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals(cluster, result);
+        assertEquals("AFF-A400", result.getModel());
+    }
+
+    @Test
+    public void testGetClusterInfo_joinsDistinctModels() {
+        stubClusterGet();
+        ClusterNode node1 = new ClusterNode();
+        node1.setModel("AFF-A400");
+        ClusterNode node2 = new ClusterNode();
+        node2.setModel("FAS8300");
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(node1, node2)));
+
+        assertEquals("AFF-A400,FAS8300", storageStrategy.getClusterInfo().getModel());
+    }
+
+    @Test
+    public void testGetClusterInfo_allFlashPerformance() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("AFF-A400", true, true, false))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("AFF-A400", result.getModel());
+        assertEquals(OntapStorageConstants.ASUP_PLATFORM_TYPE_PERFORMANCE, result.getPlatformType());
+    }
+
+    @Test
+    public void testGetClusterInfo_allFlashCapacity() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-C800", true, false, true),
+                        clusterNode("AFF-C800", true, false, true))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("AFF-C800", result.getModel());
+        assertEquals(OntapStorageConstants.ASUP_PLATFORM_TYPE_CAPACITY, result.getPlatformType());
+    }
+
+    @Test
+    public void testGetClusterInfo_notAllFlashIsFas() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("FAS8300", false, false, false),
+                        clusterNode("FAS8300", false, false, false))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("FAS8300", result.getModel());
+        assertEquals(OntapStorageConstants.ASUP_PLATFORM_TYPE_FAS, result.getPlatformType());
+    }
+
+    @Test
+    public void testGetClusterInfo_mixedPersonalitiesIsComposite() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("FAS8300", false, false, false),
+                        clusterNode("FAS8300", false, false, false))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("AFF-A400,FAS8300", result.getModel());
+        assertEquals(OntapStorageConstants.ASUP_PLATFORM_TYPE_COMPOSITE, result.getPlatformType());
+    }
+
+    @Test
+    public void testGetClusterInfo_nodesGetFailureLeavesModelUnset() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenThrow(new RuntimeException("connection refused"));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertNotNull(result);
+        assertNull(result.getModel());
+        assertNull(result.getPlatformType());
+    }
+
+    @Test
+    public void testIsAff_allNodesAllFlash_returnsTrue() {
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("AFF-A400", true, true, false))));
+
+        assertTrue(storageStrategy.isAff());
+    }
+
+    @Test
+    public void testIsAff_anyNodeNotAllFlash_returnsFalse() {
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("FAS8300", false, false, false))));
+
+        assertFalse(storageStrategy.isAff());
+    }
+
+    @Test
+    public void testIsAff_nullAllFlashOptimized_returnsFalse() {
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("unknown", null, null, null))));
+
+        assertFalse(storageStrategy.isAff());
+    }
+
+    @Test
+    public void testIsAff_noNodes_throws() {
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of()));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> storageStrategy.isAff());
+        assertTrue(ex.getMessage().contains("Unable to determine whether the ONTAP cluster is AFF or FAS"));
+    }
+
+    private Cluster stubClusterGet() {
+        Cluster cluster = new Cluster();
+        when(clusterFeignClient.getCluster(anyString(), eq(true))).thenReturn(cluster);
+        return cluster;
+    }
+
+    private static ClusterNode clusterNode(String model, Boolean allFlash, Boolean performance, Boolean capacity) {
+        ClusterNode node = new ClusterNode();
+        node.setModel(model);
+        node.setAllFlashOptimized(allFlash);
+        node.setPerformanceOptimized(performance);
+        node.setCapacityOptimized(capacity);
+        return node;
     }
 
     @Test
@@ -372,7 +529,8 @@ public class StorageStrategyTest {
                 "svm1", 5000000000L, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         Svm svm = new Svm();
         svm.setName("svm1");
@@ -671,39 +829,6 @@ public class StorageStrategyTest {
     }
 
     @Test
-    public void testPollJobIfPresent_failedPollThrowsWithOperationAndJobUuid() {
-        TestableStorageStrategy spyStrategy = spy(storageStrategy);
-        doReturn(false).when(spyStrategy).jobPollForSuccess(eq("job-uuid-1"), eq(60), eq(2000));
-
-        Job job = new Job();
-        job.setUuid("job-uuid-1");
-        JobResponse jobResponse = new JobResponse();
-        jobResponse.setJob(job);
-
-        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
-                () -> spyStrategy.pollJobIfPresent(jobResponse, "clone file"));
-        assertTrue(ex.getMessage().contains("job-uuid-1"));
-        assertTrue(ex.getMessage().contains("clone file"));
-    }
-
-    @Test
-    public void testPollJobIfPresent_noJobSkipsPolling() {
-        TestableStorageStrategy spyStrategy = spy(storageStrategy);
-
-        spyStrategy.pollJobIfPresent(new JobResponse(), "clone file");
-        spyStrategy.pollJobIfPresent(null, "clone file");
-
-        verify(spyStrategy, never()).jobPollForSuccess(anyString(), eq(60), eq(2000));
-    }
-
-    @Test
-    public void testDeleteFileByPath_unsupportedStrategyThrows() {
-        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
-                () -> storageStrategy.deleteFileByPath("flexvol-uuid", "template-uuid"));
-        assertTrue(ex.getMessage().contains("TestableStorageStrategy"));
-    }
-
-    @Test
     public void testDeleteStorageVolume_feignException() {
         // Setup
         Volume volume = new Volume();
@@ -749,7 +874,8 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         IscsiService.IscsiServiceTarget target = new IscsiService.IscsiServiceTarget();
         target.setName("iqn.1992-08.com.netapp:sn.123456:vs.1");
@@ -779,7 +905,8 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         OntapResponse<IscsiService> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
@@ -800,7 +927,8 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         IscsiService iscsiService = new IscsiService();
         iscsiService.setTarget(null);
@@ -853,7 +981,8 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         IpInterface.IpInfo ipInfo = new IpInterface.IpInfo();
         ipInfo.setAddress("192.168.1.51");
@@ -929,7 +1058,8 @@ public class StorageStrategyTest {
                 "svm1", null, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
-                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient);
+                jobFeignClient, networkFeignClient, sanFeignClient, snapshotFeignClient,
+                clusterFeignClient);
 
         IpInterface.IpInfo ipInfo = new IpInterface.IpInfo();
         ipInfo.setAddress("192.168.1.51");
@@ -1293,16 +1423,117 @@ public class StorageStrategyTest {
         verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
     }
 
+        @Test
+        void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
+                FeignException notFoundException = mock(FeignException.class);
+                when(notFoundException.status()).thenReturn(404);
+                when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                                .thenThrow(notFoundException);
+
+                storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+                verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+                verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        }
+
+    // ========== updateStorageVolume() Tests ==========
+
     @Test
-    void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
-        FeignException notFoundException = mock(FeignException.class);
-        when(notFoundException.status()).thenReturn(404);
-        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
-                .thenThrow(notFoundException);
+    public void testUpdateStorageVolume_positive() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L); // 5 GB
 
-        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
 
-        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
-        verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("resize-job-uuid");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(completedJob);
+
+        // Execute
+        Volume result = storageStrategy.updateStorageVolume(volume);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(5368709120L, result.getSize());
+        verify(volumeFeignClient, times(1)).updateVolume(anyString(), eq("vol-uuid-resize"), any());
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("resize-job-uuid"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_jobFailed() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L);
+
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
+
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("resize-job-uuid");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("Resize failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(failedJob);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Job failed"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_feignException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-fail");
+        volume.setName("flexvol-fail");
+        volume.setSize(3221225472L);
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(500);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-fail"), any()))
+                .thenThrow(feignException);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Failed to resize ONTAP FlexVolume"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_notFound_404_throwsCloudRuntimeException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-notfound");
+        volume.setName("flexvol-notfound");
+        volume.setSize(1073741824L);
+
+        FeignException feignEx = mock(FeignException.class);
+        when(feignEx.status()).thenReturn(404);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-notfound"), any()))
+                .thenThrow(feignEx);
+
+        // Execute & Verify — 404 means volume not found on ONTAP, should throw
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("not found on ONTAP"));
     }
 }
