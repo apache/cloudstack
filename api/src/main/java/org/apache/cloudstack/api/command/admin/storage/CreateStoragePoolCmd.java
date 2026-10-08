@@ -19,8 +19,8 @@ package org.apache.cloudstack.api.command.admin.storage;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -80,10 +80,10 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN, required = false, description = "Whether the storage should be managed by CloudStack")
     private Boolean managed;
 
-    @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_IOPS, type = CommandType.LONG, required = false, description = "IOPS CloudStack can provision from this storage pool", validations = {ApiArgValidator.PositiveNumber})
     private Long capacityIops;
 
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool")
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false, description = "Bytes CloudStack can provision from this storage pool", validations = {ApiArgValidator.PositiveNumber})
     private Long capacityBytes;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
