@@ -613,6 +613,19 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
+    public void validateProtocolTestProtocolIsPartOfTheSupportedList() {
+        for (String protocol : new String[] {"cp", "t", "dp,ic", ",", "tcp,udp"}) {
+            Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn(protocol);
+            try {
+                networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
+                Assert.fail("protocol [" + protocol + "] should have been rejected");
+            } catch (InvalidParameterValueException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
     public void validateProtocolTestProtocolIsStringValid() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
 

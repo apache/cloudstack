@@ -17,6 +17,7 @@
 package com.cloud.network.vpc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -619,7 +620,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
             }
         } else {
-            if (!supportedProtocolsForAclRules.contains(protocol.toLowerCase())) {
+            // one of the names, not just part of the string: "cp" or "p,ic" must not pass
+            if (!Arrays.asList(supportedProtocolsForAclRules.split(",")).contains(protocol.toLowerCase(Locale.ROOT))) {
                 throw new InvalidParameterValueException(String.format("Invalid protocol [%s]. Expected one of: [%s]", protocol, supportedProtocolsForAclRules));
             }
         }
