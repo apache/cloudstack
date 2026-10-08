@@ -107,8 +107,12 @@ RadosOpts=(--mon-host "$MonHosts")
 RbdOpts=(--mon-host "$MonHosts")
 if [ -n "$CephUser" ]
 then
-   RadosOpts+=(--id "$CephUser" --key "$CephKey")
-   RbdOpts+=(--id "$CephUser" --key "$CephKey")
+   # the key is given to rados and rbd in a file, to keep it out of the process list
+   KeyFile=$(mktemp)
+   trap 'rm -f "$KeyFile"' EXIT
+   printf '%s' "$CephKey" > "$KeyFile"
+   RadosOpts+=(--id "$CephUser" --keyfile "$KeyFile")
+   RbdOpts+=(--id "$CephUser" --keyfile "$KeyFile")
 fi
 
 hbObject="KVMHA-hb-$HostIP"
@@ -137,8 +141,14 @@ fi
 # If any of the host's volumes still has a live watcher, something (most
 # likely qemu on the host being checked) is actively using it right now.
 latestUpdateTime=0
-for image in ${UUIDList//,/ }
+IFS=',' read -ra images <<< "$UUIDList"
+for image in "${images[@]}"
 do
+  image=${image//[[:space:]]/}
+  if [ -z "$image" ]
+  then
+    continue
+  fi
   watcherCount=$(rbd status "$PoolName/$image" "${RbdOpts[@]}" --format json 2> /dev/null | \
     python3 -c 'import json,sys
 try:
@@ -152,7 +162,7 @@ except Exception:
   fi
 done
 
-if [ ! -z "$(rados -p "$PoolName" "${RadosOpts[@]}" stat "$acObject" 2> /dev/null)" ]
+if rados -p "$PoolName" "${RadosOpts[@]}" stat "$acObject" &> /dev/null
 then
   acTime=$(rados -p "$PoolName" "${RadosOpts[@]}" get "$acObject" - 2> /dev/null)
 else

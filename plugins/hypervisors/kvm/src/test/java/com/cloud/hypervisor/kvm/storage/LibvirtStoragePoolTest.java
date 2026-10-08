@@ -195,7 +195,8 @@ public class LibvirtStoragePoolTest extends TestCase {
         Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
         Mockito.verify(cmd).add("-o", "rbdpool");
         Mockito.verify(cmd).add("-n", "cephuser");
-        Mockito.verify(cmd).add("-k", "cephkey");
+        Mockito.verify(cmd).add("-k");
+        Mockito.verify(cmd).addSensitive("cephkey");
         Mockito.verifyNoMoreInteractions(cmd);
     }
 
@@ -221,5 +222,20 @@ public class LibvirtStoragePoolTest extends TestCase {
                 Mockito.verifyNoInteractions(cmd);
             }
         }
+    }
+
+    @Test
+    public void testRbdMonitorsWhichHaveAPortAlready() {
+        // the monitors keep their port, with or without a port of the pool
+        String withPorts = "10.0.0.1:6789,mon.example.com:3300,[fd00::1]:6789";
+        assertEquals(withPorts, getRbdMonitors(withPorts, 0));
+        assertEquals(withPorts, getRbdMonitors(withPorts, 6789));
+        assertEquals(withPorts, getRbdMonitors(withPorts, 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsWithAndWithoutAPortAreMixed() {
+        assertEquals("10.0.0.1:6789,10.0.0.2:3300,mon.example.com:3300,[fd00::1]:3300,[fd00::2]:6789,[fd00::3]:3300",
+                getRbdMonitors("10.0.0.1:6789,10.0.0.2,mon.example.com,fd00::1,[fd00::2]:6789,[fd00::3]", 3300));
     }
 }

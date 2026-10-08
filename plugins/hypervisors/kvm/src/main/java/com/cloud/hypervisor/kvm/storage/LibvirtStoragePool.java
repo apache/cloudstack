@@ -352,8 +352,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     /**
      * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool, trimmed
-     * and without empty entries, each with the pool's monitor port if one is set (IPv6 addresses are enclosed
-     * in square brackets then).
+     * and without empty entries. If the pool has a monitor port, it is added to each monitor which has none yet.
      */
     protected String getRbdMonitors() {
         List<String> monitors = new ArrayList<>();
@@ -362,15 +361,26 @@ public class LibvirtStoragePool implements KVMStoragePool {
             if (monitor.isEmpty()) {
                 continue;
             }
-            if (sourcePort > 0) {
-                if (monitor.contains(":") && !monitor.startsWith("[")) {
-                    monitor = "[" + monitor + "]";
-                }
-                monitor = monitor + ":" + sourcePort;
-            }
-            monitors.add(monitor);
+            monitors.add(sourcePort > 0 ? addPortToRbdMonitor(monitor) : monitor);
         }
         return String.join(",", monitors);
+    }
+
+    private String addPortToRbdMonitor(String monitor) {
+        if (monitor.startsWith("[")) {
+            // IPv6 address in square brackets, which has a port if followed by ":<port>"
+            return monitor.contains("]:") ? monitor : monitor + ":" + sourcePort;
+        }
+        int colons = StringUtils.countMatches(monitor, ":");
+        if (colons == 0) {
+            return monitor + ":" + sourcePort;
+        }
+        if (colons == 1) {
+            // IPv4 address or host name, with a port
+            return monitor;
+        }
+        // IPv6 address without square brackets, so without a port
+        return "[" + monitor + "]:" + sourcePort;
     }
 
     /**
@@ -388,7 +398,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
         cmd.add("-o", sourceDir);
         if (hasUser) {
             cmd.add("-n", authUsername);
-            cmd.add("-k", authSecret);
+            cmd.add("-k");
+            cmd.addSensitive(authSecret);
         }
     }
 

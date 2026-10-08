@@ -95,10 +95,20 @@ then
    exit 1
 fi
 
-RadosOpts=(--mon-host "$MonHosts")
-if [ -n "$CephUser" ]
+# -t is the maximum age of the heartbeat, which is compared in a check
+if [ "$rflag" == "1" ] && ! [[ "$interval" =~ ^[0-9]+$ ]]
 then
-   RadosOpts+=(--id "$CephUser" --key "$CephKey")
+   exit 1
+fi
+
+RadosOpts=(--mon-host "$MonHosts")
+if [ -n "$CephUser" ] && [ "$cflag" != "1" ]
+then
+   # the key is given to rados in a file, to keep it out of the process list
+   KeyFile=$(mktemp)
+   trap 'rm -f "$KeyFile"' EXIT
+   printf '%s' "$CephKey" > "$KeyFile"
+   RadosOpts+=(--id "$CephUser" --keyfile "$KeyFile")
 fi
 
 hbObject="KVMHA-hb-$HostIP"
