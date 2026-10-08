@@ -449,7 +449,7 @@ class CsAcl(CsDataBag):
                 if protocol != "all":
                     icmp_type = ""
                     if protocol == "protocol":
-                        protocol = "ip nexthdr %d" % rule['protocol']
+                        protocol = "ip protocol %d" % rule['protocol']
                     proto = protocol
                     if proto == "icmp":
                         proto = proto_str = "icmp"
