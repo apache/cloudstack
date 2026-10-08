@@ -135,8 +135,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         final StringBuilder memberOfFilter = new StringBuilder();
         if (null != group) {
             if(logger.isDebugEnabled()) {
-                logger.debug("adding search filter for '" + group +
-                "', using '" + memberOfAttribute + "'");
+                logger.debug("adding search filter for '{}', using '{}'", group, memberOfAttribute);
             }
             memberOfFilter.append("(" + memberOfAttribute + "=");
             memberOfFilter.append(group);
@@ -235,6 +234,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    @SuppressWarnings("BanJNDI")
     public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
         String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute(domainId);
         final SearchControls controls = new SearchControls();
@@ -264,6 +264,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return users;
     }
 
+    @SuppressWarnings("BanJNDI")
     private LdapUser getUserForDn(String userdn, LdapContext context, Long domainId) throws NamingException {
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
@@ -286,6 +287,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return false;
     }
 
+    @SuppressWarnings("BanJNDI")
     public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context, Long domainId) throws NamingException, IOException {
         final SearchControls searchControls = new SearchControls();
 
@@ -310,6 +312,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
+    @SuppressWarnings("BanJNDI")
     public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
 
         final SearchControls searchControls = new SearchControls();

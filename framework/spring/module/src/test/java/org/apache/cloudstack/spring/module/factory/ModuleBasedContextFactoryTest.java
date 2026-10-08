@@ -121,11 +121,12 @@ public class ModuleBasedContextFactoryTest {
 
     public static class InstantiationCounter {
         public static Integer count = 0;
+        private static final Object countLock = new Object();
 
         int myCount;
 
         public InstantiationCounter() {
-            synchronized (count) {
+            synchronized (countLock) {
                 myCount = count + 1;
                 count = myCount;
             }

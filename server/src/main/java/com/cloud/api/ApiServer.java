@@ -192,6 +192,7 @@ import com.google.gson.reflect.TypeToken;
 
 import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+import static org.apache.commons.lang3.StringUtils.deleteWhitespace;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
@@ -368,7 +369,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         Account jobOwner = accountMgr.getAccount(userJobOwner.getAccountId());
 
         // Get the event type from the cmdInfo json string
-        String info = job.getCmdInfo();
+        String info = StringUtils.obfuscatePasswordInJsonLikeString(job.getCmdInfo());
         String cmdEventType = "unknown";
         Map<String, Object> cmdInfoObj = new HashMap<>();
         if (info != null) {
@@ -408,7 +409,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("instanceType", instanceType);
         eventDescription.put("commandEventType", cmdEventType);
         eventDescription.put("jobId", job.getUuid());
-        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(job.getResult()));
+        eventDescription.put("jobResult", ApiSerializerHelper.fromSerializedStringToMap(StringUtils.obfuscatePasswordInJsonLikeString(job.getResult())));
         eventDescription.put("cmdInfo", cmdInfoObj);
         eventDescription.put("status", "" + job.getStatus());
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
@@ -1372,18 +1373,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        final Account account = accountMgr.getAccount(user.getAccountId());
-        final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
-
         if (apiSourceCidrChecksEnabled) {
+            final Account account = accountMgr.getAccount(user.getAccountId());
+            final String accessAllowedCidrs = deleteWhitespace(ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()));
             logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
                 logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
                 }
         }
-
 
         for (final APIChecker apiChecker : apiAccessCheckers) {
             apiChecker.checkAccess(user, commandName);

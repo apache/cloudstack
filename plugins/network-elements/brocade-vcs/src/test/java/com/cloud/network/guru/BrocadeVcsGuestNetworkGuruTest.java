@@ -231,7 +231,6 @@ public class BrocadeVcsGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -291,7 +290,6 @@ public class BrocadeVcsGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");

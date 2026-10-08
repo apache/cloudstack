@@ -228,21 +228,21 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) START", volumePath, pool.getUuid());
         AddressInfo address = this.parseAndValidatePath(volumePath);
         if (address.getAddress() == null) {
-            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) returning FALSE, volume path has no address field", volumePath, pool.getUuid());
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
 
         if (result.getExitCode() != 0) {
-            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+            LOGGER.warn("Disconnect failed for path {} with return code {}", address.getAddress().toLowerCase(), result.getExitCode());
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("multipath flush output: " + result.getResult());
-            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+            LOGGER.debug("multipath flush output: {}", result.getResult());
+            LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) COMPLETE [rc={}]", volumePath, pool.getUuid(), result.getResult());
         }
 
         return (result.getExitCode() == 0);
@@ -250,7 +250,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]: {}", volumeToDisconnect);
         return false;
     }
 

@@ -390,7 +390,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
@@ -430,7 +430,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = cmd.getId();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find subnet with id: %s", id));
         }
 
         // update domain_id and account_id to null via dataCenterIpv4GuestSubnetDao, to release the dedication
@@ -1278,7 +1278,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
         Long accountId = null;
         if (accountName != null || (projectId != null && projectId != -1L)) {
@@ -1326,7 +1326,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final Long id = releaseDedicatedBgpPeerCmd.getId();
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
         if (bgpPeerVO == null) {
-            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: %s", id));
         }
 
         // update domain_id and account_id to null via bgpPeerDao, to release the dedication

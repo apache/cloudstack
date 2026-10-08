@@ -93,6 +93,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                since = "4.16.0")
     private String userData;
 
+    @ACL
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the userdata", since = "4.18")
     private Long userdataId;
 

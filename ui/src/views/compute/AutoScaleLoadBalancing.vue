@@ -298,6 +298,7 @@
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
+import { addProjectFilter } from '@/utils/util'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -462,12 +463,14 @@ export default {
       this.lbRules = []
       this.stickinessPolicies = []
 
-      api('listLoadBalancerRules', {
+      const params = {
         listAll: true,
         id: this.resource.lbruleid,
         page: this.page,
         pageSize: this.pageSize
-      }).then(response => {
+      }
+      addProjectFilter(params, this.resource)
+      api('listLoadBalancerRules', params).then(response => {
         this.lbRules = response.listloadbalancerrulesresponse.loadbalancerrule || []
         this.totalCount = response.listloadbalancerrulesresponse.count || 0
       }).then(() => {
@@ -518,15 +521,18 @@ export default {
     },
     fetchAutoScaleVMgroups () {
       this.loading = true
-      this.lbRules.forEach(rule => {
-        api('listAutoScaleVmGroups', {
+      const requests = this.lbRules.map(rule => {
+        const params = {
           listAll: true,
           lbruleid: rule.id
-        }).then(response => {
+        }
+        addProjectFilter(params, this.resource)
+        return api('listAutoScaleVmGroups', params).then(response => {
           rule.autoscalevmgroup = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]
-        }).finally(() => {
-          this.loading = false
         })
+      })
+      Promise.all(requests).finally(() => {
+        this.loading = false
       })
     },
     returnAlgorithmName (name) {
