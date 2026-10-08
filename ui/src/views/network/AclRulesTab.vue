@@ -276,7 +276,7 @@
           </a-form-item>
         </div>
 
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol) && !(form.protocol === 'protocolnumber' && form.protocolnumber === 1)">
+        <div v-show="hasPorts(form.protocol, form.protocolnumber)">
           <a-form-item :label="$t('label.startport')" ref="startport" name="startport">
             <a-input-number style="width: 100%" v-model:value="form.startport" />
           </a-form-item>
@@ -607,6 +607,10 @@ export default {
         self.form.reason = acl.reason
       }, 200)
     },
+    hasPorts (protocol, protocolNumber) {
+      // ports only apply to TCP and UDP, also when given by protocol number
+      return ['tcp', 'udp'].includes(protocol) || (protocol === 'protocolnumber' && [6, 17].includes(protocolNumber))
+    },
     getDataFromForm (values) {
       const data = {
         cidrlist: values.cidrlist || '',
@@ -617,7 +621,7 @@ export default {
         reason: values.reason || ''
       }
 
-      if (values.protocol === 'tcp' || values.protocol === 'udp' || values.protocol === 'protocolnumber') {
+      if (this.hasPorts(values.protocol, values.protocolnumber)) {
         data.startport = values.startport || ''
         data.endport = values.endport || ''
       }

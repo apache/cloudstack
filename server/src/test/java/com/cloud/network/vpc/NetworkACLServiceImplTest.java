@@ -543,6 +543,28 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
+    public void validatePortsAreUsableWithProtocolTestTcpAndUdpByNameOrNumber() {
+        for (String protocol : new String[] {"tcp", "udp", "6", "17"}) {
+            networkAclServiceImpl.validatePortsAreUsableWithProtocol(protocol, 22, 23);
+        }
+    }
+
+    @Test
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithoutPorts() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("47", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithPorts() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("132", 22, 22);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithStartPortOnly() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("47", 22, null);
+    }
+
+    @Test
     public void validateSourceCidrListTestEmptySourceCirdList() {
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(new ArrayList<>());
         networkAclServiceImpl.validateSourceCidrList(networkAclItemVoMock);
