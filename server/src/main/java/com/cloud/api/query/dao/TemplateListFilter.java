@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -55,6 +56,10 @@ public final class TemplateListFilter {
     public final String templateType;        // templateType EQ when non-null
     public final Boolean isVnf;              // templateType EQ VNF (true) / NEQ VNF (false) when non-null
     public final Boolean forCks;             // forCks EQ when non-null
+    public final CPU.CPUArch arch;           // arch EQ when non-null
+    public final List<Long> guestOsIds;      // guest_os_id IN list (resolved from os category)
+    public final Long extensionId;           // extension_id EQ when non-null
+    public final Long imageStoreId;          // image store id EQ when non-null
     public final Boolean publicTemplate;     // EQ when non-null (forced by featured/community/all-non-admin paths)
     public final Boolean featured;           // EQ when non-null (true=featured, false=community)
     public final Boolean bootable;           // EQ when non-null
@@ -85,6 +90,7 @@ public final class TemplateListFilter {
     // hard filters — presence forces fallback to the SearchBuilder path
     public final List<Long> sharedAccountIds;        // sharedexecutable / shared / all-non-admin
     public final String domainPathLike;              // domain scoping; modeled by the bypass SQL (joins domain)
+    public final boolean domainPathExact;            // domainPathLike is an exact path (non-recursive) when true
     public final List<Long> domainIdsForFeaturedCommunity; // featured/community related-domain hierarchy
     public final Map<String, String> tags;
     public final boolean requiresViewFallback;       // catch-all flag for templateFilter combinations the bypass SQL doesn't model
@@ -102,6 +108,10 @@ public final class TemplateListFilter {
         this.templateType = b.templateType;
         this.isVnf = b.isVnf;
         this.forCks = b.forCks;
+        this.arch = b.arch;
+        this.guestOsIds = nullSafe(b.guestOsIds);
+        this.extensionId = b.extensionId;
+        this.imageStoreId = b.imageStoreId;
         this.publicTemplate = b.publicTemplate;
         this.featured = b.featured;
         this.bootable = b.bootable;
@@ -122,6 +132,7 @@ public final class TemplateListFilter {
         this.sortAscending = b.sortAscending;
         this.sharedAccountIds = nullSafe(b.sharedAccountIds);
         this.domainPathLike = b.domainPathLike;
+        this.domainPathExact = b.domainPathExact;
         this.domainIdsForFeaturedCommunity = nullSafe(b.domainIdsForFeaturedCommunity);
         this.tags = b.tags == null ? Collections.emptyMap() : Collections.unmodifiableMap(b.tags);
         this.requiresViewFallback = b.requiresViewFallback;
@@ -170,6 +181,10 @@ public final class TemplateListFilter {
         private String templateType;
         private Boolean isVnf;
         private Boolean forCks;
+        private CPU.CPUArch arch;
+        private List<Long> guestOsIds;
+        private Long extensionId;
+        private Long imageStoreId;
         private Boolean publicTemplate;
         private Boolean featured;
         private Boolean bootable;
@@ -190,6 +205,7 @@ public final class TemplateListFilter {
         private boolean sortAscending = true;
         private List<Long> sharedAccountIds;
         private String domainPathLike;
+        private boolean domainPathExact;
         private List<Long> domainIdsForFeaturedCommunity;
         private Map<String, String> tags;
         private boolean requiresViewFallback;
@@ -206,6 +222,10 @@ public final class TemplateListFilter {
         public Builder templateType(String v) { this.templateType = v; return this; }
         public Builder isVnf(Boolean v) { this.isVnf = v; return this; }
         public Builder forCks(Boolean v) { this.forCks = v; return this; }
+        public Builder arch(CPU.CPUArch v) { this.arch = v; return this; }
+        public Builder guestOsIds(List<Long> v) { this.guestOsIds = v; return this; }
+        public Builder extensionId(Long v) { this.extensionId = v; return this; }
+        public Builder imageStoreId(Long v) { this.imageStoreId = v; return this; }
         public Builder publicTemplate(Boolean v) { this.publicTemplate = v; return this; }
         public Builder featured(Boolean v) { this.featured = v; return this; }
         public Builder bootable(Boolean v) { this.bootable = v; return this; }
@@ -226,6 +246,7 @@ public final class TemplateListFilter {
         public Builder sortAscending(boolean v) { this.sortAscending = v; return this; }
         public Builder sharedAccountIds(List<Long> v) { this.sharedAccountIds = v; return this; }
         public Builder domainPathLike(String v) { this.domainPathLike = v; return this; }
+        public Builder domainPathExact(boolean v) { this.domainPathExact = v; return this; }
         public Builder domainIdsForFeaturedCommunity(List<Long> v) { this.domainIdsForFeaturedCommunity = v; return this; }
         public Builder tags(Map<String, String> v) { this.tags = v; return this; }
         public Builder requiresViewFallback(boolean v) { this.requiresViewFallback = v; return this; }

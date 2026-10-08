@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VnfTemplateDetailVO;
@@ -192,5 +193,26 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
         String where = buildWhere(TemplateListFilter.builder().build(), new ArrayList<>());
         Assert.assertFalse(where.contains("for_cks"));
         Assert.assertFalse(where.contains("vt.type"));
+    }
+
+    @Test
+    public void testAppendCommonWhereArchOsCategoryExtensionAndImageStore() {
+        List<Object> params = new ArrayList<>();
+        String where = buildWhere(TemplateListFilter.builder().arch(CPU.CPUArch.arm64)
+                .guestOsIds(Arrays.asList(1L, 2L)).extensionId(5L).imageStoreId(7L).build(), params);
+        Assert.assertTrue(where.contains(" AND vt.arch = ?"));
+        Assert.assertTrue(where.contains(" AND vt.guest_os_id IN (?,?)"));
+        Assert.assertTrue(where.contains(" AND vt.extension_id = ?"));
+        Assert.assertTrue(where.contains(" AND tsr.store_id = ?"));
+        Assert.assertEquals(Arrays.<Object>asList(CPU.CPUArch.arm64.getType(), 1L, 2L, 5L, 7L), params);
+    }
+
+    @Test
+    public void testAppendCommonWhereDomainPathExactVsLike() {
+        List<Object> params = new ArrayList<>();
+        String exact = buildWhere(TemplateListFilter.builder().domainPathLike("/a/").domainPathExact(true).build(), params);
+        Assert.assertTrue(exact.contains(" AND d.path = ?"));
+        String like = buildWhere(TemplateListFilter.builder().domainPathLike("/a/%").build(), new ArrayList<>());
+        Assert.assertTrue(like.contains(" AND d.path LIKE ?"));
     }
 }

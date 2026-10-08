@@ -4991,8 +4991,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
         }
 
+        List<Long> guestOsIds = null;
         if (osCategoryId != null) {
-            List<Long> guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
+            guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
             if (CollectionUtils.isNotEmpty(guestOsIds)) {
                 sc.setParameters("guestOsIdIN", guestOsIds.toArray());
             } else {
@@ -5152,7 +5153,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 buildTemplateListFilter(templateId, ids, name, keyword, templateFilter, isIso, bootable,
                         pageSize, startIndex, zoneId, hyperType, hypers, showDomr, onlyReady,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
-                        parentTemplateId, showUnique, templateType, isVnf, forCks));
+                        parentTemplateId, showUnique, templateType, isVnf, forCks, arch, guestOsIds, extensionId,
+                        imageStoreId, storagePoolId, domainId, isRecursive));
     }
 
     /**
@@ -5359,7 +5361,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                                                        List<Account> permittedAccounts, Account caller,
                                                        ListProjectResourcesCriteria listProjectResourcesCriteria,
                                                        Map<String, String> tags, boolean showRemovedTmpl, Long parentTemplateId,
-                                                       Boolean showUnique, String templateType, Boolean isVnf, Boolean forCks) {
+                                                       Boolean showUnique, String templateType, Boolean isVnf, Boolean forCks,
+                                                       CPU.CPUArch arch, List<Long> guestOsIds, Long extensionId, Long imageStoreId,
+                                                       Long storagePoolId, Long domainId, boolean isRecursive) {
         TemplateListFilter.Builder b = TemplateListFilter.builder()
                 .templateId(templateId)
                 .ids(ids == null ? null : new ArrayList<>(ids))
@@ -5377,6 +5381,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 .templateType(templateType)
                 .isVnf(isVnf)
                 .forCks(forCks)
+                .arch(arch)
+                .guestOsIds(guestOsIds)
+                .extensionId(extensionId)
+                .imageStoreId(imageStoreId)
                 .showUnique(showUnique != null && showUnique)
                 .startIndex(startIndex)
                 .pageSize(pageSize)
@@ -5406,6 +5414,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return b.build();
         }
 
+        // template_spool_ref join is not modeled in bypass SQL.
+        if (storagePoolId != null) {
+            b.requiresViewFallback(true);
+        }
+
         List<Long> permittedAccountIds = new ArrayList<>();
         for (Account account : permittedAccounts) {
             permittedAccountIds.add(account.getId());
@@ -5417,16 +5430,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             b.featured(templateFilter == TemplateFilter.featured ? Boolean.TRUE : Boolean.FALSE);
             b.requiresViewFallback(true);
         } else if (templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable) {
-            if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
-                // Match the existing path's domain resolution (see searchForTemplatesInternal:4498-4502):
-                // scope to the queried account's domain when one was specified, else the caller's.
-                Long domainIdForScope = !permittedAccounts.isEmpty()
-                        ? permittedAccounts.get(0).getDomainId()
-                        : caller.getDomainId();
-                DomainVO scopeDomain = _domainDao.findById(domainIdForScope);
-                if (scopeDomain != null) {
-                    b.domainPathLike(scopeDomain.getPath() + "%");
-                }
+            if (accountMgr.isAdmin(caller.getAccountId())) {
+                applySelfDomainScope(b, permittedAccounts, caller, domainId, isRecursive);
             }
             if (!permittedAccountIds.isEmpty()) {
                 b.accountIds(permittedAccountIds);
@@ -5458,6 +5463,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return b.build();
+    }
+
+    // Mirrors the admin domain-path scoping of the view path for self/selfexecutable.
+    private void applySelfDomainScope(TemplateListFilter.Builder b, List<Account> permittedAccounts, Account caller,
+                                      Long domainId, boolean isRecursive) {
+        Long domainIdForScope = !permittedAccounts.isEmpty()
+                ? permittedAccounts.get(0).getDomainId()
+                : Objects.requireNonNullElse(domainId, caller.getDomainId());
+        DomainVO scopeDomain = _domainDao.findById(domainIdForScope);
+        // A recursive scope from the root domain matches every row, so skip the domain join.
+        if (scopeDomain == null || (isRecursive && scopeDomain.getId() == Domain.ROOT_DOMAIN)) {
+            return;
+        }
+        b.domainPathLike(isRecursive ? scopeDomain.getPath() + "%" : scopeDomain.getPath());
+        b.domainPathExact(!isRecursive);
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair

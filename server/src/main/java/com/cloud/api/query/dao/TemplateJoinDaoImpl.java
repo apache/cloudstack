@@ -849,6 +849,26 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             params.add(filter.forCks ? 1 : 0);
         }
 
+        if (filter.arch != null) {
+            where.append(" AND vt.arch = ?");
+            params.add(filter.arch.getType());
+        }
+
+        if (!filter.guestOsIds.isEmpty()) {
+            where.append(" AND vt.guest_os_id IN ").append(inClausePlaceholders(filter.guestOsIds.size()));
+            params.addAll(filter.guestOsIds);
+        }
+
+        if (filter.extensionId != null) {
+            where.append(" AND vt.extension_id = ?");
+            params.add(filter.extensionId);
+        }
+
+        if (filter.imageStoreId != null) {
+            where.append(" AND tsr.store_id = ?");
+            params.add(filter.imageStoreId);
+        }
+
         if (filter.accountTypeNeq != null) {
             where.append(" AND a.type != ?");
             params.add(filter.accountTypeNeq.ordinal());
@@ -883,7 +903,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // outside any composite (self/selfexecutable + DOMAIN_ADMIN scoping).
         if (filter.domainPathLike != null
                 && !filter.publicOrDomainPathComposite) {
-            where.append(" AND d.path LIKE ?");
+            where.append(filter.domainPathExact ? " AND d.path = ?" : " AND d.path LIKE ?");
             params.add(filter.domainPathLike);
         }
 
