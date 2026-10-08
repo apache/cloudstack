@@ -58,6 +58,18 @@ class TestCsAclIpv6(unittest.TestCase):
         egress = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_egress_policy" and 'rule' in r]
         self.assertIn("ip6 daddr 2001:db8:1::/64 meta l4proto 50 accept", egress)
 
+    def test_upper_layer_protocol_numbers_use_meta_l4proto(self):
+        config = FakeConfig()
+        rules = [{"type": "protocol", "protocol": p, "cidr": "2001:db8::/64", "allowed": True} for p in (6, 17, 58, 132)]
+        obj = {"device": "eth3", "nic_ip": "10.1.1.1", "nic_netmask": "24", "nic_ip6_cidr": "fd00:1::/64",
+               "ingress_rules": rules, "egress_rules": []}
+        acl = CsAcl.AclDevice(obj, config)
+        acl.create()
+
+        ingress = [r['rule'] for r in config.ipv6_acl if r.get('chain') == "eth3_ingress_policy" and 'rule' in r]
+        for p in (6, 17, 58, 132):
+            self.assertIn("ip6 saddr 2001:db8::/64 meta l4proto %d accept" % p, ingress)
+
     def test_extension_header_number_rule(self):
         config = FakeConfig()
         rules = [{"type": "protocol", "protocol": p, "cidr": "2001:db8::/64", "allowed": False} for p in (0, 43, 44, 60, 135)]
