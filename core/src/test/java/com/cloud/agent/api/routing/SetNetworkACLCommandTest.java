@@ -66,7 +66,7 @@ public class SetNetworkACLCommandTest {
 
     @Test
     public void testTcpAndUdpByProtocolNumberWithoutPortsStayWholeProtocol() {
-        // as tcp or udp with no ports the VR would match port 0 only
+        // a bare number matches the whole protocol on every VR path
         assertEquals("Ingress;6;0;0;10.0.0.0/24;ACCEPT;", generateRule("6", null, null, null, null));
         assertEquals("Ingress;17;0;0;10.0.0.0/24;ACCEPT;", generateRule("17", null, null, null, null));
     }
