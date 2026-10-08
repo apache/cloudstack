@@ -709,6 +709,18 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
     }
 
+    /**
+     * On update the ports a rule already carries are only checked when the protocol is given too, so
+     * that a rule stored with ports on another protocol number can still be edited otherwise, while a
+     * protocol change cannot leave them on it.
+     */
+    protected void validatePortsAreUsableWithProtocolOnUpdate(UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo) {
+        boolean protocolGiven = StringUtils.isNotBlank(updateNetworkACLItemCmd.getProtocol());
+        validatePortsAreUsableWithProtocol(networkACLItemVo.getProtocol(),
+                protocolGiven ? networkACLItemVo.getSourcePortStart() : updateNetworkACLItemCmd.getSourcePortStart(),
+                protocolGiven ? networkACLItemVo.getSourcePortEnd() : updateNetworkACLItemCmd.getSourcePortEnd());
+    }
+
     @Override
     public NetworkACLItem getNetworkACLItem(final long ruleId) {
         return _networkAclMgr.getNetworkACLItem(ruleId);
@@ -895,8 +907,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         transferDataToNetworkAclRulePojo(updateNetworkACLItemCmd, networkACLItemVo, acl);
         validateNetworkACLItem(networkACLItemVo);
-        // only the ports given now: older rules may already carry ports, and must stay editable
-        validatePortsAreUsableWithProtocol(networkACLItemVo.getProtocol(), updateNetworkACLItemCmd.getSourcePortStart(), updateNetworkACLItemCmd.getSourcePortEnd());
+        validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmd, networkACLItemVo);
         return _networkAclMgr.updateNetworkACLItem(networkACLItemVo);
     }
 
