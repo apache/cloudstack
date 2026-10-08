@@ -34,6 +34,25 @@
             <groupId>io.netris</groupId>
             <artifactId>netris-java-sdk</artifactId>
             <version>1.0.0</version>
+            <exclusions>
+                <!-- BouncyCastle is provided by the bcprov/bctls-jdk18on jars managed by the parent pom -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bctls-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcutil-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.seancfoley</groupId>
