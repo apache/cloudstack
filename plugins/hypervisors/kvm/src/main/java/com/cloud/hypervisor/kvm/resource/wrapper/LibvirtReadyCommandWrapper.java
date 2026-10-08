@@ -60,6 +60,9 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
             hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());
         }
 
+        hostDetails.put(Host.HOST_VLAN_FILTERING_ENABLED, Boolean.toString(libvirtComputingResource.hostSupportsVlanFiltering()));
+        hostDetails.put(Host.HOST_VLAN_TRUNK_XML_SUPPORTED, Boolean.toString(libvirtComputingResource.hostSupportsVlanTrunkXml()));
+
         return new ReadyAnswer(command, hostDetails);
     }
 

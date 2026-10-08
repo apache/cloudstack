@@ -318,6 +318,8 @@ public class ApiConstants {
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
+    public static final String VLAN_FILTERING_ENABLED = "vlanfilteringenabled";
+    public static final String VLAN_TRUNK_XML_SUPPORTED = "vlantrunkxmlsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
@@ -420,6 +422,7 @@ public class ApiConstants {
     public static final String NIC = "nic";
     public static final String NICS = "nics";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
+    public static final String NIC_NETWORKS_LIST = "nicnetworkslist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NIC_MULTIQUEUE_NUMBER = "nicmultiqueuenumber";
     public static final String NIC_PACKED_VIRTQUEUES_ENABLED = "nicpackedvirtqueuesenabled";
@@ -865,6 +868,8 @@ public class ApiConstants {
     public static final String ASSOCIATED_NETWORK = "associatednetwork";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
+    public static final String ASSOCIATED_NETWORKS = "associatednetworks";
+    public static final String TRUNKED = "trunked";
     public static final String ASSOCIATED_VPC_ID = "associatedvpcid";
     public static final String ASSOCIATED_VPC_NAME = "associatedvpcname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";

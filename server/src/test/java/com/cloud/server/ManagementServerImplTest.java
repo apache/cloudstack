@@ -310,6 +310,19 @@ public class ManagementServerImplTest {
         f.set(configKey, o);
     }
 
+    @Test
+    public void applyAffinityConstraintsChecksMultiNetworkNicHostReadiness() {
+        Mockito.when(virtualMachineMock.getId()).thenReturn(1L);
+        Mockito.when(virtualMachineMock.getHostId()).thenReturn(5L);
+        Mockito.when(dataCenterDeploymentMock.getDataCenterId()).thenReturn(2L);
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dcDao.findById(2L)).thenReturn(dc);
+
+        spy.applyAffinityConstraints(virtualMachineMock, virtualMachineProfileMock, dataCenterDeploymentMock, Collections.emptyList());
+
+        Mockito.verify(dpMgr).avoidHostsNotReadyForMultiNetworkNics(Mockito.eq(virtualMachineProfileMock), Mockito.eq(dc), Mockito.any());
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testDuplicateRegistrations() {
         String accountName = "account";

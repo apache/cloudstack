@@ -133,7 +133,10 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -1652,6 +1655,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             }
         }
 
+        _dpMgr.avoidHostsNotReadyForMultiNetworkNics(vmProfile, _dcDao.findById(plan.getDataCenterId()), excludes);
+
         // call affinitygroup chain
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
@@ -1759,6 +1764,20 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
         final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHostsPair.first(), allHostsPair.second());
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    @Override
+    public String getMultiNetworkNicUnsuitableReason(final VirtualMachine vm, final Host host) {
+        boolean vmHasMultiNetworkNic = nicDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!vmHasMultiNetworkNic) {
+            return null;
+        }
+        final DetailVO detail = _detailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        final boolean vlanFilteringEnabled = detail != null && Boolean.parseBoolean(detail.getValue());
+        if (!vlanFilteringEnabled) {
+            return "Instance has a multi-VLAN trunk NIC, but this host does not have VLAN filtering enabled";
+        }
+        return null;
     }
 
     private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
@@ -4355,6 +4374,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(ListPublicIpAddressesCmdByAdmin.class);
         cmdList.add(CreateNetworkCmdByAdmin.class);
         cmdList.add(UpdateNetworkCmdByAdmin.class);
+        cmdList.add(AssociateNetworkToNicCmd.class);
+        cmdList.add(DisassociateNetworkFromNicCmd.class);
+        cmdList.add(ChangeNicPrimaryNetworkCmd.class);
         cmdList.add(ListNetworksCmdByAdmin.class);
         cmdList.add(CreateVPCCmdByAdmin.class);
         cmdList.add(ListVPCsCmdByAdmin.class);

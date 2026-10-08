@@ -269,6 +269,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -306,6 +308,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao;
+    @Inject
+    NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     RulesManager _rulesMgr;
     @Inject
@@ -2740,6 +2744,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
             logger.debug("Removing NIC {} secondary IP addresses failed", nic);
         }
+
+        // remove any multi-VLAN trunk associations this nic held as a primary - otherwise they're left
+        // permanently orphaned, referencing a nic that no longer exists
+        for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
+            _nicNetworkMapDao.remove(association.getId());
+        }
     }
 
     public boolean isDhcpAccrossMultipleSubnetsSupported(final DhcpServiceProvider dhcpServiceProvider) {
@@ -2791,6 +2801,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void removeNics(final VirtualMachineProfile vm) {
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
+            for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
+                _nicNetworkMapDao.remove(association.getId());
+            }
             _nicDao.remove(nic.getId());
         }
     }
@@ -3477,6 +3490,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        // A network with no primary nics can still be actively used as a secondary (trunk) network by a nic
+        // whose primary is a different network entirely - nics.network_id alone would miss this
+        if (MultiNetworkNicEnabled.valueIn(network.getDataCenterId()) && !_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
+            logger.warn("Can't delete the Network {}, it is still associated with at least one NIC as a secondary network", network);
+            return false;
+        }
+
         // Don't allow to delete network via api call when it has vms assigned to it
         final int nicCount = getActiveNicsInNetwork(networkId);
         if (nicCount > 0) {
@@ -3712,6 +3732,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                     if (!networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(networkId), null).isEmpty()) {
                         logger.debug("Network {} is associated to a shared network, skipping", networkId);
+                        continue;
+                    }
+
+                    final NetworkVO network = _networksDao.findById(networkId);
+                    if (network != null && MultiNetworkNicEnabled.valueIn(network.getDataCenterId())
+                            && !_nicNetworkMapDao.listByNetworkId(networkId).isEmpty()) {
+                        // only zones with the feature enabled can ever have nic_network_map rows at all,
+                        // so this check is skipped entirely everywhere else instead of querying needlessly
+                        logger.debug("Network {} is still associated with at least one NIC as a secondary network, skipping", networkId);
                         continue;
                     }
 
@@ -4101,6 +4130,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 result = _nicDao.listByVmId(vmId);
             } else {
                 result = _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, networkId);
+                if (networkId != null) {
+                    result = addNicsWithNetworkAssociation(result, vmId, nicId, networkId);
+                }
             }
         } else {
             result = _nicDao.listByVmIdAndKeyword(vmId, keyword);
@@ -4126,6 +4158,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
+        return result;
+    }
+
+    // A nic whose primary network is something else but is also associated with networkId (multi-VLAN trunk nic)
+    // is invisible to the primary-only search above, so it needs a separate associations-based lookup here.
+    private List<NicVO> addNicsWithNetworkAssociation(final List<NicVO> primaryMatches, final long vmId, final Long nicId, final long networkId) {
+        final List<NicVO> result = new ArrayList<>(primaryMatches);
+        for (final NicVO candidate : _nicDao.listByVmIdAndNicIdAndNtwkId(vmId, nicId, null)) {
+            if (!result.contains(candidate) && _nicNetworkMapDao.findByNicIdAndNetworkId(candidate.getId(), networkId) != null) {
+                result.add(candidate);
+            }
+        }
         return result;
     }
 
@@ -5032,10 +5076,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
             removeNic(vm, nic);
-            NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if (virtualMachine.getState() != VirtualMachine.State.Stopped) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, virtualMachine.getAccountId(), virtualMachine.getDataCenterId(), virtualMachine.getId(),
-                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, virtualMachine.getClass().getName(), virtualMachine.getUuid(), virtualMachine.isDisplay());
+                UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, virtualMachine.getAccountId(), virtualMachine.getDataCenterId(),
+                        virtualMachine.getId(), virtualMachine.getClass().getName(), virtualMachine.getUuid(), nic, 0L, virtualMachine.isDisplay());
             }
         }
     }
@@ -5069,6 +5112,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 GuestDomainSuffix, NetworkThrottlingRate, VmNetworkThrottlingRate, MinVRVersion, DhcpLeaseTimeout,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
                 TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN,
-                NETWORK_LB_HAPROXY_IDLE_TIMEOUT};
+                NETWORK_LB_HAPROXY_IDLE_TIMEOUT, MultiNetworkNicEnabled};
     }
 }

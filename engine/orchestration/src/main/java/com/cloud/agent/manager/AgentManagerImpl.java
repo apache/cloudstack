@@ -817,8 +817,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
                 String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
+                String vlanFilteringEnabled = detailsMap.get(Host.HOST_VLAN_FILTERING_ENABLED);
+                String vlanTrunkXmlSupported = detailsMap.get(Host.HOST_VLAN_TRUNK_XML_SUPPORTED);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion, vlanFilteringEnabled, vlanTrunkXmlSupported)) {
                     boolean updateNeeded = false;
                     if (syncBooleanHostCapability(host, Host.HOST_UEFI_ENABLE, uefiEnabled)) {
                         updateNeeded = true;
@@ -836,6 +838,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                     if (StringUtils.isNotBlank(vddkSupport) && !vddkSupport.equals(host.getDetails().get(Host.HOST_VDDK_SUPPORT))) {
                         host.getDetails().put(Host.HOST_VDDK_SUPPORT, vddkSupport);
+                        updateNeeded = true;
+                    }
+                    if (syncBooleanHostCapability(host, Host.HOST_VLAN_FILTERING_ENABLED, vlanFilteringEnabled)) {
+                        updateNeeded = true;
+                    }
+                    if (syncBooleanHostCapability(host, Host.HOST_VLAN_TRUNK_XML_SUPPORTED, vlanTrunkXmlSupported)) {
                         updateNeeded = true;
                     }
                     if (!StringUtils.defaultString(vddkLibDir).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VDDK_LIB_DIR)))) {

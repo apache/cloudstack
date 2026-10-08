@@ -42,14 +42,21 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +70,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,10 +110,13 @@ public class CommandSetupHelperTest {
     ASNumberDao asNumberDao;
     @Mock
     BgpPeerDetailsDao bgpPeerDetailsDao;
+    @Mock
+    NicNetworkMapDao nicNetworkMapDao;
 
     @Before
     public void setUp() {
         ReflectionTestUtils.setField(commandSetupHelper, "_nicDao", nicDao);
+        ReflectionTestUtils.setField(commandSetupHelper, "_nicNetworkMapDao", nicNetworkMapDao);
         ReflectionTestUtils.setField(commandSetupHelper, "_networkDao", networkDao);
         ReflectionTestUtils.setField(commandSetupHelper, "_ipAddressDao", ipAddressDao);
         ReflectionTestUtils.setField(commandSetupHelper, "_vlanDao", vlanDao);
@@ -116,6 +127,125 @@ public class CommandSetupHelperTest {
         ReflectionTestUtils.setField(commandSetupHelper, "_vpcDao", vpcDao);
         ReflectionTestUtils.setField(commandSetupHelper, "_routerControlHelper", routerControlHelper);
         ReflectionTestUtils.setField(commandSetupHelper, "_dcDao", dcDao);
+    }
+
+    @After
+    public void tearDown() {
+        ConfigKey.init(null);
+    }
+
+    private NetworkVO createVlanNetwork(String uuid, String name, long vlanTag) {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(network.getUuid()).thenReturn(uuid);
+        when(network.getName()).thenReturn(name);
+        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
+        when(network.getBroadcastUri()).thenReturn(BroadcastDomainType.Vlan.toUri(vlanTag));
+        return network;
+    }
+
+    private void enableNicVlanMappingExposure() {
+        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configDepotMock);
+        when(configDepotMock.getConfigStringValue(Mockito.eq(VirtualMachineManager.AllowExposeNicVlanMapping.toString()), Mockito.any(), Mockito.any()))
+                .thenReturn("true");
+    }
+
+    @Test
+    public void testAddNicVlanMappingToVmDataSkipsWhenNicNotTrunked() {
+        VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
+        NicVO nic = Mockito.mock(NicVO.class);
+        when(nic.getMultiNetwork()).thenReturn(false);
+        UserVm vm = Mockito.mock(UserVm.class);
+
+        commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
+        Assert.assertTrue(vmDataCommand.getVmData().isEmpty());
+        Mockito.verifyNoInteractions(nicNetworkMapDao);
+    }
+
+    @Test
+    public void testAddNicVlanMappingToVmDataSkipsWhenConfigDisabled() {
+        VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
+        NicVO nic = Mockito.mock(NicVO.class);
+        when(nic.getMultiNetwork()).thenReturn(true);
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getAccountId()).thenReturn(2L);
+
+        commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
+        Assert.assertTrue(vmDataCommand.getVmData().isEmpty());
+        Mockito.verifyNoInteractions(nicNetworkMapDao);
+    }
+
+    @Test
+    public void testAddNicVlanMappingToVmDataClearsFileWhenNoAssociations() {
+        enableNicVlanMappingExposure();
+        VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
+        NicVO nic = Mockito.mock(NicVO.class);
+        when(nic.getId()).thenReturn(11L);
+        when(nic.getMultiNetwork()).thenReturn(true);
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getAccountId()).thenReturn(2L);
+        when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Collections.emptyList());
+
+        commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
+        List<String[]> metadata = vmDataCommand.getVmData();
+        Assert.assertEquals(1, metadata.size());
+        String[] metadataFile = metadata.get(0);
+        Assert.assertEquals("metadata", metadataFile[0]);
+        Assert.assertEquals(NetworkModel.NIC_VLAN_MAPPING_FILE, metadataFile[1]);
+        Assert.assertEquals("", metadataFile[2]);
+    }
+
+    @Test
+    public void testAddNicVlanMappingToVmDataAddsMappingsWhenEnabledAndTrunked() {
+        enableNicVlanMappingExposure();
+        VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
+        NicVO nic = Mockito.mock(NicVO.class);
+        when(nic.getId()).thenReturn(11L);
+        when(nic.getMultiNetwork()).thenReturn(true);
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getAccountId()).thenReturn(2L);
+
+        NicNetworkMapVO association = new NicNetworkMapVO(11L, 205L);
+        when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Arrays.asList(association));
+        NetworkVO associatedNetwork = createVlanNetwork("network-uuid-205", "netNormal", 1179L);
+        when(networkDao.findById(205L)).thenReturn(associatedNetwork);
+
+        commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
+        List<String[]> metadata = vmDataCommand.getVmData();
+        Assert.assertEquals(1, metadata.size());
+        String[] metadataFile = metadata.get(0);
+        Assert.assertEquals("metadata", metadataFile[0]);
+        Assert.assertEquals(NetworkModel.NIC_VLAN_MAPPING_FILE, metadataFile[1]);
+        Assert.assertTrue(metadataFile[2].contains("network-uuid-205"));
+        Assert.assertTrue(metadataFile[2].contains("netNormal"));
+        Assert.assertTrue(metadataFile[2].contains("1179"));
+    }
+
+    @Test
+    public void testAddNicVlanMappingToVmDataClearsFileWhenOnlyNonVlanAssociatedNetworks() {
+        enableNicVlanMappingExposure();
+        VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
+        NicVO nic = Mockito.mock(NicVO.class);
+        when(nic.getId()).thenReturn(11L);
+        when(nic.getMultiNetwork()).thenReturn(true);
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getAccountId()).thenReturn(2L);
+
+        NicNetworkMapVO association = new NicNetworkMapVO(11L, 206L);
+        when(nicNetworkMapDao.listByNicId(11L)).thenReturn(Arrays.asList(association));
+        NetworkVO nonVlanNetwork = Mockito.mock(NetworkVO.class);
+        when(nonVlanNetwork.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+        when(networkDao.findById(206L)).thenReturn(nonVlanNetwork);
+
+        commandSetupHelper.addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
+        List<String[]> metadata = vmDataCommand.getVmData();
+        Assert.assertEquals(1, metadata.size());
+        Assert.assertEquals("", metadata.get(0)[2]);
     }
 
     @Test

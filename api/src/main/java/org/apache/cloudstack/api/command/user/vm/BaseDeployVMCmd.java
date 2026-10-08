@@ -19,7 +19,10 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +64,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.NetworkService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.net.Dhcp;
@@ -189,6 +193,15 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter."
             + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
+
+    @Parameter(name = ApiConstants.NIC_NETWORKS_LIST, type = CommandType.MAP, since = "24.0.0",
+            authorized = {RoleType.Admin},
+            description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk. The first network id in each entry is the nic's primary network."
+                    + " Can't be specified with networkIds or ipToNetworkList parameters."
+                    + " Optional ip4addresses/ip6addresses request specific IPs for the entry's associated (non-primary) networks - comma-separated,"
+                    + " positionally aligned to networkids after its first (primary) entry; a blank token auto-allocates that network's IP, same as omitting it."
+                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3&nicnetworkslist[0].ip4address=10.10.10.11&nicnetworkslist[0].ip4addresses=10.10.20.5,10.10.30.5")
+    private Map nicNetworksList;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
     private String ipAddress;
@@ -510,6 +523,18 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public List<Long> getNetworkIds() {
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null
+                    || MapUtils.isNotEmpty(ipToNetworkList) || MapUtils.isNotEmpty(vAppNetworks)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s, %s",
+                        ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST, ApiConstants.NIC_NETWORK_LIST));
+            }
+            List<Long> networks = new ArrayList<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                networks.add(grouping.getPrimaryNetworkId());
+            }
+            return networks;
+        }
         if (MapUtils.isNotEmpty(vAppNetworks)) {
             if (CollectionUtils.isNotEmpty(networkIds) || ipAddress != null || getIp6Address() != null || MapUtils.isNotEmpty(ipToNetworkList)) {
                 throw new InvalidParameterValueException(String.format("%s can't be specified along with %s, %s, %s", ApiConstants.NIC_NETWORK_LIST, ApiConstants.NETWORK_IDS, ApiConstants.IP_ADDRESS, ApiConstants.IP_NETWORK_LIST));
@@ -624,6 +649,20 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     }
 
     public Map<Long, IpAddresses> getIpToNetworkMap() {
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            LinkedHashMap<Long, IpAddresses> ipToNetworkMap = new LinkedHashMap<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                if (grouping.getIp4Address() == null && grouping.getIp6Address() == null && grouping.getMacAddress() == null) {
+                    continue;
+                }
+                HashMap<String, String> ips = new HashMap<>();
+                ips.put("ip", grouping.getIp4Address());
+                ips.put("ipv6", grouping.getIp6Address());
+                ips.put("mac", grouping.getMacAddress());
+                ipToNetworkMap.put(grouping.getPrimaryNetworkId(), getIpAddressesFromIpMap(ips));
+            }
+            return ipToNetworkMap.isEmpty() ? null : ipToNetworkMap;
+        }
         if ((networkIds != null || ipAddress != null || getIp6Address() != null) && ipToNetworkList != null) {
             throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
         }
@@ -641,6 +680,145 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
 
         return ipToNetworkMap;
+    }
+
+    /**
+     * Parses nicnetworkslist into one grouping per requested nic, each naming the full ordered set of networks
+     * (primary first) that nic is associated with. Legacy networkIds/ipToNetworkList/vAppNetworks are untouched
+     * when nicnetworkslist is absent - this only returns a non-empty list when it was actually supplied.
+     * <p>
+     * Entries are read in ascending order of their nicnetworkslist[N] index, not map iteration order - the index
+     * is what both the deploy-time nic creation order (device id) and VNF's per-device-id validation rely on, and
+     * the underlying request map is not guaranteed to preserve insertion order.
+     */
+    public List<NicNetworkGrouping> getNicNetworksList() {
+        return parseNicNetworksList(nicNetworksList, _networkService);
+    }
+
+    /**
+     * Shared with {@link org.apache.cloudstack.api.command.admin.vm.AssignVMCmd}, which reuses this exact
+     * nicnetworkslist parameter shape so a trunk nic's associations can be carried across an account
+     * reassignment instead of being silently rebuilt as separate nics.
+     */
+    public static List<NicNetworkGrouping> parseNicNetworksList(Map rawNicNetworksList, NetworkService networkService) {
+        List<NicNetworkGrouping> groupings = new ArrayList<>();
+        if (MapUtils.isEmpty(rawNicNetworksList)) {
+            return groupings;
+        }
+        // the request-binding framework hands back these keys as Integer, not String - sort on the parsed value
+        // directly rather than assuming a type, so this works regardless of which one it actually is
+        List<Object> indices = new ArrayList<>(rawNicNetworksList.keySet());
+        try {
+            indices.sort(Comparator.comparingInt(index -> Integer.parseInt(index.toString())));
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException(String.format("%s indices must be integers", ApiConstants.NIC_NETWORKS_LIST));
+        }
+        for (Object index : indices) {
+            HashMap<String, String> entry = (HashMap<String, String>) rawNicNetworksList.get(index);
+            String networkIdsCsv = entry.get("networkids");
+            if (StringUtils.isBlank(networkIdsCsv)) {
+                throw new InvalidParameterValueException(String.format("%s entries must specify networkids", ApiConstants.NIC_NETWORKS_LIST));
+            }
+            List<Long> resolvedNetworkIds = new ArrayList<>();
+            for (String token : networkIdsCsv.split(",")) {
+                resolvedNetworkIds.add(resolveNetworkId(token.trim(), networkService));
+            }
+            if (resolvedNetworkIds.size() != new HashSet<>(resolvedNetworkIds).size()) {
+                throw new InvalidParameterValueException(String.format("%s entry lists the same network more than once: %s", ApiConstants.NIC_NETWORKS_LIST, networkIdsCsv));
+            }
+            Map<Long, IpAddresses> associatedNetworkIps = parseAssociatedNetworkIps(resolvedNetworkIds, entry.get("ip4addresses"), entry.get("ip6addresses"));
+            groupings.add(new NicNetworkGrouping(resolvedNetworkIds, entry.get("ip4address"), entry.get("ip6address"), entry.get("macaddress"), associatedNetworkIps));
+        }
+        return groupings;
+    }
+
+    @Nonnull
+    private static Long resolveNetworkId(String networkIdOrUuid, NetworkService networkService) {
+        Network network = networkService.getNetwork(networkIdOrUuid);
+        if (network != null) {
+            return network.getId();
+        }
+        try {
+            return Long.parseLong(networkIdOrUuid);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException("Unable to translate and find entity with networkId: " + networkIdOrUuid);
+        }
+    }
+
+    /**
+     * Parses a nicnetworkslist[N] entry's optional ip4addresses/ip6addresses - comma-separated, positionally
+     * aligned to that entry's networkids starting from its 2nd id (the associated networks; the primary's own
+     * ip4address/ip6address is handled separately). A blank token, or a shorter list than the associated-network
+     * count, leaves that network to auto-allocate - same as not requesting an IP for it at all.
+     */
+    private static Map<Long, IpAddresses> parseAssociatedNetworkIps(List<Long> networkIds, String ip4AddressesCsv, String ip6AddressesCsv) {
+        if (StringUtils.isBlank(ip4AddressesCsv) && StringUtils.isBlank(ip6AddressesCsv)) {
+            return Collections.emptyMap();
+        }
+        List<Long> associatedNetworkIds = networkIds.subList(1, networkIds.size());
+        String[] ip4Tokens = ip4AddressesCsv != null ? ip4AddressesCsv.split(",", -1) : new String[0];
+        String[] ip6Tokens = ip6AddressesCsv != null ? ip6AddressesCsv.split(",", -1) : new String[0];
+        if (ip4Tokens.length > associatedNetworkIds.size() || ip6Tokens.length > associatedNetworkIds.size()) {
+            throw new InvalidParameterValueException(String.format(
+                    "%s entry's ip4addresses/ip6addresses can't list more entries than its associated networks (%d)",
+                    ApiConstants.NIC_NETWORKS_LIST, associatedNetworkIds.size()));
+        }
+        Map<Long, IpAddresses> associatedNetworkIps = new HashMap<>();
+        for (int i = 0; i < associatedNetworkIds.size(); i++) {
+            String ip4 = i < ip4Tokens.length ? StringUtils.trimToNull(ip4Tokens[i]) : null;
+            String ip6 = i < ip6Tokens.length ? StringUtils.trimToNull(ip6Tokens[i]) : null;
+            if (ip4 != null || ip6 != null) {
+                associatedNetworkIps.put(associatedNetworkIds.get(i), new IpAddresses(ip4, ip6));
+            }
+        }
+        return associatedNetworkIps;
+    }
+
+    /**
+     * One requested nic's full network association set, primary network first, from a nicnetworkslist entry.
+     */
+    public static class NicNetworkGrouping {
+        private final List<Long> networkIds;
+        private final String ip4Address;
+        private final String ip6Address;
+        private final String macAddress;
+        private final Map<Long, IpAddresses> associatedNetworkIps;
+
+        public NicNetworkGrouping(List<Long> networkIds, String ip4Address, String ip6Address, String macAddress, Map<Long, IpAddresses> associatedNetworkIps) {
+            this.networkIds = networkIds;
+            this.ip4Address = ip4Address;
+            this.ip6Address = ip6Address;
+            this.macAddress = macAddress;
+            this.associatedNetworkIps = associatedNetworkIps;
+        }
+
+        public Long getPrimaryNetworkId() {
+            return networkIds.get(0);
+        }
+
+        public List<Long> getAssociatedNetworkIds() {
+            return networkIds.subList(1, networkIds.size());
+        }
+
+        public String getIp4Address() {
+            return ip4Address;
+        }
+
+        public String getIp6Address() {
+            return ip6Address;
+        }
+
+        public String getMacAddress() {
+            return macAddress;
+        }
+
+        /**
+         * Requested ip4/ip6 addresses for this entry's associated (non-primary) networks, keyed by network id.
+         * A network with no entry here auto-allocates, same as today.
+         */
+        public Map<Long, IpAddresses> getAssociatedNetworkIps() {
+            return associatedNetworkIps;
+        }
     }
 
     @Nonnull

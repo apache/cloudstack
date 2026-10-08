@@ -61,6 +61,39 @@
         <a-descriptions-item :label="$t('label.dns.name')" v-if="record.nicdnsname">
             {{ record.nicdnsname }}
         </a-descriptions-item>
+        <a-descriptions-item :label="$t('label.nic.associatednetworks')" v-if="record.trunked && record.associatednetworks && record.associatednetworks.length > 0">
+          <a-list size="small" :dataSource="record.associatednetworks" :rowKey="item => item.networkid">
+            <template #renderItem="{ item }">
+              <a-list-item>
+                <a-list-item-meta>
+                  <template #title>
+                    <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }}</router-link>
+                    <span v-if="item.broadcasturi" style="margin-left: 8px; color: rgba(0, 0, 0, 0.45)">({{ item.broadcasturi }})</span>
+                  </template>
+                  <template #description>
+                    <span v-if="item.ipaddress">{{ $t('label.ipaddress') }}: {{ item.ipaddress }}</span>
+                    <span v-if="item.gateway" style="margin-left: 10px">{{ $t('label.gateway') }}: {{ item.gateway }}</span>
+                  </template>
+                </a-list-item-meta>
+                <template #actions>
+                  <a-popconfirm
+                    v-if="canManageAssociations"
+                    :title="$t('message.disassociate.network.confirm')"
+                    @confirm="$emit('disassociate-network', { nic: record, network: item })"
+                    :okText="$t('label.yes')"
+                    :cancelText="$t('label.no')">
+                    <tooltip-button
+                      tooltipPlacement="top"
+                      :tooltip="$t('label.disassociate.network')"
+                      type="primary"
+                      :danger="true"
+                      icon="delete-outlined" />
+                  </a-popconfirm>
+                </template>
+              </a-list-item>
+            </template>
+          </a-list>
+        </a-descriptions-item>
       </a-descriptions>
     </template>
     <template #bodyCell="{ column, text, record }">
@@ -73,6 +106,11 @@
         <a-tag v-if="record.isdefault">
           {{ $t('label.default') }}
         </a-tag>
+        <a-tooltip v-if="record.trunked" :title="$t('message.nic.trunked.tooltip')">
+          <a-tag color="blue">
+            {{ $t('label.nic.trunked') }}
+          </a-tag>
+        </a-tooltip>
       </template>
       <template v-if="column.key === 'enabled'">
         <status :text="text ? 'enabled' : 'disabled'"/> {{ text ? 'Enabled' : 'Disabled' }}
@@ -85,6 +123,7 @@
 import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'NicsTable',
@@ -96,11 +135,17 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    canManageAssociations: {
+      type: Boolean,
+      default: false
     }
   },
+  emits: ['disassociate-network'],
   components: {
     ResourceIcon,
-    Status
+    Status,
+    TooltipButton
   },
   inject: ['parentFetchData'],
   data () {

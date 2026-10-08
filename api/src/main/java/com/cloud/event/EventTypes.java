@@ -228,6 +228,11 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
     public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
+    public static final String EVENT_NIC_NETWORK_ASSOCIATE = "NIC.NETWORK.ASSOCIATE";
+    public static final String EVENT_NIC_NETWORK_DISASSOCIATE = "NIC.NETWORK.DISASSOCIATE";
+    public static final String EVENT_NIC_PRIMARY_NETWORK_CHANGE = "NIC.PRIMARY.NETWORK.CHANGE";
+    // internal-only signal consumed by the usage job - never user-facing, not an audit event
+    public static final String EVENT_NIC_NETWORK_ID_BACKFILL = "NIC.NETWORK.ID.BACKFILL";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -980,6 +985,9 @@ public class EventTypes {
 
         // Nic Events
         entityEventDetails.put(EVENT_NIC_CREATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_NETWORK_ASSOCIATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_NETWORK_DISASSOCIATE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PRIMARY_NETWORK_CHANGE, Nic.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);

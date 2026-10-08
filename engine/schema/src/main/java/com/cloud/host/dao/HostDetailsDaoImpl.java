@@ -22,10 +22,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -137,6 +140,14 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         SearchCriteria<DetailVO> sc = DetailNameSearch.create();
         sc.setParameters("name", name);
         return listBy(sc);
+    }
+
+    @Override
+    public Set<Long> findHostIdsWithVlanFilteringEnabled() {
+        return findByName(Host.HOST_VLAN_FILTERING_ENABLED).stream()
+                .filter(detail -> Boolean.parseBoolean(detail.getValue()))
+                .map(DetailVO::getHostId)
+                .collect(Collectors.toSet());
     }
 
     @Override

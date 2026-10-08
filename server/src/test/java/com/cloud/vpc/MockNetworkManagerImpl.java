@@ -26,6 +26,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
@@ -1063,6 +1066,25 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd) {
         return null;
+    }
+
+    @Override
+    public Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public void associateNetworksToNic(Nic nic, List<Long> networkIds, Map<Long, IpAddresses> requestedIps) {
     }
 
     @Override
