@@ -80,17 +80,31 @@ if [ ! -d "$MountPoint" ]; then
   exit 1
 fi
 
-# Returns 0 if the given path resides on a mounted filesystem other than the
-# root filesystem. A SharedMountPoint path does not need to be a mount point
-# itself, it may be a subdirectory of a mounted (e.g. clustered) filesystem.
+# Returns 0 if the given path is usable for the heartbeat:
+# - the path is a mount point itself (same behaviour as before), or
+# - the path is a subdirectory of a mounted (e.g. clustered) filesystem that
+#   is neither the root filesystem nor a local disk filesystem.
+# The second rule keeps a lost exact mount from passing: its empty directory
+# then belongs to the parent filesystem (e.g. a local /var), which is refused.
 is_on_mounted_fs() {
-  local target
+  local target fstype
+  if command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$1"; then
+    return 0
+  fi
   if command -v findmnt >/dev/null 2>&1; then
     target=$(findmnt -n -o TARGET -T "$1" 2>/dev/null)
+    fstype=$(findmnt -n -o FSTYPE -T "$1" 2>/dev/null)
   else
     target=$(df -P "$1" 2>/dev/null | awk 'NR==2 {print $6}')
+    fstype=$(df -PT "$1" 2>/dev/null | awk 'NR==2 {print $2}')
   fi
-  [ -n "$target" ] && [ "$target" != "/" ]
+  [ -n "$target" ] && [ "$target" != "/" ] || return 1
+  case "$fstype" in
+    ext2|ext3|ext4|xfs|btrfs|zfs|f2fs|vfat|exfat|ntfs|ntfs3|tmpfs|ramfs|overlay|squashfs)
+      return 1
+      ;;
+  esac
+  return 0
 }
 
 # Ensure the path is on a mounted filesystem (not the local root filesystem)
@@ -122,6 +136,10 @@ write_hbLog() {
      fi
   fi
 
+  # A run killed on timeout (SIGKILL) cannot run its trap; remove its
+  # leftover temporary file on the next run.
+  find "$hbFolder" -maxdepth 1 -name "hb-$HostIP.*" -mmin +1 -delete 2>/dev/null
+
   timestamp=$(date +%s)
   # Write atomically to avoid partial writes (write to tmp then mv)
   tmpfile="${hbFile}.$$"
@@ -151,13 +169,19 @@ check_hbLog() {
     return 1
   fi
   # note: 'expr' exits with 1 when the result is 0, so use shell arithmetic
+  # only accept a plain decimal timestamp of sane length
   case "$hb" in
     ''|*[!0-9]*)
       hb_diff=999997
       return 1
       ;;
   esac
-  diff=$((now - hb))
+  if [ ${#hb} -gt 12 ]; then
+    hb_diff=999997
+    return 1
+  fi
+  # base 10, otherwise a leading 0 (e.g. "08") is parsed as octal
+  diff=$((now - 10#$hb))
   if [ -z "$interval" ]; then
     # if no interval provided, consider 0 as success
     if [ $diff -gt 0 ]; then
