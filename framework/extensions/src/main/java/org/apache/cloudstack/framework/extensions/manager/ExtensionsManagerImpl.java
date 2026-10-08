@@ -140,8 +140,10 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
@@ -247,6 +249,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
+
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     @Inject
     NetworkModel networkModel;
@@ -1306,10 +1314,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return;
         }
         for (Service removedService : removedServices) {
-            boolean usedByNetworkOffering = CollectionUtils.isNotEmpty(
-                    networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(removedService, extension.getName()));
-            boolean usedByVpcOffering = CollectionUtils.isNotEmpty(
-                    vpcOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(removedService, extension.getName()));
+            // offering service map rows are kept when an offering is deleted, so ignore removed offerings
+            boolean usedByNetworkOffering = networkOfferingServiceMapDao
+                    .listOfferingIdsByServiceAndProvider(removedService, extension.getName()).stream()
+                    .anyMatch(offeringId -> networkOfferingDao.findById(offeringId) != null);
+            boolean usedByVpcOffering = vpcOfferingServiceMapDao
+                    .listOfferingIdsByServiceAndProvider(removedService, extension.getName()).stream()
+                    .anyMatch(offeringId -> vpcOfferingDao.findById(offeringId) != null);
             if (usedByNetworkOffering || usedByVpcOffering) {
                 throw new CloudRuntimeException(String.format(
                         "Cannot remove service %s from extension '%s' as it is used by a network/VPC offering",
