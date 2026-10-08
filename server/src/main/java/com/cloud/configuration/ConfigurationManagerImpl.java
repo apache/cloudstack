@@ -1531,7 +1531,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             if (NetworkOrchestrationService.VpcPublicNetworkThrottlingRate.key().equalsIgnoreCase(name)) {
                 if (val < -1) {
-                    return String.format("Please enter -1 or 0 (unlimited) or a positive value for the configuration parameter: [%s].", name);
+                    return String.format("Please enter -1 (unlimited) or a positive value for the configuration parameter: [%s].", name);
                 }
             }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||

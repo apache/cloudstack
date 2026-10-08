@@ -139,7 +139,7 @@ public interface NetworkOrchestrationService {
             "Default data transfer rate in megabits per second allowed in User vm's networks, used when the compute offering does not specify a rate.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Integer> VpcPublicNetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, "vpc.public.network.throttling.rate", "-1",
-            "Default data transfer rate in megabits per second allowed for a VPC's public/internet-facing network, used when the VPC offering does not specify a rate. -1 or 0 means unlimited.", true, ConfigKey.Scope.Zone);
+            "Default data transfer rate in megabits per second allowed for a VPC's public/internet-facing network, used when the VPC offering does not specify a rate. -1 means unlimited.", true, ConfigKey.Scope.Zone);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;

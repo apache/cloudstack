@@ -167,7 +167,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.PUBLIC_NETWORK_RATE, type = CommandType.INTEGER,
             since = "24.0.0",
-            description = "Data transfer rate in megabits per second allowed for a VPC's public gateway (internet-facing network), created with this offering. Use -1 (or 0) for unlimited. If not specified, VPCs created with this offering use the zone level setting vpc.public.network.throttling.rate")
+            description = "Data transfer rate in megabits per second allowed for a VPC's public gateway (internet-facing network), created with this offering. Use -1 for unlimited. If not specified, VPCs created with this offering use the zone level setting vpc.public.network.throttling.rate")
     private Integer publicNetworkRate;
 
 

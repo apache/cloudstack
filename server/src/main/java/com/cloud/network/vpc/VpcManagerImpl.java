@@ -602,7 +602,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Integer publicNetworkRate = cmd.getPublicNetworkRate();
         if (publicNetworkRate != null) {
             if (publicNetworkRate < -1) {
-                throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as -1 or 0 (unlimited) or a positive value");
+                throw new InvalidParameterValueException("Failed to create VPC offering " + vpcOfferingName + ": specify the public network rate value as -1 (unlimited) or a positive value");
             }
             // 0 and -1 both mean unlimited
             if (publicNetworkRate == 0) {
