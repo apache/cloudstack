@@ -561,6 +561,10 @@ class CsIP:
                     ["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
                 self.fw.append(
                     ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+                # ACL rules are inserted ahead of the chain's last rule, so like ACL_INBOUND's DROP
+                # this has to stay last; RETURN is what falling off the end of the chain does anyway
+                self.fw.append(
+                    ["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
             else:
                 self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACCEPT" % (guestNetworkCidr, self.dev)])
 
@@ -621,6 +625,7 @@ class CsIP:
             self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
                             (self.address['network'], self.dev)])
             self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
+            self.fw.append(["mangle", "", "-A ACL_OUTBOUND_%s -j RETURN" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, self.address['network'], self.address['gateway'], self.dev)])
