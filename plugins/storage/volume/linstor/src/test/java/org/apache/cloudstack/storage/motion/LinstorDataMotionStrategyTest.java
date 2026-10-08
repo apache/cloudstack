@@ -143,6 +143,7 @@ public class LinstorDataMotionStrategyTest {
         when(destHost.getName()).thenReturn(DEST_HOST_NAME);
         when(destHost.getPrivateIpAddress()).thenReturn("192.168.0.3");
 
+        // 2 vCPUs * 5001 MHz: raw shares 10002, more than cgroup v2 accepts
         vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getId()).thenReturn(100L);
         when(vmTO.getName()).thenReturn("i-2-100-VM");
@@ -250,6 +251,17 @@ public class LinstorDataMotionStrategyTest {
         Assert.assertEquals(1, migrateCommand.getMigrateDiskInfoList().size());
         Assert.assertEquals(DEST_DEVICE_PATH, migrateCommand.getMigrateDiskInfoList().get(0).getSourceText());
         Assert.assertTrue(completedResult().isSuccess());
+    }
+
+    @Test
+    public void copyAsyncUsesCpuSharesCalculatedByTargetHost() throws Exception {
+        prepareForMigrationAnswers(8335);
+        migrateSucceeds();
+
+        strategy.copyAsync(volumeMap(), vmTO, srcHost, destHost, callback);
+
+        // not the raw cpus * speed (10002), which cgroup v2 hosts reject
+        Assert.assertEquals(8335, sentMigrateCommand().getNewVmCpuShares());
     }
 
     @Test
