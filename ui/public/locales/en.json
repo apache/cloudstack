@@ -2356,7 +2356,6 @@
 "label.metric": "Metric",
 "label.condition": "Condition",
 "label.severity": "Severity",
-"label.message": "Message",
 "label.resetinterval": "Cooldown (seconds)",
 "label.resource.alert.all.resources": "All resources",
 "label.resource.alert.cooldown.default": "Leave empty to use the default",
