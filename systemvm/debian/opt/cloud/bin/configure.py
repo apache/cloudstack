@@ -73,9 +73,11 @@ def removeUndesiredCidrs(cidrs, version):
 
 def nftAddrSet(cidrs):
     """ nft rejects a bare comma-separated address list; several addresses must be a set """
-    if "," in cidrs:
-        return "{" + cidrs + "}"
-    return cidrs
+    cidrList = [c for c in cidrs.split(",") if c]
+    if len(cidrList) > 1:
+        # spaced so that no shell brace-expands it on the way to nft
+        return "{ %s }" % ", ".join(cidrList)
+    return ",".join(cidrList)
 
 
 def appendStringIfNotEmpty(s1, s2):
@@ -598,7 +600,8 @@ class CsAcl(CsDataBag):
                 # iptables expands "-s a,b" into one rule per address, but CsNetfilters
                 # counts each entry as a single rule when placing the next ACL rule ahead
                 # of the DROP. Emit one entry per CIDR so the two stay in step.
-                for c in cidr.split(",") if cidr else [cidr]:
+                cidrs = [c for c in cidr.split(",") if c] if cidr else [cidr]
+                for c in cidrs:
                     ruleData = copy.copy(i)
                     ruleData['cidr'] = c
                     r = self.AclRule(direction, self, ruleData, self.config, count)
