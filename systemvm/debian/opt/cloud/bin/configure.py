@@ -71,6 +71,13 @@ def removeUndesiredCidrs(cidrs, version):
     return None
 
 
+def nftAddrSet(cidrs):
+    """ nft rejects a bare comma-separated address list; several addresses must be a set """
+    if "," in cidrs:
+        return "{" + cidrs + "}"
+    return cidrs
+
+
 def appendStringIfNotEmpty(s1, s2):
     if s2:
         if not isinstance(s2, str):
@@ -440,9 +447,9 @@ class CsAcl(CsDataBag):
                         continue
                 addr = ""
                 if cidr:
-                    addr = "ip daddr " + cidr
+                    addr = "ip daddr " + nftAddrSet(cidr)
                     if direction == "ingress":
-                        addr = "ip saddr " + cidr
+                        addr = "ip saddr " + nftAddrSet(cidr)
 
                 proto = ""
                 protocol = rule['type']
@@ -518,9 +525,9 @@ class CsAcl(CsDataBag):
                         continue
                 addr = ""
                 if cidr:
-                    addr = "ip6 daddr " + cidr
+                    addr = "ip6 daddr " + nftAddrSet(cidr)
                     if direction == "ingress":
-                        addr = "ip6 saddr " + cidr
+                        addr = "ip6 saddr " + nftAddrSet(cidr)
 
                 proto = ""
                 protocol = rule['type']
@@ -583,16 +590,20 @@ class CsAcl(CsDataBag):
 
             count = base
             for i in rule_list:
-                ruleData = copy.copy(i)
-                cidr = ruleData['cidr']
+                cidr = i['cidr']
                 if cidr is not None and cidr != "":
                     cidr = removeUndesiredCidrs(cidr, 6)
                     if cidr is None or cidr == "":
                         continue
-                ruleData['cidr'] = cidr
-                r = self.AclRule(direction, self, ruleData, self.config, count)
-                r.create()
-                count += 1
+                # iptables expands "-s a,b" into one rule per address, but CsNetfilters
+                # counts each entry as a single rule when placing the next ACL rule ahead
+                # of the DROP. Emit one entry per CIDR so the two stay in step.
+                for c in cidr.split(",") if cidr else [cidr]:
+                    ruleData = copy.copy(i)
+                    ruleData['cidr'] = c
+                    r = self.AclRule(direction, self, ruleData, self.config, count)
+                    r.create()
+                    count += 1
 
             # Prepare IPv6 ACL rules
             self.__process_ip6(direction, rule_list)
