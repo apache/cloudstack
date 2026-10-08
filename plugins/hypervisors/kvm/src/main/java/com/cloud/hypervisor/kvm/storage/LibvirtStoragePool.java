@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -343,9 +344,28 @@ public class LibvirtStoragePool implements KVMStoragePool {
         String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
         String scriptPath = Script.findScript(kvmScriptsDir, scriptName);
         if (scriptPath == null) {
-            throw new CloudRuntimeException(String.format("Unable to find heartbeat script '%s' in directory: %s", scriptName, kvmScriptsDir));
+            throw new CloudRuntimeException(String.format("Unable to find script '%s' in directory: %s", scriptName, kvmScriptsDir));
         }
         return scriptPath;
+    }
+
+    /**
+     * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool,
+     * each with the pool's monitor port if one is set (IPv6 addresses are enclosed in square brackets).
+     */
+    protected String getRbdMonitors() {
+        if (sourcePort <= 0) {
+            return sourceHost;
+        }
+        List<String> monitors = new ArrayList<>();
+        for (String monitor : sourceHost.split(",")) {
+            monitor = monitor.trim();
+            if (monitor.contains(":") && !monitor.startsWith("[")) {
+                monitor = "[" + monitor + "]";
+            }
+            monitors.add(monitor + ":" + sourcePort);
+        }
+        return String.join(",", monitors);
     }
 
     /**
@@ -354,7 +374,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
      * options that qemu itself uses to talk to RBD (see {@link KVMPhysicalDisk#RBDStringBuilder}).
      */
     private void addRbdConnectionArgs(Script cmd) {
-        cmd.add("-s", sourceHost);
+        cmd.add("-s", getRbdMonitors());
         cmd.add("-o", sourceDir);
         if (authUsername != null) {
             cmd.add("-n", authUsername);

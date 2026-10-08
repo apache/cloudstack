@@ -109,25 +109,28 @@ check_hbLog() {
     # Either the RADOS object doesn't exist yet (host never wrote a heartbeat)
     # or the Ceph cluster can't be reached right now. Either way we can't
     # confirm the host is alive, so fail safe and report it as DEAD.
-    return 255
+    hbAge=
+    return 1
   fi
-  diff=$(expr $now - $hb)
-  if [ $diff -gt $interval ]
+  # the age is kept in a variable, not in the return status, as a status above 255 wraps around
+  hbAge=$(expr $now - $hb)
+  if [ $hbAge -gt $interval ]
   then
-    return $diff
+    return 1
   fi
   return 0
 }
 
 if [ "$rflag" == "1" ]
 then
-  check_hbLog
-  diff=$?
-  if [ $diff == 0 ]
+  if check_hbLog
   then
     echo "=====> ALIVE <====="
+  elif [ -z "$hbAge" ]
+  then
+    echo "=====> Considering host as DEAD because RADOS object [$hbObject] in pool [$PoolName] could not be read <======"
   else
-    echo "=====> Considering host as DEAD because last write to RADOS object [$hbObject] in pool [$PoolName] was [$diff] seconds ago, but the max interval is [$interval] <======"
+    echo "=====> Considering host as DEAD because last write to RADOS object [$hbObject] in pool [$PoolName] was [$hbAge] seconds ago, but the max interval is [$interval] <======"
   fi
   exit 0
 elif [ "$cflag" == "1" ]

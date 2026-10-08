@@ -117,4 +117,39 @@ public class LibvirtStoragePoolTest extends TestCase {
         assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage).isPoolSupportHA());
         assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.Filesystem, adapter, storage).isPoolSupportHA());
     }
+
+    private String getRbdMonitors(String sourceHost, int sourcePort) {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setSourceHost(sourceHost);
+        pool.setSourcePort(sourcePort);
+        return pool.getRbdMonitors();
+    }
+
+    @Test
+    public void testRbdMonitorsWithoutPort() {
+        assertEquals("10.0.0.1", getRbdMonitors("10.0.0.1", 0));
+        assertEquals("10.0.0.1,10.0.0.2,10.0.0.3", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 0));
+        assertEquals("fd00::1,fd00::2", getRbdMonitors("fd00::1,fd00::2", 0));
+    }
+
+    @Test
+    public void testRbdMonitorsIpv4WithPort() {
+        assertEquals("10.0.0.1:6789", getRbdMonitors("10.0.0.1", 6789));
+        assertEquals("10.0.0.1:3300,10.0.0.2:3300,10.0.0.3:3300", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsIpv6WithPort() {
+        assertEquals("[fd00::1]:3300", getRbdMonitors("fd00::1", 3300));
+        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("fd00::1,fd00::2", 3300));
+        // already enclosed in square brackets
+        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("[fd00::1],[fd00::2]", 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsMixedIpv4AndIpv6WithPort() {
+        assertEquals("10.0.0.1:3300,[fd00::1]:3300,[fd00::2]:3300,mon4.example.com:3300",
+                getRbdMonitors("10.0.0.1, fd00::1,[fd00::2] ,mon4.example.com", 3300));
+    }
 }
