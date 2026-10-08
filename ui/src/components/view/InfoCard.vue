@@ -412,7 +412,7 @@
               <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
               <div class="resource-detail-item__details">
                 <hdd-outlined />
-                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GiB Storage</span>
                 <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
                   {{ $bytesToHumanReadableSize(resource.size) }}
                   <a-tooltip placement="right">

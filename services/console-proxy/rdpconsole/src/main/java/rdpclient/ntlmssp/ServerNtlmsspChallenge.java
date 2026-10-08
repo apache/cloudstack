@@ -287,8 +287,9 @@ public class ServerNtlmsspChallenge extends OneTimeSwitch implements NtlmConstan
         if (state.serverChallenge == null)
             throw new RuntimeException("Challenge was not extracted from server NTLMSSP Challenge packet.");
         if (!Arrays.equals(challenge, state.serverChallenge))
-            throw new RuntimeException("Challenge was extracted from server NTLMSSP Challenge packet is not equal to expected. Actual value: "
-                    + state.serverChallenge + ", expected value: " + challenge + ".");
+            throw new RuntimeException(String.format("Challenge was extracted from server NTLMSSP Challenge packet is not" +
+                            " equal to expected. Actual value: %s, expected value: %s.",
+                    Arrays.toString(state.serverChallenge), Arrays.toString(challenge)));
 
     }
 

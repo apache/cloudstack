@@ -65,7 +65,7 @@ public class ConnectionTest extends Connection {
                 logger.debug("methodresponse call: " + method + " - " + params);
                 logger.trace("methodresponse reply: " + result);
             }
-            if (result == null && multiRes.size() >= 0) {
+            if (result == null && !multiRes.isEmpty()) {
                 result = getResult();
                 logger.debug("getresult call: " + method + " - " + params);
                 logger.trace("getresult reply: " + result);

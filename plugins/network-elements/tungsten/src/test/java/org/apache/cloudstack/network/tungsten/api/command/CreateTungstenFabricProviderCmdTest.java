@@ -25,6 +25,7 @@ import com.cloud.network.TungstenProvider;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,6 +61,7 @@ public class CreateTungstenFabricProviderCmdTest {
         ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "introspectPort", "test");
     }
 
+    @After
     public void tearDown() throws Exception {
         closeable.close();
     }

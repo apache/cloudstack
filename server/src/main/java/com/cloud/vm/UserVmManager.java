@@ -119,6 +119,10 @@ public interface UserVmManager extends UserVmService {
             "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
             "account/domain.", true, ConfigKey.Scope.Account);
 
+    ConfigKey<Boolean> ResetPasswordOnRestoreFromBackup = new ConfigKey<Boolean>("Advanced", Boolean.class, "restore.vm.from.backup.reset.password", "true",
+            "For a password enabled template, whether to generate a new password and expose it in the API response when creating/restoring an Instance from a backup. " +
+                    "Can be overridden per call with the createVMFromBackup API's resetpassword parameter.", true, ConfigKey.Scope.Zone);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";

@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -33,6 +32,8 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,7 +93,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
-            BackupAnswer answer = new BackupAnswer(command, false, result.second().trim());
+            BackupAnswer answer = new BackupAnswer(command, false, StringUtils.trimToEmpty(result.second()));
             if (EXIT_CLEANUP_FAILED.equals(result.first())) {
                 logger.debug("Backup cleanup failed");
                 answer.setNeedsCleanup(true);
@@ -104,7 +105,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         // parent checkpoint can't be re-registered) and signals it with INCREMENTAL_FALLBACK
         // on stdout. Detect it, then strip the marker line before parsing the backup size.
         String rawStdout = result.second();
-        boolean incrementalFallback = rawStdout.contains(INCREMENTAL_FALLBACK_MARKER);
+        boolean incrementalFallback = StringUtils.contains(rawStdout, INCREMENTAL_FALLBACK_MARKER);
         String stdout = stripMarkerLines(rawStdout).trim();
         long backupSize = parseBackupSize(stdout, diskPaths);
 
@@ -119,7 +120,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
     /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */
     private String stripMarkerLines(String stdout) {
-        if (stdout == null || stdout.isEmpty()) {
+        if (StringUtils.isBlank(stdout)) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
@@ -151,21 +152,21 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
                 "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
+                "-d", CollectionUtils.isEmpty(diskPaths) ? "" : String.join(",", diskPaths)
         ));
-        if (mode != null && !mode.isEmpty()) {
+        if (StringUtils.isNotBlank(mode)) {
             argv.add("-M");
             argv.add(mode);
         }
-        if (bitmapNew != null && !bitmapNew.isEmpty()) {
+        if (StringUtils.isNotBlank(bitmapNew)) {
             argv.add("--bitmap-new");
             argv.add(bitmapNew);
         }
-        if (bitmapParent != null && !bitmapParent.isEmpty()) {
+        if (StringUtils.isNotBlank(bitmapParent)) {
             argv.add("--bitmap-parent");
             argv.add(bitmapParent);
         }
-        if (parentPaths != null && !parentPaths.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(parentPaths)) {
             argv.add("--parent-paths");
             argv.add(String.join(",", parentPaths));
         }
@@ -181,29 +182,29 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private String validateBackupArgs(TakeBackupCommand command) {
         String mode = command.getMode();
-        if (mode == null || mode.isEmpty()) {
-            return null; // legacy full-only — no extra args expected
+        if (StringUtils.isBlank(mode)) {
+            return null; // legacy full-only, no extra args expected
         }
         if (MODE_INCREMENTAL.equals(mode)) {
-            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+            if (StringUtils.isBlank(command.getBitmapNew())) {
                 return "incremental mode requires bitmapNew";
             }
-            if (command.getBitmapParent() == null || command.getBitmapParent().isEmpty()) {
+            if (StringUtils.isBlank(command.getBitmapParent())) {
                 return "incremental mode requires bitmapParent";
             }
-            if (command.getParentPaths() == null || command.getParentPaths().isEmpty()) {
+            if (CollectionUtils.isEmpty(command.getParentPaths())) {
                 return "incremental mode requires parentPaths";
             }
             return null;
         }
         if (MODE_FULL.equals(mode)) {
-            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+            if (StringUtils.isBlank(command.getBitmapNew())) {
                 return "full mode requires bitmapNew (the bitmap to create for the next incremental)";
             }
             return null;
         }
         if (MODE_LEGACY_FULL.equals(mode)) {
-            return null; // feature-off full backup — no bitmap or chain args expected
+            return null; // feature-off full backup, no bitmap or chain args expected
         }
         return "Unknown backup mode: " + mode;
     }
@@ -215,7 +216,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private long parseBackupSize(String stdout, List<String> diskPaths) {
         long backupSize = 0L;
-        if (CollectionUtils.isNullOrEmpty(diskPaths)) {
+        if (CollectionUtils.isEmpty(diskPaths)) {
             List<String> outputLines = Arrays.asList(stdout.split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());

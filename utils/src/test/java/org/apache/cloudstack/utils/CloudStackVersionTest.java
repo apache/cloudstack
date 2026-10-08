@@ -36,12 +36,38 @@ public final class CloudStackVersionTest {
         "1.2.3, 1.2.3",
         "1.2.3.4, 1.2.3.4",
         "1.2.3-12, 1.2.3",
-        "1.2.3.4-14, 1.2.3.4"
+        "1.2.3.4-14, 1.2.3.4",
+        "23.9.5, 23.9.5",
+        "24.0.0, 24.0.0",
+        "24.0.1, 24.0.1",
+        "25.1.1, 25.1.1"
     })
     public void testValidParse(final String inputValue, final String expectedVersion) {
         final CloudStackVersion version = CloudStackVersion.parse(inputValue);
         assertNotNull(version);
         assertEquals(expectedVersion, version.toString());
+    }
+
+    @Test
+    public void testParseComponentMappingForLegacyAndNewVersioning() {
+        final CloudStackVersion legacyVersion = CloudStackVersion.parse("23.9.5");
+        assertEquals(23, legacyVersion.getMajorRelease());
+        assertEquals(9, legacyVersion.getMinorRelease());
+        assertEquals(5, legacyVersion.getPatchRelease());
+        Assert.assertNull(legacyVersion.getSecurityRelease());
+
+        final CloudStackVersion newVersion = CloudStackVersion.parse("24.0.1");
+        assertEquals(24, newVersion.getMajorRelease());
+        assertEquals(0, newVersion.getMinorRelease());
+        // Patch is retained as 0 to represent "no patch" in the new major.minor.security scheme.
+        assertEquals(0, newVersion.getPatchRelease());
+        assertEquals(Integer.valueOf(1), newVersion.getSecurityRelease());
+
+        final CloudStackVersion futureNewVersion = CloudStackVersion.parse("25.1.1");
+        assertEquals(25, futureNewVersion.getMajorRelease());
+        assertEquals(1, futureNewVersion.getMinorRelease());
+        assertEquals(0, futureNewVersion.getPatchRelease());
+        assertEquals(Integer.valueOf(1), futureNewVersion.getSecurityRelease());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -52,10 +78,57 @@ public final class CloudStackVersionTest {
         "aaaa",
         "",
         "  ",
-        "1.2.3.4.5"
+        "1.2.3.4.5",
+        "24.0.0.1",
+        "25.0.0.1",
+        "26.2.3.4"
     })
     public void testInvalidParse(final String invalidValue) {
         CloudStackVersion.parse(invalidValue);
+    }
+
+    @Test
+    public void testExternalParseIgnoresCutoverRule() {
+        // A 3-component value with a major at/above the cutover is treated as major.minor.patch,
+        // not major.minor.security, when parsed as an external (non-CloudStack) version.
+        CloudStackVersion version = CloudStackVersion.parse("24.1.1", true);
+        assertEquals(24, version.getMajorRelease());
+        assertEquals(1, version.getMinorRelease());
+        assertEquals(1, version.getPatchRelease());
+        Assert.assertNull(version.getSecurityRelease());
+
+        // A 4-component value with a major at/above the cutover, rejected by parse(value), is accepted
+        // when parsed as external.
+        CloudStackVersion legacyShapedVersion = CloudStackVersion.parse("24.1.1.2", true);
+        assertEquals(24, legacyShapedVersion.getMajorRelease());
+        assertEquals(1, legacyShapedVersion.getMinorRelease());
+        assertEquals(1, legacyShapedVersion.getPatchRelease());
+        assertEquals(Integer.valueOf(2), legacyShapedVersion.getSecurityRelease());
+    }
+
+    @Test
+    public void testExternalParseNotCanonicalizedAsCloudStackVersion() {
+        // An external version with major >= 24 and a literal patch digit of 0 (e.g. a 4-component
+        // value like "24.0.0.5") must not have its toString()/usesNewVersioning() apply CloudStack's
+        // own cutover canonicalization: doing so would misreport it as CloudStack version "24.0.5",
+        // silently discarding the real ("0") patch component.
+        CloudStackVersion version = CloudStackVersion.parse("24.0.0.5", true);
+        Assert.assertFalse(version.usesNewVersioning());
+        assertEquals("24.0.0.5", version.toString());
+    }
+
+    @Test
+    public void testExternalCompareIgnoresCutoverRule() {
+        // Without external=true, "24.1.0" would be new-versioning (patch dropped to 0, third
+        // component treated as security), making it equal to "24.1.1"; external=true keeps the
+        // patch component significant so these two compare as different, non-CloudStack versions.
+        assertEquals(0, CloudStackVersion.compare("24.1.0", "24.1.0", true));
+        Assert.assertTrue(CloudStackVersion.compare("24.1.1", "24.1.0", true) > 0);
+        Assert.assertTrue(CloudStackVersion.compare("24.1.0", "24.1.1", true) < 0);
+
+        // A 4-component value with a major at/above the cutover, rejected by compare(v1, v2), is
+        // accepted when compared as external.
+        assertEquals(0, CloudStackVersion.compare("24.1.1.2", "24.1.1.2", true));
     }
 
     @Test
@@ -63,7 +136,9 @@ public final class CloudStackVersionTest {
         "1.0.0",
         "1.0.0.0",
         "1.2.3",
-        "1.2.3.4"
+        "1.2.3.4",
+        "1.2.200",
+        "1.2.200.5"
     })
     public void testEquals(final String value) {
 
@@ -147,7 +222,9 @@ public final class CloudStackVersionTest {
         "1.2.3.4-10, 1.0.0.0-5",
         "1.2.3-10, 1.0.0-5",
         "1.2.3.4, 1.0.0.0-5",
-        "1.2.3.4-10, 1.0.0"
+        "1.2.3.4-10, 1.0.0",
+        "24.0.2, 24.0.1",
+        "24.1.0, 24.0.9"
     })
     public void testGreaterThanAndLessThanCompareTo(final String value, final String thatValue) {
 
@@ -178,7 +255,9 @@ public final class CloudStackVersionTest {
         "1.2.3.4-10, 1.0.0.0-5",
         "1.2.3-10, 1.0.0-5",
         "1.2.3.4, 1.0.0.0-5",
-        "1.2.3.4-10, 1.0.0"
+        "1.2.3.4-10, 1.0.0",
+        "24.0.2, 24.0.1",
+        "24.1.0, 24.0.9"
     })
     public void testGreaterThanAndLessThanCompareDirect(final String value, final String thatValue) {
 
@@ -196,14 +275,28 @@ public final class CloudStackVersionTest {
         "Cloudstack Release 1.2.3.4-1519453362 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-1519453362",
         "Cloudstack Release 1.2.3.4-brnading-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-brnading-SNAPSHOT",
         "Cloudstack Release 1.2.3.4-brnading-1519453362 Mon Jan  1 10:10:10 UTC 2018, 1.2.3.4-brnading-1519453362",
-        "Cloudstack Release 1.2 Mon Jan  1 10:10:10 UTC 2018, 0",
-        "Cloudstack Release 1.2-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 0",
-        "Cloud stack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 0"
+        "Cloudstack Release 1.2 Mon Jan  1 10:10:10 UTC 2018, 0.0.0",
+        "Cloudstack Release 1.2-SNAPSHOT Mon Jan  1 10:10:10 UTC 2018, 0.0.0",
+        "Cloud stack Release 1.2.3.4 Mon Jan  1 10:10:10 UTC 2018, 0.0.0",
+        "Cloudstack Release 24.0.0 Mon Jan  1 10:10:10 UTC 2018, 24.0.0",
+        "Cloudstack Release 24.0.0.1 Mon Jan  1 10:10:10 UTC 2018, 0.0.0"
     })
     public void testTrimRouterVersion(final String value, final String expected) {
 
         assertEquals(expected, CloudStackVersion.trimRouterVersion(value));
 
+    }
+
+    @Test
+    public void testTrimRouterVersionInvalidFallbackIsItselfParseable() {
+        // The invalid-version fallback must be a value CloudStackVersion.parse()/compare() accepts:
+        // callers (e.g. NetworkHelperImpl.checkRouterVersion) pass it straight into compare() with no
+        // try/catch, so an unparseable fallback would turn a "router needs upgrading" case into an
+        // uncaught exception.
+        String fallback = CloudStackVersion.trimRouterVersion("not a router version string");
+        CloudStackVersion parsed = CloudStackVersion.parse(fallback);
+        assertNotNull(parsed);
+        Assert.assertTrue(CloudStackVersion.compare(fallback, "1.0.0") < 0);
     }
 
     private void verifyGetVMwareParentVersion(String hypervisorVersion, String expectedParentVersion) {
@@ -213,6 +306,7 @@ public final class CloudStackVersionTest {
             Assert.assertEquals(CloudStackVersion.getVMwareParentVersion(hypervisorVersion), expectedParentVersion);
         }
     }
+
     @Test
     public void testGetParentVersion() {
         verifyGetVMwareParentVersion(null, null);
@@ -223,5 +317,11 @@ public final class CloudStackVersionTest {
         verifyGetVMwareParentVersion("8.0.0", "8.0");
         verifyGetVMwareParentVersion("8.0.0.2", "8.0");
         verifyGetVMwareParentVersion("8.0.1.0", "8.0.1");
+        // A hypervisor version whose major happens to match CloudStack's own new-versioning cutover (24)
+        // must still be treated as an ordinary major.minor.patch VMware version, not as a CloudStack
+        // major.minor.security value: the patch component ("1") must not be dropped.
+        verifyGetVMwareParentVersion("24.1.0", "24.1");
+        verifyGetVMwareParentVersion("24.1.1", "24.1.1");
+        verifyGetVMwareParentVersion("24.1.1.2", "24.1.1");
     }
 }

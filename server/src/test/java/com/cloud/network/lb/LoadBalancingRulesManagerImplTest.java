@@ -17,28 +17,19 @@
 
 package com.cloud.network.lb;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.LoadBalancerCertMapDao;
-import com.cloud.network.dao.LoadBalancerCertMapVO;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.SslCertVO;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.Nic;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
@@ -55,18 +46,30 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.LoadBalancerCertMapDao;
+import com.cloud.network.dao.LoadBalancerCertMapVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.SslCertVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LoadBalancingRulesManagerImplTest{
@@ -96,14 +99,14 @@ public class LoadBalancingRulesManagerImplTest{
     NetworkOfferingServiceMapDao _networkOfferingServiceDao;
 
     @Mock
+    NetworkVO networkMock;
+
+    @Mock
     VpcManager vpcManager;
 
     @Spy
     @InjectMocks
     LoadBalancingRulesManagerImpl lbr = new LoadBalancingRulesManagerImpl();
-
-    @Mock
-    NetworkVO networkMock;
 
     @Mock
     LoadBalancerVO loadBalancerMock;
@@ -359,5 +362,20 @@ public class LoadBalancingRulesManagerImplTest{
 
         Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, vmIdNetworkIdMap, owner);
         Assert.assertEquals(nic, nicInLb);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void createPublicLoadBalancerRuleWithDnsPortAndNoIpDoesNotNpe() throws Exception {
+        long lbOwnerId = accountId;
+        long networkOfferingId = 7L;
+        when(_accountMgr.getAccount(lbOwnerId)).thenReturn(Mockito.mock(Account.class));
+        when(_networkModel.getNetwork(networkId)).thenReturn(networkMock);
+        when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        NetworkOffering off = Mockito.mock(NetworkOffering.class);
+        when(_entityMgr.findById(NetworkOffering.class, networkOfferingId)).thenReturn(off);
+        when(off.isElasticLb()).thenReturn(false);
+
+        lbr.createPublicLoadBalancerRule("xid", "name", "desc", 53, 53, 53, 53,
+                null, "tcp", "roundrobin", networkId, lbOwnerId, false, "tcp", null, null);
     }
 }

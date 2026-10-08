@@ -242,7 +242,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return;
         }
 
-        Account owner = _accountDao.findById(entity.getAccountId());
+        Account owner = _accountDao.findByIdIncludingRemoved(entity.getAccountId());
         String entityLog = String.format("entity [owner: %s, type: %s]", owner, entity.getEntityType().getSimpleName());
         if (owner == null) {
             logger.error(String.format("Owner not found for %s", entityLog));
