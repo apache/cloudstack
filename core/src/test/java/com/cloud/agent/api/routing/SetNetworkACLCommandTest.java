@@ -65,6 +65,20 @@ public class SetNetworkACLCommandTest {
     }
 
     @Test
+    public void testTcpAndUdpByProtocolNumberWithoutPortsStayWholeProtocol() {
+        // as tcp or udp with no ports the VR would match port 0 only
+        assertEquals("Ingress;6;0;0;10.0.0.0/24;ACCEPT;", generateRule("6", null, null, null, null));
+        assertEquals("Ingress;17;0;0;10.0.0.0/24;ACCEPT;", generateRule("17", null, null, null, null));
+    }
+
+    @Test
+    public void testProtocolNumberInAnotherFormIsReadAsANumber() {
+        assertEquals("Ingress;tcp;22;22;10.0.0.0/24;ACCEPT;", generateRule("006", 22, 22, null, null));
+        assertEquals("Ingress;icmp;8;0;10.0.0.0/24;ACCEPT;", generateRule(" 01 ", null, null, 8, 0));
+        assertEquals("Ingress;47;0;0;10.0.0.0/24;ACCEPT;", generateRule("047", null, null, null, null));
+    }
+
+    @Test
     public void testIcmpByProtocolNumberKeepsItsTypeAndCode() {
         assertEquals("Ingress;icmp;8;0;10.0.0.0/24;ACCEPT;", generateRule("1", null, null, 8, 0));
         // a rule updated to protocol 1 may have no ICMP type or code: any
@@ -72,9 +86,8 @@ public class SetNetworkACLCommandTest {
     }
 
     @Test
-    public void testProtocolNameIsMatchedWhateverItsCase() {
+    public void testIcmpIsMatchedWhateverItsCase() {
         assertEquals("Ingress;icmp;8;0;10.0.0.0/24;ACCEPT;", generateRule("ICMP", null, null, 8, 0));
-        assertEquals("Ingress;tcp;22;22;10.0.0.0/24;ACCEPT;", generateRule("TCP", 22, 22, null, null));
     }
 
     @Test

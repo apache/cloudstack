@@ -25,12 +25,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.utils.net.NetUtils;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
     public static final String RULE_DETAIL_SEPARATOR = ";";
+    private static final int TCP_PROTO_NUMBER = 6;
+    private static final int UDP_PROTO_NUMBER = 17;
 
     NetworkACLTO[] rules;
     NicTO nic;
@@ -71,7 +75,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
 
             List<String> cidr;
             final StringBuilder sb = new StringBuilder();
-            final String protocol = normalizeProtocol(aclTO.getProtocol());
+            final String protocol = normalizeProtocol(aclTO.getProtocol(), aclTO.getSrcPortRange() != null);
             sb.append(aclTO.getTrafficType().toString()).append(RULE_DETAIL_SEPARATOR).append(protocol).append(RULE_DETAIL_SEPARATOR);
             if (NetUtils.ICMP_PROTO.equals(protocol)) {
                 sb.append(icmpTypeOrCode(aclTO.getIcmpType())).append(RULE_DETAIL_SEPARATOR).append(icmpTypeOrCode(aclTO.getIcmpCode())).append(RULE_DETAIL_SEPARATOR);
@@ -100,26 +104,36 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
     }
 
     /**
-     * The VR applies ports only to a rule it is told is tcp or udp, and an ICMP type and code only to
-     * one it is told is icmp; any other protocol goes to it as a bare number. Name those three by their
-     * protocol number too, and whatever the case they were stored in, so their ports or ICMP type are
-     * not dropped.
+     * The VR applies ports only to a rule it is sent as tcp or udp, and an ICMP type and code only to one
+     * sent as icmp; any other protocol goes to it as a bare number, which matches the whole protocol. So
+     * send protocol number 1 as icmp, and 6 and 17 as tcp and udp when the rule has ports, whatever form
+     * or case they were stored in. Without ports 6 and 17 stay bare numbers: that is what matches all of
+     * TCP or UDP, where a tcp or udp rule without ports would match port 0 only.
      */
-    protected static String normalizeProtocol(String protocol) {
+    protected static String normalizeProtocol(String protocol, boolean hasPorts) {
         if (protocol == null) {
             return null;
         }
         String p = protocol.trim().toLowerCase(Locale.ROOT);
-        switch (p) {
-            case "1":
-                return NetUtils.ICMP_PROTO;
-            case "6":
-                return NetUtils.TCP_PROTO;
-            case "17":
-                return NetUtils.UDP_PROTO;
-            default:
-                return p;
+        if (!StringUtils.isNumeric(p)) {
+            return p;
         }
+        int number;
+        try {
+            number = Integer.parseInt(p);
+        } catch (NumberFormatException e) {
+            return p;
+        }
+        if (number == NetUtils.ICMP_PROTO_NUMBER) {
+            return NetUtils.ICMP_PROTO;
+        }
+        if (hasPorts && number == TCP_PROTO_NUMBER) {
+            return NetUtils.TCP_PROTO;
+        }
+        if (hasPorts && number == UDP_PROTO_NUMBER) {
+            return NetUtils.UDP_PROTO;
+        }
+        return String.valueOf(number);
     }
 
     private static int icmpTypeOrCode(Integer value) {
