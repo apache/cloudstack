@@ -111,6 +111,10 @@ public interface UserVmManager extends UserVmService {
     ConfigKey<Boolean> AllowDifferentHostTagsOfferingsForVmScale = new ConfigKey<>("Advanced", Boolean.class, "allow.different.host.tags.offerings.for.vm.scale", "false",
             "Enables/Disable allowing to change a VM offering to offerings with different host tags", true);
 
+    ConfigKey<Boolean> ResetPasswordOnRestoreFromBackup = new ConfigKey<Boolean>("Advanced", Boolean.class, "restore.vm.from.backup.reset.password", "true",
+            "For a password enabled template, whether to generate a new password and expose it in the API response when creating/restoring an Instance from a backup. " +
+                    "Can be overridden per call with the createVMFromBackup API's resetpassword parameter.", true, ConfigKey.Scope.Zone);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";

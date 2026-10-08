@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
@@ -83,10 +82,71 @@ public class ConsoleProxy {
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
-    static Set<String> allowedSessions = new HashSet<>();
+    static Set<String> allowedSessions = ConcurrentHashMap.newKeySet();
+    private static final Object allowedSessionsLock = new Object();
 
+    private static final Map<String, ReconnectGrant> sessionReconnectGrants = new ConcurrentHashMap<>();
+    private static long sessionReconnectionWindowMs = 0L;
+
+    // Invoked through reflection
     public static void addAllowedSession(String sessionUuid) {
         allowedSessions.add(sessionUuid);
+    }
+
+    /**
+     * Grant the client IP a reconnection window of #{@link #sessionReconnectionWindowMs} ms to the same session UUID in case of a disconnection.
+     * The grant is bound to the client IP that was using the session so it cannot be redeemed by another client.
+     * @param sessionUuid session UUID to grant a reconnect window for
+     * @param clientIp source IP of the client the session was granted to
+     */
+    public static void grantReconnectWindowForSessionAndClientIp(String sessionUuid, String clientIp) {
+        if (sessionReconnectionWindowMs > 0) {
+            ReconnectGrant grant = new ReconnectGrant(System.currentTimeMillis() + sessionReconnectionWindowMs, clientIp);
+            sessionReconnectGrants.put(sessionUuid, grant);
+        }
+    }
+
+    /**
+     * True if the session UUID has been granted reconnection, within the reconnection window #{@link #sessionReconnectionWindowMs}.
+     */
+    private static boolean isSessionReconnectionGrantedForClientIp(String sessionUuid, String clientIp) {
+        ReconnectGrant grant = sessionReconnectGrants.remove(sessionUuid);
+        if (grant == null) {
+            return false;
+        }
+        if (grant.isExpired(System.currentTimeMillis())) {
+            LOGGER.warn("Rejecting reconnection for session {} as the reconnect window: {}ms is already expired",
+                    sessionUuid, sessionReconnectionWindowMs);
+            return false;
+        }
+        if (grant.clientIp != null && !grant.clientIp.equals(clientIp)) {
+            LOGGER.warn("Rejecting reconnection for session {} as it was requested from IP {} " +
+                    "but the session was granted to IP {}", sessionUuid, clientIp, grant.clientIp);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Drops expired, unclaimed reconnect grants so sessionReconnectGrants doesn't grow unbounded
+     * when a client never reconnects after a disconnection. Invoked periodically by {@link ConsoleProxyGCThread}.
+     */
+    static void cleanupExpiredReconnectGrants() {
+        sessionReconnectGrants.entrySet().removeIf(entry -> entry.getValue().isExpired(System.currentTimeMillis()));
+    }
+
+    private static final class ReconnectGrant {
+        final long expiryMillis;
+        final String clientIp;
+
+        ReconnectGrant(long expiryMillis, String clientIp) {
+            this.expiryMillis = expiryMillis;
+            this.clientIp = clientIp;
+        }
+
+        boolean isExpired(long now) {
+            return now >= expiryMillis;
+        }
     }
 
     private static void configLog4j() {
@@ -166,6 +226,12 @@ public class ConsoleProxy {
             defaultBufferSize = Integer.parseInt(s);
             LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
         }
+
+        s = conf.getProperty("session_reconnection_window");
+        if (s != null) {
+            sessionReconnectionWindowMs = Long.parseLong(s);
+            LOGGER.info("Setting sessionReconnectionWindowMs=" + sessionReconnectionWindowMs);
+        }
     }
 
     public static ConsoleProxyServerFactory getHttpServerFactory() {
@@ -209,13 +275,17 @@ public class ConsoleProxy {
         }
 
         String sessionUuid = param.getSessionUuid();
-        if (allowedSessions.contains(sessionUuid)) {
-            LOGGER.debug("Acquiring the session " + sessionUuid + " not available for future use");
-            allowedSessions.remove(sessionUuid);
-        } else {
-            LOGGER.info("Session " + sessionUuid + " has already been used, cannot connect");
-            authResult.setSuccess(false);
-            return authResult;
+        synchronized (allowedSessionsLock) {
+            if (allowedSessions.remove(sessionUuid)) {
+                LOGGER.debug("Acquiring the session {} from client IP {}", sessionUuid, param.getClientIp());
+            } else if (isSessionReconnectionGrantedForClientIp(sessionUuid, param.getClientIp())) {
+                LOGGER.info("Reconnecting the session {} after a dropped connection", sessionUuid);
+                return authResult;
+            } else {
+                LOGGER.info("Invalid or already used session {}, cannot connect", sessionUuid);
+                authResult.setSuccess(false);
+                return authResult;
+            }
         }
 
         String websocketUrl = param.getWebsocketUrl();
@@ -625,7 +695,7 @@ public class ConsoleProxy {
                 } catch (IOException e) {
                     LOGGER.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
                 }
-                removeViewer(viewer);
+                viewer.closeClient();
                 viewer = new ConsoleProxyNoVncClient(session);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);

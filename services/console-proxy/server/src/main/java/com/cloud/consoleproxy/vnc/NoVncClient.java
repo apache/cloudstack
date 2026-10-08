@@ -129,6 +129,28 @@ public class NoVncClient {
         }
     }
 
+    public void close() {
+        if (nioSocketConnection != null) {
+            nioSocketConnection.close();
+        }
+        if (webSocketReverseProxy != null) {
+            webSocketReverseProxy.close();
+        }
+        if (socket != null) {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+                if (os != null) {
+                    os.close();
+                }
+                socket.close();
+            } catch (IOException e) {
+                logger.debug("Error closing socket: " + e.getMessage(), e);
+            }
+        }
+    }
+
     private void setTunnelSocketStreams() throws IOException {
         this.is = new DataInputStream(this.socket.getInputStream());
         this.os = new DataOutputStream(this.socket.getOutputStream());

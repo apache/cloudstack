@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,12 +65,14 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -103,6 +106,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
@@ -952,13 +956,55 @@ public class UnmanagedVMsManagerImplTest {
         importFromDisk("shared");
     }
 
+    @Test
+    public void importFromsharedStorageOnRbdPool() throws InsufficientServerCapacityException {
+        importFromDisk("shared", Storage.StoragePoolType.RBD, "cloudstack-image", "raw", Storage.ImageFormat.RAW);
+    }
+
+    @Test
+    public void importFromsharedStorageOnZoneWidePool() throws InsufficientServerCapacityException {
+        // A zone wide pool carries no pod or cluster, so the plan must stay unconstrained and the
+        // planner is free to pick any host in the zone, exactly as it did before the pool was consulted.
+        importFromDisk("shared", Storage.StoragePoolType.NetworkFilesystem, "/mnt/pool/zonewide.qcow2",
+                "qcow2", Storage.ImageFormat.QCOW2, null, null);
+    }
+
+    @Test
+    public void testGetImageFormatFromVolumeDetails() {
+        Assert.assertNull(unmanagedVMsManager.getImageFormatFromVolumeDetails(null));
+        Assert.assertNull(unmanagedVMsManager.getImageFormatFromVolumeDetails(new HashMap<>()));
+        Assert.assertNull(unmanagedVMsManager.getImageFormatFromVolumeDetails(
+                Map.of(VolumeOnStorageTO.Detail.IS_LOCKED, "false")));
+        Assert.assertNull(unmanagedVMsManager.getImageFormatFromVolumeDetails(
+                Map.of(VolumeOnStorageTO.Detail.FILE_FORMAT, "not-a-format")));
+        Assert.assertEquals(Storage.ImageFormat.RAW, unmanagedVMsManager.getImageFormatFromVolumeDetails(
+                Map.of(VolumeOnStorageTO.Detail.FILE_FORMAT, "raw")));
+        Assert.assertEquals(Storage.ImageFormat.QCOW2, unmanagedVMsManager.getImageFormatFromVolumeDetails(
+                Map.of(VolumeOnStorageTO.Detail.FILE_FORMAT, "qcow2")));
+    }
+
+    private static final Long POOL_POD_ID = 11L;
+    private static final Long POOL_CLUSTER_ID = 22L;
+
     private void importFromDisk(String source) throws InsufficientServerCapacityException {
+        importFromDisk(source, Storage.StoragePoolType.NetworkFilesystem, "/var/lib/libvirt/images/test.qcow2",
+                "qcow2", Storage.ImageFormat.QCOW2);
+    }
+
+    private void importFromDisk(String source, Storage.StoragePoolType poolType, String diskPath,
+                                String reportedFileFormat, Storage.ImageFormat expectedFormat) throws InsufficientServerCapacityException {
+        importFromDisk(source, poolType, diskPath, reportedFileFormat, expectedFormat, POOL_POD_ID, POOL_CLUSTER_ID);
+    }
+
+    private void importFromDisk(String source, Storage.StoragePoolType poolType, String diskPath,
+                                String reportedFileFormat, Storage.ImageFormat expectedFormat,
+                                Long poolPodId, Long poolClusterId) throws InsufficientServerCapacityException {
         String vmname = "testVm";
         ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
         when(cmd.getName()).thenReturn(vmname);
         when(cmd.getImportSource()).thenReturn(source);
-        when(cmd.getDiskPath()).thenReturn("/var/lib/libvirt/images/test.qcow2");
+        when(cmd.getDiskPath()).thenReturn(diskPath);
         when(cmd.getDomainId()).thenReturn(null);
         HostVO host = Mockito.mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(host);
@@ -972,12 +1018,16 @@ public class UnmanagedVMsManagerImplTest {
         Map<Volume, StoragePool> storage = new HashMap<>();
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        lenient().when(storagePool.getPoolType()).thenReturn(poolType);
+        lenient().when(storagePool.getPodId()).thenReturn(poolPodId);
+        lenient().when(storagePool.getClusterId()).thenReturn(poolClusterId);
         storage.put(volume, storagePool);
         when(mockDest.getStorageForDisks()).thenReturn(storage);
         when(mockDest.getHost()).thenReturn(host);
         when(volumeDao.findById(anyLong())).thenReturn(volume);
         CheckVolumeAnswer answer = Mockito.mock(CheckVolumeAnswer.class);
         when(answer.getResult()).thenReturn(true);
+        when(answer.getVolumeDetails()).thenReturn(Map.of(VolumeOnStorageTO.Detail.FILE_FORMAT, reportedFileFormat));
         when(agentManager.easySend(anyLong(), any(CheckVolumeCommand.class))).thenReturn(answer);
         List<StoragePoolVO> storagePools = new ArrayList<>();
         storagePools.add(storagePool);
@@ -990,6 +1040,17 @@ public class UnmanagedVMsManagerImplTest {
              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
                 unmanagedVMsManager.importVm(cmd);
         }
+        // the imported volume must record the format the agent reported for the image on the pool,
+        // not the hypervisor default, so an RBD image is stored as RAW
+        verify(volumeManager).updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), Mockito.eq(poolType),
+                Mockito.eq(diskPath), Mockito.isNull(), any(), Mockito.eq(expectedFormat));
+
+        // the plan must be confined to the pod and cluster of the pool the caller asked for, so that the
+        // volume check cannot land on a host in another cluster that has no access to that pool
+        ArgumentCaptor<DeploymentPlan> planCaptor = ArgumentCaptor.forClass(DeploymentPlan.class);
+        verify(deploymentPlanningManager).planDeployment(any(), planCaptor.capture(), any(), any());
+        Assert.assertEquals(poolPodId, planCaptor.getValue().getPodId());
+        Assert.assertEquals(poolClusterId, planCaptor.getValue().getClusterId());
     }
 
     @Test

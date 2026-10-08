@@ -92,7 +92,10 @@ public class ApiXmlDocWriter {
     public static void main(String[] args) {
         Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[] {"org.apache.cloudstack.api", "com.cloud.api",
                 "com.cloud.api.commands", "com.globo.globodns.cloudstack.api", "org.apache.cloudstack.network.opendaylight.api",
-                "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command"});
+                "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command",
+                "org.apache.cloudstack.cloudian.api", "org.apache.cloudstack.framework.extensions.api",
+                "org.apache.cloudstack.mom.webhook.api.command.user", "org.apache.cloudstack.network.tungsten.api.command",
+                "org.apache.cloudstack.oauth2.api.command", "org.apache.cloudstack.storage.datastore.util"});
 
         for (Class<?> cmdClass : cmdClasses) {
             if(cmdClass.getAnnotation(APICommand.class)==null){
@@ -411,7 +414,7 @@ public class ApiXmlDocWriter {
         xs.alias("alert", Alert.class);
         try(ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");) {
             for (Field f : AlertManager.class.getFields()) {
-                if (f.getClass().isAssignableFrom(Number.class)) {
+                if (Number.class.isAssignableFrom(f.getType())) {
                     String name = f.getName().substring(11);
                     Alert alert = new Alert(name, f.getInt(null));
                     out.writeObject(alert);

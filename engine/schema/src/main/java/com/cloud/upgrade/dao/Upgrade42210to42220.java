@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgrade {
+import java.sql.Connection;
 
+public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgrade {
     @Override
     public String[] getUpgradableVersionRange() {
         return new String[] {"4.22.1.0", "4.22.2.0"};
@@ -26,5 +27,9 @@ public class Upgrade42210to42220 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public String getUpgradedVersion() {
         return "4.22.2.0";
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
     }
 }

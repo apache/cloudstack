@@ -612,7 +612,7 @@ export default {
       },
       {
         name: 'local',
-        label: 'Import QCOW2 image from Local Storage',
+        label: 'Import disk image from Local Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -621,7 +621,7 @@ export default {
       },
       {
         name: 'shared',
-        label: 'Import QCOW2 image from Shared Storage',
+        label: 'Import disk image from Shared Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
