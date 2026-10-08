@@ -107,8 +107,9 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
      * The VR applies ports only to a rule it is sent as tcp or udp, and an ICMP type and code only to one
      * sent as icmp; any other protocol goes to it as a bare number, which matches the whole protocol. So
      * send protocol number 1 as icmp, and 6 and 17 as tcp and udp when the rule has ports, whatever form
-     * or case they were stored in. Without ports 6 and 17 stay bare numbers: that is what matches all of
-     * TCP or UDP, where a tcp or udp rule without ports would match port 0 only.
+     * or case they were stored in. Without ports 6 and 17 stay bare numbers, which match the whole
+     * protocol on every VR path; a tcp or udp rule without ports has matched port 0 only on the iptables
+     * path (see #14363).
      */
     protected static String normalizeProtocol(String protocol, boolean hasPorts) {
         if (protocol == null) {
