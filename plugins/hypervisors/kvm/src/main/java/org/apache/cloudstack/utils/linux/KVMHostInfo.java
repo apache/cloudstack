@@ -74,10 +74,6 @@ public class KVMHostInfo {
         }
     }
 
-    public int getTotalCpus() {
-        return this.totalCpus;
-    }
-
     public int getAllocatableCpus() {
         return this.allocatableCpus;
     }
