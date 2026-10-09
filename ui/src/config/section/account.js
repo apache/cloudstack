@@ -89,6 +89,11 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
     },
     {
+      name: 'object.storage',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AccountObjectStorageTab.vue'))),
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) && 'listObjectStoragePools' in store.getters.apis }
+    },
+    {
       name: 'settings',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
       show: () => { return 'listConfigurations' in store.getters.apis }

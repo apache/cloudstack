@@ -169,6 +169,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.object.BucketApiService;
+import org.apache.cloudstack.storage.object.BucketCredential;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
@@ -330,6 +333,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketCredentialDao;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -537,6 +541,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     DataStoreManager dataStoreManager;
+    @Inject
+    BucketApiService bucketApiService;
 
     @Inject
     ManagementServerJoinDao managementServerJoinDao;
@@ -624,6 +630,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     BucketDao bucketDao;
+
+    @Inject
+    BucketCredentialDao bucketCredentialDao;
 
     @Inject
     EntityManager entityManager;
@@ -6285,6 +6294,58 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<ObjectStoreResponse> response = new ListResponse<>();
 
         List<ObjectStoreResponse> poolResponses = ViewResponseHelper.createObjectStoreResponse(result.first().toArray(new ObjectStoreVO[0]));
+
+        // Whether a store is ready for per-bucket credentials, and what is stopping it, is
+        // operator information: it names the gateway's own admin credential and its capabilities.
+        if (accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            Map<String, ObjectStoreVO> byUuid = new HashMap<>();
+            for (ObjectStoreVO store : result.first()) {
+                byUuid.put(store.getUuid(), store);
+            }
+            for (ObjectStoreResponse storeResponse : poolResponses) {
+                ObjectStoreVO store = byUuid.get(storeResponse.getId());
+                if (store == null) {
+                    continue;
+                }
+                try {
+                    ObjectStoreEntity objectStore = (ObjectStoreEntity) dataStoreManager.getDataStore(store.getId(), DataStoreRole.Object);
+                    boolean ready = objectStore.supportsBucketCredentials();
+                    storeResponse.setPerBucketCredentialsReady(ready);
+                    if (!ready) {
+                        storeResponse.setPerBucketCredentialsIssue(objectStore.bucketCredentialsUnsupportedReason());
+                    }
+                } catch (Exception e) {
+                    logger.debug("Unable to read the per-bucket credential readiness of object store {}", store.getName(), e);
+                }
+            }
+        }
+
+        if (cmd.getAccountId() != null) {
+            Account account = accountMgr.getAccount(cmd.getAccountId());
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account with ID: " + cmd.getAccountId());
+            }
+            accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, account);
+            Map<String, ObjectStoreVO> storesByUuid = new HashMap<>();
+            for (ObjectStoreVO store : result.first()) {
+                storesByUuid.put(store.getUuid(), store);
+            }
+            for (ObjectStoreResponse storeResponse : poolResponses) {
+                ObjectStoreVO store = storesByUuid.get(storeResponse.getId());
+                if (store == null) {
+                    continue;
+                }
+                ObjectStoreEntity objectStore = (ObjectStoreEntity) dataStoreManager.getDataStore(store.getId(), DataStoreRole.Object);
+                // a store this account has already been migrated on supports the feature by
+                // definition, whatever a momentarily failing probe says
+                boolean migrated = objectStore.accountSupportsBucketCredentials(account.getId());
+                boolean supported = migrated || objectStore.supportsBucketCredentials();
+                storeResponse.setPerBucketCredentialsSupported(supported);
+                storeResponse.setAccountCredentialScope(migrated ? BucketCredential.SCOPE_BUCKET : BucketCredential.SCOPE_ACCOUNT);
+                storeResponse.setLegacyBuckets(bucketApiService.countAccountScopedBuckets(account.getId(), store.getId()));
+                storeResponse.setAccountKeyRotationPending(migrated && objectStore.isAccountKeyRotationPending(account.getId()));
+            }
+        }
         response.setResponses(poolResponses, result.second());
         return response;
     }
@@ -6362,6 +6423,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Long id = cmd.getId();
         String name = cmd.getBucketName();
+        Long objectStorageId = cmd.getObjectStorageId();
+        String credentialScope = cmd.getCredentialScope();
         String keyword = cmd.getKeyword();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
@@ -6369,6 +6432,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<Long> permittedAccounts = new ArrayList<>();
 
         // Verify parameters
+        if (credentialScope != null && !BucketCredential.SCOPE_BUCKET.equalsIgnoreCase(credentialScope)
+                && !BucketCredential.SCOPE_ACCOUNT.equalsIgnoreCase(credentialScope)) {
+            throw new InvalidParameterValueException(String.format("Invalid credential scope %s, expected %s or %s",
+                    credentialScope, BucketCredential.SCOPE_BUCKET, BucketCredential.SCOPE_ACCOUNT));
+        }
+
         if (id != null) {
             BucketVO bucket = bucketDao.findById(id);
             if (bucket != null) {
@@ -6393,6 +6462,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("objectStoreId", sb.entity().getObjectStoreId(), SearchCriteria.Op.EQ);
+        sb.and("withCredential", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("withoutCredential", sb.entity().getId(), SearchCriteria.Op.NIN);
 
         SearchCriteria<BucketVO> sc = sb.create();
         accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -6410,6 +6482,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (name != null) {
             sc.setParameters("name", name);
+        }
+
+        if (objectStorageId != null) {
+            sc.setParameters("objectStoreId", objectStorageId);
+        }
+
+        if (credentialScope != null) {
+            // the scope is not a column on the bucket: it is whether the bucket has a credential row
+            List<Long> bucketIdsWithCredential = bucketCredentialDao.listBucketIdsWithCredential();
+            if (BucketCredential.SCOPE_BUCKET.equalsIgnoreCase(credentialScope)) {
+                if (bucketIdsWithCredential.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                sc.setParameters("withCredential", bucketIdsWithCredential.toArray());
+            } else if (!bucketIdsWithCredential.isEmpty()) {
+                sc.setParameters("withoutCredential", bucketIdsWithCredential.toArray());
+            }
         }
 
         setIdsListToSearchCriteria(sc, ids);

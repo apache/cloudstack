@@ -18,11 +18,14 @@
  */
 package org.apache.cloudstack.storage.object;
 
+import com.cloud.agent.api.to.BucketCredentialTO;
+import com.cloud.agent.api.to.BucketKeyTO;
 import com.cloud.agent.api.to.BucketTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ObjectStoreEntity extends DataStore, ObjectStore {
     Bucket createBucket(Bucket bucket, boolean objectLock);
@@ -46,4 +49,25 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
     void setQuota(BucketTO bucket, int quota);
 
     Map<String, Long> getAllBucketsUsage();
+
+    boolean supportsBucketCredentials();
+
+    /** Why this store cannot provide per-bucket credentials; {@code null} when it can. */
+    String bucketCredentialsUnsupportedReason();
+
+    boolean accountSupportsBucketCredentials(long accountId);
+
+    boolean migrateAccountForBucketCredentials(long accountId);
+
+    BucketCredentialTO createBucketCredential(BucketTO bucket);
+
+    BucketKeyTO createBucketCredentialKey(BucketTO bucket, Set<String> knownAccessKeys);
+
+    boolean removeBucketCredentialKey(BucketTO bucket, String accessKey);
+
+    boolean deleteBucketCredential(BucketTO bucket);
+
+    BucketKeyTO rotateAccountKey(long accountId);
+
+    boolean isAccountKeyRotationPending(long accountId);
 }

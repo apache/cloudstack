@@ -32,6 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
 import com.cloud.storage.GuestOSVO;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -1554,6 +1555,9 @@ public class ApiDBUtils {
 
     public static Map<String, String> getAccountDetails(long accountId) {
         Map<String, String> details = s_accountDetailsDao.findDetails(accountId);
+        // Credentials CloudStack holds for the account on an object store live in account details
+        // but are CloudStack's own, not the account's: they must never reach an API response.
+        details.keySet().removeIf(ObjectStore::isInternalAccountDetail);
         return details.isEmpty() ? null : details;
     }
 
