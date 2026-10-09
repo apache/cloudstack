@@ -2505,7 +2505,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri, Integer multiqueueNumber) {
         NicVO nic = null;
         if (broadcastUri != null) {
             nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(networkId, vm.getId(), broadcastUri);
@@ -2516,11 +2516,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
-        return getNicProfile(vm, nic, dc);
+        return getNicProfile(vm, nic, dc, multiqueueNumber);
     }
 
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter, Integer multiqueueNumber) {
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
         NicProfile profile =
@@ -2538,6 +2538,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dataCenter);
         profile.setIPv6Dns1(ip6Dns.first());
         profile.setIPv6Dns2(ip6Dns.second());
+
+        profile.setMultiqueueNumber(multiqueueNumber);
         return profile;
     }
 

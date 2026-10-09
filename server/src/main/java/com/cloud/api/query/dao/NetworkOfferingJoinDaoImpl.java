@@ -108,6 +108,8 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
         networkOfferingResponse.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         networkOfferingResponse.setSupportsInternalLb(offering.isInternalLb());
         networkOfferingResponse.setCreated(offering.getCreated());
+        networkOfferingResponse.setPublicMultiqueueNumber(offering.getPublicMultiqueueNumber());
+        networkOfferingResponse.setPrivateMultiqueueNumber(offering.getPrivateMultiqueueNumber());
         if (offering.getGuestType() != null) {
             networkOfferingResponse.setGuestIpType(offering.getGuestType().toString());
         }

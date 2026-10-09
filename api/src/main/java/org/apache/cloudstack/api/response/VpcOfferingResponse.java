@@ -110,6 +110,14 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers.", since = "4.23.0")
     private Boolean conserveMode;
 
+    @SerializedName(ApiConstants.PUBLIC_MULTIQUEUE_NUMBER)
+    @Param(description = "Multiqueue number for the public NIC of VRs belonging to VPCs.", since = "24.0")
+    private Integer publicMultiqueueNumber;
+
+    @SerializedName(ApiConstants.PRIVATE_GATEWAY_MULTIQUEUE_NUMBER)
+    @Param(description = "Multiqueue number for the private gateway NIC of VRs belonging to VPCs.", since = "24.0")
+    private Integer privateGatewayMultiqueueNumber;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -220,5 +228,13 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public void setPublicMultiqueueNumber(Integer publicMultiqueueNumber) {
+        this.publicMultiqueueNumber = publicMultiqueueNumber;
+    }
+
+    public void setPrivateGatewayMultiqueueNumber(Integer privateGatewayMultiqueueNumber) {
+        this.privateGatewayMultiqueueNumber = privateGatewayMultiqueueNumber;
     }
 }

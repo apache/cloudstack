@@ -172,4 +172,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     RoutingMode getRoutingMode();
 
     Boolean isSpecifyAsNumber();
+
+    Integer getPublicMultiqueueNumber();
+
+    Integer getPrivateMultiqueueNumber();
 }

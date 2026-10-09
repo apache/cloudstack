@@ -25,20 +25,11 @@ import com.cloud.vm.VirtualMachine;
 import java.util.Map;
 
 public class PlugNicCommand extends Command {
-
     NicTO nic;
     String instanceName;
     VirtualMachine.Type vmType;
+    private Integer targetVmCpus;
     Map<String, String> details;
-
-    public NicTO getNic() {
-        return nic;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
 
     protected PlugNicCommand() {
     }
@@ -56,6 +47,18 @@ public class PlugNicCommand extends Command {
         this.details = details;
     }
 
+    public PlugNicCommand(NicTO nic, String instanceName, VirtualMachine.Type vmtype, Integer targetVmCpus, Map<String, String> details) {
+        this.nic = nic;
+        this.instanceName = instanceName;
+        this.vmType = vmtype;
+        this.targetVmCpus = targetVmCpus;
+        this.details = details;
+    }
+
+    public NicTO getNic() {
+        return nic;
+    }
+
     public String getVmName() {
         return instanceName;
     }
@@ -66,5 +69,14 @@ public class PlugNicCommand extends Command {
 
     public Map<String, String> getDetails() {
         return this.details;
+    }
+
+    public Integer getTargetVmCpus() {
+        return targetVmCpus;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
     }
 }

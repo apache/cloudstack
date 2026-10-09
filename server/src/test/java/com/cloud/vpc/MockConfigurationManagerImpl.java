@@ -561,7 +561,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                                    Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
                                                    Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol,
-                                                   NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
+                                                   NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, Integer publicMultiqueueNumber, Integer privateMultiqueueNumber) {
         // TODO Auto-generated method stub
         return null;
     }
