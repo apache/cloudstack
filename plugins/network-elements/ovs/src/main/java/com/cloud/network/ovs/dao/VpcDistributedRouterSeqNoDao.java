@@ -20,4 +20,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface VpcDistributedRouterSeqNoDao extends GenericDao<VpcDistributedRouterSeqNoVO, Long> {
     VpcDistributedRouterSeqNoVO findByVpcId(long vpcId);
+
+    long incrementAndGetTopologySeqNo(long id);
+
+    long incrementAndGetPolicySeqNo(long id);
 }
