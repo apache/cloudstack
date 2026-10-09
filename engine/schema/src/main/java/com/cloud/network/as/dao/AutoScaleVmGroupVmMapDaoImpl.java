@@ -132,7 +132,7 @@ public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGrou
     public int getErroredInstanceCount(long vmGroupId) {
         SearchCriteria<Integer> sc = CountBy.create();
         sc.setParameters("vmGroupId", vmGroupId);
-        sc.setJoinParameters("vmSearch", "states", State.Error);
+        sc.setJoinParameters("vmSearch", "states", State.Error, State.Stopped);
         final List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }
