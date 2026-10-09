@@ -189,10 +189,10 @@ public class LibvirTakeKbossBackupCommandWrapperTest {
         doReturn(secondaryUrl).when(takeKbossBackupCommandMock).getImageStoreUrl();
         Pair<String, Long> pair1 = new Pair<>("p1", 10L);
         doReturn(pair1).when(libvirtTakeKbossBackupCommandWrapperSpy).copyBackupDeltaToSecondary(eq(kvmStoragePoolManagerMock), eq(kbossTO1), anyList(),
-                        eq(secondaryUrl), anyInt());
+                        eq(secondaryUrl), anyInt(), any());
         Pair<String, Long> pair2 = new Pair<>("p2", 13L);
         doReturn(pair2).when(libvirtTakeKbossBackupCommandWrapperSpy).copyBackupDeltaToSecondary(eq(kvmStoragePoolManagerMock), eq(kbossTO2), anyList(),
-                eq(secondaryUrl), anyInt());
+                eq(secondaryUrl), anyInt(), any());
 
         libvirtTakeKbossBackupCommandWrapperSpy.backupVolumes(takeKbossBackupCommandMock, libvirtComputingResourceMock, kvmStoragePoolManagerMock, List.of(kbossTO1, kbossTO2),
                 volumeTosAndNewPaths, "tst", false, mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize);
@@ -276,13 +276,14 @@ public class LibvirTakeKbossBackupCommandWrapperTest {
         doReturn(parentBackupFullPath).when(kvmStoragePool2).getLocalPathFor(parentPath);
         doReturn(backupDeltaFullPathOnPrimary1).when(kvmStoragePool3).getLocalPathFor(deltaPath2);
         doReturn(backupDeltaFullPathOnSecondary1).when(kvmStoragePool1).getLocalPathFor(deltaPath1);
-        doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath, volUuid1, 100000);
+        doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath,
+                volUuid1, 100000, takeKbossBackupCommandMock);
 
         doReturn(randomPath1).when(libvirtTakeKbossBackupCommandWrapperSpy).getRelativePathOnSecondaryForBackup(anyLong(), anyLong(), any());
         doReturn("random2").when(kvmStoragePool1).getLocalPathFor(randomPath1);
         doReturn(backupDeltaFullPathOnPrimary2).when(kvmStoragePool3).getLocalPathFor(volumePath);
         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(eq(backupDeltaFullPathOnPrimary2), eq("random2"), eq(backupDeltaFullPathOnSecondary1),
-                any(), anyInt());
+                any(), anyInt(), any());
 
         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).commitTopDeltaOnBaseBackupOnSecondaryIfNeeded(randomPath1, deltaPath1, kvmStoragePool1,
                 backupDeltaFullPathOnSecondary1, 100000);
@@ -291,15 +292,16 @@ public class LibvirTakeKbossBackupCommandWrapperTest {
         try(MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class)) {
             filesMockedStatic.when(() -> Files.size(any())).thenReturn(1000L);
             Pair<String, Long> result = libvirtTakeKbossBackupCommandWrapperSpy.copyBackupDeltaToSecondary(kvmStoragePoolManagerMock, kbossTO1, List.of(secondaryUrl2),
-                    secondaryUrl, 100000);
+                    secondaryUrl, 100000, takeKbossBackupCommandMock);
 
             assertEquals(deltaPath1, result.first());
             assertEquals(Long.valueOf(1000L), result.second());
         }
 
-        verify(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath, volUuid1, 100000);
+        verify(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath, volUuid1,
+                100000, takeKbossBackupCommandMock);
         verify(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(eq(backupDeltaFullPathOnPrimary2), eq("random2"), eq(backupDeltaFullPathOnSecondary1),
-                any(), anyInt());
+                any(), anyInt(), any());
         verify(libvirtTakeKbossBackupCommandWrapperSpy).commitTopDeltaOnBaseBackupOnSecondaryIfNeeded(randomPath1, deltaPath1, kvmStoragePool1,
                 backupDeltaFullPathOnSecondary1, 100000);
         verify(libvirtTakeKbossBackupCommandWrapperSpy).removeTemporaryDeltas(any(), anyBoolean());
