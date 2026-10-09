@@ -63,6 +63,7 @@ public class OntapStorageConstants {
     // Query params
     public static final String NAME = "name";
     public static final String FIELDS = "fields";
+    public static final String CLUSTER_NODE_ASUP_FIELDS = "model,is_all_flash_optimized,is_capacity_optimized,is_perf_optimized";
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
@@ -80,6 +81,7 @@ public class OntapStorageConstants {
     public static final String SEMICOLON = ";";
     public static final String COMMA = ",";
     public static final String HYPHEN = "-";
+    public static final String DOT = ".";
 
     public static final String VOLUME_PATH_PREFIX = "/vol/";
 
@@ -109,4 +111,55 @@ public class OntapStorageConstants {
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    // ASUP (AutoSupport) / EMS telemetry
+    public static final String ADVANCED_CONFIG_KEY_CATEGORY = "Advanced";
+    public static final String ASUP_CATEGORY = "provisioning";
+    public static final String ASUP_SEVERITY = "notice";
+    public static final String ASUP_EVENT_SOURCE = "CloudStack ONTAP plugin";
+    public static final String ASUP_EVENT_ID_HEARTBEAT = "0";
+    public static final String ASUP_EVENT_ID_STORAGE_POOL = "1";
+    public static final String ASUP_UNKNOWN = "unknown";
+    /** Event-id 0/1 JSON field: short human-readable description of the message. */
+    public static final String ASUP_MESSAGE = "message";
+    public static final String ASUP_HEARTBEAT_MESSAGE = "CloudStack connected to Unified ONTAP cluster";
+    public static final String ASUP_POOL_MESSAGE = "CloudStack storage pool backed by Unified ONTAP volume";
+    public static final String ASUP_POOL_NAME = "poolName";
+    public static final String ASUP_POOL_STATUS = "poolStatus";
+    public static final String ASUP_PROTOCOL = "protocol";
+    public static final String ASUP_SVM = "svm";
+    public static final String ASUP_ONTAP_VOLUME_UUID = "ontapVolumeUuid";
+    public static final String ASUP_CLOUDSTACK_VERSION = "cloudstackVersion";
+    public static final String ASUP_PLATFORM = "platform";
+    public static final String ASUP_ONTAP_VERSION = "ontapVersion";
+    public static final String ASUP_ONTAP_CLUSTER_MODEL = "ontapClusterModel";
+    public static final String ASUP_ONTAP_PLATFORM_TYPE = "ontapPlatformType";
+    public static final String ASUP_PLATFORM_TYPE_PERFORMANCE = "performance";
+    public static final String ASUP_PLATFORM_TYPE_CAPACITY = "capacity";
+    public static final String ASUP_PLATFORM_TYPE_FAS = "fas";
+    public static final String ASUP_PLATFORM_TYPE_COMPOSITE = "composite";
+    public static final String ASUP_CLUSTER_UUID = "clusterUuid";
+    public static final String ASUP_MANAGEMENT_SERVER_COUNT = "managementServerCount";
+    /** Event-id 0 field: VM snapshots spanning multiple ONTAP pools (consistency group). */
+    public static final String ASUP_SNAPSHOT_ACROSS_POOL = "snapshot_across_pool";
+    public static final String ASUP_MULTI_PRIMARY_STORAGE_POOL_VM = "multiPrimaryStoragePoolVm";
+    public static final String ASUP_ROOT_DISK_COUNT = "rootDiskCount";
+    public static final String ASUP_DATA_DISK_COUNT = "dataDiskCount";
+    public static final String ASUP_TOTAL_LOGICAL_SIZE_BYTES = "totalLogicalSizeBytes";
+    public static final String ASUP_VOLUME_SNAPSHOT_COUNT = "volumeSnapshotCount";
+    public static final String ASUP_VM_SNAPSHOT_COUNT = "vmSnapshotCount";
+    public static final String ASUP_GLOBAL_LOCK_NAME = "ontap.autosupport.push";
+    public static final String ASUP_INTERVAL_CONFIG_KEY = "ontap.autosupport.interval";
+    /** {@code ontap.autosupport.interval} value that disables telemetry reporting. */
+    public static final int ASUP_DISABLED_INTERVAL_HOURS = 0;
+    public static final int ASUP_MIN_INTERVAL_HOURS = 4;
+    public static final int ASUP_MAX_INTERVAL_HOURS = 168; // once a week
+    public static final int ASUP_DEFAULT_INTERVAL_HOURS = 24; // once a day
+
+    public static final String ASUP_INTERVAL_DESCRIPTION =
+            "Interval in hours between telemetry reports sent to the ONTAP cluster. "
+                    + ASUP_DISABLED_INTERVAL_HOURS + " disables reporting. Allowed range is "
+                    + ASUP_MIN_INTERVAL_HOURS + " hours to " + ASUP_MAX_INTERVAL_HOURS
+                    + " hours (1 week). Default is " + ASUP_DEFAULT_INTERVAL_HOURS
+                    + " hours (once a day). Changes take effect immediately and do not require a management server restart.";
 }
