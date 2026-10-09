@@ -67,6 +67,7 @@ vueApp.use(extensionsUtilPlugin)
 vueApp.use(backupUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
+vueApp.use(require('vue3-shortkey'), { prevent: ['input', 'textarea'] })
 
 const renderError = (err) => {
   console.error('Fatal error during app initialization: ', err)
