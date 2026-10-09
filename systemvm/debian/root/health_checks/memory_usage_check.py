@@ -35,9 +35,10 @@ def main():
     maxMemoryUsage = float(data["maxMemoryUsage"])
     cmd = "free | awk 'FNR == 2 { print $3 * 100 / $2 }'"
     pout = Popen(cmd, shell=True, stdout=PIPE)
+    stdout, _ = pout.communicate()
 
-    if pout.wait() == 0:
-        currentUsage = float(pout.communicate()[0].decode().strip())
+    if pout.returncode == 0:
+        currentUsage = float(stdout.decode().strip())
         if currentUsage > maxMemoryUsage:
             print("Memory Usage " + str(currentUsage) +
                   "% has crossed threshold of " + str(maxMemoryUsage) + "%")
