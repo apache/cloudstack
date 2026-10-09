@@ -923,6 +923,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 logger.info(context);
                 if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                    if (router.getVpcId() != null && vpcManager.isProviderSupportServiceInVpc(router.getVpcId(), Service.SourceNat, Provider.Netris)) {
+                        // re-push VPC VR static NAT/VPN routes so Netris picks up the new PRIMARY
+                        vpcManager.reconfigStaticNatForVpcVr(router.getVpcId());
+                        try {
+                            vpcManager.applyStaticRouteForVpcVpnIfNeeded(router.getVpcId(), true);
+                        } catch (final ResourceUnavailableException e) {
+                            logger.error("Unable to apply static routes for vpc " + router.getVpcId() + " due to " + e.getMessage(), e);
+                        }
+                    }
                 }
             }
         }

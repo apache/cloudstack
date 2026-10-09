@@ -16,12 +16,16 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Objects;
 
 public class NetrisResourceObjectUtils {
+
+    public static final int NETRIS_VNET_NAME_MAX_LENGTH = 50;
 
     public enum NetrisObjectType {
         VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT, STATICROUTE, ACL, LB
@@ -73,7 +77,7 @@ public class NetrisResourceObjectUtils {
                 break;
             case STATICNAT:
                 stringBuilder.append(String.format("%s%s-VM%s-%s", prefix, suffixes[0], suffixes[1], "STATICNAT"));
-                suffixes = new String[0];
+                suffixes = ArrayUtils.subarray(suffixes, 2, suffixes.length);
                 break;
             case DNAT:
                 stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "DNAT"));
@@ -99,5 +103,18 @@ public class NetrisResourceObjectUtils {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public static void validateNetrisVnetNameLength(String netrisVnetName, String networkName) {
+        if (netrisVnetName.length() > NETRIS_VNET_NAME_MAX_LENGTH) {
+            throw new InvalidParameterValueException(
+                    String.format("The resulting Netris vNet name '%s' exceeds the maximum allowed length of %d characters (actual: %d). " +
+                            "Please use a shorter network name (current: '%s')",
+                            netrisVnetName, NETRIS_VNET_NAME_MAX_LENGTH, netrisVnetName.length(), networkName));
+        }
+    }
+
+    public static NetworkOffering.NetworkMode getNetworkMode(NetworkOffering.NetworkMode mode) {
+        return Objects.isNull(mode) ? NetworkOffering.NetworkMode.NATTED : mode;
     }
 }

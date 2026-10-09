@@ -104,8 +104,9 @@ class CsPassword(CsDataBag):
         for interface in self.config.address().get_interfaces():
             if interface.ip_in_subnet(vm_ip) and interface.is_added():
                 if self.config.cl.is_redundant():
-                    server_ip = interface.get_gateway()
-                    guest_ip = interface.get_ip()
+                    server_ips = interface.get_passwd_server_ips()
+                    server_ip = server_ips[0]
+                    guest_ip = server_ips[1] if len(server_ips) > 1 else None
                 else:
                     server_ip = interface.get_ip()
                 break
