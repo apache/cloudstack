@@ -30,6 +30,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -45,8 +46,27 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfo;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
+import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
+
+    protected final Cache<String, Pair<String, String>> tokensByCode = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .build();
 
     @Inject
     OauthProviderDao _oauthProviderDao;
@@ -108,10 +128,9 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return true;
     }
 
-    protected String verifyCodeAndFetchEmailInternal(String secretCode, OauthProviderVO googleProvider) {
-        if (googleProvider == null) {
-            googleProvider = _oauthProviderDao.findByProvider(getName());
-        }
+    @Override
+    public String verifyCodeAndFetchEmail(String secretCode) {
+        OauthProviderVO googleProvider = _oauthProviderDao.findByProvider(getName());
         String clientId = googleProvider.getClientId();
         String secret = googleProvider.getSecretKey();
         String redirectURI = googleProvider.getRedirectUri();
@@ -129,14 +148,20 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
                 httpTransport, jsonFactory, clientSecrets, scopes)
                 .build();
 
-        GoogleTokenResponse tokenResponse;
+        Pair<String, String> tokens;
         try {
-            tokenResponse = flow.newTokenRequest(secretCode)
-                    .setRedirectUri(redirectURI)
-                    .execute();
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Failed to verify secret code", e);
+            tokens = tokensByCode.get(secretCode, () -> {
+                GoogleTokenResponse tokenResponse = flow.newTokenRequest(secretCode)
+                        .setRedirectUri(redirectURI)
+                        .execute();
+                return new Pair<>(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
+            });
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new CloudRuntimeException(String.format("Failed to exchange the OAuth2 authorization code for tokens: %s", cause.getMessage()), cause);
         }
+        String accessToken = tokens.first();
+        String refreshToken = tokens.second();
 
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
@@ -155,16 +180,11 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         try {
             userinfo = oauth2.userinfo().get().execute();
         } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s", e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s", e.getMessage()), e);
         }
         String verifiedEmail = userinfo.getEmail();
         addValidatedEmailToCache(secretCode, verifiedEmail);
         return verifiedEmail;
-    }
-
-    @Override
-    public String verifyCodeAndFetchEmail(String secretCode) {
-        return verifyCodeAndFetchEmailInternal(secretCode, null);
     }
 
     @Override
