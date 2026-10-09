@@ -359,6 +359,11 @@ export default {
           params.diskofferingid = values.diskofferingid
         }
 
+        if (values.categoryid) {
+          params.categoryid = values.categoryid
+        }
+
+        // Add GPU parameters
         if (values.vgpuprofile) {
           params.vgpuprofileid = values.vgpuprofile
         }
