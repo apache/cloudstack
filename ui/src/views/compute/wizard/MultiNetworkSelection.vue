@@ -107,6 +107,10 @@ export default {
       type: String,
       default: ''
     },
+    projectid: {
+      type: String,
+      default: ''
+    },
     selectionEnabled: {
       type: Boolean,
       default: true
@@ -194,6 +198,9 @@ export default {
     zoneId () {
       this.fetchNetworks()
     },
+    projectid () {
+      this.fetchNetworks()
+    },
     account () {
       clearTimeout(this.accountNetworkUpdateTimer)
       this.accountNetworkUpdateTimer = setTimeout(() => {
@@ -217,7 +224,9 @@ export default {
         zoneid: this.zoneId,
         listall: true
       }
-      if (this.domainid && this.account) {
+      if (this.projectid) {
+        params.projectid = this.projectid
+      } else if (this.domainid && this.account) {
         params.domainid = this.domainid
         params.account = this.account
       }
