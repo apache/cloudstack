@@ -1535,6 +1535,22 @@ class CsForwardingRules(CsDataBag):
             self.forward_vpc(rule)
         else:
             self.forward_vr(rule)
+        self.forward_ftp_helper(rule)
+
+    def forward_ftp_helper(self, rule):
+        # Linux 6.0 no longer attaches the ftp helper after DNAT, so attach it
+        # to the public port that is forwarded to port 21
+        if rule["protocol"] != "tcp" or "any" in [rule["public_ports"], rule["internal_ports"]]:
+            return
+        public_start = int(rule["public_ports"].split(":")[0])
+        internal_ports = rule["internal_ports"].split(":")
+        internal_start = int(internal_ports[0])
+        internal_end = int(internal_ports[-1])
+        if not internal_start <= 21 <= internal_end:
+            return
+        public_port = public_start + 21 - internal_start
+        self.fw.append(["raw", "", "-A PREROUTING -d %s/32 -p tcp -m tcp --dport %s -j CT --helper ftp" %
+                        (rule["public_ip"], public_port)])
 
     def forward_vr(self, rule):
         # Prefetch iptables variables
@@ -1679,6 +1695,7 @@ class CsForwardingRules(CsDataBag):
             self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
                             (chain_name, static_route['network'])])
 
+        self.fw.append(["raw", "", "-A PREROUTING -d %s/32 -p tcp -m tcp --dport 21 -j CT --helper ftp" % rule["public_ip"]])
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
