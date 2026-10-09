@@ -281,6 +281,10 @@ public class CAManagerImplTest {
              MockedStatic<SSHCmdHelper> sshCmdHelperMock = Mockito.mockStatic(SSHCmdHelper.class)) {
             sshCmdHelperMock.when(() -> SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(Mockito.any(Connection.class), Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(true);
+            sshCmdHelperMock.when(() -> SSHCmdHelper.sshExecuteCmdWithResult(Mockito.any(Connection.class), Mockito.contains("virsh")))
+                    .thenReturn(new SSHCmdHelper.SSHCmdResult(0, "", ""));
+            sshCmdHelperMock.when(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.anyString()))
+                    .thenReturn(true);
 
             Mockito.doNothing().when(caManager).provisionCertificateViaSsh(Mockito.any(Connection.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
 
@@ -290,8 +294,9 @@ public class CAManagerImplTest {
 
             Assert.assertTrue(result);
             Mockito.verify(caManager, Mockito.times(1)).provisionCertificateViaSsh(Mockito.any(Connection.class), Mockito.eq("192.168.1.1"), Mockito.eq("host1"), Mockito.eq("root"));
-            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("systemctl restart libvirtd")), Mockito.times(1));
-            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("systemctl restart cloudstack-agent")), Mockito.times(1));
+            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmdWithResult(Mockito.any(Connection.class), Mockito.contains("virsh")), Mockito.times(1));
+            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.contains("systemctl restart libvirtd")), Mockito.times(1));
+            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.contains("systemctl restart cloudstack-agent")), Mockito.times(1));
         }
     }
 
