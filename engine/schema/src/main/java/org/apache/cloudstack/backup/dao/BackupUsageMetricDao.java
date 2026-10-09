@@ -14,18 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.backup.dao;
 
-package com.cloud.usage.dao;
+import org.apache.cloudstack.backup.BackupUsageMetricVO;
 
-import java.util.Date;
-import java.util.List;
-
-import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface UsageBackupDao extends GenericDao<UsageBackupVO, Long> {
-    List<UsageBackupVO> listActiveUsage(Long vmId, Long backupOfferingId);
-    void updateMetrics(Long vmId, Long backupOfferingId, Long size, Long virtualSize, Date eventDate);
-    void removeUsage(Long accountId, Long vmId, Long backupOfferingId, Date eventDate);
-    List<UsageBackupVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
+public interface BackupUsageMetricDao extends GenericDao<BackupUsageMetricVO, Long> {
+    BackupUsageMetricVO findByVmAndOffering(long vmId, long backupOfferingId);
+
+    int removeByVmAndOffering(long vmId, long backupOfferingId);
 }
