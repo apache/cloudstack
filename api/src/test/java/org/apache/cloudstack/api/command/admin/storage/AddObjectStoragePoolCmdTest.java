@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.StorageService;
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -38,6 +39,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -97,5 +100,13 @@ public class AddObjectStoragePoolCmdTest {
 
         Mockito.verify(storageService, Mockito.times(1))
                 .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRequestIsMarkedAsContainingSensitiveInformation() {
+        APICommand apiCommand = AddObjectStoragePoolCmd.class.getAnnotation(APICommand.class);
+
+        assertNotNull(apiCommand);
+        assertTrue(apiCommand.requestHasSensitiveInfo());
     }
 }
