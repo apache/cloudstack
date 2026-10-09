@@ -73,6 +73,21 @@ public class LazyCacheTest {
             Assert.fail(String.format("Exception occurred: %s", ie.getMessage()));
         }
         cache.get(key);
+        // refreshAfterWrite triggers an async reload on the first get after the interval;
+        // wait for it deterministically instead of sleeping a fixed duration.
+        Mockito.verify(mockLoader, Mockito.timeout(2000).times(2)).apply(key);
+    }
+
+    @Test
+    public void testExpireAfterWriteModeReloadsSynchronously() throws InterruptedException {
+        // refreshAfterWrite=false -> the entry expires and the next get blocks to load a fresh value,
+        // so the second load is observed synchronously (no async wait needed).
+        LazyCache<String, String> expiringCache = new LazyCache<>(4, expireSeconds, false, mockLoader);
+        String key = "expireKey";
+        expiringCache.get(key);
+        Thread.sleep((long) (1.1 * expireSeconds * 1000));
+        String value = expiringCache.get(key);
+        assertEquals(cacheValuePrefix + key, value);
         Mockito.verify(mockLoader, Mockito.times(2)).apply(key);
     }
 
@@ -95,6 +110,25 @@ public class LazyCacheTest {
         cache.get(key1);
         Mockito.verify(mockLoader, Mockito.times(2)).apply(key1);
         Mockito.verify(mockLoader, Mockito.times(1)).apply(key2);
+    }
+
+    @Test
+    public void testInvalidateKeysMatching() {
+        String matchingKey1 = "group.one";
+        String matchingKey2 = "group.two";
+        String otherKey = "other.one";
+        cache.get(matchingKey1);
+        cache.get(matchingKey2);
+        cache.get(otherKey);
+
+        cache.invalidateKeysMatching(key -> key.startsWith("group."));
+
+        cache.get(matchingKey1);
+        cache.get(matchingKey2);
+        cache.get(otherKey);
+        Mockito.verify(mockLoader, Mockito.times(2)).apply(matchingKey1);
+        Mockito.verify(mockLoader, Mockito.times(2)).apply(matchingKey2);
+        Mockito.verify(mockLoader, Mockito.times(1)).apply(otherKey);
     }
 
     @Test

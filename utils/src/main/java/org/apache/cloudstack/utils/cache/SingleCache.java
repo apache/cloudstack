@@ -27,11 +27,27 @@ public class SingleCache<V> {
 
     private final LoadingCache<Integer, V> cache;
 
-    public SingleCache(long expireAfterWriteSeconds, Supplier<V> loader) {
-        this.cache = Caffeine.newBuilder()
-                .maximumSize(1)
-                .expireAfterWrite(expireAfterWriteSeconds, TimeUnit.SECONDS)
-                .build(key -> loader.get());
+    /**
+     * Creates a single-value cache that refreshes asynchronously after the given duration
+     * (refreshAfterWrite), serving the stale value while the reload runs.
+     */
+    public SingleCache(long refreshAfterWriteSeconds, Supplier<V> loader) {
+        this(refreshAfterWriteSeconds, true, loader);
+    }
+
+    /**
+     * Creates a single-value cache whose staleness strategy is selectable. See
+     * {@link LazyCache#LazyCache(long, long, boolean, java.util.function.Function)} for the semantics
+     * of refreshAfterWrite versus expireAfterWrite.
+     */
+    public SingleCache(long durationSeconds, boolean refreshAfterWrite, Supplier<V> loader) {
+        Caffeine<Object, Object> builder = Caffeine.newBuilder().maximumSize(1);
+        if (refreshAfterWrite) {
+            builder.refreshAfterWrite(durationSeconds, TimeUnit.SECONDS);
+        } else {
+            builder.expireAfterWrite(durationSeconds, TimeUnit.SECONDS);
+        }
+        this.cache = builder.build(key -> loader.get());
     }
 
     public V get() {

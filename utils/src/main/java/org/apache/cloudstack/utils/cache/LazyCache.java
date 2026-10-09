@@ -19,6 +19,7 @@ package org.apache.cloudstack.utils.cache;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -27,19 +28,52 @@ public class LazyCache<K, V> {
 
     private final LoadingCache<K, V> cache;
 
-    public LazyCache(long maximumSize, long expireAfterWriteSeconds, Function<K, V> loader) {
-        this.cache = Caffeine.newBuilder()
-                .maximumSize(maximumSize)
-                .expireAfterWrite(expireAfterWriteSeconds, TimeUnit.SECONDS)
-                .build(loader::apply);
+    /**
+     * Creates a cache that refreshes entries asynchronously after the given duration
+     * (refreshAfterWrite), serving the stale value while the reload runs.
+     */
+    public LazyCache(long maximumSize, long refreshAfterWriteSeconds, Function<K, V> loader) {
+        this(maximumSize, refreshAfterWriteSeconds, true, loader);
+    }
+
+    /**
+     * Creates a cache whose staleness strategy is selectable:
+     * <ul>
+     *   <li>refreshAfterWrite=true: after the duration, the next access returns the stale value and
+     *       triggers an async reload - callers never block, but a stale value can be served briefly
+     *       (weaker cross-node consistency).</li>
+     *   <li>refreshAfterWrite=false: after the duration the entry expires; the next access blocks and
+     *       loads a fresh value (stronger consistency, at the cost of a blocking load).</li>
+     * </ul>
+     */
+    public LazyCache(long maximumSize, long durationSeconds, boolean refreshAfterWrite, Function<K, V> loader) {
+        Caffeine<Object, Object> builder = Caffeine.newBuilder().maximumSize(maximumSize);
+        if (refreshAfterWrite) {
+            builder.refreshAfterWrite(durationSeconds, TimeUnit.SECONDS);
+        } else {
+            builder.expireAfterWrite(durationSeconds, TimeUnit.SECONDS);
+        }
+        this.cache = builder.build(loader::apply);
     }
 
     public V get(K key) {
         return cache.get(key);
     }
 
+    public void put(K key, V value) {
+        cache.put(key, value);
+    }
+
     public void invalidate(K key) {
         cache.invalidate(key);
+    }
+
+    /**
+     * Removes every entry whose key matches the predicate. Use it when one change makes a group of
+     * entries stale and the keys of that group are not known to the caller.
+     */
+    public void invalidateKeysMatching(Predicate<K> keyPredicate) {
+        cache.asMap().keySet().removeIf(keyPredicate);
     }
 
     public void clear() {
