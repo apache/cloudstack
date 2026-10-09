@@ -23,3 +23,11 @@
 -- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
 CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
+
+-- Reclaim VNETs belonging to Netris deleted networks
+UPDATE op_dc_vnet_alloc a
+    JOIN networks n ON n.broadcast_uri = CONCAT('netris://', a.vnet)
+    SET a.account_id = NULL,
+        a.reservation_id = NULL,
+        a.taken = NULL
+WHERE n.removed IS NOT NULL;
