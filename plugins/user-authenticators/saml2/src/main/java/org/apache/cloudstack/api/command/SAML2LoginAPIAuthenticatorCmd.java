@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.saml.SAML2AuthManager;
+import org.apache.cloudstack.saml.SAML2UserAuthenticator;
 import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLTokenVO;
@@ -357,8 +358,14 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 try {
                     if (apiServer.verifyUser(userAccount.getId())) {
-                        LoginCmdResponse loginResponse = (LoginCmdResponse) apiServer.loginUser(session, userAccount.getUsername(), userAccount.getUsername() + userAccount.getSource().toString(),
-                                userAccount.getDomainId(), null, remoteAddress, params);
+                        SAML2UserAuthenticator.markAssertionValidated();
+                        LoginCmdResponse loginResponse;
+                        try {
+                            loginResponse = (LoginCmdResponse) apiServer.loginUser(session, userAccount.getUsername(), userAccount.getUsername() + userAccount.getSource().toString(),
+                                    userAccount.getDomainId(), null, remoteAddress, params);
+                        } finally {
+                            SAML2UserAuthenticator.clearAssertionValidated();
+                        }
                         SAMLUtils.setupSamlUserCookies(loginResponse, resp);
                         resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
                         return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
