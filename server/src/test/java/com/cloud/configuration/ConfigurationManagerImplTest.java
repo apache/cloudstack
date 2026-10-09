@@ -35,6 +35,10 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -164,6 +168,8 @@ public class ConfigurationManagerImplTest {
     VolumeDao volumeDao;
     @Mock
     PhysicalNetworkDao physicalNetworkDao;
+    @Mock
+    NetworkDao networkDao;
     @Mock
     ImageStoreDao imageStoreDao;
     @Mock
@@ -1409,5 +1415,121 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    private Map<Network.Service, Set<Network.Provider>> validL3ServiceProviderMap() {
+        Map<Network.Service, Set<Network.Provider>> map = new HashMap<>();
+        map.put(Network.Service.UserData, Collections.singleton(Network.Provider.ConfigDrive));
+        map.put(Network.Service.Dns, Collections.singleton(Network.Provider.ConfigDrive));
+        map.put(Network.Service.SecurityGroup, Collections.singleton(Network.Provider.SecurityGroupProvider));
+        return map;
+    }
+
+    @Test
+    public void validateL3NetworkOfferingAcceptsUserDataDnsAndSecurityGroup() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, true, false);
+    }
+
+    @Test
+    public void validateL3NetworkOfferingAcceptsOfferingWithoutDns() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.remove(Network.Service.Dns);
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsDhcp() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.Dhcp, Collections.singleton(Network.Provider.ConfigDrive));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsMissingUserData() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.remove(Network.Service.UserData);
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsUserDataWithoutProvider() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.UserData, Collections.emptySet());
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsNonConfigDriveDns() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.Dns, Collections.singleton(Network.Provider.VirtualRouter));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsUnsupportedService() {
+        Map<Network.Service, Set<Network.Provider>> map = validL3ServiceProviderMap();
+        map.put(Network.Service.SourceNat, Collections.singleton(Network.Provider.VirtualRouter));
+        configurationManagerImplSpy.validateL3NetworkOffering(map, null, false, true, false);
+    }
+
+    private PhysicalNetworkVO routedPhysicalNetwork(long id) {
+        PhysicalNetworkVO physicalNetwork = Mockito.mock(PhysicalNetworkVO.class);
+        Mockito.when(physicalNetwork.getId()).thenReturn(id);
+        Mockito.when(physicalNetwork.getName()).thenReturn("routed-physnet");
+        Mockito.when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("ROUTED"));
+        return physicalNetwork;
+    }
+
+    @Test
+    public void canonicalizeRoutedRangeIdAcceptsFreeId() {
+        PhysicalNetworkVO routedPhysicalNetwork = routedPhysicalNetwork(7L);
+        Mockito.when(networkDao.listByZoneAndUriAndGuestType(1L, "routed://5828", null)).thenReturn(Collections.emptyList());
+        Mockito.when(physicalNetworkDao.listByZone(1L)).thenReturn(List.of(routedPhysicalNetwork));
+        Mockito.when(zoneDao.findVnet(1L, 7L, "5828")).thenReturn(Collections.emptyList());
+
+        Assert.assertEquals("routed://5828", configurationManagerImplSpy.canonicalizeRoutedRangeId(1L, "routed://5828"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void canonicalizeRoutedRangeIdRejectsMalformedId() {
+        configurationManagerImplSpy.canonicalizeRoutedRangeId(1L, "routed://abc");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void canonicalizeRoutedRangeIdRejectsIdOfGuestNetwork() {
+        NetworkVO guestNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkDao.listByZoneAndUriAndGuestType(1L, "routed://5828", null)).thenReturn(List.of(guestNetwork));
+
+        configurationManagerImplSpy.canonicalizeRoutedRangeId(1L, "routed://5828");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void canonicalizeRoutedRangeIdRejectsIdInsideRoutedPhysicalNetworkRange() {
+        PhysicalNetworkVO routedPhysicalNetwork = routedPhysicalNetwork(7L);
+        Mockito.when(networkDao.listByZoneAndUriAndGuestType(1L, "routed://5828", null)).thenReturn(Collections.emptyList());
+        Mockito.when(physicalNetworkDao.listByZone(1L)).thenReturn(List.of(routedPhysicalNetwork));
+        Mockito.when(zoneDao.findVnet(1L, 7L, "5828")).thenReturn(List.of(new DataCenterVnetVO("5828", 1L, 7L)));
+
+        configurationManagerImplSpy.canonicalizeRoutedRangeId(1L, "routed://5828");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsNetworkMode() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), NetworkOffering.NetworkMode.ROUTED, false, true, false);
+    }
+
+    @Test
+    public void validateL3NetworkOfferingAcceptsSpecifyVlan() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, true, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsWithoutSpecifyIpRanges() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, false, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateL3NetworkOfferingRejectsVpc() {
+        configurationManagerImplSpy.validateL3NetworkOffering(validL3ServiceProviderMap(), null, false, true, true);
     }
 }

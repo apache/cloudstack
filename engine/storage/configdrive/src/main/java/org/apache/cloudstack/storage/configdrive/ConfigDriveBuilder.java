@@ -48,6 +48,7 @@ import org.joda.time.Duration;
 
 import com.cloud.network.NetworkModel;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -246,10 +247,17 @@ public class ConfigDriveBuilder {
 
     /**
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
+     *
+     * An Instance with a direct routed NIC always gets its network data written: ConfigDrive is
+     * the only channel that carries that NIC's addressing, whatever services the offering does or
+     * does not have. The data then covers every NIC of the Instance, as it does when the
+     * historical gate (Dhcp or Dns supported) is met, because an explicit network configuration
+     * that listed only the direct routed NIC would stop cloud-init from configuring the others.
+     * For Instances without a direct routed NIC the historical gate is unchanged.
      */
     static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
         JsonObject finalNetworkData = new JsonObject();
-        if (needForGeneratingNetworkData(supportedServices)) {
+        if (needForGeneratingNetworkData(supportedServices) || nics.stream().anyMatch(ConfigDriveBuilder::isDirectRoutedNic)) {
             for (NicProfile nic : nics) {
                 List<Network.Service> supportedService = supportedServices.get(nic.getId());
                 JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
@@ -265,6 +273,27 @@ public class ConfigDriveBuilder {
 
     static boolean needForGeneratingNetworkData(Map<Long, List<Network.Service>> supportedServices) {
         return supportedServices.values().stream().anyMatch(services -> services.contains(Network.Service.Dhcp) || services.contains(Network.Service.Dns));
+    }
+
+    /**
+     * A NIC on a Direct Routed (L3) network is recognised by the form of its addressing, not by a
+     * flag: an IPv4 host netmask with a link-local gateway, or an IPv6 /128 with the fixed
+     * link-local gateway. No other network type produces this combination. ConfigDrive is the
+     * only channel that carries such a NIC's network configuration (there is no DHCP and no RA),
+     * so network data must always be generated for it, whatever services the offering carries.
+     */
+    static boolean isDirectRoutedNic(NicProfile nic) {
+        return isDirectRoutedIpv4Nic(nic) || isDirectRoutedIpv6Nic(nic);
+    }
+
+    static boolean isDirectRoutedIpv4Nic(NicProfile nic) {
+        return nic != null && StringUtils.isNotBlank(nic.getIPv4Address()) && NetUtils.IPV4_HOST_NETMASK.equals(nic.getIPv4Netmask())
+                && StringUtils.isNotBlank(nic.getIPv4Gateway()) && NetUtils.isIpWithInCidrRange(nic.getIPv4Gateway(), NetUtils.getLinkLocalCIDR());
+    }
+
+    static boolean isDirectRoutedIpv6Nic(NicProfile nic) {
+        return nic != null && StringUtils.isNotBlank(nic.getIPv6Address()) && StringUtils.isNotBlank(nic.getIPv6Cidr())
+                && nic.getIPv6Cidr().endsWith("/" + NetUtils.IPV6_HOST_PREFIX_LENGTH) && NetUtils.getIpv6LinkLocalGateway().equals(nic.getIPv6Gateway());
     }
 
     /**
@@ -362,6 +391,17 @@ public class ConfigDriveBuilder {
         return links;
     }
 
+    /**
+     * Builds the "networks" entries of network_data.json for one NIC.
+     *
+     * A direct routed IPv4 network gets a network-level "gateway" key instead of a default-route
+     * entry: its gateway lies outside the /32, so the guest needs the route marked on-link, and
+     * cloud-init derives that flag only from the gateway key (which its OpenStack converter
+     * whitelists as a subnet key), never from entries of the routes list. The two forms must not
+     * be combined — together they would render two default routes, one of them still flagless.
+     * Every other network type keeps the historical routes form, as does IPv6, whose link-local
+     * next hop is on-link by definition.
+     */
     static JsonArray getNetworksJsonArrayForNic(NicProfile nic) {
         JsonArray networks = new JsonArray();
         if (StringUtils.isNotBlank(nic.getIPv4Address())) {
@@ -373,14 +413,18 @@ public class ConfigDriveBuilder {
             ipv4Network.addProperty("network_id", nic.getUuid());
             ipv4Network.addProperty("type", "ipv4");
 
-            JsonArray ipv4RouteArray = new JsonArray();
-            JsonObject ipv4Route = new JsonObject();
-            ipv4Route.addProperty("gateway", nic.getIPv4Gateway());
-            ipv4Route.addProperty("netmask", "0.0.0.0");
-            ipv4Route.addProperty("network", "0.0.0.0");
-            ipv4RouteArray.add(ipv4Route);
+            if (isDirectRoutedIpv4Nic(nic)) {
+                ipv4Network.addProperty("gateway", nic.getIPv4Gateway());
+            } else {
+                JsonArray ipv4RouteArray = new JsonArray();
+                JsonObject ipv4Route = new JsonObject();
+                ipv4Route.addProperty("gateway", nic.getIPv4Gateway());
+                ipv4Route.addProperty("netmask", "0.0.0.0");
+                ipv4Route.addProperty("network", "0.0.0.0");
+                ipv4RouteArray.add(ipv4Route);
 
-            ipv4Network.add("routes", ipv4RouteArray);
+                ipv4Network.add("routes", ipv4RouteArray);
+            }
 
             networks.add(ipv4Network);
         }

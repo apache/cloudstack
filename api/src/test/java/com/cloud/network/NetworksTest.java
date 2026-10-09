@@ -124,6 +124,21 @@ public class NetworksTest {
     }
 
     @Test
+    public void getRoutedIdAcceptsBareAndPrefixedIds() {
+        Assert.assertEquals("5828", BroadcastDomainType.getRoutedId("5828"));
+        Assert.assertEquals("5828", BroadcastDomainType.getRoutedId("routed://5828"));
+        Assert.assertEquals("9999999999", BroadcastDomainType.getRoutedId("9999999999"));
+        Assert.assertEquals("routed://5828", BroadcastDomainType.Routed.toUri(BroadcastDomainType.getRoutedId("routed://5828")).toString());
+    }
+
+    @Test
+    public void getRoutedIdRejectsMalformedIds() {
+        for (String candidate : new String[] {null, "", "0", "0534", "abc", "routed://abc", "routed://5828;x", "vlan://5828", "10000000000", "58 28"}) {
+            Assert.assertNull("expected " + candidate + " to be rejected", BroadcastDomainType.getRoutedId(candidate));
+        }
+    }
+
+    @Test
     public void invalidTypesTest() throws URISyntaxException {
         String uri1 = "https://1";
         String uri2 = "bla:0";
