@@ -197,7 +197,14 @@ fi
 tmpFile=$(mktemp)
 echo "$SuspectTime:$latestUpdateTime" > "$tmpFile"
 rados -p "$PoolName" "${RadosOpts[@]}" put "$acObject" "$tmpFile" &> /dev/null
+putResult=$?
 rm -f "$tmpFile"
+# without the new state the next check would use an old one, so it is not known whether the host is alive
+if [ $putResult -ne 0 ]
+then
+  echo "=====> Unable to write the RADOS object [$acObject] <======"
+  exit 2
+fi
 
 if [ -z "$acTime" ]; then
     if [[ $latestUpdateTime -gt $SuspectTime ]]; then
