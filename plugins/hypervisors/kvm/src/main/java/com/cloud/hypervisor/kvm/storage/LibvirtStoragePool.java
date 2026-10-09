@@ -17,10 +17,12 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
@@ -330,29 +332,94 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     public String getHearthBeatPath() {
         if (StoragePoolType.NetworkFilesystem.equals(type)) {
-            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            String scriptPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-            if (scriptPath == null) {
-                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmheartbeat.sh' in directory: " + kvmScriptsDir);
-            }
-            return scriptPath;
+            return findKvmHaScript("kvmheartbeat.sh");
         } else if (StoragePoolType.SharedMountPoint.equals(type)) {
-            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            String scriptPath = Script.findScript(kvmScriptsDir, "kvmsmpheartbeat.sh");
-            if (scriptPath == null) {
-                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmsmpheartbeat.sh' in directory: " + kvmScriptsDir);
-            }
-            return scriptPath;
+            return findKvmHaScript("kvmsmpheartbeat.sh");
+        } else if (StoragePoolType.RBD.equals(type)) {
+            return findKvmHaScript("kvmheartbeat_rbd.sh");
         }
         return null;
     }
 
+    private String findKvmHaScript(String scriptName) {
+        String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+        String scriptPath = Script.findScript(kvmScriptsDir, scriptName);
+        if (scriptPath == null) {
+            throw new CloudRuntimeException(String.format("Unable to find script '%s' in directory: %s", scriptName, kvmScriptsDir));
+        }
+        return scriptPath;
+    }
+
+    /**
+     * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool, trimmed
+     * and without empty entries. If the pool has a monitor port, it is added to each monitor which has none yet.
+     */
+    protected String getRbdMonitors() {
+        List<String> monitors = new ArrayList<>();
+        for (String monitor : sourceHost.split(",")) {
+            monitor = monitor.trim();
+            if (monitor.isEmpty()) {
+                continue;
+            }
+            monitors.add(sourcePort > 0 ? addPortToRbdMonitor(monitor) : monitor);
+        }
+        return String.join(",", monitors);
+    }
+
+    private String addPortToRbdMonitor(String monitor) {
+        if (monitor.startsWith("[")) {
+            // IPv6 address in square brackets, which has a port if followed by ":<port>"
+            return monitor.contains("]:") ? monitor : monitor + ":" + sourcePort;
+        }
+        int colons = StringUtils.countMatches(monitor, ":");
+        if (colons == 0) {
+            return monitor + ":" + sourcePort;
+        }
+        if (colons == 1) {
+            // IPv4 address or host name, with a port
+            return monitor;
+        }
+        // IPv6 address without square brackets, so without a port
+        return "[" + monitor + "]:" + sourcePort;
+    }
+
+    /**
+     * Adds the Ceph cluster connection details (monitors, pool and, if cephx is enabled, credentials)
+     * to a heartbeat/VM-activity check {@link Script} for a RBD storage pool. Mirrors the "mon_host"/"id"/"key"
+     * options that qemu itself uses to talk to RBD (see {@link KVMPhysicalDisk#RBDStringBuilder}).
+     */
+    protected void addRbdConnectionArgs(Script cmd) {
+        boolean hasUser = StringUtils.isNotBlank(authUsername);
+        boolean hasSecret = StringUtils.isNotBlank(authSecret);
+        if (hasUser != hasSecret) {
+            throw new CloudRuntimeException(String.format("The Ceph user and key must be either both set or both unset for the storage pool %s", uuid));
+        }
+        cmd.add("-s", getRbdMonitors());
+        cmd.add("-o", sourceDir);
+        if (hasUser) {
+            cmd.add("-n", authUsername);
+            cmd.add("-k");
+            cmd.addSensitive(authSecret);
+        }
+    }
+
+    /**
+     * Adds the arguments identifying the storage to a heartbeat/VM-activity check {@link Script}:
+     * the Ceph connection details for a RBD pool, or the NFS server, path and mount point otherwise.
+     */
+    private void addPoolConnectionArgs(Script cmd, HAStoragePool pool) {
+        if (StoragePoolType.RBD.equals(type)) {
+            addRbdConnectionArgs(cmd);
+        } else {
+            cmd.add("-i", pool.getPoolIp());
+            cmd.add("-p", pool.getPoolMountSourcePath());
+            cmd.add("-m", pool.getMountDestPath());
+        }
+    }
 
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
-        cmd.add("-i", primaryStoragePool.getPoolIp());
-        cmd.add("-p", primaryStoragePool.getPoolMountSourcePath());
-        cmd.add("-m", primaryStoragePool.getMountDestPath());
+        addPoolConnectionArgs(cmd, primaryStoragePool);
 
         if (hostValidation) {
             cmd.add("-h", hostPrivateIp);
@@ -377,9 +444,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         String hostIp = host.getPrivateNetwork().getIp();
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
-        cmd.add("-i", pool.getPoolIp());
-        cmd.add("-p", pool.getPoolMountSourcePath());
-        cmd.add("-m", pool.getMountDestPath());
+        addPoolConnectionArgs(cmd, pool);
         cmd.add("-h", hostIp);
         cmd.add("-r");
         cmd.add("-t", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
@@ -401,10 +466,12 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
         String hostIp = host.getPrivateNetwork().getIp();
-        Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
-        cmd.add("-i", pool.getPoolIp());
-        cmd.add("-p", pool.getPoolMountSourcePath());
-        cmd.add("-m", pool.getMountDestPath());
+        // RBD volumes have no shared mount point to stat(), so the RBD-specific script
+        // (using RBD watchers to detect activity) is used instead of the generic,
+        // NFS/SharedMountPoint-oriented script path passed in by the caller.
+        String scriptPath = StoragePoolType.RBD.equals(type) ? findKvmHaScript("kvmvmactivity_rbd.sh") : vmActivityCheckPath;
+        Script cmd = new Script(scriptPath, activityScriptTimeout.getStandardSeconds(), logger);
+        addPoolConnectionArgs(cmd, pool);
         cmd.add("-h", hostIp);
         cmd.add("-u", volumeUUIDListString);
         cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));

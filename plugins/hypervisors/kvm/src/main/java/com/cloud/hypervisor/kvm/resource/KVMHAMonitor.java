@@ -20,6 +20,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -54,7 +55,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         synchronized (haStoragePools) {
             HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
-                Script.runSimpleBashScript("umount " + pool.getMountDestPath());
+                if (StringUtils.isNotEmpty(pool.getMountDestPath())) {
+                    Script umount = new Script("umount", logger);
+                    umount.add(pool.getMountDestPath());
+                    umount.execute();
+                }
                 haStoragePools.remove(uuid);
             }
         }
@@ -130,7 +135,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 removedPools.add(uuid);
             }
 
-            logger.debug("Found NFS storage pool [{}] in libvirt, continuing.", uuid);
+            logger.debug("Found storage pool [{}] in libvirt, continuing.", uuid);
 
         } catch (LibvirtException e) {
             logger.debug("Failed to lookup libvirt storage pool [{}].", uuid, e);

@@ -23,6 +23,8 @@ import org.libvirt.StoragePool;
 import org.mockito.Mockito;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 import junit.framework.TestCase;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -97,5 +99,143 @@ public class LibvirtStoragePoolTest extends TestCase {
 
         LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage);
         assertTrue(clvmPool.isExternalSnapshot());
+    }
+
+    @Test
+    public void testIsPoolSupportHA() {
+        String uuid = "0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5";
+        String name = "myfirstpool";
+
+        StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+        StoragePool storage = Mockito.mock(StoragePool.class);
+
+        // NetworkFilesystem, SharedMountPoint and RBD all support the KVM Host-HA
+        // heartbeat/VM-activity check mechanism.
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.SharedMountPoint, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage).isPoolSupportHA());
+
+        // Other pool types have no HA support.
+        assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage).isPoolSupportHA());
+        assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.Filesystem, adapter, storage).isPoolSupportHA());
+    }
+
+    private String getRbdMonitors(String sourceHost, int sourcePort) {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setSourceHost(sourceHost);
+        pool.setSourcePort(sourcePort);
+        return pool.getRbdMonitors();
+    }
+
+    @Test
+    public void testRbdMonitorsWithoutPort() {
+        assertEquals("10.0.0.1", getRbdMonitors("10.0.0.1", 0));
+        assertEquals("10.0.0.1,10.0.0.2,10.0.0.3", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 0));
+        assertEquals("fd00::1,fd00::2", getRbdMonitors("fd00::1,fd00::2", 0));
+    }
+
+    @Test
+    public void testRbdMonitorsIpv4WithPort() {
+        assertEquals("10.0.0.1:6789", getRbdMonitors("10.0.0.1", 6789));
+        assertEquals("10.0.0.1:3300,10.0.0.2:3300,10.0.0.3:3300", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsIpv6WithPort() {
+        assertEquals("[fd00::1]:3300", getRbdMonitors("fd00::1", 3300));
+        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("fd00::1,fd00::2", 3300));
+        // already enclosed in square brackets
+        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("[fd00::1],[fd00::2]", 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsMixedIpv4AndIpv6WithPort() {
+        assertEquals("10.0.0.1:3300,[fd00::1]:3300,[fd00::2]:3300,mon4.example.com:3300",
+                getRbdMonitors("10.0.0.1, fd00::1,[fd00::2] ,mon4.example.com", 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsMultipleIpv4AndIpv6WithoutPort() {
+        // no port: the default Ceph port is used, so the monitors are passed as they are
+        assertEquals("[fd00::1],[fd00::2],[fd00::3]", getRbdMonitors("[fd00::1],[fd00::2],[fd00::3]", 0));
+        assertEquals("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", getRbdMonitors("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", 0));
+        assertEquals("10.0.0.1,fd00::1", getRbdMonitors("10.0.0.1,fd00::1", -1));
+    }
+
+    @Test
+    public void testRbdMonitorsMultipleIpv4AndIpv6WithPort() {
+        assertEquals("10.0.0.1:6789,10.0.0.2:6789,[fd00::1]:6789,[fd00::2]:6789",
+                getRbdMonitors("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", 6789));
+        assertEquals("[fd00::1]:6789,10.0.0.1:6789,[fd00::2]:6789,10.0.0.2:6789",
+                getRbdMonitors("fd00::1,10.0.0.1,[fd00::2],10.0.0.2", 6789));
+    }
+
+    @Test
+    public void testRbdMonitorsAreTrimmedAndEmptyEntriesSkipped() {
+        assertEquals("10.0.0.1,10.0.0.2,fd00::1", getRbdMonitors(" 10.0.0.1, 10.0.0.2,,fd00::1 ,", 0));
+        assertEquals("10.0.0.1:6789,10.0.0.2:6789,[fd00::1]:6789", getRbdMonitors(" 10.0.0.1, 10.0.0.2,,fd00::1 ,", 6789));
+    }
+
+    private LibvirtStoragePool getRbdPool(String authUsername, String authSecret) {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setSourceHost("10.0.0.1,fd00::1");
+        pool.setSourcePort(6789);
+        pool.setSourceDir("rbdpool");
+        pool.setAuthUsername(authUsername);
+        pool.setAuthSecret(authSecret);
+        return pool;
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithCephx() {
+        Script cmd = Mockito.mock(Script.class);
+        getRbdPool("cephuser", "cephkey").addRbdConnectionArgs(cmd);
+        Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
+        Mockito.verify(cmd).add("-o", "rbdpool");
+        Mockito.verify(cmd).add("-n", "cephuser");
+        Mockito.verify(cmd).add("-k");
+        Mockito.verify(cmd).addSensitive("cephkey");
+        Mockito.verifyNoMoreInteractions(cmd);
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithoutCephx() {
+        for (String[] noAuth : new String[][] {{null, null}, {"", ""}, {" ", null}}) {
+            Script cmd = Mockito.mock(Script.class);
+            getRbdPool(noAuth[0], noAuth[1]).addRbdConnectionArgs(cmd);
+            Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
+            Mockito.verify(cmd).add("-o", "rbdpool");
+            Mockito.verifyNoMoreInteractions(cmd);
+        }
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithCephUserOnlyOrKeyOnly() {
+        for (String[] partial : new String[][] {{"cephuser", null}, {"cephuser", " "}, {null, "cephkey"}, {"", "cephkey"}}) {
+            Script cmd = Mockito.mock(Script.class);
+            try {
+                getRbdPool(partial[0], partial[1]).addRbdConnectionArgs(cmd);
+                fail("Expected a CloudRuntimeException for user [" + partial[0] + "] and key [" + partial[1] + "]");
+            } catch (CloudRuntimeException expected) {
+                Mockito.verifyNoInteractions(cmd);
+            }
+        }
+    }
+
+    @Test
+    public void testRbdMonitorsWhichHaveAPortAlready() {
+        // the monitors keep their port, with or without a port of the pool
+        String withPorts = "10.0.0.1:6789,mon.example.com:3300,[fd00::1]:6789";
+        assertEquals(withPorts, getRbdMonitors(withPorts, 0));
+        assertEquals(withPorts, getRbdMonitors(withPorts, 6789));
+        assertEquals(withPorts, getRbdMonitors(withPorts, 3300));
+    }
+
+    @Test
+    public void testRbdMonitorsWithAndWithoutAPortAreMixed() {
+        assertEquals("10.0.0.1:6789,10.0.0.2:3300,mon.example.com:3300,[fd00::1]:3300,[fd00::2]:6789,[fd00::3]:3300",
+                getRbdMonitors("10.0.0.1:6789,10.0.0.2,mon.example.com,fd00::1,[fd00::2]:6789,[fd00::3]", 3300));
     }
 }
