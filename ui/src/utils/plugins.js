@@ -138,7 +138,7 @@ export const pollJobPlugin = {
           if (action && action.label) {
             errMessage = i18n.global.t(action.label)
           }
-          var desc = result.jobresult.errortext
+          var desc = this.$toLocaleError(result.jobresult.errortext, result.jobresult.errortextkey, result.jobresult.errormetadata)
           if (name) {
             desc = `(${name}) ${desc}`
           }
@@ -224,15 +224,17 @@ export const notifierPlugin = {
         if (error.response.status) {
           msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
-        if (error.response.headers?.['x-description']) {
-          desc = error.response.headers['x-description']
-        } else if (error.response.data) {
+        if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
           if (responseKey) {
-            desc = error.response.data[responseKey].errortext
+            const errObj = error.response.data[responseKey]
+            desc = this.$toLocaleError(errObj.errortext, errObj.errortextkey, errObj.errormetadata)
           } else if (typeof error.response.data === 'string') {
             desc = error.response.data
           }
+        }
+        if (!desc && error.response.headers?.['x-description']) {
+          desc = error.response.headers['x-description']
         }
         if (!desc && error.message) {
           desc = error.message
@@ -617,6 +619,47 @@ export const backupUtilPlugin = {
         return false
       }
       return ['nas'].includes(provider.toLowerCase())
+    }
+  }
+}
+
+export const localeErrorUtilPlugin = {
+  install (app) {
+    const getRawLocaleMessage = function (key) {
+      const locale = i18n.global.locale
+      const localeMessages = i18n.global.getLocaleMessage(locale) || {}
+      if (Object.prototype.hasOwnProperty.call(localeMessages, key)) {
+        return localeMessages[key]
+      }
+      if (locale !== 'en') {
+        const fallbackMessages = i18n.global.getLocaleMessage('en') || {}
+        if (Object.prototype.hasOwnProperty.call(fallbackMessages, key)) {
+          return fallbackMessages[key]
+        }
+      }
+      return null
+    }
+
+    app.config.globalProperties.$toLocaleError = function (msg, key, params) {
+      if (!key) {
+        return msg
+      }
+      let localeMsg
+      if (!key.endsWith('.admin') && store.getters.userInfo?.roletype === 'Admin') {
+        localeMsg = getRawLocaleMessage(key + '.admin')
+      }
+      if (!localeMsg) {
+        localeMsg = getRawLocaleMessage(key)
+      }
+      if (!localeMsg) {
+        return msg
+      }
+      if (params && params.constructor === Object) {
+        for (const paramKey in params) {
+          localeMsg = localeMsg.replaceAll(`{{${paramKey}}}`, params[paramKey])
+        }
+      }
+      return localeMsg
     }
   }
 }

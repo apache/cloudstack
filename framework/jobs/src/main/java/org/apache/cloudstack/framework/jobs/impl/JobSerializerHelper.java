@@ -26,9 +26,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
+import org.apache.cloudstack.error.Exceptions;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
@@ -105,6 +106,10 @@ public class JobSerializerHelper {
 
     public static String toObjectSerializedString(Serializable object) {
         assert (object != null);
+
+        if (object instanceof CloudRuntimeException) {
+            Exceptions.normalizeMetadata((CloudRuntimeException)object);
+        }
 
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         try {

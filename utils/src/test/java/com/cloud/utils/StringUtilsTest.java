@@ -277,4 +277,11 @@ public class StringUtilsTest {
         assertEquals(key, output.first());
         assertEquals(value, output.second());
     }
+
+    @Test
+    public void testToNullSafeString() {
+        assertEquals("null", StringUtils.toNullSafeString(null));
+        assertEquals("value", StringUtils.toNullSafeString("value"));
+        assertEquals("", StringUtils.toNullSafeString(""));
+    }
 }

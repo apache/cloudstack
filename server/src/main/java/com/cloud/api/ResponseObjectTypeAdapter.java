@@ -43,15 +43,13 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
             if (!StringUtils.isEmpty(((SuccessResponse) responseObj).getDisplayText())) {
                 obj.addProperty("details", ((SuccessResponse)responseObj).getDisplayText());
             }
-            return obj;
         } else if (responseObj instanceof ExceptionResponse) {
-            obj.addProperty("errorcode", ((ExceptionResponse)responseObj).getErrorCode());
-            obj.addProperty("errortext", ((ExceptionResponse)responseObj).getErrorText());
-            return obj;
+            obj = ApiResponseGsonHelper.getBuilder().create().toJsonTree(responseObj).getAsJsonObject();
+            obj.remove("uuidList");
         } else {
             obj.add(responseObj.getObjectName(), ApiResponseGsonHelper.getBuilder().create().toJsonTree(responseObj));
-            return obj;
         }
+        return obj;
     }
 
     private Method getGetMethod(Object o, String propName) {
