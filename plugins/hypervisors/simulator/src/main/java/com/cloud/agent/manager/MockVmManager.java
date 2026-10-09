@@ -48,8 +48,6 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
-import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.simulator.MockVMVO;
@@ -80,10 +78,6 @@ public interface MockVmManager extends Manager {
     CheckSshAnswer checkSshCommand(CheckSshCommand cmd);
 
     Answer setVmData(VmDataCommand cmd);
-
-    Answer checkConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd);
-
-    Answer watchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd);
 
     Answer savePassword(SavePasswordCommand cmd);
 
