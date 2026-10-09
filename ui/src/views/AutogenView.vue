@@ -339,9 +339,9 @@
                   <a-select-option
                     v-for="(opt, optIndex) in currentAction.mapping[field.name].options"
                     :key="optIndex"
-                    :label="opt"
+                    :label="opt.description ? $t(opt.description) : opt"
                   >
-                    {{ opt }}
+                    {{ opt.description ? $t(opt.description) : opt }}
                   </a-select-option>
                 </a-select>
                 <a-select
@@ -1886,7 +1886,8 @@ export default {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
-              params[key] = action.mapping[key].options[input]
+              const mappedOption = action.mapping[key].options[input]
+              params[key] = (mappedOption && typeof mappedOption === 'object') ? mappedOption.id : mappedOption
               if (['createAffinityGroup'].includes(action.api) && key === 'type') {
                 if (params[key] === 'host anti-affinity (Strict)') {
                   params[key] = 'host anti-affinity'
