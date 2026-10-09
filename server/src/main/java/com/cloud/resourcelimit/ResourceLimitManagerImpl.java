@@ -2236,7 +2236,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public String getConfigComponentName() {
-        return ResourceLimitManagerImpl.class.getName();
+        return ResourceLimitManagerImpl.class.getSimpleName();
     }
 
     @Override

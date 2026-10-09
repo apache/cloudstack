@@ -162,7 +162,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
 
     @Override
     public String getConfigComponentName() {
-        return ReconcileCommandService.class.getName();
+        return ReconcileCommandService.class.getSimpleName();
     }
 
     @Override
