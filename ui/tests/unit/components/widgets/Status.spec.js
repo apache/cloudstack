@@ -212,8 +212,9 @@ describe('Components > Widgets > Status.vue', () => {
             displayText: true
           }
         })
-        router.push({ name: 'testRouter1' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter1' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Allocated</span></span>'
@@ -228,8 +229,9 @@ describe('Components > Widgets > Status.vue', () => {
             displayText: true
           }
         })
-        router.push('/')
-        await router.isReady()
+        await wrapper.vm.$router.push('/')
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Allocated</span></span>'
@@ -241,8 +243,9 @@ describe('Components > Widgets > Status.vue', () => {
     describe('getTooltip()', () => {
       it('getTooltip() is called with `$route.path` equal `/vmsnapshot`', async () => {
         const wrapper = factory({ props: { text: 'Active', displayText: true } })
-        router.push({ name: 'testRouter2' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter2' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
@@ -252,8 +255,9 @@ describe('Components > Widgets > Status.vue', () => {
 
       it('getTooltip() is called with `$route.path` equal `/vm`', async () => {
         const wrapper = factory({ props: { text: 'Active', displayText: true } })
-        router.push({ name: 'testRouter3' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter3' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
@@ -263,8 +267,9 @@ describe('Components > Widgets > Status.vue', () => {
 
       it('getTooltip() is called with `$route.path` equal `/volume`', async () => {
         const wrapper = factory({ props: { text: 'Active', displayText: true } })
-        router.push({ name: 'testRouter4' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter4' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
@@ -274,8 +279,9 @@ describe('Components > Widgets > Status.vue', () => {
 
       it('getTooltip() is called with `$route.path` equal `/guestnetwork`', async () => {
         const wrapper = factory({ props: { text: 'Active', displayText: true } })
-        router.push({ name: 'testRouter5' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter5' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
@@ -285,8 +291,9 @@ describe('Components > Widgets > Status.vue', () => {
 
       it('getTooltip() is called with `$route.path` equal `/publicip`', async () => {
         const wrapper = factory({ props: { text: 'Active', displayText: true } })
-        router.push({ name: 'testRouter1' })
-        await router.isReady()
+        await wrapper.vm.$router.push({ name: 'testRouter1' })
+        await wrapper.vm.$router.isReady()
+        await wrapper.vm.$nextTick()
         await flushPromises()
         const received = wrapper.html()
         const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
