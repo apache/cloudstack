@@ -442,6 +442,7 @@
 "label.backingup": "Salvando",
 "label.backup.attach.restore": "Restaurar e anexar volume de backup",
 "label.backuplimit": "Limite de backups",
+"label.backuppaths": "Caminho dos backups no armazenamento secund\u00e1rio",
 "label.backup.storage": "Armazenamento de backup",
 "label.backupstoragelimit": "Limite de armazenamento de backup (GiB)",
 "label.backup.configure.schedule": "Configurar Agendamento de Backup",

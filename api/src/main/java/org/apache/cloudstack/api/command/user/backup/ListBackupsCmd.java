@@ -148,12 +148,13 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
 
     protected void setupResponseBackupList(final List<Backup> backups, final Integer count) {
+        boolean isCallerRootAdmin = _accountService.isRootAdmin(CallContext.current().getCallingAccountId());
         final List<BackupResponse> responses = new ArrayList<>();
         for (Backup backup : backups) {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = backupManager.createBackupResponse(backup, this.getListVmDetails());
+            BackupResponse backupResponse = backupManager.createBackupResponse(backup, this.getListVmDetails(), isCallerRootAdmin);
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();
