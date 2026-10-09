@@ -147,6 +147,7 @@ class TestEventsResource(cloudstackTestCase):
             diskofferingid=self.disk_offering.id
         )
         self.cleanup.append(volume)
+        time.sleep(10)
         virtual_machine.attach_volume(
             self.apiclient,
             volume

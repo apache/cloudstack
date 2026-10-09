@@ -43,6 +43,7 @@ from marvin.lib.common import (get_zone,
                                list_storage_pools,
                                find_storage_pool_type)
 
+import time
 
 
 class Services:
@@ -782,6 +783,7 @@ class TestVolumeUsage(cloudstackTestCase):
         )
         rool_volume_pool = rool_volume_pool_response[0]
         try:
+            time.sleep(10)
             self.virtual_machine.attach_volume(self.apiclient,volume_uploaded)
         except Exception as e:
             self.debug("Exception %s: " % e)
@@ -1744,16 +1746,9 @@ class TestVpnUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls.public_ip = PublicIPAddress.create(
-            cls.api_client,
-            accountid=cls.virtual_machine.account,
-            zoneid=cls.virtual_machine.zoneid,
-            domainid=cls.virtual_machine.domainid,
-            services=cls.services["server"]
-        )
         src_nat_list = PublicIPAddress.list(
             cls.api_client,
-            accountid=cls.virtual_machine.account,
+            account=cls.virtual_machine.account,
             zoneid=cls.virtual_machine.zoneid,
             domainid=cls.virtual_machine.domainid,
             issourcenat=True

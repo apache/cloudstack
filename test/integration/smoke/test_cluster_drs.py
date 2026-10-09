@@ -128,13 +128,13 @@ class TestClusterDRS(cloudstackTestCase):
         responseS = cls.apiclient.listSystemVms(cmds)
         if isinstance(responseS, Iterable):
             for svm in responseS:
-                if svm.hostid != cls.hosts[0].id:
+                if svm.hostid != cls.hosts[0].id and svm.state == 'Running':
                     systemVmIds.append(svm.id)
         cmdv = listRouters.listRoutersCmd()
         responseR = cls.apiclient.listRouters(cmdv)
         if isinstance(responseR, Iterable):
             for svm in responseR:
-                if svm.hostid != cls.hosts[0].id:
+                if svm.hostid != cls.hosts[0].id and svm.state == 'Running':
                     systemVmIds.append(svm.id)
         numToMigrate = len(systemVmIds)
         cls.logger.debug(f'system vms and routers to migrate -- {numToMigrate}')
@@ -142,8 +142,15 @@ class TestClusterDRS(cloudstackTestCase):
         cmdM.hostId=cls.hosts[0].id
         for id in systemVmIds:
             cmdM.virtualmachineid=id
-            responseM = cls.apiclient.migrateSystemVm(cmdM)
-            cls.logger.debug(f'migrated {responseM}')
+            try:
+                responseM = cls.apiclient.migrateSystemVm(cmdM)
+                cls.logger.debug(f'migrated {responseM}')
+            except Exception as e:
+                # A system vm/router may have moved out of Running state (e.g. redundant
+                # router failover, or an in-progress restart from a previous test's cleanup)
+                # between the listSystemVms/listRouters call above and this migration attempt.
+                # Don't fail the whole test class setup for one such VM.
+                cls.logger.debug(f'Skipping migration of {id}, it may no longer be in Running state: {e}')
 
 
     @classmethod
