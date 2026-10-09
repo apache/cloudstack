@@ -129,6 +129,10 @@ Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
 Requires: python3-libnbd
 Requires: socat
+Requires: openssl
+Requires: bzip2
+Requires: gzip
+Requires: unzip
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
