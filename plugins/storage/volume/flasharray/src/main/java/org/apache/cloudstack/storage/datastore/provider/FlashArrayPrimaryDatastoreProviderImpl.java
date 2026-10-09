@@ -26,7 +26,7 @@ public class FlashArrayPrimaryDatastoreProviderImpl extends AdaptivePrimaryDatas
 
     @Override
     public String getName() {
-        return "Flash Array";
+        return "FlashArray";
     }
 
 }
