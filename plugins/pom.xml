@@ -77,6 +77,7 @@
 
         <module>drs/cluster/balanced</module>
         <module>drs/cluster/condensed</module>
+        <module>drs/cluster/weighted</module>
 
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>

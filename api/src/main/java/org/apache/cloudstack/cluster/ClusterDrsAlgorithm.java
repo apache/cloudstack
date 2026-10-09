@@ -20,6 +20,7 @@
 package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
+import com.cloud.host.HostLoad;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Ternary;
@@ -61,6 +62,35 @@ public interface ClusterDrsAlgorithm extends Adapter {
      */
     boolean needsDrs(Cluster cluster, List<Ternary<Long, Long, Long>> cpuList,
                      List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
+
+    /**
+     * As above, but keeping host identity.
+     *
+     * An algorithm that considers anything beyond the figures in the two maps - measured load, for
+     * instance - cannot attribute it without knowing which host each entry belongs to. Algorithms
+     * that only need the values keep the default.
+     *
+     * @param hostCpuMap
+     *         host id to a Ternary of used, reserved and total CPU
+     * @param hostMemoryMap
+     *         host id to a Ternary of used, reserved and total memory
+     */
+    default boolean needsDrs(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Map<Long, HostLoad> hostLoadMap)
+            throws ConfigurationException {
+        return needsDrs(cluster, new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()));
+    }
+
+    /**
+     * Called once per plan, before any migration is considered, so that an algorithm can do work
+     * that would otherwise be repeated for every candidate VM and host.
+     *
+     * @param hostLoadMap
+     *         measured load per host, empty when nothing has been sampled
+     */
+    default void prepare(Cluster cluster, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Map<Long, HostLoad> hostLoadMap) {
+    }
 
     /**
      * Calculates the metrics (improvement, cost, benefit) for migrating a VM to a destination host. Improvement is
