@@ -1425,4 +1425,15 @@ public class NetworkServiceImplTest {
         isolatedNetworkForDhcpRange();
         service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.1", "10.1.1.20");
     }
+
+    @Test
+    public void validateIsolatedNetworkDhcpRangeAcceptsRangeWithinCidr() {
+        // validated up front (before the network is persisted) so a bad range never leaves an orphaned network
+        service.validateIsolatedNetworkDhcpRange("10.1.1.10", "10.1.1.20", "10.1.1.0/24", "10.1.1.1");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateIsolatedNetworkDhcpRangeRejectsRangeOutsideCidr() {
+        service.validateIsolatedNetworkDhcpRange("10.9.9.10", "10.9.9.20", "10.1.1.0/24", "10.1.1.1");
+    }
 }
