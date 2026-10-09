@@ -34,6 +34,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -92,17 +94,22 @@ import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -203,6 +210,15 @@ public class NetworkServiceImplTest {
     private AccountVO accountVOMock;
     @Mock
     private DomainVO domainVOMock;
+    @Mock
+    ResourceTagDao resourceTagDao;
+
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
+
+    @Mock
+    NetworkMigrationManager networkMigrationManager;
+
     @InjectMocks
     NetworkServiceImpl service;
 
@@ -1377,5 +1393,34 @@ public class NetworkServiceImplTest {
         Mockito.when(networkOfferingVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
 
         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+    }
+
+    @Test
+    public void testMigrateVpcCopiesVpcDetailsFromOriginalToCopyBeforeDeletingTheOriginal() {
+        final long originalVpcId = 10L;
+        final long copyVpcId = 20L;
+        final long newVpcOfferingId = 7L;
+
+        // resume of a previous run: the id received is the one of the copy, the migration tag holds the id of the original
+        ResourceTag migrationTag = Mockito.mock(ResourceTag.class);
+        Mockito.when(migrationTag.getValue()).thenReturn(String.valueOf(originalVpcId));
+        Mockito.when(resourceTagDao.findByKey(copyVpcId, ResourceObjectType.Vpc, NetworkMigrationManager.MIGRATION)).thenReturn(migrationTag);
+
+        VpcVO originalVpc = Mockito.mock(VpcVO.class);
+        Mockito.when(originalVpc.getVpcOfferingId()).thenReturn(5L);
+        Mockito.when(originalVpc.getZoneId()).thenReturn(1L);
+        VpcVO copyVpc = Mockito.mock(VpcVO.class);
+        Mockito.when(copyVpc.getVpcOfferingId()).thenReturn(newVpcOfferingId);
+        Mockito.when(vpcDao.findById(originalVpcId)).thenReturn(originalVpc);
+        Mockito.when(vpcDao.findById(copyVpcId)).thenReturn(copyVpc);
+        Mockito.when(networkDao.listByVpc(Mockito.anyLong())).thenReturn(Collections.emptyList());
+
+        Vpc result = service.migrateVpcNetwork(copyVpcId, newVpcOfferingId, new HashMap<>(), Mockito.mock(Account.class), Mockito.mock(User.class), true);
+
+        Mockito.verify(networkMigrationManager, Mockito.never()).makeCopyOfVpc(Mockito.anyLong(), Mockito.anyLong());
+        InOrder inOrder = Mockito.inOrder(networkMigrationManager);
+        inOrder.verify(networkMigrationManager).copyVpcDetails(originalVpcId, copyVpcId);
+        inOrder.verify(networkMigrationManager).deleteCopyOfVpc(originalVpcId, copyVpcId);
+        Assert.assertSame(copyVpc, result);
     }
 }

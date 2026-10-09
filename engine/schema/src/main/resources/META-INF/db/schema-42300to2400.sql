@@ -19,6 +19,10 @@
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
+ALTER TABLE `cloud`.`nics` ADD COLUMN `network_rate` int DEFAULT NULL COMMENT 'effective network rate in Mb/s for this NIC, -1 means unlimited';
+
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` int DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';
+
 -- InstanceBootGroup: ordered boot sequencing for VMs and InstanceGroups
 CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group` (
     `id`          bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,

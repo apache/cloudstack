@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -246,10 +247,14 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     }
 
     @DB
-    private void copyNetworkDetails(long srcNetworkId, long dstNetworkId) {
+    protected void copyNetworkDetails(long srcNetworkId, long dstNetworkId) {
         List<NetworkDetailVO> networkDetails = _networkDetailsDao.listDetails(srcNetworkId);
 
         for (NetworkDetailVO networkDetail : networkDetails) {
+            // the network rate of the copy is already set from its offering, and it is updated when the migrated network moves to the new offering
+            if (ApiConstants.NETWORKRATE.equals(networkDetail.getName())) {
+                continue;
+            }
             _networkDetailsDao.persist(new NetworkDetailVO(dstNetworkId, networkDetail.getName(), networkDetail.getValue(), networkDetail.isDisplay()));
         }
     }
@@ -311,7 +316,6 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             swapUuids(vpc, copyVpcVO);
             reassignACLRulesToNewVpc(vpcId, copyOfVpcId);
             reassignPublicIpsToNewVpc(vpcId, copyOfVpc);
-            copyVpcDetails(vpcId, copyOfVpcId);
             reassignGatewayToNewVpc(vpcId, copyOfVpcId);
             copyVpcResourceTagsToNewVpc(vpcId, copyOfVpcId);
             if (logger.isDebugEnabled()) {
@@ -337,11 +341,16 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     }
 
 
-    private void copyVpcDetails(long srcVpcId, long dstVpcId) {
+    @Override
+    public void copyVpcDetails(long srcVpcId, long dstVpcId) {
         List<VpcDetailVO> vpcDetails = _vpcDetailsDao.listDetails(srcVpcId);
 
         for (VpcDetailVO vpcDetail : vpcDetails) {
-            _vpcDetailsDao.persist(new VpcDetailVO(dstVpcId, vpcDetail.getName(), vpcDetail.getValue(), vpcDetail.isDisplay()));
+            // The public network rate is derived from the vpc offering, and was already set on the destination vpc from its (new) offering
+            if (ApiConstants.PUBLIC_NETWORK_RATE.equals(vpcDetail.getName())) {
+                continue;
+            }
+            _vpcDetailsDao.addDetail(dstVpcId, vpcDetail.getName(), vpcDetail.getValue(), vpcDetail.isDisplay());
         }
     }
 
@@ -484,6 +493,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             network.setVpcId(vpcId);
         }
         _networksDao.update(network.getId(), network, _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), newPhysicalNetworkId));
+        Integer networkRate = _networkModel.getNetworkRate(network.getId(), null);
+        _networkDetailsDao.addDetail(network.getId(), ApiConstants.NETWORKRATE, String.valueOf(networkRate), true);
         return network;
     }
 

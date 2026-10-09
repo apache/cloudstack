@@ -225,6 +225,8 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
@@ -243,6 +245,7 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -499,6 +502,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     private IPAddressDao userIpAddressDao;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    VpcDetailsDao vpcDetailsDao;
     @Inject
     private VMSnapshotDao vmSnapshotDao;
     @Inject
@@ -2663,14 +2668,20 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVlan(vlan);
         }
 
-        // return network details only to Root admin
+        int networkRate;
+        // return network details only to Root admin, and take the network rate from them to save a lookup
         if (view == ResponseView.Full) {
             Map<String, String> details = new HashMap<>();
             for (NetworkDetailVO detail: networkDetailsDao.listDetails(network.getId())) {
                 details.put(detail.getName(),detail.getValue());
             }
             response.setDetails(details);
+            networkRate = NumberUtils.toInt(details.get(ApiConstants.NETWORKRATE), -1);
+        } else {
+            NetworkDetailVO networkRateDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.NETWORKRATE);
+            networkRate = networkRateDetail != null ? NumberUtils.toInt(networkRateDetail.getValue(), -1) : -1;
         }
+        response.setNetworkRate(networkRate > 0 ? networkRate : -1);
 
         Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
         if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
@@ -3602,6 +3613,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
             response.setVpcOfferingName(voff.getName());
             response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
+        VpcDetailVO publicNetworkRateDetail = vpcDetailsDao.findDetail(vpc.getId(), ApiConstants.PUBLIC_NETWORK_RATE);
+        Integer publicNetworkRate = publicNetworkRateDetail != null ? NumberUtils.toInt(publicNetworkRateDetail.getValue(), -1) : null;
+        response.setPublicNetworkRate((publicNetworkRate == null || publicNetworkRate <= 0) ? -1 : publicNetworkRate);
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
@@ -4916,6 +4930,10 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
 
         response.setEnabled(result.isEnabled());
+
+        Integer nicNetworkRate = result.getNetworkRate();
+        response.setNetworkRate(nicNetworkRate != null && nicNetworkRate > 0 ? nicNetworkRate : -1);
+
         return response;
     }
 
