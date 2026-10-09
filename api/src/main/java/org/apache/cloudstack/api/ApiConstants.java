@@ -1509,6 +1509,10 @@ public class ApiConstants {
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
 
+    public static final String PRIVATE_MULTIQUEUE_NUMBER = "privatemultiqueuenumber";
+    public static final String PUBLIC_MULTIQUEUE_NUMBER = "publicmultiqueuenumber";
+    public static final String PRIVATE_GATEWAY_MULTIQUEUE_NUMBER = "privategatewaymultiqueuenumber";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).

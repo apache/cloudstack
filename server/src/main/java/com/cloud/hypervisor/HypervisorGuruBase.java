@@ -207,6 +207,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIp6Dns2(profile.getIPv6Dns2());
         to.setNetworkId(profile.getNetworkId());
         to.setEnabled(profile.isEnabled());
+        to.setMultiqueueNumber(profile.getMultiqueueNumber());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());

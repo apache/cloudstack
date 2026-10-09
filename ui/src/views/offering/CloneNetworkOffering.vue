@@ -356,6 +356,32 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-row :guttter="12" v-if="guestType !== 'l2'">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="privatemultiqueuenumber" ref="privatemultiqueuenumber">
+              <template #label>
+                <tooltip-label :title="$t('label.private.multiqueue.number')" :tooltip="apiParams.privatemultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.privatemultiqueuenumber"
+                :placeholder="apiParams.privatemultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="publicmultiqueuenumber" ref="publicmultiqueuenumber" v-if="!forVpc">
+              <template #label>
+                <tooltip-label :title="$t('label.public.multiqueue.number')" :tooltip="apiParams.publicmultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.publicmultiqueuenumber"
+                :placeholder="apiParams.publicmultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item
           name="redundantroutercapability"
           ref="redundantroutercapability"
@@ -753,7 +779,9 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        privatemultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }],
+        publicmultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }]
       })
     },
     fetchServiceOfferingData () {
@@ -1005,6 +1033,13 @@ export default {
         this.form.nsxsupportlb = Boolean(this.serviceProviderMap.Lb)
         this.form.nsxsupportsinternallb = Boolean(r.nsxsupportsinternallb)
         this.handleNsxLbService(this.form.nsxsupportlb)
+      }
+      if (r.privatemultiqueuenumber) {
+        this.form.privatemultiqueuenumber = r.privatemultiqueuenumber
+      }
+
+      if (r.publicmultiqueuenumber) {
+        this.form.publicmultiqueuenumber = r.publicmultiqueuenumber
       }
     },
     updateSupportedServices () {
@@ -1392,6 +1427,8 @@ export default {
           params['details[' + detailsIndex + '].value'] = values.maclearning
           detailsIndex++
         }
+        params.privatemultiqueuenumber = values.privatemultiqueuenumber
+        params.publicmultiqueuenumber = values.publicmultiqueuenumber
 
         this.loading = true
         postAPI('cloneNetworkOffering', params).then(json => {
@@ -1409,6 +1446,16 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    validateMultiqueueValue (rule, value) {
+      if (!value) {
+        return Promise.resolve()
+      }
+      const multiqueue = Number(value)
+      if (Number.isNaN(multiqueue) || (multiqueue <= 0 && multiqueue !== -1) || multiqueue > 256) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

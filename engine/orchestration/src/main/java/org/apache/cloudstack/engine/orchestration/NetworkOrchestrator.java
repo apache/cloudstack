@@ -41,6 +41,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.guru.DirectNetworkGuru;
+import com.cloud.network.guru.ExternalGuestNetworkGuru;
+import com.cloud.network.vpc.VpcOfferingVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -603,27 +606,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.QuickCloudNoServices) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.QuickCloudNoServices, "Offering for QuickCloud with no services", TrafficType.Guest, null, true,
                             Availability.Optional, null, new HashMap<>(), true, Network.GuestType.Shared, false, null, true, null, true,
-                            false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
+                            false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#2 - SG enabled network offering
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true,
-                            null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
+                            null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#3 - shared network offering with no SG service
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false,
-                            null, true, false, false, false, false, null, null, null, true, null, null, false);
+                            null, true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultTungstenSharedSGEnabledNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true,
-                            null, true, false, null, false, null, true, false, true, false, false, null, null, null, true, null, null, false);
+                            null, true, false, null, false, null, true, false, true, false, false, null, null, null, true, null, null, false, null, null);
                     offering.setState(NetworkOffering.State.Enabled);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
@@ -633,14 +636,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                             "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null,
-                            true, false, false, false, false, null, null, null, true, null, null, false);
+                            true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#5 - default vpc offering with LB service
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
-                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false);
+                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -649,14 +652,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     defaultVPCOffProviders.remove(Service.Lb);
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
                             "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest, null, false, Availability.Optional,
-                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false);
+                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#7 - isolated offering with source nat disabled
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null,
-                            true, null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
+                            true, null, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                 }
 
                 //#8 - network offering with internal lb service
@@ -678,7 +681,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
                             "Offering for Isolated VPC networks with Internal Lb support", TrafficType.Guest, null, false, Availability.Optional, null, internalLbOffProviders,
-                            true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false);
+                            true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false, null, null);
                     offering.setInternalLb(true);
                     offering.setPublicLb(false);
                     _networkOfferingDao.update(offering.getId(), offering);
@@ -709,7 +712,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
                             "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null, true, Availability.Optional, null,
-                            netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false);
+                            netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null, false, null, true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                     offering.setDedicatedLB(false);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
@@ -2216,6 +2219,56 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         });
     }
 
+    private void setGuestNetworkVrNicMultiqueueNumber(Pair<NetworkVO, VpcVO> networks, NetworkVO implementedNetwork, NicProfile nicProfile, List<NicVO> nics) {
+        if (networks == null) {
+            logger.debug("Skipping the assignment of multiqueue for VR because it is not related with any network.");
+            return;
+        }
+
+        VpcVO vpcVO = networks.second();
+        boolean isVpcVr = vpcVO != null;
+        if (isVpcVr) {
+            logger.trace("The multiqueue number for NICs of VPCs VRs is not defined at this step, skipping it.");
+            return;
+        }
+
+        if (implementedNetwork.getTrafficType() == TrafficType.Control) {
+            logger.trace("The multiqueue number is not applied for NICs of control networks, skipping it.");
+            return;
+        }
+
+        Integer multiqueueNumber = getGuestNetworkVrNicMultiqueueNumber(implementedNetwork.getTrafficType(), nics, nicProfile);
+        if (multiqueueNumber == null) {
+            logger.info("Multiqueue for NIC [{}] will not be defined because it was not possible to identify its corresponding network " +
+                    "offering or the corresponding multiqueue attribute has not been defined in the offering.");
+        } else {
+            logger.info("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
+            nicProfile.setMultiqueueNumber(multiqueueNumber);
+        }
+    }
+
+
+    private Integer getGuestNetworkVrNicMultiqueueNumber(TrafficType trafficType, List<NicVO> nics, NicProfile nicProfile) {
+        logger.debug("Fetching the network offering of the guest network associated with the VR with ID [{}].", nicProfile.getVirtualMachineId());
+        NetworkOffering networkOfferingOfVrIsolatedNetwork = nics.stream()
+                .filter(nic -> ExternalGuestNetworkGuru.NETWORK_GURU_NAME.equals(nic.getReserver()) || DirectNetworkGuru.NETWORK_GURU_NAME.equals(nic.getReserver()))
+                .map(nic -> {
+                    NetworkVO network = _entityMgr.findById(NetworkVO.class, nic.getNetworkId());
+                    return network == null ? null : _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, network.getNetworkOfferingId());
+                }).filter(Objects::nonNull).findFirst().orElse(null);
+
+        if (networkOfferingOfVrIsolatedNetwork == null) {
+            logger.info("Unable to identify the multiqueue value for NIC [{}], as it was not possible to find its corresponding network offering.", nicProfile.getUuid());
+            return null;
+        }
+
+        if (trafficType == TrafficType.Public) {
+            return networkOfferingOfVrIsolatedNetwork.getPublicMultiqueueNumber();
+        }
+
+        return networkOfferingOfVrIsolatedNetwork.getPrivateMultiqueueNumber();
+    }
+
     @Override
     public void prepare(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException {
@@ -2242,11 +2295,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new CloudRuntimeException(String.format("Failed to implement Network ID=%s as a part preparing NIC %s", network, nic));
             }
 
-            final NetworkVO network = implemented.second();
-            final NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
+            final NetworkVO implementedNetwork = implemented.second();
+            final NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), implementedNetwork);
             if (vmProfile.getType() == Type.DomainRouter) {
                 Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
-                setMtuInVRNicProfile(networks, network.getTrafficType(), profile);
+                setMtuInVRNicProfile(networks, implementedNetwork.getTrafficType(), profile);
+                setGuestNetworkVrNicMultiqueueNumber(networks, implementedNetwork, profile, nics);
             }
             vmProfile.addNic(profile);
         }
@@ -4614,16 +4668,54 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
                 if (ipAddress == null || nicVO.getIPv4Address().equals(ipAddress)) {
-                    nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri);
+                    nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri, null);
                 }
             }
         } else {
             final NicVO nicVO = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
             if (nicVO != null) {
-                nic = _networkModel.getNicProfile(vm, network.getId(), null);
+                nic = _networkModel.getNicProfile(vm, network.getId(), null, null);
             }
         }
         return nic;
+    }
+
+    private Integer getVpcVrNicMultiqueueNumber(Network network, VirtualMachine vm) {
+        if (ExternalGuestNetworkGuru.NETWORK_GURU_NAME.equals(network.getGuruName())) {
+            NetworkOfferingVO networkOffering = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, network.getNetworkOfferingId());
+            if (networkOffering == null) {
+                logger.info("Unable to retrieve the multiqueue value for network [{}], as it was not possible to find its corresponding network offering.", network.getUuid());
+                return null;
+            }
+
+            if (!networkOffering.isForVpc()) {
+                logger.info("Network offering [{}] is not a tier offering. Skipping the retrieval of the new NIC's multiqueue number.", networkOffering.getUuid());
+                return null;
+            }
+
+            logger.debug("Network [{}] is a VPC tier; therefore, the private multiqueue number defined in its corresponding offering will be used.", network.getUuid());
+            return networkOffering.getPrivateMultiqueueNumber();
+        }
+
+        DomainRouterVO router = routerDao.findById(vm.getId());
+        if (router.getVpcId() == null) {
+            logger.info("The VR [{}] does not belong to a VPC. Skipping the retrieval of the new NIC's multiqueue number.", vm.getInstanceName());
+            return null;
+        }
+
+        VpcVO vpc = _entityMgr.findById(VpcVO.class, router.getVpcId());
+        if (vpc == null) {
+            logger.info("Unable to find the VPC that the VR [{}] belongs to. Skipping the retrieval of the new NIC's multiqueue number.", vm.getInstanceName());
+            return null;
+        }
+
+        VpcOfferingVO vpcOffering = _entityMgr.findByIdIncludingRemoved(VpcOfferingVO.class, vpc.getVpcOfferingId());
+        if (vpcOffering == null) {
+            logger.info("Unable to retrieve the multiqueue value for the private gateway's VR NIC, as it was not possible to find its VPC offering.");
+            return null;
+        }
+
+        return vpcOffering.getPrivateGatewayMultiqueueNumber();
     }
 
     @Override
@@ -4666,6 +4758,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
             logger.debug("NIC is prepared successfully for Instance {} in Network {}", vm, network);
+        }
+
+        if (vm.getType() == Type.DomainRouter) {
+            Integer multiqueueNumber = getVpcVrNicMultiqueueNumber(network, vm);
+            if (multiqueueNumber != null) {
+                logger.info("Considering [{}] as the multiqueue number for the new NIC to be added to the VR [{}] corresponding to the network [{}].", multiqueueNumber, vm.getInstanceName(), network.getUuid());
+                nic.setMultiqueueNumber(multiqueueNumber);
+            }
         }
 
         return nic;

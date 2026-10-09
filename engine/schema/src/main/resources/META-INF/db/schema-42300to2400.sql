@@ -100,3 +100,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Multiqueue for VRs
+-- Add 'public_multiqueue_number' and 'private_multiqueue_number' columns to the 'cloud.network_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'public_multiqueue_number', 'INT DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'private_multiqueue_number', 'INT DEFAULT NULL');
+-- Add 'public_multiqueue_number' and 'private_gateway_multiqueue_number' columns to the 'cloud.vpc_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings', 'public_multiqueue_number', 'INT DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings', 'private_gateway_multiqueue_number', 'INT DEFAULT NULL');

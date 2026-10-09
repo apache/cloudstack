@@ -352,6 +352,32 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-row :guttter="12" v-if="guestType !== 'l2'">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="privatemultiqueuenumber" ref="privatemultiqueuenumber">
+              <template #label>
+                <tooltip-label :title="$t('label.private.multiqueue.number')" :tooltip="apiParams.privatemultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.privatemultiqueuenumber"
+                :placeholder="apiParams.privatemultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="publicmultiqueuenumber" ref="publicmultiqueuenumber" v-if="!forVpc">
+              <template #label>
+                <tooltip-label :title="$t('label.public.multiqueue.number')" :tooltip="apiParams.publicmultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.publicmultiqueuenumber"
+                :placeholder="apiParams.publicmultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item
           name="redundantroutercapability"
           ref="redundantroutercapability"
@@ -721,7 +747,9 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        privatemultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }],
+        publicmultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }]
       })
     },
     fetchData () {
@@ -1265,6 +1293,16 @@ export default {
     },
     async validateNumber (rule, value) {
       if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
+    },
+    validateMultiqueueValue (rule, value) {
+      if (!value) {
+        return Promise.resolve()
+      }
+      const multiqueue = Number(value)
+      if (Number.isNaN(multiqueue) || (multiqueue <= 0 && multiqueue !== -1) || multiqueue > 256) {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
