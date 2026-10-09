@@ -431,14 +431,16 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private String getDeviceToAttachDisk(String vmName) {
-        String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName };
-        String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "3" };
-        String[] headCmd = new String[] { Script.getExecutableAbsolutePath("head"), "-n", "1" };
+        // --details adds a Type column so cdrom slots (hdc, hdd) can be filtered out — they sort
+        // alphabetically ahead of virtio disks, so without this the selected row is a cdrom, not
+        // an actual disk.
+        String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName, "--details" };
         // The commands are executed without a shell, so the awk program must be passed as a plain
         // argument. Keeping the quotes a shell would have stripped makes awk fail with
         // "invalid char" and produce no output.
-        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "{print $1}" };
-        Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, tailCmd, headCmd, awkCmd), 0);
+        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "$2==\"disk\"{print $3}" };
+        String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "1" };
+        Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, awkCmd, tailCmd), 0);
         // executePipedCommands appends a line separator to every line it reads, so the device
         // name has to be trimmed before the last character can be incremented.
         String currentDevice = result.second() == null ? "" : result.second().trim();

@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
@@ -655,10 +656,33 @@ public class LibvirtRestoreBackupCommandWrapperTest {
 
             invokeGetDeviceToAttachDisk("test-vm");
 
-            String[] awkCmd = captured[0].get(captured[0].size() - 1);
+            String[] awkCmd = captured[0].get(1);
             // The commands are executed without a shell, so the program must carry no shell quotes.
             Assert.assertEquals("awk", awkCmd[0]);
-            Assert.assertEquals("{print $1}", awkCmd[1]);
+            Assert.assertEquals("$2==\"disk\"{print $3}", awkCmd[1]);
+        }
+    }
+
+    @Test
+    public void testGetDeviceToAttachDiskRequestsDomblklistDetails() throws Exception {
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            final AtomicReference<List<String[]>> captured = new AtomicReference<>();
+            scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                    .thenAnswer(invocation -> {
+                        captured.set(invocation.getArgument(0));
+                        return new Pair<>(0, "vdb" + System.lineSeparator());
+                    });
+
+            Assert.assertEquals("vdc", invokeGetDeviceToAttachDisk("test-vm"));
+
+            // --details adds the Type column the awk program filters on (verified separately in
+            // testGetDeviceToAttachDiskPassesUnquotedAwkProgram); without it cdrom rows can't be
+            // told apart from real disks at all.
+            String[] domblkCmd = captured.get().get(0);
+            Assert.assertTrue("domblklist must request --details so the Type column is available to filter on",
+                    Arrays.asList(domblkCmd).contains("--details"));
         }
     }
 
