@@ -1628,6 +1628,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             String privateName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Management, hypervisorType);
             String guestName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Guest, hypervisorType);
             String storageName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Storage, hypervisorType);
+            String migrationName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Migration, hypervisorType);
             // String controlName = _pNTrafficTypeDao.getNetworkTag(pNtwk.getId(), TrafficType.Control, hypervisorType);
             PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
             info.setPhysicalNetworkId(pNtwk.getId());
@@ -1635,6 +1636,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             info.setPrivateNetworkName(privateName);
             info.setPublicNetworkName(publicName);
             info.setStorageNetworkName(storageName);
+            info.setMigrationNetworkName(migrationName);
             PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(pNtwk.getId(), TrafficType.Management);
             if (mgmtTraffic != null) {
                 String vlan = mgmtTraffic.getVlan();

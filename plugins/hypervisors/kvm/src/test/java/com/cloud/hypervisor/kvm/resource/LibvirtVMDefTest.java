@@ -214,6 +214,26 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testCpuModeDefModelFallbackForbid() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Haswell-noTSX");
+        cpuModeDef.setModelFallback("forbid");
+
+        assertEquals("<cpu mode='custom' match='exact'><model fallback='forbid'>Haswell-noTSX</model></cpu>", cpuModeDef.toString());
+    }
+
+    @Test
+    public void testCpuModeDefModelFallbackDefaultsToAllowAndIgnoresGarbage() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem");
+        cpuModeDef.setModelFallback("' onerror");
+
+        assertEquals("<cpu mode='custom' match='exact'><model fallback='allow'>Nehalem</model></cpu>", cpuModeDef.toString());
+    }
+
+    @Test
     public void testCpuModeDefCpuFeatures() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");

@@ -28,6 +28,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -190,6 +191,8 @@ public class ConfigurationManagerImplTest {
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Mock
     DomainHelper domainHelper;
+    @Mock
+    com.cloud.vm.VirtualMachineManager vmManagerMock;
 
     DeleteZoneCmd deleteZoneCmd;
     CreateNetworkOfferingCmd createNetworkOfferingCmd;
@@ -1409,5 +1412,34 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    private static final String CPU_BASELINE_KEY = VirtualMachineManager.CLUSTER_CPU_BASELINE_MODEL_KEY;
+
+    @Test
+    public void resolveClusterCpuBaselineAutoLeavesNonBaselineNameUnchanged() {
+        Assert.assertEquals("auto", configurationManagerImplSpy.resolveClusterCpuBaselineAuto("some.other.key", "auto", ConfigKey.Scope.Cluster, 1L));
+    }
+
+    @Test
+    public void resolveClusterCpuBaselineAutoLeavesExplicitModelUnchanged() {
+        Assert.assertEquals("Haswell-noTSX", configurationManagerImplSpy.resolveClusterCpuBaselineAuto(CPU_BASELINE_KEY, "Haswell-noTSX", ConfigKey.Scope.Cluster, 1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveClusterCpuBaselineAutoRejectsNonClusterScope() {
+        configurationManagerImplSpy.resolveClusterCpuBaselineAuto(CPU_BASELINE_KEY, "auto", ConfigKey.Scope.Global, null);
+    }
+
+    @Test
+    public void resolveClusterCpuBaselineAutoResolvesToComputedModel() {
+        Mockito.when(vmManagerMock.computeClusterCpuBaseline(1L)).thenReturn("Skylake-Server-IBRS");
+        Assert.assertEquals("Skylake-Server-IBRS", configurationManagerImplSpy.resolveClusterCpuBaselineAuto(CPU_BASELINE_KEY, "auto", ConfigKey.Scope.Cluster, 1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void resolveClusterCpuBaselineAutoThrowsWhenNothingComputable() {
+        Mockito.when(vmManagerMock.computeClusterCpuBaseline(1L)).thenReturn(null);
+        configurationManagerImplSpy.resolveClusterCpuBaselineAuto(CPU_BASELINE_KEY, "auto", ConfigKey.Scope.Cluster, 1L);
     }
 }

@@ -44,6 +44,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -116,6 +118,10 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BaselineCpuCommand;
+import com.cloud.agent.api.CheckCpuCompatibilityCommand;
+import com.cloud.agent.api.GetHostCpuModelCommand;
+import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -217,6 +223,7 @@ import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -515,6 +522,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Long> SystemVmRootDiskSize = new ConfigKey<Long>("Advanced",
             Long.class, "systemvm.root.disk.size", "-1",
             "Size of root volume (in GB) of system VMs and virtual routers", true);
+
+    public static final ConfigKey<String> ClusterCpuBaselineModel = new ConfigKey<String>("Advanced",
+            String.class, CLUSTER_CPU_BASELINE_MODEL_KEY, "",
+            "Named CPU model (e.g. Haswell-noTSX, Skylake-Server) that user KVM instances in this cluster are pinned to when started, " +
+                    "so they stay live-migratable across hosts with different CPU generations. Empty keeps the per-host guest.cpu.mode. " +
+                    "Set to 'auto' to compute the common-denominator model of the cluster's current hosts and store that; the computed " +
+                    "model is persisted (it does not re-compute as hosts change). Every host in the cluster must support the model; a " +
+                    "host that does not is rejected by the CPU compatibility check.",
+            true, ConfigKey.Scope.Cluster);
 
     private boolean syncTransitioningVmPowerState;
 
@@ -1554,6 +1570,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
                     setVmNetworkDetails(vm, vmTO);
+                    applyClusterCpuBaseline(vmTO, vm, dest);
 
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
@@ -3397,7 +3414,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         logger.debug("Setting auto convergence to: {}", StorageManager.KvmAutoConvergence.value());
         migrateCommand.setAutoConvergence(StorageManager.KvmAutoConvergence.value());
+        // Thread the MS-central migration-encryption policy to the agent; it overrides the per-host property
+        // only when set to Required, while Disabled or blank defers to the per-host migrate.encryption.policy.
+        migrateCommand.setMigrationEncryptionPolicy(VmMigrationEncryptionPolicy.valueIn(vmInstance.getDataCenterId()));
         migrateCommand.setHostGuid(destination.getHost().getGuid());
+
+        String migrationIp = resolveMigrationIp(vmInstance, destination.getHost());
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(migrationIp)) {
+            logger.debug("Live migration of VM [{}] will use the dedicated migration IP [{}] on destination host [{}] for the data stream.",
+                    vmInstance, migrationIp, destination.getHost());
+            migrateCommand.setMigrateIp(migrationIp);
+        }
+        preflightMigrationNetwork(vmInstance, destination.getHost(), migrationIp);
 
         PrepareForMigrationAnswer prepareForMigrationAnswer = (PrepareForMigrationAnswer) answer;
 
@@ -3416,6 +3444,189 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         return migrateCommand;
+    }
+
+    /**
+     * Resolves the IP that should carry the live-migration data stream to the destination host, or null to keep
+     * using the host management IP (the pre-existing behaviour). When a Migration traffic type is designated on the
+     * zone's physical network, the KVM agent resolves the local IP of that labelled NIC and the management server
+     * records it as the {@link Host#HOST_MIGRATION_IP} host detail; when that is present the data stream targets it
+     * instead of the management IP. Only KVM is handled here; VMware and XenServer select the migration network
+     * inside their own platform.
+     */
+    protected String resolveMigrationIp(VMInstanceVO vmInstance, Host destinationHost) {
+        if (!HypervisorType.KVM.equals(vmInstance.getHypervisorType()) || vmInstance.getHostId() == null) {
+            return null;
+        }
+        // Use the dedicated migration network only when BOTH hosts have one. The source qemu dials the
+        // destination's migration IP, so if the source has no interface on that network the migration would fail;
+        // when either side lacks it, fall back to the management IP (the pre-existing behaviour).
+        if (org.apache.commons.lang3.StringUtils.isBlank(hostMigrationIp(vmInstance.getHostId()))) {
+            return null;
+        }
+        return org.apache.commons.lang3.StringUtils.trimToNull(hostMigrationIp(destinationHost.getId()));
+    }
+
+    private String hostMigrationIp(long hostId) {
+        DetailVO detail = hostDetailsDao.findDetail(hostId, Host.HOST_MIGRATION_IP);
+        return detail == null ? null : detail.getValue();
+    }
+
+    /**
+     * Pre-flight check that warns when the source host of a KVM live migration uses a dedicated migration network
+     * but the destination host has none configured. The migration still proceeds over the management network (see
+     * {@link #resolveMigrationIp}), but without this the fallback is silent; this makes it visible so the operator
+     * can finish wiring the migration network on the destination.
+     */
+    protected void preflightMigrationNetwork(VMInstanceVO vmInstance, Host destinationHost, String resolvedMigrationIp) {
+        // The dedicated migration network is already in use when a migration IP was resolved; only the fallback
+        // case (resolved IP blank) is worth a warning, so reuse the caller's result instead of re-resolving.
+        if (!HypervisorType.KVM.equals(vmInstance.getHypervisorType()) || vmInstance.getHostId() == null
+                || org.apache.commons.lang3.StringUtils.isNotBlank(resolvedMigrationIp)) {
+            return;
+        }
+        DetailVO sourceDetail = hostDetailsDao.findDetail(vmInstance.getHostId(), Host.HOST_MIGRATION_IP);
+        boolean sourceUsesMigrationNetwork = sourceDetail != null && org.apache.commons.lang3.StringUtils.isNotBlank(sourceDetail.getValue());
+        if (sourceUsesMigrationNetwork) {
+            logger.warn("Live migration of VM [{}] has a dedicated migration network on source host [{}] but destination host [{}] has none configured; " +
+                    "the data stream will fall back to the management network. Designate the Migration traffic type on the destination's zone physical network to keep it off the management NIC.",
+                    vmInstance, vmInstance.getHostId(), destinationHost);
+        }
+    }
+
+    /**
+     * Pins a KVM instance to the destination cluster's CPU baseline model ({@link #ClusterCpuBaselineModel}) at start,
+     * so it presents the same CPU to the guest on every host in the cluster and stays live-migratable across mixed CPU
+     * generations. The model is injected as the VM's {@code guest.cpu.mode=custom} / {@code guest.cpu.model} details,
+     * which the KVM agent already honours over its per-host default. Only user instances are pinned; system VMs and
+     * virtual routers are left on their per-host CPU. An explicit per-VM CPU model is left untouched, a blank cluster
+     * baseline is a no-op (pre-existing behaviour), and only KVM is affected.
+     */
+    protected void applyClusterCpuBaseline(VirtualMachineTO vmTO, VMInstanceVO vm, DeployDestination dest) {
+        if (!VirtualMachine.Type.User.equals(vm.getType())) {
+            return;
+        }
+        if (!HypervisorType.KVM.equals(vm.getHypervisorType()) || dest == null || dest.getHost() == null || dest.getHost().getClusterId() == null) {
+            return;
+        }
+        String baselineModel = getClusterCpuBaselineModel(dest.getHost().getClusterId());
+        if (org.apache.commons.lang3.StringUtils.isBlank(baselineModel)) {
+            return;
+        }
+        Map<String, String> details = vmTO.getDetails();
+        if (details != null && (org.apache.commons.lang3.StringUtils.isNotBlank(details.get(VmDetailConstants.GUEST_CPU_MODEL))
+                || org.apache.commons.lang3.StringUtils.isNotBlank(details.get(VmDetailConstants.GUEST_CPU_MODE)))) {
+            logger.debug("VM [{}] already has an explicit CPU mode/model; leaving the cluster CPU baseline [{}] unapplied.", vm, baselineModel);
+            return;
+        }
+        Map<String, String> newDetails = details == null ? new HashMap<>() : new HashMap<>(details);
+        newDetails.put(VmDetailConstants.GUEST_CPU_MODE, "custom");
+        newDetails.put(VmDetailConstants.GUEST_CPU_MODEL, baselineModel);
+        newDetails.put(VmDetailConstants.GUEST_CPU_MODEL_FALLBACK, "forbid");
+        vmTO.setDetails(newDetails);
+        logger.debug("Pinning VM [{}] to cluster [{}] CPU baseline model [{}] for live-migration compatibility.",
+                vm, dest.getHost().getClusterId(), baselineModel);
+    }
+
+    @Override
+    public String getClusterCpuBaselineModel(long clusterId) {
+        return ClusterCpuBaselineModel.valueIn(clusterId);
+    }
+
+    protected String buildCpuModelXml(String cpuModel) {
+        return String.format("<cpu mode='custom' match='exact'><model fallback='forbid'>%s</model></cpu>", cpuModel);
+    }
+
+    @Override
+    public List<String> findHostsIncompatibleWithCpuModel(long clusterId, String cpuModel) {
+        List<String> incompatible = new ArrayList<>();
+        if (org.apache.commons.lang3.StringUtils.isBlank(cpuModel)) {
+            return incompatible;
+        }
+        String cpuXml = buildCpuModelXml(cpuModel);
+        for (HostVO host : _hostDao.findByClusterId(clusterId, Host.Type.Routing)) {
+            if (host.getStatus() != Status.Up || !HypervisorType.KVM.equals(host.getHypervisorType())) {
+                continue;
+            }
+            try {
+                Answer answer = _agentMgr.send(host.getId(), new CheckCpuCompatibilityCommand("cpu-baseline-check", cpuXml));
+                // During a rolling upgrade a pre-feature agent cannot deserialize this new command, so the send
+                // times out and the host is skipped by the OperationTimedoutException catch below. If an agent
+                // does return an UnsupportedAnswer, treat it the same way: "cannot verify", not "incompatible".
+                if (answer instanceof UnsupportedAnswer) {
+                    logger.warn("Host [{}] could not run the CPU compatibility check; skipping it for baseline validation.", host);
+                    continue;
+                }
+                // Report a host only on an explicit incompatible verdict or an explicitly unknown model (virsh
+                // prints "Unknown CPU model ..."), so a non-existent model is rejected. A reachable host whose
+                // check could not run (e.g. libvirtd momentarily down) stays unverified and is skipped, not
+                // reported, matching this method's contract; the forbid pin and migrate-time compare still guard it.
+                String details = answer == null ? null : org.apache.commons.lang3.StringUtils.lowerCase(answer.getDetails());
+                boolean unknownModel = details != null && details.contains("unknown");
+                if (answer != null && (!answer.getResult() || unknownModel)) {
+                    incompatible.add(host.getName());
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                logger.warn("Could not verify host [{}] against the cluster CPU baseline [{}]; skipping it: {}", host, cpuModel, e.getMessage());
+            }
+        }
+        return incompatible;
+    }
+
+    @Override
+    public String computeClusterCpuBaseline(long clusterId) {
+        List<String> hostCpuXmls = new ArrayList<>();
+        Long computeHostId = null;
+        for (HostVO host : _hostDao.findByClusterId(clusterId, Host.Type.Routing)) {
+            if (host.getStatus() != Status.Up || !HypervisorType.KVM.equals(host.getHypervisorType())) {
+                continue;
+            }
+            try {
+                // A pre-feature agent cannot deserialize this new command, so the send times out and the host is
+                // skipped by the catch below; an explicit UnsupportedAnswer is handled the same way.
+                Answer answer = _agentMgr.send(host.getId(), new GetHostCpuModelCommand());
+                if (answer instanceof UnsupportedAnswer) {
+                    logger.warn("Host [{}] could not report its CPU model; skipping it for baseline computation.", host);
+                    continue;
+                }
+                if (answer != null && answer.getResult() && org.apache.commons.lang3.StringUtils.isNotBlank(answer.getDetails())) {
+                    hostCpuXmls.add(answer.getDetails());
+                    if (computeHostId == null) {
+                        computeHostId = host.getId();
+                    }
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                logger.warn("Could not read the CPU model of host [{}] for baseline computation; skipping it: {}", host, e.getMessage());
+            }
+        }
+        if (hostCpuXmls.isEmpty() || computeHostId == null) {
+            logger.warn("Could not compute a CPU baseline for cluster [{}]: no reachable KVM host returned a CPU definition.", clusterId);
+            return null;
+        }
+        try {
+            Answer answer = _agentMgr.send(computeHostId, new BaselineCpuCommand(hostCpuXmls));
+            if (answer == null || !answer.getResult()) {
+                logger.warn("cpu-baseline computation failed for cluster [{}]: {}", clusterId, answer == null ? "no answer" : answer.getDetails());
+                return null;
+            }
+            String model = parseModelFromCpuXml(answer.getDetails());
+            logger.debug("Computed CPU baseline model [{}] for cluster [{}] from {} host(s).", model, clusterId, hostCpuXmls.size());
+            return model;
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn("Could not compute the CPU baseline for cluster [{}]: {}", clusterId, e.getMessage());
+            return null;
+        }
+    }
+
+    protected String parseModelFromCpuXml(String cpuXml) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(cpuXml)) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("<model[^>]*>([^<]+)</model>").matcher(cpuXml);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return null;
     }
 
     private void updateVmPod(VMInstanceVO vm, long dstHostId) {
@@ -5400,7 +5611,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
                 AllowExposeDomainInMetadata, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
-                VmSyncPowerStateTransitioning, SystemVmEnableUserData
+                VmSyncPowerStateTransitioning, SystemVmEnableUserData, VmMigrationEncryptionPolicy, ClusterCpuBaselineModel
         };
     }
 

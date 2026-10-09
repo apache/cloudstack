@@ -136,6 +136,15 @@ export default {
       show: (record) => { return record.hypervisortype !== 'External' && record.managedstate === 'Managed' }
     },
     {
+      api: 'updateConfiguration',
+      icon: 'control-outlined',
+      label: 'label.configure.cpu.baseline',
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ConfigureCpuBaseline.vue'))),
+      show: (record) => { return record.hypervisortype === 'KVM' }
+    },
+    {
       api: 'enableOutOfBandManagementForCluster',
       icon: 'plus-circle-outlined',
       label: 'label.outofbandmanagement.enable',
