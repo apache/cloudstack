@@ -18,3 +18,8 @@
 --;
 -- Schema upgrade from 4.22.1.0 to 4.22.2.0
 --;
+
+-- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the cumulative and
+-- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
+CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');
