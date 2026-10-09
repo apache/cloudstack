@@ -186,6 +186,8 @@ class TestVmSnapshot(cloudstackTestCase):
             cmds = [
                 "echo %s > %s/%s" %
                 (self.random_data_0, self.test_dir, self.random_data),
+                # make sure the data is on disk, a disk-only snapshot does not contain the page cache
+                "sync",
                 "cat %s/%s" %
                 (self.test_dir, self.random_data)]
 
