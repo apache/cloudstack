@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
@@ -261,6 +260,7 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -277,6 +277,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -294,6 +295,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailVO;
@@ -606,7 +608,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("network.gc.interval");
         configValuesForValidation.add("ping.interval");
-        configValuesForValidation.add("snapshot.poll.interval");
+        configValuesForValidation.add(SnapshotManager.SnapshotPollInterval.key());
         configValuesForValidation.add("storage.stats.interval");
         configValuesForValidation.add("storage.cleanup.interval");
         configValuesForValidation.add("wait");
@@ -619,7 +621,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.retrieval.interval");
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
-        configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(RemoteAccessVpnService.RemoteAccessVpnPskLength.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
@@ -637,19 +639,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.MemoryCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.PrivateIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.SecondaryStorageCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.VlanCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.DirectNetworkPublicIpCapacityThreshold.key());
-        weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.PrivateIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.VlanCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.DirectNetworkPublicIpCapacityThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.LocalStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.key());
-        weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
-        weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
+        weightBasedParametersForValidation.add("agent.load.threshold");
+        weightBasedParametersForValidation.add(DeploymentClusterPlanner.VmUserDispersionWeight.key());
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
@@ -683,11 +685,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (settingNameUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
                         settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
                     _indirectAgentLB.propagateMSListToAgents(false);
-                } else if (settingNameUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
-                        ||  settingNameUpdated.equals(Config.MigrateWait.toString())) {
+                } else if (settingNameUpdated.equals(ManagementServer.RouterAggregationCommandEachTimeout.key())
+                        ||  settingNameUpdated.equals(AgentManager.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                    params.put(ManagementServer.RouterAggregationCommandEachTimeout.key(), String.valueOf(ManagementServer.RouterAggregationCommandEachTimeout.value()));
+                    params.put(AgentManager.MigrateWait.toString(), String.valueOf(AgentManager.MigrateWait.value()));
                     _agentManager.propagateChangeToAgents(params);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
                     ConfigKey.Scope scope = settingUpdated.second();
@@ -751,7 +753,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // As it is so common for people to forget about configuring
         // management.network.cidr,
-        final String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        final String mgtCidr = ManagementServer.ManagementNetwork.value();
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             final String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs != null && localCidrs.length > 0) {
@@ -759,7 +761,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L, "Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0], "");
-                _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
+                _configDao.update(ManagementServer.ManagementNetwork.key(), ManagementServer.ManagementNetwork.category(), localCidrs[0]);
             } else {
                 logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, 0L,
@@ -925,7 +927,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt;
-        if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
+        if (NetworkService.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -936,7 +938,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update guest.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPrivateNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -947,7 +949,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update private.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerPublicNetwork.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -958,7 +960,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update public.network.device in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
+        } else if (NetworkService.XenServerStorageNetwork1.key().equalsIgnoreCase(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -969,7 +971,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device1 in host_details due to exception ", e);
             }
-        } else if (Config.XenServerStorageNetwork2.key().equals(name)) {
+        } else if (NetworkService.XenServerStorageNetwork2.key().equals(name)) {
             final String sql = "update host_details set value=? where name=?";
             try {
                 pstmt = txn.prepareAutoCloseStatement(sql);
@@ -980,7 +982,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to update storage.network.device2 in host_details due to exception ", e);
             }
-        } else if (Config.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
+        } else if (SecondaryStorageVmManager.SecStorageSecureCopyCert.key().equalsIgnoreCase(name)) {
             //FIXME - Ideally there should be a listener model to listen to global config changes and be able to take action gracefully.
             //Expire the download urls
             final String sqlTemplate = "update template_store_ref set download_url_created=?";
@@ -1016,7 +1018,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
      */
     private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
-        String hypervisorListConfigName = Config.HypervisorList.key();
+        String hypervisorListConfigName = ManagementServer.HypervisorList.key();
         String hypervisors = _configDao.getValue(hypervisorListConfigName);
         if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
             hypervisors = hypervisors.replace(previousValue, newValue);
@@ -1540,7 +1542,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
                     return String.format("Please enter a value greater than 5 for the configuration parameter: [%s].",  name);
                 }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name) && (val < 8 || val > 256)) {
+                if (RemoteAccessVpnService.RemoteAccessVpnPskLength.key().equalsIgnoreCase(name) && (val < 8 || val > 256)) {
                     return String.format("Please enter a value greater than 7 and less than 257 for the configuration parameter: [%s].", name);
                 }
                 if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {
@@ -1550,7 +1552,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (type.equals(String.class)) {
-            if (SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
+            if (SecondaryStorageVmManager.SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
                 final String[] cidrs = value.split(",");
                 for (final String cidr : cidrs) {
                     if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
@@ -2702,7 +2704,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
 
-            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(ManagementServer.ControlCidr.key()));
             if (linkLocalIpRanges.length > 1) {
                 _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }

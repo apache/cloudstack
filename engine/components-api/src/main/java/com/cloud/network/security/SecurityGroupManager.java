@@ -19,6 +19,8 @@ package com.cloud.network.security;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -32,6 +34,23 @@ public interface SecurityGroupManager {
     public static final String DEFAULT_GROUP_DESCRIPTION = "Default Security Group";
     public static final int TIME_BETWEEN_CLEANUPS = 60;
     public static final int WORKER_THREAD_COUNT = 10;
+
+    ConfigKey<Integer> SecurityGroupWorkCleanupInterval = new ConfigKey<>("Network", Integer.class,
+            "network.securitygroups.work.cleanup.interval", "120",
+            "Time interval (seconds) in which finished work is cleaned up from the work table", true);
+
+    ConfigKey<Integer> SecurityGroupWorkerThreads = new ConfigKey<>("Network", Integer.class,
+            "network.securitygroups.workers.pool.size", "50",
+            "Number of worker threads processing the security group update work queue", true);
+
+    ConfigKey<Integer> SecurityGroupWorkGlobalLockTimeout = new ConfigKey<>("Network", Integer.class,
+            "network.securitygroups.work.lock.timeout", "300",
+            "Lock wait timeout (seconds) while updating the security group work queue", true);
+
+    ConfigKey<Integer> SecurityGroupWorkPerAgentMaxQueueSize = new ConfigKey<>("Network", Integer.class,
+            "network.securitygroups.work.per.agent.queue.size", "100",
+            "The number of outstanding security group work items that can be queued to a host. If exceeded, work items will get dropped to conserve memory. "
+                    + "Security Group Sync will take care of ensuring that the host gets updated eventually", true);
 
     public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName);
 

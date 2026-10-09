@@ -16,9 +16,14 @@
 // under the License.
 package com.cloud.network.lb;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 
 public interface LBHealthCheckManager {
+
+    ConfigKey<String> LBHealthCheck = new ConfigKey<>("Advanced", String.class, "healthcheck.update.interval", "600",
+            "Time Interval to fetch the LB health check states (in sec)", true);
 
     void updateLBHealthCheck(Scheme scheme);
 

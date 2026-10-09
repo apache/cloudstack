@@ -84,6 +84,36 @@ public interface NetworkService {
             "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> GuestVlanBits = new ConfigKey<>("Network", Integer.class, "guest.vlan.bits", "12",
+            "The number of bits to reserve for the VLAN identifier in the guest subnet.", true);
+
+    ConfigKey<Integer> MaxNumberOfSecondaryIPsPerNIC = new ConfigKey<>("Network", Integer.class,
+            "vm.network.nic.max.secondary.ipaddresses", "10",
+            "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", true);
+
+    ConfigKey<Integer> NetworkGuestCidrLimit = new ConfigKey<>("Network", Integer.class, "network.guest.cidr.limit", "22",
+            "size limit for guest cidr; can't be less than this value", true);
+
+    ConfigKey<String> XenServerPublicNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.public.network.device", null,
+            "[ONLY IF THE PUBLIC NETWORK IS ON A DEDICATED NIC]:The network name label of the physical device dedicated to the public network on a XenServer host", true);
+
+    ConfigKey<String> XenServerGuestNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.guest.network.device", null,
+            "Specify for guest network name label", true);
+
+    ConfigKey<String> XenServerStorageNetwork1 = new ConfigKey<>("Hidden", String.class,
+            "xenserver.storage.network.device1", null,
+            "Specify when there are storage networks", true);
+
+    ConfigKey<String> XenServerStorageNetwork2 = new ConfigKey<>("Hidden", String.class,
+            "xenserver.storage.network.device2", null,
+            "Specify when there are storage networks", true);
+
+    ConfigKey<String> XenServerPrivateNetwork = new ConfigKey<>("Hidden", String.class,
+            "xenserver.private.network.device", null,
+            "Specify when the private network name is different", true);
+
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,

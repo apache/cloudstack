@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.usage.UsageService;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.usage.dao.UsageJobDao;
@@ -34,9 +34,6 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
 
     @Inject
     UsageJobDao _usageJobDao;
-
-    @Inject
-    ConfigurationDao configDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> xmlParams) throws ConfigurationException {
@@ -48,7 +45,7 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
     public boolean start() {
         super.start();
 
-        boolean enableUsage = new Boolean(configDao.getValue("enable.usage.server"));
+        boolean enableUsage = UsageService.EnableUsageServer.value();
 
         //By default, usage is enabled for production
         //Devs might override this value to disable usage in their setup

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.secondarystorage;
 
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.net.URI;
@@ -74,7 +73,6 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -116,6 +114,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
@@ -337,7 +336,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
                 setupCmd.setNfsVersion(nfsVersion);
 
-                String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
+                String postUploadKey = TemplateManager.SSVMPSK.value();
                 setupCmd.setPostUploadKey(postUploadKey);
 
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
@@ -918,7 +917,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         _secStorageVmMtuSize = NumbersUtil.parseInt(configs.get("secstorage.vm.mtu.size"), DEFAULT_SS_VM_MTUSIZE);
-        boolean _useServiceVM = BooleanUtils.toBoolean(_configDao.getValue("secondary.storage.vm"));
+        boolean _useServiceVM = UseSecondaryStorageVm.value();
         _useSSlCopy = BooleanUtils.toBoolean(_configDao.getValue("secstorage.encrypt.copy"));
 
         String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
@@ -943,7 +942,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
-        String configKey = Config.SecondaryStorageServiceOffering.key();
+        String configKey = SecondaryStorageServiceOffering.key();
         String ssvmSrvcOffIdStr = configs.get(configKey);
         if (ssvmSrvcOffIdStr != null) {
             _serviceOffering = _offeringDao.findByUuid(ssvmSrvcOffIdStr);
@@ -980,7 +979,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, SecondaryStorageCapacityScanInterval.value());
         }
 
-        _httpProxy = configs.get(Config.SecStorageProxy.key());
+        _httpProxy = configs.get(AgentManager.SecStorageProxy.key());
         if (_httpProxy != null) {
             boolean valid = true;
             String errMsg = null;
@@ -1198,7 +1197,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 buf.append(" gateway=").append(nic.getIPv4Gateway());
             }
             if (nic.getTrafficType() == TrafficType.Management) {
-                String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
+                String mgmt_cidr = ManagementServer.ManagementNetwork.value();
                 if (NetUtils.isValidCidrList(mgmt_cidr)) {
                     logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
@@ -1550,7 +1549,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
-                                   SecondaryStorageVmUserData};
+                                   SecondaryStorageVmUserData, UseSecondaryStorageVm, MountParent, SystemVMAutoReserveCapacity,
+                                   SystemVMRandomPassword, MaxTemplateAndIsoSize, SecStorageAllowedInternalDownloadSites,
+                                   SecStorageEncryptCopy, SecStorageSecureCopyCert, ExtractURLCleanUpInterval, DisableExtraction,
+                                   ExtractURLExpirationInterval, SecondaryStorageServiceOffering};
     }
 
 }

@@ -31,13 +31,11 @@ import org.apache.cloudstack.managed.context.ManagedContext;
 
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.manager.Commands;
-import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.Networks;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
@@ -282,8 +280,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             logger.error("Failed to register MBean", e);
         }
         boolean result = super.configure(name, params);
-        Map<String, String> configs = _configDao.getConfiguration("Network", params);
-        int bufferLength = NumbersUtil.parseInt(configs.get(Config.SecurityGroupWorkPerAgentMaxQueueSize.key()), 100);
+        int bufferLength = SecurityGroupWorkPerAgentMaxQueueSize.value();
         _workTracker = new SecurityGroupWorkTracker(_agentMgr, _answerListener, bufferLength);
         _answerListener.setWorkDispatcher(_workTracker);
         return result;

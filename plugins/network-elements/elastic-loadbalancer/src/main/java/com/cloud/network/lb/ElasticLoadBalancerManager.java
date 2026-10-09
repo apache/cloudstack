@@ -19,6 +19,7 @@ package com.cloud.network.lb;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -30,6 +31,18 @@ import com.cloud.user.Account;
 public interface ElasticLoadBalancerManager {
     public static final int DEFAULT_ELB_VM_RAMSIZE = 128;            // 512 MB
     public static final int DEFAULT_ELB_VM_CPU_MHZ = 256;               // 500 MHz
+
+    ConfigKey<Integer> ElasticLoadBalancerVmMemory = new ConfigKey<>("Advanced", Integer.class, "network.loadbalancer.basiczone.elb.vm.ram.size", "512",
+            "Memory in MB for the elastic load balancer vm", true);
+
+    ConfigKey<Integer> ElasticLoadBalancerVmCpuMhz = new ConfigKey<>("Advanced", Integer.class, "network.loadbalancer.basiczone.elb.vm.cpu.mhz", "128",
+            "CPU speed for the elastic load balancer vm", true);
+
+    ConfigKey<Integer> ElasticLoadBalancerVmNumVcpu = new ConfigKey<>("Advanced", Integer.class, "network.loadbalancer.basiczone.elb.vm.vcpu.num", "1",
+            "Number of VCPU  for the elastic load balancer vm", true);
+
+    ConfigKey<Integer> ElasticLoadBalancerVmGcInterval = new ConfigKey<>("Advanced", Integer.class, "network.loadbalancer.basiczone.elb.gc.interval.minutes", "30",
+            "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5", true);
 
     public boolean applyLoadBalancerRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
 
