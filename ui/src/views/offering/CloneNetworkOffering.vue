@@ -1452,7 +1452,7 @@ export default {
         return Promise.resolve()
       }
       const multiqueue = Number(value)
-      if (Number.isNaN(multiqueue) || (multiqueue <= 0 && multiqueue !== -1)) {
+      if (Number.isNaN(multiqueue) || (multiqueue <= 0 && multiqueue !== -1) || multiqueue > 256) {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()

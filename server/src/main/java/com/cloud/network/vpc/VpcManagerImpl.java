@@ -642,13 +642,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     private void validateVpcOfferingMultiqueueParameters(Integer publicMultiqueueNumber, Integer privateGatewayMultiqueueNumber) {
-        String errorMessage = "The only non-positive value accepted by the parameter [%s] is [-1].";
+        String nonPositiveMultiqueueErrorMessage = "The only non-positive value accepted by the parameter [%s] is [-1].";
+        String multiqueueGreaterThanMaximumErrorMessage = "[%s] parameter cannot be greater than 256.";
+
         if (publicMultiqueueNumber != null && publicMultiqueueNumber <= 0 && publicMultiqueueNumber != -1) {
-            throw new InvalidParameterValueException(String.format(errorMessage, ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
+            throw new InvalidParameterValueException(String.format(nonPositiveMultiqueueErrorMessage, ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
+        }
+
+        if (publicMultiqueueNumber != null && publicMultiqueueNumber > 256) {
+            throw new InvalidParameterValueException(String.format(multiqueueGreaterThanMaximumErrorMessage, ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
         }
 
         if (privateGatewayMultiqueueNumber != null && privateGatewayMultiqueueNumber <= 0 && privateGatewayMultiqueueNumber != -1) {
-            throw new InvalidParameterValueException(String.format(errorMessage, ApiConstants.PRIVATE_GATEWAY_MULTIQUEUE_NUMBER));
+            throw new InvalidParameterValueException(String.format(nonPositiveMultiqueueErrorMessage, ApiConstants.PRIVATE_GATEWAY_MULTIQUEUE_NUMBER));
+        }
+
+        if (privateGatewayMultiqueueNumber != null && privateGatewayMultiqueueNumber > 256) {
+            throw new InvalidParameterValueException(String.format(multiqueueGreaterThanMaximumErrorMessage, ApiConstants.PRIVATE_GATEWAY_MULTIQUEUE_NUMBER));
         }
     }
 

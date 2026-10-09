@@ -7480,6 +7480,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Multiqueue parameters cannot be specified for L2 network offerings.");
         }
 
+        String multiqueueGreaterThanMaximumErrorMessage = "[%s] parameter cannot be greater than 256.";
         if (publicMultiqueueNumber != null) {
             if (forVpc) {
                 throw new InvalidParameterValueException(String.format("The [%s] parameter cannot be specified for offerings that are meant to be used for VPC tiers.", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
@@ -7488,10 +7489,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (publicMultiqueueNumber <= 0 && publicMultiqueueNumber != -1) {
                 throw new InvalidParameterValueException(String.format("The only non-positive value accepted by the parameter [%s] is [-1].", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
             }
+
+            if (publicMultiqueueNumber > 256) {
+                throw new InvalidParameterValueException(String.format(multiqueueGreaterThanMaximumErrorMessage, ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
+            }
         }
 
         if (privateMultiqueueNumber != null && privateMultiqueueNumber <= 0 && privateMultiqueueNumber != -1) {
             throw new InvalidParameterValueException(String.format("The only non-positive value accepted by the parameter [%s] is [-1].", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER));
+        }
+
+        if (privateMultiqueueNumber != null && privateMultiqueueNumber > 256) {
+            throw new InvalidParameterValueException(String.format(multiqueueGreaterThanMaximumErrorMessage, ApiConstants.PRIVATE_MULTIQUEUE_NUMBER));
         }
     }
 
