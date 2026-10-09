@@ -162,6 +162,13 @@ public class ConfigurationVO implements Configuration {
         }
     }
 
+    /**
+     * Returns the value as stored in the database, without decrypting it.
+     */
+    public String getRawValue() {
+        return value;
+    }
+
     public void setValue(String value) {
         if(isEncrypted()) {
             this.value = DBEncryptionUtil.encrypt(value);
