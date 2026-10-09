@@ -47,6 +47,7 @@ import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -101,6 +102,7 @@ import com.vmware.vim25.StorageIOAllocationInfo;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
+import com.vmware.vim25.VirtualDiskType;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
@@ -1141,6 +1143,16 @@ public class VmwareHelper {
         }
 
         return new Pair<>(convertedRootDiskController, convertedDataDiskController);
+    }
+
+    public static VirtualDiskType getVirtualDiskType(Storage.ProvisioningType provisioningType) {
+        if (provisioningType == Storage.ProvisioningType.FAT) {
+            return VirtualDiskType.EAGER_ZEROED_THICK;
+        }
+        if (provisioningType == Storage.ProvisioningType.SPARSE) {
+            return VirtualDiskType.PREALLOCATED;
+        }
+        return VirtualDiskType.THIN;
     }
 
     protected static boolean diskControllersShareTheSameBusType(String rootDiskController, String dataDiskController) {
