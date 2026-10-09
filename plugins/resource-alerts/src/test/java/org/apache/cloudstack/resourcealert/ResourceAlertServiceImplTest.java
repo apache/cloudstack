@@ -69,7 +69,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -226,6 +228,46 @@ public class ResourceAlertServiceImplTest {
                 .when(accountManager).checkAccess(owner, null, false, (ControlledEntity) vm);
 
         service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnExtensionVm() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceId()).thenReturn("vm-uuid");
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getHypervisorType()).thenReturn(HypervisorType.External);
+        when(userVmDao.findByUuid("vm-uuid")).thenReturn(vm);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateFailsOnExtensionHost() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("Host");
+        when(cmd.getResourceId()).thenReturn("host-uuid");
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+        HostVO host = mock(HostVO.class);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+        when(hostDao.findByUuid("host-uuid")).thenReturn(host);
+
+        service.createResourceAlertRule(cmd);
+    }
+
+    @Test
+    public void testCreateAllowsKvmHost() {
+        CreateResourceAlertRuleCmd cmd = validVmCreateCmd();
+        when(cmd.getResourceType()).thenReturn("Host");
+        when(cmd.getResourceId()).thenReturn("host-uuid");
+        when(accountManager.isRootAdmin(2L)).thenReturn(true);
+        HostVO host = mock(HostVO.class);
+        when(host.getId()).thenReturn(3L);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(hostDao.findByUuid("host-uuid")).thenReturn(host);
+
+        service.createResourceAlertRule(cmd);
+
+        assertEquals(Long.valueOf(3L), persistedRuleCapture().getResourceId());
     }
 
     @Test(expected = InvalidParameterValueException.class)

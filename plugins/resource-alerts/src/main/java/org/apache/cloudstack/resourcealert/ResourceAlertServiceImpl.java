@@ -57,6 +57,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -120,6 +121,7 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
         long domainId = owner.getDomainId();
 
         InternalIdentity resource = findResourceOrFail(resourceType, cmd.getResourceId());
+        checkResourceReportsMetrics(resource);
         if (resource instanceof ControlledEntity) {
             accountManager.checkAccess(owner, null, false, (ControlledEntity) resource);
         }
@@ -375,6 +377,20 @@ public class ResourceAlertServiceImpl extends ManagerBase implements ResourceAle
             throw new InvalidParameterValueException("Unable to find " + type.name() + " with ID " + uuid);
         }
         return resource;
+    }
+
+    // Extensions do not report VM or host usage, so a rule on one of their VMs or hosts would never fire.
+    private void checkResourceReportsMetrics(InternalIdentity resource) {
+        HypervisorType hypervisorType = null;
+        if (resource instanceof UserVmVO) {
+            hypervisorType = ((UserVmVO) resource).getHypervisorType();
+        } else if (resource instanceof HostVO) {
+            hypervisorType = ((HostVO) resource).getHypervisorType();
+        }
+        if (HypervisorType.External.equals(hypervisorType)) {
+            throw new InvalidParameterValueException(
+                    "Resource alert rules are not supported on VMs and hosts managed by an extension, as they do not report usage");
+        }
     }
 
     private Long resolveResourceIdFilter(String resourceType, String uuid) {
