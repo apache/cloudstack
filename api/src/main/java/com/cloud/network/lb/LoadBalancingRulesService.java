@@ -70,6 +70,14 @@ public interface LoadBalancingRulesService {
 
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
+    /**
+     * Stores the optional per rule haproxy settings. A null leaves the current value alone.
+     *
+     * @param cleanup remove all three first, so the rule inherits again, then store any non null value given
+     * @return true if any value changed
+     */
+    boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup);
+
     boolean deleteLoadBalancerRule(long lbRuleId, boolean apply);
 
     /**
