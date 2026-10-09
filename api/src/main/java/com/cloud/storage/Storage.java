@@ -36,7 +36,9 @@ public class Storage {
         TAR(false, false, false, "tar"),
         ZIP(false, false, false, "zip"),
         DIR(false, false, false, "dir"),
-        PNG(false, false, false, "png");
+        PNG(false, false, false, "png"),
+        GZIP(false, false, false, "gz"),
+        TARGZ(false, false, false, "tar.gz");
 
         private final boolean supportThinProvisioning;
         private final boolean supportSparse;
