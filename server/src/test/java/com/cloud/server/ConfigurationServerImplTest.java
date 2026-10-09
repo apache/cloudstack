@@ -23,6 +23,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -35,11 +37,15 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationServerImplTest {
@@ -121,5 +127,38 @@ public class ConfigurationServerImplTest {
         Mockito.verify(_mgrService, Mockito.times(1)).generateRandomPassword();
         //teardown
         System.setProperty("user.name", realusername);
+    }
+
+    @Test
+    public void testCreateDefaultNetworkOfferingsSeedsIsolatedOfferingsWithEgressAllow() {
+        Mockito.when(_networkOfferingDao.persistDefaultNetworkOffering(Mockito.any(NetworkOfferingVO.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        try (TransactionLegacy txn = TransactionLegacy.open("testCreateDefaultNetworkOfferings")) {
+            configurationServer.createDefaultNetworkOfferings();
+        }
+
+        ArgumentCaptor<NetworkOfferingVO> captor = ArgumentCaptor.forClass(NetworkOfferingVO.class);
+        Mockito.verify(_networkOfferingDao, Mockito.atLeastOnce()).persistDefaultNetworkOffering(captor.capture());
+
+        Map<String, NetworkOfferingVO> offeringsByName = new HashMap<>();
+        for (NetworkOfferingVO offering : captor.getAllValues()) {
+            offeringsByName.putIfAbsent(offering.getUniqueName(), offering);
+        }
+
+        NetworkOfferingVO isolatedSourceNatOffering = offeringsByName.get(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService);
+        Assert.assertNotNull(isolatedSourceNatOffering);
+        Assert.assertTrue("Built-in Isolated source-NAT offering must be seeded with egress default policy Allow on fresh installations",
+                isolatedSourceNatOffering.isEgressDefaultPolicy());
+
+        NetworkOfferingVO isolatedOffering = offeringsByName.get(NetworkOffering.DefaultIsolatedNetworkOffering);
+        Assert.assertNotNull(isolatedOffering);
+        Assert.assertTrue("Built-in Isolated (no source-NAT) offering must be seeded with egress default policy Allow on fresh installations",
+                isolatedOffering.isEgressDefaultPolicy());
+
+        NetworkOfferingVO sharedOffering = offeringsByName.get(NetworkOffering.DefaultSharedNetworkOffering);
+        Assert.assertNotNull(sharedOffering);
+        Assert.assertFalse("Built-in Shared offering seeding must remain unchanged",
+                sharedOffering.isEgressDefaultPolicy());
     }
 }
