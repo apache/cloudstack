@@ -1,0 +1,41 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Systemd unit file for CloudStack packet capture on a single VM NIC.
+#
+# Started by the CloudStack KVM agent as cloudstack-pcap@<interface>.service
+# when packet capture is enabled on a NIC. The agent writes the NIC context
+# to /run/cloudstack/pcap-<interface>.env before starting this unit.
+#
+# BindsTo ties the unit to the tap device: when the VM is stopped, migrated
+# away or the NIC is unplugged, the device disappears and systemd stops the
+# capture automatically.
+#
+# The capture script shipped with CloudStack is an example. To run your own,
+# copy this unit, point its ExecStart at your script and set the property
+# packet.capture.service in agent.properties to the name of your unit.
+
+[Unit]
+Description=CloudStack packet capture on %I
+BindsTo=sys-subsystem-net-devices-%i.device
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+Type=simple
+EnvironmentFile=/run/cloudstack/pcap-%i.env
+ExecStart=/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/pcap-capture.sh
+Restart=no
