@@ -25,7 +25,12 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.network.BgpPeerVO;
@@ -46,6 +51,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -76,6 +82,18 @@ public class BGPServiceImplTest {
     @Mock
     VpcServiceMapDao vpcServiceMapDao;
 
+    @Mock
+    NetworkOfferingDao networkOfferingDao;
+
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
+
+    @Mock
+    NetworkOfferingVO networkOffering;
+
+    @Mock
+    VpcOfferingVO vpcOffering;
+
     @Test
     public void testASNumbersOverlap() {
         Assert.assertEquals(bGPServiceImplSpy.isASNumbersOverlap(1,2,3,4), false);
@@ -94,6 +112,8 @@ public class BGPServiceImplTest {
         when(network.getVpcId()).thenReturn(null);
 
         when(routedIpv4Manager.isDynamicRoutedNetwork(network)).thenReturn(true);
+        when(networkOfferingDao.findById(anyLong())).thenReturn(networkOffering);
+        when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(ntwkSrvcDao.getProviderForServiceInNetwork(networkId, Network.Service.Gateway)).thenReturn("VirtualRouter");
         VirtualRouterElement virtualRouterElement = Mockito.mock(VirtualRouterElement.class);
         when(networkModel.getElementImplementingProvider("VirtualRouter")).thenReturn(virtualRouterElement);
@@ -121,9 +141,11 @@ public class BGPServiceImplTest {
         when(network.getDataCenterId()).thenReturn(zoneId);
 
         when(routedIpv4Manager.isDynamicRoutedNetwork(network)).thenReturn(true);
-        when(ntwkSrvcDao.getProviderForServiceInNetwork(networkId, Network.Service.Gateway)).thenReturn("VirtualRouter");
+        when(networkOfferingDao.findById(anyLong())).thenReturn(networkOffering);
+        when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        when(ntwkSrvcDao.getProviderForServiceInNetwork(networkId, Network.Service.Gateway)).thenReturn("VPCVirtualRouter");
         VirtualRouterElement virtualRouterElement = Mockito.mock(VirtualRouterElement.class);
-        when(networkModel.getElementImplementingProvider("VirtualRouter")).thenReturn(virtualRouterElement);
+        when(networkModel.getElementImplementingProvider("VPCVirtualRouter")).thenReturn(virtualRouterElement);
 
         when(bgpPeerDao.listNonRevokeByVpcId(vpcId)).thenReturn(new ArrayList<>());
 
@@ -153,6 +175,8 @@ public class BGPServiceImplTest {
         when(vpc.getZoneId()).thenReturn(zoneId);
 
         when(routedIpv4Manager.isDynamicRoutedVpc(vpc)).thenReturn(true);
+        when(vpcOfferingDao.findById(anyLong())).thenReturn(vpcOffering);
+        when(vpcOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(vpcServiceMapDao.getProviderForServiceInVpc(vpcId, Network.Service.Gateway)).thenReturn("VPCVirtualRouter");
         VpcVirtualRouterElement vpcVirtualRouterElement = Mockito.mock(VpcVirtualRouterElement.class);
         when(networkModel.getElementImplementingProvider("VPCVirtualRouter")).thenReturn(vpcVirtualRouterElement);
