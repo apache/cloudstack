@@ -308,6 +308,7 @@ public class Lun {
     }
 
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Clone {
         @JsonProperty("source")
         private Source source = null;
@@ -319,6 +320,7 @@ public class Lun {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Source {
         @JsonProperty("name")
         private String name = null;
