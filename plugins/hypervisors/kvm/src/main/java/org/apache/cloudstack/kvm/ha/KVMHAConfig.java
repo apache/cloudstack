@@ -52,4 +52,11 @@ public interface KVMHAConfig {
 
     ConfigKey<Long> KvmHAFenceTimeout = new ConfigKey<>("Advanced", Long.class, "kvm.ha.fence.timeout", "60",
             "The maximum length of time, in seconds, expected for a fence operation to complete.", true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Boolean> KvmHAFenceOnStorageHeartbeat = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat", "false",
+            "Whether to consider a host fenced when the out-of-band management fence operation fails (e.g. a complete power failure that takes down the BMC together with the host) "
+                    + "but the neighbouring hosts in the cluster positively report the host's storage heartbeat as expired. The host is never considered fenced when any check still "
+                    + "sees storage activity from it or when the heartbeat check itself fails. The heartbeat semantics follow the existing checks, including "
+                    + "'kvm.ha.fence.host.if.heartbeat.fails.on.storage'. When disabled, fencing relies solely on out-of-band management.",
+            true, ConfigKey.Scope.Cluster);
 }
