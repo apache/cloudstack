@@ -76,11 +76,16 @@ jobs:
             const grade     = '${{ steps.grade.outputs.coverage_grade }}';
             const label     = '${{ steps.grade.outputs.coverage_grade_label }}';
             const linePct   = '${{ steps.grade.outputs.line_coverage }}';
-            const branchPct = '${{ steps.grade.outputs.branch_coverage }}';
+            const branchPct = '${{ steps.grade.outputs.branch_coverage || 'N/A' }}';
             const emojiMap  = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⛔' };
             const emoji     = emojiMap[grade] ?? '❓';
             const runUrl    = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const marker    = '<!-- coverage-grade-bot -->';
+
+            if (!grade || grade === 'N/A') {
+              console.log('Coverage grade not available, skipping comment');
+              return;
+            }
 
             const branchRow = branchPct !== 'N/A'
               ? `| Branch coverage | **${branchPct}%** |`
