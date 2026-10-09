@@ -100,3 +100,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Custom DHCP (guest IP allocation) range for isolated guest networks
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_start_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''start of the custom DHCP range for an isolated network, within its CIDR'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_end_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''end of the custom DHCP range for an isolated network, within its CIDR'' ');

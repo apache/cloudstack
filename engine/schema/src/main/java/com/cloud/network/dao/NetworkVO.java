@@ -82,6 +82,12 @@ public class NetworkVO implements Network {
     @Column(name = "network_cidr")
     String networkCidr;
 
+    @Column(name = "dhcp_start_ip")
+    String dhcpStartIp;
+
+    @Column(name = "dhcp_end_ip")
+    String dhcpEndIp;
+
     @Column(name = "network_offering_id")
     long networkOfferingId;
 
@@ -468,6 +474,26 @@ public class NetworkVO implements Network {
     @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    @Override
+    public String getDhcpStartIp() {
+        return dhcpStartIp;
+    }
+
+    @Override
+    public void setDhcpStartIp(String dhcpStartIp) {
+        this.dhcpStartIp = dhcpStartIp;
+    }
+
+    @Override
+    public String getDhcpEndIp() {
+        return dhcpEndIp;
+    }
+
+    @Override
+    public void setDhcpEndIp(String dhcpEndIp) {
+        this.dhcpEndIp = dhcpEndIp;
     }
 
     // "networkcidr" is the network CIDR of the guest network which is configured with IP reservation feature
