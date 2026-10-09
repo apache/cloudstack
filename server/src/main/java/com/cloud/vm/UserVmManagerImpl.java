@@ -706,6 +706,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>(String.class,
     "allow.additional.vm.configuration.list.vmware", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
+    // Registered by VirtualMachineManagerImpl; both read the same setting.
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
@@ -3576,7 +3577,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm);
         }
 
-        stopVirtualMachine(vmId, VmDestroyForcestop.value());
+        stopVirtualMachineForDestroy(ctx.getCallingAccount(), vm);
 
         // Detach all data disks from VM
         List<VolumeVO> dataVols = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
@@ -5657,10 +5658,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void finalizeExpunge(VirtualMachine vm) {
     }
 
-    private void checkForceStopVmPermission(Account callingAccount) {
+    protected void checkForceStopVmPermission(Account callingAccount) {
         if (!AllowUserForceStopVm.valueIn(callingAccount.getId())) {
             logger.error("Parameter [{}] can only be passed by Admin accounts or when the allow.user.force.stop.vm config is true for the account.", ApiConstants.FORCED);
             throw new PermissionDeniedException("Account does not have the permission to force stop the vm.");
+        }
+    }
+
+    /**
+     * Stop an instance ahead of destroying it. See VirtualMachineManager.advanceStopForDestroy(): with
+     * vm.destroy.forcestop the stop is forced, but it does not release the instance's resources while its host may
+     * still be running it.
+     */
+    protected void stopVirtualMachineForDestroy(Account caller, UserVmVO vm) throws ResourceUnavailableException, ConcurrentOperationException {
+        if (VmDestroyForcestop.value()) {
+            checkForceStopVmPermission(caller);
+        }
+        try {
+            _itMgr.advanceStopForDestroy(vm.getUuid());
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
         }
     }
 
