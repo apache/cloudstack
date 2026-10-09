@@ -1980,7 +1980,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             _accountMgr.checkAccess(caller, null, true, volume);
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume.getPassphraseId() != null) {
+            if (volume.isEncrypted()) {
                 throw new UnsupportedOperationException("Cannot create Templates from encrypted volumes");
             }
 
@@ -2008,7 +2008,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
-            if (volume != null && volume.getPassphraseId() != null) {
+            if (volume != null && volume.isEncrypted()) {
                 throw new UnsupportedOperationException("Cannot create Templates from Snapshots of encrypted volumes");
             }
 
