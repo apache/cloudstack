@@ -55,6 +55,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     boolean enabled;
 
     Integer orderIndex;
+    private Integer multiqueueNumber;
 
     // IPv4
     String iPv4Address;
@@ -422,6 +423,14 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Integer getMultiqueueNumber() {
+        return multiqueueNumber;
+    }
+
+    public void setMultiqueueNumber(Integer multiqueueNumber) {
+        this.multiqueueNumber = multiqueueNumber;
     }
 
     //

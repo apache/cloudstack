@@ -150,6 +150,7 @@ import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -7248,6 +7249,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
 
+        validateNetworkOfferingMultiqueueParameters(cmd.getPublicMultiqueueNumber(), cmd.getPrivateMultiqueueNumber(), guestType, BooleanUtils.isTrue(forVpc));
+
         NetworkOffering.RoutingMode routingMode = verifyRoutingMode(routingModeString);
 
         // configure service provider map
@@ -7460,7 +7463,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, forNetris, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx,
+                forNetris, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber, cmd.getPublicMultiqueueNumber(), cmd.getPrivateMultiqueueNumber());
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -7469,6 +7473,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    private void validateNetworkOfferingMultiqueueParameters(Integer publicMultiqueueNumber, Integer privateMultiqueueNumber, GuestType guestType, boolean forVpc) {
+        if (guestType == GuestType.L2 && ObjectUtils.anyNotNull(publicMultiqueueNumber, privateMultiqueueNumber)) {
+            throw new InvalidParameterValueException("Multiqueue parameters cannot be specified for L2 network offerings.");
+        }
+
+        if (publicMultiqueueNumber != null) {
+            if (forVpc) {
+                throw new InvalidParameterValueException(String.format("The [%s] parameter cannot be specified for offerings that are meant to be used for VPC tiers.", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
+            }
+
+            if (publicMultiqueueNumber <= 0 && publicMultiqueueNumber != -1) {
+                throw new InvalidParameterValueException(String.format("The only non-positive value accepted by the parameter [%s] is [-1].", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER));
+            }
+        }
+
+        if (privateMultiqueueNumber != null && privateMultiqueueNumber <= 0 && privateMultiqueueNumber != -1) {
+            throw new InvalidParameterValueException(String.format("The only non-positive value accepted by the parameter [%s] is [-1].", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER));
+        }
     }
 
     public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
@@ -7628,7 +7652,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
                                                    Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
-                                                   final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
+                                                   final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber, Integer publicMultiqueueNumber, Integer privateMultiqueueNumber) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -7858,6 +7882,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
         offeringFinal.setNetworkMode(networkMode);
+
+        offeringFinal.setPublicMultiqueueNumber(publicMultiqueueNumber);
+        offeringFinal.setPrivateMultiqueueNumber(privateMultiqueueNumber);
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
@@ -8610,6 +8637,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             applyIfNotProvided(cmd, requestParams, "serviceOfferingId", ApiConstants.SERVICE_OFFERING_ID, cmd.getServiceOfferingId(), sourceOffering.getServiceOfferingId());
             applyIfNotProvided(cmd, requestParams, "guestIptype", ApiConstants.GUEST_IP_TYPE, cmd.getGuestIpType(), sourceOffering.getGuestType().toString());
             applyIfNotProvided(cmd, requestParams, "maxConnections", ApiConstants.MAX_CONNECTIONS, cmd.getMaxconnections(), sourceOffering.getConcurrentConnections());
+            applyIfNotProvided(cmd, requestParams, "publicMultiqueueNumber", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, cmd.getPublicMultiqueueNumber(), sourceOffering.getPublicMultiqueueNumber());
+            applyIfNotProvided(cmd, requestParams, "privateMultiqueueNumber", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, cmd.getPrivateMultiqueueNumber(), sourceOffering.getPrivateMultiqueueNumber());
 
             applyBooleanIfNotProvided(cmd, requestParams, "specifyVlan", ApiConstants.SPECIFY_VLAN, sourceOffering.isSpecifyVlan());
             applyBooleanIfNotProvided(cmd, requestParams, "conserveMode", ApiConstants.CONSERVE_MODE, sourceOffering.isConserveMode());

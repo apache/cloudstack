@@ -52,8 +52,7 @@ public interface NetworkHelper {
             List<? extends VirtualRouter> disconnectedRouters, String reason)
                     throws ResourceUnavailableException;
 
-    public abstract NicTO getNicTO(VirtualRouter router, Long networkId,
-            String broadcastUri);
+    public abstract NicTO getNicTO(VirtualRouter router, Long networkId, String broadcastUri, Integer multiqueueNumber);
 
     public abstract VirtualRouter destroyRouter(long routerId, Account caller,
             Long callerUserId) throws ResourceUnavailableException,

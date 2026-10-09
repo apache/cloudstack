@@ -86,4 +86,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Boolean isSpecifyAsNumber();
 
     boolean isConserveMode();
+
+    Integer getPublicMultiqueueNumber();
+
+    Integer getPrivateGatewayMultiqueueNumber();
 }

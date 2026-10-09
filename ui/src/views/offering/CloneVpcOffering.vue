@@ -212,6 +212,32 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-row :guttter="12">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="publicmultiqueuenumber" ref="publicmultiqueuenumber">
+              <template #label>
+                <tooltip-label :title="$t('label.public.multiqueue.number')" :tooltip="apiParams.publicmultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.publicmultiqueuenumber"
+                :placeholder="apiParams.publicmultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="privategatewaymultiqueuenumber" ref="privategatewaymultiqueuenumber">
+              <template #label>
+                <tooltip-label :title="$t('label.private.gateway.multiqueue.number')" :tooltip="apiParams.privategatewaymultiqueuenumber.description"/>
+              </template>
+              <a-input
+                v-model:value="form.privategatewaymultiqueuenumber"
+                :placeholder="apiParams.privategatewaymultiqueuenumber.description"
+                style="width: 75%;"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" @change="val => { isPublic = val }" />
         </a-form-item>
@@ -397,7 +423,9 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        publicmultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }],
+        privategatewaymultiqueuenumber: [{ type: 'number', validator: this.validateMultiqueueValue }]
       })
     },
     fetchData () {
@@ -655,6 +683,14 @@ export default {
       if (this.provider === 'NSX') {
         this.form.nsxsupportlb = Boolean(this.serviceProviderMap.Lb)
       }
+
+      if (r.publicmultiqueuenumber) {
+        this.form.publicmultiqueuenumber = r.publicmultiqueuenumber
+      }
+
+      if (r.privategatewaymultiqueuenumber) {
+        this.form.privategatewaymultiqueuenumber = r.privategatewaymultiqueuenumber
+      }
     },
     async handleProviderChange (value) {
       this.provider = value
@@ -818,6 +854,9 @@ export default {
           params.enable = values.enable
         }
 
+        params.publicmultiqueuenumber = values.publicmultiqueuenumber
+        params.privategatewaymultiqueuenumber = values.privategatewaymultiqueuenumber
+
         this.loading = true
         postAPI('cloneVPCOffering', params).then(json => {
           this.$message.success(`${this.$t('message.success.clone.vpc.offering')} ${values.name}`)
@@ -834,6 +873,16 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    validateMultiqueueValue (rule, value) {
+      if (!value) {
+        return Promise.resolve()
+      }
+      const multiqueue = Number(value)
+      if (Number.isNaN(multiqueue) || (multiqueue <= 0 && multiqueue !== -1)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

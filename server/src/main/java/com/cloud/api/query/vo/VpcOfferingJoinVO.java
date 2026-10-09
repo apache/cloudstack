@@ -115,6 +115,12 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "conserve_mode")
     private boolean conserveMode;
 
+    @Column(name = "public_multiqueue_number")
+    private Integer publicMultiqueueNumber;
+
+    @Column(name = "private_gateway_multiqueue_number")
+    private Integer privateGatewayMultiqueueNumber;
+
     public VpcOfferingJoinVO() {
     }
 
@@ -244,6 +250,16 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     public String getInternetProtocol() {
         return internetProtocol;
+    }
+
+    @Override
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    @Override
+    public Integer getPrivateGatewayMultiqueueNumber() {
+        return privateGatewayMultiqueueNumber;
     }
 
     @Override

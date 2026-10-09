@@ -36,6 +36,7 @@ public class NicTO extends NetworkTO {
     boolean enabled;
 
     String networkSegmentName;
+    private Integer multiqueueNumber;
 
     public NicTO() {
         super();
@@ -162,5 +163,13 @@ public class NicTO extends NetworkTO {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Integer getMultiqueueNumber() {
+        return multiqueueNumber;
+    }
+
+    public void setMultiqueueNumber(Integer multiqueueNumber) {
+        this.multiqueueNumber = multiqueueNumber;
     }
 }

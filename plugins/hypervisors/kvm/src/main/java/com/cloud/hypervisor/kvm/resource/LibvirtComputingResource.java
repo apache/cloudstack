@@ -4105,9 +4105,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
         final InterfaceDef interfaceDef = getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig);
-        if (vmSpec.getDetails() != null) {
-            setInterfaceDefQueueSettings(vmSpec.getDetails(), vmSpec.getCpus(), interfaceDef);
-        }
+        setInterfaceDefQueueSettings(vmSpec.getDetails(), vmSpec.getCpus(), interfaceDef, nic.getMultiqueueNumber(), vmSpec.getType() == VirtualMachine.Type.DomainRouter);
         vm.getDevices().addDevice(interfaceDef);
     }
 
@@ -6839,22 +6837,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef) {
+    private Integer getMultiqueueFromVmDetails(Map<String, String> details) {
         String nicMultiqueueNumber = details.get(VmDetailConstants.NIC_MULTIQUEUE_NUMBER);
         if (nicMultiqueueNumber != null) {
             try {
-                Integer nicMultiqueueNumberInteger = Integer.valueOf(nicMultiqueueNumber);
-                if (nicMultiqueueNumberInteger == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES) {
-                    if (cpus != null) {
-                        interfaceDef.setMultiQueueNumber(cpus);
-                    }
-                } else {
-                    interfaceDef.setMultiQueueNumber(nicMultiqueueNumberInteger);
-                }
+                return Integer.valueOf(nicMultiqueueNumber);
             } catch (NumberFormatException ex) {
-                LOGGER.warn(String.format("VM details %s is not a valid integer value %s", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber));
+                logger.warn("VM detail [{}] is not a valid integer value {}.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber);
             }
         }
+
+        return null;
+    }
+
+    public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef, Integer multiqueueForVrs, boolean isVr) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+
+        Integer nicMultiqueueNumber = getMultiqueueFromVmDetails(details);
+        if (nicMultiqueueNumber != null) {
+            logger.info("VM detail [{}] is equal to [{}]; therefore, it will be used as the multiqueue value.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber);
+        } else if (isVr && multiqueueForVrs != null) {
+            logger.info("VM detail [{}] has not been specified. The target VM is a VR and it has an associated multiqueue number. " +
+                    "Considering this associated value, equal to [{}], as the multiqueue value.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, multiqueueForVrs);
+            nicMultiqueueNumber = multiqueueForVrs;
+        }
+
+        if (nicMultiqueueNumber != null) {
+            if (nicMultiqueueNumber == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES && cpus != null && cpus > 0) {
+                logger.info("The NIC multiqueue number is equal to [{}]. Thus, defining the multiqueue value as the number of vCPUs [{}].", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES, cpus);
+                interfaceDef.setMultiQueueNumber(cpus);
+            } else {
+                logger.debug("Defining the NIC multiqueue number as [{}] in the NIC XML definition.", nicMultiqueueNumber);
+                interfaceDef.setMultiQueueNumber(nicMultiqueueNumber);
+            }
+        }
+
         String nicPackedEnabled = details.get(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED);
         if (nicPackedEnabled != null) {
             try {

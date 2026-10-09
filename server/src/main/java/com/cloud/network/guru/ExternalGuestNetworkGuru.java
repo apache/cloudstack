@@ -88,6 +88,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     FirewallRulesCidrsDao _fwRulesCidrDao;
 
+    public static final String NETWORK_GURU_NAME = "ExternalGuestNetworkGuru";
+
     public ExternalGuestNetworkGuru() {
         super();
         _isolationMethods = new IsolationMethod[] {new IsolationMethod("GRE"), new IsolationMethod("L3"), new IsolationMethod("VLAN")};

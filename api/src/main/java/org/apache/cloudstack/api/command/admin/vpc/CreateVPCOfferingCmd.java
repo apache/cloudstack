@@ -165,6 +165,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             description = "True if the VPC offering is IP conserve mode enabled, allowing public IPs to be used across multiple VPC tiers. Default value is false")
     private Boolean conserveMode;
 
+    @Parameter(name = ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "24.0",
+            description = "Multiqueue number for the public NIC of VRs belonging to VPCs.")
+    private Integer publicMultiqueueNumber;
+
+    @Parameter(name = ApiConstants.PRIVATE_GATEWAY_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "24.0",
+            description = "Multiqueue number for the private gateway NIC of VRs belonging to VPCs.")
+    private Integer privateGatewayMultiqueueNumber;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -316,6 +324,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     public boolean isConserveMode() {
         return BooleanUtils.toBoolean(conserveMode);
+    }
+
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    public Integer getPrivateGatewayMultiqueueNumber() {
+        return privateGatewayMultiqueueNumber;
     }
 
     @Override
