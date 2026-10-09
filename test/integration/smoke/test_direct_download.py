@@ -169,9 +169,9 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         cls._cleanup = []
         cls.hypervisorSupported = False
-        cls.nfsStorageFound = False
+        cls.sharedStorageFound = False
+        cls.sharedPoolIds = {}
         cls.localStorageFound = False
-        cls.sharedMountPointFound = False
 
         if cls.hypervisor.lower() in ['kvm', 'lxc']:
             cls.hypervisorSupported = True
@@ -218,19 +218,16 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                 zoneid=cls.zone.id
             )
             for pool in storage_pools:
-                if not cls.nfsStorageFound and pool.type in ("NetworkFilesystem", "RBD"):
-                    cls.nfsStorageFound = True
-                    cls.nfsPoolId = pool.id
+                if pool.type in ("NetworkFilesystem", "RBD", "SharedMountPoint"):
+                    # the first pool of each supported shared storage type
+                    cls.sharedStorageFound = True
+                    cls.sharedPoolIds.setdefault(pool.type, pool.id)
                 elif not cls.localStorageFound and pool.type == "Filesystem":
                     cls.localStorageFound = True
                     cls.localPoolId = pool.id
-                elif not cls.sharedMountPointFound and pool.type == "SharedMountPoint":
-                    cls.sharedMountPointFound = True
-                    cls.sharedPoolId = pool.id
 
-        cls.nfsKvmNotAvailable = not cls.hypervisorSupported or not cls.nfsStorageFound
-        cls.localStorageKvmNotAvailable = not cls.hypervisorSupported or not cls.localStorageFound
-        cls.sharedMountPointKvmNotAvailable = not cls.hypervisorSupported or not cls.sharedMountPointFound
+        cls.storageKvmNotAvailable = not cls.hypervisorSupported or not (
+            cls.sharedStorageFound or cls.localStorageFound)
         return
 
     @classmethod
@@ -295,82 +292,36 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         self.cleanup.append(vm)
         return vm
 
-    @skipTestIf("nfsKvmNotAvailable")
+    @skipTestIf("storageKvmNotAvailable")
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
-    def test_01_deploy_vm_from_direct_download_template_nfs_storage(self):
-        """Test Deploy VM from direct download template on NFS or RBD storage
+    def test_01_deploy_vm_from_direct_download_template(self):
+        """Test Deploy VM from direct download template on NFS, RBD, local storage and shared mount point
         """
 
-        # Create service offering for local storage using storage tags
-        tags = self.getCurrentStoragePoolTags(self.nfsPoolId)
-        test_tag = "marvin_test_nfs_storage_direct_download"
-        self.updateStoragePoolTags(self.nfsPoolId, test_tag)
-        nfs_storage_offering = self.createServiceOffering("TestNFSStorageDirectDownload", "shared", test_tag)
+        storages = []
+        for pool_type, pool_id in self.sharedPoolIds.items():
+            storages.append((pool_type, pool_id, "shared"))
+        if self.localStorageFound:
+            storages.append(("Filesystem", self.localPoolId, "local"))
 
-        vm = self.deployVM(nfs_storage_offering)
-        self.assertEqual(
-            vm.state,
-            "Running",
-            "Check VM deployed from direct download template is running on NFS storage"
-        )
+        for pool_type, pool_id, offering_type in storages:
+            self.debug("Deploying VM from direct download template on %s storage" % pool_type)
 
-        # Revert storage tags for the storage pool used in this test
-        self.updateStoragePoolTags(self.nfsPoolId, tags)
-        self.cleanup.append(nfs_storage_offering)
-        return
-
-    @skipTestIf("localStorageKvmNotAvailable")
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
-    def test_02_deploy_vm_from_direct_download_template_local_storage(self):
-        """Test Deploy VM from direct download template on local storage
-        """
-
-        # Create service offering for local storage using storage tags
-        tags = self.getCurrentStoragePoolTags(self.localPoolId)
-        test_tag = "marvin_test_local_storage_direct_download"
-        self.updateStoragePoolTags(self.localPoolId, test_tag)
-        local_storage_offering = self.createServiceOffering("TestLocalStorageDirectDownload", "local", test_tag)
-
-        # Deploy VM
-        vm = self.deployVM(local_storage_offering)
-        self.assertEqual(
-            vm.state,
-            "Running",
-            "Check VM deployed from direct download template is running on local storage"
-        )
-
-        # Revert storage tags for the storage pool used in this test
-        self.updateStoragePoolTags(self.localPoolId, tags)
-        self.cleanup.append(local_storage_offering)
-        return
-
-    @skipTestIf("sharedMountPointKvmNotAvailable")
-    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
-    def test_03_deploy_vm_from_direct_download_template_shared_mount_point_storage(self):
-        """Test Deploy VM from direct download template on shared mount point
-        """
-
-        # Create service offering for local storage using storage tags
-        tags = self.getCurrentStoragePoolTags(self.sharedPoolId)
-        test_tag = "marvin_test_shared_mount_point_storage_direct_download"
-        self.updateStoragePoolTags(self.sharedPoolId, test_tag)
-        shared_offering = self.createServiceOffering("TestSharedMountPointStorageDirectDownload", "shared", test_tag)
-
-        # Deploy VM
-        vm = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            serviceofferingid=shared_offering.id,
-            networkids=self.l2_network.id,
-        )
-        self.assertEqual(
-            vm.state,
-            "Running",
-            "Check VM deployed from direct download template is running on shared mount point"
-        )
-
-        # Revert storage tags for the storage pool used in this test
-        self.updateStoragePoolTags(self.sharedPoolId, tags)
-        self.cleanup.append(vm)
-        self.cleanup.append(shared_offering)
-        return
+            # Create service offering for the storage using the storage pool type as storage tag
+            tags = self.getCurrentStoragePoolTags(pool_id)
+            test_tag = pool_type.lower()
+            self.updateStoragePoolTags(pool_id, test_tag)
+            offering = self.createServiceOffering("TestDirectDownload-%s" % test_tag, offering_type, test_tag)
+            try:
+                # Deploy VM
+                vm = self.deployVM(offering)
+                self.assertEqual(
+                    vm.state,
+                    "Running",
+                    "Check VM deployed from direct download template is running on %s storage" % pool_type
+                )
+            finally:
+                # Revert storage tags for the storage pool used in this test
+                self.updateStoragePoolTags(pool_id, tags)
+                # the offering is cleaned up after the VM using it
+                self.cleanup.append(offering)
