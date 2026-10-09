@@ -2851,7 +2851,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (deleteNetworkFinal) {
                 final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                 final Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-                final ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+                final ReservationContext context = new ReservationContextImpl(null, null, callerUser, CallContext.current().getCallingAccount());
                 _ntwkMgr.destroyNetwork(networkId, context, false);
                 logger.debug("Deleted private network {}", network);
             }
