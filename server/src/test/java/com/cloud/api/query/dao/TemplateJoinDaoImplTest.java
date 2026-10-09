@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VnfTemplateDetailVO;
@@ -38,7 +39,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -149,5 +152,67 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
         Assert.assertEquals(2, ((VnfTemplateResponse)response).getVnfNics().size());
         Assert.assertEquals(3, ((VnfTemplateResponse)response).getVnfDetails().size());
 
+    }
+
+    private String buildWhere(TemplateListFilter filter, List<Object> params) {
+        StringBuilder where = new StringBuilder();
+        _templateJoinDaoImpl.appendCommonWhere(where, params, filter);
+        return where.toString();
+    }
+
+    @Test
+    public void testAppendCommonWhereTemplateType() {
+        List<Object> params = new ArrayList<>();
+        String where = buildWhere(TemplateListFilter.builder().templateType("SYSTEM").build(), params);
+        Assert.assertTrue(where.contains(" AND vt.type = ?"));
+        Assert.assertEquals(Arrays.<Object>asList("SYSTEM"), params);
+    }
+
+    @Test
+    public void testAppendCommonWhereIsVnf() {
+        Assert.assertTrue(buildWhere(TemplateListFilter.builder().isVnf(true).build(), new ArrayList<>()).contains("vt.type = 'VNF'"));
+        Assert.assertTrue(buildWhere(TemplateListFilter.builder().isVnf(false).build(), new ArrayList<>()).contains("vt.type != 'VNF'"));
+    }
+
+    @Test
+    public void testAppendCommonWhereForCks() {
+        List<Object> params = new ArrayList<>();
+        String where = buildWhere(TemplateListFilter.builder().forCks(true).build(), params);
+        Assert.assertTrue(where.contains(" AND vt.for_cks = ?"));
+        Assert.assertEquals(Arrays.<Object>asList(1), params);
+    }
+
+    @Test
+    public void testAppendCommonWhereOnlyReadyIncludesExternalFormat() {
+        String where = buildWhere(TemplateListFilter.builder().onlyReady(true).build(), new ArrayList<>());
+        Assert.assertTrue(where.contains("vt.format IN ('BAREMETAL', 'EXTERNAL')"));
+    }
+
+    @Test
+    public void testAppendCommonWhereOmitsUnsetTypeFilters() {
+        String where = buildWhere(TemplateListFilter.builder().build(), new ArrayList<>());
+        Assert.assertFalse(where.contains("for_cks"));
+        Assert.assertFalse(where.contains("vt.type"));
+    }
+
+    @Test
+    public void testAppendCommonWhereArchOsCategoryExtensionAndImageStore() {
+        List<Object> params = new ArrayList<>();
+        String where = buildWhere(TemplateListFilter.builder().arch(CPU.CPUArch.arm64)
+                .guestOsIds(Arrays.asList(1L, 2L)).extensionId(5L).imageStoreId(7L).build(), params);
+        Assert.assertTrue(where.contains(" AND vt.arch = ?"));
+        Assert.assertTrue(where.contains(" AND vt.guest_os_id IN (?,?)"));
+        Assert.assertTrue(where.contains(" AND vt.extension_id = ?"));
+        Assert.assertTrue(where.contains(" AND tsr.store_id = ?"));
+        Assert.assertEquals(Arrays.<Object>asList(CPU.CPUArch.arm64.getType(), 1L, 2L, 5L, 7L), params);
+    }
+
+    @Test
+    public void testAppendCommonWhereDomainPathExactVsLike() {
+        List<Object> params = new ArrayList<>();
+        String exact = buildWhere(TemplateListFilter.builder().domainPathLike("/a/").domainPathExact(true).build(), params);
+        Assert.assertTrue(exact.contains(" AND d.path = ?"));
+        String like = buildWhere(TemplateListFilter.builder().domainPathLike("/a/%").build(), new ArrayList<>());
+        Assert.assertTrue(like.contains(" AND d.path LIKE ?"));
     }
 }
