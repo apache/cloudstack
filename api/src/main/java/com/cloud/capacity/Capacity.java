@@ -22,49 +22,49 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Capacity extends InternalIdentity, Identity {
-    public static final short CAPACITY_TYPE_MEMORY = 0;
-    public static final short CAPACITY_TYPE_CPU = 1;
-    public static final short CAPACITY_TYPE_STORAGE = 2;
-    public static final short CAPACITY_TYPE_STORAGE_ALLOCATED = 3;
-    public static final short CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4;
-    public static final short CAPACITY_TYPE_PRIVATE_IP = 5;
-    public static final short CAPACITY_TYPE_SECONDARY_STORAGE = 6;
-    public static final short CAPACITY_TYPE_VLAN = 7;
-    public static final short CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8;
-    public static final short CAPACITY_TYPE_LOCAL_STORAGE = 9;
-    public static final short CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = 10;
-    public static final short CAPACITY_TYPE_GPU = 19;
-    public static final short CAPACITY_TYPE_OBJECT_STORAGE = 20;
-    public static final short CAPACITY_TYPE_BACKUP_STORAGE = 21;
+    short CAPACITY_TYPE_MEMORY = 0;
+    short CAPACITY_TYPE_CPU = 1;
+    short CAPACITY_TYPE_STORAGE = 2;
+    short CAPACITY_TYPE_STORAGE_ALLOCATED = 3;
+    short CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4;
+    short CAPACITY_TYPE_PRIVATE_IP = 5;
+    short CAPACITY_TYPE_SECONDARY_STORAGE = 6;
+    short CAPACITY_TYPE_VLAN = 7;
+    short CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8;
+    short CAPACITY_TYPE_LOCAL_STORAGE = 9;
+    short CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = 10;
+    short CAPACITY_TYPE_GPU = 19;
+    short CAPACITY_TYPE_OBJECT_STORAGE = 20;
+    short CAPACITY_TYPE_BACKUP_STORAGE = 21;
 
-    public static final short CAPACITY_TYPE_CPU_CORE = 90;
+    short CAPACITY_TYPE_CPU_CORE = 90;
 
-    public static final List<Short> STORAGE_CAPACITY_TYPES = List.of(CAPACITY_TYPE_STORAGE,
+    List<Short> STORAGE_CAPACITY_TYPES = List.of(CAPACITY_TYPE_STORAGE,
             CAPACITY_TYPE_STORAGE_ALLOCATED,
             CAPACITY_TYPE_SECONDARY_STORAGE,
             CAPACITY_TYPE_LOCAL_STORAGE,
             CAPACITY_TYPE_BACKUP_STORAGE,
             CAPACITY_TYPE_OBJECT_STORAGE);
 
-    public Long getHostOrPoolId();
+    Long getHostOrPoolId();
 
-    public Long getDataCenterId();
+    Long getDataCenterId();
 
-    public Long getPodId();
+    Long getPodId();
 
-    public Long getClusterId();
+    Long getClusterId();
 
-    public long getUsedCapacity();
+    long getUsedCapacity();
 
-    public long getTotalCapacity();
+    long getTotalCapacity();
 
-    public short getCapacityType();
+    short getCapacityType();
 
-    public long getReservedCapacity();
+    long getReservedCapacity();
 
-    public Float getUsedPercentage();
+    Float getUsedPercentage();
 
-    public Long getAllocatedCapacity();
+    Long getAllocatedCapacity();
 
-    public String getTag();
+    String getTag();
 }
