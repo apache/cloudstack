@@ -35,9 +35,12 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
@@ -171,9 +174,25 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add(String.join(",", parentPaths));
         }
 
+        // Optional enhancement flags (compression / encryption / bandwidth / integrity check).
+        // Encryption writes the passphrase to a private temp file for the script; it is always
+        // removed once the script returns, whether the backup succeeded or not.
+        File passphraseFile;
+        try {
+            passphraseFile = appendEnhancementFlags(argv, command.getDetails());
+        } catch (BackupConfigException e) {
+            return new Pair<>(1, e.getMessage());
+        }
+
         List<String[]> commands = new ArrayList<>();
         commands.add(argv.toArray(new String[0]));
-        return Script.executePipedCommands(commands, timeout);
+        try {
+            return Script.executePipedCommands(commands, timeout);
+        } finally {
+            if (passphraseFile != null && passphraseFile.exists() && !passphraseFile.delete()) {
+                logger.warn("Could not delete temporary backup passphrase file " + passphraseFile);
+            }
+        }
     }
 
     /**
@@ -227,5 +246,57 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
         return backupSize;
+    }
+
+    /**
+     * Translates the optional backup-enhancement details (compression, encryption,
+     * bandwidth limit, integrity check) into nasbackup.sh CLI flags appended to
+     * {@code cmdArgs}. Returns the temporary passphrase file when encryption is
+     * enabled (the caller deletes it after the backup), or {@code null} otherwise.
+     */
+    File appendEnhancementFlags(List<String> cmdArgs, Map<String, String> details) throws BackupConfigException {
+        if (details == null) {
+            return null;
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_COMPRESSION))) {
+            cmdArgs.add("-c");
+        }
+        File passphraseFile = null;
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_ENCRYPTION))) {
+            String passphrase = details.get(TakeBackupCommand.DETAIL_ENCRYPTION_PASSPHRASE);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new BackupConfigException("Encryption is enabled but no passphrase was provided");
+            }
+            passphraseFile = writePassphraseFile(passphrase);
+            cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
+        }
+        String bwLimit = details.get(TakeBackupCommand.DETAIL_BANDWIDTH_LIMIT);
+        if (bwLimit != null && !"0".equals(bwLimit)) {
+            cmdArgs.add("-b"); cmdArgs.add(bwLimit);
+        }
+        if ("true".equals(details.get(TakeBackupCommand.DETAIL_INTEGRITY_CHECK))) {
+            cmdArgs.add("--verify");
+        }
+        return passphraseFile;
+    }
+
+    /**
+     * Writes {@code passphrase} to a 0600 UTF-8 temp file for nasbackup.sh's {@code -e}
+     * flag. Scheduled for deletion on JVM exit; the caller removes it after the backup.
+     */
+    private File writePassphraseFile(String passphrase) throws BackupConfigException {
+        try {
+            return NasBackupPassphraseFile.write(passphrase);
+        } catch (IOException e) {
+            logger.error("Failed to create encryption passphrase file", e);
+            throw new BackupConfigException("Failed to create encryption passphrase file: " + e.getMessage());
+        }
+    }
+
+    /** Signals an invalid or unsatisfiable backup-enhancement configuration. */
+    static class BackupConfigException extends Exception {
+        BackupConfigException(String message) {
+            super(message);
+        }
     }
 }

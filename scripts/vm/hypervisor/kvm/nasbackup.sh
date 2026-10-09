@@ -32,6 +32,10 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+COMPRESS=""
+BANDWIDTH=""
+ENCRYPT_PASSFILE=""
+VERIFY=""
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
@@ -96,6 +100,86 @@ sanity_checks() {
   log -ne "Environment Sanity Checks successfully passed"
 }
 
+encrypt_backup() {
+  local backup_dir="$1"
+  if [[ -z "$ENCRYPT_PASSFILE" ]]; then
+    return
+  fi
+  if [[ ! -f "$ENCRYPT_PASSFILE" ]]; then
+    echo "Encryption passphrase file not found: $ENCRYPT_PASSFILE"
+    return 1
+  fi
+  log -ne "Encrypting backup files with LUKS"
+  # No -c here: qcow2 cannot compress and encrypt the same image, so the combination is
+  # rejected before the backup starts (see the check before the operation dispatch).
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    local tmp_img="${img}.luks"
+    if qemu-img convert -O qcow2 \
+        --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
+        -o "encrypt.format=luks,encrypt.key-secret=sec0" \
+        "$img" "$tmp_img" >> "$logFile" 2>&1; then
+      mv "$tmp_img" "$img"
+      log -ne "Encrypted: $img"
+    else
+      echo "Encryption failed for $img"
+      rm -f "$tmp_img"
+      return 1
+    fi
+  done
+}
+
+verify_backup() {
+  local backup_dir="$1"
+  local failed=0
+  # If encryption was applied to this backup, qemu-img check has to open the
+  # qcow2 with the same LUKS secret — otherwise every verification call fails
+  # with a "Could not open" error and --verify is unusable on encrypted
+  # backups.
+  local check_secret=()
+  if [[ -n "$ENCRYPT_PASSFILE" && -f "$ENCRYPT_PASSFILE" ]]; then
+    check_secret=(--object "secret,id=sec0,file=$ENCRYPT_PASSFILE")
+  fi
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    local check_rc=0
+    if [[ ${#check_secret[@]} -gt 0 ]]; then
+      qemu-img check "${check_secret[@]}" --image-opts \
+        "driver=qcow2,file.filename=$img,encrypt.key-secret=sec0" \
+        > /dev/null 2>&1 || check_rc=$?
+    else
+      qemu-img check "$img" > /dev/null 2>&1 || check_rc=$?
+    fi
+    # qemu-img check: 0 = clean, 3 = leaked clusters only (wasted space, data intact),
+    # 2 = corruption, 1 = check could not complete, 63 = format cannot be checked.
+    case $check_rc in
+      0)
+        log -ne "Backup verification passed: $img" ;;
+      3)
+        log -ne "Backup verification passed with leaked clusters (wasted space only, data intact): $img" ;;
+      *)
+        echo "Backup verification failed for $img (qemu-img check exit code $check_rc)"
+        log -ne "Backup verification FAILED (qemu-img check exit code $check_rc): $img"
+        failed=1 ;;
+    esac
+  done
+  if [[ $failed -ne 0 ]]; then
+    echo "One or more backup files failed verification"
+    return 1
+  fi
+}
+
+# qemu-img convert -r (rate limit) arrived in QEMU 5.2; older hosts reject the option. Probe it on
+# a throwaway 1 MiB image rather than parsing --help, whose format differs between releases.
+qemu_img_supports_rate_limit() {
+  local probe_dir rc=0
+  probe_dir=$(mktemp -d) || return 1
+  { qemu-img create -q -f qcow2 "$probe_dir/src.qcow2" 1M &&
+    qemu-img convert -r 1G -O qcow2 "$probe_dir/src.qcow2" "$probe_dir/dst.qcow2"; } > /dev/null 2>&1 || rc=$?
+  rm -rf "$probe_dir"
+  return $rc
+}
+
 ### Operation methods ###
 
 get_ceph_uuid_from_path() {
@@ -157,6 +241,16 @@ backup_running_vm() {
       exit 1
       ;;
   esac
+
+  # Compression and encryption rewrite each file with qemu-img convert, which would flatten an
+  # incremental through its backing chain. The management server never combines them (a zone
+  # with either enabled takes full backups); refuse the combination rather than silently
+  # producing a full-size or unreadable chain member.
+  if [[ "$effective_mode" == "incremental" && ( "$COMPRESS" == "true" || -n "$ENCRYPT_PASSFILE" ) ]]; then
+    echo "Incremental mode cannot be combined with compression or encryption"
+    cleanup
+    exit 1
+  fi
 
   # Incremental needs the parent checkpoint registered with libvirt. CloudStack rebuilds the
   # domain XML on every VM start, wiping libvirt's checkpoint registry while the dirty bitmap
@@ -290,6 +384,21 @@ print(len(files))
     exit 1
   fi
 
+  # Throttle backup bandwidth if requested (MiB/s per disk). Log what actually happened per disk:
+  # a failed set-speed leaves that disk unthrottled, and the log must not claim otherwise.
+  if [[ -n "$BANDWIDTH" ]]; then
+    local throttled=0 not_throttled=0 bw_out
+    for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '$2=="disk"{print $3}'); do
+      if bw_out=$(virsh -c qemu:///system blockjob $VM $disk --bandwidth "${BANDWIDTH}" 2>&1); then
+        throttled=$((throttled + 1))
+      else
+        not_throttled=$((not_throttled + 1))
+        log -ne "WARNING: could not limit backup bandwidth on $VM disk $disk, it runs unthrottled: $bw_out"
+      fi
+    done
+    log -ne "Backup bandwidth limit of ${BANDWIDTH} MiB/s applied to $throttled disk(s) of $VM; $not_throttled disk(s) unthrottled"
+  fi
+
   # Backup domain information
   virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
   virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null
@@ -303,7 +412,8 @@ print(len(files))
         break ;;
       Failed)
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        return 1 ;;
     esac
     sleep 5
   done
@@ -410,6 +520,37 @@ for dev in data.get("return", []) or []:
     )
   fi
 
+  # Compress backup files if requested
+  if [[ "$COMPRESS" == "true" ]]; then
+    log -ne "Compressing backup files for $VM"
+    for img in "$dest"/*.qcow2; do
+      [[ -f "$img" ]] || continue
+      local tmp_img="${img}.tmp"
+      if qemu-img convert -c -O qcow2 "$img" "$tmp_img" >> "$logFile" 2>&1; then
+        mv "$tmp_img" "$img"
+      else
+        log -ne "Warning: compression failed for $img, keeping uncompressed"
+        rm -f "$tmp_img"
+      fi
+    done
+  fi
+
+  # Encrypt backup files if requested
+  if ! encrypt_backup "$dest"; then
+    cleanup
+    return 1
+  fi
+
+  sync
+
+  # Verify backup integrity if requested
+  if [[ "$VERIFY" == "true" ]]; then
+    if ! verify_backup "$dest"; then
+      cleanup
+      return 1
+    fi
+  fi
+
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
@@ -423,6 +564,22 @@ backup_stopped_vm() {
   # qemu-img convert. The orchestrator never sends incremental mode for a stopped VM.
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
+
+  # Optional convert flags. ionice and -r only apply when a bandwidth limit is configured, so
+  # backups without the new settings run exactly as before.
+  local convert_opts=() io_prio=()
+  if [[ "$COMPRESS" == "true" ]]; then
+    convert_opts+=(-c)
+  fi
+  if [[ -n "$BANDWIDTH" ]]; then
+    io_prio=(ionice -c 3)
+    if qemu_img_supports_rate_limit; then
+      convert_opts+=(-r "${BANDWIDTH}M")
+      log -ne "Backup bandwidth limited to ${BANDWIDTH} MiB/s per disk for $VM"
+    else
+      log -ne "WARNING: qemu-img on this host does not support convert -r (QEMU >= 5.2 required); $VM is backed up without the ${BANDWIDTH} MiB/s limit, at idle I/O priority only"
+    fi
+  fi
 
   IFS=","
 
@@ -442,9 +599,10 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+    if ! "${io_prio[@]}" qemu-img convert "${convert_opts[@]}" -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
+      return 1
     fi
 
     # Pre-seed a persistent bitmap on the source disk so the NEXT backup (taken
@@ -465,7 +623,22 @@ backup_stopped_vm() {
 
     name="datadisk"
   done
+
+  # Encrypt backup files if requested
+  if ! encrypt_backup "$dest"; then
+    cleanup
+    return 1
+  fi
+
   sync
+
+  # Verify backup integrity if requested
+  if [[ "$VERIFY" == "true" ]]; then
+    if ! verify_backup "$dest"; then
+      cleanup
+      return 1
+    fi
+  fi
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
@@ -494,8 +667,7 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) 2>&1 | tee -a "$logFile"
-  if [ $? -eq 0 ]; then
+  if mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) >> "$logFile" 2>&1; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
@@ -518,7 +690,7 @@ cleanup() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false> [-c] [-b <MiB/s>] [-e <passphrase file>] [--verify]"
   echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
@@ -574,6 +746,24 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -c|--compress)
+      COMPRESS="true"
+      shift
+      ;;
+    -b|--bandwidth)
+      BANDWIDTH="$2"
+      shift
+      shift
+      ;;
+    -e|--encrypt)
+      ENCRYPT_PASSFILE="$2"
+      shift
+      shift
+      ;;
+    --verify)
+      VERIFY="true"
+      shift
+      ;;
     -M|--mode)
       MODE="$2"
       shift
@@ -604,6 +794,13 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# qcow2 cannot compress and encrypt the same image. Refuse the combination before anything is
+# mounted or written, so no partial backup is created and then deleted.
+if [[ "$OP" == "backup" && "$COMPRESS" == "true" && -n "$ENCRYPT_PASSFILE" ]]; then
+  echo "Compression and encryption cannot be combined: qcow2 does not support both on one image"
+  exit 1
+fi
 
 # Perform initial environment sanity checks (QEMU/libvirt version).
 sanity_checks
