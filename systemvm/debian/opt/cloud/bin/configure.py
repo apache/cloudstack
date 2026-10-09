@@ -1530,7 +1530,6 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["nat", "", fw_output_rule])
 
     def processStaticNatRule(self, rule):
-        # FIXME this needs ordering with the VPN no nat rule
         device = self.getDeviceByIp(rule["public_ip"])
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
@@ -1556,8 +1555,9 @@ class CsForwardingRules(CsDataBag):
 
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
+        # Skip VPN-marked traffic so chain order vs the site-to-site VPN exemption doesn't matter.
         self.fw.append(["nat", "front",
-                        "-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % (device, rule["internal_ip"], rule["public_ip"])])
+                        "-A POSTROUTING -o %s -s %s/32 -m mark ! --mark 0x525 -j SNAT --to-source %s" % (device, rule["internal_ip"], rule["public_ip"])])
         self.fw.append(["nat", "front",
                         "-A OUTPUT -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["filter", "",
