@@ -644,19 +644,15 @@ public class ConfigDriveBuilderTest {
         folder.create();
         File openStackFolder = folder.newFolder("openStack");
 
-        // Expected JSON structure
-        String expectedJson = "{}";
-
         // Action
         ConfigDriveBuilder.writeNetworkData(Arrays.asList(nicp), supportedServices, openStackFolder);
 
-        // Verify
+        // Verify: no NIC has the ConfigDrive provider assigned for Dhcp/Dns, so network_data.json
+        // must not be written at all -- an empty-but-present file would make cloud-init believe
+        // explicit (empty) network config was supplied, suppressing its default DHCP auto-config
+        // and leaving the guest NIC administratively down.
         File networkDataFile = new File(openStackFolder, "network_data.json");
-        String content = FileUtils.readFileToString(networkDataFile, StandardCharsets.UTF_8);
-        JsonObject actualJson = new JsonParser().parse(content).getAsJsonObject();
-        JsonObject expectedJsonObject = new JsonParser().parse(expectedJson).getAsJsonObject();
-
-        Assert.assertEquals(expectedJsonObject, actualJson);
+        Assert.assertFalse(networkDataFile.exists());
         folder.delete();
     }
 }
