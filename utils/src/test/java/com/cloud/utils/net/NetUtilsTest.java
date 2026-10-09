@@ -955,4 +955,26 @@ public class NetUtilsTest {
         String cidr = NetUtils.transformCidr(startIp + "/" + cidrSize);
         Assert.assertEquals("10.1.2.0/28", cidr);
     }
+
+    @Test
+    public void testIsLinkLocalIp4() {
+        Assert.assertTrue(NetUtils.isLinkLocalIp4("169.254.149.120"));
+        Assert.assertTrue(NetUtils.isLinkLocalIp4("169.254.0.1"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp4("172.25.16.236"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp4("169.255.0.1"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp4("fe80::1"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp4("not-an-ip"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp4(null));
+    }
+
+    @Test
+    public void testIsLinkLocalIp6() {
+        Assert.assertTrue(NetUtils.isLinkLocalIp6("fe80::df84:2984:e396:8ac3"));
+        Assert.assertTrue(NetUtils.isLinkLocalIp6("fe80::df84:2984:e396:8ac3%6"));
+        Assert.assertTrue(NetUtils.isLinkLocalIp6("febf::1"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6("fd00:ac19:0:1910:0:d3fc:4177:2c32"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6("::1"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6("169.254.149.120"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6(null));
+    }
 }
