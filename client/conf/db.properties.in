@@ -104,24 +104,28 @@ db.simulator.uri=
 
 
 # High Availability And Cluster Properties
+# When enabled, connections use MySQL Connector/J's load-balancing driver (jdbc:mysql:loadbalance)
+# with the first host in the list (db.<schema>.host) always preferred over the replicas, via
+# db.ha.loadBalanceStrategy. connectTimeout/socketTimeout bound how long a new connection can hang
+# against an unreachable host; loadBalanceBlocklistTimeout is how long a host that just failed is
+# skipped before being retried. This only fails read/write traffic over to a replica connection-wise:
+# promoting a replica to a writable primary after a real source outage is still a manual DBA step.
 db.ha.enabled=false
 db.ha.loadBalanceStrategy=com.cloud.utils.db.StaticStrategy
 # cloud stack Database
 db.cloud.replicas=localhost,localhost
 db.cloud.autoReconnect=true
-db.cloud.failOverReadOnly=false
 db.cloud.reconnectAtTxEnd=true
 db.cloud.autoReconnectForPools=true
-db.cloud.secondsBeforeRetrySource=3600
-db.cloud.queriesBeforeRetrySource=5000
-db.cloud.initialTimeout=3600
+db.cloud.connectTimeout=3000
+db.cloud.socketTimeout=30000
+db.cloud.loadBalanceBlocklistTimeout=30000
 
 #usage Database
 db.usage.replicas=localhost,localhost
 db.usage.autoReconnect=true
-db.usage.failOverReadOnly=false
 db.usage.reconnectAtTxEnd=true
 db.usage.autoReconnectForPools=true
-db.usage.secondsBeforeRetrySource=3600
-db.usage.queriesBeforeRetrySource=5000
-db.usage.initialTimeout=3600
+db.usage.connectTimeout=3000
+db.usage.socketTimeout=30000
+db.usage.loadBalanceBlocklistTimeout=30000
