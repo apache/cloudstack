@@ -7749,6 +7749,63 @@ class Webhook:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
 
+class ResourceAlertRule:
+    """Manage Resource Alert Rule Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, resourcetype, metric, condition, threshold, severity, **kwargs):
+        """Create Resource Alert Rule"""
+        cmd = createResourceAlertRule.createResourceAlertRuleCmd()
+        cmd.name = name
+        cmd.resourcetype = resourcetype
+        cmd.metric = metric
+        cmd.condition = condition
+        cmd.threshold = threshold
+        cmd.severity = severity
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return ResourceAlertRule(apiclient.createResourceAlertRule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listResourceAlertRules.listResourceAlertRulesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listResourceAlertRules(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update Resource Alert Rule"""
+        cmd = updateResourceAlertRule.updateResourceAlertRuleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateResourceAlertRule(cmd)
+
+    def delete(self, apiclient):
+        """Delete Resource Alert Rule"""
+        cmd = deleteResourceAlertRule.deleteResourceAlertRuleCmd()
+        cmd.id = self.id
+        apiclient.deleteResourceAlertRule(cmd)
+
+    def list_alerts(self, apiclient, **kwargs):
+        """List fired alerts of this rule"""
+        cmd = listResourceAlerts.listResourceAlertsCmd()
+        cmd.alertruleid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listResourceAlerts(cmd)
+
+    @classmethod
+    def list_alerts_for_resource(cls, apiclient, resourcetype, resourceid, **kwargs):
+        """List fired alerts of a resource"""
+        cmd = listResourceAlerts.listResourceAlertsCmd()
+        cmd.resourcetype = resourcetype
+        cmd.resourceid = resourceid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listResourceAlerts(cmd)
+
+
 class Extension:
     """Manage Extension Life cycle"""
 

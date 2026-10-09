@@ -114,20 +114,35 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, DeliveryConfig config) {
         WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
-                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(), webhook.getId());
+                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(),
+                        event.getEventType(), webhook.getId());
         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                 AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deliveryCompleteCallback(null, null))
                 .setContext(context);
         WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
         job = ComponentContext.inject(job);
+        applyDeliveryConfig(job, config);
+        return job;
+    }
+
+    protected DeliveryConfig getDeliveryConfig(long domainId) {
+        return new DeliveryConfig(
+                WebhookDeliveryTries.valueIn(domainId),
+                WebhookDeliveryTimeout.valueIn(domainId),
+                WebhookDeliveryBlocklist.valueIn(domainId),
+                WebhookDeliveryBlockLocalAddresses.value(),
+                WebhookDeliveryAllowRedirects.valueIn(domainId),
+                WebhookDeliveryAllowHttp.valueIn(domainId));
+    }
+
+    protected void applyDeliveryConfig(WebhookDeliveryThread job, DeliveryConfig config) {
         job.setDeliveryTries(config.tries);
         job.setDeliveryTimeout(config.timeout);
         job.setDestinationBlocklist(config.blocklist);
         job.setBlockLocalAddresses(config.blockLocalAddresses);
         job.setAllowRedirects(config.allowRedirects);
         job.setAllowHttp(config.allowHttp);
-        return job;
     }
 
     protected String getEventValueByFilterType(Event event, WebhookFilter.Type filterType) {
@@ -214,17 +229,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 logger.debug("Skipping delivering {} to {} as it doesn't match filters", event, webhook);
                 continue;
             }
-            if (!domainConfigs.containsKey(webhook.getDomainId())) {
-                domainConfigs.put(webhook.getDomainId(),
-                        new DeliveryConfig(
-                                WebhookDeliveryTries.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryTimeout.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryBlocklist.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryBlockLocalAddresses.value(),
-                                WebhookDeliveryAllowRedirects.valueIn(webhook.getDomainId()),
-                                WebhookDeliveryAllowHttp.valueIn(webhook.getDomainId())));
-            }
-            DeliveryConfig config = domainConfigs.get(webhook.getDomainId());
+            DeliveryConfig config = domainConfigs.computeIfAbsent(webhook.getDomainId(), this::getDeliveryConfig);
             WebhookDeliveryThread job = getDeliveryJob(event, webhook, config);
             jobs.add(job);
         }
@@ -241,13 +246,18 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         String eventUuid = UUID.randomUUID().toString();
         String description = payload;
         String resourceAccountUuid = null;
-        if (existingDelivery != null) {
+        if (existingDelivery != null && existingDelivery.getEventId() != null) {
             EventJoinVO eventJoinVO = eventJoinDao.findById(existingDelivery.getEventId());
             eventId = eventJoinVO.getId();
             eventType = eventJoinVO.getType();
             eventUuid = eventJoinVO.getUuid();
             description = existingDelivery.getPayload();
             resourceAccountUuid = eventJoinVO.getAccountUuid();
+        } else if (existingDelivery != null) {
+            eventType = existingDelivery.getEventType();
+            description = existingDelivery.getPayload();
+            Account account = accountManager.getAccount(webhook.getAccountId());
+            resourceAccountUuid = account.getUuid();
         } else {
             Account account = accountManager.getAccount(webhook.getAccountId());
             resourceAccountUuid = account.getUuid();
@@ -274,12 +284,48 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return job;
     }
 
+    protected List<Runnable> getDirectDeliveryJobs(List<Long> webhookIds, long accountId, String eventType,
+            String payload) {
+        List<Runnable> jobs = new ArrayList<>();
+        if (CollectionUtils.isEmpty(webhookIds)) {
+            return jobs;
+        }
+        Account account = accountManager.getAccount(accountId);
+        Event event = new Event(ManagementService.Name, EventCategory.ALERT_EVENT.getName(), eventType, null, null);
+        event.setEventUuid(UUID.randomUUID().toString());
+        event.setDescription(payload);
+        event.setResourceAccountUuid(account != null ? account.getUuid() : null);
+        for (Long webhookId : webhookIds) {
+            WebhookVO webhook = webhookDao.findById(webhookId);
+            // Info level, as the caller picked these webhooks and would otherwise not know why nothing arrived.
+            if (webhook == null || !Webhook.State.Enabled.equals(webhook.getState())) {
+                logger.info("Skipping delivering {} to webhook ID: {} as it is missing or disabled", eventType, webhookId);
+                continue;
+            }
+            if (!isEventMatchingFilters(event, webhookFiltersCache.get(webhook.getId()))) {
+                logger.info("Skipping delivering {} to {} as it doesn't match the webhook filters", eventType, webhook);
+                continue;
+            }
+            WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
+                    new WebhookDeliveryThread.WebhookDeliveryContext<>(null, null, eventType, webhook.getId());
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
+                    AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().deliveryCompleteCallback(null, null))
+                    .setContext(context);
+            WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
+            job = ComponentContext.inject(job);
+            applyDeliveryConfig(job, getDeliveryConfig(webhook.getDomainId()));
+            jobs.add(job);
+        }
+        return jobs;
+    }
+
     protected Void deliveryCompleteCallback(
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
             WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
         WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
-        WebhookDeliveryVO deliveryVO = new WebhookDeliveryVO(context.getEventId(), context.getRuleId(),
-                ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+        WebhookDeliveryVO deliveryVO = new WebhookDeliveryVO(context.getEventId(), context.getEventType(),
+                context.getRuleId(), ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
                 result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
         webhookDeliveryDao.persist(deliveryVO);
         return null;
@@ -387,6 +433,35 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
+    public ControlledEntity findWebhookByUuid(String uuid) {
+        return webhookDao.findByUuid(uuid);
+    }
+
+    @Override
+    public Pair<String, String> describeWebhook(long webhookId) {
+        WebhookVO webhook = webhookDao.findById(webhookId);
+        return webhook != null ? new Pair<>(webhook.getUuid(), webhook.getName()) : null;
+    }
+
+    @Override
+    public void deliverToWebhooks(List<Long> webhookIds, long accountId, String eventType, String payload) {
+        for (Runnable job : getDirectDeliveryJobs(webhookIds, accountId, eventType, payload)) {
+            webhookJobExecutor.submit(loggingFailures(job, eventType));
+        }
+    }
+
+    // The executor swallows exceptions, e.g. a payload URL rejected by the blocklist at delivery time.
+    protected Runnable loggingFailures(Runnable job, String eventType) {
+        return () -> {
+            try {
+                job.run();
+            } catch (Exception e) {
+                logger.warn("Failed to deliver {} to webhook: {}", eventType, e.getMessage());
+            }
+        };
+    }
+
+    @Override
     public void handleEvent(Event event) throws EventBusException {
         List<Runnable> jobs = getDeliveryJobs(event);
         for(Runnable job : jobs) {
@@ -405,8 +480,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         try {
             result = future.get();
             if (delivery != null) {
-                webhookDeliveryVO = new WebhookDeliveryVO(delivery.getEventId(), delivery.getWebhookId(),
-                        ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+                webhookDeliveryVO = new WebhookDeliveryVO(delivery.getEventId(), delivery.getEventType(),
+                        delivery.getWebhookId(), ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
                         result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
                 webhookDeliveryVO = webhookDeliveryDao.persist(webhookDeliveryVO);
             } else {

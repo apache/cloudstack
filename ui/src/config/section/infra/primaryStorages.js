@@ -67,6 +67,11 @@ export default {
     resourceType: 'PrimaryStorage',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/StorageBrowser.vue')))
   }, {
+    name: 'resourcealerts',
+    resourceType: 'StoragePool',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceAlertsTab.vue'))),
+    show: () => { return 'listResourceAlerts' in store.getters.apis }
+  }, {
     name: 'events',
     resourceType: 'StoragePool',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),

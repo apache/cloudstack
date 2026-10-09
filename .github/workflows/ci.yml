@@ -128,6 +128,7 @@ jobs:
                   smoke/test_nested_virtualization
                   smoke/test_set_sourcenat
                   smoke/test_webhook_lifecycle
+                  smoke/test_resource_alerts
                   smoke/test_purge_expunged_vms
                   smoke/test_extension_lifecycle
                   smoke/test_extension_custom_action_lifecycle
