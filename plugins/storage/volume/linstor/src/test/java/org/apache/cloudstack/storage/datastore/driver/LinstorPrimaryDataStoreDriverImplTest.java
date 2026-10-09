@@ -26,13 +26,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.storage.DataStoreRole;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -42,12 +51,96 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
     private DevelopersApi api;
 
+    @Mock
+    private SnapshotDataStoreDao snapshotStoreDao;
+
     @InjectMocks
     private LinstorPrimaryDataStoreDriverImpl linstorPrimaryDataStoreDriver;
 
     @Before
     public void setUp() {
         api = mock(DevelopersApi.class);
+    }
+
+    private SnapshotDataStoreVO mockDestRef(long parentSnapshotId, long size) {
+        SnapshotDataStoreVO destRef = mock(SnapshotDataStoreVO.class);
+        when(destRef.getParentSnapshotId()).thenReturn(parentSnapshotId);
+        if (parentSnapshotId > 0) {
+            Mockito.lenient().when(destRef.getRole()).thenReturn(DataStoreRole.Image);
+            Mockito.lenient().when(destRef.getDataStoreId()).thenReturn(10L);
+            Mockito.lenient().when(destRef.getSize()).thenReturn(size);
+        }
+        return destRef;
+    }
+
+    private SnapshotDataStoreVO mockParentRef(String installPath, ObjectInDataStoreStateMachine.State state, long size) {
+        SnapshotDataStoreVO parentRef = mock(SnapshotDataStoreVO.class);
+        Mockito.lenient().when(parentRef.getInstallPath()).thenReturn(installPath);
+        Mockito.lenient().when(parentRef.getState()).thenReturn(state);
+        Mockito.lenient().when(parentRef.getSize()).thenReturn(size);
+        when(snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, 10L, 2L)).thenReturn(parentRef);
+        return parentRef;
+    }
+
+    @Test
+    public void testGetIncrementalParentPathNoDestRef() {
+        Assert.assertNull(linstorPrimaryDataStoreDriver.getIncrementalParentPath(null));
+    }
+
+    @Test
+    public void testGetIncrementalParentPathNoParentLink() {
+        Assert.assertNull(linstorPrimaryDataStoreDriver.getIncrementalParentPath(mockDestRef(0, 100L)));
+    }
+
+    @Test
+    public void testGetIncrementalParentPathParentRefMissing() {
+        when(snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, 10L, 2L)).thenReturn(null);
+        Assert.assertNull(linstorPrimaryDataStoreDriver.getIncrementalParentPath(mockDestRef(2L, 100L)));
+    }
+
+    @Test
+    public void testGetIncrementalParentPathParentNotReady() {
+        mockParentRef("snapshots/2/5/parent", ObjectInDataStoreStateMachine.State.Destroyed, 100L);
+        Assert.assertNull(linstorPrimaryDataStoreDriver.getIncrementalParentPath(mockDestRef(2L, 100L)));
+    }
+
+    @Test
+    public void testGetIncrementalParentPathVolumeResized() {
+        mockParentRef("snapshots/2/5/parent", ObjectInDataStoreStateMachine.State.Ready, 50L);
+        Assert.assertNull(linstorPrimaryDataStoreDriver.getIncrementalParentPath(mockDestRef(2L, 100L)));
+    }
+
+    @Test
+    public void testGetIncrementalParentPathReadyParent() {
+        mockParentRef("snapshots/2/5/parent", ObjectInDataStoreStateMachine.State.Ready, 100L);
+        Assert.assertEquals("snapshots/2/5/parent",
+            linstorPrimaryDataStoreDriver.getIncrementalParentPath(mockDestRef(2L, 100L)));
+    }
+
+    @Test
+    public void testClearChainParentIfFullCopyClearsOnFullBackup() {
+        SnapshotDataStoreVO destRef = mock(SnapshotDataStoreVO.class);
+        when(destRef.getParentSnapshotId()).thenReturn(2L);
+
+        SnapshotObjectTO to = new SnapshotObjectTO();
+        to.setKvmIncrementalSnapshot(false);
+        linstorPrimaryDataStoreDriver.clearChainParentIfFullCopy(destRef, new CopyCmdAnswer(to));
+
+        Mockito.verify(destRef).setParentSnapshotId(0);
+        Mockito.verify(snapshotStoreDao).update(Mockito.anyLong(), Mockito.eq(destRef));
+    }
+
+    @Test
+    public void testClearChainParentIfFullCopyKeepsLinkOnIncremental() {
+        SnapshotDataStoreVO destRef = mock(SnapshotDataStoreVO.class);
+        when(destRef.getParentSnapshotId()).thenReturn(2L);
+
+        SnapshotObjectTO to = new SnapshotObjectTO();
+        to.setKvmIncrementalSnapshot(true);
+        linstorPrimaryDataStoreDriver.clearChainParentIfFullCopy(destRef, new CopyCmdAnswer(to));
+
+        Mockito.verify(destRef, Mockito.never()).setParentSnapshotId(Mockito.anyLong());
+        Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
