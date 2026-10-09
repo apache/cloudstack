@@ -41,6 +41,10 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
             "List of OAuth plugins", true);
     public static final ConfigKey<String> OAuth2PluginsExclude = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins.exclude", "",
             "List of OAuth plugins which are excluded", true);
+    public static final ConfigKey<Boolean> OIDCRequireVerifiedEmail = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.oidc.require.verified.email", "true",
+            "For the generic OIDC provider, require the id_token to assert a verified email (email_verified=true) before the address is used to identify a CloudStack account. " +
+            "When set to false for a trusted identity provider that does not send the claim (such as Microsoft Entra ID), an id_token without the claim is accepted, " +
+            "but one that explicitly marks the email as not verified is always rejected. This can be configured at domain level.", true, ConfigKey.Scope.Domain);
 
     /**
      * Lists user OAuth2 provider plugins
@@ -54,6 +58,16 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
      * @return OAuth2 provider
      */
     UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName);
+
+    /**
+     * Finds the user OAuth2 provider serving the named registration within a domain scope. A name
+     * that matches no provider plugin is resolved through the type of its registration, so that a
+     * generic provider can serve registrations under administrator chosen names.
+     * @param providerName name of the registration
+     * @param domainId domain id, or null for global
+     * @return OAuth2 provider
+     */
+    UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(final String providerName, final Long domainId);
 
     String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId);
 
