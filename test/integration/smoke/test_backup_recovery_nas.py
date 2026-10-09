@@ -24,7 +24,11 @@ from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, Vi
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
+import os
 import time
+from urllib.parse import urlsplit
+
+SUPPORTED_PRIMARY_STORAGE_POOL_TYPES = ['networkfilesystem', 'rbd']
 
 class TestNASBackupAndRecovery(cloudstackTestCase):
 
@@ -39,19 +43,56 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
-        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
-        if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-        cls.services["small"]["zoneid"] = cls.zone.id
-        cls.services["small"]["template"] = cls.template.id
         cls._cleanup = []
 
         if cls.hypervisor.lower() != 'kvm':
             cls.skipTest(cls, reason="Test can be run only on KVM hypervisor")
 
-        cls.storage_pool = StoragePool.list(cls.api_client)[0]
-        if cls.storage_pool.type.lower() != 'networkfilesystem':
-            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS")
+        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = cls.template.id
+
+        # Pick a pool that's actually usable, not just list()[0] -- environments that
+        # added Ceph/RBD storage after the zone's original NFS primary storage keep the
+        # old NFS pool around in Disabled state, and it still sorts first. Falling back
+        # to index 0 there silently exercises the disabled NFS pool's path as if it were
+        # the primary storage in use, rather than the RBD pool VMs actually deploy on.
+        storage_pools = StoragePool.list(cls.api_client)
+        usable_pools = [p for p in storage_pools if getattr(p, 'state', 'Up') == 'Up']
+        cls.storage_pool = usable_pools[0] if usable_pools else storage_pools[0]
+        if cls.storage_pool.type.lower() not in SUPPORTED_PRIMARY_STORAGE_POOL_TYPES:
+            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS or RBD (Ceph)")
+
+        # The NAS backup repository needs an NFS export to mount. When the primary
+        # storage is itself NFS, its own path can double as that export (the
+        # historical behaviour). When the primary storage is Ceph/RBD, the primary
+        # storage location can't be reused as a NAS export, so fall back to the
+        # "nfs" test data entry -- the same NFS mount point test_primary_storage.py
+        # uses to create its temporary NFS primary storage pool, and something every
+        # marvin environment already has configured (services["nfs"]["url"], e.g.
+        # "nfs://nfs/export/automation/1/testprimary"). An explicit
+        # "nas_backup_repository_address" test data entry or NAS_BACKUP_REPO_ADDRESS
+        # environment variable, if set, takes precedence over both.
+        if cls.storage_pool.type.lower() == 'networkfilesystem':
+            default_nas_repository_address = cls.storage_pool.ipaddress + ":" + cls.storage_pool.path
+        else:
+            nfs_test_data = cls.services.get("nfs")
+            if nfs_test_data and nfs_test_data.get("url"):
+                nfs_url = urlsplit(nfs_test_data["url"])
+                default_nas_repository_address = "%s:%s" % (nfs_url.hostname, nfs_url.path)
+            else:
+                default_nas_repository_address = None
+        cls.nas_repository_address = cls.services.get("nas_backup_repository_address") \
+            or os.environ.get("NAS_BACKUP_REPO_ADDRESS") \
+            or default_nas_repository_address
+        if not cls.nas_repository_address:
+            cls.skipTest(cls, reason="No NAS backup repository export configured. Set "
+                                     "'nas_backup_repository_address' in the test data, the "
+                                     "NAS_BACKUP_REPO_ADDRESS environment variable, or the standard "
+                                     "'nfs' test data entry, when the primary storage is not NFS "
+                                     "(e.g. Ceph/RBD)")
 
         # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
@@ -72,14 +113,22 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         cls._cleanup = [cls.account]
 
-        # Create NAS backup repository and offering. Use the same directory as the storage pool
+        # Create NAS backup repository and offering.
         cls.backup_repository = BackupRepository.add(cls.api_client, zoneid=cls.zone.id, name="Nas",
-                                                     address=cls.storage_pool.ipaddress + ":" + cls.storage_pool.path,
+                                                     address=cls.nas_repository_address,
                                                      provider="nas", type="nfs",)
         cls._cleanup.append(cls.backup_repository)
+        # Match the external offering to the repository just created above by externalid
+        # (== the repository's own id for the nas provider) rather than blindly taking
+        # index 0 -- a stray repository left over from an earlier interrupted run (e.g.
+        # one whose backups didn't get cleaned up, so its own teardown couldn't remove
+        # it either) sorts alongside the new one, and index 0 has no guarantee of being
+        # the one this run owns.
         cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
-        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.provider_offerings[0].externalid,
-                                                            cls.provider_offerings[0].name, cls.provider_offerings[0].description)
+        matching_offerings = [o for o in cls.provider_offerings if o.externalid == cls.backup_repository.id]
+        provider_offering = matching_offerings[0] if matching_offerings else cls.provider_offerings[0]
+        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, provider_offering.externalid,
+                                                            provider_offering.name, provider_offering.description)
         cls._cleanup.append(cls.backup_offering)
 
         cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
@@ -303,12 +352,26 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Backup objects expose `type`; for chained backups it's "INCREMENTAL", else "FULL".
         return getattr(backup, 'type', 'FULL') or 'FULL'
 
+    def _require_incremental_capable_storage(self):
+        """
+        Incremental NAS backups rely on QEMU dirty bitmaps / libvirt checkpoints, which
+        only exist on file-based qcow2 storage -- see
+        NASBackupProvider.allVolumesOnCheckpointCapableStorage(), which forces every VM
+        on RBD/Ceph (or Linstor) onto the legacy full-only path server-side. On such
+        storage every backup comes back FULL regardless of cadence, so these chain/type
+        assertions can't pass (and some would pass vacuously without exercising the
+        chain logic at all). Skip rather than fail when running against RBD.
+        """
+        if self.storage_pool.type.lower() == 'rbd':
+            self.skipTest("Incremental backups are not supported on RBD/Ceph primary Storage")
+
     @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_incremental_chain_cadence(self):
         """
         With nas.backup.full.every=3, the sequence of backups should be
         FULL, INCREMENTAL, INCREMENTAL, FULL, INCREMENTAL, ...
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(3)
@@ -358,6 +421,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             FULL + marker1  ->  stop/start the VM (wipes the checkpoint registry)
             ->  INCREMENTAL + marker2  ->  restore the tip  ->  both markers present.
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         # High cadence so the post-restart backup is INCREMENTAL, not a periodic FULL.
@@ -430,6 +494,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         Take FULL + 2 INCREMENTAL backups, each with a marker file. Restore from the
         latest incremental and verify all three markers are present (chain flatten).
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -479,6 +544,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         The chain repair should rebase INC2 onto FULL, and the final restore
         should still produce a working VM with all expected blocks.
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -531,6 +597,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         FULL is hidden from the backup list while its child survives, and it is
         physically swept once the last descendant is deleted.
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -568,6 +635,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         would call for an incremental, the agent must fall back to a full and start a
         new chain. The incrementalFallback flag should be reflected in backup.type=FULL.
         """
+        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(2)  # next backup after the first should be incremental
@@ -593,4 +661,80 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 Backup.delete(self.apiclient, b.id)
         finally:
             self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    # ------------------------------------------------------------------
+    # Restore-volume-and-attach regression (PR apache/cloudstack#14007)
+    # ------------------------------------------------------------------
+    # This test exercises the fixed path end to end via restoreVolumeFromBackupAndAttachToVM,
+    # on whichever primary storage this environment is running with (NFS or Ceph/RBD).
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_restore_volume_and_attach_to_vm(self):
+        """
+        Test restoring the ROOT and DATADISK volumes of a backup and attaching them
+        to a different Instance (restoreVolumeFromBackupAndAttachToVM).
+        """
+        target_vm = None
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("echo restore-attach-marker > /root/restore_attach_marker.txt; sync")
+
+            Backup.create(self.apiclient, self.vm.id, "restore_attach_backup")
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
+            backup = backups[0]
+
+            volumes = Volume.list(self.apiclient, virtualmachineid=self.vm.id, listall=True)
+            self.assertTrue(isinstance(volumes, list), "List volumes should return a valid list")
+            root_disk_id = None
+            data_disk_id = None
+            for volume in volumes:
+                if volume.type == 'ROOT':
+                    root_disk_id = volume.id
+                elif volume.type == 'DATADISK':
+                    data_disk_id = volume.id
+            self.assertIsNotNone(root_disk_id, "The backed up VM should have a ROOT volume")
+
+            # Target Instance that will receive the restored volumes. The nas provider
+            # (unlike KBOSS) requires the target Instance to be stopped before a volume
+            # can be restored and attached to it.
+            target_vm = VirtualMachine.create(
+                self.apiclient, self.services["small"], accountid=self.account.name,
+                domainid=self.account.domainid, serviceofferingid=self.offering.id,
+                mode=self.services["mode"]
+            )
+            target_vm.stop(self.apiclient, forced=True)
+
+            # Restore and attach the ROOT volume backup as an extra disk.
+            Backup.restoreVolumeFromBackupAndAttachToVM(
+                self.apiclient, backupid=backup.id, volumeid=root_disk_id, virtualmachineid=target_vm.id
+            )
+            target_volumes = Volume.list(self.apiclient, virtualmachineid=target_vm.id, listall=True)
+            self.assertTrue(isinstance(target_volumes, list), "List volumes should return a valid list")
+            self.assertEqual(2, len(target_volumes),
+                "Target Instance should have its own ROOT volume plus the restored volume")
+
+            if data_disk_id:
+                # Restore and attach the DATADISK volume backup as well.
+                Backup.restoreVolumeFromBackupAndAttachToVM(
+                    self.apiclient, backupid=backup.id, volumeid=data_disk_id, virtualmachineid=target_vm.id
+                )
+                target_volumes = Volume.list(self.apiclient, virtualmachineid=target_vm.id, listall=True)
+                self.assertEqual(3, len(target_volumes),
+                    "Target Instance should have 3 volumes after restoring both the ROOT and DATADISK backups")
+
+            # Start the target Instance to verify the restored disk(s) are actually
+            # usable and libvirt accepted the attach-device/attach-disk calls.
+            target_vm.start(self.apiclient)
+
+            Backup.delete(self.apiclient, backup.id)
+        finally:
+            if target_vm is not None:
+                try:
+                    target_vm.delete(self.apiclient)
+                except Exception:
+                    pass
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
