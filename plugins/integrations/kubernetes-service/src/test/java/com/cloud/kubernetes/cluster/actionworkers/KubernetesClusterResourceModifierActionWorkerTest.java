@@ -23,6 +23,15 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.network.IpAddress;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.utils.net.NetUtils;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +59,18 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
     @Mock
     private KubernetesCluster kubernetesClusterMock;
+
+    @Mock
+    private IpAddress publicIpMock;
+
+    @Mock
+    private FirewallRulesDao firewallRulesDaoMock;
+
+    @Mock
+    private PortForwardingRulesDao portForwardingRulesDaoMock;
+
+    @Mock
+    private FirewallService firewallServiceMock;
 
     private KubernetesClusterResourceModifierActionWorker kubernetesClusterResourceModifierActionWorker;
 
@@ -134,5 +155,59 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    private static final long NETWORK_ID = 10L;
+
+    private void mockSshFirewallRules(FirewallRuleVO... rules) {
+        kubernetesClusterResourceModifierActionWorker.firewallRulesDao = firewallRulesDaoMock;
+        kubernetesClusterResourceModifierActionWorker.portForwardingRulesDao = portForwardingRulesDaoMock;
+        kubernetesClusterResourceModifierActionWorker.firewallService = firewallServiceMock;
+        Mockito.when(publicIpMock.getId()).thenReturn(1L);
+        Mockito.when(firewallRulesDaoMock.listByIpPurposeProtocolAndNotRevoked(1L, FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO)).thenReturn(Arrays.asList(rules));
+    }
+
+    private FirewallRuleVO mockSshForwardedFirewallRule(int port) {
+        FirewallRuleVO rule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(rule.getSourcePortStart()).thenReturn(port);
+        Mockito.when(rule.getSourcePortEnd()).thenReturn(port);
+        PortForwardingRuleVO pfRule = Mockito.mock(PortForwardingRuleVO.class);
+        Mockito.when(pfRule.getDestinationPortStart()).thenReturn(KubernetesClusterActionWorker.DEFAULT_SSH_PORT);
+        Mockito.when(portForwardingRulesDaoMock.findByNetworkAndPorts(NETWORK_ID, port, port)).thenReturn(pfRule);
+        return rule;
+    }
+
+    @Test
+    public void removeSshFirewallRuleTestPrefersNodesRuleOverEtcdRuleListedFirst() {
+        FirewallRuleVO etcdRule = mockSshForwardedFirewallRule(50000);
+        FirewallRuleVO nodesRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(nodesRule.getSourcePortStart()).thenReturn(KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT);
+        Mockito.when(nodesRule.getId()).thenReturn(11L);
+        mockSshFirewallRules(etcdRule, nodesRule);
+
+        Assert.assertSame(nodesRule, kubernetesClusterResourceModifierActionWorker.removeSshFirewallRule(publicIpMock, NETWORK_ID));
+        Mockito.verify(firewallServiceMock).revokeIngressFwRule(11L, true);
+        Mockito.verifyNoMoreInteractions(firewallServiceMock);
+    }
+
+    @Test
+    public void removeSshFirewallRuleTestFallsBackToSshForwardedRule() {
+        FirewallRuleVO externalNodeRule = mockSshForwardedFirewallRule(2225);
+        Mockito.when(externalNodeRule.getId()).thenReturn(12L);
+        mockSshFirewallRules(externalNodeRule);
+
+        Assert.assertSame(externalNodeRule, kubernetesClusterResourceModifierActionWorker.removeSshFirewallRule(publicIpMock, NETWORK_ID));
+        Mockito.verify(firewallServiceMock).revokeIngressFwRule(12L, true);
+    }
+
+    @Test
+    public void removeSshFirewallRuleTestReturnsNullWhenNoSshRule() {
+        FirewallRuleVO apiRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(apiRule.getSourcePortStart()).thenReturn(KubernetesClusterActionWorker.CLUSTER_API_PORT);
+        Mockito.when(apiRule.getSourcePortEnd()).thenReturn(KubernetesClusterActionWorker.CLUSTER_API_PORT);
+        mockSshFirewallRules(apiRule);
+
+        Assert.assertNull(kubernetesClusterResourceModifierActionWorker.removeSshFirewallRule(publicIpMock, NETWORK_ID));
+        Mockito.verifyNoMoreInteractions(firewallServiceMock);
     }
 }
