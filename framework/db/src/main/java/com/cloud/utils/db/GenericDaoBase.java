@@ -1634,6 +1634,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = null;
+        boolean committed = false;
         try {
             txn.start();
             for (final Pair<String, Attribute[]> pair : _insertSqls) {
@@ -1682,6 +1683,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 insertElementCollection(entity, _idAttributes.get(_table)[0], id, ecAttributes);
             }
             txn.commit();
+            committed = true;
         } catch (final SQLException e) {
             logger.error("DB Exception on: " + pstmt, e);
             handleEntityExistsException(e);
@@ -1690,6 +1692,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
+        } finally {
+            if (!committed) {
+                txn.rollback();
+            }
         }
 
         return _idField != null ? findByIdIncludingRemoved(id) : null;
