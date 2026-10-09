@@ -40,10 +40,18 @@ from marvin.lib.common import (get_domain,
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 
-import uuid
 import unittest
 
 class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
+
+    def rbd_snapshot_cannot_outlive_source_volume(self):
+        '''
+            On RBD, a snapshot lives on primary storage with its parent
+            volume, so with snapshot.backup.to.secondary=false, deleting the
+            parent volume destroys the snapshot too - it can no longer be
+            used to deploy a new volume/VM afterward.
+        '''
+        return self.storage_pool.type == 'RBD'
 
     @classmethod
     def setUpClass(cls):
@@ -80,23 +88,33 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         cls._cleanup.append(cls.account)
         cls.debug(cls.account.id)
 
+        # Prefer a zone-wide pool, but also accept a cluster-scope NFS/RBD pool.
         storage_pools_response = list_storage_pools(cls.apiclient,
                                                     zoneid=cls.zone.id,
                                                     scope="ZONE")
 
+        if not storage_pools_response:
+            cluster_storage_pools = list_storage_pools(cls.apiclient,
+                                                        zoneid=cls.zone.id,
+                                                        scope="CLUSTER") or []
+            storage_pools_response = [
+                pool for pool in cluster_storage_pools
+                if getattr(pool, "type", None) in ("NetworkFilesystem", "RBD")
+            ]
+
         if storage_pools_response:
-            cls.zone_wide_storage = storage_pools_response[0]
+            cls.storage_pool = storage_pools_response[0]
 
             cls.debug(
-                "zone wide storage id is %s" %
-                cls.zone_wide_storage.id)
+                "storage pool id is %s, scope is %s" %
+                (cls.storage_pool.id, cls.storage_pool.scope))
             update1 = StoragePool.update(cls.apiclient,
-                                         id=cls.zone_wide_storage.id,
+                                         id=cls.storage_pool.id,
                                          tags="test-vm"
                                          )
             cls.debug(
                 "Storage %s pool tag%s" %
-                (cls.zone_wide_storage.id, update1.tags))
+                (cls.storage_pool.id, update1.tags))
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["small"],
@@ -116,7 +134,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             )
             cls._cleanup.append(cls.disk_offering)
         else:
-            raise unittest.SkipTest("No zone wide storage found. Skipping tests")
+            raise unittest.SkipTest("No zone-wide or cluster-scope NFS/RBD storage pool found. Skipping tests")
 
 
         cls.virtual_machine = VirtualMachine.create(
@@ -177,16 +195,16 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         template = Template.create_from_snapshot(self.apiclient, self.snapshot, services)
         self._cleanup.append(template)
         virtual_machine = VirtualMachine.create(self.apiclient,
-                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                self.services['small'],
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
                                                 zoneid=self.zone.id,
                                                 serviceofferingid=self.service_offering.id,
                                                 templateid=template.id,
-                                                mode="basic",
+                                                mode=self.services['mode'],
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = virtual_machine.get_ssh_client(reconnect=True)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -202,29 +220,35 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             root_volume.id,
         )
         VirtualMachine.delete(virtual_machine, self.apiclient, expunge=True)
-        self.create_volume_from_snapshot_deploy_vm(snapshot.id)
+        if not self.rbd_snapshot_cannot_outlive_source_volume():
+            self.create_volume_from_snapshot_deploy_vm(snapshot.id)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_04_deploy_vm_with_existing_snapshot_deleted_template(self):
         '''
             Deploy a Virtual machine with existing snapshot of a ROOT volume created from a templated which was deleted
         '''
+        if self.rbd_snapshot_cannot_outlive_source_volume():
+            raise unittest.SkipTest(
+                "Covered by test_03 on RBD: deploying from a snapshot after "
+                "its source ROOT volume was deleted is not supported here."
+            )
         services = {"displaytext": "Template-1", "name": "Template-1-name", "ostypeid": self.template.ostypeid,
                     "ispublic": "true"}
 
         template = Template.create_from_snapshot(self.apiclient, self.snapshot, services)
         self._cleanup.append(template)
         virtual_machine = VirtualMachine.create(self.apiclient,
-                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                self.services['small'],
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
                                                 zoneid=self.zone.id,
                                                 serviceofferingid=self.service_offering.id,
                                                 templateid=template.id,
-                                                mode="basic",
+                                                mode=self.services['mode'],
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = virtual_machine.get_ssh_client(reconnect=True)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -247,18 +271,22 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         '''
             Deploy a Virtual machine with existing snapshot of a ROOT volume which was deleted
         '''
-
+        if self.rbd_snapshot_cannot_outlive_source_volume():
+            raise unittest.SkipTest(
+                "Covered by test_03 on RBD: deploying from a snapshot after "
+                "its source ROOT volume was deleted is not supported here."
+            )
         virtual_machine = VirtualMachine.create(self.apiclient,
-                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                self.services['small'],
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
                                                 zoneid=self.zone.id,
                                                 serviceofferingid=self.service_offering.id,
                                                 templateid=self.template.id,
-                                                mode="basic",
+                                                mode=self.services['mode'],
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = virtual_machine.get_ssh_client(reconnect=True)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -278,16 +306,16 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
 
     def deploy_vm_from_snapshot(self, snapshot):
         virtual_machine = VirtualMachine.create(self.apiclient,
-                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                self.services['small'],
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
                                                 zoneid=self.zone.id,
                                                 serviceofferingid=self.service_offering.id,
                                                 snapshotid=snapshot.id,
-                                                mode="basic",
+                                                mode=self.services['mode'],
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = virtual_machine.get_ssh_client(reconnect=True)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
@@ -303,16 +331,16 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             zoneid=self.zone.id,
         )
         virtual_machine = VirtualMachine.create(self.apiclient,
-                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                self.services['small'],
                                                 accountid=self.account.name,
                                                 domainid=self.account.domainid,
                                                 zoneid=self.zone.id,
                                                 serviceofferingid=self.service_offering.id,
                                                 volumeid=volume.id,
-                                                mode="basic",
+                                                mode=self.services['mode'],
                                                 )
         try:
-            ssh_client = virtual_machine.get_ssh_client()
+            ssh_client = virtual_machine.get_ssh_client(reconnect=True)
         except Exception as e:
             self.fail("SSH failed for virtual machine: %s - %s" %
                       (virtual_machine.ipaddress, e))
