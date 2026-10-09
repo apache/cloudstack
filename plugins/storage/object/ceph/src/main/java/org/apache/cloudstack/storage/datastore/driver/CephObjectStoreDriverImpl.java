@@ -312,7 +312,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                     continue;
                 }
 
-                bucketsUsage.put(bucket.getBucket(), usage.getRgwMain().getSize_kb());
+                bucketsUsage.put(bucket.getBucket(), usage.getRgwMain().getSize());
             }
 
             return bucketsUsage;
