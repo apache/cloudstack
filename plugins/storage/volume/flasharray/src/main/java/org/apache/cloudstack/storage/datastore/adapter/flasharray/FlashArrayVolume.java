@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.adapter.flasharray;
 
+import java.util.regex.Pattern;
+
 import org.apache.cloudstack.storage.datastore.adapter.ProviderSnapshot;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -27,6 +29,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FlashArrayVolume implements ProviderSnapshot {
     public static final String PURE_OUI = "24a9370";
+    // The 3-byte OUI as it appears inside an NVMe EUI-128 (no trailing nibble).
+    // FC WWNs use a 7-hex-digit Pure OUI; NVMe NGUIDs embed the same vendor
+    // prefix in its raw 6-hex-digit form.
+    public static final String PURE_OUI_EUI = "24a937";
+
+    /** FlashArray volume serials are exactly 24 hexadecimal characters. */
+    private static final Pattern SERIAL_PATTERN = Pattern.compile("[0-9a-fA-F]{24}");
 
     @JsonProperty("destroyed")
     private Boolean destroyed;
@@ -107,6 +116,23 @@ public class FlashArrayVolume implements ProviderSnapshot {
     @JsonIgnore
     public String getAddress() {
         if (serial == null) return null;
+        if (AddressType.NVMETCP.equals(addressType)) {
+            // EUI-128 layout for FlashArray NVMe namespaces:
+            //   00 + serial[0:14] + <Pure OUI (24a937)> + serial[14:24]
+            // This is the value the Linux kernel exposes as
+            //   /dev/disk/by-id/nvme-eui.<result>
+            // Require an exact 24-hex-character serial. Accepting anything longer and slicing
+            // the first 24 characters would silently map two distinct serials sharing a prefix
+            // onto the same EUI, breaking volume identity; accepting anything shorter cannot
+            // produce a valid 32-character EUI at all.
+            if (!SERIAL_PATTERN.matcher(serial).matches()) {
+                throw new RuntimeException("FlashArray serial [" + serial
+                        + "] cannot be used to build an NVMe EUI-128 address "
+                        + "(expected exactly 24 hexadecimal characters, got "
+                        + serial.length() + ")");
+            }
+            return ("00" + serial.substring(0, 14) + PURE_OUI_EUI + serial.substring(14, 24)).toLowerCase();
+        }
         return ("6" + PURE_OUI + serial).toLowerCase();
     }
     @Override
