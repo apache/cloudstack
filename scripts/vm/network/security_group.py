@@ -1136,23 +1136,25 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
         ip4s, ip6s = split_ips_by_family(vm_ip, vm_ip6, sec_ips, str(ipv6_link_local_addr(vmMac)))
 
         rules = parse_network_rules(rules)
-        conntrack4_not_needed = False
-        conntrack6_not_needed = False
+        ingress4_allow_all = False
+        egress4_allow_all = False
+        ingress6_allow_all = False
+        egress6_allow_all = False
         for rule in rules:
-            """
-            If any of the rules has an explicit allow all protocols from 0.0.0.0/0 (ipv4)
-            or ::/0 (ipv6), then that IP family doesn't need its connection tracked
-            Example contents of the rules list:
-            [
-	            {'ipv4': ['1.0.0.0/24', '0.0.0.0/0'], 'ipv6': ['::/0'], 'ruletype': 'I', 'start': 0, 'end': 0, 'protocol': 'all'},
-	            {'ipv4': ['1.1.1.1/32'], 'ipv6': [], 'ruletype': 'I', 'start': 1, 'end': 65535, 'protocol': 'tcp'},
-	            {'ipv4': [], 'ipv6': ['2001:db8::/32'], 'ruletype': 'I', 'start': 2000, 'end': 3000, 'protocol': 'tcp'}
-            ]
-            """
-            if '0.0.0.0/0' in rule['ipv4'] and rule['protocol'].lower() == 'all':
-                conntrack4_not_needed = True
-            if '::/0' in rule['ipv6'] and rule['protocol'].lower() == 'all':
-                conntrack6_not_needed = True
+            if rule['protocol'].lower() == 'all':
+                if '0.0.0.0/0' in rule['ipv4']:
+                    if rule['ruletype'] == 'E':
+                        egress4_allow_all = True
+                    else:
+                        ingress4_allow_all = True
+                if '::/0' in rule['ipv6']:
+                    if rule['ruletype'] == 'E':
+                        egress6_allow_all = True
+                    else:
+                        ingress6_allow_all = True
+
+        conntrack4_not_needed = ingress4_allow_all and egress4_allow_all
+        conntrack6_not_needed = ingress6_allow_all and egress6_allow_all
 
         if conntrack4_not_needed:
             add_to_ipset(NOTRACK_IPV4_IPSET, ip4s, "add")
