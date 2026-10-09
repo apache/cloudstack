@@ -31,7 +31,7 @@ help() {
                     -s ceph monitor host(s), comma separated
                     -o ceph/rbd pool name
                     -n cephx auth user (optional)
-                    -k cephx auth key, base64 (optional, required if -n is set)
+                    -k cephx auth key (optional, required if -n is set)
                     -h host
                     -u volume (rbd image) uuid list
                     -t current time in seconds (accepted for compatibility with kvmvmactivity.sh, not used)
@@ -118,22 +118,36 @@ fi
 hbObject="KVMHA-hb-$HostIP"
 acObject="KVMHA-ac-$HostIP"
 
+# the reason why the heartbeat did not show that the host is alive, added to the messages about a DEAD host
+hbNote=
+
+dead() {
+  echo "=====> Considering host as DEAD due to $1.$hbNote <======"
+}
+
 # First check: heartbeat object, same as kvmheartbeat_rbd.sh
 now=$(date +%s)
-hb=$(rados -p "$PoolName" "${RadosOpts[@]}" get "$hbObject" - 2> /dev/null)
-if [[ "$hb" =~ ^[0-9]+$ ]]
+if hb=$(rados -p "$PoolName" "${RadosOpts[@]}" get "$hbObject" - 2> /dev/null)
 then
-  diff=$(expr $now - $hb)
-  if [ $diff -lt 61 ]
+  if [[ "$hb" =~ ^[0-9]+$ ]]
   then
-    echo "=====> ALIVE <====="
-    exit 0
+    diff=$(expr $now - $hb)
+    if [ $diff -lt 61 ]
+    then
+      echo "=====> ALIVE <====="
+      exit 0
+    fi
+    hbNote=" The heartbeat in RADOS object [$hbObject] is [$diff] seconds old."
+  else
+    hbNote=" The RADOS object [$hbObject] does not hold a heartbeat."
   fi
+else
+  hbNote=" The RADOS object [$hbObject] could not be read, it does not exist or Ceph can not be reached."
 fi
 
 if [ -z "$UUIDList" ]
 then
-  echo "=====> Considering host as DEAD due to empty UUIDList <======"
+  dead "empty UUIDList"
   exit 0
 fi
 
@@ -149,23 +163,34 @@ do
   then
     continue
   fi
-  watcherCount=$(rbd status "$PoolName/$image" "${RbdOpts[@]}" --format json 2> /dev/null | \
-    python3 -c 'import json,sys
-try:
-    print(len(json.load(sys.stdin).get("watchers", [])))
-except Exception:
-    print(0)' 2> /dev/null)
-  if [ -n "$watcherCount" ] && [ "$watcherCount" -gt 0 ] 2> /dev/null
+  # when the watchers can not be listed, it is unknown whether the host is alive: the script fails, which
+  # is not a DEAD host
+  if ! watchers=$(rbd status "$PoolName/$image" "${RbdOpts[@]}" 2> /dev/null)
+  then
+    echo "=====> Unable to get the watchers of the image [$PoolName/$image] <======"
+    exit 2
+  fi
+  # "Watchers: none", or a line "watcher=<address> client.<id> cookie=<cookie>" per watcher
+  if grep -q '^[[:space:]]*watcher=' <<< "$watchers"
   then
     latestUpdateTime=$now
     break
   fi
 done
 
+acTime=
 if rados -p "$PoolName" "${RadosOpts[@]}" stat "$acObject" &> /dev/null
 then
-  acTime=$(rados -p "$PoolName" "${RadosOpts[@]}" get "$acObject" - 2> /dev/null)
-else
+  if ! acTime=$(rados -p "$PoolName" "${RadosOpts[@]}" get "$acObject" - 2> /dev/null)
+  then
+    echo "=====> Unable to read the RADOS object [$acObject] <======"
+    exit 2
+  fi
+fi
+# a state which is not "<suspect time>:<update time>" (with an optional third field of older versions)
+# is ignored, as if there was none
+if ! [[ "$acTime" =~ ^[0-9]+:[0-9]+(:[0-9]+)?$ ]]
+then
   acTime=
 fi
 
@@ -178,7 +203,7 @@ if [ -z "$acTime" ]; then
     if [[ $latestUpdateTime -gt $SuspectTime ]]; then
         echo "=====> ALIVE <====="
     else
-        echo "=====> Considering host as DEAD due to RADOS object [$acObject] did not exist and condition [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
+        dead "RADOS object [$acObject] did not exist or holds no state, and condition [latestUpdateTime -gt SuspectTime] has not been satisfied"
     fi
 else
     arrTime=(${acTime//:/ })
@@ -190,13 +215,13 @@ else
         if [[ $latestUpdateTime -gt $SuspectTime ]]; then
             echo "=====> ALIVE <====="
         else
-            echo "=====> Considering host as DEAD due to RADOS object [$acObject] exists, condition [suspectTimeDiff -lt 0] was satisfied and [latestUpdateTime -gt SuspectTime] has not been satisfied. <======"
+            dead "RADOS object [$acObject] exists, condition [suspectTimeDiff -lt 0] was satisfied and [latestUpdateTime -gt SuspectTime] has not been satisfied"
         fi
     else
         if [[ $latestUpdateTime -gt $lastUpdateTime ]]; then
             echo "=====> ALIVE <====="
         else
-            echo "=====> Considering host as DEAD due to RADOS object [$acObject] exists and conditions [suspectTimeDiff -lt 0] and [latestUpdateTime -gt SuspectTime] have not been satisfied. <======"
+            dead "RADOS object [$acObject] exists and conditions [suspectTimeDiff -lt 0] and [latestUpdateTime -gt SuspectTime] have not been satisfied"
         fi
     fi
 fi

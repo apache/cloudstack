@@ -29,7 +29,7 @@ help() {
                     -s ceph monitor host(s), comma separated
                     -o ceph/rbd pool name
                     -n cephx auth user (optional)
-                    -k cephx auth key, base64 (optional, required if -n is set)
+                    -k cephx auth key (optional, required if -n is set)
                     -h host
                     -r write/read hb log
                     -c cleanup
