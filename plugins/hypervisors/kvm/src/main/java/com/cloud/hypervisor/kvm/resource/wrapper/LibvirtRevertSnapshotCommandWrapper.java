@@ -43,6 +43,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.CephUtil;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -60,11 +61,6 @@ import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
-
-    private static final String MON_HOST = "mon_host";
-    private static final String KEY = "key";
-    private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String RADOS_CONNECTION_TIMEOUT = "30";
 
     protected Set<StoragePoolType> storagePoolTypesThatSupportRevertSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD, StoragePoolType.Filesystem,
             StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint));
@@ -92,26 +88,29 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
             KVMStoragePool primaryPool = snapshotDisk.getPool();
 
             if (primaryPool.getType() == StoragePoolType.RBD) {
-                Rados rados = new Rados(primaryPool.getAuthUserName());
-                rados.confSet(MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                rados.confSet(KEY, primaryPool.getAuthSecret());
-                rados.confSet(CLIENT_MOUNT_TIMEOUT, RADOS_CONNECTION_TIMEOUT);
-                rados.connect();
+                Rados rados = null;
+                IoCTX io = null;
+                Rbd rbd = null;
+                RbdImage image = null;
+                try {
+                    rados = CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
 
-                String[] rbdPoolAndVolumeAndSnapshot = snapshotRelPath.split("/");
-                int snapshotIndex = rbdPoolAndVolumeAndSnapshot.length - 1;
-                String rbdSnapshotId = rbdPoolAndVolumeAndSnapshot[snapshotIndex];
+                    String[] rbdPoolAndVolumeAndSnapshot = snapshotRelPath.split("/");
+                    int snapshotIndex = rbdPoolAndVolumeAndSnapshot.length - 1;
+                    String rbdSnapshotId = rbdPoolAndVolumeAndSnapshot[snapshotIndex];
 
-                IoCTX io = rados.ioCtxCreate(primaryPool.getSourceDir());
-                Rbd rbd = new Rbd(io);
+                    io = rados.ioCtxCreate(primaryPool.getSourceDir());
+                    rbd = new Rbd(io);
 
-                logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(), volumePath, rbdSnapshotId));
+                    logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(), volumePath, rbdSnapshotId));
 
-                RbdImage image = rbd.open(volumePath);
-                image.snapRollBack(rbdSnapshotId);
-
-                rbd.close(image);
-                rados.ioCtxDestroy(io);
+                    image = rbd.open(volumePath);
+                    image.snapRollBack(rbdSnapshotId);
+                } finally {
+                    CephUtil.closeQuietly(rbd, image, volumePath);
+                    CephUtil.ioCtxDestroyQuietly(rados, io);
+                    CephUtil.shutDownQuietly(rados);
+                }
             } else {
                 if (snapshotImageStore != null && DataStoreRole.Primary != snapshotImageStore.getRole()) {
                     secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
