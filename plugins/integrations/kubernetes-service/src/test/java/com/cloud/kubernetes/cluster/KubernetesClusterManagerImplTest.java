@@ -131,6 +131,14 @@ public class KubernetesClusterManagerImplTest {
     }
 
     @Test
+    public void testValidateVpcTierWithoutAcl() {
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getState()).thenReturn(Network.State.Implemented);
+        Mockito.when(network.getNetworkACLId()).thenReturn(null);
+        kubernetesClusterManager.validateVpcTier(network);
+    }
+
+    @Test
     public void validateIsolatedNetworkIpRulesNoRules() {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
