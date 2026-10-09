@@ -38,6 +38,7 @@ import com.google.gson.JsonParser;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.joda.time.Duration;
 import org.libvirt.Connect;
+import org.libvirt.Error;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StorageVol;
@@ -106,23 +107,35 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     }
 
     private boolean undefineInactiveClvmPool(Connect conn, String uuid) throws LibvirtException {
-        StoragePool sp;
-        try {
-            sp = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
+        StoragePool sp = lookupClvmPool(conn, uuid);
+        if (sp == null) {
             logger.warn("CLVM/CLVM_NG storage pool {} doesn't exist in libvirt. Assuming it is already removed", uuid);
             return true;
         }
 
-        if (sp.isActive() == 1) {
-            sp.destroy();
+        try {
+            if (sp.isActive() == 1) {
+                sp.destroy();
+            }
+            if (sp.isPersistent() == 1) {
+                sp.undefine();
+            }
+        } finally {
+            sp.free();
         }
-        if (sp.isPersistent() == 1) {
-            sp.undefine();
-        }
-        sp.free();
         logger.info("CLVM/CLVM_NG storage pool {} was successfully removed from libvirt", uuid);
         return true;
+    }
+
+    private StoragePool lookupClvmPool(Connect conn, String uuid) throws LibvirtException {
+        try {
+            return conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException e) {
+            if (e.getError() != null && e.getError().getCode() == Error.ErrorNumber.VIR_ERR_NO_STORAGE_POOL) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     @Override
