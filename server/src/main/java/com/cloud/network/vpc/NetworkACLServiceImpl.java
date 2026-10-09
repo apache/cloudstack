@@ -42,6 +42,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -116,6 +117,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcManager vpcManager;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
+    private static final int TCP_PROTO_NUMBER = 6;
+    private static final int UDP_PROTO_NUMBER = 17;
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -365,6 +368,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         networkACLItemVO.setDisplay(createNetworkACLCmd.isDisplay());
 
         validateNetworkACLItem(networkACLItemVO);
+        validatePortsAreUsableWithProtocol(protocol, sourcePortStart, sourcePortEnd);
         return _networkAclMgr.createNetworkACLItem(networkACLItemVO);
     }
 
@@ -690,6 +694,33 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
     }
 
+    /**
+     * Ports are only applied to TCP and UDP, so they cannot be given with any other protocol number:
+     * the rule would be applied to the whole protocol, ignoring them.
+     */
+    protected void validatePortsAreUsableWithProtocol(String protocol, Integer sourcePortStart, Integer sourcePortEnd) {
+        if ((sourcePortStart == null && sourcePortEnd == null) || !StringUtils.isNumeric(protocol)) {
+            return;
+        }
+        int protoNumber = NumberUtils.toInt(protocol, -1);
+        if (protoNumber != TCP_PROTO_NUMBER && protoNumber != UDP_PROTO_NUMBER) {
+            throw new InvalidParameterValueException(String.format("Start and end port can only be given for TCP or UDP (protocol number %d or %d), not for protocol number [%s]",
+                    TCP_PROTO_NUMBER, UDP_PROTO_NUMBER, protocol));
+        }
+    }
+
+    /**
+     * On update the ports a rule already carries are only checked when the protocol is given too, so
+     * that a rule stored with ports on another protocol number can still be edited otherwise, while a
+     * protocol change cannot leave them on it.
+     */
+    protected void validatePortsAreUsableWithProtocolOnUpdate(UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo) {
+        boolean protocolGiven = StringUtils.isNotBlank(updateNetworkACLItemCmd.getProtocol());
+        validatePortsAreUsableWithProtocol(networkACLItemVo.getProtocol(),
+                protocolGiven ? networkACLItemVo.getSourcePortStart() : updateNetworkACLItemCmd.getSourcePortStart(),
+                protocolGiven ? networkACLItemVo.getSourcePortEnd() : updateNetworkACLItemCmd.getSourcePortEnd());
+    }
+
     @Override
     public NetworkACLItem getNetworkACLItem(final long ruleId) {
         return _networkAclMgr.getNetworkACLItem(ruleId);
@@ -876,6 +907,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         transferDataToNetworkAclRulePojo(updateNetworkACLItemCmd, networkACLItemVo, acl);
         validateNetworkACLItem(networkACLItemVo);
+        validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmd, networkACLItemVo);
         return _networkAclMgr.updateNetworkACLItem(networkACLItemVo);
     }
 
