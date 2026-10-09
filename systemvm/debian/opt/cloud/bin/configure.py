@@ -81,6 +81,17 @@ def appendStringIfNotEmpty(s1, s2):
     return s1
 
 
+# nft names of the IPv6 extension headers, which can also be given as an ACL protocol number
+IP6_EXTHDR_NAMES = {0: "hbh", 43: "rt", 44: "frag", 60: "dst", 135: "mh"}
+
+
+def ip6ProtocolMatch(number):
+    """ An extension header number is matched as that extension header, any other as the protocol """
+    if number in IP6_EXTHDR_NAMES:
+        return "exthdr %s exists" % IP6_EXTHDR_NAMES[number]
+    return "meta l4proto %d" % number
+
+
 class CsPassword(CsDataBag):
 
     TOKEN_FILE = "/tmp/passwdsrvrtoken"
@@ -527,7 +538,7 @@ class CsAcl(CsDataBag):
                 if protocol != "all":
                     icmp_type = ""
                     if protocol == "protocol":
-                        protocol = "ip6 nexthdr %d" % rule['protocol']
+                        protocol = ip6ProtocolMatch(rule['protocol'])
                     proto = protocol
                     if proto == "icmp":
                         proto = proto_str = "icmpv6"
