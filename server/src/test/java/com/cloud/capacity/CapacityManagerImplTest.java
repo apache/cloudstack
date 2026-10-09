@@ -48,11 +48,15 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CapacityManagerImplTest {
     @Mock
     ClusterDetailsDao clusterDetailsDao;
+
+    @Mock
+    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Mock
     ServiceOfferingDao serviceOfferingDao;
 

@@ -70,6 +70,7 @@ public interface VmDetailConstants {
     // Misc details for internal usage (not to be set/changed by user or admin)
     String CPU_OVER_COMMIT_RATIO = "cpuOvercommitRatio";
     String MEMORY_OVER_COMMIT_RATIO = "memoryOvercommitRatio";
+    String MEMORY_RECLAIM_DISABLED = "memoryReclaimDisabled";
     String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
     String DEPLOY_VM = "deployvm";
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
