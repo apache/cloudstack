@@ -52,5 +52,5 @@ public interface VolumeFeignClient {
 
     @RequestLine("PATCH /api/storage/volumes/{uuid}")
     @Headers({ "Authorization: {authHeader}"})
-    JobResponse updateVolumeRebalancing(@Param("authHeader") String authHeader, @Param("uuid") String uuid, Volume volumeRequest);
+    JobResponse updateVolume(@Param("authHeader") String authHeader, @Param("uuid") String uuid, Volume volumeRequest);
 }
