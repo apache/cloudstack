@@ -166,6 +166,14 @@ class CsInterface:
     def get_ip(self):
         return self.get_attr("public_ip")
 
+    def get_passwd_server_ips(self):
+        if CsGuestNetwork(self.get_device(), self.config).router_owns_gateway():
+            return [self.get_gateway(), self.get_ip()]
+        return [self.get_ip()]
+
+    def get_passwd_server_address(self):
+        return ",".join(self.get_passwd_server_ips())
+
     def get_ip6(self):
         if not self.config.is_vpc():
             return self.config.cmdline().get_dev_ip6prelen(self.get_device())
@@ -892,9 +900,9 @@ class CsIP:
                         CsPasswdSvc(self.address['public_ip']).stop()
                 elif cmdline.is_primary():
                     if method == "add":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).start()
                     elif method == "delete":
-                        CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
+                        CsPasswdSvc(CsInterface(self.address, self.config).get_passwd_server_address()).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routed():
             if self.address["source_nat"]:
