@@ -345,7 +345,6 @@ import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.zone.MarkDefaultZoneForAccountCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
 import org.apache.cloudstack.api.command.user.account.AddUserToProjectCmd;
@@ -4007,7 +4006,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         cmdList.add(UpdateVPCOfferingCmd.class);
         cmdList.add(CreateZoneCmd.class);
         cmdList.add(DeleteZoneCmd.class);
-        cmdList.add(MarkDefaultZoneForAccountCmd.class);
         cmdList.add(UpdateZoneCmd.class);
         cmdList.add(AddAccountToProjectCmd.class);
         cmdList.add(AddUserToProjectCmd.class);

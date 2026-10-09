@@ -336,15 +336,6 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationService#markDefaultZone(java.lang.String, long, long)
-     */
-    @Override
-    public Account markDefaultZone(String accountName, long domainId, long defaultZoneId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#deleteVlanIpRange(org.apache.cloudstack.api.commands.DeleteVlanIpRangeCmd)
      */
     @Override
