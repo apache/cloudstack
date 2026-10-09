@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.ConfigurationManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -33,7 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
@@ -44,7 +44,6 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,8 +56,6 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     EndPointSelector _epSelector;
     @Inject
     StorageCacheManager cacheManager;
-    @Inject
-    ConfigurationDao _configDao;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -83,15 +80,11 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         String containerName = SwiftUtil.getContainerName(dataObject.getType().toString(), dataObject.getId());
         String objectName = installPath.split("\\/")[1];
         // Get extract url expiration interval set in global configuration (in seconds)
-        int urlExpirationInterval = Integer.parseInt(_configDao.getValue(Config.ExtractURLExpirationInterval.toString()));
+        int urlExpirationInterval = ConfigurationManager.ExtractURLExpirationInterval.value();
 
         URL swiftUrl = SwiftUtil.generateTempUrl(swiftTO, containerName, objectName, tempKey, urlExpirationInterval);
-        if (swiftUrl != null) {
-            logger.debug("Swift temp-url: " + swiftUrl.toString());
-            return swiftUrl.toString();
-        }
-
-        throw new CloudRuntimeException("Unable to create extraction URL");
+        logger.debug("Swift temp-url: {}", swiftUrl);
+        return swiftUrl.toString();
     }
 
     @Override
@@ -115,7 +108,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
             throw new CloudRuntimeException(errMsg);
         }
 
-        CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
+        CreateContext<CreateCmdResult> context = new CreateContext<>(callback, data);
         AsyncCallbackDispatcher<SwiftImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
 
@@ -125,7 +118,5 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
         }
         ep.sendMessageAsync(dcmd, caller);
-
     }
-
 }
