@@ -136,9 +136,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -811,15 +812,49 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(Arrays.asList(vol1));
         Mockito.when(volDao.findByInstanceAndType(1L, Volume.Type.ROOT)).thenReturn(Arrays.asList(vol1));
         Mockito.when(_dataStoreManager.getPrimaryDataStore(vol1.getPoolId())).thenReturn((DataStore) primaryDataStore);
+        Mockito.when(primaryDataStore.isInMaintenance()).thenReturn(true);
         Mockito.when(avoids.shouldAvoid(storagePool)).thenReturn(Boolean.FALSE);
 
         Mockito.doReturn(Arrays.asList(storagePool)).when(allocator).allocateToPool(diskProfile, vmProfile, plan,
                 avoids, 10);
-        Mockito.when(volDao.update(vol1.getId(), vol1)).thenReturn(true);
         _dpm.findSuitablePoolsForVolumes(vmProfile, plan, avoids, 10);
-        verify(vol1, times(1)).setPoolId(null);
-        assertTrue(vol1.getPoolId() == null);
+        // Allocated volume with an existing poolId should NOT have its poolId cleared;
+        // it goes through the pool suitability check and falls back to the allocator if the pool is unsuitable.
+        verify(vol1, never()).setPoolId(null);
+        assertNotNull(vol1.getPoolId());
+    }
 
+    @Test
+    public void testFindSuitablePoolsReusesPoolForAllocatedRootVolume() {
+        VolumeVO vol = Mockito.spy(new VolumeVO("root", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path",
+                Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT));
+        Mockito.when(vol.getId()).thenReturn(1L);
+        vol.setState(Volume.State.Allocated);
+        vol.setPoolId(1L);
+
+        PrimaryDataStore pool = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(pool.getId()).thenReturn(1L);
+        Mockito.when(pool.isInMaintenance()).thenReturn(false);
+        Mockito.when(pool.getDataCenterId()).thenReturn(dataCenterId);
+        Mockito.when(pool.getPodId()).thenReturn(podId);
+        Mockito.when(pool.getClusterId()).thenReturn(clusterId);
+
+        // plan has no poolId, so reuse must come from the volume's own poolId (the broadened, non-DATADISK-only path).
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+
+        Mockito.when(vmProfile.getId()).thenReturn(1L);
+        Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(Arrays.asList(vol));
+        Mockito.when(volDao.findByInstanceAndType(1L, Volume.Type.ROOT)).thenReturn(Arrays.asList(vol));
+        Mockito.when(_dataStoreManager.getPrimaryDataStore(vol.getPoolId())).thenReturn((DataStore) pool);
+        Mockito.when(avoids.shouldAvoid(pool)).thenReturn(Boolean.FALSE);
+
+        Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = _dpm.findSuitablePoolsForVolumes(vmProfile, plan, avoids, 10);
+
+        assertTrue(result.first().containsKey(vol));
+        assertTrue(result.first().get(vol).contains(pool));
+        // Allocated volumes still need to be created, so they are not treated as ready-and-reused.
+        assertFalse(result.second().contains(vol));
+        verify(vol, never()).setPoolId(null);
     }
 
     // This is so ugly but everything is so intertwined...
