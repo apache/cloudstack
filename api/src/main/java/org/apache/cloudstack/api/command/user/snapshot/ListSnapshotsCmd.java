@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.storage.Snapshot;
+import com.cloud.utils.DateUtil;
 
 @APICommand(name = "listSnapshots", description = "Lists all available Snapshots for the Account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -46,13 +47,19 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=SnapshotResponse.class, description = "The IDs of the Snapshots, mutually exclusive with id", since = "4.9")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.")
+    @Parameter(name = ApiConstants.INTERVAL_TYPE,
+        type = CommandType.STRING,
+        description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY.",
+        allowedValueType = DateUtil.IntervalType.class)
     private String intervalType;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists Snapshot by Snapshot name")
     private String snapshotName;
 
-    @Parameter(name = ApiConstants.SNAPSHOT_TYPE, type = CommandType.STRING, description = "Valid values are MANUAL or RECURRING.")
+    @Parameter(name = ApiConstants.SNAPSHOT_TYPE,
+        type = CommandType.STRING,
+        description = "Valid values are MANUAL or RECURRING.",
+        allowedValueType = Snapshot.Type.class)
     private String snapshotType;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume")
@@ -64,8 +71,15 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages", since = "4.19.0")
     private Boolean showUnique;
 
-    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "list snapshots by location type. Used only when showunique=false. " +
-            "Valid location types: 'primary', 'secondary'. Default is empty", since = "4.19.0")
+    @Parameter(name = ApiConstants.LOCATION_TYPE,
+        type = CommandType.STRING,
+        description = "list snapshots by location type. Used only when showunique=false. "
+                + "Valid location types: 'primary', 'secondary'. Default is empty",
+        since = "4.19.0",
+        allowedValues = {
+                "primary",
+                "secondary"
+        })
     private String locationType;
 
     /////////////////////////////////////////////////////

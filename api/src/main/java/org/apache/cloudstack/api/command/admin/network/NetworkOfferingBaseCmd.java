@@ -155,8 +155,10 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NETWORK_MODE,
             type = CommandType.STRING,
+            allowedValues = {"NATTED", "ROUTED"},
             description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
+            since = "4.20.0",
+            allowedValueType = NetworkOffering.NetworkMode.class)
     private String networkMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
