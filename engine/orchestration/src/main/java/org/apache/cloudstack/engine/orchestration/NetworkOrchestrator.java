@@ -581,19 +581,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
 
         final Map<Network.Service, Set<Network.Provider>> defaultVPCOffProviders = new HashMap<>();
-        defaultProviders.clear();
-        defaultProviders.add(Network.Provider.VPCVirtualRouter);
-        defaultVPCOffProviders.put(Service.Dhcp, defaultProviders);
-        defaultVPCOffProviders.put(Service.Dns, defaultProviders);
-        defaultVPCOffProviders.put(Service.UserData, defaultProviders);
-        defaultVPCOffProviders.put(Service.NetworkACL, defaultProviders);
-        defaultVPCOffProviders.put(Service.Gateway, defaultProviders);
-        defaultVPCOffProviders.put(Service.Lb, defaultProviders);
-        defaultVPCOffProviders.put(Service.SourceNat, defaultProviders);
-        defaultVPCOffProviders.put(Service.StaticNat, defaultProviders);
-        defaultVPCOffProviders.put(Service.PortForwarding, defaultProviders);
-        defaultVPCOffProviders.put(Service.Vpn, defaultProviders);
-        defaultVPCOffProviders.put(Service.Firewall, defaultProviders);
+        final Set<Network.Provider> defaultVpcProviders = new HashSet<>();
+        defaultVpcProviders.add(Network.Provider.VPCVirtualRouter);
+        defaultVPCOffProviders.put(Service.Dhcp, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Dns, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.UserData, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.NetworkACL, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Gateway, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Lb, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.SourceNat, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.StaticNat, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.PortForwarding, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Vpn, defaultVpcProviders);
+        defaultVPCOffProviders.put(Service.Firewall, defaultVpcProviders);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -634,6 +634,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null,
                             true, false, false, false, false, null, null, null, true, null, null, false);
+                }
+
+                //#4-2 - default isolated offering with Source nat service and egress traffic allowed by default
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed,
+                            "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, null, false, Availability.Optional, null,
+                            defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, true, null,
+                            true, false, false, false, false, null, null, null, true, null, null, false);
+                    // keep consistent with the offering created on fresh installation (ConfigurationServerImpl)
+                    offering.setMulticastRateMbps(null);
+                    offering.setDedicatedLB(true);
+                    offering.setAssociatePublicIP(true);
+                    offering.setSupportsVmAutoScaling(true);
+                    _networkOfferingDao.update(offering.getId(), offering);
                 }
 
                 //#5 - default vpc offering with LB service

@@ -138,7 +138,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     NetworkMode networkMode;
 
     @Column(name = "egress_default_policy")
-    boolean egressdefaultpolicy;
+    boolean egressDefaultPolicy;
 
     @Column(name = "concurrent_connections")
     Integer concurrentConnections;
@@ -343,12 +343,16 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Override
     public boolean isEgressDefaultPolicy() {
-        return egressdefaultpolicy;
+        return egressDefaultPolicy;
+    }
+
+    public void setEgressDefaultPolicy(boolean egressDefaultPolicy) {
+        this.egressDefaultPolicy = egressDefaultPolicy;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
-            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
-            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {
+                             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
+                             boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -404,7 +408,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = elasticLb;
         this.inline = inline;
         this.eipAssociatePublicIp = associatePublicIP;
-        this.egressdefaultpolicy = egressdefaultpolicy;
+        this.egressDefaultPolicy = egressdefaultpolicy;
         this.supportsStrechedL2 = supportsStrechedL2;
         this.supportsPublicAccess = supportsPublicAccess;
     }
@@ -486,6 +490,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean isAssociatePublicIP() {
         return eipAssociatePublicIp;
+    }
+
+    public void setAssociatePublicIP(boolean associatePublicIP) {
+        this.eipAssociatePublicIp = associatePublicIP;
     }
 
     @Override
