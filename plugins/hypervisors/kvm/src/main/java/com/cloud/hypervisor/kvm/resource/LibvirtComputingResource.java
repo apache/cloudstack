@@ -6868,6 +6868,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (nicMultiqueueNumber == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES && cpus != null && cpus > 0) {
                 logger.info("The NIC multiqueue number is equal to [{}]. Thus, defining the multiqueue value as the number of vCPUs [{}].", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES, cpus);
                 interfaceDef.setMultiQueueNumber(cpus);
+            } else if (nicMultiqueueNumber == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES) {
+                logger.info("Not setting NIC multiqueue number, as it is equal to [{}] and there is not associated number of vCPUs to be considered.", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES);
             } else {
                 logger.debug("Defining the NIC multiqueue number as [{}] in the NIC XML definition.", nicMultiqueueNumber);
                 interfaceDef.setMultiQueueNumber(nicMultiqueueNumber);
