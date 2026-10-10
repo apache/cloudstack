@@ -341,7 +341,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx, Provider.Netris);
 
     int _cleanupInterval;
-    int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
 
     protected final List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
@@ -516,9 +515,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<String, String> configs = _configDao.getConfiguration(params);
         final String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
-
-        final String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
-        _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -2580,9 +2576,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 try {
                     // check number of active networks in vpc
-                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, Config.VpcMaxNetworks));
-                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
+                    final int maxNetworks = VpcMaxNetworks.value();
+                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= maxNetworks) {
+                        logger.warn("Failed to create a new network in VPC [{}] because it has reached the maximum of [{}] networks for {}. "
+                                + "Increase it by modifying the global setting [{}].", vpc, maxNetworks, _accountMgr.getAccount(vpc.getAccountId()), VpcMaxNetworks.key());
+                        throw new InvalidParameterValueException(String.format("VPC %s has reached the maximum of %d networks. "
+                                + "Delete an unused network or contact your platform administrator to raise the limit.", vpc.getName(), maxNetworks));
                     }
 
                     // 1) CIDR is required
@@ -3721,7 +3720,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
                 VpcTierNamePrepend,
-                VpcTierNamePrependDelimiter
+                VpcTierNamePrependDelimiter,
+                VpcMaxNetworks
         };
     }
 

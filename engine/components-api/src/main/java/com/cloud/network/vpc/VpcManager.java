@@ -57,6 +57,13 @@ public interface VpcManager {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced",
+            Integer.class,
+            "vpc.max.networks",
+            "3",
+            "Maximum number of networks per VPC",
+            true,
+            ConfigKey.Scope.Global);
 
     /**
      * Returns all the Guest networks that are part of VPC
