@@ -58,7 +58,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.SNAPSHOT_TYPE,
         type = CommandType.STRING,
-        description = "Valid values are MANUAL or RECURRING.",
+        description = "Valid values are MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY, GROUP, and FROM_GROUP.",
         allowedValueType = Snapshot.Type.class)
     private String snapshotType;
 

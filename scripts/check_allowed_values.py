@@ -98,7 +98,6 @@ def extract_valid_values(description):
     ]
 
     match = None
-
     for pattern in patterns:
         match = re.search(pattern, description, re.IGNORECASE)
         if match:
@@ -108,23 +107,27 @@ def extract_valid_values(description):
         return []
 
     values_text = match.group(1).strip()
-
-    # Some descriptions contain a fixed set of examples but also
-    # explicitly allow additional values. These are not closed enums
-    # and therefore should not require an allowedValues annotation.
-    if re.search(r"\bor\s+valid\s+protocol\s+number\b", values_text, re.IGNORECASE):
-        return []
-
-    # Remove a leading colon if the wording leaves one behind.
     values_text = values_text.lstrip(":").strip()
 
-    # Convert "A, B, and C" into "A, B, C".
-    values_text = re.sub(
-        r",?\s+and\s+",
-        ", ",
+    # These descriptions permit arbitrary protocol numbers.
+    if re.search(
+        r"\bor\s+valid\s+protocol\s+number\b",
         values_text,
-        flags=re.IGNORECASE,
+        re.IGNORECASE,
+    ):
+        return []
+
+    # Remove explanatory parenthetical text.
+    values_text = re.sub(r"\s*\([^)]*\)", "", values_text)
+
+    # Normalize conjunctions and slash-separated enum values.
+    values_text = re.sub(
+        r",?\s+and\s+", ", ", values_text, flags=re.IGNORECASE
     )
+    values_text = re.sub(
+        r"\s+or\s+", ", ", values_text, flags=re.IGNORECASE
+    )
+    values_text = re.sub(r"\s*/\s*", ", ", values_text)
 
     values = [
         value.strip().strip('"').strip("'")
@@ -132,7 +135,6 @@ def extract_valid_values(description):
     ]
 
     return [value for value in values if value]
-
 
 def extract_parameter_name(block):
     match = re.search(
@@ -192,12 +194,26 @@ def extract_inner_enums(source):
 
 def build_enum_index():
     enum_index = {}
+    simple_names = {}
+    ambiguous_names = set()
 
     for path in find_java_files():
         source = path.read_text(encoding="utf-8")
         enums = extract_inner_enums(source)
 
         for enum_name, values in enums.items():
+            # Keep the declaring Java filename to distinguish enums
+            # with identical simple names in different classes.
+            enum_index[f"{path.stem}.{enum_name}"] = values
+
+            if enum_name in simple_names:
+                ambiguous_names.add(enum_name)
+            else:
+                simple_names[enum_name] = values
+
+    # Retain simple-name lookup only for unambiguous enum names.
+    for enum_name, values in simple_names.items():
+        if enum_name not in ambiguous_names:
             enum_index[enum_name] = values
 
     return enum_index
@@ -212,7 +228,7 @@ def extract_allowed_value_type(block):
         return None
 
     if match.group(2):
-        return match.group(2)
+        return f"{match.group(1)}.{match.group(2)}"
 
     return match.group(1)
 
@@ -276,10 +292,19 @@ def check_file(path, enum_index=None):
         values = extract_valid_values(description) if description else []
 
         enum_values = None
-        if enum_name and enum_name in enums:
-            enum_values = enums[enum_name]
-        elif enum_name and enum_name in enum_index:
-            enum_values = enum_index[enum_name]
+        if enum_name:
+            # Prefer the fully qualified enum name to avoid collisions.
+            candidates = [enum_name]
+            if "." in enum_name:
+                candidates.append(enum_name.rsplit(".", 1)[1])
+
+            for candidate in candidates:
+                if candidate in enums:
+                    enum_values = enums[candidate]
+                    break
+                if candidate in enum_index:
+                    enum_values = enum_index[candidate]
+                    break
 
         if enum_values is not None:
 

@@ -30,6 +30,14 @@ class CheckAllowedValuesTest(unittest.TestCase):
             ["HOURLY", "DAILY", "WEEKLY", "MONTHLY"],
         )
 
+    def test_extract_valid_values_with_colon_and_or(self):
+        description = "Valid options are: NATTED or ROUTED"
+
+        self.assertEqual(
+            check_allowed_values.extract_valid_values(description),
+            ["NATTED", "ROUTED"],
+        )
+
     def test_open_ended_protocol_values_are_ignored(self):
         description = (
             "TCP/UDP/ICMP/ALL or valid protocol number"
