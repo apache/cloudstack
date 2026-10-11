@@ -1829,10 +1829,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected void setKVMVncAccess(long hostId, List<VMInstanceVO> vms) {
         for (VMInstanceVO vm : vms) {
             GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
-            if (vmVncPortAnswer != null) {
-                vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vmVncPortAnswer.getAddress(), true);
-                vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, String.valueOf(vmVncPortAnswer.getPort()), true);
-            }
+            updateVncAccessDetailForVM(vm, vmVncPortAnswer, hostId);
+        }
+    }
+
+    private void updateVncAccessDetailForVM(VMInstanceVO vm, GetVncPortAnswer vmVncPortAnswer, long hostId) {
+        if (vm == null || vmVncPortAnswer == null) {
+            logger.warn("VM or VNC port answer is null. Cannot update VNC access details.");
+            return;
+        }
+
+        if (!vmVncPortAnswer.getResult()) {
+            logger.warn("Failed to get VNC port for VM {} on host {}. Details: {}", vm, hostId, vmVncPortAnswer.getDetails());
+            return;
+        }
+
+        String vncAddress = vmVncPortAnswer.getAddress();
+        String vncPort = String.valueOf(vmVncPortAnswer.getPort());
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(vmVncPortAnswer.getAddress()) && org.apache.commons.lang3.StringUtils.isNotBlank(vncPort)) {
+            logger.info("Setting VNC access details for VM {} on host {} to address: {}, port: {}", vm, hostId, vncAddress, vncPort);
+            vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vncAddress, true);
+            vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, vncPort, true);
+        } else {
+            logger.warn("Unable to set VNC access details for VM {} on host {} as the address or port is blank. Address: {}, Port: {}", vm, hostId, vncAddress, vncPort);
         }
     }
 
@@ -2744,8 +2763,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         allPoolsByTags.addAll(_storagePoolDao.findPoolsByAccessGroupsForHostConnection(dcId, podId, clusterId, ScopeType.CLUSTER, storageAccessGroups));
         allPoolsByTags.addAll(_storagePoolDao.findZoneWideStoragePoolsByAccessGroupsForHostConnection(dcId, storageAccessGroups));
         if (includeEmptyTags) {
-            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null));
-            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null));
+            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null, StoragePoolStatus.Up));
+            allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null, StoragePoolStatus.Up));
         }
 
         return allPoolsByTags;
@@ -2753,8 +2772,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private List<StoragePoolVO> getStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId) {
         List<StoragePoolVO> allPoolsByTags = new ArrayList<>();
-        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null));
-        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null));
+        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, podId, clusterId, ScopeType.CLUSTER, null, StoragePoolStatus.Up));
+        allPoolsByTags.addAll(_storagePoolDao.findStoragePoolsByEmptyStorageAccessGroups(dcId, null, null, ScopeType.ZONE, null, StoragePoolStatus.Up));
 
         return allPoolsByTags;
     }
@@ -2962,7 +2981,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forVirtualRouter, final Long podId) {
+    public List<HypervisorType> getSupportedHypervisorTypes(final long zoneId, final boolean forSystemVm, final Long podId) {
         final List<HypervisorType> hypervisorTypes = new ArrayList<>();
 
         List<ClusterVO> clustersForZone;
@@ -2974,7 +2993,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         for (final ClusterVO cluster : clustersForZone) {
             final HypervisorType hType = cluster.getHypervisorType();
-            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
+            if (!forSystemVm || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
                 hypervisorTypes.add(hType);
             }
         }

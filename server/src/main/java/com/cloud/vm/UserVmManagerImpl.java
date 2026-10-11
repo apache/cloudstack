@@ -9603,6 +9603,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (host == null && hypervisorType == HypervisorType.VMware) {
                 throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
             }
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to import virtual machine without a template");
+            }
+
+            // Ensure template details are loaded so that commitUserVm can copy them into the VM's details map
+            if (template instanceof VMTemplateVO) {
+                VMTemplateVO vmTemplateVO = (VMTemplateVO) template;
+                _templateDao.loadDetails(vmTemplateVO);
+            }
 
             final long id = _vmDao.getNextInSequence(Long.class, "id");
             String instanceName = StringUtils.isBlank(instanceNameInternal) ?

@@ -50,7 +50,8 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
     private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
-            Storage.StoragePoolType.SharedMountPoint);
+            Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.RBD);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -64,14 +65,25 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
                 final String path = vol.getPath();
-                try {
-                    KVMPhysicalDisk.checkQcow2File(path);
-                } catch (final CloudRuntimeException e) {
-                    return new CheckVolumeAnswer(command, false, "", 0, getVolumeDetails(pool, vol));
+                final boolean isRbd = Storage.StoragePoolType.RBD.equals(storageFilerTO.getType());
+
+                Map<VolumeOnStorageTO.Detail, String> volumeDetails = getVolumeDetails(pool, vol);
+                if (MapUtils.isEmpty(volumeDetails)) {
+                    return new Answer(command, false, "Unable to read the volume on the storage pool");
                 }
 
-                long size = KVMPhysicalDisk.getVirtualSizeFromFile(path);
-                return new CheckVolumeAnswer(command, true, "", size, getVolumeDetails(pool, vol));
+                if (!isRbd) {
+                    try {
+                        KVMPhysicalDisk.checkQcow2File(path);
+                    } catch (final CloudRuntimeException e) {
+                        return new CheckVolumeAnswer(command, false, "", 0, volumeDetails);
+                    }
+                }
+
+                // Images on RBD are raw and the path is an image name that qemu-img cannot open
+                // without the rbd: URI, so take the size libvirt already reported for the volume.
+                long size = isRbd ? vol.getVirtualSize() : KVMPhysicalDisk.getVirtualSizeFromFile(path);
+                return new CheckVolumeAnswer(command, true, "", size, volumeDetails);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
@@ -122,6 +134,9 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         try {
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            if (Storage.StoragePoolType.RBD.equals(pool.getType())) {
+                qemuFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath()), disk.getFormat());
+            }
             return qemu.info(qemuFile, secure);
         } catch (QemuImgException | LibvirtException ex) {
             logger.error("Failed to get info of disk file: " + ex.getMessage());
