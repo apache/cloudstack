@@ -637,8 +637,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 //#4-2 - default isolated offering with Source nat service and egress traffic allowed by default
-                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed) == null) {
-                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed,
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed,
                             "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, null, false, Availability.Optional, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, true, null,
                             true, false, false, false, false, null, null, null, true, null, null, false);
@@ -647,6 +647,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering.setDedicatedLB(true);
                     offering.setEipAssociatePublicIp(true);
                     offering.setSupportsVmAutoScaling(true);
+                    offering.setEgressDefaultPolicy(true);
+                    offering.setKeepAliveEnabled(false);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
 

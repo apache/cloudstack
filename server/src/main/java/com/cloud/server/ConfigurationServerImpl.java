@@ -1072,7 +1072,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 // Offering #3-2
                 NetworkOfferingVO defaultIsolatedSourceNatEnabledNetworkOfferingWithDefaultEgressAllowed =
-                        new NetworkOfferingVO(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceDefaultEgressAllowed,
+                        new NetworkOfferingVO(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed,
                                 "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, false, false, null, null, true, Availability.Optional, null,
                                 Network.GuestType.Isolated, true, false, false, false, true, false);
 
