@@ -25,8 +25,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 jobs:
   build:
     if: github.repository == 'apache/cloudstack'
@@ -51,9 +49,12 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: Run Build and Tests with Coverage
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: mvn -B -T$(nproc) -P developer,systemvm,quality -Dsimulator -Dnoredist clean install
       - name: Upload to SonarQube
         env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B -P quality org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack -Dsonar.branch.name=${{ github.ref_name }}

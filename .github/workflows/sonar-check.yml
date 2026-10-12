@@ -24,8 +24,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 jobs:
   build:
     name: Sonar JaCoCo Coverage
@@ -49,10 +47,13 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: Run Build and Tests with Coverage
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: mvn -B -T$(nproc) -P developer,systemvm,quality -Dsimulator -Dnoredist clean install
       - name: Upload to SonarQube
         if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
         env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PR_ID: ${{ github.event.pull_request.number }}

@@ -28,8 +28,6 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -42,6 +40,8 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: RAT licence checks
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
       - name: Rat Report

@@ -28,8 +28,6 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 jobs:
   build:
     if: github.repository == 'apache/cloudstack'
@@ -56,6 +54,8 @@ jobs:
           git status
           ipmitool -V
       - name: Build with Maven
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
       - name: Archive artifacts
@@ -309,6 +309,8 @@ jobs:
           mkdir -p ~/.m2/repository
           tar -xzf /tmp/artifacts/m2-cloudstack.tar.gz -C ~/.m2/repository
       - name: Setup Simulator Prerequisites
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           sudo python3 -m pip install --upgrade netaddr mysql-connector-python
           python3 -m pip install --user --upgrade tools/marvin/dist/[mM]arvin-*.tar.gz
@@ -321,6 +323,8 @@ jobs:
           find . | grep "src/main/java" | sed 's/\/java\//\/java /g' | awk '{print "--sourcefiles", $1, "\\"}' | sort | uniq >> jacoco-report.sh
           echo "--xml jacoco-coverage.xml" >> jacoco-report.sh
       - name: Start CloudStack Management Server with Simulator
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
@@ -331,6 +335,8 @@ jobs:
           echo -e "\nStarting Advanced Zone DataCenter deployment"
           python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg 2>&1 || true
       - name: Run Integration Tests with Simulator
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mkdir -p integration-test-results/smoke/misc
           mkdir -p integration-test-results/component
