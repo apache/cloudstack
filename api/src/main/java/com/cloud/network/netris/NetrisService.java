@@ -21,6 +21,8 @@ import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.NetUtils;
 
 import java.util.List;
 
@@ -81,18 +83,20 @@ public interface NetrisService {
     /**
      * Creates a virtual network (vNet) resource.
      *
-     * @param zoneId           the ID of the zone
-     * @param accountId        the ID of the account
-     * @param domainId         the ID of the domain
-     * @param vpcName          the name of the VPC
-     * @param vpcId            the ID of the VPC
-     * @param networkName      the name of the network
-     * @param networkId        the ID of the network
-     * @param cidr             the CIDR of the network
-     * @param globalRouting    true if global routing is enabled
+     * @param zoneId            the ID of the zone
+     * @param accountId         the ID of the account
+     * @param domainId          the ID of the domain
+     * @param vpcName           the name of the VPC
+     * @param vpcId             the ID of the VPC
+     * @param networkName       the name of the network
+     * @param networkId         the ID of the network
+     * @param cidr              the CIDR of the network
+     * @param networkMode       the network mode
+     * @param internetProtocol  the internet protocol
+     * @param isL2              true if it is an L2 network
      * @return true if the operation is successful, false otherwise
      */
-    boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting);
+    boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, NetworkOffering.NetworkMode networkMode, NetUtils.InternetProtocol internetProtocol, boolean isL2);
 
     /**
      * Updates an existing vNet resource.
@@ -105,9 +109,10 @@ public interface NetrisService {
      * @param networkName     the new name of the network
      * @param networkId       the ID of the network
      * @param prevNetworkName the previous name of the network
+     * @param isL2            true if it is an L2 network
      * @return true if the operation is successful, false otherwise
      */
-    boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName);
+    boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName, boolean isL2);
 
     /**
      * Deletes an existing vNet resource.
@@ -120,9 +125,10 @@ public interface NetrisService {
      * @param networkName  the name of the network
      * @param networkId    the ID of the network
      * @param cidr         the CIDR of the network
+     * @param isL2         true if it is an L2 network
      * @return true if the operation is successful, false otherwise
      */
-    boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
+    boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, boolean isL2);
 
     /**
      * Creates a source NAT rule for a VPC or network.
