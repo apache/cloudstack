@@ -2086,15 +2086,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private Map<Long, NetworkVO> batchLoadNetworksForNics(List<NicVO> nics) {
-        List<Long> networkIds = new ArrayList<>(nics.size());
-        for (NicVO nic : nics) {
-            networkIds.add(nic.getNetworkId());
-        }
+        List<Long> networkIds = nics.stream().map(NicVO::getNetworkId).distinct().collect(Collectors.toList());
         Map<Long, NetworkVO> result = new HashMap<>(networkIds.size());
-        if (!networkIds.isEmpty()) {
-            for (NetworkVO network : _networksDao.listByIds(networkIds)) {
-                result.put(network.getId(), network);
-            }
+        for (NetworkVO network : _networksDao.listByIds(networkIds)) {
+            result.put(network.getId(), network);
         }
         return result;
     }

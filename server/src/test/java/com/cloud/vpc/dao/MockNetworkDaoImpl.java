@@ -283,6 +283,6 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
 
     @Override
     public List<NetworkVO> listByIds(List<Long> ids) {
-        return null;
+        return List.of();
     }
 }

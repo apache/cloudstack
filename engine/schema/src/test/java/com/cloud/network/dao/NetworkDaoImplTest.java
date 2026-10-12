@@ -26,11 +26,13 @@ import com.cloud.utils.db.TransactionLegacy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 
+import java.util.Collections;
 import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -67,5 +69,27 @@ public class NetworkDaoImplTest {
         } finally {
             txn.close();
         }
+    }
+
+    @Test
+    public void listByIdsTestNullOrEmptyIdsReturnsEmptyList() {
+        NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
+
+        Assert.assertTrue(networkDaoImplSpy.listByIds(null).isEmpty());
+        Assert.assertTrue(networkDaoImplSpy.listByIds(Collections.emptyList()).isEmpty());
+        Mockito.verify(networkDaoImplSpy, Mockito.never()).listBy(Mockito.any(SearchCriteria.class));
+    }
+
+    @Test
+    public void listByIdsTestBuildsInClause() {
+        NetworkDaoImpl networkDaoImplSpy = Mockito.spy(NetworkDaoImpl.class);
+        Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
+
+        List<NetworkVO> result = networkDaoImplSpy.listByIds(List.of(1L, 2L, 3L));
+
+        Assert.assertEquals(listNetworkVoMock, result);
+        ArgumentCaptor<SearchCriteria> scCaptor = ArgumentCaptor.forClass(SearchCriteria.class);
+        Mockito.verify(networkDaoImplSpy).listBy(scCaptor.capture());
+        Assert.assertEquals("networks.id IN (?,?,?)", scCaptor.getValue().getWhereClause().trim());
     }
 }
