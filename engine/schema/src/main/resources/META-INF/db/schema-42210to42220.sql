@@ -30,3 +30,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_usage_metric` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_backup_usage_metric__vm_id__backup_offering_id` (`vm_id`, `backup_offering_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the cumulative and
+-- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
+CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id', '(volume_id ASC, created ASC, vm_id ASC)');

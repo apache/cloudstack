@@ -32,6 +32,7 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
@@ -44,6 +45,7 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
+BACKUP_JOB_ACTIVE=0
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -131,6 +133,53 @@ get_linstor_uuid_from_device() {
   done
   # Without a by-res symlink we cannot derive the volume UUID. Falling back to the
   # raw device name would produce a backup that restore cannot find, so fail hard.
+  return 1
+}
+
+qemu_agent_command() {
+  local timeout_args=()
+  if [[ -n "$QUIESCE_TIMEOUT" ]]; then
+    timeout_args=(--timeout "$QUIESCE_TIMEOUT")
+  fi
+  virsh -c qemu:///system qemu-agent-command "$VM" "${timeout_args[@]}" "$1"
+}
+
+guest_fsfreeze_status() {
+  local response
+  response=$(qemu_agent_command '{"execute":"guest-fsfreeze-status"}' 2>>"$logFile") || return 1
+  grep -oE 'thawed|frozen' <<< "$response" | head -n 1
+}
+
+guest_agent_connected() {
+  local xml
+  xml=$(virsh -c qemu:///system dumpxml "$VM" 2>/dev/null) || return 1
+  grep -q "name='org.qemu.guest_agent.0' state='connected'" <<< "$xml"
+}
+
+# Thaws the guest filesystems. A thaw that times out on the host can still complete in the
+# guest, so each failure is checked against guest-fsfreeze-status before retrying. Succeeds
+# once the guest reports thawed, or when the freeze failed and the guest agent is not
+# connected, which means the freeze never reached the guest.
+thaw_guest() {
+  local freeze_ok=$1
+  local attempt response state
+  for ((attempt = 1; attempt <= 3; attempt++)); do
+    if response=$(qemu_agent_command '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
+      return 0
+    fi
+    log -e "Thaw attempt $attempt for vm $VM failed: $response"
+    state=$(guest_fsfreeze_status || true)
+    if [[ "$state" == "thawed" ]]; then
+      log -e "Guest filesystem of vm $VM reports thawed after the failed thaw"
+      return 0
+    fi
+    if [[ -z "$state" && $freeze_ok -eq 0 ]] && ! guest_agent_connected; then
+      log -e "Guest agent of vm $VM is not connected, so the failed freeze never reached the guest"
+      return 0
+    fi
+    sleep 5
+  done
+  echo "Failed to thaw the filesystem for vm $VM, guest filesystem state: ${state:-unknown}: $response"
   return 1
 }
 
@@ -257,9 +306,15 @@ print(len(files))
   fi
 
   local thaw=0
+  local freeze_ok=0
   if [[ ${QUIESCE} == "true" ]]; then
-    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
-      thaw=1
+    # Always thaw after a freeze attempt: a freeze that times out on the host can still
+    # complete inside the guest, and nothing else would unfreeze it.
+    thaw=1
+    if freeze_err=$(qemu_agent_command '{"execute":"guest-fsfreeze-freeze"}' 2>&1 > /dev/null); then
+      freeze_ok=1
+    else
+      log -e "Failed to freeze the filesystem for vm $VM, continuing without quiescing: $freeze_err"
     fi
   fi
 
@@ -276,13 +331,13 @@ print(len(files))
       backup_begin=1;
     fi
   fi
+  if [[ $backup_begin -eq 1 ]]; then
+    BACKUP_JOB_ACTIVE=1
+  fi
 
-  if [[ $thaw -eq 1 ]]; then
-    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1); then
-      echo "Failed to thaw the filesystem for vm $VM: $response"
-      cleanup
-      exit 1
-    fi
+  if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
+    cleanup
+    exit 1
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
@@ -296,14 +351,30 @@ print(len(files))
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
+  local info query_failures=0
   while true; do
-    status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
+    # A failed query says nothing about the job, so retry before giving up on it.
+    if ! info=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>&1); then
+      log -e "Backup job query $((query_failures + 1)) for vm $VM failed: $info"
+      if (( ++query_failures >= 12 )); then
+        echo "Unable to query the backup job for vm $VM"
+        cleanup
+        exit 1
+      fi
+      sleep 5
+      continue
+    fi
+    query_failures=0
+    status=$(awk '/Job type:/ {print $3}' <<< "$info")
     case "$status" in
       Completed)
+        BACKUP_JOB_ACTIVE=0
         break ;;
       Failed)
+        BACKUP_JOB_ACTIVE=0
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        exit 1 ;;
     esac
     sleep 5
   done
@@ -503,8 +574,33 @@ mount_operation() {
   fi
 }
 
+abort_backup_job() {
+  [[ $BACKUP_JOB_ACTIVE -eq 1 ]] || return 0
+
+  # The push backup job writes into $dest until it ends, so it must be gone before the
+  # destination is removed or unmounted.
+  virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>>"$logFile" || true
+  local i info
+  for ((i = 0; i < 60; i++)); do
+    # Only a successful query reporting no job proves the job has ended.
+    if info=$(virsh -c qemu:///system domjobinfo "$VM" 2>>"$logFile") \
+        && [[ "$(awk '/Job type:/ {print $3}' <<< "$info")" == "None" ]]; then
+      BACKUP_JOB_ACTIVE=0
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 cleanup() {
   local status=0
+
+  if ! abort_backup_job; then
+    echo "Backup job for vm $VM is still running after abort, leaving $dest mounted at $mount_point"
+    echo "Backup cleanup failed"
+    exit $EXIT_CLEANUP_FAILED
+  fi
 
   rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
   umount "$mount_point" || { echo "Failed to unmount $mount_point"; status=1; }
@@ -519,6 +615,7 @@ cleanup() {
 function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
+  echo "         [--quiesce-timeout <seconds>]"
   echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
@@ -566,6 +663,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q|--quiesce)
       QUIESCE="$2"
+      shift
+      shift
+      ;;
+    --quiesce-timeout)
+      QUIESCE_TIMEOUT="$2"
       shift
       shift
       ;;
