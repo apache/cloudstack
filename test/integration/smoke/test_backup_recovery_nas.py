@@ -843,6 +843,181 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                     pass
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
+    # ------------------------------------------------------------------
+    # Whole-chain validation: every backup is restorable and bootable, and
+    # stays so after a backup is removed from the middle of the chain
+    # ------------------------------------------------------------------
+    # The other chain tests each check one property of one backup. This one walks
+    # the whole chain: FULL + 3 INCREMENTALs, then restores from every backup and
+    # builds a VM from every backup, deletes the 2nd incremental, and repeats both
+    # sweeps over what survives.
+    #
+    # It is the mid-chain delete that makes this worth its runtime on RBD. An
+    # `rbd export-diff` stream carries no pointer to the diff before it, so a restore
+    # replays the whole sequence from the full anchor; a diff whose descendant still
+    # needs it therefore cannot be dropped when it is deleted, only hidden. Restoring
+    # the tip across that gap is what breaks if the provider ever sends a chain with a
+    # hole in it, and no other test exercises it.
+    #
+    # Sizes are asserted throughout: an incremental must be a small fraction of the
+    # full, which is what distinguishes a real `export-diff` delta from the whole
+    # image being re-exported every cycle. Nothing else in this file asserts on size,
+    # so a provider that silently fell back to full-every-time would still pass.
+
+    def _assert_chain_sizes(self, backups, context):
+        """A FULL carries the allocated image; an INCREMENTAL must carry only a delta."""
+        full = backups[0]
+        full_size = int(full.size)
+        self.assertGreater(full_size, 0, "%s: FULL reports a size of 0" % context)
+        for inc in backups[1:]:
+            inc_size = int(inc.size)
+            self.assertGreater(inc_size, 0, "%s: incremental reports a size of 0" % context)
+            self.assertLess(inc_size, full_size / 10,
+                "%s: incremental is %d bytes against a FULL of %d -- an export-diff delta "
+                "should be a small fraction of the full, not the whole image again"
+                % (context, inc_size, full_size))
+
+    def _restore_in_place_and_check(self, backup, expected_markers, absent_markers, context):
+        """Restore over the Instance's own volume and verify the guest's contents.
+
+        A restore rewinds the volume wholesale, so markers written after the backup
+        was taken must be gone -- checking only that the expected ones are present
+        would pass even if the restore had quietly done nothing.
+        """
+        self.vm.stop(self.apiclient)
+        time.sleep(5)
+        Backup.restoreVM(self.apiclient, backup.id)
+        self.vm.start(self.apiclient)
+        ssh = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+        listing = "".join(ssh.execute(self._sudo("ls /root")))
+        for marker in expected_markers:
+            self.assertIn(marker, listing,
+                "%s: marker %s written before this backup is missing after the restore"
+                % (context, marker))
+        for marker in absent_markers:
+            self.assertNotIn(marker, listing,
+                "%s: marker %s was written AFTER this backup, so the restore should have "
+                "rolled it back" % (context, marker))
+
+    def _create_vm_from_backup_and_check(self, backup, context):
+        """Build a VM from a backup and confirm it reaches Running, then clean it up."""
+        name = "chain-%s-%d" % (context, int(time.time()))
+        new_vm = Backup.createVMFromBackup(
+            self.apiclient,
+            self.services["small"],
+            mode=self.services["mode"],
+            backupid=backup.id,
+            vmname=name,
+            accountname=self.account.name,
+            domainid=self.account.domainid,
+            zoneid=self.zone.id,
+            networkids=None,
+            templateid=None
+        )
+        self.assertIsNotNone(new_vm, "%s: createVMFromBackup returned nothing" % context)
+        try:
+            vms = VirtualMachine.list(self.apiclient, id=new_vm.id, listall=True)
+            self.assertTrue(vms and str(vms[0].state).lower() == "running",
+                "%s: VM created from the backup is not Running (state=%s)"
+                % (context, vms[0].state if vms else "<not listed>"))
+        finally:
+            # Destroyed as we go rather than via cls._cleanup: this test builds seven
+            # of these, and keeping them all alive to the end risks exhausting the
+            # environment's capacity partway through the run.
+            try:
+                new_vm.delete(self.apiclient, expunge=True)
+            except Exception:
+                pass
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_full_chain_restore_and_create_vm_survive_mid_chain_delete(self):
+        """
+        FULL + 3 INCREMENTALs: restore from every backup and create a VM from every
+        backup; then delete the 2nd incremental and repeat over the survivors. Backup
+        sizes are checked at each stage, and the chain must be gone at the end.
+        """
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        # High enough that every backup after the first stays an incremental.
+        self._set_full_every(10)
+        backups = []
+        try:
+            ssh = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+
+            # --- build FULL -> INC1 -> INC2 -> INC3, a marker per backup ---------
+            markers = []
+            for idx in range(4):
+                marker = "chain_marker_%d.txt" % idx
+                # sync: without it the file can still be in the guest page cache rather
+                # than on the RBD image when the snapshot is taken moments later.
+                ssh.execute(self._sudo("touch /root/%s; sync" % marker))
+                markers.append(marker)
+                Backup.create(self.apiclient, self.vm.id, "chain_%d" % idx)
+                time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 4, "Expected FULL + 3 INCREMENTAL backups")
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            for inc in backups[1:]:
+                self.assertEqual(self._backup_type(inc).upper(), 'INCREMENTAL')
+            self._assert_chain_sizes(backups, "complete chain")
+            sizes_before = [int(b.size) for b in backups]
+
+            # --- restore from each, then build a VM from each --------------------
+            for idx, backup in enumerate(backups):
+                self._restore_in_place_and_check(
+                    backup, markers[:idx + 1], markers[idx + 1:], "complete chain, backup %d" % idx)
+            for idx, backup in enumerate(backups):
+                self._create_vm_from_backup_and_check(backup, "full%d" % idx)
+
+            # --- delete the 2nd incremental --------------------------------------
+            # Its diff stays on the repository while INC3 still needs it to replay;
+            # it is swept once the last backup depending on it is gone.
+            deleted = backups[2]
+            Backup.delete(self.apiclient, deleted.id)
+            survivors = Backup.list(self.apiclient, self.vm.id)
+            survivors.sort(key=lambda b: b.created)
+            self.assertEqual(len(survivors), 3,
+                "Deleting one backup should leave exactly the other three")
+            self.assertNotIn(deleted.id, [b.id for b in survivors],
+                "The deleted backup must no longer be listed")
+
+            # Removing a sibling must not alter what the others report.
+            surviving_sizes = [int(b.size) for b in survivors]
+            self.assertEqual(surviving_sizes,
+                             [sizes_before[0], sizes_before[1], sizes_before[3]],
+                "Deleting a backup changed the reported size of the backups that remain")
+            self._assert_chain_sizes(survivors, "after mid-chain delete")
+
+            # --- restore from each survivor, then build a VM from each -----------
+            # survivors[2] is the old INC3: restoring it replays the chain across the
+            # deleted INC2, so its marker must still come back.
+            expected = [markers[:1], markers[:2], markers[:4]]
+            absent = [markers[1:], markers[2:], []]
+            for idx, backup in enumerate(survivors):
+                self._restore_in_place_and_check(
+                    backup, expected[idx], absent[idx], "after delete, backup %d" % idx)
+            for idx, backup in enumerate(survivors):
+                self._create_vm_from_backup_and_check(backup, "post%d" % idx)
+
+            # --- the chain must leave nothing behind ------------------------------
+            for backup in reversed(survivors):
+                Backup.delete(self.apiclient, backup.id)
+            backups = []
+            remaining = Backup.list(self.apiclient, self.vm.id)
+            self.assertFalse(remaining,
+                "Every backup was deleted, so none should be left for this Instance "
+                "(still listed: %s)" % remaining)
+        finally:
+            for b in reversed(backups):
+                try:
+                    Backup.delete(self.apiclient, b.id)
+                except Exception:
+                    pass
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
     def _sudo(self, cmd):
         """Wrap a shell command to run as root via sudo (the cloud-init "ubuntu" user
         this test SSHes in as has passwordless sudo) -- needed for anything touching
