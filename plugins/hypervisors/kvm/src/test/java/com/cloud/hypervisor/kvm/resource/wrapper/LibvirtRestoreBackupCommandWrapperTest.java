@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,6 +56,11 @@ import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtRestoreBackupCommandWrapperTest {
+
+    /** Trimmed {@code qemu-img info --output=json} of a plain qcow2: no top-level "encrypted" key. */
+    private static final String PLAIN_QCOW2_INFO = "{\"virtual-size\": 1048576, \"filename\": \"volume-123\", \"format\": \"qcow2\"}";
+    /** Same for a LUKS-encrypted qcow2 written by nasbackup.sh -e. */
+    private static final String ENCRYPTED_QCOW2_INFO = "{\"virtual-size\": 1048576, \"filename\": \"volume-123\", \"format\": \"qcow2\", \"encrypted\": true}";
 
     private LibvirtRestoreBackupCommandWrapper wrapper;
     private LibvirtComputingResource libvirtComputingResource;
@@ -94,7 +101,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
                         .thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -139,7 +146,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
                         .thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -180,7 +187,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
                         .thenReturn(0);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -228,6 +235,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() ->
                                 Script.executePipedCommands(anyList(), anyLong()))
                         .thenReturn(new Pair<>(0, "vda")); // Current device
+                // qemu-img info reads the header; a plain qcow2 has no "encrypted" key
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(PLAIN_QCOW2_INFO);
 
                 filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
 
@@ -306,7 +315,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
@@ -355,7 +364,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
@@ -408,7 +417,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
                         .thenAnswer(invocation -> {
                             if (Arrays.stream(invocation.getArguments()).map(String::valueOf).anyMatch("rsync"::equals)) {
@@ -470,7 +479,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
                         .thenAnswer(invocation -> {
                             if (Arrays.stream(invocation.getArguments()).map(String::valueOf).anyMatch("attach-disk"::equals)) {
@@ -571,7 +580,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
                         .thenReturn(0); // All commands success
                 scriptMock.when(() -> Script.executeCommand(any(String[].class)))
-                        .thenReturn(null);
+                        .thenReturn(PLAIN_QCOW2_INFO);
                 scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
                         .thenReturn(0); // All commands success
 
@@ -583,6 +592,165 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(result instanceof BackupAnswer);
                 BackupAnswer backupAnswer = (BackupAnswer) result;
                 Assert.assertTrue(backupAnswer.getResult());
+            }
+        }
+    }
+
+    /** Mockito hands varargs to the answer as individual arguments; rebuild the command line from {@code from}. */
+    private static String joinArgs(Object[] args, int from) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < args.length; i++) {
+            if (args[i] instanceof String[]) {
+                sb.append(String.join(" ", (String[]) args[i]));
+            } else {
+                sb.append(args[i]);
+            }
+            if (i < args.length - 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void recordQemuImg(List<String> calls, String cmdline) {
+        if (cmdline.startsWith("qemu-img")) {
+            calls.add(cmdline);
+        }
+    }
+
+    private void stubEncryptedNfsRestore(String passphrase) {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(false);
+        when(command.getWait()).thenReturn(60);
+        when(command.getEncryptionPassphrase()).thenReturn(passphrase);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getMountTimeout()).thenReturn(30);
+    }
+
+    @Test
+    public void testEncryptedBackupIsCheckedAndDecryptedWithTheSecret() throws Exception {
+        stubEncryptedNfsRestore("s3cret");
+        List<String> qemuImgCalls = new ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(ENCRYPTED_QCOW2_INFO);
+                // mount/umount also run through executeCommandForExitValue (#14006); only qemu-img matters here
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 0)); return 0; });
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 1)); return 0; });
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(answer.getDetails(), answer.getResult());
+                Assert.assertEquals(2, qemuImgCalls.size());
+                Assert.assertTrue(qemuImgCalls.get(0), qemuImgCalls.get(0).startsWith("qemu-img check --object secret,id=sec0,file="));
+                Assert.assertTrue(qemuImgCalls.get(0), qemuImgCalls.get(0).contains("encrypt.key-secret=sec0"));
+                Assert.assertTrue(qemuImgCalls.get(1), qemuImgCalls.get(1).startsWith("qemu-img convert -O qcow2 --object secret,id=sec0,file="));
+                Assert.assertTrue(qemuImgCalls.get(1), qemuImgCalls.get(1).endsWith(" /var/lib/libvirt/images/volume-123"));
+                // the rsync used for plain backups must not run for an encrypted one
+                scriptMock.verify(() -> Script.runSimpleBashScriptForExitValue(Mockito.startsWith("rsync"), anyInt(), any(Boolean.class)), Mockito.never());
+            }
+        }
+    }
+
+    private void stubPlainNfsRestoreOfExistingVm() {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+        when(command.getMountTimeout()).thenReturn(30);
+    }
+
+    @Test
+    public void testRestoreFailsClosedWhenEncryptionStateCannotBeDetermined() throws Exception {
+        stubPlainNfsRestoreOfExistingVm();
+        List<String> copyCalls = new ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString())).thenAnswer(inv -> inv.getArgument(0));
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                // qemu-img info failed (missing binary, unreadable file, timeout): Script returns null
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(inv -> { copyCalls.add(joinArgs(inv.getArguments(), 1)); return 0; });
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(inv -> { copyCalls.add(joinArgs(inv.getArguments(), 0)); return 0; });
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertFalse("restore must fail when the encryption state is unknown", answer.getResult());
+                Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("refusing to restore"));
+                Assert.assertTrue("nothing may be copied onto the volume: " + copyCalls,
+                        copyCalls.stream().noneMatch(c -> c.startsWith("rsync") || c.startsWith("qemu-img convert")));
+            }
+        }
+    }
+
+    @Test
+    public void testRestoreAcceptsLeakedClustersAsAPass() throws Exception {
+        stubPlainNfsRestoreOfExistingVm();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString())).thenAnswer(inv -> inv.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(PLAIN_QCOW2_INFO);
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenAnswer(inv -> {
+                    String cmd = inv.getArgument(0);
+                    if (cmd.startsWith("qemu-img check")) {
+                        return 3; // leaked clusters only
+                    }
+                    if (cmd.contains("qemu-img info") && cmd.contains("backing-filename")) {
+                        return 1; // no backing chain: plain full backup
+                    }
+                    return 0;
+                });
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+                Assert.assertTrue(answer.getDetails(), answer.getResult());
+
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(Mockito.startsWith("qemu-img check"))).thenReturn(2);
+                BackupAnswer corrupt = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+                Assert.assertFalse("a corrupt backup (exit 2) must still be rejected", corrupt.getResult());
+                Assert.assertTrue(corrupt.getDetails(), corrupt.getDetails().contains("is corrupt"));
             }
         }
     }
@@ -638,6 +806,33 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                     .thenReturn(new Pair<>(0, "vda" + System.lineSeparator()));
 
             Assert.assertEquals("vdb", invokeGetDeviceToAttachDisk("test-vm"));
+        }
+    }
+
+    @Test
+    public void testEncryptedBackupWithoutPassphraseFailsClearly() throws Exception {
+        stubEncryptedNfsRestore(null);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(ENCRYPTED_QCOW2_INFO);
+                List<String> qemuImgCalls = new ArrayList<>();
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(inv -> { recordQemuImg(qemuImgCalls, joinArgs(inv.getArguments(), 1)); return 0; });
+
+                BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertFalse(answer.getResult());
+                Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("LUKS-encrypted but no passphrase is configured"));
+                Assert.assertTrue("no qemu-img command may run without a passphrase: " + qemuImgCalls, qemuImgCalls.isEmpty());
+            }
         }
     }
 
@@ -804,6 +999,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                             return 0;
                         });
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(PLAIN_QCOW2_INFO);
 
                 wrapper.execute(command, libvirtComputingResource);
 
