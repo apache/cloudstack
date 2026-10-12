@@ -1413,7 +1413,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 continue;
             }
 
-            String name = rawName.split("~")[1];
+            String name = rawName.substring(1);
 
             if (StringUtils.isNotBlank(keyword) && !name.contains(keyword)) {
                 continue;
@@ -1441,7 +1441,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (isVolumeDeleted(volume) || !isGlobalIdVolumeName(rawName) || (!forUnmanage && isTaggedCs(volume))) {
             return volumes;
         }
-        volumes.add(toVolumeOnStorageTO(volume, rawName.split("~")[1]));
+        volumes.add(toVolumeOnStorageTO(volume, rawName.substring(1)));
         return volumes;
     }
 
