@@ -492,8 +492,8 @@ public class NetworkOfferingVO implements NetworkOffering {
         return eipAssociatePublicIp;
     }
 
-    public void setAssociatePublicIP(boolean associatePublicIP) {
-        this.eipAssociatePublicIp = associatePublicIP;
+    public void setEipAssociatePublicIp(boolean eipAssociatePublicIp) {
+        this.eipAssociatePublicIp = eipAssociatePublicIp;
     }
 
     @Override

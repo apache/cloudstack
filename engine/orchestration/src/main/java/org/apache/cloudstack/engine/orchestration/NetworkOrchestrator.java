@@ -645,7 +645,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     // keep consistent with the offering created on fresh installation (ConfigurationServerImpl)
                     offering.setMulticastRateMbps(null);
                     offering.setDedicatedLB(true);
-                    offering.setAssociatePublicIP(true);
+                    offering.setEipAssociatePublicIp(true);
                     offering.setSupportsVmAutoScaling(true);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
