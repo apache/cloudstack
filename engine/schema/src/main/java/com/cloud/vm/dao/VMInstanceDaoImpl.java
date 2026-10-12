@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
     protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
+    protected SearchBuilder<VMInstanceVO> IdsSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
     GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
     SearchBuilder<VMInstanceVO> DeleteProtectedVmSearchByAccount;
@@ -386,6 +388,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearchByDomainIds.entity().isDeleteProtection(), Op.EQ);
         DeleteProtectedVmSearchByDomainIds.and(ApiConstants.REMOVED, DeleteProtectedVmSearchByDomainIds.entity().getRemoved(), Op.NULL);
         DeleteProtectedVmSearchByDomainIds.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), Op.IN);
+        IdsSearch.done();
     }
 
     @Override
@@ -1339,14 +1345,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public List<VMInstanceVO> listByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
         }
-        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
-        sb.and("id", sb.entity().getId(), Op.IN);
-        sb.done();
-        SearchCriteria<VMInstanceVO> sc = sb.create();
-        sc.setParameters("id", ids.toArray());
+        SearchCriteria<VMInstanceVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
         return listBy(sc);
     }
 }
