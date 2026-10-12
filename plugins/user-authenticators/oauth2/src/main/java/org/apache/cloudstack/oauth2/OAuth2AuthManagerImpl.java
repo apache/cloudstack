@@ -148,10 +148,12 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return userOAuth2AuthenticationProvidersMap.get(providerName.toLowerCase());
     }
 
-    // oauth2.plugins.exclude is checked live here rather than relying on the registry's
-    // registration-time filtering, so a config change takes effect without a restart and so a
-    // domain-level override can be layered on top of the global list. A domain can only add
-    // further exclusions, never un-exclude something the global list already excludes.
+    /**
+     * Checks oauth2.plugins.exclude live rather than relying on the registry's
+     * registration-time filtering, so a config change takes effect without a restart and so a
+     * domain-level override can be layered on top of the global list. A domain can only add
+     * further exclusions, never un-exclude something the global list already excludes.
+     */
     protected boolean isProviderExcluded(String providerName, Long domainId) {
         if (isExcludedByList(providerName, OAuth2AuthManager.OAuth2PluginsExclude.value())) {
             return true;
