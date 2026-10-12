@@ -459,9 +459,11 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
     private VolumeVO importVolumeInternal(VolumeOnStorageTO volume, DiskOfferingVO diskOffering,
                                           Account owner, StoragePoolVO pool, String volumeName) {
+        // as for importVm, a Linstor volume keeps the hypervisor default format like a native Linstor volume
+        Storage.ImageFormat format = Storage.StoragePoolType.Linstor == pool.getPoolType() ? null : getImageFormat(volume.getFormat());
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, getImageFormat(volume.getFormat()));
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, format);
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 

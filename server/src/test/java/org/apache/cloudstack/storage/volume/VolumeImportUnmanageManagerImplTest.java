@@ -249,6 +249,17 @@ public class VolumeImportUnmanageManagerImplTest {
 
     @Test
     public void testImportVolumeAllGood() throws ResourceAllocationException {
+        importVolumeAndCheckFormat(Storage.ImageFormat.QCOW2);
+    }
+
+    @Test
+    public void testImportVolumeOnLinstorPoolKeepsDefaultFormat() throws ResourceAllocationException {
+        // as for importVm, a Linstor volume keeps the hypervisor default format like a native Linstor volume
+        when(storagePoolVO.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        importVolumeAndCheckFormat(null);
+    }
+
+    private void importVolumeAndCheckFormat(Storage.ImageFormat expectedFormat) throws ResourceAllocationException {
         ImportVolumeCmd cmd = mock(ImportVolumeCmd.class);
         when(cmd.getPath()).thenReturn(path);
         when(cmd.getStorageId()).thenReturn(poolId);
@@ -274,7 +285,7 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
         doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
-                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), eq(Storage.ImageFormat.QCOW2));
+                any(), isNull(), isNull(), any(), isNull(), anyLong(), any(), anyString(), isNull(), eq(expectedFormat));
         when(diskProfile.getVolumeId()).thenReturn(volumeId);
         when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
 

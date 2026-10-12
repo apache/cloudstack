@@ -23,6 +23,9 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceState;
+import com.linbit.linstor.api.model.VolumeDefinition;
+
+import org.apache.cloudstack.utils.qemu.QemuImg;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,6 +70,7 @@ public class LinstorStorageAdaptorTest {
             Mockito.lenient().when(api.resourceDefinitionList(Collections.singletonList(RSC_NAME), null, null, null, null))
                     .thenReturn(rscDfns);
             Mockito.lenient().when(api.resourceList(RSC_NAME, null, null)).thenReturn(resources);
+            Mockito.lenient().when(api.resourceDefinitionList(null, true, null, null, null)).thenReturn(rscDfns);
         });
     }
 
@@ -127,5 +131,33 @@ public class LinstorStorageAdaptorTest {
         addResource(LOCAL_NODE, ApiConsts.FLAG_DRBD_DISKLESS);
 
         Assert.assertFalse(adaptor.isPhysicalDiskInUse(VOLUME, pool));
+    }
+
+    private ResourceDefinition resourceDefinition(String name, String rscGroup, Long sizeKib) {
+        ResourceDefinition rd = new ResourceDefinition();
+        rd.setName(name);
+        rd.setResourceGroupName(rscGroup);
+        if (sizeKib != null) {
+            VolumeDefinition vd = new VolumeDefinition();
+            vd.setSizeKib(sizeKib);
+            rd.setVolumeDefinitions(Collections.singletonList(vd));
+        }
+        return rd;
+    }
+
+    @Test
+    public void listPhysicalDisksReturnsResourcesOfPoolGroupByVolumePath() {
+        rscDfns.add(resourceDefinition(RSC_NAME, RSC_GROUP.toLowerCase(), 1048576L));
+        rscDfns.add(resourceDefinition("cs-other-group", "OtherRG", 1048576L));
+        rscDfns.add(resourceDefinition("not-cloudstack", RSC_GROUP, 1048576L));
+        rscDfns.add(resourceDefinition("cs-no-volume", RSC_GROUP, null));
+
+        List<KVMPhysicalDisk> disks = adaptor.listPhysicalDisks("pool-uuid", pool);
+
+        Assert.assertEquals(1, disks.size());
+        Assert.assertEquals(VOLUME, disks.get(0).getName());
+        Assert.assertEquals("/dev/drbd/by-res/" + RSC_NAME + "/0", disks.get(0).getPath());
+        Assert.assertEquals(1073741824L, disks.get(0).getVirtualSize());
+        Assert.assertEquals(QemuImg.PhysicalDiskFormat.RAW, disks.get(0).getFormat());
     }
 }

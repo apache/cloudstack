@@ -617,7 +617,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool)
     {
-        throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
+        // lists the resources of the pool's resource group by their volume path, for volume import
+        final String rscGrpName = ((LinstorStoragePool) pool).getResourceGroup();
+        final DevelopersApi api = getLinstorAPI(pool);
+        try {
+            List<KVMPhysicalDisk> disks = new ArrayList<>();
+            for (ResourceDefinition rd : api.resourceDefinitionList(null, true, null, null, null)) {
+                if (!rd.getName().toLowerCase().startsWith(LinstorUtil.RSC_PREFIX) || rd.getResourceGroupName() == null
+                        || !rd.getResourceGroupName().equalsIgnoreCase(rscGrpName)
+                        || rd.getVolumeDefinitions() == null || rd.getVolumeDefinitions().isEmpty()) {
+                    continue;
+                }
+                final KVMPhysicalDisk disk = new KVMPhysicalDisk(LinstorUtil.formatDrbdByResDevicePath(rd.getName()),
+                        rd.getName().substring(LinstorUtil.RSC_PREFIX.length()), pool);
+                final long size = rd.getVolumeDefinitions().get(0).getSizeKib() * 1024;
+                disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+                disk.setSize(size);
+                disk.setVirtualSize(size);
+                disks.add(disk);
+            }
+            return disks;
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
     }
 
     @Override

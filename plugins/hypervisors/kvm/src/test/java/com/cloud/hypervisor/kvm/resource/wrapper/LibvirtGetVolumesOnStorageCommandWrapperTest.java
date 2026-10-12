@@ -28,6 +28,7 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
@@ -154,5 +155,32 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
         Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
         Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, "true");
         Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "false");
+    }
+
+    @Test
+    public void testLibvirtGetVolumesOnStorageCommandWrapperForVolumeOutsideThePool() {
+        Mockito.doThrow(new CloudRuntimeException("not in resource group")).when(storagePool).checkPhysicalDiskForImport(volumePath);
+
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath, null);
+        Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
+        Assert.assertFalse(answer.getResult());
+        Assert.assertEquals("not in resource group", answer.getDetails());
+        Mockito.verify(storagePool, Mockito.never()).getPhysicalDisk(volumePath);
+    }
+
+    @Test
+    public void testLibvirtGetVolumesOnStorageCommandWrapperForVolumeInUseOnAnyHost() {
+        KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(disk.getPath()).thenReturn(volumePath);
+        Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.RAW);
+        Mockito.when(storagePool.getPhysicalDisk(volumePath)).thenReturn(disk);
+        Mockito.when(storagePool.getType()).thenReturn(poolType);
+        Mockito.when(storagePool.isPhysicalDiskInUse(volumePath)).thenReturn(true);
+
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath, null);
+        Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
+        Assert.assertTrue(answer.getResult());
+        VolumeOnStorageTO volumeOnStorageTO = volumeOnStorageTOMock.constructed().get(0);
+        Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "true");
     }
 }
