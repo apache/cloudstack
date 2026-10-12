@@ -51,6 +51,21 @@ public interface KVMStoragePool {
 
     boolean disconnectPhysicalDisk(String volumeUuid);
 
+    /**
+     * Checks that a disk which already exists on the pool, and is about to be imported, belongs to this pool.
+     * Throws when it does not. Pools whose disks cannot belong to another pool have nothing to check.
+     */
+    default void checkPhysicalDiskForImport(String volumeUuid) {
+    }
+
+    /**
+     * Reports whether a disk is in use by a running guest on any host, not only on this one.
+     * @return null when the pool cannot tell, in which case only the qemu-img lock probe on this host applies
+     */
+    default Boolean isPhysicalDiskInUse(String volumeUuid) {
+        return null;
+    }
+
     boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format);
 
     List<KVMPhysicalDisk> listPhysicalDisks();

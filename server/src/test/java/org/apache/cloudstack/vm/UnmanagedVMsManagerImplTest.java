@@ -962,6 +962,12 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
+    public void importFromsharedStorageOnLinstorPool() throws InsufficientServerCapacityException {
+        // the volume records the hypervisor default format like a natively created Linstor volume
+        importFromDisk("shared", Storage.StoragePoolType.Linstor, "1b0a8c3e-5f2d-4c67-9a10-3e5b7d9c2f41", "raw", null);
+    }
+
+    @Test
     public void importFromsharedStorageOnZoneWidePool() throws InsufficientServerCapacityException {
         // A zone wide pool carries no pod or cluster, so the plan must stay unconstrained and the
         // planner is free to pick any host in the zone, exactly as it did before the pool was consulted.

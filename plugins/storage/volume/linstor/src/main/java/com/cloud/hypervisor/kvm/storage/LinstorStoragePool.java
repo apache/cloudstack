@@ -93,6 +93,18 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     @Override
+    public void checkPhysicalDiskForImport(String volumeUuid)
+    {
+        ((LinstorStorageAdaptor)_storageAdaptor).checkPhysicalDiskForImport(volumeUuid, this);
+    }
+
+    @Override
+    public Boolean isPhysicalDiskInUse(String volumeUuid)
+    {
+        return ((LinstorStorageAdaptor)_storageAdaptor).isPhysicalDiskInUse(volumeUuid, this);
+    }
+
+    @Override
     public boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format)
     {
         return _storageAdaptor.deletePhysicalDisk(volumeUuid, this, format);

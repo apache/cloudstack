@@ -357,6 +357,51 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
+    /**
+     * Checks that a resource which is not managed by CloudStack yet can be imported into this pool. It must
+     * belong to the resource group of the pool, otherwise a resource owned by a volume of another pool on the
+     * same controller could be imported a second time.
+     */
+    public void checkPhysicalDiskForImport(String name, LinstorStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        try {
+            List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
+                    Collections.singletonList(rscName), null, null, null, null);
+            if (rscDfns == null || rscDfns.isEmpty()) {
+                throw new CloudRuntimeException(String.format("Linstor: resource %s not found", rscName));
+            }
+            final String rscGrpName = rscDfns.get(0).getResourceGroupName();
+            if (rscGrpName == null || !rscGrpName.equalsIgnoreCase(pool.getResourceGroup())) {
+                throw new CloudRuntimeException(String.format(
+                        "Linstor: resource %s belongs to resource group %s, not to %s of this storage pool",
+                        rscName, rscGrpName, pool.getResourceGroup()));
+            }
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    /**
+     * Asks the controller whether the resource is in use (DRBD primary) on any node, which a qemu-img lock
+     * probe on this node cannot see.
+     */
+    public Boolean isPhysicalDiskInUse(String name, KVMStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        try {
+            String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
+            if (inUseNode != null) {
+                logger.info("Linstor: resource {} is in use on node {}", rscName, inUseNode);
+            }
+            return inUseNode != null;
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     private void removeTwoPrimariesRDProps(DevelopersApi api, String rscName, List<String> deleteProps)
             throws ApiException {
         ResourceDefinitionModify rdm = new ResourceDefinitionModify();
