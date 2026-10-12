@@ -899,8 +899,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 "%s: marker %s was written AFTER this backup, so the restore should have "
                 "rolled it back" % (context, marker))
 
-    def _create_vm_from_backup_and_check(self, backup, context):
-        """Build a VM from a backup and confirm it reaches Running, then clean it up."""
+    def _create_vm_from_backup_and_check(self, backup, expected_markers, absent_markers, context):
+        """Build a VM from a backup and verify the guest it comes up with.
+
+        Reaching Running only proves the image boots. The markers are what prove the
+        diff chain was replayed into the new volume correctly, so the guest is checked
+        the same way an in-place restore is -- markers taken up to this backup present,
+        markers written after it absent.
+        """
         name = "chain-%s-%d" % (context, int(time.time()))
         new_vm = Backup.createVMFromBackup(
             self.apiclient,
@@ -920,6 +926,20 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             self.assertTrue(vms and str(vms[0].state).lower() == "running",
                 "%s: VM created from the backup is not Running (state=%s)"
                 % (context, vms[0].state if vms else "<not listed>"))
+
+            # The backup carries the source Instance's authorized_keys, so the new VM
+            # accepts the same keypair and the stock cloud-image "ubuntu" user.
+            new_vm.username = "ubuntu"
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            listing = "".join(ssh_new.execute(self._sudo("ls /root")))
+            for marker in expected_markers:
+                self.assertIn(marker, listing,
+                    "%s: marker %s written before this backup is missing from the VM created "
+                    "from it" % (context, marker))
+            for marker in absent_markers:
+                self.assertNotIn(marker, listing,
+                    "%s: marker %s was written AFTER this backup, so a VM created from it "
+                    "should not have it" % (context, marker))
         finally:
             # Destroyed as we go rather than via cls._cleanup: this test builds seven
             # of these, and keeping them all alive to the end risks exhausting the
@@ -969,7 +989,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 self._restore_in_place_and_check(
                     backup, markers[:idx + 1], markers[idx + 1:], "complete chain, backup %d" % idx)
             for idx, backup in enumerate(backups):
-                self._create_vm_from_backup_and_check(backup, "full%d" % idx)
+                self._create_vm_from_backup_and_check(
+                    backup, markers[:idx + 1], markers[idx + 1:], "full%d" % idx)
 
             # --- delete the 2nd incremental --------------------------------------
             # Its diff stays on the repository while INC3 still needs it to replay;
@@ -999,7 +1020,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 self._restore_in_place_and_check(
                     backup, expected[idx], absent[idx], "after delete, backup %d" % idx)
             for idx, backup in enumerate(survivors):
-                self._create_vm_from_backup_and_check(backup, "post%d" % idx)
+                self._create_vm_from_backup_and_check(
+                    backup, expected[idx], absent[idx], "post%d" % idx)
 
             # --- the chain must leave nothing behind ------------------------------
             for backup in reversed(survivors):
