@@ -95,6 +95,9 @@ public class ParamProcessWorkerTest {
         @Parameter(name = "vmHostNameParam", type = CommandType.STRING, validations = {ApiArgValidator.RFCComplianceDomainName})
         String vmHostNameParam;
 
+        @Parameter(name = "mountOptions", type = CommandType.STRING, validations = {ApiArgValidator.SafeCommandOptions})
+        String mountOptions;
+
         @Override
         public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
                 ResourceAllocationException, NetworkRuleConflictException {
@@ -137,6 +140,23 @@ public class ParamProcessWorkerTest {
         Assert.assertEquals(100, cmd.intparam1);
         Assert.assertTrue(Double.compare(cmd.doubleparam1, 11.89) == 0);
         Assert.assertEquals("test-host-name-123", cmd.vmHostNameParam);
+    }
+
+    @Test
+    public void processMountOptionsParameter_Valid() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "vers=4.1,soft,timeo=600,retrans=2");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
+        Assert.assertEquals("vers=4.1,soft,timeo=600,retrans=2", cmd.mountOptions);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processMountOptionsParameter_RejectCodeLikeContent() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("mountOptions", "rw;rm -rf /");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorkerSpy.processParameters(cmd, params);
     }
 
     @Test(expected = ServerApiException.class)

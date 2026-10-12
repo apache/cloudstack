@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -92,16 +93,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
-    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
-            "nas.backup.full.every",
-            "10",
-            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
-                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
-                    "Set to 1 to disable incrementals (every backup is full).",
-            true,
-            ConfigKey.Scope.Zone,
-            BackupFrameworkEnabled.key());
-
     ConfigKey<Boolean> NASBackupIncrementalEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "nas.backup.incremental.enabled",
             "false",
@@ -114,6 +105,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             ConfigKey.Scope.Zone,
             BackupFrameworkEnabled.key());
+
+    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.full.every",
+            "10",
+            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
+                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
+                    "Set to 1 to disable incrementals (every backup is full).",
+            true,
+            ConfigKey.Scope.Zone,
+            NASBackupIncrementalEnabled.key());
 
     @Inject
     private BackupDao backupDao;
@@ -392,7 +393,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return null;
         }
         String v = d.getValue();
-        return (v == null || v.isEmpty()) ? null : v;
+        return StringUtils.isBlank(v) ? null : v;
     }
 
     /**
@@ -402,7 +403,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      */
     private Backup findLatestBackedUpBackup(long vmId) {
         List<Backup> history = backupDao.listByVmId(null, vmId);
-        if (history == null || history.isEmpty()) {
+        if (CollectionUtils.isEmpty(history)) {
             return null;
         }
         return history.stream()
@@ -434,17 +435,21 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // backupPath is stored as externalId by createBackupObject — e.g.
         // "i-2-1234-VM/2026.04.27.13.45.00".
         String dir = parent.getExternalId();
-        if (dir == null || dir.isEmpty()) {
+        if (StringUtils.isBlank(dir)) {
+            LOG.debug("Parent backup {} has no backup path recorded; cannot compose parent backup paths", parent.getUuid());
             return null;
         }
 
         List<Backup.VolumeInfo> parentVols = parent.getBackedUpVolumes();
-        if (parentVols == null || parentVols.isEmpty()) {
+        if (CollectionUtils.isEmpty(parentVols)) {
+            LOG.debug("Parent backup {} has no backed up volumes recorded; cannot compose parent backup paths", parent.getUuid());
             return null;
         }
 
         List<VolumeVO> currentVols = volumeDao.findByInstance(vmId);
-        if (currentVols == null || currentVols.size() != parentVols.size()) {
+        if (CollectionUtils.isEmpty(currentVols) || currentVols.size() != parentVols.size()) {
+            LOG.debug("VM id={} currently has {} volume(s) but parent backup {} recorded {}; cannot compose parent backup paths",
+                    vmId, currentVols == null ? 0 : currentVols.size(), parent.getUuid(), parentVols.size());
             return null;
         }
 
@@ -726,9 +731,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
-        // After a restore the QEMU dirty-bitmap chain is gone — clear active_checkpoint_id so
+        if (answer == null) {
+            throw new CloudRuntimeException(String.format("No answer received from the backend control plane while restoring VM %s from backup %s", vm.getInstanceName(), backup.getUuid()));
+        }
+        // After a restore the QEMU dirty-bitmap chain is gone, so clear active_checkpoint_id so
         // the next backup is taken as a fresh full and starts a new chain. See decideChain.
-        if (answer != null && answer.getResult()) {
+        if (answer.getResult()) {
             clearVmActiveCheckpoint(vm.getId());
         }
         return new Pair<>(answer.getResult(), answer.getDetails());

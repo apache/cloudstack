@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Objects;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
@@ -81,7 +83,7 @@ public class ImageStoreDetailResponse extends BaseResponse {
                 return false;
         } else if (!oid.equals(other.getName()))
             return false;
-        else if (this.getValue().equals(other.getValue()))
+        else if (!Objects.equals(this.getValue(), other.getValue()))
             return false;
         return true;
     }

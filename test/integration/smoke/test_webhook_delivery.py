@@ -21,7 +21,8 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              Domain,
                              Webhook,
-                             SSHKeyPair)
+                             SSHKeyPair,
+                             Configurations)
 from marvin.lib.common import (get_domain,
                                get_zone)
 from marvin.lib.utils import (random_gen)
@@ -67,6 +68,8 @@ class WebhookReceiver(BaseHTTPRequestHandler):
 
 class TestWebhookDelivery(cloudstackTestCase):
 
+    original_config_values = {}
+
     @classmethod
     def setUpClass(cls):
         testClient = super(TestWebhookDelivery, cls).getClsTestClient()
@@ -103,6 +106,7 @@ class TestWebhookDelivery(cloudstackTestCase):
             except Exception: pass
         cls.server = HTTPServer(('0.0.0.0', cls.server_port), WebhookReceiver)
         _thread.start_new_thread(startMgmtServer, ("webhook-receiver", cls.server,))
+        cls.manage_webhook_test_configurations()
 
         cls._cleanup = []
 
@@ -112,7 +116,68 @@ class TestWebhookDelivery(cloudstackTestCase):
             cls.server.socket.close()
         global deliveries_received
         deliveries_received = []
+        cls.manage_webhook_test_configurations(restore=True)
         super(TestWebhookDelivery, cls).tearDownClass()
+
+    @classmethod
+    def manage_webhook_test_configurations(cls, restore=False):
+        """
+        Manage configuration values required for the webhook integration tests.
+
+        During class setup, stores original values and applies test-specific overrides.
+        During class teardown, restores the original values.
+
+        More configurations can be easily added here later by extending the
+        configuration_updates dictionary.
+        """
+        configuration_updates = {
+            "webhook.delivery.allow.http": "true",
+            "webhook.delivery.blocklist": "1.2.3.4/32"
+        }
+
+        if restore:
+            for config_name, original_value in cls.original_config_values.items():
+                if original_value is None:
+                    continue
+                try:
+                    Configurations.update(
+                        cls.apiclient,
+                        name=config_name,
+                        value=original_value
+                    )
+                    cls.logger.debug("Restored configuration %s to original value: %s" % (config_name, original_value))
+                except Exception as e:
+                    cls.logger.warning("Error restoring configuration %s: %s" % (config_name, str(e)))
+            cls.original_config_values.clear()
+            return
+
+        cls.original_config_values.clear()
+        for config_name, config_value in configuration_updates.items():
+            try:
+                configs = Configurations.list(
+                    cls.apiclient,
+                    name=config_name
+                )
+                if configs:
+                    original_value = configs[0].value
+                    cls.original_config_values[config_name] = original_value
+                    cls.logger.debug("Stored original value for %s: %s" % (config_name, original_value))
+                else:
+                    cls.logger.debug("Configuration %s not found" % config_name)
+                    cls.original_config_values[config_name] = None
+            except Exception as e:
+                cls.logger.debug("Error retrieving configuration %s: %s" % (config_name, str(e)))
+                cls.original_config_values[config_name] = None
+
+            try:
+                Configurations.update(
+                    cls.apiclient,
+                    name=config_name,
+                    value=config_value
+                )
+                cls.logger.debug("Updated configuration %s to %s" % (config_name, config_value))
+            except Exception as e:
+                cls.logger.warning("Error updating configuration %s: %s" % (config_name, str(e)))
 
     def setUp(self):
         self.cleanup = []

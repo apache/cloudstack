@@ -59,4 +59,11 @@ public class WebhookDeliveryThreadTest {
         webhookDeliveryThread.setDeliveryTries(tries);
         Assert.assertEquals(tries, ReflectionTestUtils.getField(webhookDeliveryThread, "deliveryTries"));
     }
+
+    @Test
+    public void testIsRedirectStatus() {
+        Assert.assertTrue(webhookDeliveryThread.isRedirectStatus(301));
+        Assert.assertTrue(webhookDeliveryThread.isRedirectStatus(308));
+        Assert.assertFalse(webhookDeliveryThread.isRedirectStatus(200));
+    }
 }

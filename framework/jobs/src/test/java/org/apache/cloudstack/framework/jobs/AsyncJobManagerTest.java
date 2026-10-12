@@ -87,7 +87,6 @@ public class AsyncJobManagerTest {
         String result = asyncJobManager.obfuscatePassword(noPassword, false);
         Assert.assertEquals(noPassword, result);
     }
-
     @Test
     public void obfuscatePasswordTestHidePasswordRealInput() {
         String result = asyncJobManager.obfuscatePassword(realUserVmResponseWithPasswordInput, true);
@@ -98,5 +97,4 @@ public class AsyncJobManagerTest {
         Assert.assertTrue(StringUtils.isNotEmpty(jsonObject));
         Assert.assertTrue(jsonObject.contains("\"password\":\"3*****\""));
     }
-
 }

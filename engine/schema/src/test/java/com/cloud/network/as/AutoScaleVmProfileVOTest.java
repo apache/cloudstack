@@ -44,8 +44,15 @@ public class AutoScaleVmProfileVOTest {
         AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO();
 
         Map<String, LinkedHashMap<String, String>> counterParamList = new LinkedHashMap<>();
-        counterParamList.put("0", new LinkedHashMap<>() {{ put("name", "snmpcommunity"); put("value", "public"); }});
-        counterParamList.put("1", new LinkedHashMap<>() {{ put("name", "snmpport"); put("value", "161"); }});
+        LinkedHashMap<String, String> param0 = new LinkedHashMap<>();
+        param0.put("name", "snmpcommunity");
+        param0.put("value", "public");
+        counterParamList.put("0", param0);
+
+        LinkedHashMap<String, String> param1 = new LinkedHashMap<>();
+        param1.put("name", "snmpport");
+        param1.put("value", "161");
+        counterParamList.put("1", param1);
 
         profile.setCounterParamsForUpdate(counterParamList);
         Assert.assertEquals("snmpcommunity=public&snmpport=161", profile.getCounterParamsString());
@@ -63,8 +70,15 @@ public class AutoScaleVmProfileVOTest {
         AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO();
 
         Map<String, HashMap<String, String>> otherDeployParamsMap = new HashMap<>();
-        otherDeployParamsMap.put("0", new HashMap<>() {{ put("name", "serviceofferingid"); put("value", "a7fb50f6-01d9-11ed-8bc1-77f8f0228926"); }});
-        otherDeployParamsMap.put("1", new HashMap<>() {{ put("name", "rootdisksize"); put("value", "10"); }});
+        HashMap<String, String> deployParam0 = new HashMap<>();
+        deployParam0.put("name", "serviceofferingid");
+        deployParam0.put("value", "a7fb50f6-01d9-11ed-8bc1-77f8f0228926");
+        otherDeployParamsMap.put("0", deployParam0);
+
+        HashMap<String, String> deployParam1 = new HashMap<>();
+        deployParam1.put("name", "rootdisksize");
+        deployParam1.put("value", "10");
+        otherDeployParamsMap.put("1", deployParam1);
 
         profile.setOtherDeployParamsForUpdate(otherDeployParamsMap);
 
