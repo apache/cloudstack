@@ -16,8 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# Shared fence-action helper for kvmheartbeat.sh and kvmspheartbeat.sh.
-# Sourced by both scripts; do not invoke directly.
+# Shared fence-action helper for kvmheartbeat.sh, kvmspheartbeat.sh and kvmsmpheartbeat.sh.
+# Sourced by those scripts; do not invoke directly.
+#
+# kvm.heartbeat.fence.action in agent.properties selects the action:
+#   hard-reboot (default), graceful-reboot, restart-agent, or log-only (only writes to
+#   syslog and takes no action). Any other value falls back to hard-reboot.
 #
 # Usage from caller:
 #   source "$(dirname "$0")/kvmha-fence.sh"
@@ -28,50 +32,32 @@ AGENT_PROPS="${AGENT_PROPS:-/etc/cloudstack/agent/agent.properties}"
 fence_action() {
   local source_script="${1:-kvmha}"
   local FENCE_ACTION="hard-reboot"
-  local CUSTOM_SCRIPT="/etc/cloudstack/agent/heartbeat-fence-custom.sh"
 
   if [ -r "$AGENT_PROPS" ]; then
     local val
     val=$(grep "^kvm.heartbeat.fence.action=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')
     [ -n "$val" ] && FENCE_ACTION="$val"
-    local cval
-    cval=$(grep "^kvm.heartbeat.fence.custom.script=" "$AGENT_PROPS" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')
-    [ -n "$cval" ] && CUSTOM_SCRIPT="$cval"
   fi
 
   case "$FENCE_ACTION" in
     log-only)
-      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'log-only' selected — taking no automatic action. Operator must investigate."
+      # Only writes to syslog; no reboot, no agent restart and no management server alert.
+      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'log-only' selected, taking no action. Operator must investigate."
       exit 0
       ;;
     restart-agent)
-      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'restart-agent' — restarting cloudstack-agent (running VMs preserved)."
+      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'restart-agent', restarting cloudstack-agent (running VMs preserved)."
       sync &
       sleep 2
       systemctl restart cloudstack-agent
       exit $?
       ;;
     graceful-reboot)
-      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'graceful-reboot' — rebooting via systemctl (allows running VMs to stop cleanly)."
+      /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'graceful-reboot', rebooting via systemctl (allows running VMs to stop cleanly)."
       sync &
       sleep 5
       systemctl reboot
       exit $?
-      ;;
-    custom)
-      if [ -x "$CUSTOM_SCRIPT" ]; then
-        /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'custom' — running ${CUSTOM_SCRIPT}."
-        sync &
-        sleep 2
-        "$CUSTOM_SCRIPT" "$source_script"
-        exit $?
-      else
-        /usr/bin/logger -t heartbeat "${source_script}: heartbeat write to storage failed; fence action 'custom' selected but ${CUSTOM_SCRIPT} is missing or not executable — falling back to hard-reboot."
-        sync &
-        sleep 5
-        echo b > /proc/sysrq-trigger
-        exit $?
-      fi
       ;;
     hard-reboot|*)
       # Default, and the fallback for any unrecognised value: identical to the pre-existing behaviour.

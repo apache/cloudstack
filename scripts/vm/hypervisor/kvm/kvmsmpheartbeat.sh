@@ -209,7 +209,7 @@ elif [ "$cflag" == "1" ]
 then
   # Delegate the fence action to the shared helper so this script honours the
   # kvm.heartbeat.fence.action property (hard-reboot / graceful-reboot /
-  # restart-agent / log-only / custom) like kvmheartbeat.sh and kvmspheartbeat.sh.
+  # restart-agent / log-only) like kvmheartbeat.sh and kvmspheartbeat.sh.
   # Default (no property set) remains hard-reboot via sysrq-trigger.
   # shellcheck disable=SC1091
   . "$(dirname "$0")/kvmha-fence.sh"
