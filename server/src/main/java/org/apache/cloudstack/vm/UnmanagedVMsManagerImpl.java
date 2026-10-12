@@ -840,6 +840,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private void notifyStorageDriverOfVolumeImport(StoragePool pool, long volumeId) {
         Volume volume = volumeDao.findById(volumeId);
+        if (volume == null) {
+            logger.warn(String.format("Could not find volume with id [%s] to notify storage driver after import", volumeId));
+            return;
+        }
         volumeImportUnmanageService.notifyStorageDriverOfVolumeManagementChange(pool, volume, true);
     }
 
