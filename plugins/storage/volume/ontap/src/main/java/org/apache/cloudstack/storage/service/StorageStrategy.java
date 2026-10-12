@@ -19,23 +19,25 @@
 
 package org.apache.cloudstack.storage.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.ClusterFeignClient;
+import org.apache.cloudstack.storage.feign.client.EmsFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
 import org.apache.cloudstack.storage.feign.client.QosFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
-import org.apache.cloudstack.storage.feign.client.EmsFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
@@ -53,12 +55,12 @@ import org.apache.cloudstack.storage.feign.model.Volume;
 import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -67,7 +69,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import feign.FeignException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 /**
  * Storage Strategy represents the communication path for all the ONTAP storage options
  *
@@ -603,15 +604,38 @@ public abstract class StorageStrategy {
     }
 
     /**
-     * Gets ONTAP Flex-Volume
-     * Eligible only for Unified ONTAP storage
-     * throw exception in case of disaggregated ONTAP storage
+     * Gets an ONTAP FlexVolume by UUID.
+     * Eligible only for Unified ONTAP storage.
+     * Throws exception in case of disaggregated ONTAP storage.
      *
-     * @param volume the volume to retrieve
-     * @return the retrieved Volume object
+     * <p>Callers pass ONTAP query parameters when they need a partial record. For example,
+     * {@code fields=space.used} returns only used space instead of the full volume.
+     * A null or empty map returns the default volume representation.</p>
+     *
+     * @param uuid the UUID of the volume to retrieve
+     * @param queryParams ONTAP query parameters applied to {@code GET /storage/volumes/{uuid}};
+     *                    may be null
+     * @return the retrieved Volume object, or null if not found
      */
-    public Volume getStorageVolume(Volume volume) {
-        return null;
+    public Volume getStorageVolume(String uuid, Map<String, Object> queryParams) {
+        if (StringUtils.isBlank(uuid)) {
+            throw new CloudRuntimeException("Cannot fetch ONTAP volume: UUID is null or empty");
+        }
+        Map<String, Object> params = queryParams != null ? queryParams : Collections.emptyMap();
+        logger.info("getStorageVolume: Fetching ONTAP volume [{}] with query params {}", uuid, params);
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            Volume fetchedVolume = volumeFeignClient.getVolumeByUUID(authHeader, uuid, params);
+            logger.info("getStorageVolume: Volume [{}] fetched successfully", uuid);
+            return fetchedVolume;
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("getStorageVolume: Volume [{}] not found in ONTAP", uuid);
+                return null;
+            }
+            logger.error("getStorageVolume: Exception while fetching volume [{}]: ", uuid, e);
+            throw new CloudRuntimeException("Failed to fetch volume: " + e.getMessage());
+        }
     }
 
     /**
@@ -865,6 +889,11 @@ public abstract class StorageStrategy {
      *
      * <p>Needed after cloning a cached template, because a clone inherits the size of its source
      * while the service offering may ask for a larger disk.</p>
+     *
+     * <p>When the request already carries a QoS policy on the LUN or file, that policy is applied
+     * as part of this resize. iSCSI sends one LUN update with the new size and the policy.
+     * NFS grows the file on the host, then updates the file policy. A request with no policy
+     * changes size only.</p>
      */
     abstract public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes);
 

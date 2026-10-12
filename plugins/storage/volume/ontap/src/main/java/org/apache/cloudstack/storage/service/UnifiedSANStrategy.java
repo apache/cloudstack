@@ -19,20 +19,24 @@
 
 package org.apache.cloudstack.storage.service;
 
-import com.cloud.host.HostVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import feign.FeignException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
-import org.apache.cloudstack.storage.feign.model.Svm;
-import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
 import org.apache.cloudstack.storage.feign.model.LunSpace;
-import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.feign.model.Svm;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -41,18 +45,24 @@ import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
+import com.cloud.host.HostVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import feign.FeignException;
 
 public class UnifiedSANStrategy extends SANStrategy {
 
     private static final Logger logger = LogManager.getLogger(UnifiedSANStrategy.class);
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private VolumeDetailsDao volumeDetailsDao;
 
     public UnifiedSANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
@@ -191,24 +201,7 @@ public class UnifiedSANStrategy extends SANStrategy {
 
     @Override
     public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        if (cloudstackVolume == null || cloudstackVolume.getLun() == null
-                || cloudstackVolume.getLun().getUuid() == null) {
-            throw new CloudRuntimeException("Invalid iSCSI volume QoS update request");
-        }
-        Lun lunUpdate = new Lun();
-        lunUpdate.setQosPolicy(cloudstackVolume.getLun().getQosPolicy());
-        try {
-            JobResponse response = sanFeignClient.updateLun(
-                    getAuthHeader(), cloudstackVolume.getLun().getUuid(), lunUpdate);
-            pollJobIfPresent(response, "update QoS policy on LUN [" + cloudstackVolume.getLun().getUuid() + "]");
-        } catch (FeignException e) {
-            throw new CloudRuntimeException("Failed to apply QoS policy to LUN: " + e.getMessage(), e);
-        }
-        logger.info("Applied QoS policy [{}] to LUN [{}]",
-                cloudstackVolume.getLun().getQosPolicy() != null
-                        ? cloudstackVolume.getLun().getQosPolicy().getName() : null,
-                cloudstackVolume.getLun().getUuid());
-        return cloudstackVolume;
+        return null;
     }
 
     @Override
@@ -272,6 +265,7 @@ public class UnifiedSANStrategy extends SANStrategy {
 
             CloudStackVolume clonedCloudStackVolume = new CloudStackVolume();
             clonedCloudStackVolume.setLun(lun);
+            clonedCloudStackVolume.setVolumeInfo(cloudstackVolume.getVolumeInfo());
             return clonedCloudStackVolume;
         } catch (FeignException e) {
             logger.error("FeignException occurred while cloning LUN: {}, Status: {}, Exception: {}",
@@ -304,29 +298,57 @@ public class UnifiedSANStrategy extends SANStrategy {
      */
     @Override
     public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes) {
-        if (cloudstackVolume == null || cloudstackVolume.getLun() == null || cloudstackVolume.getLun().getUuid() == null) {
+        if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null) {
             logger.error("resizeCloudStackVolume: Lun resize failed. Invalid request: {}", cloudstackVolume);
             throw new CloudRuntimeException("Failed to resize Lun, invalid request");
         }
         if (sizeInBytes <= 0) {
             throw new CloudRuntimeException("Failed to resize Lun, invalid size " + sizeInBytes);
         }
+
+        // Resolve LUN UUID from volume details when not pre-populated on the cloudstackVolume
+        // Keep a QoS policy already set on the request so size and QoS go out in one LUN update.
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getLun() != null ? cloudstackVolume.getLun().getQosPolicy() : null;
+        if (cloudstackVolume.getLun() == null || cloudstackVolume.getLun().getUuid() == null) {
+            logger.debug("LUN details not present on cloudstackVolume, resolving UUID from volume details");
+            long volumeId = cloudstackVolume.getVolumeInfo().getId();
+            VolumeDetailVO lunUuidDetail = volumeDetailsDao.findDetail(volumeId, OntapStorageConstants.LUN_DOT_UUID);
+            if (lunUuidDetail == null || StringUtils.isBlank(lunUuidDetail.getValue())) {
+                throw new CloudRuntimeException("LUN UUID not found in volume details for volume " + volumeId);
+            }
+            Lun resolvedLun = new Lun();
+            resolvedLun.setUuid(lunUuidDetail.getValue());
+            cloudstackVolume.setLun(resolvedLun);
+        } else {
+            logger.debug("resizeCloudStackVolume: LUN UUID [{}] already present on cloudstackVolume, skipping volume details lookup", cloudstackVolume.getLun().getUuid());
+        }
+
         String lunUuid = cloudstackVolume.getLun().getUuid();
         logger.trace("resizeCloudStackVolume: Resizing Lun {} to {} bytes", lunUuid, sizeInBytes);
         try {
             String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             LunSpace lunSpace = new LunSpace();
             lunSpace.setSize(sizeInBytes);
-            Lun patch = new Lun();
-            patch.setSpace(lunSpace);
-            JobResponse response = sanFeignClient.updateLun(authHeader, lunUuid, patch);
+            Lun lunPatch = new Lun();
+            lunPatch.setSpace(lunSpace);
+            lunPatch.setQosPolicy(qosPolicy);
+            JobResponse response = sanFeignClient.updateLun(authHeader, lunUuid, lunPatch);
             pollJobIfPresent(response, "resize Lun [" + lunUuid + "]");
             logger.debug("resizeCloudStackVolume: Lun {} resized to {} bytes", lunUuid, sizeInBytes);
         } catch (FeignException e) {
-            throw new CloudRuntimeException("Failed to resize Lun: " + e.getMessage(), e);
+            logger.error("FeignException occurred while resizing LUN [{}], Status: {}, Exception: {}",
+                    lunUuid, e.status(), e.getMessage());
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                throw new CloudRuntimeException(String.format(
+                        "LUN [%s] no longer exists on ONTAP; it may have been deleted externally. " +
+                        "Verify the LUN is present before retrying the resize.", lunUuid));
+            }
+            throw new CloudRuntimeException(String.format(
+                    "Failed to resize LUN [%s]: %s",lunUuid, e.getMessage()));
         } catch (Exception e) {
-            logger.error("Exception occurred while resizing LUN: {}, Exception: {}", lunUuid, e.getMessage());
-            throw new CloudRuntimeException("Failed to resize Lun: " + e.getMessage());
+            logger.error("Exception occurred while resizing LUN [{}]: {}", lunUuid, e.getMessage());
+            throw new CloudRuntimeException(String.format(
+                    "Unexpected error while resizing LUN [%s]: %s", lunUuid, e.getMessage()));
         }
     }
 

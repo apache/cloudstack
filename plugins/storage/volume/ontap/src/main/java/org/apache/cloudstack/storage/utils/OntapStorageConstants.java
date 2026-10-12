@@ -59,11 +59,13 @@ public class OntapStorageConstants {
     public static final String JOB_SUCCESS = "success";
 
     public static final String TRUE = "true";
-    public static final String FALSE = "false";
 
     // Query params
     public static final String NAME = "name";
     public static final String FIELDS = "fields";
+    /** ONTAP volume field: bytes consumed, {@code space.used}. */
+    public static final String SPACE_USED = "space.used";
+    public static final String CLUSTER_NODE_ASUP_FIELDS = "model,is_all_flash_optimized,is_capacity_optimized,is_perf_optimized";
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
@@ -90,6 +92,7 @@ public class OntapStorageConstants {
     public static final String SEMICOLON = ";";
     public static final String COMMA = ",";
     public static final String HYPHEN = "-";
+    public static final String DOT = ".";
 
     public static final String VOLUME_PATH_PREFIX = "/vol/";
 
@@ -150,6 +153,9 @@ public class OntapStorageConstants {
     public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+    /** Retry settings for FlexVolume create/resize/delete job polling. */
+    public static final int ONTAP_VOLUME_JOB_MAX_RETRIES = 10;
+    public static final int ONTAP_VOLUME_JOB_POLL_INTERVAL_MS = 1000;
     public static final int ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES = 30;
 

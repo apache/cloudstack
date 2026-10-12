@@ -18,11 +18,14 @@
  */
 package org.apache.cloudstack.storage.service;
 
-import com.cloud.host.HostVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import feign.FeignException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.Igroup;
@@ -37,19 +40,6 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,11 +48,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -71,6 +66,14 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.cloud.host.HostVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import feign.FeignException;
 
 @ExtendWith(MockitoExtension.class)
 class UnifiedSANStrategyTest {
@@ -92,6 +95,9 @@ class UnifiedSANStrategyTest {
 
     @Mock
     private StoragePoolDetailsDao storagePoolDetailsDao;
+
+    @Mock
+    private VolumeDetailsDao volumeDetailsDao;
 
     private UnifiedSANStrategy unifiedSANStrategy;
     private String authHeader;
@@ -124,6 +130,11 @@ class UnifiedSANStrategyTest {
             java.lang.reflect.Field storagePoolDetailsDaoField = UnifiedSANStrategy.class.getDeclaredField("storagePoolDetailsDao");
             storagePoolDetailsDaoField.setAccessible(true);
             storagePoolDetailsDaoField.set(unifiedSANStrategy, storagePoolDetailsDao);
+
+            // Inject volumeDetailsDao, used to resolve the LUN UUID during resize
+            java.lang.reflect.Field volumeDetailsDaoField = UnifiedSANStrategy.class.getDeclaredField("volumeDetailsDao");
+            volumeDetailsDaoField.setAccessible(true);
+            volumeDetailsDaoField.set(unifiedSANStrategy, volumeDetailsDao);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1024,8 +1035,10 @@ class UnifiedSANStrategyTest {
         lun.setName("/vol/vol1/cloned");
         lun.setClone(clone);
 
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
+        request.setVolumeInfo(volumeInfo);
 
         Lun clonedLun = new Lun();
         clonedLun.setName("/vol/vol1/cloned");
@@ -1045,6 +1058,7 @@ class UnifiedSANStrategyTest {
 
             assertNotNull(result);
             assertEquals("cloned-lun-uuid", result.getLun().getUuid());
+            assertSame(volumeInfo, result.getVolumeInfo());
             verify(sanFeignClient).createLun(eq(authHeader), eq(true), any(Lun.class));
         }
     }
@@ -1106,6 +1120,88 @@ class UnifiedSANStrategyTest {
         lun.setUuid("lun-uuid-123");
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
+
+        unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L);
+
+        ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+        verify(sanFeignClient).updateLun(any(), eq("lun-uuid-123"), lunCaptor.capture());
+        assertEquals(21474836480L, lunCaptor.getValue().getSpace().getSize());
+        assertNull(lunCaptor.getValue().getQosPolicy());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_PatchesSizeAndQosTogether() {
+        VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
+        qosPolicy.setName("cs_0_to_5000_iops_svm1");
+        qosPolicy.setUuid("qos-uuid");
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        lun.setQosPolicy(qosPolicy);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
+
+        unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L);
+
+        ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+        verify(sanFeignClient).updateLun(any(), eq("lun-uuid-123"), lunCaptor.capture());
+        assertEquals(21474836480L, lunCaptor.getValue().getSpace().getSize());
+        assertEquals("cs_0_to_5000_iops_svm1", lunCaptor.getValue().getQosPolicy().getName());
+        assertEquals("qos-uuid", lunCaptor.getValue().getQosPolicy().getUuid());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_NoUuid_Throws() {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getId()).thenReturn(100L);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(new Lun());
+        request.setVolumeInfo(volumeInfo);
+
+        // LUN UUID is absent on the request and cannot be resolved from volume details
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_UUID)).thenReturn(null);
+
+        assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(request, 100L));
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_BlankUuidDetail_Throws() {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getId()).thenReturn(100L);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeInfo);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_UUID))
+                .thenReturn(new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_UUID, "   ", false));
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                () -> unifiedSANStrategy.resizeCloudStackVolume(request, 100L));
+
+        assertTrue(exception.getMessage().contains("LUN UUID not found"));
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_NoVolumeInfo_Throws() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+
+        assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(request, 100L));
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
+    }
+
+    @Test
+    void testResizeCloudStackVolume_UuidResolvedFromVolumeDetails() {
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        when(volumeInfo.getId()).thenReturn(100L);
+        CloudStackVolume request = new CloudStackVolume();
+        request.setVolumeInfo(volumeInfo);
+
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_UUID))
+                .thenReturn(new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123", false));
 
         unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L);
 
@@ -1115,20 +1211,12 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testResizeCloudStackVolume_NoUuid_Throws() {
-        CloudStackVolume request = new CloudStackVolume();
-        request.setLun(new Lun());
-
-        assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(request, 100L));
-        verify(sanFeignClient, never()).updateLun(any(), any(), any());
-    }
-
-    @Test
     void testResizeCloudStackVolume_InvalidSize_Throws() {
         Lun lun = new Lun();
         lun.setUuid("lun-uuid-123");
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
 
         assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(request, 0L));
         assertThrows(CloudRuntimeException.class, () -> unifiedSANStrategy.resizeCloudStackVolume(null, 100L));
@@ -1136,23 +1224,92 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testResizeCloudStackVolume_FeignException_Throws() {
+    void testResizeCloudStackVolume_FeignExceptions_Throw() {
         Lun lun = new Lun();
         lun.setUuid("lun-uuid-123");
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
-
-        FeignException feignException = mock(FeignException.class);
-        when(feignException.getMessage()).thenReturn("resize failed");
+        request.setVolumeInfo(mock(VolumeInfo.class));
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            doThrow(feignException).when(sanFeignClient).updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class));
+            for (int status : new int[] {401, 403, 409, 500, -1}) {
+                FeignException feignException = mock(FeignException.class);
+                when(feignException.status()).thenReturn(status);
+                when(feignException.getMessage()).thenReturn(
+                        status == -1 ? "connection timed out" : "resize failed");
+                doThrow(feignException).when(sanFeignClient)
+                        .updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class));
 
-            assertThrows(CloudRuntimeException.class,
-                    () -> unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L));
+                assertThrows(CloudRuntimeException.class,
+                        () -> unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L));
+            }
         }
+    }
+
+    @Test
+    void testResizeCloudStackVolume_DeletedLun_ThrowsSpecificMessage() {
+        Lun lun = new Lun();
+        lun.setUuid("deleted-lun-uuid");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
+        FeignException notFound = mock(FeignException.class);
+        when(notFound.status()).thenReturn(404);
+        when(notFound.getMessage()).thenReturn("LUN not found");
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            utilityMock.when(() -> OntapStorageUtils.isOntapObjectNotFoundError(notFound))
+                    .thenReturn(true);
+            doThrow(notFound).when(sanFeignClient)
+                    .updateLun(eq(authHeader), eq("deleted-lun-uuid"), any(Lun.class));
+
+            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L));
+
+            assertTrue(exception.getMessage().contains("no longer exists on ONTAP"));
+            assertTrue(exception.getMessage().contains("deleted-lun-uuid"));
+        }
+    }
+
+    @Test
+    void testResizeCloudStackVolume_UnexpectedException_IsWrapped() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
+                    .thenReturn(authHeader);
+            doThrow(new IllegalStateException("unexpected failure")).when(sanFeignClient)
+                    .updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class));
+
+            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                    () -> unifiedSANStrategy.resizeCloudStackVolume(request, 21474836480L));
+
+            assertTrue(exception.getMessage().contains("Unexpected error"));
+            assertTrue(exception.getMessage().contains("unexpected failure"));
+        }
+    }
+
+    @Test
+    void testResizeCloudStackVolume_SameSizePatchIsIdempotent() {
+        Lun lun = new Lun();
+        lun.setUuid("lun-uuid-123");
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+        request.setVolumeInfo(mock(VolumeInfo.class));
+
+        unifiedSANStrategy.resizeCloudStackVolume(request, 10737418240L);
+
+        ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
+        verify(sanFeignClient).updateLun(any(), eq("lun-uuid-123"), lunCaptor.capture());
+        assertEquals(10737418240L, lunCaptor.getValue().getSpace().getSize());
     }
 
     @Test
@@ -1215,35 +1372,18 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testUpdateCloudStackVolume_InvalidRequest_ThrowsException() {
-        CloudStackVolume request = new CloudStackVolume();
-        assertThrows(CloudRuntimeException.class,
-            () -> unifiedSANStrategy.updateCloudStackVolume(request));
-    }
-
-    @Test
-    void testUpdateCloudStackVolume_AppliesQosPolicyToLun() {
+    void testUpdateCloudStackVolume_ReturnsNull() {
         Lun lun = new Lun();
         lun.setUuid("lun-uuid-123");
         VolumeQosPolicy qosPolicy = new VolumeQosPolicy();
-        qosPolicy.setName("cs_0_to5000_iops_svm1");
+        qosPolicy.setName("cs_0_to_5000_iops_svm1");
         lun.setQosPolicy(qosPolicy);
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
-            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-            when(sanFeignClient.updateLun(eq(authHeader), eq("lun-uuid-123"), any(Lun.class)))
-                    .thenReturn(null);
-
-            CloudStackVolume result = unifiedSANStrategy.updateCloudStackVolume(request);
-
-            assertSame(request, result);
-            verify(sanFeignClient).updateLun(eq(authHeader), eq("lun-uuid-123"), argThat(update ->
-                    update.getQosPolicy() != null
-                            && "cs_0_to5000_iops_svm1".equals(update.getQosPolicy().getName())));
-        }
+        assertNull(unifiedSANStrategy.updateCloudStackVolume(request));
+        assertNull(unifiedSANStrategy.updateCloudStackVolume(new CloudStackVolume()));
+        verify(sanFeignClient, never()).updateLun(any(), any(), any());
     }
 
     @Test

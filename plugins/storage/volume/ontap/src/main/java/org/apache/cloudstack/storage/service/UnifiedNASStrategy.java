@@ -69,6 +69,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.host.HostVO;
+import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -262,6 +263,9 @@ public class UnifiedNASStrategy extends NASStrategy {
             logger.error("resizeCloudStackVolume: " + errMsg);
             throw new CloudRuntimeException(errMsg);
         }
+        if (cloudstackVolume.getFile() != null && cloudstackVolume.getFile().getQosPolicy() != null) {
+            updateCloudStackVolume(cloudstackVolume);
+        }
         logger.info("resizeCloudStackVolume: Resized volume [{}] to {} bytes", volumeInfo.getUuid(), sizeInBytes);
     }
 
@@ -277,8 +281,15 @@ public class UnifiedNASStrategy extends NASStrategy {
             throw new CloudRuntimeException("Storage Pool not found for id: " + volume.getPoolId());
         }
 
-        ResizeVolumeCommand cmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(storagePool),
-                volume.getSize(), sizeInBytes, false, null);
+        // instanceName is set by VolumeApiServiceImpl.orchestrateResizeVolume() before calling the
+        // driver — it is the VM instance name when attached, or "none" when the volume is detached.
+        ResizeVolumePayload resizePayload = volumeObject.getpayload() instanceof ResizeVolumePayload
+        ? (ResizeVolumePayload) volumeObject.getpayload()
+        : null;
+       String instanceName = resizePayload != null ? resizePayload.instanceName : "none";
+       ResizeVolumeCommand cmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(storagePool),
+        volume.getSize(), sizeInBytes, false, instanceName);
+
         EndPoint ep = epSelector.select(volumeInfo);
         if (ep == null) {
             String errMsg = "No remote endpoint to send ResizeVolumeCommand, check if host is up";

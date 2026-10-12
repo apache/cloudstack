@@ -44,7 +44,7 @@ public interface VolumeFeignClient {
 
     @RequestLine("GET /api/storage/volumes/{uuid}")
     @Headers({"Authorization: {authHeader}"})
-    Volume getVolumeByUUID(@Param("authHeader") String authHeader, @Param("uuid") String uuid);
+    Volume getVolumeByUUID(@Param("authHeader") String authHeader, @Param("uuid") String uuid, @QueryMap Map<String, Object> queryParams);
 
     @RequestLine("GET /api/storage/volumes")
     @Headers({"Authorization: {authHeader}"})
