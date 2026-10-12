@@ -156,8 +156,8 @@ mount_operation() {
   fi
   local mount_args=(-t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}")
   [[ -n "${MOUNT_OPTS}" ]] && mount_args+=(-o "${MOUNT_OPTS}")
-  mount "${mount_args[@]}" 2>&1 | tee -a "$logFile"
-  if [ $? -eq 0 ]; then
+  mount "${mount_args[@]}" 2>>"$logFile" | tee -a "$logFile"
+  if [ "${PIPESTATUS[0]}" -eq 0 ]; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
