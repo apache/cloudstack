@@ -27,6 +27,8 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.VnfTemplateResponse;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +41,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -52,6 +55,9 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
 
     @Mock
     private VnfTemplateDetailsDao vnfTemplateDetailsDao;
+
+    @Mock
+    private TemplateDataStoreDao templateDataStoreDao;
 
     private TemplateJoinVO template = new TemplateJoinVO();
     private TemplateResponse templateResponse = new TemplateResponse();
@@ -149,5 +155,25 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
         Assert.assertEquals(2, ((VnfTemplateResponse)response).getVnfNics().size());
         Assert.assertEquals(3, ((VnfTemplateResponse)response).getVnfDetails().size());
 
+    }
+
+    @Test
+    public void testListTemplatesInImageStoresSkipsStorelessEntry() {
+        TemplateDataStoreVO storeless = new TemplateDataStoreVO(null, templateId);
+        TemplateDataStoreVO inStore = new TemplateDataStoreVO(5L, templateId);
+        Mockito.doReturn(Arrays.asList(storeless, inStore)).when(templateDataStoreDao).listByTemplateNotBypassed(templateId);
+
+        List<TemplateDataStoreVO> result = _templateJoinDaoImpl.listTemplatesInImageStores(templateId);
+
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(5L, result.get(0).getDataStoreId());
+    }
+
+    @Test
+    public void testListTemplatesInImageStoresOnlyStorelessEntry() {
+        TemplateDataStoreVO storeless = new TemplateDataStoreVO(null, templateId);
+        Mockito.doReturn(List.of(storeless)).when(templateDataStoreDao).listByTemplateNotBypassed(templateId);
+
+        Assert.assertTrue(_templateJoinDaoImpl.listTemplatesInImageStores(templateId).isEmpty());
     }
 }

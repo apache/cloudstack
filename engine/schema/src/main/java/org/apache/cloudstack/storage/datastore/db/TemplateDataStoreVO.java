@@ -184,6 +184,14 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         return dataStoreId;
     }
 
+    /**
+     * Baremetal and External templates are registered with a store-less entry (store_id NULL),
+     * for which {@link #getDataStoreId()} cannot be called.
+     */
+    public boolean hasDataStore() {
+        return dataStoreId != null;
+    }
+
     public void setDataStoreId(long storeId) {
         dataStoreId = storeId;
     }

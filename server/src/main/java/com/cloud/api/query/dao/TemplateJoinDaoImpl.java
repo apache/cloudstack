@@ -209,11 +209,21 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         return templateStatus.getStatus();
     }
 
+    /**
+     * Lists the not bypassed store entries of a template, leaving out store-less entries (store_id NULL)
+     * as created for Baremetal and External templates. These are returned when storeIds is empty.
+     */
+    protected List<TemplateDataStoreVO> listTemplatesInImageStores(long templateId, Long... storeIds) {
+        return _templateStoreDao.listByTemplateNotBypassed(templateId, storeIds).stream()
+                .filter(TemplateDataStoreVO::hasDataStore)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO template) {
         List<ImageStoreVO> storesInZone = dataStoreDao.listStoresByZoneId(template.getDataCenterId());
         Long[] storeIds = storesInZone.stream().map(ImageStoreVO::getId).toArray(Long[]::new);
-        List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId(), storeIds);
+        List<TemplateDataStoreVO> templatesInStore = listTemplatesInImageStores(template.getId(), storeIds);
 
         List<Long> dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
         Map<Long, ImageStoreVO> imageStoreMap = dataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(ImageStoreVO::getId, imageStore -> imageStore));
@@ -532,7 +542,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.setStatus(templateStatus);
             }
             isoResponse.setUrl(iso.getUrl());
-            List<TemplateDataStoreVO> isosInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
+            List<TemplateDataStoreVO> isosInStore = listTemplatesInImageStores(iso.getId());
             List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
             HashMap<String, String> downloadDetailInImageStores = null;
             for (TemplateDataStoreVO isoInStore : isosInStore) {
