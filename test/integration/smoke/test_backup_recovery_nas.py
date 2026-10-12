@@ -18,13 +18,16 @@
 
 from marvin.cloudstackAPI import listZones
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
-                             NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool)
+                             NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool, Template,
+                             SSHKeyPair)
 from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.utils import (cleanup_resources, random_gen)
 from nose.plugins.attrib import attr
-from marvin.codes import FAILED
 import os
+import re
+import shlex
+import tempfile
 import time
 from urllib.parse import urlsplit
 
@@ -48,9 +51,21 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         if cls.hypervisor.lower() != 'kvm':
             cls.skipTest(cls, reason="Test can be run only on KVM hypervisor")
 
-        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
-        if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+        # A cloud-init template (Ubuntu 24.04) rather than the legacy CentOS 5.5 one:
+        # a modern kernel/udev enumerates hot-attached virtio disks and has mkfs.ext4,
+        # sidestepping guest-side workarounds the older template needed, and cloud-init
+        # grows the root filesystem to fill the disk on first boot on its own.
+        cls.template = Template.register(
+            cls.api_client,
+            cls.services["test_templates_cloud_init"][cls.hypervisor.lower()],
+            zoneid=cls.zone.id,
+            hypervisor=cls.hypervisor,
+        )
+        cls.template.download(cls.api_client)
+        # Not added to cls._cleanup here: cleanup_resources() deletes items in list
+        # order, and a template can't be deleted while any VM still uses it -- it must
+        # be appended after cls.vm (and hence the account that owns it) further down,
+        # so the account/VM cleanup earlier in the list runs first.
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
 
@@ -111,7 +126,24 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
 
-        cls._cleanup = [cls.account]
+        cls._cleanup.append(cls.account)
+
+        # The cloud-init template's cloud-image hardening disables SSH password auth
+        # outright (/etc/ssh/sshd_config.d/60-cloudimg-settings.conf sets
+        # "PasswordAuthentication no", regardless of any password baked into the
+        # image), so guest access here uses an SSH keypair and the stock cloud image
+        # "ubuntu" user instead, matching the pattern used for cloud-init templates
+        # elsewhere (e.g. test_network.py's TestSharedNetworkWithConfigDrive).
+        cls.keypair = SSHKeyPair.create(cls.api_client, name="nas-backup-%s" % random_gen(),
+                                        account=cls.account.name, domainid=cls.account.domainid)
+        cls.ssh_key_file = os.path.join(tempfile.gettempdir(), cls.keypair.name)
+        with open(cls.ssh_key_file, "w") as key_file:
+            key_file.write(cls.keypair.privatekey)
+        os.chmod(cls.ssh_key_file, 0o400)
+        # createSSHKeyPair's response has no .delete() (it isn't wrapped as an
+        # SSHKeyPair instance), so it isn't added to cls._cleanup; it is removed
+        # along with everything else owned by cls.account when that gets deleted.
+        cls.services["small"]["username"] = "ubuntu"
 
         # Create NAS backup repository and offering.
         cls.backup_repository = BackupRepository.add(cls.api_client, zoneid=cls.zone.id, name="Nas",
@@ -136,7 +168,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         cls._cleanup.extend([cls.offering, cls.diskoffering, cls.account])
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
-                                       diskofferingid=cls.diskoffering.id, mode=cls.services["mode"])
+                                       diskofferingid=cls.diskoffering.id, mode=cls.services["mode"],
+                                       keypair=cls.keypair.name)
+        # Appended last so cleanup_resources() (which deletes cls._cleanup in list
+        # order) removes cls.account -- and with it cls.vm, the template's only user
+        # -- before it gets here.
+        cls._cleanup.append(cls.template)
 
 
     @classmethod
@@ -144,6 +181,10 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         try:
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
+
+            ssh_key_file = getattr(cls, "ssh_key_file", None)
+            if ssh_key_file and os.path.exists(ssh_key_file):
+                os.remove(ssh_key_file)
 
             if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
@@ -170,8 +211,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         # Create a file and take backup
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch test_backup_and_recovery.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            # sync is required here: without it, this file's data can still be sitting
+            # in the guest's page cache (ext4 delayed allocation) rather than on the
+            # RBD-backed disk when the backup is taken a few seconds later, and the
+            # restored VM then comes up without it.
+            ssh_client_vm.execute("touch test_backup_and_recovery.txt; sync")
         except Exception as err:
             self.fail("SSH failed for Virtual machine: %s due to %s" % (self.vm.ipaddress, err))
 
@@ -206,6 +251,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             templateid=templateid
         )
         self.cleanup.append(new_vm)
+        new_vm.username = "ubuntu"
 
         # Verify the new VM was created successfully
         self.assertIsNotNone(new_vm, "Failed to create VM from backup")
@@ -232,7 +278,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
 
         # Verify that the file is present in the Instance created from backup
         try:
-            ssh_client_new_vm = new_vm.get_ssh_client(reconnect=True)
+            ssh_client_new_vm = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             result = ssh_client_new_vm.execute("ls test_backup_and_recovery.txt")
             self.assertEqual(result[0], "test_backup_and_recovery.txt",
                              "Instance created from Backup should have the same file as the backup.")
@@ -375,14 +421,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(3)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/incremental_marker_1.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/incremental_marker_1.txt"))
 
             created = []
             for i in range(5):
                 Backup.create(self.apiclient, self.vm.id, "inc_chain_%d" % i)
                 # write a small change so each incremental has something to capture
-                ssh_client_vm.execute("dd if=/dev/urandom of=/root/delta_%d bs=64k count=4 2>/dev/null" % i)
+                ssh_client_vm.execute(self._sudo("dd if=/dev/urandom of=/root/delta_%d bs=64k count=4 2>/dev/null" % i))
                 time.sleep(2)
                 created = Backup.list(self.apiclient, self.vm.id)
 
@@ -429,8 +475,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         self._set_full_every(100)
         backups = []
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("echo restart-test-1 > /root/restart_marker_1.txt; sync")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restart-test-1 > /root/restart_marker_1.txt; sync"))
 
             # 1) FULL anchor
             Backup.create(self.apiclient, self.vm.id, "restart_full")
@@ -439,8 +485,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             # 2) Restart the VM — wipes libvirt's checkpoint registry (the bug trigger).
             self.vm.stop(self.apiclient)
             self.vm.start(self.apiclient)
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("echo restart-test-2 > /root/restart_marker_2.txt; sync")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restart-test-2 > /root/restart_marker_2.txt; sync"))
 
             # 3) INCREMENTAL after the restart — the previously-broken path.
             Backup.create(self.apiclient, self.vm.id, "restart_incr")
@@ -469,12 +515,13 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 zoneid=self.zone.id
             )
             self.cleanup.append(new_vm)
+            new_vm.username = "ubuntu"
             self.assertIsNotNone(new_vm, "Failed to create VM from the post-restart incremental backup")
             self.assertEqual(new_vm.state, "Running", "Restored VM should be Running")
 
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
-            r1 = "".join(ssh_new.execute("cat /root/restart_marker_1.txt"))
-            r2 = "".join(ssh_new.execute("cat /root/restart_marker_2.txt"))
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            r1 = "".join(ssh_new.execute(self._sudo("cat /root/restart_marker_1.txt")))
+            r2 = "".join(ssh_new.execute(self._sudo("cat /root/restart_marker_2.txt")))
             self.assertIn("restart-test-1", r1,
                 "Marker written before the restart is missing from the restore")
             self.assertIn("restart-test-2", r2,
@@ -499,16 +546,16 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/marker_full.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/marker_full.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_full")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc1.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/marker_inc1.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_inc1")
             time.sleep(3)
 
-            ssh_client_vm.execute("touch /root/marker_inc2.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/marker_inc2.txt"))
             Backup.create(self.apiclient, self.vm.id, "rfi_inc2")
             time.sleep(3)
 
@@ -524,10 +571,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 accountname=self.account.name, domainid=self.account.domainid,
                 zoneid=self.zone.id)
             self.cleanup.append(new_vm)
+            # createVMFromBackup wraps its response with an empty services dict, so
+            # it always defaults to username "root" regardless of self.services --
+            # override it to match the account this VM (and its SSH key) actually use.
+            new_vm.username = "ubuntu"
 
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             for marker in ("marker_full.txt", "marker_inc1.txt", "marker_inc2.txt"):
-                result = ssh_new.execute("ls /root/%s" % marker)
+                result = ssh_new.execute(self._sudo("ls /root/%s" % marker))
                 self.assertIn(marker, result[0],
                     "Restored VM should have %s (chain flattened correctly)" % marker)
 
@@ -548,14 +599,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         original_full_every = self._get_full_every()
         self._set_full_every(5)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("touch /root/dmi_full.txt")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_full.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_full")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc1.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_inc1.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_inc1")
             time.sleep(3)
-            ssh_client_vm.execute("touch /root/dmi_inc2.txt")
+            ssh_client_vm.execute(self._sudo("touch /root/dmi_inc2.txt"))
             Backup.create(self.apiclient, self.vm.id, "dmi_inc2")
             time.sleep(3)
 
@@ -575,11 +626,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 accountname=self.account.name, domainid=self.account.domainid,
                 zoneid=self.zone.id)
             self.cleanup.append(new_vm)
-            ssh_new = new_vm.get_ssh_client(reconnect=True)
+            new_vm.username = "ubuntu"
+            ssh_new = new_vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
             # Both the FULL marker and (importantly) the deleted-INC1 marker should still
             # be present, because the rebase merged INC1's blocks into INC2.
             for marker in ("dmi_full.txt", "dmi_inc1.txt", "dmi_inc2.txt"):
-                result = ssh_new.execute("ls /root/%s" % marker)
+                result = ssh_new.execute(self._sudo("ls /root/%s" % marker))
                 self.assertIn(marker, result[0],
                     "After mid-incremental delete and rebase, %s should still be restorable" % marker)
 
@@ -730,8 +782,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         target_vm = None
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         try:
-            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
-            ssh_client_vm.execute("echo restore-attach-marker > /root/restore_attach_marker.txt; sync")
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo restore-attach-marker > /root/restore_attach_marker.txt; sync"))
 
             Backup.create(self.apiclient, self.vm.id, "restore_attach_backup")
 
@@ -756,9 +808,9 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             target_vm = VirtualMachine.create(
                 self.apiclient, self.services["small"], accountid=self.account.name,
                 domainid=self.account.domainid, serviceofferingid=self.offering.id,
-                mode=self.services["mode"]
+                mode=self.services["mode"], keypair=self.keypair.name
             )
-            target_vm.stop(self.apiclient, forced=True)
+            target_vm.stop(self.apiclient)
 
             # Restore and attach the ROOT volume backup as an extra disk.
             Backup.restoreVolumeFromBackupAndAttachToVM(
@@ -790,3 +842,12 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                 except Exception:
                     pass
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    def _sudo(self, cmd):
+        """Wrap a shell command to run as root via sudo (the cloud-init "ubuntu" user
+        this test SSHes in as has passwordless sudo) -- needed for anything touching
+        /root or a raw block device, since the SSH session itself lands unprivileged.
+        Runs the whole command through `sh -c` under sudo rather than just prefixing
+        `sudo` onto the first word, so redirects and ';'-separated commands run with
+        root's privileges too, not just whatever the first word happens to be."""
+        return "sudo sh -c %s" % shlex.quote(cmd)
