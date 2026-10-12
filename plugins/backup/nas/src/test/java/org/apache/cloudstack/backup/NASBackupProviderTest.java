@@ -450,6 +450,91 @@ public class NASBackupProviderTest {
         Assert.assertEquals(0, decision.chainPosition);
     }
 
+    /** Enable the zone-level incremental master switch for a decideChain test. */
+    private void enableIncrementalBackups() {
+        ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
+                new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
+                        "nas.backup.incremental.enabled", "true",
+                        "test override — enabled", true,
+                        org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
+    }
+
+    /** Give {@code vmId} a single volume on a Ceph-RBD pool. */
+    private void givenVmVolumesOnRbd(Long vmId) {
+        VolumeVO rbdVol = mock(VolumeVO.class);
+        Mockito.when(rbdVol.getPoolId()).thenReturn(9L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(rbdVol));
+        StoragePoolVO rbd = mock(StoragePoolVO.class);
+        Mockito.when(rbd.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(storagePoolDao.findById(9L)).thenReturn(rbd);
+    }
+
+    /**
+     * A VM entirely on Ceph-RBD no longer drops to the legacy full-only path: it anchors its chain
+     * on an RBD snapshot and its backups are written as rbd export-diff streams.
+     */
+    @Test
+    public void decideChainStartsAnRbdChainForRbdBackedVm() {
+        Long vmId = 60L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.lenient().when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+        enableIncrementalBackups();
+        givenVmVolumesOnRbd(vmId);
+        Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(null);
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+
+        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, decision.format);
+        Assert.assertTrue("RBD chains anchor on an RBD snapshot, not a QEMU bitmap",
+                decision.bitmapNew.startsWith("csbackup-"));
+        Assert.assertNull("a full reads nothing from a parent anchor", decision.bitmapParent);
+        Assert.assertNull("RBD backups are replayed in order, not rebased onto a parent file", decision.parentPaths);
+        Assert.assertEquals(0, decision.chainPosition);
+    }
+
+    /**
+     * RBD snapshots are taken inside Ceph, so a stopped VM is no different from a running one. It
+     * must stay on the RBD path rather than being pushed onto a qcow2 full the way a stopped VM on
+     * file-based storage is (which has no live QEMU to hold a dirty bitmap).
+     */
+    @Test
+    public void decideChainKeepsStoppedRbdVmOnTheRbdPath() {
+        Long vmId = 61L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.lenient().when(vm.getState()).thenReturn(VMInstanceVO.State.Stopped);
+        enableIncrementalBackups();
+        givenVmVolumesOnRbd(vmId);
+        Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(null);
+
+        NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
+
+        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, decision.format);
+    }
+
+    /**
+     * When the agent reports it completed a full after failing to proceed as an incremental, the
+     * backup is re-registered as the start of a new chain — in the same storage flavour, so an RBD
+     * backup is not accidentally recorded as a qcow2 one.
+     */
+    @Test
+    public void asFullRestartKeepsTheRbdFlavour() {
+        NASBackupProvider.ChainDecision incremental =
+                NASBackupProvider.ChainDecision.rbdIncremental("csbackup-2", "csbackup-1", "chain-1", 3);
+
+        NASBackupProvider.ChainDecision restarted = incremental.asFullRestart();
+
+        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, restarted.mode);
+        Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, restarted.format);
+        Assert.assertEquals("csbackup-2", restarted.bitmapNew);
+        Assert.assertEquals(0, restarted.chainPosition);
+    }
+
     // -- incremental storage-capability guard (Ceph-RBD / Linstor stay on legacy full) ----
 
     /**
@@ -457,7 +542,7 @@ public class NASBackupProviderTest {
      * volume sits on NFS / HOST-scope local / SharedMountPoint is checkpoint-capable.
      */
     @Test
-    public void allVolumesOnCheckpointCapableStorageTrueForNfsHostAndSharedMount() {
+    public void getIncrementalFlavorIsQcow2ForNfsHostAndSharedMount() {
         Long vmId = 55L;
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(vmId);
@@ -480,15 +565,15 @@ public class NASBackupProviderTest {
         Mockito.when(storagePoolDao.findById(2L)).thenReturn(host);
         Mockito.when(storagePoolDao.findById(3L)).thenReturn(smp);
 
-        Assert.assertTrue(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+        Assert.assertEquals(NASBackupProvider.IncrementalFlavor.QCOW2, nasBackupProvider.getIncrementalFlavor(vm));
     }
 
     /**
-     * A single volume on Ceph-RBD (or any pool that cannot carry a per-disk checkpoint) forces
-     * the whole VM onto the legacy full-only path — avoids regressing RBD/Linstor storages.
+     * The two mechanisms produce different on-NAS files, so a VM straddling file-based storage and
+     * Ceph-RBD cannot use either and stays on the legacy full-only path.
      */
     @Test
-    public void allVolumesOnCheckpointCapableStorageFalseWhenAnyVolumeOnRbd() {
+    public void getIncrementalFlavorIsUnsupportedForMixedFileAndRbdStorage() {
         Long vmId = 56L;
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(vmId);
@@ -506,12 +591,54 @@ public class NASBackupProviderTest {
         Mockito.when(storagePoolDao.findById(1L)).thenReturn(nfs);
         Mockito.when(storagePoolDao.findById(9L)).thenReturn(rbd);
 
-        Assert.assertFalse(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+        Assert.assertEquals(NASBackupProvider.IncrementalFlavor.UNSUPPORTED, nasBackupProvider.getIncrementalFlavor(vm));
+    }
+
+    /**
+     * Every volume on Ceph-RBD selects the Ceph-native mechanism: an RBD snapshot per cycle plus
+     * {@code rbd export-diff}, instead of a libvirt checkpoint that a raw RBD image cannot hold.
+     */
+    @Test
+    public void getIncrementalFlavorIsRbdWhenEveryVolumeIsOnRbd() {
+        Long vmId = 58L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+
+        VolumeVO rootVol = mock(VolumeVO.class);
+        Mockito.when(rootVol.getPoolId()).thenReturn(9L);
+        VolumeVO dataVol = mock(VolumeVO.class);
+        Mockito.when(dataVol.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(rootVol, dataVol));
+
+        StoragePoolVO rbd = mock(StoragePoolVO.class);
+        Mockito.when(rbd.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        StoragePoolVO otherRbd = mock(StoragePoolVO.class);
+        Mockito.when(otherRbd.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(storagePoolDao.findById(9L)).thenReturn(rbd);
+        Mockito.when(storagePoolDao.findById(10L)).thenReturn(otherRbd);
+
+        Assert.assertEquals(NASBackupProvider.IncrementalFlavor.RBD, nasBackupProvider.getIncrementalFlavor(vm));
+    }
+
+    /** Linstor supports neither mechanism, so it keeps the legacy full-only behaviour. */
+    @Test
+    public void getIncrementalFlavorIsUnsupportedForLinstor() {
+        Long vmId = 59L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        VolumeVO vol = mock(VolumeVO.class);
+        Mockito.when(vol.getPoolId()).thenReturn(1L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(vol));
+        StoragePoolVO linstor = mock(StoragePoolVO.class);
+        Mockito.when(linstor.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(linstor);
+
+        Assert.assertEquals(NASBackupProvider.IncrementalFlavor.UNSUPPORTED, nasBackupProvider.getIncrementalFlavor(vm));
     }
 
     /** A volume whose storage pool can no longer be resolved is treated as incapable (safe). */
     @Test
-    public void allVolumesOnCheckpointCapableStorageFalseWhenPoolUnresolvable() {
+    public void getIncrementalFlavorIsUnsupportedWhenPoolUnresolvable() {
         Long vmId = 57L;
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(vmId);
@@ -520,7 +647,7 @@ public class NASBackupProviderTest {
         Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(vol));
         Mockito.when(storagePoolDao.findById(1L)).thenReturn(null);
 
-        Assert.assertFalse(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+        Assert.assertEquals(NASBackupProvider.IncrementalFlavor.UNSUPPORTED, nasBackupProvider.getIncrementalFlavor(vm));
     }
 
     // -- restore clears active_checkpoint_id ---------------------------------------------

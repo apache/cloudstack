@@ -115,6 +115,98 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         }
     }
 
+    /**
+     * An RBD backup is a chain of `rbd export-diff` streams with no link between them, so the
+     * agent has to recreate the image and replay every diff from the chain's full anchor up to the
+     * backup being restored, in that order.
+     */
+    @Test
+    public void testExecuteRestoresRbdVolumeByReplayingTheWholeDiffChain() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        // The provider sets both; the chain paths are what an rbddiff restore actually reads.
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStore.getUuid()).thenReturn("ceph-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol-uuid"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol-uuid"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol-uuid"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new java.util.ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            // executeCommandForExitValue is varargs, so Mockito hands the
+                            // arguments over either already expanded or still packed.
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                // `rbd info --format json` is the only piped command on this path.
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenReturn(new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}"));
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+            }
+        }
+
+        List<String> importedDiffs = new java.util.ArrayList<>();
+        boolean created = false;
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            if (args.contains("import-diff")) {
+                importedDiffs.add(args.get(args.indexOf("import-diff") + 1));
+            } else if (args.contains("create")) {
+                created = true;
+                Assert.assertTrue("the image must be recreated at its own size, in bytes",
+                        args.contains("1073741824B"));
+                Assert.assertTrue("no diff may be replayed before the image is recreated",
+                        importedDiffs.isEmpty());
+            }
+        }
+        Assert.assertTrue("the target image must be recreated before the chain is replayed", created);
+        Assert.assertEquals("the chain must be replayed full-anchor first",
+                Arrays.asList("/tmp/csbackup.abc123/test-vm/full/root.vol-uuid.rbddiff",
+                              "/tmp/csbackup.abc123/test-vm/inc1/root.vol-uuid.rbddiff"),
+                importedDiffs);
+    }
+
     @Test
     public void testExecuteWithVmExistsTrue() throws Exception {
         when(command.getVmName()).thenReturn("test-vm");

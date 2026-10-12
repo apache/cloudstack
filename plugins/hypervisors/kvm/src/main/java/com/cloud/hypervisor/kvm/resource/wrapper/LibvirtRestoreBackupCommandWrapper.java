@@ -24,11 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
@@ -62,6 +67,56 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     // so the test is robust to qemu-img version differences in human-readable output.
     private static final String QEMU_IMG_HAS_BACKING_COMMAND =
             "qemu-img info --output=json %s 2>/dev/null | grep -q '\"backing-filename\"'";
+    private static final String FORMAT_RBD_DIFF = "rbddiff";
+    private static final String FORMAT_QCOW2 = "qcow2";
+    // `rbd info --format json` reports the image size in bytes.
+    private static final Pattern RBD_INFO_SIZE = Pattern.compile("\"size\"\\s*:\\s*(\\d+)");
+    // Matches the features CloudStack itself creates RBD volumes with
+    // (LibvirtStorageAdaptor.RBD_FEATURES), so a restored image behaves like any other. object-map
+    // and fast-diff in particular are what make a later `rbd export-diff` cheap.
+    private static final List<String> RBD_IMAGE_FEATURES =
+            List.of("layering", "exclusive-lock", "object-map", "fast-diff", "deep-flatten");
+
+    /**
+     * How the backup being restored is laid out on the NAS.
+     *
+     * <p>A qcow2 backup is a single self-describing file per volume: incrementals were rebased onto
+     * their parent, so following the backing chain from the leaf is enough. An {@code rbddiff}
+     * backup is a chain of {@code rbd export-diff} streams with no link between them, so the whole
+     * chain travels with the command and every diff is replayed in order.</p>
+     *
+     * <p>Held as a value object rather than wrapper state: command wrappers are shared singletons
+     * and must stay stateless.</p>
+     */
+    private static final class BackupLayout {
+        private final String format;
+        private final List<String> chainDirs; // root-first; exactly one entry for qcow2
+
+        private BackupLayout(RestoreBackupCommand command) {
+            this.format = FORMAT_RBD_DIFF.equals(command.getBackupFormat()) ? FORMAT_RBD_DIFF : FORMAT_QCOW2;
+            List<String> dirs = command.getBackupChainPaths();
+            this.chainDirs = (dirs == null || dirs.isEmpty())
+                    ? Collections.singletonList(command.getBackupPath())
+                    : dirs;
+        }
+
+        private boolean isRbdDiff() {
+            return FORMAT_RBD_DIFF.equals(format);
+        }
+
+        /**
+         * Every on-NAS file that has to be read for one volume, oldest first. For qcow2 that is the
+         * single leaf file; for rbddiff, the full anchor followed by each incremental.
+         */
+        private List<String> filesFor(String mountDirectory, String backupFile, String diskType) {
+            String fileName = String.format("%s.%s.%s", diskType.toLowerCase(Locale.ROOT), backupFile, format);
+            List<String> files = new ArrayList<>(chainDirs.size());
+            for (String dir : chainDirs) {
+                files.add(String.format(FILE_PATH_PLACEHOLDER, String.format(FILE_PATH_PLACEHOLDER, mountDirectory, dir), fileName));
+            }
+            return files;
+        }
+    }
 
     private String getVolumeUuidFromPath(String volumePath, PrimaryDataStoreTO volumePool) {
         if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
@@ -80,7 +135,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     @Override
     public Answer execute(RestoreBackupCommand command, LibvirtComputingResource serverResource) {
         String vmName = command.getVmName();
-        String backupPath = command.getBackupPath();
         String backupRepoAddress = command.getBackupRepoAddress();
         String backupRepoType = command.getBackupRepoType();
         String mountOptions = command.getMountOptions();
@@ -93,6 +147,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         int timeout = command.getWait() > 0 ? command.getWait() * 1000 : serverResource.getCmdsTimeout();
         KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         List<String> backupFiles = command.getBackupFiles();
+        BackupLayout layout = new BackupLayout(command);
 
         String newVolumeId = null;
         try {
@@ -103,12 +158,12 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 String backupFile = backupFiles.get(0);
                 newVolumeId = getVolumeUuidFromPath(volumePath, volumePool);
                 Long size = command.getRestoreVolumeSizes().get(0);
-                restoreVolume(storagePoolMgr, backupPath, volumePool, volumePath, diskType, backupFile, size,
-                        new Pair<>(vmName, command.getVmState()), mountDirectory, timeout, mountTimeout);
+                restoreVolume(storagePoolMgr, volumePool, volumePath, diskType, backupFile, size,
+                        new Pair<>(vmName, command.getVmState()), mountDirectory, layout, timeout, mountTimeout);
             } else if (Boolean.TRUE.equals(vmExists)) {
-                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupPath, backupFiles, mountDirectory, timeout, mountTimeout);
+                restoreVolumesOfExistingVM(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backedVolumeUUIDs, backupFiles, mountDirectory, layout, timeout, mountTimeout);
             } else {
-                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupPath, backupFiles, mountDirectory, timeout, mountTimeout);
+                restoreVolumesOfDestroyedVMs(storagePoolMgr, restoreVolumePools, restoreVolumePaths, backupFiles, mountDirectory, layout, timeout, mountTimeout);
             }
         } catch (CloudRuntimeException e) {
             String errorMessage = e.getMessage() != null ? e.getMessage() : "";
@@ -118,18 +173,30 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return new BackupAnswer(command, true, newVolumeId);
     }
 
-    private void verifyBackupFile(String backupPath, String volUuid) {
-        if (!checkBackupPathExists(backupPath)) {
-            throw new CloudRuntimeException(String.format("Backup file for the volume [%s] does not exist.", volUuid));
+    /**
+     * Check every file the volume will be rebuilt from. qcow2 leaves are additionally run through
+     * {@code qemu-img check}; an {@code rbd export-diff} stream is not a disk image, so there the
+     * check is existence only — a truncated or corrupt diff is caught by {@code rbd import-diff},
+     * which refuses to apply it.
+     */
+    private void verifyBackupFiles(List<String> backupFiles, BackupLayout layout, String volUuid) {
+        for (String file : backupFiles) {
+            if (!checkBackupPathExists(file)) {
+                throw new CloudRuntimeException(String.format("Backup file for the volume [%s] does not exist: %s", volUuid, file));
+            }
         }
-        if (!checkBackupFileImage(backupPath)) {
+        if (layout.isRbdDiff()) {
+            return;
+        }
+        String leaf = backupFiles.get(backupFiles.size() - 1);
+        if (!checkBackupFileImage(leaf)) {
             throw new CloudRuntimeException(String.format("Backup qcow2 file for the volume [%s] is corrupt.", volUuid));
         }
     }
 
     private void restoreVolumesOfExistingVM(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> restoreVolumePools,
                                             List<String> restoreVolumePaths, List<String> backedVolumesUUIDs,
-                                            String backupPath, List<String> backupFiles, String mountDirectory, int timeout, Integer mountTimeout) {
+                                            List<String> backupFiles, String mountDirectory, BackupLayout layout, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
             for (int idx = 0; idx < restoreVolumePaths.size(); idx++) {
@@ -137,11 +204,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 String restoreVolumePath = restoreVolumePaths.get(idx);
                 String backupFile = backupFiles.get(idx);
                 String backupVolumeUuid = backedVolumesUUIDs.get(idx);
-                String fullPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
+                List<String> volumeBackupFiles = layout.filesFor(mountDirectory, backupFile, diskType);
                 diskType = "datadisk";
 
-                verifyBackupFile(fullPath, backupVolumeUuid);
-                if (!replaceVolumeWithBackup(storagePoolMgr, restoreVolumePool, restoreVolumePath, fullPath, timeout)) {
+                verifyBackupFiles(volumeBackupFiles, layout, backupVolumeUuid);
+                if (!replaceVolumeWithBackup(storagePoolMgr, restoreVolumePool, restoreVolumePath, volumeBackupFiles, layout, timeout)) {
                     throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", backupVolumeUuid));
                 }
             }
@@ -152,18 +219,19 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolumesOfDestroyedVMs(KVMStoragePoolManager storagePoolMgr, List<PrimaryDataStoreTO> volumePools,
-                                              List<String> volumePaths, String backupPath, List<String> backupFiles, String mountDirectory, int timeout, Integer mountTimeout) {
+                                              List<String> volumePaths, List<String> backupFiles, String mountDirectory,
+                                              BackupLayout layout, int timeout, Integer mountTimeout) {
         String diskType = "root";
         try {
             for (int i = 0; i < volumePaths.size(); i++) {
                 PrimaryDataStoreTO volumePool = volumePools.get(i);
                 String volumePath = volumePaths.get(i);
                 String backupFile = backupFiles.get(i);
-                String bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
+                List<String> volumeBackupFiles = layout.filesFor(mountDirectory, backupFile, diskType);
                 String volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
                 diskType = "datadisk";
-                verifyBackupFile(bkpPath, volumeUuid);
-                if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout)) {
+                verifyBackupFiles(volumeBackupFiles, layout, volumeUuid);
+                if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, volumeBackupFiles, layout, timeout)) {
                     throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", volumeUuid));
                 }
             }
@@ -173,15 +241,15 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    private void restoreVolume(KVMStoragePoolManager storagePoolMgr, String backupPath, PrimaryDataStoreTO volumePool, String volumePath, String diskType, String backupFile,
-                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, int timeout, Integer mountTimeout) {
-        String bkpPath;
+    private void restoreVolume(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String diskType, String backupFile,
+                               Long size, Pair<String, VirtualMachine.State> vmNameAndState, String mountDirectory, BackupLayout layout, int timeout, Integer mountTimeout) {
+        List<String> volumeBackupFiles;
         String volumeUuid;
         try {
-            bkpPath = getBackupPath(mountDirectory, backupPath, backupFile, diskType);
+            volumeBackupFiles = layout.filesFor(mountDirectory, backupFile, diskType);
             volumeUuid = getVolumeUuidFromPath(volumePath, volumePool);
-            verifyBackupFile(bkpPath, volumeUuid);
-            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPath, timeout, true, size)) {
+            verifyBackupFiles(volumeBackupFiles, layout, volumeUuid);
+            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, volumeBackupFiles, layout, timeout, true, size)) {
                 throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", volumeUuid));
 
             }
@@ -275,13 +343,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    private String getBackupPath(String mountDirectory, String backupPath, String backupFile, String diskType) {
-        String bkpPath = String.format(FILE_PATH_PLACEHOLDER, mountDirectory, backupPath);
-        String backupFileName = String.format("%s.%s.qcow2", diskType.toLowerCase(Locale.ROOT), backupFile);
-        bkpPath = String.format(FILE_PATH_PLACEHOLDER, bkpPath, backupFileName);
-        return bkpPath;
-    }
-
     private boolean checkBackupFileImage(String backupPath) {
         int exitValue = Script.runSimpleBashScriptForExitValue(String.format("qemu-img check %s", backupPath));
         return exitValue == 0;
@@ -292,11 +353,18 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         return exitValue == 0;
     }
 
-    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout) {
-        return replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, false, null);
+    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath,
+                                            List<String> backupFiles, BackupLayout layout, int timeout) {
+        return replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupFiles, layout, timeout, false, null);
     }
 
-    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume, Long size) {
+    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath,
+                                            List<String> backupFiles, BackupLayout layout, int timeout, boolean createTargetVolume, Long size) {
+        if (layout.isRbdDiff()) {
+            return restoreRbdImageFromDiffChain(storagePoolMgr, volumePool, volumePath, backupFiles, size);
+        }
+
+        String backupPath = backupFiles.get(backupFiles.size() - 1);
         if (List.of(Storage.StoragePoolType.RBD, Storage.StoragePoolType.Linstor).contains(volumePool.getPoolType())) {
             return replaceBlockDeviceWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, createTargetVolume, size);
         }
@@ -379,6 +447,173 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
 
         return true;
+    }
+
+    /**
+     * Rebuild an RBD image by replaying a chain of {@code rbd export-diff} streams into it: the
+     * chain's full anchor first, then each incremental in the order it was taken.
+     *
+     * <p>RBD images are raw and cannot hold a backing-file reference, so — unlike the qcow2 path —
+     * a diff carries no pointer to the one before it and the chain cannot be flattened by
+     * {@code qemu-img}. Ceph applies the deltas natively instead: each diff ends at the snapshot
+     * the backup was taken from, {@code import-diff} recreates that snapshot on the target, and the
+     * next diff in the chain is validated against it. A truncated or out-of-order diff is therefore
+     * rejected by Ceph rather than silently producing a half-restored image.</p>
+     *
+     * <p>The image is recreated first. A full diff only carries the extents that were allocated
+     * when it was taken, so any block still allocated in the current image would otherwise show
+     * through the restore as stale data. Recreating the image also drops any RBD snapshots it
+     * carried, including CloudStack volume snapshots kept on primary storage — a restore rewinds
+     * the volume wholesale, and there is no way to guarantee the first requirement while keeping
+     * snapshots of content that is being replaced.</p>
+     */
+    private boolean restoreRbdImageFromDiffChain(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool,
+                                                 String volumePath, List<String> diffFiles, Long size) {
+        if (!Storage.StoragePoolType.RBD.equals(volumePool.getPoolType())) {
+            logger.error("Backup [{}] holds RBD diffs but volume [{}] is on {} storage; it cannot be restored there.",
+                    diffFiles.get(0), volumePath, volumePool.getPoolType());
+            return false;
+        }
+        KVMStoragePool pool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
+        Path keyFile = null;
+        try {
+            keyFile = writeCephKeyFile(pool.getAuthSecret());
+            List<String> connection = rbdConnectionArgs(pool, keyFile);
+            // Volume paths of RBD volumes are already "<ceph pool>/<image>".
+            String image = volumePath;
+
+            // Prefer the current image's own size: it is what the VM's disk was sized to. Only a
+            // restore that creates a brand new volume has no image to read it from.
+            Long imageSize = rbdImageSize(connection, image);
+            if (imageSize == null) {
+                imageSize = size;
+            }
+            if (imageSize == null || imageSize <= 0) {
+                logger.error("Unable to determine the size to recreate RBD image {} with", image);
+                return false;
+            }
+
+            if (!recreateRbdImage(connection, image, imageSize, rbdDataPool(pool))) {
+                return false;
+            }
+
+            for (String diff : diffFiles) {
+                logger.debug("Applying backup diff {} to RBD image {}", diff, image);
+                if (Script.executeCommandForExitValue(rbdCommand(connection, "import-diff", diff, image)) != 0) {
+                    logger.error("Failed to apply backup diff {} to RBD image {}", diff, image);
+                    return false;
+                }
+            }
+
+            // The snapshots import-diff recreated only existed to chain the diffs together; the
+            // restored volume should look like any other, so drop them.
+            if (Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image)) != 0) {
+                logger.warn("Failed to purge the snapshots left behind by the restore of RBD image {}", image);
+            }
+            logger.debug("Successfully restored RBD image {} from {} backup diff(s)", image, diffFiles.size());
+            return true;
+        } catch (IOException e) {
+            logger.error("Failed to prepare the Ceph credentials needed to restore volume [{}]", volumePath, e);
+            return false;
+        } finally {
+            deleteCephKeyFile(keyFile);
+        }
+    }
+
+    /**
+     * Hand the cephx secret to the {@code rbd} CLI through a 0600 temporary file rather than an
+     * argument, so it never shows up in the host's process list.
+     */
+    private Path writeCephKeyFile(String authSecret) throws IOException {
+        if (StringUtils.isBlank(authSecret)) {
+            return null;
+        }
+        Path keyFile = Files.createTempFile("csrestore-ceph-", ".key",
+                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        Files.write(keyFile, authSecret.getBytes(StandardCharsets.UTF_8));
+        return keyFile;
+    }
+
+    private void deleteCephKeyFile(Path keyFile) {
+        if (keyFile == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(keyFile);
+        } catch (IOException e) {
+            logger.warn("Failed to delete the temporary Ceph key file [{}].", keyFile, e);
+        }
+    }
+
+    private List<String> rbdConnectionArgs(KVMStoragePool pool, Path keyFile) {
+        List<String> args = new ArrayList<>();
+        if (StringUtils.isNotBlank(pool.getSourceHost())) {
+            List<String> monitors = new ArrayList<>();
+            for (String host : pool.getSourceHost().split(",")) {
+                host = host.trim().replace("[", "").replace("]", "");
+                monitors.add(pool.getSourcePort() > 0 ? host + ":" + pool.getSourcePort() : host);
+            }
+            args.add("-m");
+            args.add(String.join(",", monitors));
+        }
+        if (StringUtils.isNotBlank(pool.getAuthUserName())) {
+            args.add("--id");
+            args.add(pool.getAuthUserName());
+            if (keyFile != null) {
+                args.add("--keyfile");
+                args.add(keyFile.toString());
+            }
+        }
+        return args;
+    }
+
+    private String[] rbdCommand(List<String> connection, String... arguments) {
+        List<String> command = new ArrayList<>();
+        command.add(Script.getExecutableAbsolutePath("rbd"));
+        command.addAll(connection);
+        command.addAll(Arrays.asList(arguments));
+        return command.toArray(new String[0]);
+    }
+
+    /** Size of {@code image} in bytes, or {@code null} when the image does not exist. */
+    private Long rbdImageSize(List<String> connection, String image) {
+        Pair<Integer, String> result = Script.executePipedCommands(
+                Collections.singletonList(rbdCommand(connection, "info", image, "--format", "json")), 0);
+        if (result.first() == null || result.first() != 0 || result.second() == null) {
+            return null;
+        }
+        Matcher matcher = RBD_INFO_SIZE.matcher(result.second());
+        return matcher.find() ? Long.valueOf(matcher.group(1)) : null;
+    }
+
+    private boolean recreateRbdImage(List<String> connection, String image, long sizeBytes, String dataPool) {
+        // `rbd rm` refuses to delete an image that still has snapshots, and a restore target
+        // normally carries the anchor snapshot of the backup chain it belongs to.
+        Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image));
+        if (Script.executeCommandForExitValue(rbdCommand(connection, "rm", image)) != 0
+                && rbdImageSize(connection, image) != null) {
+            logger.error("Failed to remove RBD image {} before restoring it", image);
+            return false;
+        }
+        List<String> create = new ArrayList<>(Arrays.asList("create", image, "--size", sizeBytes + "B"));
+        for (String feature : RBD_IMAGE_FEATURES) {
+            create.add("--image-feature");
+            create.add(feature);
+        }
+        if (StringUtils.isNotBlank(dataPool)) {
+            create.add("--data-pool");
+            create.add(dataPool);
+        }
+        if (Script.executeCommandForExitValue(rbdCommand(connection, create.toArray(new String[0]))) != 0) {
+            logger.error("Failed to recreate RBD image {} with size {} bytes", image, sizeBytes);
+            return false;
+        }
+        return true;
+    }
+
+    private String rbdDataPool(KVMStoragePool pool) {
+        Map<String, String> details = pool.getDetails();
+        return details == null ? null : details.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
     }
 
     private boolean attachVolumeToVm(KVMStoragePoolManager storagePoolMgr, String vmName, PrimaryDataStoreTO volumePool, String volumePath) {

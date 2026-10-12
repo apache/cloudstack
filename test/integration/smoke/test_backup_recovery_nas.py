@@ -352,18 +352,18 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Backup objects expose `type`; for chained backups it's "INCREMENTAL", else "FULL".
         return getattr(backup, 'type', 'FULL') or 'FULL'
 
-    def _require_incremental_capable_storage(self):
+    def _is_rbd_storage(self):
         """
-        Incremental NAS backups rely on QEMU dirty bitmaps / libvirt checkpoints, which
-        only exist on file-based qcow2 storage -- see
-        NASBackupProvider.allVolumesOnCheckpointCapableStorage(), which forces every VM
-        on RBD/Ceph (or Linstor) onto the legacy full-only path server-side. On such
-        storage every backup comes back FULL regardless of cadence, so these chain/type
-        assertions can't pass (and some would pass vacuously without exercising the
-        chain logic at all). Skip rather than fail when running against RBD.
+        Whether this environment's primary storage is Ceph/RBD, which uses a different
+        incremental mechanism: NASBackupProvider.getIncrementalFlavor() picks RBD snapshots +
+        `rbd export-diff` there, instead of the QEMU dirty bitmaps / libvirt checkpoints it uses
+        on file-based qcow2 storage (raw RBD images have nowhere to persist a bitmap).
+
+        Both mechanisms produce the same FULL/INCREMENTAL chain semantics, so the chain tests
+        run on either. Only the handful of assertions that are specific to one mechanism branch
+        on this.
         """
-        if self.storage_pool.type.lower() == 'rbd':
-            self.skipTest("Incremental backups are not supported on RBD/Ceph primary Storage")
+        return self.storage_pool.type.lower() == 'rbd'
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_incremental_chain_cadence(self):
@@ -371,7 +371,6 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         With nas.backup.full.every=3, the sequence of backups should be
         FULL, INCREMENTAL, INCREMENTAL, FULL, INCREMENTAL, ...
         """
-        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(3)
@@ -416,12 +415,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         saved checkpoint XML) rather than a fresh create — a fresh create fails with
         "Bitmap already exists", and qemu-img cannot drop the bitmap on a running disk.
 
+        On Ceph/RBD the anchor is an RBD snapshot that lives in the cluster rather than in the
+        QEMU process, so a restart cannot disturb it; the same end-to-end assertions apply.
+
         How this was reproduced manually on a libvirt 10.0.0 host, and what this test
         automates:
             FULL + marker1  ->  stop/start the VM (wipes the checkpoint registry)
             ->  INCREMENTAL + marker2  ->  restore the tip  ->  both markers present.
         """
-        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         # High cadence so the post-restart backup is INCREMENTAL, not a periodic FULL.
@@ -494,7 +495,6 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         Take FULL + 2 INCREMENTAL backups, each with a marker file. Restore from the
         latest incremental and verify all three markers are present (chain flatten).
         """
-        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -544,7 +544,6 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         The chain repair should rebase INC2 onto FULL, and the final restore
         should still produce a working VM with all expected blocks.
         """
-        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -597,7 +596,6 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         FULL is hidden from the backup list while its child survives, and it is
         physically swept once the last descendant is deleted.
         """
-        self._require_incremental_capable_storage()
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(5)
@@ -634,8 +632,14 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         When a backup is requested while the VM is stopped, even if the chain cadence
         would call for an incremental, the agent must fall back to a full and start a
         new chain. The incrementalFallback flag should be reflected in backup.type=FULL.
+
+        Specific to the qcow2 mechanism: libvirt's backup-begin needs a live QEMU process to
+        hold the dirty bitmap. RBD has the opposite behaviour, covered by
+        test_stopped_rbd_vm_keeps_incremental_cadence.
         """
-        self._require_incremental_capable_storage()
+        if self._is_rbd_storage():
+            self.skipTest("On RBD a stopped VM keeps its incremental cadence; "
+                          "see test_stopped_rbd_vm_keeps_incremental_cadence")
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
         original_full_every = self._get_full_every()
         self._set_full_every(2)  # next backup after the first should be incremental
@@ -660,6 +664,54 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             for b in reversed(backups):
                 Backup.delete(self.apiclient, b.id)
         finally:
+            self._set_full_every(original_full_every)
+            self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_stopped_rbd_vm_keeps_incremental_cadence(self):
+        """
+        The RBD counterpart of test_stopped_vm_falls_back_to_full.
+
+        An RBD chain is anchored on an `rbd snap`, which is created inside Ceph against the image
+        itself. Unlike a QEMU dirty bitmap it needs no live QEMU process, so stopping the VM must
+        not break the chain: with nas.backup.full.every=2 the backup taken while the VM is stopped
+        is still an INCREMENTAL, and restoring it brings back data written before the stop.
+        """
+        if not self._is_rbd_storage():
+            self.skipTest("Test is specific to Ceph/RBD primary storage")
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        original_full_every = self._get_full_every()
+        self._set_full_every(2)  # the backup after the first should be an incremental
+        backups = []
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            ssh_client_vm.execute(self._sudo("echo rbd-stopped-marker > /root/rbd_stopped_marker.txt; sync"))
+
+            Backup.create(self.apiclient, self.vm.id, "srv_full")
+            time.sleep(3)
+
+            self.vm.stop(self.apiclient)
+            time.sleep(5)
+            Backup.create(self.apiclient, self.vm.id, "srv_inc")
+            time.sleep(3)
+
+            backups = Backup.list(self.apiclient, self.vm.id)
+            backups.sort(key=lambda b: b.created)
+            self.assertEqual(len(backups), 2)
+            self.assertEqual(self._backup_type(backups[0]).upper(), 'FULL')
+            self.assertEqual(self._backup_type(backups[1]).upper(), 'INCREMENTAL',
+                "An RBD snapshot anchor survives the VM being stopped, so the cadence must hold")
+
+            # Restoring the incremental replays the full diff and then the incremental one.
+            Backup.restoreVM(self.apiclient, backups[1].id)
+            self.vm.start(self.apiclient)
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True, keyPairFileLocation=self.ssh_key_file)
+            marker = ssh_client_vm.execute(self._sudo("cat /root/rbd_stopped_marker.txt"))
+            self.assertIn("rbd-stopped-marker", "".join(marker),
+                "Data written before the stop must survive a restore from the stopped-VM incremental")
+        finally:
+            for b in reversed(backups):
+                Backup.delete(self.apiclient, b.id)
             self._set_full_every(original_full_every)
             self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 

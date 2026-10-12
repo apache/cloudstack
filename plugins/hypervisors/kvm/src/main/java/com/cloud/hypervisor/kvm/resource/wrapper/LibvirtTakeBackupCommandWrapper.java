@@ -52,6 +52,11 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
+    // Ceph/RBD chains: anchored on an `rbd snap` per cycle and exported with `rbd export-diff`
+    // instead of a libvirt checkpoint + push backup. bitmapNew/bitmapParent carry RBD snapshot
+    // names rather than QEMU bitmap names; no parent file paths, nothing is rebased.
+    private static final String MODE_RBD_FULL = "rbd-full";
+    private static final String MODE_RBD_INCREMENTAL = "rbd-incremental";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -206,6 +211,19 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         if (MODE_LEGACY_FULL.equals(mode)) {
             return null; // feature-off full backup, no bitmap or chain args expected
         }
+        if (MODE_RBD_FULL.equals(mode) || MODE_RBD_INCREMENTAL.equals(mode)) {
+            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+                return mode + " mode requires bitmapNew (the RBD snapshot to create as the chain anchor)";
+            }
+            if (MODE_RBD_INCREMENTAL.equals(mode)
+                    && (command.getBitmapParent() == null || command.getBitmapParent().isEmpty())) {
+                return "rbd-incremental mode requires bitmapParent (the RBD snapshot to diff against)";
+            }
+            if (command.getVolumePaths() == null || command.getVolumePaths().isEmpty()) {
+                return mode + " mode requires the VM's volume paths";
+            }
+            return null;
+        }
         return "Unknown backup mode: " + mode;
     }
 
@@ -213,6 +231,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      * Sum the per-disk size lines emitted by nasbackup.sh. Single-volume mode emits one
      * line containing just the byte count; multi-volume mode emits one line per disk
      * whose first whitespace-separated token is the byte count.
+     *
+     * <p>Lines that do not start with a number are skipped rather than aborting the parse: the
+     * script's stdout also carries whatever the mount produced, and losing an otherwise complete
+     * backup over a stray warning line would be worse than reporting a size of 0.</p>
      */
     private long parseBackupSize(String stdout, List<String> diskPaths) {
         long backupSize = 0L;
@@ -223,7 +245,12 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         } else {
             for (String line : stdout.split("\n")) {
-                backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
+                String sizeToken = line.trim().split("\\s+")[0];
+                if (!sizeToken.matches("\\d+")) {
+                    logger.debug("Ignoring non-size line in nasbackup.sh output: {}", line);
+                    continue;
+                }
+                backupSize = backupSize + Long.parseLong(sizeToken);
             }
         }
         return backupSize;
