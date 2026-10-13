@@ -100,6 +100,9 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.vm.bootgroup.InstanceBootGroupMembershipGuard;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -213,6 +216,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.NicNetworkMapVO;
@@ -491,6 +496,18 @@ public class UserVmManagerImplTest {
 
     @Mock
     private AutoScaleManager autoScaleManager;
+
+    @Mock
+    private InstanceBootGroupMembershipGuard instanceBootGroupMembershipGuard;
+
+    @Mock
+    private InstanceGroupDao _vmGroupDao;
+
+    @Mock
+    private InstanceGroupVMMapDao _groupVMMapDao;
+
+    @Mock
+    private AnnotationDao annotationDao;
 
     @Mock
     private UUIDManager uuidMgr;
@@ -4000,6 +4017,50 @@ public class UserVmManagerImplTest {
                 Mockito.verify(backupManager).checkAndRemoveBackupOfferingBeforeExpunge(vm);
             }
         }
+    }
+
+    @Test
+    public void testDestroyVmBlockedWhenPartOfBootGroup() {
+        Long vmId = 3L;
+
+        ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+
+            DestroyVMCmd cmd = mock(DestroyVMCmd.class);
+            when(cmd.getId()).thenReturn(vmId);
+
+            UserVmVO vm = mock(UserVmVO.class);
+            when(vm.getId()).thenReturn(vmId);
+            when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+            when(vm.getUserVmType()).thenReturn("User");
+            when(userVmDao.findById(vmId)).thenReturn(vm);
+
+            Mockito.doThrow(new InvalidParameterValueException("VM is a member of an instance boot group"))
+                    .when(instanceBootGroupMembershipGuard).validateVmNotInBootGroup(vm);
+
+            assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.destroyVm(cmd, false));
+
+            Mockito.verify(userVmManagerImpl, never()).stopVirtualMachine(anyLong(), anyBoolean());
+        }
+    }
+
+    @Test
+    public void testDeleteVmGroupCascadesBootGroupMembershipCleanup() {
+        long groupId = 55L;
+        InstanceGroupVO group = mock(InstanceGroupVO.class);
+        when(group.getUuid()).thenReturn("group-uuid");
+        when(_vmGroupDao.findById(groupId)).thenReturn(group);
+        when(_groupVMMapDao.listByGroupId(groupId)).thenReturn(new ArrayList<>());
+        when(_vmGroupDao.remove(groupId)).thenReturn(true);
+
+        boolean result = userVmManagerImpl.deleteVmGroup(groupId);
+
+        assertTrue(result);
+        Mockito.verify(instanceBootGroupMembershipGuard).removeInstanceGroupBootGroupMembershipIfPresent(groupId);
+        Mockito.verify(annotationDao).removeByEntityType(AnnotationService.EntityType.INSTANCE_GROUP.name(), "group-uuid");
+        Mockito.verify(_vmGroupDao).remove(groupId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
