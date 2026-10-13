@@ -30,15 +30,11 @@
 # of volumes: one argument of a command is limited to 128 KiB, which is about 3500
 # volumes. The file has the uuids separated by commas or by lines.
 #
-# The cephx key is not an argument, as it would be visible in the process list:
-# it is read from the environment variable CEPH_KEY, and is given to rados and
-# rbd in the environment variable CEPH_ARGS.
-#
-# The watchers of the volumes are listed over one connection to the Ceph cluster
-# with the Python bindings of librados and librbd (python3-rados and python3-rbd),
-# which is much faster than "rbd status" for each volume when a host has many
-# volumes. If the bindings are not installed or can not be used, "rbd status" is
-# run for each volume instead.
+# The objects and the watchers are read and written over one connection to the Ceph
+# cluster with the Python bindings of librados and librbd (python3-rados and
+# python3-rbd), which is much faster than "rbd status" for each volume when a host has
+# many volumes, see kvmha_rbd.py. The cephx key is not an argument, as it would be
+# visible in the process list: it is read from the environment variable CEPH_KEY.
 #
 # Exit status: 0 with ALIVE or DEAD in the output, 2 if the arguments are not
 # valid or if the state of the host could not be found out, which is not a DEAD host.
@@ -46,109 +42,16 @@
 import argparse
 import os
 import re
-import subprocess
 import sys
 import time
 
-try:
-    import rados
-    import rbd
-except ImportError:
-    rados = None
-    rbd = None
-
-KEY_ENV = "CEPH_KEY"
-CONNECT_TIMEOUT = 60
+from kvmha_rbd import BindingsError, Ceph, CephError, WatchersError, KEY_ENV, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
     def error(self, message):
         self.print_usage(sys.stderr)
         sys.exit(1)
-
-
-def ceph(tool, args, env, data=None):
-    """Runs rados or rbd and returns its exit status and its output."""
-    try:
-        result = subprocess.run([tool] + args, input=data, stdout=subprocess.PIPE,
-                                stderr=subprocess.DEVNULL, env=env, universal_newlines=True)
-    except OSError:
-        return 127, ""
-    return result.returncode, result.stdout
-
-
-class WatchersError(Exception):
-    """The watchers of a volume could not be listed: it is not known whether the host is alive."""
-
-
-class BindingsWatchers:
-    """Lists the watchers of volumes over one connection, with the Python bindings of librados and librbd."""
-
-    def __init__(self, mon_hosts, pool, user, key):
-        if rados is None or rbd is None or not hasattr(rbd.Image, "watchers_list"):
-            raise RuntimeError("the Python bindings of librados and librbd can not be used")
-        conf = {"mon_host": mon_hosts}
-        if key:
-            conf["key"] = key
-        self.cluster = rados.Rados(rados_id=user if user else None, conf=conf)
-        self.ioctx = None
-        try:
-            self.cluster.connect(timeout=CONNECT_TIMEOUT)
-            self.ioctx = self.cluster.open_ioctx(pool)
-        except Exception:
-            self.close()
-            raise
-
-    def has_watcher(self, image):
-        try:
-            with rbd.Image(self.ioctx, image, read_only=True) as volume:
-                return any(True for _ in volume.watchers_list())
-        except (rados.Error, rbd.Error):
-            raise WatchersError(image)
-
-    def close(self):
-        if self.ioctx is not None:
-            self.ioctx.close()
-        self.cluster.shutdown()
-
-
-class CommandWatchers:
-    """Lists the watchers of a volume with "rbd status", which is run for each volume."""
-
-    def __init__(self, pool, options, env):
-        self.pool = pool
-        self.options = options
-        self.env = env
-
-    def has_watcher(self, image):
-        status, watchers = ceph("rbd", ["status", self.pool + "/" + image] + self.options, self.env)
-        if status != 0:
-            raise WatchersError(image)
-        # "Watchers: none", or a line "watcher=<address> client.<id> cookie=<cookie>" per watcher
-        return re.search(r"^\s*watcher=", watchers, re.MULTILINE) is not None
-
-    def close(self):
-        pass
-
-
-def find_watcher(images, pool, mon_hosts, user, key, options, env):
-    """Returns True if one of the volumes has a watcher, raises WatchersError if it is not known."""
-    try:
-        watchers = BindingsWatchers(mon_hosts, pool, user, key)
-    except Exception:
-        watchers = None
-    if watchers is not None:
-        try:
-            return any(watchers.has_watcher(image) for image in images)
-        except WatchersError:
-            raise
-        except Exception:
-            # not the volume, but the bindings: use the command instead
-            pass
-        finally:
-            watchers.close()
-    watchers = CommandWatchers(pool, options, env)
-    return any(watchers.has_watcher(image) for image in images)
 
 
 def alive():
@@ -195,15 +98,20 @@ def main():
         except OSError:
             sys.exit(2)
 
-    env = dict(os.environ)
-    options = ["--mon-host", args.mon_hosts]
-    if args.user:
-        options += ["--id", args.user]
-        env["CEPH_ARGS"] = (env.get("CEPH_ARGS", "") + " --key=" + key).strip()
-    rados_options = ["-p", args.pool] + options
+    silence_standard_error()
+    try:
+        ceph = Ceph(args.mon_hosts, args.pool, args.user, key, watchers=True)
+    except BindingsError as error:
+        fail("Unable to check the VM activity, %s" % error)
+    try:
+        check(ceph, args.pool, args.host, volumes, suspect_time)
+    finally:
+        ceph.close()
 
-    heartbeat_object = "KVMHA-hb-" + args.host
-    activity_object = "KVMHA-ac-" + args.host
+
+def check(ceph, pool, host, volumes, suspect_time):
+    heartbeat_object = "KVMHA-hb-" + host
+    activity_object = "KVMHA-ac-" + host
 
     # the reason why the heartbeat did not show that the host is alive, added to the messages about a DEAD host
     heartbeat_note = ""
@@ -214,17 +122,17 @@ def main():
 
     # First check: heartbeat object, same as kvmheartbeat_rbd.py
     now = int(time.time())
-    status, output = ceph("rados", rados_options + ["get", heartbeat_object, "-"], env)
-    heartbeat = output.strip()
-    if status != 0:
+    try:
+        heartbeat = ceph.read(heartbeat_object).strip()
+        if not re.fullmatch(r"[0-9]+", heartbeat):
+            heartbeat_note = " The RADOS object [%s] does not hold a heartbeat." % heartbeat_object
+        else:
+            age = now - int(heartbeat)
+            if age < 61:
+                alive()
+            heartbeat_note = " The heartbeat in RADOS object [%s] is [%d] seconds old." % (heartbeat_object, age)
+    except CephError:
         heartbeat_note = " The RADOS object [%s] could not be read, it does not exist or Ceph can not be reached." % heartbeat_object
-    elif not re.fullmatch(r"[0-9]+", heartbeat):
-        heartbeat_note = " The RADOS object [%s] does not hold a heartbeat." % heartbeat_object
-    else:
-        age = now - int(heartbeat)
-        if age < 61:
-            alive()
-        heartbeat_note = " The heartbeat in RADOS object [%s] is [%d] seconds old." % (heartbeat_object, age)
 
     if not volumes.strip():
         dead("empty UUIDList")
@@ -236,27 +144,27 @@ def main():
     images = ["".join(image.split()) for image in images]
     images = [image for image in images if image]
     try:
-        has_watcher = find_watcher(images, args.pool, args.mon_hosts, args.user, key, options, env)
+        has_watcher = any(ceph.has_watcher(image) for image in images)
     except WatchersError as error:
         # when the watchers can not be listed, it is unknown whether the host is alive: the script fails,
         # which is not a DEAD host
-        fail("Unable to get the watchers of the image [%s/%s]" % (args.pool, error))
+        fail("Unable to get the watchers of the image [%s/%s]" % (pool, error))
     latest_update_time = now if has_watcher else 0
 
     state = ""
-    status, _ = ceph("rados", rados_options + ["stat", activity_object], env)
-    if status == 0:
-        status, state = ceph("rados", rados_options + ["get", activity_object, "-"], env)
-        if status != 0:
-            fail("Unable to read the RADOS object [%s]" % activity_object)
+    try:
+        if ceph.exists(activity_object):
+            state = ceph.read(activity_object)
+    except CephError:
+        fail("Unable to read the RADOS object [%s]" % activity_object)
     # a state which is not "<suspect time>:<update time>" (with an optional third field of older versions)
     # is ignored, as if there was none
     match = re.fullmatch(r"([0-9]+):([0-9]+)(:[0-9]+)?", state.strip())
 
-    status, _ = ceph("rados", rados_options + ["put", activity_object, "-"], env,
-                     "%d:%d\n" % (suspect_time, latest_update_time))
-    # without the new state the next check would use an old one, so it is not known whether the host is alive
-    if status != 0:
+    try:
+        ceph.write(activity_object, "%d:%d\n" % (suspect_time, latest_update_time))
+    except CephError:
+        # without the new state the next check would use an old one, so it is not known whether the host is alive
         fail("Unable to write the RADOS object [%s]" % activity_object)
 
     if not match:
@@ -274,8 +182,8 @@ def main():
              "[latestUpdateTime -gt SuspectTime] has not been satisfied" % activity_object)
     if latest_update_time > last_update_time:
         alive()
-    dead("RADOS object [%s] exists and conditions [suspectTimeDiff -lt 0] and [latestUpdateTime -gt SuspectTime] "
-         "have not been satisfied" % activity_object)
+    dead("RADOS object [%s] exists, condition [suspectTimeDiff -lt 0] was not satisfied and "
+         "[latestUpdateTime -gt lastUpdateTime] has not been satisfied" % activity_object)
 
 
 if __name__ == "__main__":

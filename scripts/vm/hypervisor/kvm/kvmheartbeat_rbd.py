@@ -24,9 +24,9 @@
 # Any host with a working path to the Ceph cluster can write/read this object,
 # which gives the same semantics as the NFS/SharedMountPoint heartbeat file.
 #
-# The cephx key is not an argument, as it would be visible in the process list:
-# it is read from the environment variable CEPH_KEY, and is given to rados in
-# the environment variable CEPH_ARGS.
+# The object is written and read with the Python bindings of librados
+# (python3-rados), see kvmha_rbd.py. The cephx key is not an argument, as it would be visible in the process list: it is
+# read from the environment variable CEPH_KEY.
 
 import argparse
 import os
@@ -35,23 +35,13 @@ import subprocess
 import sys
 import time
 
-KEY_ENV = "CEPH_KEY"
+from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
     def error(self, message):
         self.print_usage(sys.stderr)
         sys.exit(1)
-
-
-def rados(args, env, data=None):
-    """Runs rados and returns its exit status and its output."""
-    try:
-        result = subprocess.run(["rados"] + args, input=data, stdout=subprocess.PIPE,
-                                stderr=subprocess.DEVNULL, env=env, universal_newlines=True)
-    except OSError:
-        return 127, ""
-    return result.returncode, result.stdout
 
 
 def main():
@@ -78,45 +68,53 @@ def main():
         sys.exit(1)
 
     if args.cleanup:
-        print_and_reboot()
+        reboot()
         return
 
-    env = dict(os.environ)
-    options = ["-p", args.pool, "--mon-host", args.mon_hosts]
-    if args.user:
-        options += ["--id", args.user]
-        env["CEPH_ARGS"] = (env.get("CEPH_ARGS", "") + " --key=" + key).strip()
-
     heartbeat_object = "KVMHA-hb-" + args.host
+    silence_standard_error()
+    try:
+        ceph = Ceph(args.mon_hosts, args.pool, args.user, key)
+    except BindingsError as error:
+        if args.check:
+            # not a proof that the host is dead, so DEAD is not reported
+            print("=====> Unable to check the heartbeat, %s <======" % error)
+            sys.exit(2)
+        sys.exit(1)
+    try:
+        if args.check:
+            check(ceph, heartbeat_object, args.pool, int(args.interval))
+            return
+        try:
+            ceph.write(heartbeat_object, "%d\n" % time.time())
+        except CephError:
+            sys.exit(1)
+    finally:
+        ceph.close()
 
-    if args.check:
-        sys.exit(check(options, env, heartbeat_object, args.pool, int(args.interval)))
 
-    status, _ = rados(options + ["put", heartbeat_object, "-"], env, "%d\n" % time.time())
-    sys.exit(0 if status == 0 else 1)
-
-
-def check(options, env, heartbeat_object, pool, interval):
+def check(ceph, heartbeat_object, pool, interval):
     now = int(time.time())
-    status, output = rados(options + ["get", heartbeat_object, "-"], env)
-    heartbeat = output.strip()
+    try:
+        heartbeat = ceph.read(heartbeat_object).strip()
+    except CephError:
+        heartbeat = ""
     if not re.fullmatch(r"[0-9]+", heartbeat):
         # Either the RADOS object doesn't exist yet (host never wrote a heartbeat)
         # or the Ceph cluster can't be reached right now. Either way we can't
         # confirm the host is alive, so fail safe and report it as DEAD.
         print("=====> Considering host as DEAD because RADOS object [%s] in pool [%s] could not be read <======"
               % (heartbeat_object, pool))
-        return 0
+        return
     age = now - int(heartbeat)
     if age > interval:
         print("=====> Considering host as DEAD because last write to RADOS object [%s] in pool [%s] was [%d] seconds ago, "
               "but the max interval is [%d] <======" % (heartbeat_object, pool, age, interval))
     else:
         print("=====> ALIVE <=====")
-    return 0
 
 
-def print_and_reboot():
+def reboot():
     subprocess.call(["/usr/bin/logger", "-t", "heartbeat",
                      "kvmheartbeat_rbd.py will reboot system because it was unable to write the heartbeat to the Ceph RBD storage."])
     # not waited for, the storage may be hanging
