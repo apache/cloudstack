@@ -191,9 +191,19 @@ public interface TemplateManager {
      * whether or not ISOs are attached to them.
      *
      * @param vm the Instance
-     * @return the number of CD-ROM devices
+     * @return the number of CD-ROM devices, including the one of the config drive ISO if the Instance uses config drive
      */
     int getVmCdromCount(VirtualMachine vm);
+
+    /**
+     * Returns the device id of the config drive ISO of the Instance. The config drive ISO is attached as the CD-ROM
+     * following the ones of the ISOs, so it is {@link #CDROM_PRIMARY_DEVICE_SEQ} plus the number of the CD-ROMs of the ISOs.
+     *
+     * @param vm the Instance
+     * @param hostId the host the Instance is (to be) deployed on
+     * @return the device id of the config drive ISO
+     */
+    int getConfigDriveDeviceId(VirtualMachine vm, Long hostId);
 
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";

@@ -155,6 +155,9 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
@@ -219,6 +222,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -228,9 +232,11 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmIsoMapVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -264,6 +270,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private DataCenterDao _dcDao;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private NetworkModel _networkModel;
+    @Inject
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private VmIsoMapDao _vmIsoMapDao;
     @Inject
@@ -719,14 +731,53 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getType() != VirtualMachine.Type.User) {
             return 1;
         }
+        Long hostId = hostIdForVm(vm);
+        boolean configDriveUsed = isConfigDriveUsed(vm);
         // all the CD-ROM devices supported by the host are defined for the Instance at boot, even if the configured
         // maximum number of ISOs (vm.iso.max.count) is lower or is increased later
-        int cdromCount = advertisedCdromCap(hostIdForVm(vm));
+        int cdromCount = advertisedCdromCap(hostId);
+        int isoSlots = getIsoSlotCount(vm, hostId, configDriveUsed);
+        // the config drive ISO is attached as the CD-ROM following the ones of the ISOs
+        return Math.max(cdromCount, isoSlots + (configDriveUsed ? 1 : 0));
+    }
+
+    @Override
+    public int getConfigDriveDeviceId(VirtualMachine vm, Long hostId) {
+        // the config drive ISO is attached as the CD-ROM following the ones of the ISOs
+        return CDROM_PRIMARY_DEVICE_SEQ + getIsoSlotCount(vm, hostId, true);
+    }
+
+    /**
+     * The number of CD-ROM devices of the Instance which are used for ISOs, i.e. the ones allocated at boot.
+     */
+    private int getIsoSlotCount(VirtualMachine vm, Long hostId, boolean configDriveUsed) {
         UserVmVO userVm = _userVmDao.findById(vm.getId());
-        if (userVm != null) {
-            cdromCount = Math.max(cdromCount, slotsNeededFor(loadAttachedIsoSlots(userVm)));
+        int slotsNeeded = userVm != null ? slotsNeededFor(loadAttachedIsoSlots(userVm)) : 0;
+        return Math.max(effectiveMaxCdroms(vm, hostId, configDriveUsed), slotsNeeded);
+    }
+
+    /**
+     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
+     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
+     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
+     * never been started.
+     */
+    boolean isConfigDriveUsed(VirtualMachine vm) {
+        if (_vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            return true;
         }
-        return cdromCount;
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        if (CollectionUtils.isEmpty(nics)) {
+            return false;
+        }
+        for (NicVO nic : nics) {
+            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
+                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Long singleStoragePoolId(DeployDestination dest) {
@@ -1588,16 +1639,28 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
+        return effectiveMaxCdroms(vm, hostId, isConfigDriveUsed(vm));
+    }
+
+    /**
+     * The maximum number of ISOs which can be attached to the Instance. The config drive ISO, if any, is attached as a
+     * CD-ROM as well, and therefore takes one of the CD-ROM devices supported by the host.
+     */
+    int effectiveMaxCdroms(VirtualMachine vm, Long hostId, boolean configDriveUsed) {
         HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
         Long clusterId = host != null ? host.getClusterId() : null;
         int configuredCap = VmIsoMaxCount.valueIn(clusterId);
         int hypervisorCap = advertisedCdromCap(hostId);
+        int effectiveMax = configuredCap;
         if (configuredCap > hypervisorCap) {
             logger.warn("{} is set to {} but the placement host supports a maximum of {} CD-ROM(s) per Instance. Clamping to {}.",
                     VmIsoMaxCount.key(), configuredCap, hypervisorCap, hypervisorCap);
-            return hypervisorCap;
+            effectiveMax = hypervisorCap;
         }
-        return configuredCap;
+        if (configDriveUsed && hypervisorCap > 1) {
+            effectiveMax = Math.min(effectiveMax, hypervisorCap - 1);
+        }
+        return effectiveMax;
     }
 
     int advertisedCdromCap(Long hostId) {

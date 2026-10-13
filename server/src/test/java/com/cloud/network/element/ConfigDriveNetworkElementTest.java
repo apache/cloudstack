@@ -49,6 +49,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
+import com.cloud.template.TemplateManager;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -92,6 +93,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -128,6 +130,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private HostDao _hostDao;
     @Mock private ServiceOfferingDao _serviceOfferingDao;
     @Mock private UserVmDao _vmDao;
+    @Mock private TemplateManager _templateMgr;
     @Mock private VMInstanceDao _vmInstanceDao;
     @Mock private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Mock private NetworkDao _networkDao;
@@ -306,6 +309,7 @@ public class ConfigDriveNetworkElementTest {
             when(answer.getResult()).thenReturn(true);
             when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
             when(virtualMachine.getUuid()).thenReturn("vm-uuid");
+            when(_templateMgr.getConfigDriveDeviceId(Mockito.any(), Mockito.any())).thenReturn(5);
 
             Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
             parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
@@ -314,6 +318,10 @@ public class ConfigDriveNetworkElementTest {
             profile.setConfigDriveLabel("testlabel");
             profile.setVmData(Collections.emptyList());
             assertTrue(_configDrivesNetworkElement.createConfigDriveIso(nicp, profile, deployDestination, null));
+
+            // the device id of the config drive ISO is the one calculated from the number of the CD-ROMs of the Instance
+            assertEquals(1, profile.getDisks().size());
+            assertEquals(Long.valueOf(5L), profile.getDisks().get(0).getDiskSeq());
 
             ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
             verify(agentManager, times(1)).easySend(Mockito.anyLong(), commandCaptor.capture());

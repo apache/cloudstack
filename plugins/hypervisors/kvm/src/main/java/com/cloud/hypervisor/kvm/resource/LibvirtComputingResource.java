@@ -570,8 +570,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected List<String> localStoragePaths = new ArrayList<>();
     protected List<String> localStorageUUIDs = new ArrayList<>();
 
-    private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
-    private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
 
     protected File qemuSocketsPath;
     private final String qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
@@ -4163,24 +4161,33 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storagePoolManager;
     }
 
+    /**
+     * Checks if the CD-ROM is the one of the config drive ISO of the VM. The device id (and so the label) of the config
+     * drive ISO depends on the number of the CD-ROMs of the VM, so it is found by the path of the ISO.
+     */
+    protected boolean isConfigDriveCdrom(final DiskDef disk, final String vmName) {
+        return disk.getDeviceType() == DiskDef.DeviceType.CDROM && disk.getDiskPath() != null
+                && disk.getDiskPath().endsWith("/" + ConfigDrive.createConfigDrivePath(vmName));
+    }
+
     public void detachAndAttachConfigDriveISO(final Connect conn, final String vmName) {
         // detach and re-attach configdrive ISO
         List<DiskDef> disks = getDisks(conn, vmName);
         DiskDef configdrive = null;
         for (DiskDef disk : disks) {
-            if (disk.getDeviceType() == DiskDef.DeviceType.CDROM && CONFIG_DRIVE_ISO_DISK_LABEL.equals(disk.getDiskLabel())) {
+            if (isConfigDriveCdrom(disk, vmName)) {
                 configdrive = disk;
             }
         }
         if (configdrive != null) {
             try {
                 LOGGER.debug(String.format("Detaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
-                String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
+                String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, null, configdrive);
                 if (result != null) {
                     LOGGER.warn("Detach ConfigDrive ISO of the VM {}, at path {} with result: {}", vmName, configdrive.getDiskPath(), result);
                 }
                 LOGGER.debug(String.format("Attaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
-                result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
+                result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, null, configdrive);
                 if (result != null) {
                     LOGGER.warn("Attach ConfigDrive ISO of the VM {}, at path {} with result: {}", vmName, configdrive.getDiskPath(), result);
                 }
@@ -4192,6 +4199,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
+            InternalErrorException {
+        return attachOrDetachISO(conn, vmName, isoPath, isAttach, diskSeq, null);
+    }
+
+    /**
+     * Attaches or detaches (ejects) an ISO. If {@code cdrom} is specified, the ISO is attached to that CD-ROM device
+     * (the label and bus of the device are kept), instead of the one of the device id.
+     */
+    private synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq, final DiskDef cdrom) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
         if (isAttach && StringUtils.isNotBlank(isoPath)) {
@@ -4211,13 +4227,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else {
             iso.defISODisk(null, diskSeq, DiskDef.DiskType.FILE);
         }
+        if (cdrom != null) {
+            iso.setDiskLabel(cdrom.getDiskLabel());
+            iso.setBusType(cdrom.getBusType());
+        }
 
         final String result = attachOrDetachDevice(conn, true, vmName, iso.toString());
         if (result == null && !isAttach) {
             final List<DiskDef> disks = getDisks(conn, vmName);
             for (final DiskDef disk : disks) {
                 if (disk.getDeviceType() == DiskDef.DeviceType.CDROM
-                        && (diskSeq == null || disk.getDiskLabel().equals(iso.getDiskLabel()))) {
+                        && ((diskSeq == null && cdrom == null) || disk.getDiskLabel().equals(iso.getDiskLabel()))) {
                     cleanupDisk(disk);
                 }
             }
