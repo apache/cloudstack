@@ -32,12 +32,18 @@ function fix_tune2fs() {
 }
 
 function add_backports() {
-  sed -i '/cdrom/d' /etc/apt/sources.list
-  sed -i '/deb-src/d' /etc/apt/sources.list
-  sed -i '/backports/d' /etc/apt/sources.list
-  sed -i '/security/d' /etc/apt/sources.list
-  echo 'deb http://http.debian.net/debian trixie-backports main' >> /etc/apt/sources.list
-  echo 'deb http://security.debian.org/debian-security trixie-security main' >> /etc/apt/sources.list
+  # Debian 13 installs apt sources in /etc/apt/sources.list.d/debian.sources
+  # and /etc/apt/sources.list may not exist
+  if [ -f /etc/apt/sources.list ]; then
+    sed -i '/cdrom/d' /etc/apt/sources.list
+    sed -i '/deb-src/d' /etc/apt/sources.list
+    sed -i '/backports/d' /etc/apt/sources.list
+    sed -i '/security/d' /etc/apt/sources.list
+  fi
+  cat > /etc/apt/sources.list.d/backports-security.list << EOF
+deb http://http.debian.net/debian trixie-backports main
+deb http://security.debian.org/debian-security trixie-security main
+EOF
 }
 
 function apt_upgrade() {
