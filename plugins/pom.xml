@@ -101,7 +101,6 @@
 
         <module>metrics</module>
 
-        <module>resource-alerts</module>
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
