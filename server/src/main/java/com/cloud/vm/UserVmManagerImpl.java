@@ -810,9 +810,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     } else if (NetUtils.isLinkLocalIp4(vmIp)) {
                         // a link-local (APIPA) address means the guest has not obtained a DHCP lease yet; do not record it,
-                        // clear any previously recorded link-local address and keep retrying within the retry budget
+                        // clear any previously recorded link-local address and keep retrying without consuming the retry budget
+                        // (consistent with KVM, which reports this case as a failed answer), so a late DHCP lease is still picked up
                         logger.debug("Instance [ID: {}, UUID: {}, name: {}] - ignoring link-local IP {}, DHCP lease not obtained yet",
                                 vmId, vmUuid, vmName, vmIp);
+                        decrementCount = false;
                         if (nic != null && NetUtils.isLinkLocalIp4(nic.getIPv4Address())) {
                             nic.setIPv4Address(null);
                             _nicDao.update(nicId, nic);
@@ -2531,8 +2533,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
-                    // also retry NICs holding a link-local (APIPA) address recorded before the guest obtained its DHCP lease
-                    if (nic.getIPv4Address() == null || NetUtils.isLinkLocalIp4(nic.getIPv4Address())) {
+                    // a link-local (APIPA) address recorded before the guest obtained its DHCP lease is not a valid instance IP,
+                    // clear it so it is no longer exposed and the NIC is retried as one without an IP
+                    if (NetUtils.isLinkLocalIp4(nic.getIPv4Address())) {
+                        logger.debug("Clearing link-local IP {} recorded for NIC {}", nic.getIPv4Address(), nic);
+                        nic.setIPv4Address(null);
+                        _nicDao.update(nic.getId(), nic);
+                    }
+                    if (nic.getIPv4Address() == null) {
                         long nicId = nic.getId();
                         long vmId = nic.getInstanceId();
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);

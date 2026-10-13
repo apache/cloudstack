@@ -976,5 +976,8 @@ public class NetUtilsTest {
         Assert.assertFalse(NetUtils.isLinkLocalIp6("::1"));
         Assert.assertFalse(NetUtils.isLinkLocalIp6("169.254.149.120"));
         Assert.assertFalse(NetUtils.isLinkLocalIp6(null));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6("%"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6("%6"));
+        Assert.assertFalse(NetUtils.isLinkLocalIp6(""));
     }
 }

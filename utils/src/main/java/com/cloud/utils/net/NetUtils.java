@@ -1055,7 +1055,8 @@ public class NetUtils {
         if (ip == null) {
             return false;
         }
-        final String address = ip.split("%")[0];
+        final int zoneIndex = ip.indexOf('%');
+        final String address = zoneIndex >= 0 ? ip.substring(0, zoneIndex) : ip;
         if (!isValidIp6(address)) {
             return false;
         }
