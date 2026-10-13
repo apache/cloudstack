@@ -18,10 +18,12 @@ package com.cloud.consoleproxy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,6 +50,9 @@ public class ConsoleProxyManagerImplTest {
 
     @Mock
     private AccountManager accountManager;
+
+    @Mock
+    private ConfigurationDao configurationDao;
 
     @Mock
     private ServiceOffering serviceOffering;
@@ -103,5 +108,34 @@ public class ConsoleProxyManagerImplTest {
         assertEquals(template.getHypervisorType(), result.getHypervisorType());
         assertEquals(template.getGuestOSId(), result.getGuestOSId());
         assertEquals(template.isDynamicallyScalable(), result.isDynamicallyScalable());
+    }
+
+    @Test
+    public void testGetManagementStateReadsCurrentValueFromDb() {
+        when(configurationDao.getValue(ConsoleProxyManager.ConsoleProxyServiceManagementState.key()))
+                .thenReturn(ConsoleProxyManagementState.ResetSuspending.toString(), ConsoleProxyManagementState.Auto.toString());
+
+        assertEquals(ConsoleProxyManagementState.ResetSuspending, consoleProxyManager.getManagementState());
+        assertEquals(ConsoleProxyManagementState.Auto, consoleProxyManager.getManagementState());
+    }
+
+    @Test
+    public void testGetManagementStateInvalidValueReturnsNull() {
+        when(configurationDao.getValue(ConsoleProxyManager.ConsoleProxyServiceManagementState.key())).thenReturn("Bogus");
+
+        assertNull(consoleProxyManager.getManagementState());
+    }
+
+    @Test
+    public void testResumeLastManagementStateUpdatesDb() {
+        when(configurationDao.getValue(ConsoleProxyManager.ConsoleProxyServiceManagementState.key()))
+                .thenReturn(ConsoleProxyManagementState.ResetSuspending.toString());
+        when(configurationDao.getValue(ConsoleProxyManager.ConsoleProxyManagementLastState.key()))
+                .thenReturn(ConsoleProxyManagementState.Auto.toString());
+
+        consoleProxyManager.resumeLastManagementState();
+
+        verify(configurationDao).update(ConsoleProxyManager.ConsoleProxyServiceManagementState.key(),
+                ConsoleProxyManager.ConsoleProxyServiceManagementState.category(), ConsoleProxyManagementState.Auto.toString());
     }
 }
