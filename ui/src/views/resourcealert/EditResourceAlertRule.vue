@@ -100,6 +100,7 @@ export default {
   data () {
     return {
       loading: false,
+      rule: null,
       webhooks: [],
       webhooksLoading: false,
       form: {
@@ -130,9 +131,31 @@ export default {
     }
   },
   created () {
+    this.fetchRule()
     this.fetchWebhooks()
   },
   methods: {
+    // The list view swaps codes like GT for display labels on its rows, so read the rule itself.
+    fetchRule () {
+      this.loading = true
+      getAPI('listResourceAlertRules', { id: this.resource.id, listall: true }).then(json => {
+        const rule = json?.listresourcealertrulesresponse?.resourcealertrule?.[0]
+        if (!rule) return
+        this.rule = rule
+        Object.assign(this.form, {
+          name: rule.name,
+          condition: rule.condition,
+          threshold: rule.threshold,
+          severity: rule.severity,
+          message: rule.message || '',
+          email: !!rule.email,
+          resetinterval: rule.resetinterval,
+          webhookids: [...(rule.webhookids || [])]
+        })
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     fetchWebhooks () {
       if (!('listWebhooks' in this.$store.getters.apis)) return
       // Only webhooks the rule owner can use are valid for the rule
@@ -147,7 +170,7 @@ export default {
       })
     },
     webhooksChanged () {
-      const before = [...(this.resource.webhookids || [])].sort().join(',')
+      const before = [...((this.rule || this.resource).webhookids || [])].sort().join(',')
       return before !== [...this.form.webhookids].sort().join(',')
     },
     handleSubmit () {
