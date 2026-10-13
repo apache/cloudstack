@@ -301,9 +301,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 .map(Backup.VolumeInfo::getUuid)
                 .collect(Collectors.toList());
 
-        List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId()).stream()
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId()).stream()
                 .sorted(Comparator.comparingLong(VolumeVO::getDeviceId))
                 .collect(Collectors.toList());
+        List<VolumeVO> restoreVolumes = getVolumesToRestoreInto(backedVolumes, vmVolumes);
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
@@ -333,6 +334,42 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
         return new Pair<>(answer.getResult(), answer.getDetails());
+    }
+
+    /**
+     * Returns, for each backed up volume in the given order, the instance's volume its backup has to be
+     * written into.
+     * <p>
+     * A backed up volume goes into the instance's volume with the same uuid. The uuid is compared, not the
+     * volume's path: the path is the volume's name on the storage, and it differs from the uuid once the
+     * volume was migrated to another pool, or when it was created from a snapshot or an upload.
+     * <p>
+     * Creating an instance from a backup gives it brand new volumes, so none of the uuids can match. Only then
+     * are the instance's volumes taken in device id order. When some of them match, a missing one is a volume
+     * that is no longer attached, and the restore is refused before anything is written, instead of writing
+     * that backup into another volume.
+     */
+    protected List<VolumeVO> getVolumesToRestoreInto(List<Backup.VolumeInfo> backedVolumes, List<VolumeVO> vmVolumes) {
+        Map<String, VolumeVO> vmVolumeByUuid = vmVolumes.stream().collect(Collectors.toMap(VolumeVO::getUuid, volume -> volume));
+        boolean restoringIntoNewVolumes = backedVolumes.stream().noneMatch(backedVolume -> vmVolumeByUuid.containsKey(backedVolume.getUuid()));
+        if (restoringIntoNewVolumes) {
+            if (backedVolumes.size() != vmVolumes.size()) {
+                throw new CloudRuntimeException(String.format("Unable to restore backup: it holds %d volumes but the instance has %d.",
+                        backedVolumes.size(), vmVolumes.size()));
+            }
+            LOG.debug("None of the backed up volumes belong to this instance; restoring into its volumes in device id order.");
+            return vmVolumes;
+        }
+        List<VolumeVO> restoreVolumes = new ArrayList<>();
+        for (Backup.VolumeInfo backedVolume : backedVolumes) {
+            VolumeVO volume = vmVolumeByUuid.get(backedVolume.getUuid());
+            if (volume == null) {
+                throw new CloudRuntimeException(String.format("Unable to restore backup: volume [%s] recorded in the backup"
+                        + " is not attached to the instance any more.", backedVolume.getUuid()));
+            }
+            restoreVolumes.add(volume);
+        }
+        return restoreVolumes;
     }
 
     private List<String> getBackupFiles(List<Backup.VolumeInfo> backedVolumes) {
