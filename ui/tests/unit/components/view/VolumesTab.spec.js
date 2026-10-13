@@ -37,15 +37,29 @@ const i18n = common.createMockI18n('en')
 const projectVm = { id: 'vm-1', projectid: 'project-1' }
 const accountVm = { id: 'vm-2' }
 const systemVm = { id: 'vm-3', systemvmtype: 'secondarystoragevm' }
+let caller = 'domain admin'
 let requests = []
+
+// Mirrors buildACLSearchParameters in server/src/main/java/com/cloud/user/AccountManagerImpl.java for
+// listVolumes with listall. The domain admin owns none of the instances and belongs to no project.
+// Without projectid, project resources are skipped. projectid=-1 reaches only the caller's own account
+// and project accounts, so it hides every instance from a domain admin, while a root admin is not
+// restricted. projectid=<id> reaches that project, which a domain admin may open.
+const canList = (vm, projectid) => {
+  if (!projectid) {
+    return !vm.projectid
+  }
+  if (projectid === '-1') {
+    return caller === 'root admin'
+  }
+  return projectid === vm.projectid
+}
+
 const server = createServer((request, response) => {
   const params = Object.fromEntries(new URL(request.url, 'http://localhost').searchParams)
   requests.push(params)
   const vm = [projectVm, accountVm, systemVm].find(vm => vm.id === params.virtualmachineid)
-  const volume = vm && (
-    (params.projectid === '-1' && params.listall === 'true') ||
-    params.projectid === vm.projectid
-  )
+  const volume = vm && canList(vm, params.projectid)
     ? [
       { id: 'data-volume', name: 'Data volume', deviceid: 1 },
       { id: 'root-volume', name: 'Root volume', deviceid: 0 }
@@ -68,6 +82,7 @@ describe('Components > View > VolumesTab.vue', () => {
   afterAll(() => new Promise(resolve => server.close(resolve)))
 
   beforeEach(() => {
+    caller = 'domain admin'
     requests = []
     jest.clearAllMocks()
     vueProps.$localStorage.get.mockReturnValue(null)
@@ -104,14 +119,14 @@ describe('Components > View > VolumesTab.vue', () => {
   })
 
   it.each([
-    ['project instance in Default view', projectVm, null],
-    ['project instance in its project', projectVm, projectVm.projectid],
-    ['project instance in another project', projectVm, 'project-2'],
-    ['account instance in Default view', accountVm, null],
-    ['account instance in another project', accountVm, 'project-2'],
-    ['system VM in Default view', systemVm, null],
-    ['system VM in another project', systemVm, 'project-2']
-  ])('shows volume rows for %s', async (name, resource, selectedProjectId) => {
+    ['project instance in Default view', 'domain admin', projectVm, null],
+    ['project instance in Default view', 'root admin', projectVm, null],
+    ['project instance in its project', 'domain admin', projectVm, projectVm.projectid],
+    ['project instance in another project', 'domain admin', projectVm, 'project-2'],
+    ['account instance in Default view', 'domain admin', accountVm, null],
+    ['system VM in Default view', 'root admin', systemVm, null]
+  ])('shows volume rows for %s as a %s', async (name, role, resource, selectedProjectId) => {
+    caller = role
     vueProps.$localStorage.get.mockImplementation(key => {
       return key === CURRENT_PROJECT && selectedProjectId ? { id: selectedProjectId } : null
     })
@@ -141,8 +156,8 @@ describe('Components > View > VolumesTab.vue', () => {
         response: 'json',
         listall: 'true',
         listsystemvms: 'true',
-        projectid: '-1',
-        virtualmachineid: resource.id
+        virtualmachineid: resource.id,
+        ...(resource.projectid && { projectid: resource.projectid })
       }])
       expect(wrapper.vm.volumes.map(volume => volume.id)).toEqual(['root-volume', 'data-volume'])
       expect(wrapper.text()).toContain('Root volume')
