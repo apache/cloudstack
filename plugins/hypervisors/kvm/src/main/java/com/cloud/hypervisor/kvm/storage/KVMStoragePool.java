@@ -125,4 +125,13 @@ public interface KVMStoragePool {
 
     default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
     }
+
+    /**
+     * Whether the volume {@code volumeUuid}, freshly created in this pool, already reads as zeroes,
+     * so a copy onto it may skip zero regions (qemu-img --target-is-zero). Says nothing about a
+     * volume that has been written to: that still holds its old data.
+     */
+    default boolean newVolumeReadsAsZero(String volumeUuid) {
+        return false;
+    }
 }

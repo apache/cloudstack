@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -34,10 +35,13 @@ import java.util.List;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -811,5 +815,68 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertEquals(30 * 1000L, umountTimeout[0]);
             }
         }
+    }
+
+    /**
+     * Restores a backup onto a LINSTOR volume through replaceBlockDeviceWithBackup and returns
+     * the QemuImg instance used for the copy together with its constructor arguments.
+     */
+    private Pair<QemuImg, List<?>> restoreOntoLinstorVolume(boolean createTargetVolume, boolean newVolumeReadsAsZero)
+            throws Exception {
+        Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("replaceBlockDeviceWithBackup",
+                KVMStoragePoolManager.class, PrimaryDataStoreTO.class, String.class, String.class, int.class,
+                boolean.class, Long.class);
+        method.setAccessible(true);
+
+        PrimaryDataStoreTO volumePool = Mockito.mock(PrimaryDataStoreTO.class);
+        when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        when(volumePool.getUuid()).thenReturn("pool-uuid");
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool linstorPool = Mockito.mock(KVMStoragePool.class);
+        lenient().when(linstorPool.newVolumeReadsAsZero("volume-123")).thenReturn(newVolumeReadsAsZero);
+        when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, "pool-uuid")).thenReturn(linstorPool);
+
+        final List<?>[] ctorArgs = new List<?>[1];
+        try (MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
+                (mock, context) -> ctorArgs[0] = context.arguments())) {
+            boolean result = (boolean) method.invoke(wrapper, storagePoolMgr, volumePool,
+                    "/dev/drbd/by-res/cs-volume-123/0", "/mnt/backup/root.volume-123.qcow2", 60,
+                    createTargetVolume, 1024L);
+
+            Assert.assertTrue(result);
+            Assert.assertEquals(1, qemuMock.constructed().size());
+            QemuImg qemu = qemuMock.constructed().get(0);
+            Mockito.verify(qemu).convert(any(QemuImgFile.class), any(QemuImgFile.class));
+            if (!createTargetVolume) {
+                Mockito.verify(linstorPool, Mockito.never()).newVolumeReadsAsZero(anyString());
+            }
+            return new Pair<>(qemu, ctorArgs[0]);
+        }
+    }
+
+    @Test
+    public void testInPlaceLinstorRestoreDoesNotSkipZeroes() throws Exception {
+        // Even on a thin pool: the volume still holds its old data, so the backup's zero regions
+        // must be written.
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(false, true);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThickVolumeDoesNotSkipZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, false);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThinVolumeSkipsZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, true);
+
+        Assert.assertEquals(Boolean.TRUE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
     }
 }
