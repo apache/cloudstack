@@ -1396,6 +1396,17 @@
                             <groupId>org.jacoco</groupId>
                             <artifactId>jacoco-maven-plugin</artifactId>
                             <version>${cs.jacoco-plugin.version}</version>
+                            <configuration>
+                                <!-- Plain data/transfer classes carry no logic of their own to cover - excluding
+                                     them keeps the coverage number reflecting actual behavior, not boilerplate
+                                     getters/setters on VOs and agent Command/Answer DTOs. -->
+                                <excludes>
+                                    <exclude>**/*VO.class</exclude>
+                                    <exclude>**/*VO$*.class</exclude>
+                                    <exclude>**/*Command.class</exclude>
+                                    <exclude>**/*Answer.class</exclude>
+                                </excludes>
+                            </configuration>
                             <executions>
                                 <execution>
                                     <id>prepare-coverage-agent</id>
