@@ -35,9 +35,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -80,6 +82,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -1669,5 +1672,25 @@ public class UnmanagedVMsManagerImplTest {
         Map<String, String> details = new HashMap<>();
         details.put("key", "not-a-number");
         unmanagedVMsManager.getDetailAsInteger("key", details);
+    }
+
+    @Test
+    public void getReservedDeviceIdsAlwaysIncludesConfigDriveDeviceId() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(volumeApiService.getReservedDeviceIds(vm)).thenReturn(Collections.singleton(3L));
+
+        Set<Long> reserved = ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getReservedDeviceIds", vm);
+
+        Assert.assertEquals(new HashSet<>(java.util.Arrays.asList(3L, 4L)), reserved);
+    }
+
+    @Test
+    public void getNextDeviceIdSkipsReservedDeviceIds() {
+        Set<Long> reserved = new HashSet<>(java.util.Arrays.asList(3L, 4L));
+
+        Assert.assertEquals(1L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 0L, reserved));
+        Assert.assertEquals(2L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 1L, reserved));
+        Assert.assertEquals(5L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 2L, reserved));
+        Assert.assertEquals(6L, (long) ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getNextDeviceId", 5L, reserved));
     }
 }

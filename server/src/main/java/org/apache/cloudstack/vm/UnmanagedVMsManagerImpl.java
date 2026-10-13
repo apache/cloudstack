@@ -78,6 +78,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -871,6 +872,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
+    /**
+     * Returns the device ids which cannot be used by the volumes of the imported Instance: the ones of the CD-ROM devices,
+     * and the one of the config drive ISO (always kept free, as the NICs of the Instance are not imported yet at this point).
+     */
+    private Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        Set<Long> reservedDeviceIds = new HashSet<>(volumeApiService.getReservedDeviceIds(vm));
+        reservedDeviceIds.add(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue());
+        return reservedDeviceIds;
+    }
+
+    private long getNextDeviceId(long deviceId, Set<Long> reservedDeviceIds) {
+        do {
+            deviceId++;
+        } while (reservedDeviceIds.contains(deviceId));
+        return deviceId;
+    }
+
     private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         DataCenterVO dataCenterVO = dataCenterDao.findById(network.getDataCenterId());
         Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced);
@@ -1189,7 +1207,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
                 diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
                         rootDisk.getCapacity(), minIops, maxIops, template, owner, null));
-                long deviceId = 1L;
+                Set<Long> reservedDeviceIds = getReservedDeviceIds(userVm);
+                long deviceId = getNextDeviceId(0L, reservedDeviceIds);
                 for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                     if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                         throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
@@ -1198,7 +1217,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
                             disk.getCapacity(), offering.getMinIops(), offering.getMaxIops(),
                             template, owner, deviceId));
-                    deviceId++;
+                    deviceId = getNextDeviceId(deviceId, reservedDeviceIds);
                 }
             } catch (Exception e) {
                 logger.error(String.format("Failed to import volumes while importing vm: %s", displayName), e);
@@ -2820,7 +2839,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 diskProfileStoragePoolList.add(importExternalDisk(rootDisk, userVm, dest, diskOffering, Volume.Type.ROOT,
                         template, null, remoteUrl, username, password, tmpPath, diskProfile));
 
-                long deviceId = 1L;
+                Set<Long> reservedDeviceIds = getReservedDeviceIds(userVm);
+                long deviceId = getNextDeviceId(0L, reservedDeviceIds);
                 diskSeq = 0;
                 for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                     DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
@@ -2828,7 +2848,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
                     diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
                             template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));
-                    deviceId++;
+                    deviceId = getNextDeviceId(deviceId, reservedDeviceIds);
                 }
             } catch (Exception e) {
                 logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);

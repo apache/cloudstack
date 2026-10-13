@@ -160,6 +160,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
@@ -220,6 +223,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
@@ -241,6 +245,7 @@ import com.cloud.vm.VmWorkMigrateVolume;
 import com.cloud.vm.VmWorkResizeVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -293,6 +298,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private UserVmDao _userVmDao;
     @Inject
     private VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private NetworkModel _networkModel;
     @Inject
     private UserVmService _userVmService;
     @Inject
@@ -5038,16 +5047,69 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
+    /**
+     * The number of CD-ROM devices of the Instance. Each CD-ROM device occupies a device id, starting from
+     * {@link TemplateManager#CDROM_PRIMARY_DEVICE_SEQ}.
+     */
+    protected int getVmCdromCount(VirtualMachine vm) {
+        return 1;
+    }
+
+    /**
+     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
+     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
+     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
+     * never been started.
+     */
+    protected boolean isConfigDriveUsed(VirtualMachine vm) {
+        if (vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            return true;
+        }
+        for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
+            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
+                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        Set<Long> reservedDeviceIds = new HashSet<>();
+        for (int i = 0; i < getVmCdromCount(vm); i++) {
+            reservedDeviceIds.add((long) TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + i);
+        }
+        if (isConfigDriveUsed(vm)) {
+            reservedDeviceIds.add(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue());
+        }
+        return reservedDeviceIds;
+    }
+
+    /**
+     * Returns the first {@code maxDataVolumes} device ids (starting from 1) which are not reserved.
+     */
+    private List<Long> getAvailableDeviceIds(int maxDataVolumes, Set<Long> reservedDeviceIds) {
+        List<Long> availableDeviceIds = new ArrayList<>();
+        for (long id = 1; availableDeviceIds.size() < maxDataVolumes; id++) {
+            if (!reservedDeviceIds.contains(id)) {
+                availableDeviceIds.add(id);
+            }
+        }
+        return availableDeviceIds;
+    }
+
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
         // allocate deviceId
-        int maxDevices = getMaxDataVolumesSupported(vm) + 2; // add 2 to consider devices root volume and cdrom
-        int maxDeviceId = maxDevices - 1;
+        Set<Long> reservedDeviceIds = getReservedDeviceIds(vm);
+        List<Long> availableDeviceIds = getAvailableDeviceIds(getMaxDataVolumesSupported(vm), reservedDeviceIds);
+        long maxDeviceId = availableDeviceIds.get(availableDeviceIds.size() - 1);
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
-        boolean vmHasConfigDrive = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null;
         if (deviceId != null) {
-            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || deviceId.longValue() == 3
-                    || (vmHasConfigDrive && deviceId.longValue() == ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ)) {
-                throw new RuntimeException("deviceId should be 0,1,2,4-" + maxDeviceId);
+            if (deviceId.longValue() < 0 || deviceId.longValue() > maxDeviceId || reservedDeviceIds.contains(deviceId)) {
+                throw new RuntimeException(String.format("deviceId should be 0 or between 1 and %d, except the ones reserved for CD-ROM/config drive devices: %s",
+                        maxDeviceId, reservedDeviceIds));
             }
             for (VolumeVO vol : vols) {
                 if (vol.getDeviceId().equals(deviceId)) {
@@ -5056,21 +5118,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         } else {
             // allocate deviceId here
-            List<String> devIds = new ArrayList<String>();
-            for (int i = 1; i <= maxDeviceId; i++) {
-                devIds.add(String.valueOf(i));
-            }
-            devIds.remove("3");
-            if (vmHasConfigDrive) {
-                devIds.remove(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.toString());
-            }
             for (VolumeVO vol : vols) {
-                devIds.remove(vol.getDeviceId().toString().trim());
+                availableDeviceIds.remove(vol.getDeviceId());
             }
-            if (devIds.isEmpty()) {
+            if (availableDeviceIds.isEmpty()) {
                 throw new RuntimeException(String.format("All device Ids are used by vm %s", vm));
             }
-            deviceId = Long.parseLong(devIds.iterator().next());
+            deviceId = availableDeviceIds.get(0);
         }
 
         return deviceId;

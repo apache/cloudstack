@@ -21,12 +21,14 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -179,6 +181,16 @@ public interface VolumeApiService {
      * return whether the tags are supported in the storage pool
      */
     boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
+
+    /**
+     * Returns the device ids of the Instance which are used by non-volume devices (the CD-ROM drives and the config drive ISO),
+     * and therefore must not be assigned to its volumes. Otherwise the hypervisor may end up with two devices using the same
+     * target name (e.g. sde), which is rejected.
+     *
+     * @param vm the Instance
+     * @return the reserved device ids
+     */
+    Set<Long> getReservedDeviceIds(VirtualMachine vm);
 
     boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
 

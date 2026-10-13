@@ -67,6 +67,9 @@ public interface TemplateManager {
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
+    // KVM/libvirt maps deviceSeq=3 to hdc (hda/hdb are taken by the root volume on i440fx/IDE).
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
     /**
      * Prepares a template for vm creation for a certain storage pool.
      *
