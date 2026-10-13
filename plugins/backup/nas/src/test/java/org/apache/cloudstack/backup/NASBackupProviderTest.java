@@ -36,6 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.configuration.Resource;
@@ -125,6 +126,9 @@ public class NASBackupProviderTest {
     @Mock
     private DataStoreManager dataStoreMgr;
 
+    @Mock
+    private AlertManager alertManager;
+
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
         Long hostId = 1L;
@@ -202,16 +206,7 @@ public class NASBackupProviderTest {
         Assert.assertEquals(Long.valueOf(3000L), result.second());
     }
 
-    @Test
-    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException {
-        Long vmId = 1L;
-        Long hostId = 2L;
-        Long backupOfferingId = 3L;
-        Long accountId = 4L;
-        Long domainId = 5L;
-        Long zoneId = 6L;
-        Long backupId = 7L;
-
+    private VMInstanceVO mockRunningVmForBackup(Long vmId, Long hostId, Long backupOfferingId, Long accountId, Long domainId, Long zoneId) {
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.when(vm.getId()).thenReturn(vmId);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
@@ -241,6 +236,16 @@ public class NASBackupProviderTest {
         Mockito.when(volume2.getState()).thenReturn(Volume.State.Ready);
         Mockito.when(volume2.getSize()).thenReturn(200L);
         Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume1, volume2));
+        return vm;
+    }
+
+    @Test
+    public void takeBackupSuccessfully() throws AgentUnavailableException, OperationTimedoutException {
+        Long backupOfferingId = 3L;
+        Long accountId = 4L;
+        Long domainId = 5L;
+        Long zoneId = 6L;
+        VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, backupOfferingId, accountId, domainId, zoneId);
 
         BackupAnswer answer = mock(BackupAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
@@ -267,6 +272,60 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.verify(backupDao).update(Mockito.anyLong(), Mockito.any(BackupVO.class));
         Mockito.verify(agentManager).send(anyLong(), Mockito.any(TakeBackupCommand.class));
+    }
+
+    @Test
+    public void takeBackupFailureNeedingCleanupReturnsErrorBackup() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
+        HostVO host = hostDao.findById(2L);
+        Mockito.when(host.getName()).thenReturn("kvm01");
+        Mockito.when(host.getPodId()).thenReturn(7L);
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(answer.getNeedsCleanup()).thenReturn(true);
+        Mockito.when(answer.getDetails()).thenReturn("leaving /tmp/csbackup.abcde/i-2-3-VM mounted at /tmp/csbackup.abcde");
+        ArgumentCaptor<TakeBackupCommand> commandCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), commandCaptor.capture())).thenReturn(answer);
+
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, true);
+
+        Assert.assertFalse(result.first());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(Backup.Status.Error, result.second().getStatus());
+        Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
+
+        TakeBackupCommand command = commandCaptor.getValue();
+        Assert.assertTrue(command.getQuiesce());
+        Assert.assertEquals(Integer.valueOf(30), command.getQuiesceTimeout());
+
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(alertManager).sendAlert(Mockito.eq(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE), Mockito.eq(6L), Mockito.eq(7L),
+                subjectCaptor.capture(), bodyCaptor.capture());
+        Assert.assertTrue(subjectCaptor.getValue().contains("kvm01"));
+        Assert.assertTrue(bodyCaptor.getValue().contains("/tmp/csbackup.abcde"));
+    }
+
+    @Test
+    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException {
+        VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(false);
+        Mockito.when(answer.getNeedsCleanup()).thenReturn(false);
+        Mockito.when(agentManager.send(anyLong(), Mockito.any(TakeBackupCommand.class))).thenReturn(answer);
+
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false);
+
+        Assert.assertFalse(result.first());
+        Assert.assertNull(result.second());
+        Mockito.verify(backupDao).remove(Mockito.anyLong());
+        Mockito.verifyNoInteractions(alertManager);
     }
 
     @Test

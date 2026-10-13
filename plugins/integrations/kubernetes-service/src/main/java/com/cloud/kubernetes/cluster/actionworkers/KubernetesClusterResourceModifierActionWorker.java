@@ -799,6 +799,29 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+
+    /**
+     *
+     * Netris-specific VPC tier rule setup. The two IPs serve distinct roles in Netris:
+     *   lbIp  (PUBLIC_IP_ID)            — Kubernetes API (port 6443) via Netris L4 Load Balancer rule.
+     *   natIp (NETRIS_NAT_PUBLIC_IP_ID) — SSH node access (ports 22001+) via Netris DNAT / port-forwarding.
+     */
+    protected void setupKubernetesClusterVpcTierRulesForNetris(IpAddress lbIp, IpAddress natIp,
+            Network network, List<Long> clusterVMIds) throws ManagementServerException {
+        createVpcTierAclRules(network);
+        try {
+            provisionLoadBalancerRule(lbIp, network, owner, clusterVMIds, CLUSTER_API_PORT);
+        } catch (InsufficientAddressCapacityException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to activate API load balancing rules for Netris Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        try {
+            Map<Long, Integer> vmIdPortMap = getVmPortMap();
+            provisionSshPortForwardingRules(natIp, network, owner, clusterVMIds, vmIdPortMap);
+        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for Netris Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
     /**
      * Generates a valid name prefix for Kubernetes cluster nodes.
      *
