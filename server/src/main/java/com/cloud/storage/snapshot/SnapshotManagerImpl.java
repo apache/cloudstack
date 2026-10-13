@@ -1718,10 +1718,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (vmInstance != null) {
             vmDisplayName = vmInstance.getHostName();
         }
+        boolean nameProvided = snapshotName != null;
         if (snapshotName == null)
             snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 
-        if (_snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, snapshotName, Snapshot.State.Destroyed, Snapshot.State.Error) != null) {
+        if (nameProvided && _snapshotDao.findByVolumeIdAndNameNotInStatus(volumeId, snapshotName, Snapshot.State.Destroyed, Snapshot.State.Error) != null) {
             throw new InvalidParameterValueException(String.format("A snapshot with name [%s] already exists for volume %s.", snapshotName, volume));
         }
 
