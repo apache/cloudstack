@@ -508,11 +508,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
         String hostIp = host.getPrivateNetwork().getIp();
-        // RBD volumes have no shared mount point to stat(), so the RBD-specific script
-        // (using RBD watchers to detect activity) is used instead of the generic,
-        // NFS/SharedMountPoint-oriented script path passed in by the caller.
-        String scriptPath = StoragePoolType.RBD.equals(type) ? findKvmHaScript("kvmvmactivity_rbd.py") : vmActivityCheckPath;
-        Script cmd = new Script(scriptPath, activityScriptTimeout.getStandardSeconds(), logger);
+        Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         addPoolConnectionArgs(cmd, pool);
         cmd.add("-h", hostIp);
         File volumeListFile = addVolumeListArgs(cmd, volumeUUIDListString);
