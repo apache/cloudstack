@@ -1447,9 +1447,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volumeResizeRequired = true;
             }
             if (!volumeMigrateRequired && !volumeResizeRequired) {
-                volume = _volsDao.findById(volume.getId());
-                if (newDiskOffering != null) {
+
+                if (newDiskOffering != null && newDiskOffering.getId()!=diskOffering.getId()) {
                     _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
+                    volume = _volsDao.findById(volume.getId());
                     updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
                 }
                 return volume;
