@@ -49,6 +49,7 @@ logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
 BACKUP_JOB_ACTIVE=0
+PULL_SCRATCH_DIR=""   # Scratch dir of a running pull-mode backup, removed by on_pull_backup_exit()
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -211,6 +212,26 @@ thaw_guest() {
 #
 # Assumes mount_operation() already ran, so $dest and $mount_point are set.
 # ---------------------------------------------------------------------------
+
+# EXIT trap of the pull-mode path, armed once the scratch dir exists and cleared once the
+# backup is complete. Any exit in between -- an explicit failure, an unexpected error under
+# "set -e", or SIGINT/SIGTERM/SIGHUP -- has to end the pull job: unlike a push job it never
+# finishes on its own, so it would keep the NBD server and the growing fleecing images alive
+# and block every later backup or migration of the VM. cleanup() aborts the job (via
+# BACKUP_JOB_ACTIVE) before removing the partial backup. SIGKILL cannot be trapped, so the
+# agent wrapper aborts the job itself when the script times out.
+on_pull_backup_exit() {
+  local rc=$?
+  trap - EXIT INT TERM HUP
+  [[ $rc -ne 0 ]] || rc=1
+  # The fleecing images belong to the job: only remove them once it is gone.
+  if abort_backup_job; then
+    rm -rf "$PULL_SCRATCH_DIR"
+  fi
+  cleanup
+  exit $rc
+}
+
 backup_running_vm_pull() {
   local effective_mode="$1"
 
@@ -223,6 +244,11 @@ backup_running_vm_pull() {
     echo "Failed to create scratch directory under $SCRATCH_PARENT"; cleanup; exit 1;
   }
   chmod 711 "$scratch_dir"
+  PULL_SCRATCH_DIR="$scratch_dir"
+  trap on_pull_backup_exit EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   local nbd_sock="$scratch_dir/nbd.sock"
   local backupxml="$scratch_dir/backup.xml"
 
@@ -231,8 +257,6 @@ backup_running_vm_pull() {
   if [[ ${#nbd_sock} -ge 108 ]]; then
     echo "Pull-mode NBD socket path is too long (${#nbd_sock} bytes, limit 108): $nbd_sock"
     echo "Set a shorter scratch dir via -S (agent.properties nas.backup.pull.scratch.dir)"
-    rm -rf "$scratch_dir"
-    cleanup
     exit 1
   fi
 
@@ -243,8 +267,6 @@ backup_running_vm_pull() {
   )
   if [[ ${#disks[@]} -eq 0 ]]; then
     echo "No disks found for vm $VM"
-    rm -rf "$scratch_dir"
-    cleanup
     exit 1
   fi
 
@@ -306,21 +328,15 @@ backup_running_vm_pull() {
   local backup_out
   if backup_out=$(virsh -c qemu:///system backup-begin --domain "$VM" --backupxml "$backupxml" 2>&1); then
     backup_begin=1
+    BACKUP_JOB_ACTIVE=1
   fi
 
   if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
-    if [[ $backup_begin -eq 1 ]]; then
-      virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>&1 || true
-    fi
-    rm -rf "$scratch_dir"
-    cleanup
     exit 1
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
     echo "Failed to start pull-mode backup for $VM: $backup_out"
-    rm -rf "$scratch_dir"
-    cleanup
     exit 1
   fi
 
@@ -341,9 +357,6 @@ backup_running_vm_pull() {
     elif [[ "$fullpath" == /dev/drbd[0-9]* ]]; then
       if ! volUuid=$(get_linstor_uuid_from_device "$fullpath"); then
         echo "Failed to resolve LINSTOR volume UUID for $fullpath"
-        virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>&1 || true
-        rm -rf "$scratch_dir"
-        cleanup
         exit 1
       fi
     else
@@ -363,19 +376,12 @@ backup_running_vm_pull() {
          || ! qemu-img rebase -b "$parent_abs" -F qcow2 "$output" >> "$logFile" 2> >(cat >&2) \
          || ! qemu-img rebase -u -b "$parent_rel" -F qcow2 "$output" >> "$logFile" 2> >(cat >&2); then
         echo "qemu-img incremental delta failed for $disk -> $output"
-        rm -f "$output"
-        virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>&1 || true
-        rm -rf "$scratch_dir"
-        cleanup
         exit 1
       fi
     else
       # Zero detection while streaming gives a sparse qcow2 in a single pass.
       if ! qemu-img convert -f raw -O qcow2 "$export_uri" "$output" >> "$logFile" 2> >(cat >&2); then
         echo "qemu-img convert failed for pull export $disk -> $output"
-        virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>&1 || true
-        rm -rf "$scratch_dir"
-        cleanup
         exit 1
       fi
     fi
@@ -385,8 +391,10 @@ backup_running_vm_pull() {
 
   # End the pull job. Aborting the active job is how a pull backup finishes (there is no
   # backup-end command): libvirt tears down the NBD server and deletes the scratch files.
-  # The data already pulled is a complete backup.
-  if ! virsh -c qemu:///system domjobabort "$VM" > /dev/null 2>&1; then
+  # The data already pulled is a complete backup, so from here on a failure must no longer
+  # discard it.
+  trap - EXIT INT TERM HUP
+  if ! abort_backup_job; then
     log -e "warning: failed to end (domjobabort) backup job for $VM"
   fi
   rm -rf "$scratch_dir"

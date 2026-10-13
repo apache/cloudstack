@@ -102,6 +102,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
+            if (Script.ERR_TIMEOUT.equals(result.second()) && isPullMode(command.getMode())) {
+                abortPullBackupJob(vmName);
+            }
             BackupAnswer answer = new BackupAnswer(command, false, StringUtils.trimToEmpty(result.second()));
             if (EXIT_CLEANUP_FAILED.equals(result.first())) {
                 logger.debug("Backup cleanup failed");
@@ -125,6 +128,25 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
+    }
+
+    private boolean isPullMode(String mode) {
+        return MODE_CONTENT_FULL.equals(mode) || MODE_CONTENT_INCREMENTAL.equals(mode);
+    }
+
+    /**
+     * A pull-mode backup job never ends on its own: nasbackup.sh ends it once the data is read,
+     * and its EXIT trap does so on failure. A timed-out script is killed with SIGKILL, which
+     * no trap can catch, so end the job here. Otherwise it keeps the NBD server and the growing
+     * fleecing images alive and blocks every later backup or migration of the VM.
+     */
+    private void abortPullBackupJob(String vmName) {
+        logger.warn("Backup of VM {} timed out, aborting its pull-mode backup job", vmName);
+        int exitValue = Script.executeCommandForExitValue(Script.getExecutableAbsolutePath("virsh"),
+                "-c", "qemu:///system", "domjobabort", vmName);
+        if (exitValue != 0) {
+            logger.warn("Failed to abort the backup job of VM {} (exit code {})", vmName, exitValue);
+        }
     }
 
     /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */

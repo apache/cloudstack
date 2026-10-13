@@ -18,7 +18,9 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -98,5 +100,44 @@ public class LibvirtTakeBackupCommandWrapperTest {
         command.setQuiesceTimeout(0);
 
         Assert.assertFalse(runAndCaptureArgv().contains("--quiesce-timeout"));
+    }
+
+    private void runFailing(Pair<Integer, String> result, boolean expectJobAbort) {
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong())).thenReturn(result);
+            scriptMock.when(() -> Script.getExecutableAbsolutePath("virsh")).thenReturn("/usr/bin/virsh");
+
+            BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+            Assert.assertFalse(answer.getResult());
+
+            if (expectJobAbort) {
+                scriptMock.verify(() -> Script.executeCommandForExitValue("/usr/bin/virsh", "-c", "qemu:///system",
+                        "domjobabort", "i-2-3-VM"));
+            } else {
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyString(), anyString(), anyString(),
+                        anyString(), anyString()), never());
+            }
+        }
+    }
+
+    @Test
+    public void executeAbortsPullBackupJobOnTimeout() {
+        command.setMode("content-full");
+
+        runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), true);
+    }
+
+    @Test
+    public void executeLeavesPullBackupJobToScriptOnFailure() {
+        command.setMode("content-full");
+
+        runFailing(new Pair<>(1, "qemu-img convert failed"), false);
+    }
+
+    @Test
+    public void executeDoesNotAbortPushBackupJobOnTimeout() {
+        command.setMode("legacy-full");
+
+        runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), false);
     }
 }
