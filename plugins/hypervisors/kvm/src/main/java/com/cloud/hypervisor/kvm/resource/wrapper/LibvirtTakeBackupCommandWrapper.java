@@ -54,13 +54,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
-    /**
-     * Content-based (libvirt pull mode) modes, used for raw block-device storage such as
-     * LINSTOR/DRBD which cannot carry QEMU persistent dirty bitmaps. Neither carries a bitmap
-     * name; the incremental one needs only its per-disk parent paths.
-     */
-    private static final String MODE_CONTENT_FULL = "content-full";
-    private static final String MODE_CONTENT_INCREMENTAL = "content-incremental";
+
+    // Backup methods, orthogonal to the mode. qcow2 is the push-mode path with QEMU dirty bitmaps,
+    // also assumed when the management server sends none. content is libvirt pull mode, used for
+    // raw block-device storage such as LINSTOR/DRBD which cannot carry persistent dirty bitmaps:
+    // it needs no bitmap names, an incremental only its per-disk parent paths.
+    private static final String METHOD_QCOW2 = "qcow2";
+    private static final String METHOD_CONTENT = "content";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -102,7 +102,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
-            if (Script.ERR_TIMEOUT.equals(result.second()) && isPullMode(command.getMode())) {
+            if (Script.ERR_TIMEOUT.equals(result.second()) && METHOD_CONTENT.equals(command.getMethod())) {
                 abortPullBackupJob(vmName);
             }
             BackupAnswer answer = new BackupAnswer(command, false, StringUtils.trimToEmpty(result.second()));
@@ -128,10 +128,6 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         answer.setBitmapCreated(command.getBitmapNew());
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
-    }
-
-    private boolean isPullMode(String mode) {
-        return MODE_CONTENT_FULL.equals(mode) || MODE_CONTENT_INCREMENTAL.equals(mode);
     }
 
     /**
@@ -195,6 +191,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("-M");
             argv.add(mode);
         }
+        if (StringUtils.isNotBlank(command.getMethod())) {
+            argv.add("--method");
+            argv.add(command.getMethod());
+        }
         if (StringUtils.isNotBlank(bitmapNew)) {
             argv.add("--bitmap-new");
             argv.add(bitmapNew);
@@ -226,6 +226,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private String validateBackupArgs(TakeBackupCommand command) {
         String mode = command.getMode();
+        String method = StringUtils.defaultIfBlank(command.getMethod(), METHOD_QCOW2);
+        if (METHOD_CONTENT.equals(method)) {
+            return validateContentBackupArgs(command);
+        }
+        if (!METHOD_QCOW2.equals(method)) {
+            return "Unknown backup method: " + method;
+        }
         if (StringUtils.isBlank(mode)) {
             return null; // legacy full-only, no extra args expected
         }
@@ -250,17 +257,22 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         if (MODE_LEGACY_FULL.equals(mode)) {
             return null; // feature-off full backup, no bitmap or chain args expected
         }
-        if (MODE_CONTENT_FULL.equals(mode)) {
+        return "Unknown backup mode: " + mode;
+    }
+
+    private String validateContentBackupArgs(TakeBackupCommand command) {
+        String mode = command.getMode();
+        if (MODE_FULL.equals(mode)) {
             return null; // pull-mode full — no bitmap, no parent
         }
-        if (MODE_CONTENT_INCREMENTAL.equals(mode)) {
+        if (MODE_INCREMENTAL.equals(mode)) {
             // No bitmap is involved: the delta comes from comparing the disk against the parent.
             if (CollectionUtils.isEmpty(command.getParentPaths())) {
-                return "content-incremental mode requires parentPaths";
+                return "content incremental mode requires parentPaths";
             }
             return null;
         }
-        return "Unknown backup mode: " + mode;
+        return "Unsupported mode for the content backup method: " + mode;
     }
 
     /**

@@ -224,11 +224,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     /**
      * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
-     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
-     * parent bitmap and parent file path.
+     * the chain: full vs incremental, how it is taken, the bitmap name to create, and (for
+     * incrementals) the parent bitmap and parent file path.
      */
     static final class ChainDecision {
         final String mode;            // "full" or "incremental"
+        final String method;          // NASBackupChainKeys.METHOD_QCOW2 or METHOD_CONTENT
         final String bitmapNew;
         final String bitmapParent;    // null for full
         // Per-volume parent backup file paths, one per current VM volume in deviceId order.
@@ -243,12 +244,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         private ChainDecision(String mode, String bitmapNew, String bitmapParent, List<String> parentPaths,
                               String chainId, int chainPosition) {
-            this(mode, bitmapNew, bitmapParent, parentPaths, chainId, chainPosition, null);
+            this(mode, NASBackupChainKeys.METHOD_QCOW2, bitmapNew, bitmapParent, parentPaths, chainId,
+                    chainPosition, null);
         }
 
-        private ChainDecision(String mode, String bitmapNew, String bitmapParent, List<String> parentPaths,
-                              String chainId, int chainPosition, String parentBackupUuid) {
+        private ChainDecision(String mode, String method, String bitmapNew, String bitmapParent,
+                              List<String> parentPaths, String chainId, int chainPosition, String parentBackupUuid) {
             this.mode = mode;
+            this.method = method;
             this.bitmapNew = bitmapNew;
             this.bitmapParent = bitmapParent;
             this.parentPaths = parentPaths;
@@ -282,25 +285,23 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
          * does anchor a chain so later content-incrementals can hang off it.
          */
         static ChainDecision contentFull() {
-            return new ChainDecision(NASBackupChainKeys.TYPE_CONTENT_FULL, null, null, null,
-                    UUID.randomUUID().toString(), 0, null);
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, NASBackupChainKeys.METHOD_CONTENT, null, null,
+                    null, UUID.randomUUID().toString(), 0, null);
         }
 
         static ChainDecision contentIncremental(List<String> parentPaths, String chainId,
                                                 int chainPosition, String parentBackupUuid) {
-            return new ChainDecision(NASBackupChainKeys.TYPE_CONTENT_INCREMENTAL, null, null,
-                    parentPaths, chainId, chainPosition, parentBackupUuid);
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, NASBackupChainKeys.METHOD_CONTENT, null,
+                    null, parentPaths, chainId, chainPosition, parentBackupUuid);
         }
 
         boolean isIncremental() {
-            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode)
-                    || NASBackupChainKeys.TYPE_CONTENT_INCREMENTAL.equals(mode);
+            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
         }
 
         /** True for the pull-mode content-diff path (no dirty bitmaps involved). */
         boolean isContentBased() {
-            return NASBackupChainKeys.TYPE_CONTENT_FULL.equals(mode)
-                    || NASBackupChainKeys.TYPE_CONTENT_INCREMENTAL.equals(mode);
+            return NASBackupChainKeys.METHOD_CONTENT.equals(method);
         }
 
         boolean isLegacyFull() {
@@ -710,6 +711,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setQuiesce(quiesceVM);
         command.setQuiesceTimeout(NASBackupQuiesceAgentTimeout.valueIn(vm.getDataCenterId()));
         command.setMode(decision.mode);
+        command.setMethod(decision.method);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);

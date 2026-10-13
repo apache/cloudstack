@@ -505,6 +505,7 @@ public class NASBackupProviderTest {
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
         Assert.assertNotNull(decision);
         Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_QCOW2, decision.method);
         Assert.assertNull(decision.bitmapParent);
         Assert.assertEquals(0, decision.chainPosition);
     }
@@ -1123,16 +1124,17 @@ public class NASBackupProviderTest {
                         org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_CONTENT, decision.method);
         Assert.assertTrue(decision.isContentBased());
         Assert.assertFalse(decision.isIncremental());
         Assert.assertNull("content path uses no bitmaps", decision.bitmapNew);
-        Assert.assertNotNull("content-full still anchors a chain", decision.chainId);
+        Assert.assertNotNull("a content full still anchors a chain", decision.chainId);
     }
 
     /**
      * Stopped VMs are imaged straight from the disk by qemu-img, with no point-in-time export to
-     * diff against a parent, so a LINSTOR VM that is stopped must take a content-full.
+     * diff against a parent, so a LINSTOR VM that is stopped must take a content full.
      */
     @Test
     public void decideChainReturnsContentFullForStoppedLinstorVm() {
@@ -1145,11 +1147,12 @@ public class NASBackupProviderTest {
         enableIncrementals();
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_CONTENT, decision.method);
     }
 
     /**
-     * Running LINSTOR VM with a healthy parent inside the cadence => content-incremental, carrying
+     * Running LINSTOR VM with a healthy parent inside the cadence => content incremental, carrying
      * the parent's chain id, the next position, the parent uuid (resolved directly since there is
      * no bitmap to look it up by) and the per-volume parent paths the script rebases onto.
      */
@@ -1186,10 +1189,11 @@ public class NASBackupProviderTest {
         Mockito.when(backupDetailsDao.findDetail(900L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(chainPos);
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_INCREMENTAL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_INCREMENTAL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_CONTENT, decision.method);
         Assert.assertTrue(decision.isIncremental());
         Assert.assertTrue(decision.isContentBased());
-        Assert.assertNull("content-incremental carries no bitmap", decision.bitmapNew);
+        Assert.assertNull("a content incremental carries no bitmap", decision.bitmapNew);
         Assert.assertNull(decision.bitmapParent);
         Assert.assertEquals("chain-1", decision.chainId);
         Assert.assertEquals(1, decision.chainPosition);
@@ -1200,7 +1204,7 @@ public class NASBackupProviderTest {
 
     /**
      * Once the chain reaches nas.backup.full.every, the next LINSTOR backup must anchor a new
-     * chain with a content-full rather than extending the existing one.
+     * chain with a content full rather than extending the existing one.
      */
     @Test
     public void decideChainReturnsContentFullForLinstorAtChainEnd() {
@@ -1229,7 +1233,8 @@ public class NASBackupProviderTest {
         Mockito.when(backupDetailsDao.findDetail(901L, NASBackupChainKeys.CHAIN_POSITION)).thenReturn(chainPos);
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_CONTENT_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_CONTENT, decision.method);
     }
 
     /**

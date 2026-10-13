@@ -122,14 +122,16 @@ public class LibvirtTakeBackupCommandWrapperTest {
 
     @Test
     public void executeAbortsPullBackupJobOnTimeout() {
-        command.setMode("content-full");
+        command.setMode("full");
+        command.setMethod("content");
 
         runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), true);
     }
 
     @Test
     public void executeLeavesPullBackupJobToScriptOnFailure() {
-        command.setMode("content-full");
+        command.setMode("full");
+        command.setMethod("content");
 
         runFailing(new Pair<>(1, "qemu-img convert failed"), false);
     }
@@ -139,5 +141,39 @@ public class LibvirtTakeBackupCommandWrapperTest {
         command.setMode("legacy-full");
 
         runFailing(new Pair<>(-1, Script.ERR_TIMEOUT), false);
+    }
+
+    @Test
+    public void executePassesContentMethodToScript() {
+        command.setMode("incremental");
+        command.setMethod("content");
+        command.setParentPaths(Arrays.asList("i-2-3-VM/2026.10.03.00.00.00/root.vol-1.qcow2"));
+
+        List<String> argv = runAndCaptureArgv();
+
+        Assert.assertEquals("incremental", argv.get(argv.indexOf("-M") + 1));
+        Assert.assertEquals("content", argv.get(argv.indexOf("--method") + 1));
+        Assert.assertFalse(argv.contains("--bitmap-new"));
+    }
+
+    @Test
+    public void executeRejectsContentIncrementalWithoutParentPaths() {
+        command.setMode("incremental");
+        command.setMethod("content");
+
+        BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertEquals("content incremental mode requires parentPaths", answer.getDetails());
+    }
+
+    @Test
+    public void executeRejectsLegacyFullWithContentMethod() {
+        command.setMode("legacy-full");
+        command.setMethod("content");
+
+        BackupAnswer answer = (BackupAnswer) wrapper.execute(command, libvirtComputingResource);
+
+        Assert.assertFalse(answer.getResult());
     }
 }

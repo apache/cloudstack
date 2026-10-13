@@ -49,18 +49,22 @@ public final class NASBackupChainKeys {
     public static final String TYPE_LEGACY_FULL = "legacy-full";
 
     /**
-     * Backup taken through the content-based (libvirt pull mode) path, used for raw
-     * block-device storage such as LINSTOR/DRBD which cannot carry QEMU persistent dirty
-     * bitmaps. A full standalone qcow2, written sparse in a single pass.
+     * In-memory backup-method sentinels used by {@code ChainDecision.method}: how a backup is
+     * taken, independent of whether it is a full or an incremental ({@code ChainDecision.mode}).
+     * Both methods write the same chain of qcow2 files, so restore and delete do not care.
+     *
+     * <p>{@link #METHOD_QCOW2}: libvirt push-mode backup; incrementals come from QEMU persistent
+     * dirty bitmaps (libvirt checkpoints), which only qcow2 volumes can carry.</p>
      */
-    public static final String TYPE_CONTENT_FULL = "content-full";
+    public static final String METHOD_QCOW2 = "qcow2";
 
     /**
-     * Delta backup produced by content comparison rather than dirty bitmaps: a qcow2 overlay
-     * on the disk's NBD export, safe-rebased onto the parent so it holds only the clusters
-     * that differ. Same chain shape as {@link #TYPE_INCREMENTAL}.
+     * Content-based libvirt pull-mode backup, used for raw block-device storage such as
+     * LINSTOR/DRBD which cannot carry persistent dirty bitmaps. A full is written as a sparse
+     * qcow2 in a single pass; an incremental is a qcow2 overlay on the disk's NBD export,
+     * safe-rebased onto the parent so it holds only the clusters that differ.
      */
-    public static final String TYPE_CONTENT_INCREMENTAL = "content-incremental";
+    public static final String METHOD_CONTENT = "content";
 
     /**
      * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap

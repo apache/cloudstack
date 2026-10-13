@@ -35,6 +35,8 @@ QUIESCE=""
 QUIESCE_TIMEOUT=""    # Seconds to wait for the guest agent freeze/thaw; empty => libvirt default
 # Incremental backup parameters (all optional; legacy callers omit them)
 MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
+METHOD="qcow2"        # How the backup is taken: "qcow2" (push mode, incrementals from dirty bitmaps) or
+                      # "content" (pull mode, incrementals by content comparison; raw block storage)
 BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
 BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes since
 PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
@@ -198,14 +200,14 @@ thaw_guest() {
 # point-in-time view of each disk, held consistent by copy-before-write into local
 # fleecing scratch images. The backup is then derived from that export:
 #
-#   content-full         qemu-img convert -> sparse standalone qcow2. Zero detection
-#                        happens while streaming, so the fully allocated push-mode
-#                        output and its separate re-convert pass are both avoided.
-#   content-incremental  a qcow2 overlay backed by the NBD export, then a SAFE rebase
-#                        onto the parent backup. That merges exactly the clusters which
-#                        differ between export and parent into the overlay, yielding a
-#                        delta qcow2 backed by the parent -- the same chain shape the
-#                        push-mode incremental produces, so restore/delete are unchanged.
+#   full         qemu-img convert -> sparse standalone qcow2. Zero detection happens
+#                while streaming, so the fully allocated push-mode output and its
+#                separate re-convert pass are both avoided.
+#   incremental  a qcow2 overlay backed by the NBD export, then a SAFE rebase onto the
+#                parent backup. That merges exactly the clusters which differ between
+#                export and parent into the overlay, yielding a delta qcow2 backed by the
+#                parent -- the same chain shape the push-mode incremental produces, so
+#                restore/delete are unchanged.
 #
 # Unlike a storage-snapshot based diff there is no trailing DRBD metadata to clip: the
 # DRBD device, and therefore the NBD export, is already net-sized.
@@ -274,24 +276,24 @@ backup_running_vm_pull() {
   # per volume in the same order as the disk list. Anything missing degrades this run to a
   # full backup rather than failing it, mirroring the push-mode fallback.
   local -a parent_paths_arr=()
-  if [[ "$effective_mode" == "content-incremental" ]]; then
+  if [[ "$effective_mode" == "incremental" ]]; then
     if [[ -z "$PARENT_PATHS" ]]; then
-      log -e "content-incremental: no parent paths supplied -- falling back to full"
+      log -e "content incremental: no parent paths supplied -- falling back to full"
       echo "INCREMENTAL_FALLBACK=true"
-      effective_mode="content-full"
+      effective_mode="full"
     else
       IFS=',' read -ra parent_paths_arr <<< "$PARENT_PATHS"
       if [[ ${#parent_paths_arr[@]} -lt ${#disks[@]} ]]; then
-        log -e "content-incremental: parent path list shorter than disk list -- falling back to full"
+        log -e "content incremental: parent path list shorter than disk list -- falling back to full"
         echo "INCREMENTAL_FALLBACK=true"
-        effective_mode="content-full"
+        effective_mode="full"
       else
         local pp
         for pp in "${parent_paths_arr[@]}"; do
           if [[ ! -f "$mount_point/$pp" ]]; then
-            log -e "content-incremental: parent $mount_point/$pp missing on NAS -- falling back to full"
+            log -e "content incremental: parent $mount_point/$pp missing on NAS -- falling back to full"
             echo "INCREMENTAL_FALLBACK=true"
-            effective_mode="content-full"
+            effective_mode="full"
             break
           fi
         done
@@ -366,7 +368,7 @@ backup_running_vm_pull() {
     # The export name defaults to the disk target (e.g. vda) and presents raw bytes.
     export_uri="nbd+unix:///$disk?socket=$nbd_sock"
 
-    if [[ "$effective_mode" == "content-incremental" ]]; then
+    if [[ "$effective_mode" == "incremental" ]]; then
       parent_abs="$mount_point/${parent_paths_arr[$disk_idx]}"
       parent_rel=$(realpath --relative-to="$dest" "$parent_abs")
       # Overlay over the export, safe-rebase onto the parent to merge the differing
@@ -417,15 +419,33 @@ backup_running_vm() {
   # invoking the script; the case below is a defensive fallback for direct invocations.
   local effective_mode="${MODE:-legacy-full}"
   local make_checkpoint=0
+  case "$METHOD" in
+    qcow2)
+      ;;
+    content)
+      # Raw block-device storage (LINSTOR/DRBD) cannot carry persistent dirty bitmaps,
+      # so checkpoints are unavailable. Use the content-based pull-mode path instead.
+      case "$effective_mode" in
+        full|incremental)
+          backup_running_vm_pull "$effective_mode"
+          return
+          ;;
+        *)
+          echo "Mode $effective_mode is not supported by the content method"
+          cleanup
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      echo "Unknown method: $METHOD"
+      cleanup
+      exit 1
+      ;;
+  esac
   case "$effective_mode" in
     incremental|full)
       make_checkpoint=1
-      ;;
-    content-full|content-incremental)
-      # Raw block-device storage (LINSTOR/DRBD) cannot carry persistent dirty bitmaps,
-      # so checkpoints are unavailable. Use the content-based pull-mode path instead.
-      backup_running_vm_pull "$effective_mode"
-      return
       ;;
     legacy-full)
       make_checkpoint=0
@@ -846,7 +866,7 @@ function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
   echo "         [--quiesce-timeout <seconds>]"
-  echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
+  echo "         [-M|--mode <full|incremental>] [--method <qcow2|content>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-paths <p1,p2,...>]"
   echo ""
   echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
   echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
@@ -854,11 +874,12 @@ function usage {
   echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-paths (comma-separated list, one"
   echo "                          parent qcow2 path per disk: root.<uuid>.qcow2, datadisk.<uuid>.qcow2, … same order"
   echo "                          as -d|--disks)."
-  echo "  -M|--mode content-full        Full backup via libvirt pull mode; qemu-img convert writes a sparse qcow2."
-  echo "  -M|--mode content-incremental Delta backup via libvirt pull mode: a qcow2 overlay on the NBD export is"
+  echo "  --method qcow2                Default. Push-mode backup; incrementals come from QEMU dirty bitmaps."
+  echo "  --method content              Libvirt pull-mode backup, for raw block-device storage (LINSTOR/DRBD) which"
+  echo "                                cannot carry the persistent dirty bitmaps checkpoints need. A full is written"
+  echo "                                as a sparse qcow2; an incremental is a qcow2 overlay on the NBD export,"
   echo "                                safe-rebased onto the parent, keeping only the clusters that differ."
-  echo "                                Requires --parent-paths. Used for raw block-device storage (LINSTOR/DRBD),"
-  echo "                                which cannot carry the persistent dirty bitmaps checkpoints need."
+  echo "                                Takes no bitmap names; an incremental requires --parent-paths."
   echo "  -S|--scratch-dir <dir>        Host-local parent dir for pull-mode scratch (NBD socket + fleecing images)."
   echo "                                Defaults to /var/tmp. Must not be on the NAS share."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
@@ -915,6 +936,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -M|--mode)
       MODE="$2"
+      shift
+      shift
+      ;;
+    --method)
+      METHOD="$2"
       shift
       shift
       ;;
