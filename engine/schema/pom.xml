@@ -88,8 +88,15 @@
                                 <script><![CDATA[
                                     def projectVersion = project.properties.getProperty('project.systemvm.template.version')
                                     String[] versionParts = projectVersion.tokenize('.')
-                                    project.properties.setProperty('cs.version', versionParts[0] + "." + versionParts[1])
-                                    project.properties.setProperty('patch.version', versionParts[2])
+                                    if (versionParts[0].toInteger() >= 24) {
+                                        // new versioning: directory 24, templates systemvmtemplate-24.0-...
+                                        project.properties.setProperty('cs.version', versionParts[0])
+                                        project.properties.setProperty('patch.version', versionParts[1])
+                                    } else {
+                                        // legacy versioning: directory 4.22, templates systemvmtemplate-4.22.0-...
+                                        project.properties.setProperty('cs.version', versionParts[0] + "." + versionParts[1])
+                                        project.properties.setProperty('patch.version', versionParts[2])
+                                    }
                                 ]]></script>
                             </scripts>
                         </configuration>
