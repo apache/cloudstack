@@ -195,8 +195,7 @@ public class LibvirtStoragePoolTest extends TestCase {
         Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
         Mockito.verify(cmd).add("-o", "rbdpool");
         Mockito.verify(cmd).add("-n", "cephuser");
-        Mockito.verify(cmd).add("-k");
-        Mockito.verify(cmd).addSensitive("cephkey");
+        // the key is not an argument of the script, it would be visible in the process list
         Mockito.verifyNoMoreInteractions(cmd);
     }
 
@@ -237,5 +236,66 @@ public class LibvirtStoragePoolTest extends TestCase {
     public void testRbdMonitorsWithAndWithoutAPortAreMixed() {
         assertEquals("10.0.0.1:6789,10.0.0.2:3300,mon.example.com:3300,[fd00::1]:3300,[fd00::2]:6789,[fd00::3]:3300",
                 getRbdMonitors("10.0.0.1:6789,10.0.0.2,mon.example.com,fd00::1,[fd00::2]:6789,[fd00::3]", 3300));
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentHasTheCephKey() {
+        assertEquals(java.util.Map.of("CEPH_KEY", "cephkey"), getRbdPool("cephuser", "cephkey").getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentWithoutCephx() {
+        assertNull(getRbdPool(null, null).getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("", " ").getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentOfOtherPoolTypes() {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.NetworkFilesystem,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setAuthSecret("cephkey");
+        assertNull(pool.getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testVolumeListOfRbdPoolIsGivenInAFile() throws java.io.IOException {
+        Script cmd = Mockito.mock(Script.class);
+        String volumes = "uuid-1,uuid-2,uuid-3";
+        java.io.File file = getRbdPool("cephuser", "cephkey").addVolumeListArgs(cmd, volumes);
+        try {
+            assertNotNull(file);
+            assertEquals(volumes, new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8));
+            Mockito.verify(cmd).add("-U", file.getAbsolutePath());
+            Mockito.verifyNoMoreInteractions(cmd);
+        } finally {
+            if (file != null) {
+                file.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testVolumeListOfRbdPoolCanBeVeryLong() throws java.io.IOException {
+        // more than what an argument of a command can have (128 KiB)
+        String volumes = String.join(",", java.util.Collections.nCopies(10000, "6d93a798-9fbe-41e2-8b69-fc6b5782f89a"));
+        java.io.File file = getRbdPool("cephuser", "cephkey").addVolumeListArgs(Mockito.mock(Script.class), volumes);
+        try {
+            assertNotNull(file);
+            assertEquals(volumes.length(), file.length());
+        } finally {
+            if (file != null) {
+                file.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testVolumeListOfOtherPoolTypesIsAnArgument() {
+        Script cmd = Mockito.mock(Script.class);
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.NetworkFilesystem,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        assertNull(pool.addVolumeListArgs(cmd, "uuid-1,uuid-2"));
+        Mockito.verify(cmd).add("-u", "uuid-1,uuid-2");
+        Mockito.verifyNoMoreInteractions(cmd);
     }
 }
