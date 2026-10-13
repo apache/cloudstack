@@ -714,6 +714,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    public int getVmCdromCount(VirtualMachine vm) {
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return 1;
+        }
+        // all the CD-ROM devices supported by the host are defined for the Instance at boot, even if the configured
+        // maximum number of ISOs (vm.iso.max.count) is lower or is increased later
+        int cdromCount = advertisedCdromCap(hostIdForVm(vm));
+        UserVmVO userVm = _userVmDao.findById(vm.getId());
+        if (userVm != null) {
+            cdromCount = Math.max(cdromCount, slotsNeededFor(loadAttachedIsoSlots(userVm)));
+        }
+        return cdromCount;
+    }
+
     private Long singleStoragePoolId(DeployDestination dest) {
         Long poolId = null;
         Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();

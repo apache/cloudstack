@@ -37,6 +37,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -182,6 +183,17 @@ public interface TemplateManager {
      * @param VirtualMachineProfile
      */
     void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest);
+
+    /**
+     * Returns the number of CD-ROM devices of the Instance. The CD-ROM devices occupy the device ids starting from
+     * {@link #CDROM_PRIMARY_DEVICE_SEQ}, which therefore cannot be used by the volumes of the Instance.
+     * The hypervisor defines all the CD-ROM devices it supports for the Instance (see {@code host.cdrom.max.count}),
+     * whether or not ISOs are attached to them.
+     *
+     * @param vm the Instance
+     * @return the number of CD-ROM devices
+     */
+    int getVmCdromCount(VirtualMachine vm);
 
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";

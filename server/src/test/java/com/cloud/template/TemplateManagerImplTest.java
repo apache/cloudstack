@@ -1312,4 +1312,51 @@ public class TemplateManagerImplTest extends TestCase {
             }
         }
     }
+
+    private UserVmVO mockUserVmOnHostWithCdromCap(Long advertisedCap) {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm.getHostId()).thenReturn(7L);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        if (advertisedCap != null) {
+            DetailVO detail = Mockito.mock(DetailVO.class);
+            Mockito.when(detail.getValue()).thenReturn(String.valueOf(advertisedCap));
+            Mockito.when(_hostDetailsDao.findDetail(7L, Host.HOST_CDROM_MAX_COUNT)).thenReturn(detail);
+        }
+        return vm;
+    }
+
+    @Test
+    public void getVmCdromCountReturnsOneForSystemVms() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+
+        Assert.assertEquals(1, templateManager.getVmCdromCount(vm));
+    }
+
+    @Test
+    public void getVmCdromCountReturnsAllCdromsAdvertisedByHostRegardlessOfConfiguredMaximum() {
+        // vm.iso.max.count defaults to 1, but the host defines all the CD-ROMs it supports
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+
+        Assert.assertEquals(2, templateManager.getVmCdromCount(vm));
+    }
+
+    @Test
+    public void getVmCdromCountReturnsDefaultWhenHostDoesNotAdvertiseCdromCap() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
+
+        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.getVmCdromCount(vm));
+    }
+
+    @Test
+    public void getVmCdromCountCoversAttachedIsosBeyondHostCap() {
+        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(
+                new VmIsoMapVO(1L, 11L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1),
+                new VmIsoMapVO(1L, 12L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2)));
+
+        Assert.assertEquals(3, templateManager.getVmCdromCount(vm));
+    }
 }
