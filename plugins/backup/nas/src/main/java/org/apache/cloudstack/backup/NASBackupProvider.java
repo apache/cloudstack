@@ -325,20 +325,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // Master switch — when the operator disables incrementals at the zone level the backup
         // behaves exactly like the pre-incremental full-only path: no bitmap is generated and no
         // chain/checkpoint metadata is created, sent to the agent, or persisted (legacy-full).
+        // This holds for every storage, so enabling incrementals is also the opt-in to the
+        // content-based path below and its host-local scratch space.
         Boolean incrementalEnabled = NASBackupIncrementalEnabled.valueIn(vm.getDataCenterId());
-        final boolean incrementalOn = incrementalEnabled != null && incrementalEnabled;
+        if (incrementalEnabled == null || !incrementalEnabled) {
+            return ChainDecision.legacyFull();
+        }
 
         // Raw block-device storage (LINSTOR/DRBD) cannot carry QEMU persistent dirty bitmaps, so
         // libvirt checkpoints — and with them the push-mode incremental path — are unavailable.
-        // Those VMs take the content-based pull-mode path instead. It is chosen regardless of the
-        // master switch, because even a full backup benefits: pull mode writes a sparse qcow2 in a
-        // single pass rather than a fully allocated one needing a second re-convert pass.
+        // Those VMs take the content-based pull-mode path instead.
         if (allVolumesOnContentDiffCapableStorage(vm)) {
-            return decideContentChain(vm, incrementalOn);
-        }
-
-        if (!incrementalOn) {
-            return ChainDecision.legacyFull();
+            return decideContentChain(vm);
         }
 
         // Incremental backups rely on QEMU dirty bitmaps / libvirt checkpoints, which only exist
@@ -418,11 +416,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
      * independently verifies the parent files still exist on the NAS, degrading to a full if they
      * do not (INCREMENTAL_FALLBACK).</p>
      */
-    protected ChainDecision decideContentChain(VirtualMachine vm, boolean incrementalEnabled) {
-        if (!incrementalEnabled) {
-            return ChainDecision.contentFull();
-        }
-
+    protected ChainDecision decideContentChain(VirtualMachine vm) {
         // Stopped VMs are backed up straight from the disk with qemu-img convert; that path has no
         // point-in-time export to diff against a parent, so it is always a full.
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {

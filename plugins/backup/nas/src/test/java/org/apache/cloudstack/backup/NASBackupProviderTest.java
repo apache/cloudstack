@@ -1105,17 +1105,16 @@ public class NASBackupProviderTest {
     // -- content-based (pull mode) chain decisions for raw block storage -----------------
 
     /**
-     * A LINSTOR-backed VM must take the content-based path even when the incremental master
-     * switch is off: pull mode still writes a sparse qcow2 in one pass, which is strictly better
-     * than the fully allocated push output. It must NOT fall back to legacy-full.
+     * With the incremental master switch off, a LINSTOR-backed VM keeps the legacy push-mode full
+     * like every other VM: enabling incrementals is the opt-in to the content-based path and its
+     * host-local scratch space. The storage is not even looked at.
      */
     @Test
-    public void decideChainReturnsContentFullForLinstorWhenIncrementalDisabled() {
+    public void decideChainReturnsLegacyFullForLinstorWhenIncrementalDisabled() {
         Long vmId = 70L;
         VMInstanceVO vm = mock(VMInstanceVO.class);
-        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.lenient().when(vm.getId()).thenReturn(vmId);
         Mockito.lenient().when(vm.getDataCenterId()).thenReturn(1L);
-        stubAllVolumesOnLinstor(vmId, 1);
 
         ReflectionTestUtils.setField(nasBackupProvider, "NASBackupIncrementalEnabled",
                 new org.apache.cloudstack.framework.config.ConfigKey<>("Advanced", Boolean.class,
@@ -1124,12 +1123,11 @@ public class NASBackupProviderTest {
                         org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone));
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
-        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
-        Assert.assertEquals(NASBackupChainKeys.METHOD_CONTENT, decision.method);
-        Assert.assertTrue(decision.isContentBased());
-        Assert.assertFalse(decision.isIncremental());
-        Assert.assertNull("content path uses no bitmaps", decision.bitmapNew);
-        Assert.assertNotNull("a content full still anchors a chain", decision.chainId);
+        Assert.assertTrue(decision.isLegacyFull());
+        Assert.assertEquals(NASBackupChainKeys.METHOD_QCOW2, decision.method);
+        Assert.assertFalse(decision.isContentBased());
+        Assert.assertNull("legacy full anchors no chain", decision.chainId);
+        Mockito.verify(volumeDao, Mockito.never()).findByInstance(vmId);
     }
 
     /**
