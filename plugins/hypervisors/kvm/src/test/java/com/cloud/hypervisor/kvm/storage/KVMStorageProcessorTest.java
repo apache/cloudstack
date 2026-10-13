@@ -27,6 +27,7 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -486,5 +487,12 @@ public class KVMStorageProcessorTest {
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
+    }
+
+    @Test
+    public void getAttachDiskBusTypeReadsVirtioBlkControllerAsVirtio() {
+        Map<String, String> controllerInfo = Map.of(VmDetailConstants.DATA_DISK_CONTROLLER, "virtio-blk");
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.VIRTIO,
+                storageProcessor.getAttachDiskBusType(1, new ArrayList<>(), controllerInfo));
     }
 }
