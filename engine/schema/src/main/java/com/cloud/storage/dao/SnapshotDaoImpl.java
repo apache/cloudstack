@@ -65,6 +65,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> InstanceIdSearch;
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
+    private SearchBuilder<SnapshotVO> volumeIdNameNotInStatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
     @Inject
     ResourceTagDao _tagsDao;
@@ -158,6 +159,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         notInStatusSearch.and("volumeId", notInStatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         notInStatusSearch.and("status", notInStatusSearch.entity().getState(), SearchCriteria.Op.NOTIN);
         notInStatusSearch.done();
+
+        volumeIdNameNotInStatusSearch = createSearchBuilder();
+        volumeIdNameNotInStatusSearch.and("volumeId", volumeIdNameNotInStatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeIdNameNotInStatusSearch.and("name", volumeIdNameNotInStatusSearch.entity().getName(), SearchCriteria.Op.EQ);
+        volumeIdNameNotInStatusSearch.and("status", volumeIdNameNotInStatusSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        volumeIdNameNotInStatusSearch.done();
 
         CountSnapshotsByAccount = createSearchBuilder(Long.class);
         CountSnapshotsByAccount.select(null, Func.COUNT, null);
@@ -293,6 +300,15 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("status", (Object[]) status);
         return listBy(sc, null);
+    }
+
+    @Override
+    public SnapshotVO findByVolumeIdAndNameNotInStatus(long volumeId, String name, Snapshot.State... status) {
+        SearchCriteria<SnapshotVO> sc = volumeIdNameNotInStatusSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("name", name);
+        sc.setParameters("status", (Object[]) status);
+        return findOneBy(sc);
     }
 
     @Override
