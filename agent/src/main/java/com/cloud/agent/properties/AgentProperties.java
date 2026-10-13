@@ -654,6 +654,25 @@ public class AgentProperties{
     public static final Property<String> NAS_BACKUP_PULL_SCRATCH_DIR = new Property<>("nas.backup.pull.scratch.dir", "/var/tmp");
 
     /**
+     * Free space the NAS backup pull-mode scratch area ({@link #NAS_BACKUP_PULL_SCRATCH_DIR}) must
+     * have before a backup starts, as a percentage of the VM's total disk size. Otherwise the
+     * backup fails up front.
+     * <p>
+     * Copy-before-write saves every guest block that is overwritten during the backup into the
+     * scratch area, at most once per block, so the total disk size is the worst case. If the scratch
+     * area fills up anyway, the guest's writes fail and the VM is paused. 100 rules that out; the
+     * default assumes the guest overwrites at most a quarter of its disks while a backup runs.
+     * 0 disables the check.
+     * <p>
+     * Data type: Integer.<br>
+     * Default value: <code>25</code>
+     *
+     * @since 4.22.0
+     */
+    public static final Property<Integer> NAS_BACKUP_PULL_SCRATCH_MIN_FREE_PERCENT =
+            new Property<>("nas.backup.pull.scratch.min.free.percent", 25);
+
+    /**
      * Specifies start MAC address for private IP range.<br>
      * Data type: String.<br>
      * Default value: <code>00:16:3e:77:e2:a0</code>

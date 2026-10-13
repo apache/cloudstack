@@ -47,6 +47,8 @@ PARENT_PATHS=""       # For incremental: comma-separated list of parent backup f
 SCRATCH_PARENT="/var/tmp"   # Parent dir for the pull-mode scratch area (NBD socket +
                       # libvirt fleecing images). Host-local, never the NAS share.
                       # Overridable with -S (agent.properties nas.backup.pull.scratch.dir).
+SCRATCH_MIN_FREE_PERCENT=25   # Free space the scratch area needs before a pull-mode backup starts,
+                      # as a percentage of the VM's total disk size; 0 disables the check.
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
@@ -270,6 +272,40 @@ backup_running_vm_pull() {
   if [[ ${#disks[@]} -eq 0 ]]; then
     echo "No disks found for vm $VM"
     exit 1
+  fi
+
+  # Copy-before-write saves each guest block overwritten during the backup into the scratch
+  # area, at most once per block. If the scratch area fills up, the guest's writes fail and
+  # QEMU pauses the VM, and nothing resumes it. Refuse to start unless the scratch area can
+  # take the configured share of the worst case, the VM's total disk size.
+  if [[ ! "$SCRATCH_MIN_FREE_PERCENT" =~ ^[0-9]+$ ]]; then
+    echo "Invalid scratch minimum free percentage: $SCRATCH_MIN_FREE_PERCENT"
+    exit 1
+  fi
+  if [[ $SCRATCH_MIN_FREE_PERCENT -gt 0 ]]; then
+    local entry disk_bytes total_bytes=0 required_bytes available_bytes
+    for entry in "${disks[@]}"; do
+      disk_bytes=$(virsh -c qemu:///system domblkinfo "$VM" "${entry%% *}" 2>/dev/null | awk '/^Capacity:/ {print $2}')
+      if [[ ! "$disk_bytes" =~ ^[0-9]+$ ]]; then
+        echo "Failed to determine the size of disk ${entry%% *} of vm $VM"
+        exit 1
+      fi
+      total_bytes=$((total_bytes + disk_bytes))
+    done
+    required_bytes=$(((total_bytes * SCRATCH_MIN_FREE_PERCENT + 99) / 100))
+    available_bytes=$(df --output=avail -B1 "$scratch_dir" 2>/dev/null | tail -n 1 | tr -d ' ')
+    if [[ ! "$available_bytes" =~ ^[0-9]+$ ]]; then
+      echo "Failed to determine the free space in $SCRATCH_PARENT"
+      exit 1
+    fi
+    if [[ $available_bytes -lt $required_bytes ]]; then
+      echo "Not enough free space in $SCRATCH_PARENT for the pull-mode backup of vm $VM:" \
+        "$available_bytes bytes available, $required_bytes bytes required" \
+        "($SCRATCH_MIN_FREE_PERCENT% of the $total_bytes bytes of disk)."
+      echo "Free up or enlarge $SCRATCH_PARENT, set agent.properties nas.backup.pull.scratch.dir to a" \
+        "larger filesystem, or lower nas.backup.pull.scratch.min.free.percent."
+      exit 1
+    fi
   fi
 
   # Resolve each disk's parent backup up front. PARENT_PATHS is comma separated, one entry
@@ -882,6 +918,9 @@ function usage {
   echo "                                Takes no bitmap names; an incremental requires --parent-paths."
   echo "  -S|--scratch-dir <dir>        Host-local parent dir for pull-mode scratch (NBD socket + fleecing images)."
   echo "                                Defaults to /var/tmp. Must not be on the NAS share."
+  echo "  --scratch-min-free-percent <n>"
+  echo "                                Free space the scratch dir needs before a pull-mode backup starts, as a"
+  echo "                                percentage of the VM's total disk size. Defaults to 25; 0 disables the check."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
@@ -961,6 +1000,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -S|--scratch-dir)
       SCRATCH_PARENT="$2"
+      shift
+      shift
+      ;;
+    --scratch-min-free-percent)
+      SCRATCH_MIN_FREE_PERCENT="$2"
       shift
       shift
       ;;

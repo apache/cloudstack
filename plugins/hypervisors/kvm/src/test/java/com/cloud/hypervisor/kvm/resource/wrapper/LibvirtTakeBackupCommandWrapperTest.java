@@ -154,6 +154,15 @@ public class LibvirtTakeBackupCommandWrapperTest {
         Assert.assertEquals("incremental", argv.get(argv.indexOf("-M") + 1));
         Assert.assertEquals("content", argv.get(argv.indexOf("--method") + 1));
         Assert.assertFalse(argv.contains("--bitmap-new"));
+        // Pull mode needs scratch space, by default for a quarter of the disk size.
+        Assert.assertEquals("25", argv.get(argv.indexOf("--scratch-min-free-percent") + 1));
+    }
+
+    @Test
+    public void executeOmitsScratchSpaceCheckForPushMode() {
+        command.setMode("legacy-full");
+
+        Assert.assertFalse(runAndCaptureArgv().contains("--scratch-min-free-percent"));
     }
 
     @Test

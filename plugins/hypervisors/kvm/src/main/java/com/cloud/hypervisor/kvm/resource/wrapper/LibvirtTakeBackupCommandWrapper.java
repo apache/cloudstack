@@ -214,6 +214,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("-S");
             argv.add(scratchDir);
         }
+        if (METHOD_CONTENT.equals(command.getMethod())) {
+            Integer minFreePercent = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NAS_BACKUP_PULL_SCRATCH_MIN_FREE_PERCENT);
+            if (minFreePercent != null) {
+                argv.add("--scratch-min-free-percent");
+                argv.add(String.valueOf(Math.max(0, minFreePercent)));
+            }
+        }
 
         List<String[]> commands = new ArrayList<>();
         commands.add(argv.toArray(new String[0]));
