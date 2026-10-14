@@ -307,7 +307,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                         state = dm.getInfo().state;
                         logger.info("VM domain state when trying to pause VM for migration: {}.", state);
                     } catch (final LibvirtException e) {
-                        logger.info("Could not get VM domain state after {}ms: {}.", sleeptime, e.getMessage());
+                        logger.warn("Could not get VM domain state after {}ms.", sleeptime, e);
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
