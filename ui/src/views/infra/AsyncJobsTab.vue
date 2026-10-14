@@ -86,6 +86,12 @@
       <template #domainpath="{ text, record }">
         <router-link :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       </template>
+      <template #created="{ text }">
+        {{ text ? $toLocaleDate(text) : '-' }}
+      </template>
+      <template #completed="{ text }">
+        {{ text ? $toLocaleDate(text) : '-' }}
+      </template>
       <template #jobresult="{ text }">
         <a-tooltip v-if="text" placement="topLeft" :title="text">
           <span class="job-result">{{ text }}</span>
@@ -227,11 +233,13 @@ export default {
       columns.push(
         {
           title: this.$t('label.created'),
-          dataIndex: 'created'
+          dataIndex: 'created',
+          slots: { customRender: 'created' }
         },
         {
           title: this.$t('label.completed'),
-          dataIndex: 'completed'
+          dataIndex: 'completed',
+          slots: { customRender: 'completed' }
         },
         {
           title: this.$t('label.jobresult'),
