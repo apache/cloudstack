@@ -153,11 +153,8 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
 
-    @Parameter(name = ApiConstants.NETWORK_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
-    private String networkMode;
+   @Parameter(name = ApiConstants.NETWORK_MODE, type = CommandType.STRING, required = true, description = "the network mode for the network offering")
+   private String networkMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
