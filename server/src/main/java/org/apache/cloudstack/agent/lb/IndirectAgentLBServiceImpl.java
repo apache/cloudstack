@@ -23,6 +23,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerAddressUtil;
 import com.cloud.dc.ClusterVO;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBRoundRobinAlgorithm;
 import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBShuffleAlgorithm;
@@ -72,6 +75,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             "The interval in seconds after which indirect agent should check and try to connect to its preferred host (the first management server from the propagated list provided in the 'host' config)." +
                     " Set 0 to disable it.",
             true, ConfigKey.Scope.Cluster);
+
+    public static final ConfigKey<Integer> IndirectAgentLBMigrateCommandWait = new ConfigKey<>("Advanced", Integer.class,
+            "indirect.agent.lb.migrate.command.wait", "60",
+            "The time in seconds to wait for an indirect agent to answer the command asking it to migrate its connection to another management server.",
+            true, ConfigKey.Scope.Global);
 
     private static Map<String, org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm> algorithmMap = new HashMap<>();
 
@@ -331,7 +339,9 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 zoneHostIds.addAll(hostIds);
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
-            final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+
+            final List<String> avoidMsList = agentManager.getAvoidMsList();
+
             for (Long nonRoutingHostId : nonRoutingHostIds) {
                 setupMSListExecutorService.submit(new SetupMSListTask(nonRoutingHostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, globalLbCheckInterval, triggerHostLB));
             }
@@ -377,7 +387,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         final String lbAlgorithm = getLBAlgorithmName();
         List<Long> clusterHostIds = getAllAgentBasedRoutingHostsFromDB(zone.getId(), clusterId, null, false);
         clusterHostIds.sort(Comparator.comparingLong(x -> x));
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
         final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
         for (Long hostId : clusterHostIds) {
             setupMSListInClusterExecutorService.submit(new SetupMSListTask(hostId, zone.getId(), clusterHostIds, avoidMsList, lbAlgorithm, clusterLbCheckInterval, false));
@@ -437,6 +447,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 systemVmAgentsInDc.size(), fromMsId, fromMsUuid, dc));
         ExecutorService migrateAgentsExecutorService = Executors.newFixedThreadPool(5, new NamedThreadFactory("MigrateNonRoutingHostAgent-Worker"));
         Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
+        Set<Long> failedHostIds = ConcurrentHashMap.newKeySet();
         boolean stopMigration = false;
         for (final Long hostId : systemVmAgentsInDc) {
             long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTimeInMs;
@@ -446,7 +457,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 break;
             }
 
-            migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged));
+            migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged, failedHostIds));
         }
 
         if (stopMigration) {
@@ -465,6 +476,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             logger.debug(String.format("Force shutdown migrate non-routing agents service as it did not shutdown in the desired time due to: %s", e.getMessage()));
         }
 
+        logFailedMigrations("non-routing", failedHostIds, fromMsId, fromMsUuid);
         return true;
     }
 
@@ -480,6 +492,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 "cluster ID: %d", agentBasedHostsOfMsInDcAndCluster.size(), fromMsId, fromMsUuid, dc, clusterId));
         ExecutorService migrateAgentsExecutorService = Executors.newFixedThreadPool(10, new NamedThreadFactory("MigrateRoutingHostAgent-Worker"));
         Long lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+        Set<Long> failedHostIds = ConcurrentHashMap.newKeySet();
         boolean stopMigration = false;
         for (final Long hostId : agentBasedHostsOfMsInDcAndCluster) {
             long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTimeInMs;
@@ -489,7 +502,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 break;
             }
 
-            migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged));
+            migrateAgentsExecutorService.submit(new MigrateAgentConnectionTask(fromMsId, hostId, dc.getId(), orderedHostIdList, avoidMsList, lbCheckInterval, lbAlgorithm, lbAlgorithmChanged, failedHostIds));
         }
 
         if (stopMigration) {
@@ -508,7 +521,16 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             logger.debug(String.format("Force shutdown migrate routing agents service as it did not shutdown in the desired time due to: %s", e.getMessage()));
         }
 
+        logFailedMigrations("routing", failedHostIds, fromMsId, fromMsUuid);
         return true;
+    }
+
+    private void logFailedMigrations(String hostKind, Set<Long> failedHostIds, long fromMsId, String fromMsUuid) {
+        if (failedHostIds.isEmpty()) {
+            return;
+        }
+        logger.warn(String.format("Failed to migrate %d %s host agent(s) from management server node %d (id: %s), host IDs: %s",
+                failedHostIds.size(), hostKind, fromMsId, fromMsUuid, failedHostIds));
     }
 
     @Override
@@ -531,10 +553,16 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             lbAlgorithmChanged = true;
         }
 
-        final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
+        final List<String> avoidMsList = agentManager.getAvoidMsList();
+
+        // Add the source management server in the same format as the config
         ManagementServerHostVO ms = mshostDao.findByMsid(fromMsId);
-        if (ms != null && !avoidMsList.contains(ms.getServiceIP())) {
-            avoidMsList.add(ms.getServiceIP());
+        if (ms != null) {
+            for (String msAddress : ManagementServerAddressUtil.getConfiguredAddresses(ms.getName(), ms.getServiceIP())) {
+                if (!avoidMsList.contains(msAddress)) {
+                    avoidMsList.add(msAddress);
+                }
+            }
         }
 
         List<DataCenterVO> dataCenterList = dcDao.listAll();
@@ -574,9 +602,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         Long lbCheckInterval;
         String lbAlgorithm;
         boolean lbAlgorithmChanged;
+        Set<Long> failedHostIds;
 
         public MigrateAgentConnectionTask(long fromMsId, Long hostId, Long dcId, List<Long> orderedHostIdList,
-                                          List<String> avoidMsList, Long lbCheckInterval, String lbAlgorithm, boolean lbAlgorithmChanged) {
+                                          List<String> avoidMsList, Long lbCheckInterval, String lbAlgorithm, boolean lbAlgorithmChanged,
+                                          Set<Long> failedHostIds) {
             this.fromMsId = fromMsId;
             this.hostId = hostId;
             this.orderedHostIdList = orderedHostIdList;
@@ -584,6 +614,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             this.lbCheckInterval = lbCheckInterval;
             this.lbAlgorithm = lbAlgorithm;
             this.lbAlgorithmChanged = lbAlgorithmChanged;
+            this.failedHostIds = failedHostIds;
         }
 
         @Override
@@ -595,16 +626,19 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                     msList = getManagementServerList(hostId, dcId, orderedHostIdList, lbAlgorithm);
                 }
 
+                // ask Host to reconnect to another Management Server
                 final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
-                cmd.setWait(60);
+                cmd.setWait(IndirectAgentLBMigrateCommandWait.value());
                 final Answer answer = agentManager.easySend(hostId, cmd); //may not receive answer when the agent disconnects immediately and try reconnecting to other ms host
                 if (answer == null) {
                     logger.warn(String.format("Got empty answer while initiating migration of agent connection for host agent ID: %d", hostId));
                 } else if (!answer.getResult()) {
+                    failedHostIds.add(hostId);
                     logger.warn(String.format("Error while initiating migration of agent connection for host agent ID: %d - %s", hostId, answer.getDetails()));
                 }
                 updateLastManagementServer(hostId, fromMsId);
             } catch (final Exception e) {
+                failedHostIds.add(hostId);
                 logger.error(String.format("Error migrating agent connection for host %d", hostId), e);
             }
         }
@@ -645,7 +679,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
                 IndirectAgentLBAlgorithm,
-                IndirectAgentLBCheckInterval
+                IndirectAgentLBCheckInterval,
+                IndirectAgentLBMigrateCommandWait
         };
     }
 }

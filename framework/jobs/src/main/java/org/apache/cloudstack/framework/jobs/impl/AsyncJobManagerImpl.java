@@ -64,6 +64,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.threadcontext.ThreadContextUtil;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -666,6 +667,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         }
                     }
                     ThreadContext.put("logcontextid", logContext);
+
+                    if (StringUtils.isBlank(ThreadContext.get(ThreadContextUtil.MDC_UUID_KEY))) {
+                        AsyncJob jobToCheck = job;
+                        logger.debug("Updating UUID ThreadContext value");
+
+                        // If current job has no cmdInfo and has a related parent job, check parent instead
+                        if (StringUtils.isNotBlank(related)) {
+                            AsyncJob parentJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                            if (parentJob != null && StringUtils.isNotBlank(parentJob.getCmdInfo())) {
+                                jobToCheck = parentJob;
+                            }
+                        }
+
+                        // Extract entity UUID from the selected job
+                        ThreadContextUtil.extractAndSetUuidFromCmdInfo(jobToCheck.getCmdInfo());
+                    }
 
                     // execute the job
                     if (logger.isDebugEnabled()) {

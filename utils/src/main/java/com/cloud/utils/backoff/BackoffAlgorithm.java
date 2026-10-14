@@ -21,6 +21,8 @@ package com.cloud.utils.backoff;
 
 import com.cloud.utils.component.Adapter;
 
+import java.util.Map;
+
 /**
  * BackoffAlgorithm implements multiple BackoffAlgorithm.
  */
@@ -35,4 +37,5 @@ public interface BackoffAlgorithm extends Adapter {
      */
     void reset();
 
+    Map<String, String> getConfiguration();
 }
