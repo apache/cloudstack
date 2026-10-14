@@ -217,11 +217,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     /**
      * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
-     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
-     * parent bitmap and parent file path.
+     * the chain: full vs incremental, how it is taken, the bitmap name to create, and (for
+     * incrementals) the parent bitmap and parent file path.
      */
     static final class ChainDecision {
-        final String mode;            // "full"/"incremental", or their "rbd-" prefixed equivalents
+        final String mode;            // "full" or "incremental"
+        final String method;          // NASBackupChainKeys.METHOD_QCOW2, METHOD_CONTENT or METHOD_RBD
         // On-NAS format of the chain this backup belongs to: NASBackupChainKeys.FORMAT_QCOW2 for
         // the libvirt-checkpoint path, FORMAT_RBD_DIFF for the Ceph-native rbd export-diff path.
         final String format;
@@ -234,9 +235,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String chainId;         // chain identifier this backup belongs to
         final int chainPosition;      // 0 for full, N for the Nth incremental in the chain
 
-        private ChainDecision(String mode, String format, String bitmapNew, String bitmapParent, List<String> parentPaths,
-                              String chainId, int chainPosition) {
+        private ChainDecision(String mode, String method, String format, String bitmapNew, String bitmapParent,
+                              List<String> parentPaths, String chainId, int chainPosition) {
             this.mode = mode;
+            this.method = method;
             this.format = format;
             this.bitmapNew = bitmapNew;
             this.bitmapParent = bitmapParent;
@@ -246,8 +248,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
 
         static ChainDecision fullStart(String bitmapName) {
-            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, NASBackupChainKeys.FORMAT_QCOW2, bitmapName,
-                    null, null, UUID.randomUUID().toString(), 0);
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, NASBackupChainKeys.METHOD_QCOW2,
+                    NASBackupChainKeys.FORMAT_QCOW2, bitmapName, null, null, UUID.randomUUID().toString(), 0);
         }
 
         /**
@@ -257,8 +259,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
          * deleted backup, an unassigned offering, a restore) cannot leave snapshots behind.
          */
         static ChainDecision rbdFullStart(String snapshotName) {
-            return new ChainDecision(NASBackupChainKeys.TYPE_RBD_FULL, NASBackupChainKeys.FORMAT_RBD_DIFF,
-                    snapshotName, null, null, UUID.randomUUID().toString(), 0);
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, NASBackupChainKeys.METHOD_RBD,
+                    NASBackupChainKeys.FORMAT_RBD_DIFF, snapshotName, null, null, UUID.randomUUID().toString(), 0);
         }
 
         /**
@@ -267,8 +269,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
          * diff stream is not rebased onto its parent, the chain is replayed in order on restore.
          */
         static ChainDecision rbdIncremental(String snapshotName, String parentSnapshot, String chainId, int chainPosition) {
-            return new ChainDecision(NASBackupChainKeys.TYPE_RBD_INCREMENTAL, NASBackupChainKeys.FORMAT_RBD_DIFF,
-                    snapshotName, parentSnapshot, null, chainId, chainPosition);
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, NASBackupChainKeys.METHOD_RBD,
+                    NASBackupChainKeys.FORMAT_RBD_DIFF, snapshotName, parentSnapshot, null, chainId, chainPosition);
         }
 
         /**
@@ -277,19 +279,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
          * is sent to the agent or persisted. Keeps the feature-off path byte-for-byte legacy.
          */
         static ChainDecision legacyFull() {
-            return new ChainDecision(NASBackupChainKeys.TYPE_LEGACY_FULL, NASBackupChainKeys.FORMAT_QCOW2,
-                    null, null, null, null, 0);
+            return new ChainDecision(NASBackupChainKeys.TYPE_LEGACY_FULL, NASBackupChainKeys.METHOD_QCOW2,
+                    NASBackupChainKeys.FORMAT_QCOW2, null, null, null, null, 0);
         }
 
         static ChainDecision incremental(String bitmapNew, String bitmapParent, List<String> parentPaths,
                                          String chainId, int chainPosition) {
-            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, NASBackupChainKeys.FORMAT_QCOW2,
-                    bitmapNew, bitmapParent, parentPaths, chainId, chainPosition);
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, NASBackupChainKeys.METHOD_QCOW2,
+                    NASBackupChainKeys.FORMAT_QCOW2, bitmapNew, bitmapParent, parentPaths, chainId, chainPosition);
         }
 
         boolean isIncremental() {
-            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode)
-                    || NASBackupChainKeys.TYPE_RBD_INCREMENTAL.equals(mode);
+            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
         }
 
         boolean isLegacyFull() {
@@ -297,7 +298,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
 
         boolean isRbd() {
-            return NASBackupChainKeys.FORMAT_RBD_DIFF.equals(format);
+            return NASBackupChainKeys.METHOD_RBD.equals(method);
         }
 
         /**
@@ -701,6 +702,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
         command.setMode(decision.mode);
+        command.setMethod(decision.method);
         command.setBitmapNew(decision.bitmapNew);
         command.setBitmapParent(decision.bitmapParent);
         command.setParentPaths(decision.parentPaths);

@@ -34,10 +34,11 @@ BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
 # Incremental backup parameters (all optional; legacy callers omit them)
-MODE=""               # "full"/"incremental" (qcow2 chains), "rbd-full"/"rbd-incremental" (Ceph chains);
-                      # empty => legacy full-only behavior (no checkpoint created)
+MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
+METHOD="qcow2"        # How the backup is taken: "qcow2" (push mode, incrementals from dirty bitmaps) or
+                      # "rbd" (Ceph-native, incrementals from rbd export-diff --from-snap)
 BITMAP_NEW=""         # Anchor to create with this backup: a QEMU bitmap/checkpoint name for qcow2
-                      # chains (e.g. "backup-1711586400"), an RBD snapshot name for rbd-* modes
+                      # chains (e.g. "backup-1711586400"), an RBD snapshot name for the rbd method
 BITMAP_PARENT=""      # Anchor to read changes since (incremental modes only)
 PARENT_PATHS=""       # For incremental: comma-separated list of parent backup file paths,
                       # one per VM volume in the same order as DISK_PATHS. Each new qcow2
@@ -277,6 +278,15 @@ backup_rbd_vm() {
   fi
 
   local effective_mode="$MODE"
+  case "$effective_mode" in
+    full|incremental)
+      ;;
+    *)
+      echo "Mode $effective_mode is not supported by the rbd method"
+      cleanup
+      exit 1
+      ;;
+  esac
   local -a disks=()
   IFS=',' read -ra disks <<< "$DISK_PATHS"
 
@@ -291,13 +301,13 @@ backup_rbd_vm() {
   # The parent anchor must still be present on EVERY disk. A volume migration or an out-of-band
   # snapshot purge can drop it; fall back to a full rather than letting export-diff fail. Checked
   # before anything is mounted or created so the fallback costs nothing.
-  if [[ "$effective_mode" == "rbd-incremental" ]]; then
+  if [[ "$effective_mode" == "incremental" ]]; then
     for d in "${disks[@]}"; do
       parse_rbd_opts "$d"
       if ! rbd_snapshot_exists "$BITMAP_PARENT"; then
         log -e "rbd incremental: parent snapshot $BITMAP_PARENT missing on $RBD_IMAGE — falling back to full"
         echo "INCREMENTAL_FALLBACK=true"
-        effective_mode="rbd-full"
+        effective_mode="full"
         break
       fi
     done
@@ -358,7 +368,7 @@ backup_rbd_vm() {
     parse_rbd_opts "$d"
     volUuid=$(get_ceph_uuid_from_path "$d")
     output="$dest/$name.$volUuid.rbddiff"
-    if [[ "$effective_mode" == "rbd-incremental" ]]; then
+    if [[ "$effective_mode" == "incremental" ]]; then
       if ! rbd "${RBD_ARGS[@]}" export-diff --from-snap "$BITMAP_PARENT" "$RBD_IMAGE@$BITMAP_NEW" "$output" >> "$logFile" 2>&1; then
         echo "rbd export-diff --from-snap $BITMAP_PARENT failed for $RBD_IMAGE"
         rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
@@ -389,7 +399,7 @@ backup_rbd_vm() {
 
   # The parent anchor has served its purpose: its delta is on the NAS and BITMAP_NEW tracks
   # changes from here on. Dropping it keeps exactly one backup snapshot per image.
-  if [[ "$effective_mode" == "rbd-incremental" && -n "$BITMAP_PARENT" && "$BITMAP_PARENT" != "$BITMAP_NEW" ]]; then
+  if [[ "$effective_mode" == "incremental" && -n "$BITMAP_PARENT" && "$BITMAP_PARENT" != "$BITMAP_NEW" ]]; then
     rbd_remove_snapshots "$BITMAP_PARENT" "${disks[@]}"
   else
     # A full starts a new chain, so every anchor this tool left on the image before it is stale --
@@ -814,12 +824,13 @@ function usage {
   echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-paths (comma-separated list, one"
   echo "                          parent qcow2 path per disk: root.<uuid>.qcow2, datadisk.<uuid>.qcow2, … same order"
   echo "                          as -d|--disks)."
-  echo "  -M|--mode rbd-full          Snapshot every RBD volume (--bitmap-new) and export it in full with"
-  echo "                              rbd export-diff. --bitmap-parent, if given, names the previous chain's"
-  echo "                              snapshot and is removed once the export succeeds."
-  echo "  -M|--mode rbd-incremental   Snapshot every RBD volume (--bitmap-new) and export only what changed"
-  echo "                              since --bitmap-parent. Requires -d|--disks. Falls back to rbd-full when"
-  echo "                              the parent snapshot is missing on any disk."
+  echo "  --method qcow2              Default. Push-mode backup; incrementals come from QEMU dirty bitmaps."
+  echo "  --method rbd                Ceph-native backup of RBD volumes. With -M full, snapshots every volume"
+  echo "                              (--bitmap-new) and exports it whole with rbd export-diff; --bitmap-parent,"
+  echo "                              if given, names the previous chain's snapshot and is removed once the"
+  echo "                              export succeeds. With -M incremental, exports only what changed since"
+  echo "                              --bitmap-parent. Requires -d|--disks, and falls back to a full when the"
+  echo "                              parent snapshot is missing on any disk."
   echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
@@ -872,6 +883,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    --method)
+      METHOD="$2"
+      shift
+      shift
+      ;;
     --bitmap-new)
       BITMAP_NEW="$2"
       shift
@@ -902,7 +918,7 @@ done
 sanity_checks
 
 if [ "$OP" = "backup" ]; then
-  if [[ "$MODE" == rbd-* ]]; then
+  if [[ "$METHOD" == "rbd" ]]; then
     # RBD chains snapshot inside Ceph, so the VM's run state does not change the procedure.
     backup_rbd_vm
   else

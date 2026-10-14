@@ -52,11 +52,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // Incremental feature disabled: plain full backup with no QEMU bitmap/checkpoint and no
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
-    // Ceph/RBD chains: anchored on an `rbd snap` per cycle and exported with `rbd export-diff`
-    // instead of a libvirt checkpoint + push backup. bitmapNew/bitmapParent carry RBD snapshot
-    // names rather than QEMU bitmap names; no parent file paths, nothing is rebased.
-    private static final String MODE_RBD_FULL = "rbd-full";
-    private static final String MODE_RBD_INCREMENTAL = "rbd-incremental";
+
+    // Backup methods, orthogonal to the mode. qcow2 is the push-mode path with QEMU dirty bitmaps,
+    // also assumed when the management server sends none. rbd is the Ceph-native path: it anchors
+    // each cycle on an `rbd snap` and exports the delta with `rbd export-diff`, so bitmapNew and
+    // bitmapParent carry RBD snapshot names rather than QEMU bitmap names, and nothing is rebased.
+    private static final String METHOD_QCOW2 = "qcow2";
+    private static final String METHOD_RBD = "rbd";
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -163,6 +165,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("-M");
             argv.add(mode);
         }
+        if (StringUtils.isNotBlank(command.getMethod())) {
+            argv.add("--method");
+            argv.add(command.getMethod());
+        }
         if (StringUtils.isNotBlank(bitmapNew)) {
             argv.add("--bitmap-new");
             argv.add(bitmapNew);
@@ -187,6 +193,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private String validateBackupArgs(TakeBackupCommand command) {
         String mode = command.getMode();
+        String method = StringUtils.defaultIfBlank(command.getMethod(), METHOD_QCOW2);
+        if (METHOD_RBD.equals(method)) {
+            return validateRbdBackupArgs(command, mode);
+        }
+        if (!METHOD_QCOW2.equals(method)) {
+            return "Unknown backup method: " + method;
+        }
         if (StringUtils.isBlank(mode)) {
             return null; // legacy full-only, no extra args expected
         }
@@ -211,20 +224,29 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         if (MODE_LEGACY_FULL.equals(mode)) {
             return null; // feature-off full backup, no bitmap or chain args expected
         }
-        if (MODE_RBD_FULL.equals(mode) || MODE_RBD_INCREMENTAL.equals(mode)) {
-            if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
-                return mode + " mode requires bitmapNew (the RBD snapshot to create as the chain anchor)";
-            }
-            if (MODE_RBD_INCREMENTAL.equals(mode)
-                    && (command.getBitmapParent() == null || command.getBitmapParent().isEmpty())) {
-                return "rbd-incremental mode requires bitmapParent (the RBD snapshot to diff against)";
-            }
-            if (command.getVolumePaths() == null || command.getVolumePaths().isEmpty()) {
-                return mode + " mode requires the VM's volume paths";
-            }
-            return null;
-        }
         return "Unknown backup mode: " + mode;
+    }
+
+    /**
+     * An RBD chain anchors each cycle on an {@code rbd snap} whose name travels in bitmapNew, and
+     * an incremental diffs it against the previous anchor in bitmapParent. No parent file paths:
+     * the diff stream is replayed on restore rather than rebased onto its parent.
+     */
+    private String validateRbdBackupArgs(TakeBackupCommand command, String mode) {
+        if (!MODE_FULL.equals(mode) && !MODE_INCREMENTAL.equals(mode)) {
+            return "Unknown backup mode for the rbd method: " + mode;
+        }
+        if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+            return mode + " mode requires bitmapNew (the RBD snapshot to create as the chain anchor)";
+        }
+        if (MODE_INCREMENTAL.equals(mode)
+                && (command.getBitmapParent() == null || command.getBitmapParent().isEmpty())) {
+            return "incremental mode requires bitmapParent (the RBD snapshot to diff against)";
+        }
+        if (command.getVolumePaths() == null || command.getVolumePaths().isEmpty()) {
+            return mode + " mode requires the VM's volume paths";
+        }
+        return null;
     }
 
     /**

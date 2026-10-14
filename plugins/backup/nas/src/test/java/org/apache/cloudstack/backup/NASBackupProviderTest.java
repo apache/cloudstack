@@ -486,7 +486,8 @@ public class NASBackupProviderTest {
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
 
-        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_RBD, decision.method);
         Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, decision.format);
         Assert.assertTrue("RBD chains anchor on an RBD snapshot, not a QEMU bitmap",
                 decision.bitmapNew.startsWith("csbackup-"));
@@ -513,7 +514,8 @@ public class NASBackupProviderTest {
 
         NASBackupProvider.ChainDecision decision = nasBackupProvider.decideChain(vm);
 
-        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, decision.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_RBD, decision.method);
         Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, decision.format);
     }
 
@@ -529,7 +531,8 @@ public class NASBackupProviderTest {
 
         NASBackupProvider.ChainDecision restarted = incremental.asFullRestart();
 
-        Assert.assertEquals(NASBackupChainKeys.TYPE_RBD_FULL, restarted.mode);
+        Assert.assertEquals(NASBackupChainKeys.TYPE_FULL, restarted.mode);
+        Assert.assertEquals(NASBackupChainKeys.METHOD_RBD, restarted.method);
         Assert.assertEquals(NASBackupChainKeys.FORMAT_RBD_DIFF, restarted.format);
         Assert.assertEquals("csbackup-2", restarted.bitmapNew);
         Assert.assertEquals(0, restarted.chainPosition);

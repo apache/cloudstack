@@ -55,17 +55,35 @@ public final class NASBackupChainKeys {
      */
     public static final String TYPE_FULL = "full";
     public static final String TYPE_INCREMENTAL = "incremental";
-    /**
-     * Ceph/RBD equivalents of {@link #TYPE_FULL} / {@link #TYPE_INCREMENTAL}. RBD images are raw
-     * and cannot carry a QEMU dirty bitmap, so these anchor each cycle on an RBD snapshot and
-     * export the delta with {@code rbd export-diff} instead of a libvirt checkpoint + push backup.
-     */
-    public static final String TYPE_RBD_FULL = "rbd-full";
-    public static final String TYPE_RBD_INCREMENTAL = "rbd-incremental";
     // Feature disabled: behave exactly like the pre-incremental full-only backup — no QEMU
     // bitmap/checkpoint is created and no chain metadata is persisted. Matches nasbackup.sh's
     // "legacy-full" mode token (which sets make_checkpoint=0).
     public static final String TYPE_LEGACY_FULL = "legacy-full";
+
+    /**
+     * In-memory backup-method sentinels used by {@code ChainDecision.method}: how a backup is
+     * taken, independent of whether it is a full or an incremental ({@code ChainDecision.mode}).
+     *
+     * <p>{@link #METHOD_QCOW2}: libvirt push-mode backup; incrementals come from QEMU persistent
+     * dirty bitmaps (libvirt checkpoints), which only qcow2 volumes can carry.</p>
+     */
+    public static final String METHOD_QCOW2 = "qcow2";
+
+    /**
+     * Content-based libvirt pull-mode backup, used for raw block-device storage such as
+     * LINSTOR/DRBD which cannot carry persistent dirty bitmaps. A full is written as a sparse
+     * qcow2 in a single pass; an incremental is a qcow2 overlay on the disk's NBD export,
+     * safe-rebased onto the parent so it holds only the clusters that differ.
+     */
+    public static final String METHOD_CONTENT = "content";
+
+    /**
+     * Ceph-native backup, used for RBD volumes. They are raw and cannot carry a persistent dirty
+     * bitmap, so each cycle anchors on an RBD snapshot and exports the delta with
+     * {@code rbd export-diff}. Unlike the other methods this one writes {@link #FORMAT_RBD_DIFF}
+     * streams rather than qcow2 files, which is what {@link #CHAIN_FORMAT} records for restore.
+     */
+    public static final String METHOD_RBD = "rbd";
 
     /**
      * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap
