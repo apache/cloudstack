@@ -129,6 +129,9 @@
         <span v-else>-</span>
       </template>
       <template #actions="{ record }">
+        <router-link v-if="canListEvents" :to="{ path: '/event', query: { jobid: record.jobid } }" style="margin-right: 8px">
+          {{ $t('label.events') }}
+        </router-link>
         <a-popconfirm
           v-if="canCancel(record)"
           :title="$t('message.confirm.cancel.job')"
@@ -253,12 +256,12 @@ export default {
         column('created', this.$t('label.created'), 'created'),
         column('completed', this.$t('label.completed'), 'completed'),
         column('jobresult', this.$t('label.jobresult'), 'jobresult'))
-      if (this.showActions) {
+      if (this.showActions || this.canListEvents) {
         columns.push({
           key: 'actions',
           title: this.$t('label.actions'),
           dataIndex: 'actions',
-          width: 120,
+          width: 160,
           slots: { customRender: 'actions' }
         })
       }
@@ -280,6 +283,9 @@ export default {
     },
     showActions () {
       return isAdmin() && 'cancelAsyncJob' in this.$store.getters.apis
+    },
+    canListEvents () {
+      return 'listEvents' in this.$store.getters.apis
     },
     scopedToManagementServer () {
       return !this.resourceType && !!(this.resource && this.resource.id)

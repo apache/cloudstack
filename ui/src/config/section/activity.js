@@ -43,8 +43,8 @@ export default {
         fields.push(...['domain', 'created'])
         return fields
       },
-      details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'state', 'level', 'type', 'account', 'domain', 'created'],
-      searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype', 'state'],
+      details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'jobid', 'state', 'level', 'type', 'account', 'domain', 'created'],
+      searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype', 'state', 'jobid'],
       related: [{
         name: 'event',
         title: 'label.event.timeline',
