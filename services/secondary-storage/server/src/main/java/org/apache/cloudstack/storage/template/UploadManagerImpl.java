@@ -59,6 +59,7 @@ import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
@@ -381,6 +382,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             }
         }
 
+        String deleteGzipResult = deleteIfGzipFile(cmd);
+        if (deleteGzipResult != null) {
+            return new Answer(cmd, false, deleteGzipResult);
+        }
+
         return new Answer(cmd, true, "");
     }
 
@@ -406,6 +412,31 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         } catch (IOException e) {
             logger.warn(failMsg, rootDir, cmd.getExtractUrl(), e);
         }
+    }
+
+    /**
+     * Deletes the extract file if it is a GZIP. Currently, the GZIP format is only used to download files from backups. This cleans up the files from secondary storage.
+     * */
+    private String deleteIfGzipFile(DeleteEntityDownloadURLCommand cmd) {
+        String path = cmd.getPath();
+        if (!path.substring(path.lastIndexOf(".") + 1).equals(ImageFormat.GZIP.getFileExtension())) {
+            return null;
+        }
+
+        try {
+            String fullPath = String.format("/mnt/SecStorage/%s%s%s", cmd.getParentPath(), File.separator, path);
+            logger.debug("Deleting temporary gzip file at [{}].", fullPath);
+            Files.deleteIfExists(Path.of(fullPath));
+            File dir = new File(fullPath.substring(0, fullPath.lastIndexOf(File.separator)));
+            if (dir.exists() && dir.isDirectory() && ArrayUtils.isEmpty(dir.listFiles())) {
+                dir.delete();
+            }
+        } catch (IOException e) {
+            String errorString = String.format("Error deleting temporary download file %s.", path);
+            logger.warn(errorString, e);
+            return errorString;
+        }
+        return null;
     }
 
     private String getInstallPath(String jobId) {
