@@ -135,6 +135,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -147,6 +149,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -249,6 +253,10 @@ public class UnmanagedVMsManagerImplTest {
     private ImportVmTasksManager importVmTasksManager;
     @Mock
     private SnapshotDao snapshotDao;
+    @Mock
+    private GuestOSDao guestOSDao;
+    @Mock
+    private GuestOSHypervisorDao guestOSHypervisorDao;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -728,6 +736,88 @@ public class UnmanagedVMsManagerImplTest {
         when(templateDao.findByName(anyString())).thenReturn(template);
         VMTemplateVO templateForImportInstance = unmanagedVMsManager.getTemplateForImportInstance(null, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
+    }
+
+    @Test
+    public void testResolveVmwareToKvmImportGuestOsIdKeepsRequestedGuestOsId() {
+        Long resolvedGuestOsId = unmanagedVMsManager.resolveVmwareToKvmImportGuestOsId(1L, instance);
+
+        Assert.assertEquals(Long.valueOf(1L), resolvedGuestOsId);
+        Mockito.verifyNoInteractions(guestOSDao, guestOSHypervisorDao);
+    }
+
+    @Test
+    public void testResolveVmwareToKvmImportGuestOsIdPrefersDisplayNameMapping() {
+        String osDisplayName = "Debian GNU/Linux 11 (64-bit)";
+        instance.setOperatingSystem(osDisplayName);
+        instance.setOperatingSystemId("otherLinux64Guest");
+        instance.setHostHypervisorVersion("8.0.3");
+
+        GuestOSVO guestOS = mock(GuestOSVO.class);
+        when(guestOS.getId()).thenReturn(10L);
+        when(guestOSDao.findOneByDisplayName(osDisplayName)).thenReturn(guestOS);
+        when(guestOSDao.listLikeDisplayName(osDisplayName)).thenReturn(List.of(guestOS));
+
+        GuestOSHypervisorVO guestOSHypervisor = mock(GuestOSHypervisorVO.class);
+        when(guestOSHypervisor.getGuestOsId()).thenReturn(20L);
+        when(guestOSHypervisorDao.findByOsIdAndHypervisor(10L, Hypervisor.HypervisorType.VMware.toString(), "8.0.3")).thenReturn(guestOSHypervisor);
+
+        Long resolvedGuestOsId = unmanagedVMsManager.resolveVmwareToKvmImportGuestOsId(null, instance);
+
+        Assert.assertEquals(Long.valueOf(20L), resolvedGuestOsId);
+        Mockito.verify(guestOSHypervisorDao, Mockito.never()).findByOsNameAndHypervisor(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    public void testResolveVmwareToKvmImportGuestOsIdFallsBackToConfiguredGuestOsIdentifier() {
+        String osDisplayName = "Unmatched Runtime OS";
+        instance.setOperatingSystem(osDisplayName);
+        instance.setOperatingSystemId("ubuntu64Guest");
+        instance.setHostHypervisorVersion("8.0.3");
+        when(guestOSDao.findOneByDisplayName(osDisplayName)).thenReturn(null);
+        when(guestOSDao.listLikeDisplayName(osDisplayName)).thenReturn(Collections.emptyList());
+
+        GuestOSHypervisorVO guestOSHypervisor = mock(GuestOSHypervisorVO.class);
+        when(guestOSHypervisor.getGuestOsId()).thenReturn(30L);
+        when(guestOSHypervisorDao.findByOsNameAndHypervisor("ubuntu64Guest", Hypervisor.HypervisorType.VMware.toString(), "8.0.3")).thenReturn(guestOSHypervisor);
+
+        Long resolvedGuestOsId = unmanagedVMsManager.resolveVmwareToKvmImportGuestOsId(null, instance);
+
+        Assert.assertEquals(Long.valueOf(30L), resolvedGuestOsId);
+    }
+
+    @Test
+    public void testResolveVmwareToKvmImportGuestOsIdFallsBackToGuestOsTypeMatch() {
+        String osDisplayName = "Debian GNU/Linux 11 (64-bit)";
+        instance.setOperatingSystem(osDisplayName);
+        instance.setOperatingSystemId("otherLinux64Guest");
+        instance.setHostHypervisorVersion("8.0.3");
+
+        GuestOSVO guestOS = mock(GuestOSVO.class);
+        when(guestOS.getId()).thenReturn(40L);
+        when(guestOSDao.findOneByDisplayName(osDisplayName)).thenReturn(guestOS);
+        when(guestOSDao.listLikeDisplayName(osDisplayName)).thenReturn(List.of(guestOS));
+
+        Long resolvedGuestOsId = unmanagedVMsManager.resolveVmwareToKvmImportGuestOsId(null, instance);
+
+        Assert.assertEquals(Long.valueOf(40L), resolvedGuestOsId);
+    }
+
+    @Test
+    public void testResolveVmwareToKvmImportGuestOsIdAvoidsWeakGuestOsTypeMatch() {
+        String osDisplayName = "Linux";
+        instance.setOperatingSystem(osDisplayName);
+        instance.setOperatingSystemId(null);
+        instance.setHostHypervisorVersion("8.0.3");
+
+        GuestOSVO guestOS = mock(GuestOSVO.class);
+        when(guestOS.getDisplayName()).thenReturn("Other Linux (64-bit)");
+        when(guestOSDao.findOneByDisplayName(osDisplayName)).thenReturn(null);
+        when(guestOSDao.listLikeDisplayName(osDisplayName)).thenReturn(List.of(guestOS));
+
+        Long resolvedGuestOsId = unmanagedVMsManager.resolveVmwareToKvmImportGuestOsId(null, instance);
+
+        Assert.assertNull(resolvedGuestOsId);
     }
 
     private enum VcenterParameter {
