@@ -2254,6 +2254,60 @@ public class VirtualMachineManagerImplTest {
         verify(virtualMachineManagerImpl, never()).sendStop(any(), any(), anyBoolean(), anyBoolean());
     }
 
+    /**
+     * An instance stuck in Migrating: hostId is the destination, lastHostId the source. StopRequested is not a
+     * transition from Migrating, so advanceStop() goes through the forced cleanup.
+     */
+    private VMInstanceVO migratingVm(final Status destinationStatus, final Status sourceStatus) throws Exception {
+        final long sourceHostId = hostMockId + 1;
+        final HostVO sourceHost = mock(HostVO.class);
+        when(sourceHost.getStatus()).thenReturn(sourceStatus);
+        when(hostDaoMock.findById(sourceHostId)).thenReturn(sourceHost);
+        VMInstanceVO vm = startingVmOnHost(destinationStatus);
+        ReflectionTestUtils.setField(vm, "state", State.Migrating);
+        ReflectionTestUtils.setField(vm, "lastHostId", sourceHostId);
+        return vm;
+    }
+
+    @Test
+    public void destroyStopOfAMigratingInstanceFailsWhileTheSourceHostMayStillRunIt() throws Exception {
+        for (Status source : new Status[] {Status.Up, Status.Disconnected, Status.Alert}) {
+            VMInstanceVO vm = migratingVm(Status.Down, source);
+
+            CloudRuntimeException e = assertThrows(source.toString(), CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, true));
+
+            assertTrue(e.getMessage().contains("migrating from"));
+        }
+        verify(virtualMachineManagerImpl, never()).sendStop(any(), any(), anyBoolean(), anyBoolean());
+        verify(virtualMachineManagerImpl, never()).cleanup(any(), any(), any(), any(), anyBoolean());
+    }
+
+    @Test
+    public void destroyStopOfAMigratingInstanceCleansUpWhenBothHostsAreGone() throws Exception {
+        VMInstanceVO vm = migratingVm(Status.Down, Status.Removed);
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, true));
+
+        assertEquals("cleaned up", e.getMessage());
+    }
+
+    @Test
+    public void explicitForcedStopOfAMigratingInstanceIgnoresTheSourceHost() throws Exception {
+        VMInstanceVO vm = migratingVm(Status.Down, Status.Up);
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.advanceStop(vm, true, false));
+
+        assertEquals("cleaned up", e.getMessage());
+    }
+
+    @Test
+    public void migrationSourceIsOnlyConsideredForAMigratingInstance() throws Exception {
+        VMInstanceVO vm = migratingVm(Status.Up, Status.Up);
+        assertEquals(Long.valueOf(hostMockId + 1), virtualMachineManagerImpl.migrationSourceThatMayBeRunningIt(vm));
+        ReflectionTestUtils.setField(vm, "state", State.Running);
+        assertNull(virtualMachineManagerImpl.migrationSourceThatMayBeRunningIt(vm));
+    }
+
     @Test
     public void advanceStopQueuesTheFlagOnTheStopJob() throws Exception {
         final AsyncJobExecutionContext jobContext = mock(AsyncJobExecutionContext.class);
