@@ -79,6 +79,10 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "The unique ID of the Instance/entity object related to the job")
     private String jobInstanceId;
 
+    @SerializedName("jobinstancename")
+    @Param(description = "The name of the Instance/entity object related to the job", since = "24.0")
+    private String jobInstanceName;
+
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "The MSID of the management server on which the job is running", since = "4.19")
     private String managementServerId;
@@ -141,6 +145,10 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setJobInstanceId(String jobInstanceId) {
         this.jobInstanceId = jobInstanceId;
+    }
+
+    public void setJobInstanceName(String jobInstanceName) {
+        this.jobInstanceName = jobInstanceName;
     }
 
     public void setCreated(Date created) {
