@@ -64,6 +64,8 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -251,6 +253,10 @@ public class VirtualMachineManagerImplTest {
     private UserVmVO userVmMock;
     @Mock
     private NetworkDao networkDao;
+    @Mock
+    private VolumeOrchestrationService volumeOrchestrationServiceMock;
+    @Mock
+    private NetworkOrchestrationService networkOrchestrationServiceMock;
     @Mock
     private AccountDao accountDao;
     @Mock
@@ -2241,4 +2247,13 @@ public class VirtualMachineManagerImplTest {
         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
     }
 
+    @Test
+    public void cleanupAllocatedResourcesRemovesVolumesAndNics() {
+        when(vmInstanceMock.getId()).thenReturn(1L);
+
+        virtualMachineManagerImpl.cleanupAllocatedResources(vmInstanceMock);
+
+        verify(volumeOrchestrationServiceMock).cleanupVolumes(1L);
+        verify(networkOrchestrationServiceMock).cleanupNics(Mockito.argThat(profile -> profile.getVirtualMachine() == vmInstanceMock));
+    }
 }
