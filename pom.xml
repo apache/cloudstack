@@ -151,7 +151,7 @@
         <cs.httpclient.version>4.5.14</cs.httpclient.version>
         <cs.httpcore.version>4.4.16</cs.httpcore.version>
         <cs.influxdb-java.version>2.25</cs.influxdb-java.version>
-        <cs.jackson.version>2.13.3</cs.jackson.version>
+        <cs.jackson.version>2.18.8</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.27.0-GA</cs.javassist.version>
