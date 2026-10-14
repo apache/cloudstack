@@ -98,6 +98,9 @@ public class InternalBackupJoinVO {
     @Column(name = "volume_id")
     private long volumeId;
 
+    @Column(name = "volume_name")
+    private String volumeName;
+
     @Column(name = "isolated")
     private Boolean isolated;
 
@@ -173,6 +176,10 @@ public class InternalBackupJoinVO {
 
     public long getVolumeId() {
         return volumeId;
+    }
+
+    public String getVolumeName() {
+        return volumeName;
     }
 
     public Boolean getIsolated() {

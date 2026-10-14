@@ -82,7 +82,8 @@ import com.cloud.event.EventTypes;
     public void execute() {
         try {
             Backup backup = kvmBackupExportService.startBackup(this);
-            BackupResponse response = backupManager.createBackupResponse(backup, null);
+            boolean isCallerRootAdmin = _accountService.isRootAdmin(CallContext.current().getCallingAccountId());
+            BackupResponse response = backupManager.createBackupResponse(backup, null, isCallerRootAdmin);
 
             response.setResponseName(getCommandName());
             setResponseObject(response);

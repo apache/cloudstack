@@ -99,6 +99,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Backup offering name")
     private String backupOfferingName;
 
+    @SerializedName(ApiConstants.BACKUP_PATHS)
+    @Param(description = "The backups paths in the secondary storage")
+    private Map<String, String> backupPaths;
+
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "Account id")
     private String accountId;
@@ -386,4 +390,13 @@ public class BackupResponse extends BaseResponse {
     public String getHostId() {
         return this.hostId;
     }
+
+    public Map<String, String> getBackupPaths() {
+        return backupPaths;
+    }
+
+    public void setBackupPaths(Map<String, String> backupPaths) {
+        this.backupPaths = backupPaths;
+    }
+
 }

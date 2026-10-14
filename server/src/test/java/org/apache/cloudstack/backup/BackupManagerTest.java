@@ -59,6 +59,7 @@ import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
@@ -195,6 +196,9 @@ public class BackupManagerTest {
 
     @Mock
     private AlertManager alertManagerMock;
+
+    @Mock
+    private InternalBackupJoinDao internalBackupJoinDaoMock;
 
     @Mock
     private Domain domainMock;
@@ -1713,7 +1717,14 @@ public class BackupManagerTest {
 
         Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
 
-        BackupResponse response = backupManager.createBackupResponse(backup, true);
+        String backupPath = "/backup/path";
+        String volumeName = "ROOT";
+        InternalBackupJoinVO backupJoin = new InternalBackupJoinVO();
+        ReflectionTestUtils.setField(backupJoin, "imageStorePath", backupPath);
+        ReflectionTestUtils.setField(backupJoin, "volumeName", volumeName);
+        Mockito.when(internalBackupJoinDaoMock.listById(Mockito.anyLong())).thenReturn(Collections.singletonList(backupJoin));
+
+        BackupResponse response = backupManager.createBackupResponse(backup, true, true);
 
         Assert.assertEquals("backup-uuid", response.getId());
         Assert.assertEquals("test-vm", response.getVmName());
@@ -1730,6 +1741,7 @@ public class BackupManagerTest {
                 "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
                 "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
         Assert.assertEquals(true, response.getVmOfferingRemoved());
+        Assert.assertEquals(backupPath, response.getBackupPaths().get(volumeName));
     }
 
     @Test
