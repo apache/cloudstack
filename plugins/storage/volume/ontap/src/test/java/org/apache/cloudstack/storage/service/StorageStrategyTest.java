@@ -900,4 +900,272 @@ public class StorageStrategyTest {
         when(volumeFeignClient.getVolume(anyString(), anyMap()))
                 .thenReturn(volumeResponse);
     }
+
+    /**
+     * Injects a value into the private {@code chosenAggregateNode} field of StorageStrategy
+     * so node-affinity tests can exercise all three selection tiers without having to drive
+     * the full {@code createStorageVolume()} flow.
+     */
+    private static void injectChosenAggregateNode(StorageStrategy strategy, String nodeName) {
+        try {
+            Field field = StorageStrategy.class.getDeclaredField("chosenAggregateNode");
+            field.setAccessible(true);
+            field.set(strategy, nodeName);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to inject chosenAggregateNode", e);
+        }
+    }
+
+    /**
+     * Builds an {@link IpInterface} with all node-affinity fields populated.
+     *
+     * @param ip          the LIF's IP address (IPv4 for NFS3 selection to work)
+     * @param state       operational state (e.g. "up" or "down")
+     * @param enabled     administrative state
+     * @param homeNode    name of the node the LIF is homed to
+     * @param currentNode name of the node the LIF is currently running on
+     */
+    private static IpInterface buildLif(String ip, String state, boolean enabled,
+                                        String homeNode, String currentNode) {
+        IpInterface.IpInfo ipInfo = new IpInterface.IpInfo();
+        ipInfo.setAddress(ip);
+
+        IpInterface.Node homeNodeObj = new IpInterface.Node();
+        homeNodeObj.setName(homeNode);
+
+        IpInterface.Node currentNodeObj = new IpInterface.Node();
+        currentNodeObj.setName(currentNode);
+
+        IpInterface.Location location = new IpInterface.Location();
+        location.setHomeNode(homeNodeObj);
+        location.setNode(currentNodeObj);
+
+        IpInterface lif = new IpInterface();
+        lif.setIp(ipInfo);
+        lif.setState(state);
+        lif.setEnabled(enabled);
+        lif.setLocation(location);
+        return lif;
+    }
+
+    private static OntapResponse<IpInterface> wrapLifs(List<IpInterface> lifs) {
+        OntapResponse<IpInterface> response = new OntapResponse<>();
+        response.setRecords(lifs);
+        return response;
+    }
+
+    /**
+     * Creates a real {@link Aggregate} with nested space information so tests can avoid
+     * {@code mock(Aggregate.class)} which fails on JDK 26+ due to Byte Buddy limitations.
+     */
+    private static Aggregate buildAggregate(String name, String uuid, double availableBytes) {
+        Aggregate.AggregateSpaceBlockStorage blockStorage = new Aggregate.AggregateSpaceBlockStorage();
+        blockStorage.setAvailable(availableBytes);
+
+        Aggregate.AggregateSpace space = new Aggregate.AggregateSpace();
+        space.setBlockStorage(blockStorage);
+
+        Aggregate agg = new Aggregate();
+        agg.setName(name);
+        agg.setUuid(uuid);
+        agg.setState(Aggregate.StateEnum.ONLINE);
+        agg.setSpace(space);
+        return agg;
+    }
+
+    // ========== pollJobIfPresent / executeCliSfsrRestore Tests ==========
+
+    @Test
+    void testPollJobIfPresent_NoJob_DoesNotPoll() {
+        storageStrategy.pollJobIfPresent(null, "test operation");
+        storageStrategy.pollJobIfPresent(new JobResponse(), "test operation");
+        verify(jobFeignClient, times(0)).getJobByUUID(anyString(), anyString());
+    }
+
+    @Test
+    void testPollJobIfPresent_WithJob_PollsUntilSuccess() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("sfsr-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore");
+
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("sfsr-job-1"));
+    }
+
+    @Test
+    void testPollJobIfPresent_JobFailure_ThrowsCloudRuntimeException() {
+        Job job = new Job();
+        job.setUuid("sfsr-job-fail");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("sfsr-job-fail");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("restore failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("sfsr-job-fail"))).thenReturn(failedJob);
+
+        assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.executeCliSfsrRestore(response, "CLI SFSR restore"));
+    }
+
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_PollsJobAndSucceeds() {
+        Job job = new Job();
+        job.setUuid("delete-job-1");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenReturn(response);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("delete-job-1");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("delete-job-1"))).thenReturn(completedJob);
+
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+    }
+
+    @Test
+    void testDeleteFlexVolSnapshotForCloudStackVolume_AlreadyAbsentOnOntap() {
+        Job job = new Job();
+        job.setUuid("delete-job-missing");
+        JobResponse response = new JobResponse();
+        response.setJob(job);
+        when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                .thenReturn(response);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("delete-job-missing");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("entry doesn't exist");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("delete-job-missing"))).thenReturn(failedJob);
+
+        storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+        verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+    }
+
+        @Test
+        void testDeleteFlexVolSnapshotForCloudStackVolume_Feign404_TreatedAsSuccess() {
+                FeignException notFoundException = mock(FeignException.class);
+                when(notFoundException.status()).thenReturn(404);
+                when(snapshotFeignClient.deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1")))
+                                .thenThrow(notFoundException);
+
+                storageStrategy.deleteFlexVolSnapshotForCloudStackVolume("fv-uuid-1", "snap-uuid-1", "snap-name-1");
+
+                verify(snapshotFeignClient).deleteSnapshot(anyString(), eq("fv-uuid-1"), eq("snap-uuid-1"));
+                verify(jobFeignClient, never()).getJobByUUID(anyString(), anyString());
+        }
+
+    // ========== updateStorageVolume() Tests ==========
+
+    @Test
+    public void testUpdateStorageVolume_positive() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L); // 5 GB
+
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
+
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job completedJob = new Job();
+        completedJob.setUuid("resize-job-uuid");
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(completedJob);
+
+        // Execute
+        Volume result = storageStrategy.updateStorageVolume(volume);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals(5368709120L, result.getSize());
+        verify(volumeFeignClient, times(1)).updateVolume(anyString(), eq("vol-uuid-resize"), any());
+        verify(jobFeignClient, atLeastOnce()).getJobByUUID(anyString(), eq("resize-job-uuid"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_jobFailed() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-resize");
+        volume.setName("flexvol-resize");
+        volume.setSize(5368709120L);
+
+        Job job = new Job();
+        job.setUuid("resize-job-uuid");
+        JobResponse jobResponse = new JobResponse();
+        jobResponse.setJob(job);
+
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-resize"), any()))
+                .thenReturn(jobResponse);
+
+        Job failedJob = new Job();
+        failedJob.setUuid("resize-job-uuid");
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
+        failedJob.setMessage("Resize failed");
+        when(jobFeignClient.getJobByUUID(anyString(), eq("resize-job-uuid")))
+                .thenReturn(failedJob);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Job failed"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_feignException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-fail");
+        volume.setName("flexvol-fail");
+        volume.setSize(3221225472L);
+
+        FeignException feignException = mock(FeignException.class);
+        when(feignException.status()).thenReturn(500);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-fail"), any()))
+                .thenThrow(feignException);
+
+        // Execute & Verify
+        Exception ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("Failed to resize ONTAP FlexVolume"));
+    }
+
+    @Test
+    public void testUpdateStorageVolume_notFound_404_throwsCloudRuntimeException() {
+        // Setup
+        Volume volume = new Volume();
+        volume.setUuid("vol-uuid-notfound");
+        volume.setName("flexvol-notfound");
+        volume.setSize(1073741824L);
+
+        FeignException feignEx = mock(FeignException.class);
+        when(feignEx.status()).thenReturn(404);
+        when(volumeFeignClient.updateVolume(anyString(), eq("vol-uuid-notfound"), any()))
+                .thenThrow(feignEx);
+
+        // Execute & Verify — 404 means volume not found on ONTAP, should throw
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                () -> storageStrategy.updateStorageVolume(volume));
+        assertTrue(ex.getMessage().contains("not found on ONTAP"));
+    }
 }
