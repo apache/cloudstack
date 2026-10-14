@@ -143,12 +143,25 @@ def check(ceph, pool, host, volumes, suspect_time):
     images = volumes.replace("\n", ",").split(",")
     images = ["".join(image.split()) for image in images]
     images = [image for image in images if image]
+    has_watcher = False
+    existing = 0
     try:
-        has_watcher = any(ceph.has_watcher(image) for image in images)
+        for image in images:
+            watched = ceph.has_watcher(image)
+            if watched is None:
+                # a volume which was deleted, but is still in the list, does not matter for the others
+                continue
+            existing += 1
+            if watched:
+                has_watcher = True
+                break
     except WatchersError as error:
         # when the watchers can not be listed, it is unknown whether the host is alive: the script fails,
         # which is not a DEAD host
         fail("Unable to get the watchers of the image [%s/%s]" % (pool, error))
+    if existing == 0:
+        # none of the images could be looked at, maybe the names are wrong: it is not known whether the host is alive
+        fail("None of the images of the volumes in pool [%s] exists" % pool)
     latest_update_time = now if has_watcher else 0
 
     state = ""

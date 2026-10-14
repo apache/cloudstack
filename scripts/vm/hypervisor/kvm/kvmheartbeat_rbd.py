@@ -35,7 +35,7 @@ import subprocess
 import sys
 import time
 
-from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, silence_standard_error
+from kvmha_rbd import BindingsError, Ceph, CephError, KEY_ENV, ObjectNotFoundError, silence_standard_error
 
 
 class Parser(argparse.ArgumentParser):
@@ -97,12 +97,16 @@ def check(ceph, heartbeat_object, pool, interval):
     now = int(time.time())
     try:
         heartbeat = ceph.read(heartbeat_object).strip()
-    except CephError:
+    except ObjectNotFoundError:
         heartbeat = ""
+    except CephError:
+        # Ceph can not be reached from this host, which says nothing about the host which is checked, as for the
+        # VM activity check
+        print("=====> Unable to read the RADOS object [%s] in pool [%s] <======" % (heartbeat_object, pool))
+        sys.exit(2)
     if not re.fullmatch(r"[0-9]+", heartbeat):
-        # Either the RADOS object doesn't exist yet (host never wrote a heartbeat)
-        # or the Ceph cluster can't be reached right now. Either way we can't
-        # confirm the host is alive, so fail safe and report it as DEAD.
+        # Either the RADOS object doesn't exist (host never wrote a heartbeat) or it doesn't hold one.
+        # We can't confirm the host is alive, so fail safe and report it as DEAD.
         print("=====> Considering host as DEAD because RADOS object [%s] in pool [%s] could not be read <======"
               % (heartbeat_object, pool))
         return

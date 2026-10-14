@@ -66,6 +66,10 @@ class CephError(Exception):
     """The cluster could not be connected, or an object could not be read, written or found out if it exists."""
 
 
+class ObjectNotFoundError(CephError):
+    """The object does not exist, which is different from a cluster which can not be reached."""
+
+
 class WatchersError(Exception):
     """The watchers of a volume could not be listed: it is not known whether the host is alive."""
 
@@ -122,11 +126,13 @@ class Ceph:
             raise CephError(name)
 
     def read(self, name):
-        """Returns the content of the object, or raises CephError."""
+        """Returns the content of the object, or raises ObjectNotFoundError or CephError."""
         ioctx = self._connected(name)
         try:
             size = min(ioctx.stat(name)[0], MAX_OBJECT_SIZE)
             return ioctx.read(name, size).decode("utf-8", "replace") if size else ""
+        except rados.ObjectNotFound:
+            raise ObjectNotFoundError(name)
         except rados.Error:
             raise CephError(name)
 
@@ -139,11 +145,18 @@ class Ceph:
             raise CephError(name)
 
     def has_watcher(self, image):
-        """Returns whether the volume has a watcher, or raises WatchersError."""
+        """
+        Returns whether the volume has a watcher, None if the image does not exist (for example a volume which is
+        deleted but still in the list of the management server), or raises WatchersError.
+        """
         if self.ioctx is None:
             raise WatchersError(image)
         try:
+            # read_only is needed: a volume which is not opened read-only gets a watcher of this script, which
+            # would make every host look alive
             with rbd.Image(self.ioctx, image, read_only=True) as volume:
                 return any(True for _ in volume.watchers_list())
+        except rbd.ImageNotFound:
+            return None
         except (rados.Error, rbd.Error):
             raise WatchersError(image)
