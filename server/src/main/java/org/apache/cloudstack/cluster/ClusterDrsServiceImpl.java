@@ -439,20 +439,31 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *
      * Non-strict groups express themselves by lowering a host's priority rather than by excluding
      * it, and DRS only reads the exclude list - so the preference was being discarded. Rebalancing
-     * is never a reason to break it: the VM is already running somewhere that satisfies the group,
-     * and leaving it there is always available to DRS. "Non-strict" means the rule may be broken
-     * when there is nowhere else to put a VM, which cannot arise while merely rebalancing.
+     * is never a reason to make it worse: leaving the VM where it is is always available to DRS.
+     *
+     * A host is excluded only when it is dispreferred more than the VM's current host, so a move
+     * never adds to the group members the VM shares a host with. Comparing against the source
+     * rather than against an untouched host matters when a group has more VMs than there are
+     * hosts: then every host is dispreferred, and excluding all of them would stop DRS moving
+     * those VMs at all, which it did before non-strict groups were honoured.
+     *
+     * @param sourceHostId
+     *         the host the VM is on now, in the placements the priorities were computed from
      */
-    protected void excludeHostsDispreferredByAffinity(DeploymentPlan plan, ExcludeList excludes) {
+    protected void excludeHostsDispreferredByAffinity(DeploymentPlan plan, ExcludeList excludes, Long sourceHostId) {
         Map<Long, Integer> priorities = plan.getHostPriorities();
         if (MapUtils.isEmpty(priorities)) {
             return;
         }
+        // a raised priority (non-strict host affinity) is not a penalty, so never compare above the default
+        Integer sourcePriority = priorities.get(sourceHostId);
+        int threshold = sourcePriority == null ? DeploymentPlan.DEFAULT_HOST_PRIORITY
+                : Math.min(sourcePriority, DeploymentPlan.DEFAULT_HOST_PRIORITY);
         for (Map.Entry<Long, Integer> entry : priorities.entrySet()) {
-            if (entry.getValue() != null && entry.getValue() < DeploymentPlan.DEFAULT_HOST_PRIORITY) {
+            if (entry.getValue() != null && entry.getValue() < threshold) {
                 excludes.addHost(entry.getKey());
-                logger.debug("Host {} is dispreferred by a non-strict affinity group, so DRS will not migrate onto it",
-                        entry.getKey());
+                logger.debug("Host {} is dispreferred by a non-strict affinity group more than the current host {}, "
+                        + "so DRS will not migrate onto it", entry.getKey(), sourceHostId);
             }
         }
     }
@@ -477,7 +488,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
                         excludes = managementServer.applyAffinityConstraints(
                                 vm, vmProfile, plan, vmList);
-                        excludeHostsDispreferredByAffinity(plan, excludes);
+                        excludeHostsDispreferredByAffinity(plan, excludes, vm.getHostId());
                     } else {
                         // VM has no affinity groups - create minimal ExcludeList (just source host)
                         excludes = new ExcludeList();
@@ -799,32 +810,41 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * applies DPDK and dedicated-resource exclusions, which apply regardless of group membership.
      * A refusal here is therefore not necessarily about an affinity group.
      *
+     * A queued migration occupies both of its hosts until it completes, and may never complete, so
+     * the check is made twice: against where queued VMs are headed, and against the database, which
+     * still shows them on the host they are leaving. Both go through the affinity processors, so
+     * only VMs that actually share a group with this one constrain it.
+     *
      * @param vm
      *         the VM the plan wants to move
      * @param destHost
      *         where the plan wants to move it
      * @param dispatched
-     *         migrations already queued by this run, which the database does not reflect yet
-     * @param dispatchedSourceHosts
-     *         hosts those queued migrations have not actually left yet
+     *         migrations already queued by this run, placed on their destination hosts
      * @return true when the migration should not go ahead
      */
-    protected boolean destinationViolatesAffinity(VirtualMachine vm, Host destHost, List<VirtualMachine> dispatched,
-            List<Long> dispatchedSourceHosts) {
+    protected boolean destinationViolatesAffinity(VirtualMachine vm, Host destHost, List<VirtualMachine> dispatched) {
         if (vm.getHostId() == null) {
             logger.debug("VM {} is no longer running, so its planned migration is out of date", vm);
             return true;
         }
-        if (dispatchedSourceHosts.contains(destHost.getId())) {
+        if (destinationExcluded(vm, destHost, dispatched)) {
+            return true;
+        }
+        if (!dispatched.isEmpty() && destinationExcluded(vm, destHost, Collections.emptyList())) {
             logger.debug("Host {} is still occupied by a VM whose migration away from it is only queued", destHost);
             return true;
         }
+        return false;
+    }
+
+    private boolean destinationExcluded(VirtualMachine vm, Host destHost, List<VirtualMachine> placements) {
         DataCenterDeployment plan = new DataCenterDeployment(destHost.getDataCenterId(), destHost.getPodId(),
                 destHost.getClusterId(), null, null, null);
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm, null,
                 serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()), null, null);
-        ExcludeList excludes = managementServer.applyAffinityConstraints(vm, vmProfile, plan, dispatched);
-        excludeHostsDispreferredByAffinity(plan, excludes);
+        ExcludeList excludes = managementServer.applyAffinityConstraints(vm, vmProfile, plan, placements);
+        excludeHostsDispreferredByAffinity(plan, excludes, vm.getHostId());
         return excludes.shouldAvoid(destHost);
     }
 
@@ -852,7 +872,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
         // a queued migration occupies both ends until it completes, and it may not complete at all
         List<VirtualMachine> dispatched = new ArrayList<>();
-        List<Long> dispatchedSourceHosts = new ArrayList<>();
 
         for (ClusterDrsPlanMigrationVO migration : planMigrations) {
             try {
@@ -863,7 +882,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                             migration.getDestHostId()));
                 }
 
-                if (destinationViolatesAffinity(vm, host, dispatched, dispatchedSourceHosts)) {
+                if (destinationViolatesAffinity(vm, host, dispatched)) {
                     String reason = String.format("Skipped DRS migration of %s to %s: the destination no longer "
                             + "satisfies the placement rules for that VM. The plan was generated against older "
                             + "state.", vm, host);
@@ -884,13 +903,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 migration.setStatus(job.getStatus());
                 drsPlanMigrationDao.update(migration.getId(), migration);
 
-                // the migration job has only been queued, so the database still shows the old host.
-                // record both ends: the VM is headed for the destination but has not left the
-                // source, and if the job fails it never will.
-                Long sourceHostId = vm.getHostId();
-                if (sourceHostId != null) {
-                    dispatchedSourceHosts.add(sourceHostId);
-                }
+                // the migration job has only been queued, so the database still shows the old host,
+                // which covers the source end; record the destination end here. if the job fails the
+                // VM never leaves the source, which the database check keeps honouring.
                 vm.setHostId(host.getId());
                 dispatched.add(vm);
             } catch (Exception e) {
