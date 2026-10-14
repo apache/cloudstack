@@ -3594,7 +3594,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             for (Long domainId : filteredDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException(String.format("Unable to create service offering by another domain-admin: %s for domain: %s", user, _entityMgr.findById(Domain.class, domainId).getUuid()));
+                    throw new InvalidParameterValueException(String.format("Unable to create service offering by another domain-admin: %s for domain: %s", user, _entityMgr.findById(Domain.class, domainId)));
                 }
             }
         } else if (account.getType() != Account.Type.ADMIN) {
@@ -4646,7 +4646,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             for (Long domainId : filteredDomainIds) {
                 if (domainId == null || !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException(String.format("Unable to create disk offering by another domain-admin: %s for domain: %s", user, _entityMgr.findById(Domain.class, domainId).getUuid()));
+                    Domain domain = domainId != null ? _entityMgr.findById(Domain.class, domainId) : null;
+                    throw new InvalidParameterValueException(String.format("Unable to create disk offering by another domain-admin: %s for domain: %s",
+                            user, domain != null ? domain : "id " + domainId));
                 }
             }
         } else if (account.getType() != Account.Type.ADMIN) {
@@ -7740,7 +7742,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // only one network offering in the system can be Required
             final List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
             if (!offerings.isEmpty()) {
-                throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+                throw new InvalidParameterValueException("System already has network offering " + offerings.get(0) + " with availability " + Availability.Required);
             }
         }
 
@@ -8056,7 +8058,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
             }
             if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                throw new InvalidParameterValueException(String.format("Unable to list network offerings for domain: %s as caller does not have access for it", domain.getUuid()));
+                throw new InvalidParameterValueException(String.format("Unable to list network offerings for domain: %s as caller does not have access for it", domain));
             }
         }
 
@@ -8920,7 +8922,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         // only one network offering in the system can be Required
                         final List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                         if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
-                            throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability "
+                            throw new InvalidParameterValueException("System already has network offering " + offerings.get(0) + " with availability "
                                     + Availability.Required);
                         }
                     }
