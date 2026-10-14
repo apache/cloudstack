@@ -29,7 +29,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import org.apache.commons.collections.CollectionUtils;
@@ -217,7 +219,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return result;
             }
 
-            result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
+            result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null, null));
             if (!result) {
                 logger.warn("Failed to destroy guest network config " + network + " on router " + router);
                 return false;
@@ -382,12 +384,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
 
-        Map<String, String> details = new HashMap<String, String>();
-
-        if(profile.getHypervisorType() == Hypervisor.HypervisorType.VMware){
+        Map<String, String> details = new HashMap<>();
+        VirtualMachineTO vmTO = null;
+        if (profile.getHypervisorType() == Hypervisor.HypervisorType.VMware || profile.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
             HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getHypervisorType());
-            VirtualMachineTO vmTO = hvGuru.implement(profile);
-            if(vmTO.getDetails() != null){
+            vmTO = hvGuru.implement(profile);
+            if (vmTO.getDetails() != null) {
                 details = vmTO.getDetails();
             }
         }
@@ -396,6 +398,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (!isVpc) {
             return super.finalizeCommandsOnStart(cmds, profile);
         }
+
+        VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+        VpcOfferingVO vpcOffering = _entityMgr.findByIdIncludingRemoved(VpcOfferingVO.class, vpc.getVpcOfferingId());
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
             // 1) FORM SSH CHECK COMMAND
@@ -462,10 +467,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         }
                     }
                     String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI),
-                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI, vpcOffering.getPublicMultiqueueNumber()),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
-                    final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
                     if (routedIpv4Manager.isRoutedVpc(vpc)) {
                         continue;
                     }
@@ -490,7 +494,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, vpcOffering.getPrivateGatewayMultiqueueNumber()),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set private network
                     final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIPv4Address());
@@ -520,11 +525,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    NetworkOffering tierOffering = _entityMgr.findByIdIncludingRemoved(NetworkOffering.class, nicNtwk.second().getNetworkOfferingId());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, tierOffering.getPrivateMultiqueueNumber()),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set guest network
                     final VirtualMachine vm = _vmDao.findById(domainRouterVO.getId());
-                    final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null);
+                    final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null, null);
                     final SetupGuestNetworkCommand setupCmd = _commandSetupHelper.createSetupGuestNetworkCommand(domainRouterVO, true, nicProfile);
                     cmds.addCommand(setupCmd);
                 }
@@ -749,7 +756,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         final Network privateNetwork = _networkModel.getNetwork(gateway.getNetworkId());
-        final NicProfile nicProfile = _networkModel.getNicProfile(router, privateNetwork.getId(), null);
+        final NicProfile nicProfile = _networkModel.getNicProfile(router, privateNetwork.getId(), null, null);
 
         logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
         result = setupVpcPrivateNetwork(router, false, nicProfile);

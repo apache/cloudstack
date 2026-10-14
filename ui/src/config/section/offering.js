@@ -447,7 +447,12 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
+      details: [
+        'name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent',
+        'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges',
+        'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', { field: 'publicmultiqueuenumber', customTitle: 'public.multiqueue.number' },
+        { field: 'privatemultiqueuenumber', customTitle: 'private.multiqueue.number' }, 'service', 'tags', 'domain', 'zone'
+      ],
       resourceType: 'NetworkOffering',
       customParamHandler: (params, query) => {
         const { filter } = query
@@ -566,7 +571,11 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'conservemode', 'domain', 'zone', 'created'],
+      details: [
+        'name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', { field: 'publicmultiqueuenumber', customTitle: 'public.multiqueue.number' },
+        { field: 'privategatewaymultiqueuenumber', customTitle: 'private.gateway.multiqueue.number' }, 'tags', 'routingmode',
+        'specifyasnumber', 'service', 'fornsx', 'networkmode', 'conservemode', 'domain', 'zone', 'created'
+      ],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

@@ -689,7 +689,7 @@ public class CommandSetupHelper {
             }
         }
 
-        NicTO nicTO = _networkHelper.getNicTO(router, guestNetworkId, null);
+        NicTO nicTO = _networkHelper.getNicTO(router, guestNetworkId, null, null);
         final SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, nicTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
@@ -1255,7 +1255,7 @@ public class CommandSetupHelper {
         final String networkDomain = network.getNetworkDomain();
         final String dhcpRange = getGuestDhcpRange(guestNic, network, _entityMgr.findById(DataCenter.class, network.getDataCenterId()));
 
-        final NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null);
+        final NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null, null);
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 

@@ -321,9 +321,9 @@ public interface NetworkModel {
 
     boolean isNetworkAvailableInDomain(long networkId, long domainId);
 
-    NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri);
+    NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri, Integer multiqueueNumber);
 
-    NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter);
+    NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter, Integer multiqueueNumber);
 
     Set<Long> getAvailableIps(Network network, String requestedIp);
 

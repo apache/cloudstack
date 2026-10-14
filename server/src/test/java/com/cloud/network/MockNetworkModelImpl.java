@@ -798,13 +798,13 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      * @see com.cloud.network.NetworkModel#getNicProfile(com.cloud.vm.VirtualMachine, long, java.lang.String)
      */
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri, Integer multiqueueNumber) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter, Integer multiqueueNumber) {
         return null;
     }
 

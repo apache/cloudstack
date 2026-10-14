@@ -171,6 +171,14 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the routing mode for the network offering, supported types are Static or Dynamic.")
     private String routingMode;
 
+    @SerializedName(ApiConstants.PUBLIC_MULTIQUEUE_NUMBER)
+    @Param(description = "Multiqueue number for the public NIC of VRs belonging to isolated networks.", since = "24.0")
+    private Integer publicMultiqueueNumber;
+
+    @SerializedName(ApiConstants.PRIVATE_MULTIQUEUE_NUMBER)
+    @Param(description = "Multiqueue number for the private NICs of VRs belonging to isolated networks and VPC tiers.", since = "24.0")
+    private Integer privateMultiqueueNumber;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -341,5 +349,13 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setPublicMultiqueueNumber(Integer publicMultiqueueNumber) {
+        this.publicMultiqueueNumber = publicMultiqueueNumber;
+    }
+
+    public void setPrivateMultiqueueNumber(Integer privateMultiqueueNumber) {
+        this.privateMultiqueueNumber = privateMultiqueueNumber;
     }
 }

@@ -192,6 +192,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber;
 
+    @Column(name = "public_multiqueue_number")
+    private Integer publicMultiqueueNumber;
+
+    @Column(name = "private_multiqueue_number")
+    private Integer privateMultiqueueNumber;
+
     public NetworkOfferingJoinVO() {
     }
 
@@ -451,5 +457,15 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {
         this.specifyAsNumber = specifyAsNumber;
+    }
+
+    @Override
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    @Override
+    public Integer getPrivateMultiqueueNumber() {
+        return privateMultiqueueNumber;
     }
 }

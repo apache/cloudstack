@@ -294,7 +294,7 @@ public class NetworkModelImplTest {
         doReturn(100).when(networkModel).getNetworkRate(1L, 10L);
         doReturn("cloud").when(networkModel).getNetworkTag(any(), any());
         doReturn(false).when(networkModel).isSecurityGroupSupportedInNetwork(any());
-        NicProfile result = networkModel.getNicProfile(vm, nic, mock(DataCenterVO.class));
+        NicProfile result = networkModel.getNicProfile(vm, nic, mock(DataCenterVO.class), null);
 
         assertNotNull(result);
     }

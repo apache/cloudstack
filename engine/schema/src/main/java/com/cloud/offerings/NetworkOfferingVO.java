@@ -176,6 +176,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "specify_as_number")
     private Boolean specifyAsNumber = false;
 
+    @Column(name = "public_multiqueue_number")
+    private Integer publicMultiqueueNumber;
+
+    @Column(name = "private_multiqueue_number")
+    private Integer privateMultiqueueNumber;
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
@@ -582,5 +588,23 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setSpecifyAsNumber(Boolean specifyAsNumber) {
         this.specifyAsNumber = specifyAsNumber;
+    }
+
+    @Override
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    public void setPublicMultiqueueNumber(Integer publicMultiqueueNumber) {
+        this.publicMultiqueueNumber = publicMultiqueueNumber;
+    }
+
+    @Override
+    public Integer getPrivateMultiqueueNumber() {
+        return privateMultiqueueNumber;
+    }
+
+    public void setPrivateMultiqueueNumber(Integer privateMultiqueueNumber) {
+        this.privateMultiqueueNumber = privateMultiqueueNumber;
     }
 }

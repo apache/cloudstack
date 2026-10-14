@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
 
+import com.cloud.vm.VirtualMachine;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -64,9 +65,7 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
 
             final VifDriver newVifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
             final InterfaceDef interfaceDef = newVifDriver.plug(nic, "Other PV", oldPluggedNic.getModel().toString(), null);
-            if (command.getDetails() != null) {
-                libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), null, interfaceDef);
-            }
+            libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), null, interfaceDef, nic.getMultiqueueNumber(), command.getVMType() == VirtualMachine.Type.DomainRouter);
             interfaceDef.setSlot(oldPluggedNic.getSlot());
             interfaceDef.setDevName(oldPluggedNic.getDevName());
             interfaceDef.setLinkStateUp(false);

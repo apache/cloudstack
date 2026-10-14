@@ -124,7 +124,7 @@ public class PrivateGatewayRules extends RuleApplier {
 
         logger.debug("Releasing private ip for gateway " + _privateGateway + " from " + _router);
 
-        _nicProfile = networkModel.getNicProfile(_router, privateNetwork.getId(), null);
+        _nicProfile = networkModel.getNicProfile(_router, privateNetwork.getId(), null, null);
         boolean result = visitor.visit(this);
         if (!result) {
             logger.warn("Failed to release private ip for gateway " + _privateGateway + " on router " + _router);

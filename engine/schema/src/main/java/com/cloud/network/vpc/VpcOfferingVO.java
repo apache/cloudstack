@@ -94,6 +94,12 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "conserve_mode")
     private boolean conserveMode;
 
+    @Column(name = "public_multiqueue_number")
+    private Integer publicMultiqueueNumber;
+
+    @Column(name = "private_gateway_multiqueue_number")
+    private Integer privateGatewayMultiqueueNumber;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -109,12 +115,14 @@ public class VpcOfferingVO implements VpcOffering {
 
     public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
                          final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                         final boolean redundantRouter) {
+                         final boolean redundantRouter, Integer publicMultiqueueNumber, Integer privateGatewayMultiqueueNumber) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
         this.supportsDistributedRouter = supportsDistributedRouter;
         this.offersRegionLevelVPC = offersRegionLevelVPC;
         this.redundantRouter = redundantRouter;
+        this.publicMultiqueueNumber = publicMultiqueueNumber;
+        this.privateGatewayMultiqueueNumber = privateGatewayMultiqueueNumber;
     }
 
     public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
@@ -253,5 +261,15 @@ public class VpcOfferingVO implements VpcOffering {
 
     public void setConserveMode(boolean conserveMode) {
         this.conserveMode = conserveMode;
+    }
+
+    @Override
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    @Override
+    public Integer getPrivateGatewayMultiqueueNumber() {
+        return privateGatewayMultiqueueNumber;
     }
 }

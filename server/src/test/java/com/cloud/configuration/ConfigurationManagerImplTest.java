@@ -465,6 +465,8 @@ public class ConfigurationManagerImplTest {
         when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
         when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
+        when(createNetworkOfferingCmd.getPrivateMultiqueueNumber()).thenReturn(null);
+        when(createNetworkOfferingCmd.getPublicMultiqueueNumber()).thenReturn(null);
         when(configDao.getValue(anyString())).thenReturn("1000");
         when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
         doNothing().when(networkService).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(anyLong());

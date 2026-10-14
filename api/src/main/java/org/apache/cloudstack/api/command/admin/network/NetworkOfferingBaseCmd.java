@@ -216,6 +216,16 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
             description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 
+    @Parameter(name = ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "24.0",
+            description = "Multiqueue number for the public NIC of VRs belonging to guest networks. This parameter " +
+                    "is not allowed for L2 network and isolated network for VPC (tier) offerings.")
+    private Integer publicMultiqueueNumber;
+
+    @Parameter(name = ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "24.0",
+            description = "Multiqueue number for the private NICs of VRs belonging to guest networks and VPC tiers. " +
+                    "This parameter is not allowed for L2 network offerings")
+    private Integer privateMultiqueueNumber;
+
     private Map<String, String> sourceDetailsMap;
 
     /////////////////////////////////////////////////////
@@ -482,6 +492,14 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
 
     public String getRoutingMode() {
         return routingMode;
+    }
+
+    public Integer getPublicMultiqueueNumber() {
+        return publicMultiqueueNumber;
+    }
+
+    public Integer getPrivateMultiqueueNumber() {
+        return privateMultiqueueNumber;
     }
 
     /////////////////////////////////////////////////////
