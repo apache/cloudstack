@@ -31,6 +31,13 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
+    /** Validate backend ownership before adopting an existing volume, without modifying it. */
+    default void validateVolumeForImport(StoragePool pool, String path) {
+        if (pool.getPoolType() == StoragePoolType.Linstor) {
+            throw new UnsupportedOperationException("The storage driver cannot validate LINSTOR volume imports");
+        }
+    }
+
     enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
 
     String BASIC_CREATE = "basicCreate";
