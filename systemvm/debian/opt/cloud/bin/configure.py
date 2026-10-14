@@ -1276,6 +1276,19 @@ class CsSite2SiteVpn(CsDataBag):
             ipinsubnet = '.'.join(octets)
             CsHelper.execute("timeout 5 ping -c 3 %s" % ipinsubnet)
 
+        # The ping above only matches the tunnel when the router has an address in
+        # the local subnet. A VPC tier gets one only once a VM is deployed in it, so
+        # without VMs the ping leaves from the public IP and the tunnel never starts.
+        # The active side starts it explicitly instead. The passive side waits.
+        if not obj.get('passive', False):
+            self.start_connections(rightpeer, len(peerlistarr) if splitconnections else 1)
+
+    def start_connections(self, rightpeer, count):
+        for peeridx in range(0, count):
+            conn = 'vpn-%s' % rightpeer if peeridx == 0 else 'vpn-%s-%d' % (rightpeer, peeridx + 1)
+            if len(CsHelper.execute('ipsec status %s | grep ESTABLISHED' % conn)) == 0:
+                CsHelper.execute('timeout 20 ipsec up %s' % conn)
+
     def convert_sec_to_min(self, val):
         mins = int(val / 60)
         return "%sm" % mins
