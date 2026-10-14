@@ -321,13 +321,15 @@ export default {
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
           getAPI('listVPCs', params).then(json => {
-            const listVPCs = json.listvpcsresponse.vpc
+            const listVPCs = json?.listvpcsresponse?.vpc
             var vpcAvailable = this.arrayHasItems(listVPCs)
             if (vpcAvailable === false) {
               this.fetchNetworkOfferingData(false)
             } else {
               this.fetchNetworkOfferingData()
             }
+          }).catch(() => {
+            this.fetchNetworkOfferingData(false)
           })
         } else {
           this.fetchNetworkOfferingData(false)
@@ -347,12 +349,15 @@ export default {
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
       }
-      if (forVpc !== null) {
+      if (forVpc !== undefined && forVpc !== null) {
         params.forvpc = forVpc
       }
+      this.networkOfferings = []
       getAPI('listNetworkOfferings', params).then(json => {
-        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        const offerings = json?.listnetworkofferingsresponse?.networkoffering || []
+        this.networkOfferings = Array.isArray(offerings) ? offerings : []
       }).catch(error => {
+        this.networkOfferings = []
         this.$notifyError(error)
       }).finally(() => {
         this.networkOfferingLoading = false

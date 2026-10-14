@@ -96,6 +96,9 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
+            <a-alert type="warning" v-if="networkOfferingWarning">
+              <template #message>{{ $t('message.network.offering.unavailable') }}</template>
+            </a-alert>
             <a-alert type="warning" v-if="!this.hasVPC">
               <template #message>
                 <span v-html="$t('message.warn.vpc.offerings')"/>
@@ -371,6 +374,7 @@ export default {
       selectedZone: {},
       networkOfferings: [],
       networkOfferingLoading: false,
+      networkOfferingWarning: false,
       selectedNetworkOffering: {},
       vpcs: [],
       vpcLoading: false,
@@ -540,13 +544,16 @@ export default {
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
           getAPI('listVPCs', params).then(json => {
-            const listVPCs = json.listvpcsresponse.vpc
+            const listVPCs = json?.listvpcsresponse?.vpc
             this.hasVPC = this.arrayHasItems(listVPCs)
             if (!this.hasVPC) {
               this.fetchNetworkOfferingData(false)
             } else {
               this.fetchNetworkOfferingData()
             }
+          }).catch(() => {
+            this.hasVPC = false
+            this.fetchNetworkOfferingData(false)
           })
         } else {
           this.fetchNetworkOfferingData(false)
@@ -555,6 +562,7 @@ export default {
     },
     fetchNetworkOfferingData (forVpc) {
       this.networkOfferingLoading = true
+      this.networkOfferingWarning = false
       const params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
@@ -566,24 +574,30 @@ export default {
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
       }
-      if (forVpc !== null) {
+      if (forVpc !== undefined && forVpc !== null) {
         params.forvpc = forVpc
       }
       this.networkOfferings = []
       this.selectedNetworkOffering = {}
       getAPI('listNetworkOfferings', params).then(json => {
-        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
-        this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
-        if (!this.selectedZone.routedmodeenabled) {
+        const offerings = json?.listnetworkofferingsresponse?.networkoffering || []
+        this.networkOfferings = Array.isArray(offerings) ? offerings : []
+        this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone?.isnsxenabled)
+        if (!this.selectedZone?.routedmodeenabled) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
         }
       }).catch(error => {
+        this.networkOfferings = []
         this.$notifyError(error)
       }).finally(() => {
         this.networkOfferingLoading = false
         if (this.arrayHasItems(this.networkOfferings)) {
           this.form.networkofferingid = 0
           this.handleNetworkOfferingChange(this.networkOfferings[0])
+          this.networkOfferingWarning = false
+        } else {
+          this.form.networkofferingid = null
+          this.networkOfferingWarning = true
         }
       })
     },
