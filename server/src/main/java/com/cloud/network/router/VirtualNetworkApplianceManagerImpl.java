@@ -53,7 +53,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.acl.ApiKeyPairVO;
-import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -861,7 +860,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                         "Site-to-site Vpn Connection to %s on router %s(%s)  just switched from %s to %s",
                                         gw.getName(), router.getHostName(), router, oldState, conn.getState());
                                 logger.info(context);
-                                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                                _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             }
                         }
                     } finally {
@@ -924,7 +923,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         router, router.getHostName(), prevState, currState);
                 logger.info(context);
                 if (currState == RedundantState.PRIMARY) {
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                    _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                 }
             }
         }
@@ -1002,7 +1001,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                             "with hostname %s are both in PRIMARY state! " +
                                             "If the problem persist, restart both of routers. ",
                                     router, router.getHostName(), dupRouter, dupRouter.getHostName());
-                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                            _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             logger.warn(context);
                         } else {
                             networkRouterMaps.put(routerGuestNtwkId, router);
@@ -1160,11 +1159,21 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (CollectionUtils.isEmpty(failingChecks)) {
             return;
         }
+        String subject = String.format("Failed health checks on router [%s]", router.getName());
+        String alertMessage = String.format("The following health checks have failed on router [%s] with UUID [%s]: ", router.getName(), router.getUuid());
+        ArrayList<String> failedChecks = new ArrayList<>();
+        for (String failedCheckName : failingChecks) {
+            RouterHealthCheckResultVO routerHealthCheckResultVO = routerHealthCheckResultDao.getRouterHealthCheckResult(router.getId(), failedCheckName, null);
+            String failedCheckDetails = routerHealthCheckResultVO.getParsedCheckDetails();
+            failedCheckDetails = failedCheckDetails.replace("\n", " ");
+            String failedCheck = failedCheckName + ": " + failedCheckDetails;
+            failedChecks.add(failedCheck);
+        }
+        alertMessage = alertMessage + failedChecks;
 
-        String alertMessage = String.format("Health checks failed: %d failing checks on router %s / %s", failingChecks.size(), router.getName(), router.getUuid());
         _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
-                alertMessage, alertMessage);
-        logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
+                subject, alertMessage);
+        logger.warn("{}. Checking failed health checks to see if router needs recreation", alertMessage);
 
         String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
         StringBuilder failingChecksEvent = new StringBuilder();
@@ -1172,11 +1181,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         for (int i = 0; i < failingChecks.size(); i++) {
             String failedCheck = failingChecks.get(i);
             if (i == 0) {
-                failingChecksEvent.append("Router ")
+                failingChecksEvent.append("Router [")
                         .append(router.getName())
-                        .append(" / ")
+                        .append("] with UUID [")
                         .append(router.getUuid())
-                        .append(" has failing checks: ");
+                        .append("] has failing checks: ");
             }
 
             failingChecksEvent.append(failedCheck);
@@ -1193,8 +1202,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
 
         if (recreateRouter) {
-            logger.warn("Health Check Alert: Found failing checks in " +
-                    RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
+            logger.warn("Health Check Alert: Found failing checks in [{}], attempting to recreate router with id [{}].", RouterHealthChecksFailuresToRecreateVrCK, router.getId());
             recreateRouter(router);
         }
     }
@@ -2303,7 +2311,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (vrProvider == null) {
             throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
         }
-        final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+        final Provider provider = Provider.getProvider(vrProvider.getType().toString());
         if (provider == null) {
             throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
         }
@@ -2713,7 +2721,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(final Provider provider, final Long guestNetworkId,
-            final com.cloud.network.IpAddress.State... skipInStates) {
+            final IpAddress.State... skipInStates) {
 
         final List<? extends IpAddress> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
 
@@ -2761,7 +2769,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final String errorMessage = "Command: " + cmdClassName + " failed while starting virtual router";
                 final String errorDetails = "Details: " + answer.getDetails() + " " + answer;
                 // add alerts for the failed commands
-                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), errorMessage, errorDetails);
+                _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), errorMessage, errorDetails);
                 logger.error(answer.getDetails());
                 logger.warn(errorMessage);
                 // Stop the router if any of the commands failed
@@ -3180,7 +3188,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     continue;
                 }
                 if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
-                        && network.getGuestType() == Network.GuestType.Isolated) {
+                        && network.getGuestType() == GuestType.Isolated) {
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());
                     final String routerType = router.getType().toString();
                     final UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), network.getId(),

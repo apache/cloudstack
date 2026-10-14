@@ -64,7 +64,7 @@ public class RouterHealthCheckResultDaoImpl extends GenericDaoBase<RouterHealthC
         SearchCriteria<RouterHealthCheckResultVO> sc = RouterChecksSearchBuilder.create();
         sc.setParameters("routerId", routerId);
         sc.setParameters("checkName", checkName);
-        sc.setParameters("checkType", checkType);
+        sc.setParametersIfNotNull("checkType", checkType);
         List<RouterHealthCheckResultVO> checks = listBy(sc);
         if (checks.size() > 1) {
             logger.error("Found multiple entries for router Id: " + routerId + ", check name: " + checkName);
