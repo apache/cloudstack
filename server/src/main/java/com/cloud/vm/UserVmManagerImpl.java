@@ -4724,6 +4724,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.details.remove(VmDetailConstants.IO_POLICY);
                     continue;
                 }
+                if (key.equalsIgnoreCase(VmDetailConstants.DISK_DISCARD)) {
+                    vm.details.remove(VmDetailConstants.DISK_DISCARD);
+                    continue;
+                }
             }
 
             if (key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
