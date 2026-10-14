@@ -172,7 +172,7 @@ public class BackupScheduleVO implements BackupSchedule {
     }
 
     public Boolean getQuiesceVM() {
-        return quiesceVM;
+        return this.quiesceVM;
     }
 
     @Override
