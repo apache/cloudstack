@@ -4482,6 +4482,7 @@
 "label.jobs": "Jobs",
 "label.usage.jobs": "Usage Jobs",
 "label.jobresult": "Result",
+"label.jobid": "Job ID",
 "label.pending": "Pending",
 "label.period": "Period",
 "label.cancelled": "Cancelled",
