@@ -120,63 +120,6 @@ public class LibvirtStoragePoolTest extends TestCase {
         assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.Filesystem, adapter, storage).isPoolSupportHA());
     }
 
-    private String getRbdMonitors(String sourceHost, int sourcePort) {
-        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
-                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
-        pool.setSourceHost(sourceHost);
-        pool.setSourcePort(sourcePort);
-        return pool.getRbdMonitors();
-    }
-
-    @Test
-    public void testRbdMonitorsWithoutPort() {
-        assertEquals("10.0.0.1", getRbdMonitors("10.0.0.1", 0));
-        assertEquals("10.0.0.1,10.0.0.2,10.0.0.3", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 0));
-        assertEquals("fd00::1,fd00::2", getRbdMonitors("fd00::1,fd00::2", 0));
-    }
-
-    @Test
-    public void testRbdMonitorsIpv4WithPort() {
-        assertEquals("10.0.0.1:6789", getRbdMonitors("10.0.0.1", 6789));
-        assertEquals("10.0.0.1:3300,10.0.0.2:3300,10.0.0.3:3300", getRbdMonitors("10.0.0.1,10.0.0.2,10.0.0.3", 3300));
-    }
-
-    @Test
-    public void testRbdMonitorsIpv6WithPort() {
-        assertEquals("[fd00::1]:3300", getRbdMonitors("fd00::1", 3300));
-        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("fd00::1,fd00::2", 3300));
-        // already enclosed in square brackets
-        assertEquals("[fd00::1]:3300,[fd00::2]:3300", getRbdMonitors("[fd00::1],[fd00::2]", 3300));
-    }
-
-    @Test
-    public void testRbdMonitorsMixedIpv4AndIpv6WithPort() {
-        assertEquals("10.0.0.1:3300,[fd00::1]:3300,[fd00::2]:3300,mon4.example.com:3300",
-                getRbdMonitors("10.0.0.1, fd00::1,[fd00::2] ,mon4.example.com", 3300));
-    }
-
-    @Test
-    public void testRbdMonitorsMultipleIpv4AndIpv6WithoutPort() {
-        // no port: the default Ceph port is used, so the monitors are passed as they are
-        assertEquals("[fd00::1],[fd00::2],[fd00::3]", getRbdMonitors("[fd00::1],[fd00::2],[fd00::3]", 0));
-        assertEquals("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", getRbdMonitors("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", 0));
-        assertEquals("10.0.0.1,fd00::1", getRbdMonitors("10.0.0.1,fd00::1", -1));
-    }
-
-    @Test
-    public void testRbdMonitorsMultipleIpv4AndIpv6WithPort() {
-        assertEquals("10.0.0.1:6789,10.0.0.2:6789,[fd00::1]:6789,[fd00::2]:6789",
-                getRbdMonitors("10.0.0.1,10.0.0.2,fd00::1,[fd00::2]", 6789));
-        assertEquals("[fd00::1]:6789,10.0.0.1:6789,[fd00::2]:6789,10.0.0.2:6789",
-                getRbdMonitors("fd00::1,10.0.0.1,[fd00::2],10.0.0.2", 6789));
-    }
-
-    @Test
-    public void testRbdMonitorsAreTrimmedAndEmptyEntriesSkipped() {
-        assertEquals("10.0.0.1,10.0.0.2,fd00::1", getRbdMonitors(" 10.0.0.1, 10.0.0.2,,fd00::1 ,", 0));
-        assertEquals("10.0.0.1:6789,10.0.0.2:6789,[fd00::1]:6789", getRbdMonitors(" 10.0.0.1, 10.0.0.2,,fd00::1 ,", 6789));
-    }
-
     private LibvirtStoragePool getRbdPool(String authUsername, String authSecret) {
         LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
                 Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
@@ -221,21 +164,6 @@ public class LibvirtStoragePoolTest extends TestCase {
                 Mockito.verifyNoInteractions(cmd);
             }
         }
-    }
-
-    @Test
-    public void testRbdMonitorsWhichHaveAPortAlready() {
-        // the monitors keep their port, with or without a port of the pool
-        String withPorts = "10.0.0.1:6789,mon.example.com:3300,[fd00::1]:6789";
-        assertEquals(withPorts, getRbdMonitors(withPorts, 0));
-        assertEquals(withPorts, getRbdMonitors(withPorts, 6789));
-        assertEquals(withPorts, getRbdMonitors(withPorts, 3300));
-    }
-
-    @Test
-    public void testRbdMonitorsWithAndWithoutAPortAreMixed() {
-        assertEquals("10.0.0.1:6789,10.0.0.2:3300,mon.example.com:3300,[fd00::1]:3300,[fd00::2]:6789,[fd00::3]:3300",
-                getRbdMonitors("10.0.0.1:6789,10.0.0.2,mon.example.com,fd00::1,[fd00::2]:6789,[fd00::3]", 3300));
     }
 
     @Test

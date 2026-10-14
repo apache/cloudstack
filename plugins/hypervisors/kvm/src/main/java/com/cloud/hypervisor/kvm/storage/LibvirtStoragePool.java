@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +39,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -357,39 +357,6 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     /**
-     * Returns the Ceph monitors as expected by "--mon-host": the comma-separated monitors of the pool, trimmed
-     * and without empty entries. If the pool has a monitor port, it is added to each monitor which has none yet.
-     */
-    protected String getRbdMonitors() {
-        List<String> monitors = new ArrayList<>();
-        for (String monitor : sourceHost.split(",")) {
-            monitor = monitor.trim();
-            if (monitor.isEmpty()) {
-                continue;
-            }
-            monitors.add(sourcePort > 0 ? addPortToRbdMonitor(monitor) : monitor);
-        }
-        return String.join(",", monitors);
-    }
-
-    private String addPortToRbdMonitor(String monitor) {
-        if (monitor.startsWith("[")) {
-            // IPv6 address in square brackets, which has a port if followed by ":<port>"
-            return monitor.contains("]:") ? monitor : monitor + ":" + sourcePort;
-        }
-        int colons = StringUtils.countMatches(monitor, ":");
-        if (colons == 0) {
-            return monitor + ":" + sourcePort;
-        }
-        if (colons == 1) {
-            // IPv4 address or host name, with a port
-            return monitor;
-        }
-        // IPv6 address without square brackets, so without a port
-        return "[" + monitor + "]:" + sourcePort;
-    }
-
-    /**
      * Returns the environment of a heartbeat/VM-activity check script: for a RBD storage pool with cephx, the
      * Ceph key, which is not an argument of the script as it would be visible in the process list.
      */
@@ -411,7 +378,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
         if (hasUser != hasSecret) {
             throw new CloudRuntimeException(String.format("The Ceph user and key must be either both set or both unset for the storage pool %s", uuid));
         }
-        cmd.add("-s", getRbdMonitors());
+        cmd.add("-s", RbdUtils.getRbdMonitors(sourceHost, sourcePort));
         cmd.add("-o", sourceDir);
         if (hasUser) {
             cmd.add("-n", authUsername);
