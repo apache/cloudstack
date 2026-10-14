@@ -83,8 +83,6 @@ export default {
   },
   data () {
     return {
-      offerings: [],
-      customDiskOffering: false,
       loading: false,
       customDiskOfferingIops: false
     }
@@ -105,14 +103,23 @@ export default {
     },
     fetchData () {
       this.loading = true
+      if (this.resource.size != null) {
+        this.form.size = this.resource.size / (1024 * 1024 * 1024)
+      }
+      if (!this.resource.diskofferingid) {
+        this.loading = false
+        return
+      }
       getAPI('listDiskOfferings', {
-        zoneid: this.resource.zoneid,
-        listall: true
+        id: this.resource.diskofferingid,
+        state: 'all'
       }).then(json => {
-        this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskofferingid = this.offerings[0].id || ''
-        this.customDiskOffering = this.offerings[0].iscustomized || false
-        this.customDiskOfferingIops = this.offerings[0].iscustomizediops || false
+        const currentOffering = (json.listdiskofferingsresponse.diskoffering || [])[0]
+        this.customDiskOfferingIops = currentOffering?.iscustomizediops || false
+        if (this.customDiskOfferingIops) {
+          this.form.miniops = this.resource.miniops
+          this.form.maxiops = this.resource.maxiops
+        }
       }).finally(() => {
         this.loading = false
       })
