@@ -46,6 +46,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
     public static final String DEFAULT_TOPIC = "cloudstack";
     public static final String DEFAULT_SERIALIZER = "org.apache.kafka.common.serialization.StringSerializer";
+    public static final String DEFAULT_MAX_BLOCK_MS = "2500";
 
     private String _topic = null;
     private Producer<String,String> _producer;
@@ -69,6 +70,10 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
             if (!props.containsKey("value.serializer")) {
                 props.put("value.serializer", DEFAULT_SERIALIZER);
+            }
+
+            if (!props.containsKey("max.block.ms")) {
+                props.put("max.block.ms", DEFAULT_MAX_BLOCK_MS);
             }
         } catch (Exception e) {
             throw new ConfigurationException("Could not read kafka properties");
