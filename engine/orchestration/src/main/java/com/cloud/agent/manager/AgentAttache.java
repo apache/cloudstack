@@ -46,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -244,7 +245,33 @@ public abstract class AgentAttache {
         return false;
     }
 
-    /** Job-cancel path; distinct from cancel(seq), which is also the timeout path and never reaches the hypervisor. */
+    /** Timeout path: best effort, the sender still reports the timeout; a request that cannot be stopped runs to completion as before. */
+    boolean cancelRunningOnTimeout(final long seq, final Request req) {
+        if (_agentMgr == null) {
+            return false;
+        }
+        if (req != null && req.getCommands() != null) {
+            for (final Command cmd : req.getCommands()) {
+                if (cmd instanceof CancelCommand) {
+                    return false;
+                }
+            }
+        }
+        try {
+            if (!isExecutionCancellable(seq)) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; its hypervisor work cannot be stopped and is left to complete");
+                return false;
+            }
+            final boolean stopped = cancelRunning(seq);
+            logger.info(LOG_SEQ_FORMATTED_STRING, seq, stopped ? "Timed out; its hypervisor work was stopped" : "Timed out; its hypervisor work could not be stopped and is left to complete");
+            return stopped;
+        } catch (final Exception e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Timed out; failed to stop its hypervisor work: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Job-cancel path; distinct from cancel(seq), which only drops the request on this side. */
     public boolean cancelExecution(final long seq) {
         _cancelledSequences.add(seq);
         if (!cancelRunning(seq)) {
@@ -498,6 +525,7 @@ public abstract class AgentAttache {
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait * 2, true);
         } catch (OperationTimedoutException e) {
             logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Timed out on " + req.toString());
+            cancelRunningOnTimeout(seq, req);
             cancel(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
@@ -631,6 +659,7 @@ public abstract class AgentAttache {
             try {
                 Listener listener = unregisterListener(_seq);
                 if (listener != null) {
+                    cancelRunningOnTimeout(_seq, null);
                     cancel(_seq);
                     listener.processTimeout(_id, _seq);
                 }
