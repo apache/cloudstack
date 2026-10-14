@@ -623,6 +623,31 @@ public class AgentProperties{
         = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
 
     /**
+     * Action taken by the KVM agent's storage heartbeat scripts (kvmheartbeat.sh, kvmspheartbeat.sh
+     * and kvmsmpheartbeat.sh) when a heartbeat write fails persistently. Only consulted when
+     * {@link #REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT} is true: that boolean remains the
+     * on/off switch for fencing, this setting only chooses what the fence does. Allowed values:
+     * <ul>
+     *   <li>{@code hard-reboot} (default): immediate sysrq-trigger reboot. Required default for setups
+     *       where a stale NFSv3 mount can prevent a graceful shutdown from completing.</li>
+     *   <li>{@code graceful-reboot}: {@code systemctl reboot} instead of sysrq; allows VMs
+     *       to stop cleanly. Use only if a stale storage mount cannot block shutdown.</li>
+     *   <li>{@code restart-agent}: restart cloudstack-agent only; running VMs preserved.</li>
+     *   <li>{@code log-only}: only write a message to the host's syslog and take no action (no reboot,
+     *       no agent restart, no management server alert); the operator must investigate.</li>
+     * </ul>
+     * Any other value falls back to {@code hard-reboot}.<br>
+     * The non-default values are recommended for setups using LINSTOR/DRBD or other replicated
+     * local storage, where transient I/O contention can cause a heartbeat write to time out
+     * without the host actually being unhealthy.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: String.<br>
+     * Default value: {@code hard-reboot}
+     */
+    public static final Property<String> KVM_HEARTBEAT_FENCE_ACTION
+        = new Property<>("kvm.heartbeat.fence.action", "hard-reboot");
+
+    /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
      * Data type: Boolean.<br>
      * Default value: <code>true</code>
