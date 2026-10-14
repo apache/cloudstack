@@ -54,6 +54,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
@@ -548,13 +549,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private List<String> rbdConnectionArgs(KVMStoragePool pool, Path keyFile) {
         List<String> args = new ArrayList<>();
         if (StringUtils.isNotBlank(pool.getSourceHost())) {
-            List<String> monitors = new ArrayList<>();
-            for (String host : pool.getSourceHost().split(",")) {
-                host = host.trim().replace("[", "").replace("]", "");
-                monitors.add(pool.getSourcePort() > 0 ? host + ":" + pool.getSourcePort() : host);
-            }
             args.add("-m");
-            args.add(String.join(",", monitors));
+            args.add(RbdUtils.getRbdMonitors(pool.getSourceHost(), pool.getSourcePort()));
         }
         if (StringUtils.isNotBlank(pool.getAuthUserName())) {
             args.add("--id");
