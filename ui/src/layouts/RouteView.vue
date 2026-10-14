@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<script>
+<script lang="jsx">
 export default {
   name: 'RouteView',
   data () {
