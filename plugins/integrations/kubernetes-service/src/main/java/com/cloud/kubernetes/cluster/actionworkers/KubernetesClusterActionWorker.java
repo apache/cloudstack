@@ -761,6 +761,25 @@ public class KubernetesClusterActionWorker {
         }
     }
 
+    /**
+     * Deletes the local temporary copies of the scripts created by {@link #retrieveScriptFiles()}
+     * once they have been copied to the cluster node(s). Without this, every deploy/autoscale/PV-cleanup
+     * action leaks a *.sh file in the management server's tmp directory.
+     */
+    protected void cleanupScriptFiles() {
+        deleteScriptFileQuietly(deploySecretsScriptFile);
+        deleteScriptFileQuietly(deployProviderScriptFile);
+        deleteScriptFileQuietly(deployCsiDriverScriptFile);
+        deleteScriptFileQuietly(deletePvScriptFile);
+        deleteScriptFileQuietly(autoscaleScriptFile);
+    }
+
+    protected void deleteScriptFileQuietly(File file) {
+        if (file != null && file.exists() && !file.delete()) {
+            logger.debug("Failed to delete temporary Kubernetes cluster script file: {}", file.getAbsolutePath());
+        }
+    }
+
     protected boolean taintControlNodes() {
         StringBuilder commands = new StringBuilder();
         List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
@@ -820,7 +839,11 @@ public class KubernetesClusterActionWorker {
             if (!result.first()) {
                 logMessage(Level.INFO, "Provider files missing. Adding them now", null);
                 retrieveScriptFiles();
-                copyScripts(publicIpAddress, sshPort);
+                try {
+                    copyScripts(publicIpAddress, sshPort);
+                } finally {
+                    cleanupScriptFiles();
+                }
 
                 if (!createCloudStackSecret(keys)) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
@@ -857,7 +880,11 @@ public class KubernetesClusterActionWorker {
             if (!result.first()) {
                 logMessage(Level.INFO, "CSI files missing. Adding them now", null);
                 retrieveScriptFiles();
-                copyScripts(publicIpAddress, sshPort);
+                try {
+                    copyScripts(publicIpAddress, sshPort);
+                } finally {
+                    cleanupScriptFiles();
+                }
 
                 if (!createCloudStackSecret(keys)) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
