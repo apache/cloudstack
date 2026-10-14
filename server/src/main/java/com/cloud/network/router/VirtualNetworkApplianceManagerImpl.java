@@ -78,6 +78,8 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -199,6 +201,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
@@ -351,6 +354,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject ManagementServer mgr;
+    @Inject
+    private FirewallRuleDetailsDao _firewallRuleDetailsDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
@@ -1711,13 +1716,30 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             .append(",protocol=").append(appLoadBalancerVO.getLbProtocol());
                 }
                 loadBalancingData.append(",stickiness=").append(getStickinessPolicies(firewallRuleVO.getId()));
-                loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled()).append(",vmIps=");
+                loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled());
+                appendLbRuleConnectionSettings(loadBalancingData, firewallRuleVO.getId());
+                loadBalancingData.append(",vmIps=");
                 for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
             }
         }
+    }
+
+    /**
+     * The per rule haproxy settings, so the health check can tell what the rule's own listen
+     * section should hold. Empty when the rule inherits.
+     */
+    protected void appendLbRuleConnectionSettings(final StringBuilder loadBalancingData, long lbRuleId) {
+        loadBalancingData.append(",ruleKeepAlive=").append(lbRuleDetail(lbRuleId, LoadBalancer.KEEPALIVE))
+                .append(",ruleIdleTimeout=").append(lbRuleDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT))
+                .append(",ruleKeepAliveTimeout=").append(lbRuleDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT));
+    }
+
+    private String lbRuleDetail(long lbRuleId, String key) {
+        FirewallRuleDetailVO detail = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+        return detail == null ? "" : detail.getValue();
     }
 
     protected void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
