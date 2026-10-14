@@ -68,6 +68,16 @@
       :rowKey="item => item.jobid"
       :scroll="{ x: 'max-content' }"
       :pagination="false" >
+      <template #customFilterDropdown>
+        <div style="padding: 8px" class="filter-dropdown">
+          <a-menu>
+            <a-menu-item v-for="column in allColumns" :key="column.key" @click="updateSelectedColumns(column.key)">
+              <a-checkbox :id="column.key" :checked="selectedColumns.includes(column.key)" />
+              {{ column.title }}
+            </a-menu-item>
+          </a-menu>
+        </div>
+      </template>
       <template #cmd="{ text }">
         {{ text ? text.split('.').pop() : '' }}
       </template>
@@ -93,10 +103,7 @@
         {{ text ? $toLocaleDate(text) : '-' }}
       </template>
       <template #jobresult="{ text }">
-        <a-tooltip v-if="text" placement="topLeft" :title="text">
-          <span class="job-result">{{ text }}</span>
-        </a-tooltip>
-        <span v-else>-</span>
+        <span class="job-result">{{ resultText(text) }}</span>
       </template>
       <template #actions="{ record }">
         <a-popconfirm
@@ -139,6 +146,7 @@
 import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import SearchView from '@/components/view/SearchView'
+import { genericCompare } from '@/utils/sort.js'
 
 // Mirrors org.apache.cloudstack.jobs.JobInfo.Status ordinals.
 const STATUS_IN_PROGRESS = 0
@@ -177,6 +185,7 @@ export default {
       durationHours: 24,
       searchFilters: ['domainid', 'account', 'resourcetype'],
       searchParams: {},
+      selectedColumns: [],
       statusOptions: [
         { value: 'pending', label: this.$t('label.pending') },
         { value: String(STATUS_SUCCEEDED), label: this.$t('label.success') },
@@ -193,61 +202,34 @@ export default {
     }
   },
   computed: {
-    columns () {
-      const columns = [
-        {
-          title: this.$t('label.command'),
-          dataIndex: 'cmd',
-          slots: { customRender: 'cmd' }
-        },
-        {
-          title: this.$t('label.status'),
-          dataIndex: 'jobstatus',
-          slots: { customRender: 'jobstatus' }
+    allColumns () {
+      const column = (key, title, slot) => {
+        const col = { key, title, dataIndex: key, sorter: (a, b) => genericCompare(a[key] || '', b[key] || '') }
+        if (slot) {
+          col.slots = { customRender: slot }
         }
+        return col
+      }
+      const columns = [
+        column('cmd', this.$t('label.command'), 'cmd'),
+        column('jobstatus', this.$t('label.status'), 'jobstatus')
       ]
       if (!this.resourceType) {
-        columns.push({
-          title: this.$t('label.resourcetype'),
-          dataIndex: 'jobinstancetype',
-          slots: { customRender: 'jobinstance' }
-        })
+        columns.push(column('jobinstancetype', this.$t('label.resourcetype'), 'jobinstance'))
       }
       columns.push(
-        {
-          title: this.$t('label.account'),
-          dataIndex: 'account',
-          slots: { customRender: 'account' }
-        },
-        {
-          title: this.$t('label.domain'),
-          dataIndex: 'domainpath',
-          slots: { customRender: 'domainpath' }
-        })
+        column('account', this.$t('label.account'), 'account'),
+        column('domainpath', this.$t('label.domain'), 'domainpath'))
       if (!this.scopedToManagementServer) {
-        columns.push({
-          title: this.$t('label.managementservername'),
-          dataIndex: 'managementservername'
-        })
+        columns.push(column('managementservername', this.$t('label.managementservername')))
       }
       columns.push(
-        {
-          title: this.$t('label.created'),
-          dataIndex: 'created',
-          slots: { customRender: 'created' }
-        },
-        {
-          title: this.$t('label.completed'),
-          dataIndex: 'completed',
-          slots: { customRender: 'completed' }
-        },
-        {
-          title: this.$t('label.jobresult'),
-          dataIndex: 'jobresult',
-          slots: { customRender: 'jobresult' }
-        })
+        column('created', this.$t('label.created'), 'created'),
+        column('completed', this.$t('label.completed'), 'completed'),
+        column('jobresult', this.$t('label.jobresult'), 'jobresult'))
       if (this.showActions) {
         columns.push({
+          key: 'actions',
           title: this.$t('label.actions'),
           dataIndex: 'actions',
           width: 120,
@@ -255,6 +237,20 @@ export default {
         })
       }
       return columns
+    },
+    columns () {
+      const columns = this.allColumns.filter(column => this.selectedColumns.includes(column.key))
+      columns.push({
+        key: 'filtercolumn',
+        dataIndex: 'filtercolumn',
+        title: '',
+        customFilterDropdown: true,
+        width: columns.length === 0 ? 'auto' : 5
+      })
+      return columns
+    },
+    columnsStoreKey () {
+      return 'asyncjobs:' + (this.resourceType || (this.scopedToManagementServer ? 'managementserver' : 'all'))
     },
     showActions () {
       return isAdmin() && 'cancelAsyncJob' in this.$store.getters.apis
@@ -264,6 +260,7 @@ export default {
     }
   },
   created () {
+    this.loadSelectedColumns()
     this.fetchData()
   },
   watch: {
@@ -318,6 +315,33 @@ export default {
       }).finally(() => {
         this.tabLoading = false
       })
+    },
+    loadSelectedColumns () {
+      const userId = this.$store.getters.userInfo.id
+      const saved = this.$store.getters.customColumns?.[userId]?.[this.columnsStoreKey]
+      const keys = this.allColumns.map(column => column.key)
+      this.selectedColumns = saved ? keys.filter(key => saved.includes(key)) : keys
+    },
+    updateSelectedColumns (key) {
+      if (this.selectedColumns.includes(key)) {
+        this.selectedColumns = this.selectedColumns.filter(x => x !== key)
+      } else {
+        this.selectedColumns = [...this.selectedColumns, key]
+      }
+      const userId = this.$store.getters.userInfo.id
+      const customColumns = this.$store.getters.customColumns || {}
+      customColumns[userId] = customColumns[userId] || {}
+      customColumns[userId][this.columnsStoreKey] = this.selectedColumns
+      this.$store.dispatch('SetCustomColumns', customColumns)
+    },
+    resultText (text) {
+      if (!text) {
+        return '-'
+      }
+      if (typeof text === 'object') {
+        return text.errortext || JSON.stringify(text)
+      }
+      return String(text)
     },
     onFilterChange () {
       this.page = 1
@@ -389,10 +413,9 @@ export default {
 <style scoped lang="less">
 .job-result {
   display: inline-block;
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: bottom;
+  min-width: 240px;
+  max-width: 480px;
+  white-space: normal;
+  word-break: break-word;
 }
 </style>
