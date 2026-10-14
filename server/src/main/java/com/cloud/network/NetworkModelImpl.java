@@ -749,6 +749,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         return _networksDao.findById(id);
     }
 
+    /**
+     * A Shared network's IPv4 presence is its gateway; a gateway-less L3 network's is its cidr —
+     * when either is present, a free address must remain in the network's IPv4 pool. IPv6 needs
+     * no free-IP check: addresses are computed with EUI-64 from the subnet and the NIC MAC, so an
+     * IPv6-only network never runs out.
+     */
     @Override
     public boolean canUseForDeploy(Network network) {
         if (network.getTrafficType() != TrafficType.Guest) {
@@ -758,8 +764,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return true; // do not check free IPs if there is no service in the network
         }
         boolean hasFreeIps = true;
-        if (network.getGuestType() == GuestType.Shared) {
-            if (network.getGateway() != null) {
+        if (network.getGuestType() == GuestType.Shared || network.getGuestType() == GuestType.L3) {
+            if (network.getGateway() != null || (network.getGuestType() == GuestType.L3 && network.getCidr() != null)) {
                 hasFreeIps = _ipAddressDao.countFreeIPsInNetwork(network.getId()) > 0;
             }
             if (!hasFreeIps) {
@@ -3097,7 +3103,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 if (network == null) {
                     throw new InvalidParameterValueException("Unable to find network by id " + networkId);
                 }
-                if (network.getGuestType() == Network.GuestType.Shared && isSecurityGroupSupportedInNetwork(network)) {
+                if ((network.getGuestType() == Network.GuestType.Shared || network.getGuestType() == Network.GuestType.L3)
+                        && isSecurityGroupSupportedInNetwork(network)) {
                     return true;
                 }
             }

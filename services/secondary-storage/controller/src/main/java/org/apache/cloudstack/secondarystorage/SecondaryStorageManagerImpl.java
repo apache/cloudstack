@@ -1194,8 +1194,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 buf.append(" eth").append(deviceId).append("mask=").append(nic.getIPv4Netmask());
             }
 
+            if (nic.getIPv6Address() != null) {
+                buf.append(" eth").append(deviceId).append("ip6=").append(nic.getIPv6Address());
+                buf.append(" eth").append(deviceId).append("ip6prelen=").append(NetUtils.getIp6CidrSize(nic.getIPv6Cidr()));
+            }
+
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getIPv4Gateway());
+                if (nic.getIPv6Gateway() != null) {
+                    buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
+                }
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
