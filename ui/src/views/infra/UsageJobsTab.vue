@@ -44,6 +44,9 @@
       :rowKey="(item, index) => item.usageserver + '-' + item.startdate + '-' + index"
       :scroll="{ x: 'max-content' }"
       :pagination="false">
+      <template #date="{ text }">
+        {{ text ? $toLocaleDate(text) : '-' }}
+      </template>
       <template #jobtype="{ text }">
         {{ jobTypeLabel(text) }}
       </template>
@@ -121,11 +124,13 @@ export default {
         },
         {
           title: this.$t('label.start.date'),
-          dataIndex: 'startdate'
+          dataIndex: 'startdate',
+          slots: { customRender: 'date' }
         },
         {
           title: this.$t('label.end.date'),
-          dataIndex: 'enddate'
+          dataIndex: 'enddate',
+          slots: { customRender: 'date' }
         },
         {
           title: this.$t('label.execution.time'),
@@ -138,7 +143,8 @@ export default {
         },
         {
           title: this.$t('label.heartbeat'),
-          dataIndex: 'heartbeat'
+          dataIndex: 'heartbeat',
+          slots: { customRender: 'date' }
         }
       ]
     }
