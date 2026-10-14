@@ -130,6 +130,7 @@ Requires: sysstat
 Requires: python3-libnbd
 Requires: python3-rados
 Requires: python3-rbd
+Requires: ceph-common
 Requires: socat
 Provides: cloud-agent
 Group: System Environment/Libraries

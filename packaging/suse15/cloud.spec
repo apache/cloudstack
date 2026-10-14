@@ -122,6 +122,7 @@ Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (python3-rados or python3-ceph-common)
 Requires: (python3-rbd or python3-ceph-common)
+Requires: ceph-common
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
 Requires: cryptsetup
