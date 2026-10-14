@@ -800,8 +800,10 @@ export default {
       this.handleNetworkOfferingChange(null)
       this.networkOfferings = []
       getAPI('listNetworkOfferings', params).then(json => {
-        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
+        const offerings = json?.listnetworkofferingsresponse?.networkoffering || []
+        this.networkOfferings = Array.isArray(offerings) ? offerings : []
       }).catch(error => {
+        this.networkOfferings = []
         this.$notifyError(error)
       }).finally(() => {
         this.networkOfferingLoading = false
