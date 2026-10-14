@@ -17,7 +17,6 @@
 
 package com.cloud.storage;
 
-import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -35,10 +34,8 @@ import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
 import com.cloud.exception.DiscoveryException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
@@ -55,12 +52,9 @@ public interface StorageService {
      *            storage pool.
      * @return
      *            The StoragePool created.
-     * @throws ResourceInUseException
      * @throws IllegalArgumentException
-     * @throws UnknownHostException
-     * @throws ResourceUnavailableException
      */
-    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
+    StoragePool createPool(CreateStoragePoolCmd cmd) throws IllegalArgumentException;
 
     ImageStore createSecondaryStagingStore(CreateSecondaryStagingStoreCmd cmd);
 
@@ -79,10 +73,8 @@ public interface StorageService {
      * @param primaryStorageId
      *            - the primaryStorageId
      * @return the primary storage pool
-     * @throws ResourceUnavailableException
-     * @throws InsufficientCapacityException
      */
-    StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
+    StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId);
 
     /**
      * Complete maintenance for primary storage
@@ -108,7 +100,7 @@ public interface StorageService {
 
     boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd);
 
-    ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map<String, String> details) throws IllegalArgumentException, InvalidParameterValueException;
 
     /**
      * Migrate existing NFS to use object store.
@@ -134,7 +126,7 @@ public interface StorageService {
 
     void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd);
 
-    ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map<String, String> details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
     boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
 
