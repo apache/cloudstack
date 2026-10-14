@@ -52,6 +52,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.cloudstack.acl.Role;
@@ -139,8 +140,12 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import com.cloud.org.Cluster;
@@ -222,6 +227,12 @@ public class ExtensionsManagerImplTest {
 
     @Mock
     private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+
+    @Mock
+    private NetworkOfferingDao networkOfferingDao;
+
+    @Mock
+    private VpcOfferingDao vpcOfferingDao;
 
     @Before
     public void setUp() {
@@ -961,6 +972,7 @@ public class ExtensionsManagerImplTest {
 
         when(networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.StaticNat, "MyExt"))
                 .thenReturn(Collections.singletonList(1L));
+        when(networkOfferingDao.findById(1L)).thenReturn(mock(NetworkOfferingVO.class));
 
         extensionsManager.updateExtension(cmd);
     }
@@ -992,8 +1004,40 @@ public class ExtensionsManagerImplTest {
                 .thenReturn(Collections.emptyList());
         when(vpcOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.StaticNat, "MyExt"))
                 .thenReturn(Collections.singletonList(1L));
+        when(vpcOfferingDao.findById(1L)).thenReturn(mock(VpcOfferingVO.class));
 
         extensionsManager.updateExtension(cmd);
+    }
+
+    @Test
+    public void updateNetworkExtensionServicesOnPhysicalNetworks_IgnoresRemovedOfferings() {
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getId()).thenReturn(9L);
+        when(ext.getName()).thenReturn("MyExt");
+
+        // service map rows still reference offerings 1 (network) and 2 (VPC), but both offerings are removed
+        when(networkOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.CustomAction, "MyExt"))
+                .thenReturn(Collections.singletonList(1L));
+        when(vpcOfferingServiceMapDao.listOfferingIdsByServiceAndProvider(Network.Service.CustomAction, "MyExt"))
+                .thenReturn(Collections.singletonList(2L));
+        when(networkOfferingDao.findById(1L)).thenReturn(null);
+        when(vpcOfferingDao.findById(2L)).thenReturn(null);
+
+        when(extensionResourceMapDao.listResourceIdsByExtensionIdAndType(9L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
+                .thenReturn(Collections.singletonList(100L));
+        PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
+        when(nsp.getId()).thenReturn(500L);
+        when(nsp.getEnabledServices()).thenReturn(new ArrayList<>(Collections.singletonList(Network.Service.CustomAction)));
+        when(physicalNetworkServiceProviderDao.findByServiceProvider(100L, "MyExt")).thenReturn(nsp);
+
+        extensionsManager.updateNetworkExtensionServicesOnPhysicalNetworks(ext,
+                Set.of(Network.Service.CustomAction), Set.of(Network.Service.UserData));
+
+        ArgumentCaptor<List<Network.Service>> captor = ArgumentCaptor.forClass(List.class);
+        verify(nsp).setEnabledServices(captor.capture());
+        assertFalse(captor.getValue().contains(Network.Service.CustomAction));
+        assertTrue(captor.getValue().contains(Network.Service.UserData));
+        verify(physicalNetworkServiceProviderDao).update(500L, nsp);
     }
 
     @Test
