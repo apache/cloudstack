@@ -103,7 +103,22 @@
         {{ text ? $toLocaleDate(text) : '-' }}
       </template>
       <template #jobresult="{ text }">
-        <span class="job-result">{{ resultText(text) }}</span>
+        <a-popover v-if="resultText(text) !== '-'" placement="topLeft" overlayClassName="job-result-popover">
+          <template #content>
+            <div class="job-result-full">
+              <a
+                href="javascript:;"
+                class="job-result-copy"
+                v-clipboard:copy="prettyResult(text)"
+                @click="$message.success($t('label.copied.clipboard'))">
+                <copy-outlined /> {{ $t('label.copy') }}
+              </a>
+              <pre>{{ prettyResult(text) }}</pre>
+            </div>
+          </template>
+          <span class="job-result">{{ resultText(text) }}</span>
+        </a-popover>
+        <span v-else>-</span>
       </template>
       <template #actions="{ record }">
         <a-popconfirm
@@ -343,6 +358,12 @@ export default {
       }
       return String(text)
     },
+    prettyResult (text) {
+      if (text && typeof text === 'object' && !text.errortext) {
+        return JSON.stringify(text, null, 2)
+      }
+      return this.resultText(text)
+    },
     onFilterChange () {
       this.page = 1
       this.fetchData()
@@ -413,9 +434,34 @@ export default {
 <style scoped lang="less">
 .job-result {
   display: inline-block;
-  min-width: 240px;
-  max-width: 480px;
-  white-space: normal;
-  word-break: break-word;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  cursor: default;
+}
+</style>
+
+<style lang="less">
+.job-result-popover .ant-popover-inner-content {
+  padding: 8px 12px;
+}
+.job-result-full {
+  max-width: 640px;
+  max-height: 420px;
+  overflow: auto;
+
+  .job-result-copy {
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+
+  pre {
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 }
 </style>
