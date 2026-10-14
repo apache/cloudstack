@@ -914,6 +914,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# The cephx key file is written to /tmp for the lifetime of an rbd call. cleanup() removes it,
+# but only the failure paths call cleanup, so leave its removal to the shell as well: every exit
+# from here on drops the key, including the ones that end the script without reaching cleanup.
+trap rbd_cleanup_keyfile EXIT
+
 # Perform initial environment sanity checks (QEMU/libvirt version).
 sanity_checks
 
