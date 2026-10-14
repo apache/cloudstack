@@ -1482,7 +1482,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             Long instanceId = volume.getInstanceId();
             tags = StorPoolHelper.addStorPoolTags(volume.getUuid(), getVMInstanceUUID(instanceId), "volume", getVcPolicyTag(instanceId), tier);
         } else {
-            tags = StorPoolHelper.addStorPoolTags(null, null, "", null, null);
+            tags = StorPoolHelper.addStorPoolTags("", "", "", "", "");
         }
         StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, null, tags, null, null, null, null, null, null);
         SpApiResponse resp = StorPoolUtil.volumeUpdate(spVolume, conn);

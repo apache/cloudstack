@@ -37,6 +37,7 @@ from marvin.lib.base import (Account,
                              DiskOffering,
                              ServiceOffering,
                              Snapshot,
+                             Tag,
                              VirtualMachine,
                              Volume)
 from marvin.lib.common import (get_domain,
@@ -556,3 +557,54 @@ class TestStorPoolImportVolume(cloudstackTestCase):
                 self.debug("importVolume correctly failed for a cs-tagged volume: %s" % e)
         finally:
             self.spapi.volumeDelete(volumeName=sp_volume_name)
+
+    @attr(tags=["advanced", "basic", "sg"], required_hardware=False)
+    def test_09_unmanage_volume_clears_all_storpool_tags(self):
+        """ unmanageVolume should clear every StorPool tag CloudStack set - cs, uuid, qc, cvm
+        and vc-policy - checked in isolation from a subsequent re-import (contrast test_01,
+        which only asserts on cs/uuid, and only as part of an unmanage-then-reimport round
+        trip). The volume is attached to cls.virtual_machine (so it picks up the cvm tag) and
+        the VM is given a vc-policy resource tag (so the volume picks that up too) before being
+        detached and unmanaged. CloudStack rejects unmanageVolume on a still-attached volume, so
+        the volume has to be detached first anyway - the tags are checked as cleared here too in
+        case that invariant ever changes. """
+
+        volume = self.create_storpool_volume("StorPoolUnmanageClearsTagsTest", self.disk_offering_qos.id)
+
+        self.virtual_machine.attach_volume(self.apiclient, volume)
+        Tag.create(
+            self.apiclient,
+            resourceIds=self.virtual_machine.id,
+            resourceType='UserVm',
+            tags={'vc-policy': 'test'}
+        )
+
+        sp_volume = self.storpool_volume(volume.path)
+        self.assertEqual("volume", sp_volume.tags.get("cs"),
+                          "A CloudStack-managed volume should carry the cs=volume StorPool tag")
+        self.assertEqual(volume.id, sp_volume.tags.get("uuid"),
+                          "A CloudStack-managed volume should carry its CloudStack uuid as a StorPool tag")
+        self.assertEqual(self.qos_tag, sp_volume.tags.get("qc"),
+                          "A CloudStack-managed volume on a QoS disk offering should carry the qc tag")
+        self.assertEqual(self.virtual_machine.id, sp_volume.tags.get("cvm"),
+                          "A volume attached to a VM should carry the owning VM's uuid as the cvm tag")
+        self.assertEqual("test", sp_volume.tags.get("vc-policy"),
+                          "A vc-policy tag set on the owning VM should be pushed to the StorPool volume")
+
+        try:
+            self.virtual_machine.detach_volume(self.apiclient, volume)
+
+            cmd = unmanageVolume.unmanageVolumeCmd()
+            cmd.id = volume.id
+            self.apiclient.unmanageVolume(cmd)
+
+            sp_volume = self.storpool_volume(volume.path)
+            self.assertFalse(sp_volume.tags.get("cs"), "unmanageVolume should clear the cs tag")
+            self.assertFalse(sp_volume.tags.get("uuid"), "unmanageVolume should clear the uuid tag")
+            self.assertFalse(sp_volume.tags.get("qc"), "unmanageVolume should clear the qc tag")
+            self.assertFalse(sp_volume.tags.get("cvm"), "unmanageVolume should clear the cvm tag")
+            self.assertFalse(sp_volume.tags.get("vc-policy"), "unmanageVolume should clear the vc-policy tag")
+        finally:
+            # The volume is unmanaged, so it is no longer a CloudStack-tracked resource for
+            # self.cleanup to delete - remove it directly on StorPool instead.
+            self.spapi.volumeDelete(volumeName="~" + volume.path.split("/")[3])
