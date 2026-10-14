@@ -458,7 +458,25 @@ export default {
       if (arrayField.includes('resourcetype')) {
         const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
         this.fields[resourceTypeIndex].loading = true
-        this.fields[resourceTypeIndex].opts = [
+        this.fields[resourceTypeIndex].opts = this.apiName.includes('listAsyncJobs') ? [
+          { value: 'VirtualMachine' },
+          { value: 'Volume' },
+          { value: 'Snapshot' },
+          { value: 'VmSnapshot' },
+          { value: 'Template' },
+          { value: 'Iso' },
+          { value: 'Network' },
+          { value: 'Vpc' },
+          { value: 'Host' },
+          { value: 'StoragePool' },
+          { value: 'SystemVm' },
+          { value: 'DomainRouter' },
+          { value: 'KubernetesCluster' },
+          { value: 'Backup' },
+          { value: 'Account' },
+          { value: 'Domain' },
+          { value: 'User' }
+        ] : [
           { value: 'Account' },
           { value: 'Domain' },
           { value: 'Iso' },
