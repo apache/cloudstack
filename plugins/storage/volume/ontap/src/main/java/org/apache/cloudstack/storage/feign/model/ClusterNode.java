@@ -36,7 +36,7 @@ public class ClusterNode {
     @JsonProperty("is_all_flash_optimized")
     private Boolean allFlashOptimized;
 
-    @JsonProperty("is_performance_optimized")
+    @JsonProperty("is_perf_optimized")
     private Boolean performanceOptimized;
 
     @JsonProperty("is_capacity_optimized")

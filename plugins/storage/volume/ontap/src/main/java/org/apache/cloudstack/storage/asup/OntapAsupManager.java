@@ -268,14 +268,18 @@ public class OntapAsupManager extends ManagerBase {
                 logger.debug("ONTAP ASUP: another management server holds the ASUP lock; skipping this cycle.");
                 return;
             }
-            logger.debug("ONTAP ASUP: pushing telemetry for {} pool(s) [CloudStack version={}]",
-                    pools.size(), getCloudStackVersion());
-            Map<String, AsupClusterClient> clientsByStorageIp = new HashMap<>();
-            for (StoragePoolVO pool : pools) {
-                pushAsupForStoragePool(pool, clientsByStorageIp);
+            try {
+                logger.debug("ONTAP ASUP: pushing telemetry for {} pool(s) [CloudStack version={}]",
+                        pools.size(), getCloudStackVersion());
+                Map<String, AsupClusterClient> clientsByStorageIp = new HashMap<>();
+                for (StoragePoolVO pool : pools) {
+                    pushAsupForStoragePool(pool, clientsByStorageIp);
+                }
+            } finally {
+                lock.unlock();
             }
         } finally {
-            lock.unlock();
+            lock.releaseRef();
         }
     }
 
@@ -430,17 +434,20 @@ public class OntapAsupManager extends ManagerBase {
             // Only count volumes that definitely have a physical object on the ONTAP FlexVolume.
             // "Allocated" volumes have a pool_id row in the CS DB but ONTAP provisioning has not
             // yet been called, so including them would inflate counts and provisioned size.
-            List<VolumeVO> cstackVolumes = volumes.stream()
-                    .filter(v -> CS_VOLUME_STATES.contains(v.getState()))
-                    .collect(java.util.stream.Collectors.toList());
-
-            long rootDiskCount = cstackVolumes.stream()
-                    .filter(v -> Volume.Type.ROOT.equals(v.getVolumeType())).count();
-            long dataDiskCount = cstackVolumes.stream()
-                    .filter(v -> Volume.Type.DATADISK.equals(v.getVolumeType())).count();
-
-            long totalLogicalSizeBytes = cstackVolumes.stream()
-                    .mapToLong(v -> v.getSize() != null ? v.getSize() : 0L).sum();
+            long rootDiskCount = 0L;
+            long dataDiskCount = 0L;
+            long totalLogicalSizeBytes = 0L;
+            for (VolumeVO volume : volumes) {
+                if (!CS_VOLUME_STATES.contains(volume.getState())) {
+                    continue;
+                }
+                if (Volume.Type.ROOT.equals(volume.getVolumeType())) {
+                    rootDiskCount++;
+                } else if (Volume.Type.DATADISK.equals(volume.getVolumeType())) {
+                    dataDiskCount++;
+                }
+                totalLogicalSizeBytes += volume.getSize() != null ? volume.getSize() : 0L;
+            }
             payload.put(OntapStorageConstants.ASUP_ROOT_DISK_COUNT, rootDiskCount);
             payload.put(OntapStorageConstants.ASUP_DATA_DISK_COUNT, dataDiskCount);
             payload.put(OntapStorageConstants.ASUP_TOTAL_LOGICAL_SIZE_BYTES, totalLogicalSizeBytes);
@@ -450,9 +457,9 @@ public class OntapAsupManager extends ManagerBase {
     }
 
     /**
-     * Adds {@code hasMultiPrimaryStoragePoolVm}: true when at least one VM with ROOT on this
-     * pool also has an attached DATADISK on a different primary storage pool. Uses a single
-     * {@code LIMIT 1} existence query.
+     * Adds {@code hasMultiPrimaryStoragePoolVm}: true when at least one VM with a Ready ROOT
+     * on this pool also has an attached Ready DATADISK on a different primary storage pool.
+     * Uses a single {@code LIMIT 1} existence query.
      */
     private void hasMultiPrimaryStoragePoolVm(StoragePoolVO pool, Map<String, Object> payload) {
         try {

@@ -136,6 +136,8 @@ public abstract class StorageStrategy {
      * Sets {@link Cluster#setModel(String)} and {@link Cluster#setPlatformType(String)} from one
      * {@code GET /api/cluster/nodes}. Distinct models are joined with a comma. Platform type is
      * {@code performance}, {@code capacity}, {@code fas}, or {@code composite} when personalities mix.
+     * A node that omits {@code is_all_flash_optimized} is left out of the rollup so a partial
+     * response is not reported as {@code fas}.
      */
     private void populateNodeAsupFields(Cluster cluster, String authHeader) {
         try {
@@ -154,7 +156,10 @@ public abstract class StorageStrategy {
                 if (node.getModel() != null && !node.getModel().isBlank()) {
                     models.add(node.getModel().trim());
                 }
-                platformTypes.add(classifyNodePlatformType(node));
+                String platformType = classifyNodePlatformType(node);
+                if (platformType != null) {
+                    platformTypes.add(platformType);
+                }
             }
             if (!models.isEmpty()) {
                 cluster.setModel(String.join(OntapStorageConstants.COMMA, models));
@@ -194,14 +199,17 @@ public abstract class StorageStrategy {
     /**
      * Classifies one node: not all-flash → {@code fas}; all-flash + capacity → {@code capacity};
      * otherwise all-flash (including performance-optimized or classic AFF) → {@code performance}.
+     * Returns {@code null} when {@code is_all_flash_optimized} is absent, so unknown hardware is
+     * not reported as {@code fas}.
      */
     private static String classifyNodePlatformType(ClusterNode node) {
-        boolean allFlash = Boolean.TRUE.equals(node.getAllFlashOptimized());
-        boolean capacity = Boolean.TRUE.equals(node.getCapacityOptimized());
-        if (!allFlash) {
+        if (node.getAllFlashOptimized() == null) {
+            return null;
+        }
+        if (!node.getAllFlashOptimized()) {
             return OntapStorageConstants.ASUP_PLATFORM_TYPE_FAS;
         }
-        if (capacity) {
+        if (Boolean.TRUE.equals(node.getCapacityOptimized())) {
             return OntapStorageConstants.ASUP_PLATFORM_TYPE_CAPACITY;
         }
         return OntapStorageConstants.ASUP_PLATFORM_TYPE_PERFORMANCE;

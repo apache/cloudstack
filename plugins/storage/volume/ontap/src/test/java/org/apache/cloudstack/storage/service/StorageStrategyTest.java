@@ -356,6 +356,31 @@ public class StorageStrategyTest {
     }
 
     @Test
+    public void testGetClusterInfo_missingAllFlashFlagLeavesPlatformUnset() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", null, null, null))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("AFF-A400", result.getModel());
+        assertNull(result.getPlatformType());
+    }
+
+    @Test
+    public void testGetClusterInfo_missingFlagDoesNotChangeKnownPlatform() {
+        stubClusterGet();
+        when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
+                .thenReturn(new OntapResponse<>(List.of(
+                        clusterNode("AFF-A400", true, true, false),
+                        clusterNode("AFF-A400", null, null, null))));
+
+        Cluster result = storageStrategy.getClusterInfo();
+        assertEquals("AFF-A400", result.getModel());
+        assertEquals(OntapStorageConstants.ASUP_PLATFORM_TYPE_PERFORMANCE, result.getPlatformType());
+    }
+
+    @Test
     public void testGetClusterInfo_nodesGetFailureLeavesModelUnset() {
         stubClusterGet();
         when(clusterFeignClient.getClusterNodes(anyString(), anyMap()))
