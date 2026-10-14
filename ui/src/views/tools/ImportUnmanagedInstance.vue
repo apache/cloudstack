@@ -352,15 +352,25 @@
                   </template>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
-                <a-row v-if="selectedVmwareVcenter" :gutter="12" justify="end">
+                <a-row v-if="selectedVmwareVcenter && showMacConflictOptions" :gutter="12" justify="end">
                   <a-col style="text-align: right">
                     <a-form-item name="forced" ref="forced">
                       <template #label>
                         <tooltip-label
-                          :title="$t('label.allow.duplicate.macaddresses')"
+                          :title="$t('label.generate.new.mac.if.required')"
                           :tooltip="apiParams.forced.description"/>
                       </template>
-                      <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
+                      <a-switch v-model:checked="form.forced" @change="onForcedMacConflictChange" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col style="text-align: right" v-if="showAllowDuplicateMacAddresses">
+                    <a-form-item name="allowduplicatemacaddresses" ref="allowduplicatemacaddresses">
+                      <template #label>
+                        <tooltip-label
+                          :title="$t('label.allow.duplicate.macaddresses')"
+                          :tooltip="apiParams.allowduplicatemacaddresses.description"/>
+                      </template>
+                      <a-switch v-model:checked="form.allowduplicatemacaddresses" @change="onAllowDuplicateMacAddressesChange" />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -414,14 +424,24 @@
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
-                <a-col>
+                <a-col v-if="showMacConflictOptions">
                   <a-form-item name="forced" ref="forced">
                     <template #label>
                       <tooltip-label
-                        :title="$t('label.forced')"
+                        :title="$t('label.generate.new.mac.if.required')"
                         :tooltip="apiParams.forced.description"/>
                     </template>
-                    <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
+                    <a-switch v-model:checked="form.forced" @change="onForcedMacConflictChange" />
+                  </a-form-item>
+                </a-col>
+                <a-col v-if="showAllowDuplicateMacAddresses">
+                  <a-form-item name="allowduplicatemacaddresses" ref="allowduplicatemacaddresses">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.allow.duplicate.macaddresses')"
+                        :tooltip="apiParams.allowduplicatemacaddresses.description"/>
+                    </template>
+                    <a-switch v-model:checked="form.allowduplicatemacaddresses" @change="onAllowDuplicateMacAddressesChange" />
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -450,6 +470,12 @@ import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import {
+  getDefaultMacAddressConflictOptions,
+  getMacAddressConflictApiParams,
+  selectAllowDuplicateMacAddressesOption,
+  selectForcedMacAddressConflictOption
+} from '@/utils/importVmMacAddressPolicy'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -670,8 +696,20 @@ export default {
       }
       return false
     },
+    isExternalKvmImport () {
+      return this.isExternalImport && this.hypervisor?.toLowerCase() === 'kvm'
+    },
     isKVMUnmanage () {
       return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
+    },
+    hasSourceNicMacAddresses () {
+      return !this.isDiskImport && this.resource?.nic?.some(nic => nic.macaddress || nic.mac)
+    },
+    showMacConflictOptions () {
+      return this.hasSourceNicMacAddresses
+    },
+    showAllowDuplicateMacAddresses () {
+      return this.showMacConflictOptions && this.apiParams.allowduplicatemacaddresses
     },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
@@ -784,11 +822,15 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
+      const macAddressConflictOptions = getDefaultMacAddressConflictOptions(this.isExternalKvmImport)
+      this.switches.forced = macAddressConflictOptions.forced
+      this.switches.allowDuplicateMacAddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.form = reactive({
         rootdiskid: 0,
         usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
+        allowduplicatemacaddresses: this.switches.allowDuplicateMacAddresses,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
@@ -1163,6 +1205,20 @@ export default {
       this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
     },
+    onForcedMacConflictChange (val) {
+      const options = selectForcedMacAddressConflictOption(this.switches, val)
+      this.switches.forced = options.forced
+      this.switches.allowDuplicateMacAddresses = options.allowDuplicateMacAddresses
+      this.form.forced = options.forced
+      this.form.allowduplicatemacaddresses = options.allowDuplicateMacAddresses
+    },
+    onAllowDuplicateMacAddressesChange (val) {
+      const options = selectAllowDuplicateMacAddressesOption(this.switches, val)
+      this.switches.forced = options.forced
+      this.switches.allowDuplicateMacAddresses = options.allowDuplicateMacAddresses
+      this.form.forced = options.forced
+      this.form.allowduplicatemacaddresses = options.allowDuplicateMacAddresses
+    },
     onUseVddkChange (val, isUserChange = true) {
       if (isUserChange) {
         this.userModifiedVddkSetting = true
@@ -1317,7 +1373,11 @@ export default {
             params.forceconverttopool = values.forceconverttopool
           }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'osid']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'osid']
+        Object.assign(params, getMacAddressConflictApiParams({
+          forced: values.forced,
+          allowDuplicateMacAddresses: values.allowduplicatemacaddresses
+        }, this.isExternalKvmImport, this.showMacConflictOptions, this.showAllowDuplicateMacAddresses))
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1431,9 +1491,14 @@ export default {
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
+      const macAddressConflictOptions = getDefaultMacAddressConflictOptions(this.isExternalKvmImport)
+      this.switches.forced = macAddressConflictOptions.forced
+      this.switches.allowDuplicateMacAddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.form.usevddk = false
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false
+      this.form.forced = macAddressConflictOptions.forced
+      this.form.allowduplicatemacaddresses = macAddressConflictOptions.allowDuplicateMacAddresses
       this.userModifiedVddkSetting = false
       this.resetStorageOptionsForConversion()
     },
