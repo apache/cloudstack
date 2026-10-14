@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import java.util.List;
+
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.db.GenericDao;
 
@@ -23,4 +25,13 @@ public interface VersionDao extends GenericDao<VersionVO, Long> {
     VersionVO findByVersion(String version, Step step);
 
     String getCurrentVersion();
+
+    List<VersionVO> getAllVersions();
+
+    /**
+     * @return the oldest row of the version table, which records the version the
+     *         database was originally created with and when, or null if the table
+     *         is empty
+     */
+    VersionVO getInitialVersion();
 }
