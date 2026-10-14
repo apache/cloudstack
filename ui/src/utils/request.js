@@ -95,12 +95,11 @@ const err = (error) => {
       } else if (originalPath !== '/user/login') {
         countNotify++
         store.commit('SET_COUNT_NOTIFY', countNotify)
-        notification.error({
+        notification.warning({
           top: '65px',
-          message: i18n.global.t('label.unauthorized'),
-          description: i18n.global.t('message.authorization.failed'),
+          message: i18n.global.t('label.session.expired'),
+          description: i18n.global.t('message.session.expired'),
           key: 'http-401',
-          duration: 0,
           onClose: () => {
             let countNotify = store.getters.countNotify
             countNotify > 0 ? countNotify-- : countNotify = 0
