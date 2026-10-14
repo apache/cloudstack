@@ -66,11 +66,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.storage.CreateAnswer;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.hyperv.resource.HypervDirectConnectResource;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
@@ -385,79 +381,6 @@ public class HypervDirectConnectResourceTest {
         logger.debug("TestInitialize expected " + _setTestJsonResultStr);
         Assert.assertTrue("StartupCommand[] not what we expected", _setTestJsonResultStr.equals(result));
         return;
-    }
-
-    @Test
-    public final void testPrimaryStorageDownloadCommandHTTP() {
-        PrimaryStorageDownloadCommand cmd = samplePrimaryDownloadCommand();
-        cmd.setUrl("http://s3-eu-west-1.amazonaws.com/cshv3eu/SmallDisk.vhdx");
-        corePrimaryStorageDownloadCommandTestCycle(cmd);
-    }
-
-    private void corePrimaryStorageDownloadCommandTestCycle(final PrimaryStorageDownloadCommand cmd) {
-        PrimaryStorageDownloadAnswer ans = (PrimaryStorageDownloadAnswer)s_hypervresource.executeRequest(cmd);
-        if (!ans.getResult()) {
-            logger.error(ans.getDetails());
-        } else {
-            logger.debug(ans.getDetails());
-        }
-
-        Assert.assertTrue(ans.getDetails(), ans.getResult());
-        // Test that returned URL works.
-        // CreateCommand createCmd = CreateCommandSample();
-        // CreateCommand testCreateCmd = new
-        // CreateCommand(createCmd.getDiskCharacteristics(),
-        // ans.getInstallPath(), createCmd.getPool());
-        // CreateAnswer ans2 =
-        // (CreateAnswer)s_hypervresource.executeRequest(testCreateCmd);
-        // Assert.assertTrue(ans2.getDetails(), ans2.getResult());
-    }
-
-    private PrimaryStorageDownloadCommand samplePrimaryDownloadCommand() {
-        String cmdJson =
-            "{\"localPath\":" + s_testLocalStorePathJSON + ",\"poolUuid\":\"" + s_testLocalStoreUUID + "\",\"poolId\":201," + "\"secondaryStorageUrl\":" +
-                "\"nfs://10.70.176.36/mnt/cshv3/secondarystorage\"," + "\"primaryStorageUrl\":" + "\"nfs://10.70.176.29E:\\\\Disks\\\\Disks\"," + "\"url\":" +
-                "\"nfs://10.70.176.36/mnt/cshv3/secondarystorage/template/tmpl//2/204//af39aa7f-2b12-37e1-86d3-e23f2f005101.vhdx\"," +
-                "\"format\":\"VHDX\",\"accountId\":2," + "\"name\":" + "\"204-2-5a1db1ac-932b-3e7e-a0e8-5684c72cb862\"" + ",\"contextMap\":{},\"wait\":10800}";
-        PrimaryStorageDownloadCommand cmd = s_gson.fromJson(cmdJson, PrimaryStorageDownloadCommand.class);
-        return cmd;
-    }
-
-    public final CreateCommand createCommandSample() {
-        String sample =
-            "{\"volId\":17,\"pool\":{\"id\":201,\"uuid\":\"" + s_testLocalStoreUUID + "\",\"host\":\"10.70.176.29\"" + ",\"path\":" + s_testLocalStorePathJSON +
-                ",\"port\":0,\"type\":\"Filesystem\"}," + "\"diskCharacteristics\":{\"size\":0," + "\"tags\":[],\"type\":\"ROOT\",\"name\":\"ROOT-15\"," +
-                "\"useLocalStorage\":true,\"recreatable\":true," + "\"diskOfferingId\":11," + "\"volumeId\":17,\"hyperType\":\"Hyperv\"}," + "\"templateUrl\":" +
-                s_testSampleTemplateURLJSON + ",\"wait\":0}";
-        CreateCommand cmd = s_gson.fromJson(sample, CreateCommand.class);
-        return cmd;
-    }
-
-    @Test
-    public final void testCreateCommand() {
-        String sample =
-            "{\"volId\":10,\"pool\":{\"id\":201,\"uuid\":\"" + s_testLocalStoreUUID + "\",\"host\":\"10.70.176.29\"" + ",\"path\":" + s_testLocalStorePathJSON +
-                ",\"port\":0,\"type\":\"Filesystem\"}," + "\"diskCharacteristics\":{\"size\":0," + "\"tags\":[],\"type\":\"ROOT\",\"name\":\"ROOT-9\"," +
-                "\"useLocalStorage\":true,\"recreatable\":true," + "\"diskOfferingId\":11," + "\"volumeId\":10,\"hyperType\":\"Hyperv\"}," + "\"templateUrl\":" +
-                s_testSampleTemplateURLJSON + ",\"contextMap\":{},\"wait\":0}";
-
-        File destDir = new File(s_testLocalStorePath);
-        Assert.assertTrue(destDir.isDirectory());
-        File testSampleTemplateURLFile = new File(s_testLocalStorePath + File.separator + s_gson.fromJson(s_testSampleTemplateURLJSON, String.class));
-        Assert.assertTrue("The template that create should make" + " volumes from is missing from path " + testSampleTemplateURLFile.getPath(),
-            testSampleTemplateURLFile.exists());
-
-        int fileCount = destDir.listFiles().length;
-        logger.debug(" test local store has " + fileCount + "files");
-        // Test requires there to be a template at the tempalteUrl, which is its
-        // location in the local file system.
-        CreateCommand cmd = s_gson.fromJson(sample, CreateCommand.class);
-        CreateAnswer ans = (CreateAnswer)s_hypervresource.executeRequest(cmd);
-        Assert.assertTrue(ans.getDetails(), ans.getResult());
-        Assert.assertTrue("CreateCommand should add a file to the folder", fileCount + 1 == destDir.listFiles().length);
-        File newFile = new File(ans.getVolume().getPath());
-        Assert.assertTrue("The new file should have a size greater than zero", newFile.length() > 0);
-        newFile.delete();
     }
 
     @Test

@@ -82,10 +82,6 @@ import org.joda.time.Duration;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoAnswer;
-import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.BackupSnapshotAnswer;
-import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckGuestOsMappingAnswer;
 import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -97,13 +93,9 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
-import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
@@ -134,8 +126,6 @@ import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.ManageSnapshotAnswer;
-import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateVmToPoolAnswer;
@@ -165,7 +155,6 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.ReplugNicAnswer;
 import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
@@ -189,7 +178,6 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
-import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.ValidateVcenterDetailsCommand;
@@ -207,12 +195,9 @@ import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -285,7 +270,6 @@ import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
-import com.cloud.template.TemplateManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.FileUtil;
@@ -500,8 +484,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((CheckHealthCommand) cmd);
             } else if (clz == StopCommand.class) {
                 answer = execute((StopCommand) cmd);
-            } else if (clz == RebootRouterCommand.class) {
-                answer = execute((RebootRouterCommand) cmd);
             } else if (clz == RebootCommand.class) {
                 answer = execute((RebootCommand) cmd);
             } else if (clz == CheckVirtualMachineCommand.class) {
@@ -530,26 +512,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
                 answer = execute((CopyVolumeCommand) cmd);
-            } else if (clz == AttachIsoCommand.class) {
-                answer = execute((AttachIsoCommand) cmd);
             } else if (clz == ValidateSnapshotCommand.class) {
                 answer = execute((ValidateSnapshotCommand) cmd);
-            } else if (clz == ManageSnapshotCommand.class) {
-                answer = execute((ManageSnapshotCommand) cmd);
-            } else if (clz == BackupSnapshotCommand.class) {
-                answer = execute((BackupSnapshotCommand) cmd);
-            } else if (clz == CreateVolumeFromSnapshotCommand.class) {
-                answer = execute((CreateVolumeFromSnapshotCommand) cmd);
-            } else if (clz == CreatePrivateTemplateFromVolumeCommand.class) {
-                answer = execute((CreatePrivateTemplateFromVolumeCommand) cmd);
-            } else if (clz == CreatePrivateTemplateFromSnapshotCommand.class) {
-                answer = execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
-            } else if (clz == UpgradeSnapshotCommand.class) {
-                answer = execute((UpgradeSnapshotCommand) cmd);
             } else if (clz == GetStorageStatsCommand.class) {
                 answer = execute((GetStorageStatsCommand) cmd);
-            } else if (clz == PrimaryStorageDownloadCommand.class) {
-                answer = execute((PrimaryStorageDownloadCommand) cmd);
             } else if (clz == GetVncPortCommand.class) {
                 answer = execute((GetVncPortCommand) cmd);
             } else if (clz == SetupCommand.class) {
@@ -4544,21 +4510,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
-    protected Answer execute(RebootRouterCommand cmd) {
-        RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
-
-        if (answer.getResult()) {
-            String connectResult = connect(cmd.getVmName(), cmd.getPrivateIpAddress());
-            networkUsage(cmd.getPrivateIpAddress(), "create", null);
-            if (connectResult == null) {
-                return answer;
-            } else {
-                return new Answer(cmd, false, connectResult);
-            }
-        }
-        return answer;
-    }
-
     protected Answer execute(RebootCommand cmd) {
         boolean toolsInstallerMounted = false;
         VirtualMachineMO vmMo = null;
@@ -5443,80 +5394,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return "-" + iqn + "-0";
     }
 
-    protected AttachIsoAnswer execute(AttachIsoCommand cmd) {
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-            VirtualMachineMO vmMo = HypervisorHostHelper.findVmOnHypervisorHostOrPeer(hyperHost, cmd.getVmName());
-            if (vmMo == null) {
-                String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + cmd.getVmName();
-                logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            String storeUrl = cmd.getStoreUrl();
-            if (storeUrl == null) {
-                if (!cmd.getIsoPath().equalsIgnoreCase(TemplateManager.VMWARE_TOOLS_ISO)) {
-                    String msg = "ISO store root url is not found in AttachIsoCommand";
-                    logger.error(msg);
-                    throw new Exception(msg);
-                } else {
-                    if (cmd.isAttach()) {
-                        vmMo.mountToolsInstaller();
-                    } else {
-                        try {
-                            if (!vmMo.unmountToolsInstaller()) {
-                                return new AttachIsoAnswer(cmd, false,
-                                        "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
-                            }
-                        } catch (Throwable e) {
-                            vmMo.detachIso(null, cmd.isForce());
-                        }
-                    }
-
-                    return new AttachIsoAnswer(cmd);
-                }
-            }
-
-            ManagedObjectReference morSecondaryDs = prepareSecondaryDatastoreOnHost(storeUrl);
-            String isoPath = cmd.getIsoPath();
-            if (!isoPath.startsWith(storeUrl)) {
-                assert (false);
-                String msg = "ISO path does not start with the secondary storage root";
-                logger.error(msg);
-                throw new Exception(msg);
-            }
-
-            int isoNameStartPos = isoPath.lastIndexOf('/');
-            String isoFileName = isoPath.substring(isoNameStartPos + 1);
-            String isoStorePathFromRoot = isoPath.substring(storeUrl.length() + 1, isoNameStartPos + 1);
-
-
-            // TODO, check if iso is already attached, or if there is a previous
-            // attachment
-            DatastoreMO secondaryDsMo = new DatastoreMO(getServiceContext(), morSecondaryDs);
-            String storeName = secondaryDsMo.getName();
-            String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
-
-            if (cmd.isAttach()) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey(), cmd.isForce());
-                return new AttachIsoAnswer(cmd);
-            } else {
-                int key = vmMo.detachIso(isoDatastorePath, cmd.isForce());
-                return new AttachIsoAnswer(cmd, key);
-            }
-
-        } catch (Throwable e) {
-            if (e instanceof RemoteException) {
-                logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
-                invalidateServiceContext();
-            }
-
-            String message = String.format("AttachIsoCommand(%s) failed due to [%s].", cmd.isAttach()? "attach" : "detach", VmwareHelper.getExceptionMessage(e));
-            logger.error(message, e);
-            return new AttachIsoAnswer(cmd, false, message);
-        }
-    }
-
     public synchronized ManagedObjectReference prepareSecondaryDatastoreOnHost(String storeUrl) throws Exception {
         String storeName = getSecondaryDatastoreUUID(storeUrl);
         URI uri = new URI(storeUrl);
@@ -5561,45 +5438,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 actualSnapshotUuid);
     }
 
-    protected Answer execute(ManageSnapshotCommand cmd) {
-        long snapshotId = cmd.getSnapshotId();
-
-        /*
-         * "ManageSnapshotCommand",
-         * "{\"_commandSwitch\":\"-c\",\"_volumePath\":\"i-2-3-KY-ROOT\",\"_snapshotName\":\"i-2-3-KY_i-2-3-KY-ROOT_20101102203827\",\"_snapshotId\":1,\"_vmName\":\"i-2-3-KY\"}"
-         */
-        boolean success;
-        String cmdSwitch = cmd.getCommandSwitch();
-        String snapshotOp = "Unsupported snapshot command." + cmdSwitch;
-        if (cmdSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-            snapshotOp = "create";
-        } else if (cmdSwitch.equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
-            snapshotOp = "destroy";
-        }
-
-        String details;
-        String snapshotUUID;
-
-        // snapshot operation (create or destroy) is handled inside BackupSnapshotCommand(), we just fake
-        // a success return here
-        snapshotUUID = UUID.randomUUID().toString();
-        success = true;
-        details = null;
-
-        return new ManageSnapshotAnswer(cmd, snapshotId, snapshotUUID, success, details);
-    }
-
-    protected Answer execute(BackupSnapshotCommand cmd) {
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            return mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            return new BackupSnapshotAnswer(cmd, false, createLogMessageException(e, cmd), null, true);
-        }
-    }
-
     protected Answer execute(CreateVMSnapshotCommand cmd) {
         try {
             VmwareContext context = getServiceContext();
@@ -5632,48 +5470,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             createLogMessageException(e, cmd);
             return new RevertToVMSnapshotAnswer(cmd, false, "");
-        }
-    }
-
-    protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
-        String details;
-        boolean success = false;
-        String newVolumeName = UUID.randomUUID().toString();
-
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            details = createLogMessageException(e, cmd);
-        }
-
-        return new CreateVolumeFromSnapshotAnswer(cmd, success, details, newVolumeName);
-    }
-
-    protected Answer execute(CreatePrivateTemplateFromVolumeCommand cmd) {
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            return mgr.getStorageManager().execute(this, cmd);
-
-        } catch (Throwable e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, createLogMessageException(e, cmd));
-        }
-    }
-
-    protected Answer execute(final UpgradeSnapshotCommand cmd) {
-        return new Answer(cmd, true, "success");
-    }
-
-    protected Answer execute(CreatePrivateTemplateFromSnapshotCommand cmd) {
-        try {
-            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return mgr.getStorageManager().execute(this, cmd);
-
-        } catch (Throwable e) {
-            return new CreatePrivateTemplateAnswer(cmd, false, createLogMessageException(e, cmd));
         }
     }
 
@@ -5868,17 +5664,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.trace("Returning GetVmIpAddressAnswer: " + _gson.toJson(answer));
         }
         return answer;
-    }
-
-    @Override
-    public PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {
-        try {
-            VmwareContext context = getServiceContext();
-            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-            return (PrimaryStorageDownloadAnswer) mgr.getStorageManager().execute(this, cmd);
-        } catch (Throwable e) {
-            return new PrimaryStorageDownloadAnswer(createLogMessageException(e, cmd));
-        }
     }
 
     protected Answer execute(PvlanSetupCommand cmd) {

@@ -81,7 +81,6 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
-    // called from LibvirtComputingResource.execute(CreateCommand)
     // does not apply for iScsiAdmStorageAdaptor
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {

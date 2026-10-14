@@ -181,7 +181,6 @@ public class Storage {
         SMB(true, false, EncryptionSupport.Unsupported),
         Gluster(true, false, EncryptionSupport.Unsupported),
         PowerFlex(true, true, EncryptionSupport.Hypervisor), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
-        ManagedNFS(true, false, EncryptionSupport.Unsupported),
         Linstor(true, true, EncryptionSupport.Storage),
         DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
         StorPool(true, true, EncryptionSupport.Hypervisor),
