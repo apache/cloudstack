@@ -32,8 +32,10 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.Pair;
@@ -44,10 +46,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -55,19 +60,22 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
+import org.apache.cloudstack.storage.feign.model.FileInfo;
 import org.apache.cloudstack.storage.feign.model.FlexVolSnapshot;
 import org.apache.cloudstack.storage.feign.model.Lun;
+import org.apache.cloudstack.storage.feign.model.LunSpace;
+import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.SANStrategy;
 import org.apache.cloudstack.storage.service.StorageStrategy;
+import org.apache.cloudstack.storage.service.UnifiedNASStrategy;
 import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -91,6 +99,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject private VMTemplatePoolDao vmTemplatePoolDao;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -98,6 +107,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         Map<String, String> mapCapabilities = new HashMap<>();
         mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        // Enables the framework to cache a template on the FlexVolume once and serve every later
+        // deployment with an array-side clone instead of another copy from secondary storage.
+        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString(), Boolean.TRUE.toString());
         return mapCapabilities;
     }
 
@@ -151,24 +163,25 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 // Update CloudStack volume record with storage pool association and protocol-specific details
                 VolumeVO volumeVO = volumeDao.findById(volInfo.getId());
                 if (volumeVO != null) {
-                    // Create the backend storage object (LUN for iSCSI, no-op for NFS)
-                    CloudStackVolume created = createCloudStackVolume(storagePool, volInfo, details);
+                    // Create the backend storage object: a clone of the cached template when the
+                    // orchestrator asked for one, otherwise a blank LUN (iSCSI) or qcow2 file (NFS).
+                    Long cloneOfTemplateId = getTemplateIdForCloning(volInfo.getId());
+                    CloudStackVolume clonedCloudStackVolume = cloneOfTemplateId != null
+                            ? cloneCloudStackVolumeFromTemplate(storagePool, volInfo, details, cloneOfTemplateId)
+                            : createCloudStackVolume(storagePool, volInfo, details);
 
                     volumeVO.setPoolType(storagePool.getPoolType());
                     volumeVO.setPoolId(storagePool.getId());
 
                     if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
-                        String lunName = created != null && created.getLun() != null ? created.getLun().getName() : null;
-                        if (lunName == null) {
-                            throw new CloudRuntimeException("Missing LUN name for volume " + volInfo.getId());
-                        }
+                        // createCloudStackVolume validates the Feign response (LUN name + uuid) before returning
+                        Lun createdLun = clonedCloudStackVolume.getLun();
+                        String lunName = createdLun.getName();
 
                         // Persist LUN details for future operations (delete, grant/revoke access)
-                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_UUID, created.getLun().getUuid(), false);
+                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_UUID, createdLun.getUuid(), false);
                         volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_NAME, lunName, false);
-                        if (created.getLun().getUuid() != null) {
-                            volumeVO.setFolder(created.getLun().getUuid());
-                        }
+                        volumeVO.setFolder(createdLun.getUuid());
 
                         logger.info("createAsync: Created LUN [{}] for volume [{}]. LUN mapping will occur during grantAccess() to per-host igroup.",
                                 lunName, volumeVO.getId());
@@ -180,6 +193,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     }
                     volumeDao.update(volumeVO.getId(), volumeVO);
                 }
+            } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
+                createCmdResult = createTemplateOnPrimary(storagePool, (TemplateInfo) dataObject, details);
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
                 logger.error(errMsg);
@@ -203,8 +218,217 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      */
     private CloudStackVolume createCloudStackVolume(StoragePoolVO storagePool, VolumeInfo volumeObject, Map<String, String> details) {
         StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
-        CloudStackVolume cloudStackVolumeRequest = OntapStorageUtils.createCloudStackVolumeRequestByProtocol(storagePool, details, volumeObject);
-        return storageStrategy.createCloudStackVolume(cloudStackVolumeRequest);
+        return storageStrategy.createCloudStackVolume(createVolumeRequest(storagePool, details, volumeObject));
+    }
+
+    /**
+     * Creates the backend object that caches a template on this pool's FlexVolume.
+     *
+     * <p>Protocol-specific work is delegated to {@link StorageStrategy#createTemplateCache}.
+     * This method maps the result to {@link CreateCmdResult} and records SAN identity on
+     * {@code template_spool_ref} ({@code local_download_path} = LUN uuid).</p>
+     */
+    private CreateCmdResult createTemplateOnPrimary(StoragePoolVO storagePool, TemplateInfo templateInfo, Map<String, String> details) {
+        StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        long sizeInBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
+        CloudStackVolume created = null;
+        try {
+            created = storageStrategy.createTemplateCache(storagePool, templateInfo, details, sizeInBytes);
+            String path = recordTemplateCacheOnSpoolRef(storagePool, templateInfo, created, sizeInBytes);
+            return new CreateCmdResult(path, new Answer(null, true, null));
+        } catch (Exception e) {
+            // Compensating delete for SAN: strategy cleans create-time LUN failures; this covers
+            // post-create failures (e.g. template_spool_ref update) after a LUN was returned.
+            if (created != null && created.getLun() != null) {
+                bestEffortDeleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME),
+                        created.getLun().getName(), created.getLun().getUuid());
+            }
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to create template cache for template [" + templateInfo.getId()
+                    + "]: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Persists SAN cache identity on {@code template_spool_ref} when a LUN was created.
+     * NFS returns the template uuid as the create path; {@code install_path} is filled later.
+     */
+    private String recordTemplateCacheOnSpoolRef(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                 CloudStackVolume created, long sizeInBytes) {
+        if (created == null || created.getLun() == null) {
+            return templateInfo.getUuid();
+        }
+        Lun lun = created.getLun();
+        VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateInfo.getId());
+        templatePoolRef.setLocalDownloadPath(lun.getUuid());
+        templatePoolRef.setTemplateSize(sizeInBytes);
+        vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        return lun.getName();
+    }
+
+    /**
+     * Clones the cached template into a new volume on the same FlexVolume.
+     *
+     * <p>Invoked when {@code StorageSystemDataMotionStrategy} has recorded a
+     * {@code cloneOfTemplate} detail on the volume.</p>
+     */
+    private CloudStackVolume cloneCloudStackVolumeFromTemplate(StoragePoolVO storagePool, VolumeInfo volumeInfo,
+                                                               Map<String, String> details, long templateId) {
+        VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateId);
+        StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        boolean iscsi = isIscsi(details);
+
+        CloudStackVolume request = iscsi
+                ? createCloneLunRequest(storagePool, details, volumeInfo, templatePoolRef, templateId)
+                : createCloneFileRequest(storagePool, volumeInfo, templatePoolRef, templateId);
+
+        CloudStackVolume cloned = storageStrategy.cloneCloudStackVolume(request);
+        // SAN cloneCloudStackVolume validates the Feign response (LUN name + uuid) before returning
+        if (cloned == null) {
+            throw new CloudRuntimeException("ONTAP returned nothing when cloning template [" + templateId
+                    + "] for volume [" + volumeInfo.getId() + "]");
+        }
+
+        logger.info("cloneCloudStackVolumeFromTemplate: Cloned template [{}] for volume [{}] on pool [{}]",
+                templateId, volumeInfo.getId(), storagePool.getId());
+
+        long requestedSize = getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, storagePool);
+        if (requestedSize > templatePoolRef.getTemplateSize()) {
+            logger.info("cloneCloudStackVolumeFromTemplate: Growing clone of template [{}] from {} to {} bytes for volume [{}]",
+                    templateId, templatePoolRef.getTemplateSize(), requestedSize, volumeInfo.getId());
+            storageStrategy.resizeCloudStackVolume(cloned, requestedSize);
+        }
+
+        return cloned;
+    }
+
+    /**
+     * Returns the CloudStack template id the volume should be cloned from, or null for a blank volume.
+     *
+     * <p>{@code StorageSystemDataMotionStrategy} persists this detail immediately before calling
+     * {@code createAsync} and removes it right after, so it is only visible during creation.</p>
+     */
+    private Long getTemplateIdForCloning(long volumeId) {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeId, OntapStorageConstants.CLONE_OF_TEMPLATE);
+        if (detail == null || detail.getValue() == null || detail.getValue().isEmpty()) {
+            return null;
+        }
+        return Long.valueOf(detail.getValue());
+    }
+
+    private VMTemplateStoragePoolVO findTemplatePoolRef(long poolId, long templateId) {
+        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId, null);
+        if (templatePoolRef == null) {
+            throw new CloudRuntimeException("No template_spool_ref row for template [" + templateId + "] on pool [" + poolId + "]");
+        }
+        return templatePoolRef;
+    }
+
+    /**
+     * Deletes the LUN caching a template on this pool, invoked by template eviction
+     * ({@code TemplateManagerImpl.evictTemplateFromStoragePool}).
+     *
+     * <p>Volumes previously cloned from this LUN are unaffected: an ONTAP sis-clone shares blocks
+     * with its source through reference counting rather than depending on it, so the source can be
+     * removed while its clones stay online.</p>
+     *
+     * <p>{@code deleteCloudStackVolume} already unmaps as it deletes ({@code allow_delete_while_mapped})
+     * and treats a missing LUN as success.</p>
+     */
+    private void deleteTemplateOnPrimary(DataStore store, TemplateInfo templateInfo) {
+        StoragePoolVO storagePool = storagePoolDao.findById(store.getId());
+        if (storagePool == null) {
+            throw new CloudRuntimeException("Storage Pool not found for id: " + store.getId());
+        }
+
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(store.getId());
+        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(), templateInfo.getId(), null);
+        if (templatePoolRef == null) {
+            logger.warn("deleteTemplateOnPrimary: No template_spool_ref for template [{}] on pool [{}]; nothing to delete",
+                    templateInfo.getId(), storagePool.getId());
+            return;
+        }
+
+        StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        if (isIscsi(details)) {
+            deleteIscsiTemplateCache(storagePool, templateInfo, templatePoolRef, storageStrategy, details);
+        } else {
+            deleteNfsTemplateCache(details, templateInfo, templatePoolRef, storageStrategy);
+        }
+    }
+
+    private void deleteIscsiTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                          VMTemplateStoragePoolVO templatePoolRef, StorageStrategy storageStrategy,
+                                          Map<String, String> details) {
+        String lunName = getTemplateLunName(storagePool, templateInfo.getId());
+        String lunUuid = templatePoolRef.getLocalDownloadPath();
+        deleteTemplateCacheLun(storageStrategy, details.get(OntapStorageConstants.SVM_NAME), lunName, lunUuid);
+        logger.info("deleteIscsiTemplateCache: Deleted template cache LUN [{}] for template [{}] on pool [{}]",
+                lunName, templateInfo.getId(), storagePool.getId());
+    }
+
+    /**
+     * Deletes a template-cache LUN. When {@code lunUuid} is missing, resolves the LUN by its
+     * deterministic name so eviction and create-time rollback still work.
+     */
+    private void deleteTemplateCacheLun(StorageStrategy storageStrategy, String svmName, String lunName, String lunUuid) {
+        String uuid = lunUuid;
+        if (uuid == null || uuid.isEmpty()) {
+            CloudStackVolume existing = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
+            if (existing == null || existing.getLun() == null || existing.getLun().getUuid() == null) {
+                logger.warn("deleteTemplateCacheLun: LUN [{}] not found on SVM [{}]; nothing to delete", lunName, svmName);
+                return;
+            }
+            uuid = existing.getLun().getUuid();
+        }
+
+        Lun lun = new Lun();
+        lun.setUuid(uuid);
+        lun.setName(lunName);
+
+        CloudStackVolume deleteRequest = new CloudStackVolume();
+        deleteRequest.setLun(lun);
+        storageStrategy.deleteCloudStackVolume(deleteRequest);
+    }
+
+    /**
+     * Best-effort cleanup of a template-cache LUN after a failed create. Never masks the original
+     * create failure.
+     */
+    private void bestEffortDeleteTemplateCacheLun(StorageStrategy storageStrategy, String svmName, String lunName,
+                                                  String lunUuid) {
+        try {
+            deleteTemplateCacheLun(storageStrategy, svmName, lunName, lunUuid);
+            logger.info("bestEffortDeleteTemplateCacheLun: Removed leftover template cache LUN [{}] on SVM [{}]",
+                    lunName, svmName);
+        } catch (Exception cleanupEx) {
+            logger.warn("bestEffortDeleteTemplateCacheLun: Failed to remove leftover template cache LUN [{}] on SVM [{}]: {}",
+                    lunName, svmName, cleanupEx.getMessage());
+        }
+    }
+
+    private void deleteNfsTemplateCache(Map<String, String> details, TemplateInfo templateInfo,
+                                        VMTemplateStoragePoolVO templatePoolRef, StorageStrategy storageStrategy) {
+        String filePath = templatePoolRef.getInstallPath();
+        if (filePath == null || filePath.isEmpty()) {
+            logger.warn("deleteNfsTemplateCache: No install_path recorded for template [{}]; nothing to delete",
+                    templateInfo.getId());
+            return;
+        }
+        String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
+        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
+            // Misconfigured pool detail — fail eviction rather than calling ONTAP with a null
+            // volume UUID (which would hit /api/storage/volumes/null and still look like success
+            // upstream if we swallowed the error).
+            throw new CloudRuntimeException("FlexVolume UUID (volumeUUID) is missing from storage pool details; "
+                    + "cannot delete NFS template cache file [" + filePath + "] for template ["
+                    + templateInfo.getId() + "]");
+        }
+        ((UnifiedNASStrategy) storageStrategy).deleteFileByPath(flexVolUuid, filePath);
+        logger.info("deleteNfsTemplateCache: Deleted template cache file [{}] for template [{}]",
+                filePath, templateInfo.getId());
     }
 
     /**
@@ -234,6 +458,10 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool, details, volumeInfo);
                 storageStrategy.deleteCloudStackVolume(cloudStackVolumeRequest);
                 logger.info("deleteAsync: Volume deleted: " + volumeInfo.getId());
+                commandResult.setResult(null);
+                commandResult.setSuccess(true);
+            } else if (data.getType() == DataObjectType.TEMPLATE) {
+                deleteTemplateOnPrimary(store, (TemplateInfo) data);
                 commandResult.setResult(null);
                 commandResult.setSuccess(true);
             } else if (data.getType() == DataObjectType.SNAPSHOT) {
@@ -399,6 +627,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 volumeVO.setPoolType(storagePool.getPoolType());
                 volumeVO.setPoolId(storagePool.getId());
                 volumeDao.update(volumeVO.getId(), volumeVO);
+            } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
+                grantAccessTemplate((TemplateInfo) dataObject, host, dataStore, storagePool);
             } else {
                 logger.error("Invalid DataObjectType (" + dataObject.getType() + ") passed to grantAccess");
                 throw new CloudRuntimeException("Invalid DataObjectType (" + dataObject.getType() + ") passed to grantAccess");
@@ -415,23 +645,93 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
         String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
 
-        // Validate if Igroup exist ONTAP for this host as we may be using delete_on_unmap= true and igroup may be deleted by ONTAP automatically
+        ensureAccessGroupForHost(sanStrategy, host, storagePool, svmName, accessGroupName);
+
+        // Create or retrieve existing LUN mapping
+        String lunNumber = sanStrategy.ensureLunMapped(svmName, cloudStackVolumeName, accessGroupName);
+
+        // Update volume path if changed (e.g., after migration or re-mapping)
+        String iscsiPath = buildIscsiPath(storagePool, lunNumber);
+        if (volumeVO.getPath() == null || !volumeVO.getPath().equals(iscsiPath)) {
+            volumeVO.set_iScsiName(iscsiPath);
+            volumeVO.setPath(iscsiPath);
+        }
+    }
+
+    /**
+     * Maps the cached template LUN to the host so the KVM agent can write the image into it.
+     *
+     * <p>Called by the framework from {@code copyTemplateToManagedTemplateVolume} just before it
+     * issues the {@code CopyCommand}. That method reads {@code managedStoreTarget} from the pool
+     * details <em>before</em> this call, when the LUN number does not exist yet, so the stale
+     * value is corrected here. The datastore details are re-read when the command is built, so the
+     * update lands in time.</p>
+     */
+    private void grantAccessTemplate(TemplateInfo templateInfo, Host host, DataStore dataStore, StoragePoolVO storagePool) {
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
+        if (!ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
+            logger.debug("grantAccessTemplate: NFS template [{}], no igroup mapping required", templateInfo.getUuid());
+            return;
+        }
+
+        String svmName = details.get(OntapStorageConstants.SVM_NAME);
+        VMTemplateStoragePoolVO templatePoolRef = findTemplatePoolRef(storagePool.getId(), templateInfo.getId());
+        String lunName = getTemplateLunName(storagePool, templateInfo.getId());
+
+        UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
+
+        ensureAccessGroupForHost(sanStrategy, host, storagePool, svmName, accessGroupName);
+
+        boolean lunMapped = false;
+        try {
+            String lunNumber = sanStrategy.ensureLunMapped(svmName, lunName, accessGroupName);
+            lunMapped = true;
+            String iscsiPath = buildIscsiPath(storagePool, lunNumber);
+
+            templatePoolRef.setInstallPath(iscsiPath);
+            vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+            refreshManagedStoreTarget(dataStore, iscsiPath);
+
+            logger.info("grantAccessTemplate: Mapped template cache LUN [{}] to igroup [{}] as [{}] for template [{}]",
+                    lunName, accessGroupName, iscsiPath, templateInfo.getId());
+        } catch (RuntimeException e) {
+            // Undo only this call's side effect (map). Do not delete the cache LUN — create already succeeded.
+            if (lunMapped) {
+                try {
+                    unmapLunFromHost(sanStrategy, svmName, lunName, accessGroupName, host);
+                } catch (Exception rollbackEx) {
+                    logger.warn("grantAccessTemplate: Failed to unmap template cache LUN [{}] from igroup [{}] after grant failure: {}",
+                            lunName, accessGroupName, rollbackEx.getMessage());
+                }
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Ensures an igroup containing this host's initiator exists on the SVM.
+     *
+     * <p>The igroup may be absent even for a host that used the pool before, because LUN maps are
+     * created with {@code delete_on_unmap}, which lets ONTAP remove the igroup on its own.</p>
+     */
+    private void ensureAccessGroupForHost(UnifiedSANStrategy sanStrategy, Host host, StoragePoolVO storagePool,
+                                          String svmName, String accessGroupName) {
         Map<String, String> getAccessGroupMap = Map.of(
                 OntapStorageConstants.NAME, accessGroupName,
                 OntapStorageConstants.SVM_DOT_NAME, svmName
         );
         AccessGroup accessGroup = sanStrategy.getAccessGroup(getAccessGroupMap);
-        if(accessGroup == null || accessGroup.getIgroup() == null) {
-            logger.info("grantAccess: Igroup {} does not exist for the host {} : Need to create Igroup for the host ", accessGroupName, host.getName());
-            // create the igroup for the host and perform lun-mapping
+        if (accessGroup == null || accessGroup.getIgroup() == null) {
+            logger.info("ensureAccessGroupForHost: Igroup {} does not exist for the host {} : Need to create Igroup for the host ", accessGroupName, host.getName());
             accessGroup = new AccessGroup();
             List<HostVO> hosts = new ArrayList<>();
             hosts.add((HostVO) host);
             accessGroup.setHostsToConnect(hosts);
             accessGroup.setStoragePoolId(storagePool.getId());
             accessGroup = sanStrategy.createAccessGroup(accessGroup);
-        }else{
-            logger.info("grantAccess: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName() , host.getName());
+        } else {
+            logger.info("ensureAccessGroupForHost: Igroup {} already exist for the host {}: ", accessGroup.getIgroup().getName(), host.getName());
             /* TODO Below cases will be covered later, for now they will be a pre-requisite on customer side
               1. Igroup exist with the same name but host initiator has been removed
               2.  Igroup exist with the same name but host initiator has been changed may be due to new NIC or new adapter
@@ -439,16 +739,28 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
               Incase it is not , add it and proceed for lun-mapping
              */
         }
-        logger.info("grantAccess: Igroup {}  is present now with initiators {} ", accessGroup.getIgroup().getName(), accessGroup.getIgroup().getInitiators());
-        // Create or retrieve existing LUN mapping
-        String lunNumber = sanStrategy.ensureLunMapped(svmName, cloudStackVolumeName, accessGroupName);
+        logger.info("ensureAccessGroupForHost: Igroup {}  is present now with initiators {} ", accessGroup.getIgroup().getName(), accessGroup.getIgroup().getInitiators());
+    }
 
-        // Update volume path if changed (e.g., after migration or re-mapping)
-        String iscsiPath = OntapStorageConstants.SLASH + storagePool.getPath() + OntapStorageConstants.SLASH + lunNumber;
-        if (volumeVO.getPath() == null || !volumeVO.getPath().equals(iscsiPath)) {
-            volumeVO.set_iScsiName(iscsiPath);
-            volumeVO.setPath(iscsiPath);
+    /**
+     * Builds the volume path the KVM agent expects for managed iSCSI: {@code /<targetIQN>/<lunNumber>}.
+     */
+    private String buildIscsiPath(StoragePoolVO storagePool, String lunNumber) {
+        return OntapStorageConstants.SLASH + storagePool.getPath() + OntapStorageConstants.SLASH + lunNumber;
+    }
+
+    private void refreshManagedStoreTarget(DataStore dataStore, String iscsiPath) {
+        if (!(dataStore instanceof PrimaryDataStore)) {
+            return;
         }
+        PrimaryDataStore primaryDataStore = (PrimaryDataStore) dataStore;
+        Map<String, String> storeDetails = primaryDataStore.getDetails();
+        if (storeDetails == null) {
+            return;
+        }
+        Map<String, String> updated = new HashMap<>(storeDetails);
+        updated.put(PrimaryDataStore.MANAGED_STORE_TARGET, iscsiPath);
+        primaryDataStore.setDetails(updated);
     }
 
     /**
@@ -485,6 +797,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     throw new CloudRuntimeException("CloudStack Volume not found for id: " + dataObject.getId());
                 }
                 revokeAccessForVolume(storagePool, volumeVO, host);
+            } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
+                revokeAccessForTemplate(storagePool, (TemplateInfo) dataObject, host);
             } else {
                 logger.error("revokeAccess: Invalid DataObjectType (" + dataObject.getType() + ") passed to revokeAccess");
                 throw new CloudRuntimeException("Invalid DataObjectType (" + dataObject.getType() + ") passed to revokeAccess");
@@ -510,46 +824,73 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             // Retrieve LUN name from volume details; if missing, volume may not have been fully created
             VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeVO.getId(), OntapStorageConstants.LUN_DOT_NAME);
-            ValidateRevoke result = getValidateRevoke(volumeVO, host, lunDetail, storageStrategy, svmName, accessGroupName);
-            if (result == null) return;
-
-            // Remove the LUN mapping from the igroup
-            Map<String, String> disableLogicalAccessMap = new HashMap<>();
-            disableLogicalAccessMap.put(OntapStorageConstants.LUN_DOT_UUID, result.cloudStackVolume.getLun().getUuid());
-            disableLogicalAccessMap.put(OntapStorageConstants.IGROUP_DOT_UUID, result.accessGroup.getIgroup().getUuid());
-            storageStrategy.disableLogicalAccess(disableLogicalAccessMap);
-
-            logger.info("revokeAccessForVolume: Successfully revoked access to LUN [{}] for host [{}]",
-                    result.lunName, host.getName());
+            String lunName = lunDetail != null ? lunDetail.getValue() : null;
+            if (lunName == null) {
+                logger.warn("revokeAccessForVolume: No LUN name found for volume [{}]; skipping revoke", volumeVO.getId());
+                return;
+            }
+            unmapLunFromHost(storageStrategy, svmName, lunName, accessGroupName, host);
         }
     }
 
-    @Nullable
-    private ValidateRevoke getValidateRevoke(VolumeVO volumeVO, Host host, VolumeDetailVO lunDetail, StorageStrategy storageStrategy, String svmName, String accessGroupName) {
-        String lunName = lunDetail != null ? lunDetail.getValue() : null;
-        if (lunName == null) {
-            logger.warn("revokeAccessForVolume: No LUN name found for volume [{}]; skipping revoke", volumeVO.getId());
-            return null;
+    /**
+     * Unmaps the cached template LUN once the framework has finished writing the image into it.
+     */
+    private void revokeAccessForTemplate(StoragePoolVO storagePool, TemplateInfo templateInfo, Host host) {
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
+        if (!ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
+            logger.debug("revokeAccessForTemplate: NFS template [{}], no igroup mapping to remove", templateInfo.getUuid());
+            return;
         }
 
+        String svmName = details.get(OntapStorageConstants.SVM_NAME);
+        StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(details);
+        String accessGroupName = OntapStorageUtils.getIgroupName(svmName, host.getUuid());
+        String lunName = getTemplateLunName(storagePool, templateInfo.getId());
+
+        logger.info("revokeAccessForTemplate: Revoking access to template cache LUN [{}] for host [{}]", lunName, host.getName());
+        unmapLunFromHost(storageStrategy, svmName, lunName, accessGroupName, host);
+    }
+
+    /**
+     * Removes a LUN-to-igroup mapping, skipping quietly when the LUN, the igroup or the host
+     * initiator is already gone.
+     */
+    private void unmapLunFromHost(StorageStrategy storageStrategy, String svmName, String lunName,
+                                  String accessGroupName, Host host) {
+        ValidateRevoke result = getValidateRevoke(lunName, host, storageStrategy, svmName, accessGroupName);
+        if (result == null) {
+            return;
+        }
+
+        Map<String, String> disableLogicalAccessMap = new HashMap<>();
+        disableLogicalAccessMap.put(OntapStorageConstants.LUN_DOT_UUID, result.cloudStackVolume.getLun().getUuid());
+        disableLogicalAccessMap.put(OntapStorageConstants.IGROUP_DOT_UUID, result.accessGroup.getIgroup().getUuid());
+        storageStrategy.disableLogicalAccess(disableLogicalAccessMap);
+
+        logger.info("unmapLunFromHost: Successfully revoked access to LUN [{}] for host [{}]", result.lunName, host.getName());
+    }
+
+    @Nullable
+    private ValidateRevoke getValidateRevoke(String lunName, Host host, StorageStrategy storageStrategy, String svmName, String accessGroupName) {
         // Verify LUN still exists on ONTAP (may have been manually deleted)
         CloudStackVolume cloudStackVolume = getCloudStackVolumeByName(storageStrategy, svmName, lunName);
         if (cloudStackVolume == null || cloudStackVolume.getLun() == null || cloudStackVolume.getLun().getUuid() == null) {
-            logger.warn("revokeAccessForVolume: LUN for volume [{}] not found on ONTAP, skipping revoke", volumeVO.getId());
+            logger.warn("getValidateRevoke: LUN [{}] not found on ONTAP, skipping revoke", lunName);
             return null;
         }
 
         // Verify igroup still exists on ONTAP
         AccessGroup accessGroup = getAccessGroupByName(storageStrategy, svmName, accessGroupName);
         if (accessGroup == null || accessGroup.getIgroup() == null || accessGroup.getIgroup().getUuid() == null) {
-            logger.warn("revokeAccessForVolume: iGroup [{}] not found on ONTAP, skipping revoke", accessGroupName);
+            logger.warn("getValidateRevoke: iGroup [{}] not found on ONTAP, skipping revoke", accessGroupName);
             return null;
         }
 
         // Verify host initiator is in the igroup before attempting to remove mapping
         SANStrategy sanStrategy = (UnifiedSANStrategy) storageStrategy;
         if (!sanStrategy.validateInitiatorInAccessGroup(host.getStorageUrl(), svmName, accessGroup.getIgroup())) {
-            logger.warn("revokeAccessForVolume: Initiator [{}] is not in iGroup [{}], skipping revoke",
+            logger.warn("getValidateRevoke: Initiator [{}] is not in iGroup [{}], skipping revoke",
                     host.getStorageUrl(), accessGroupName);
             return null;
         }
@@ -600,14 +941,56 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         return accessGroup;
     }
 
+    /**
+     * ONTAP is only supported with KVM, which does not take hypervisor-side snapshots into the
+     * volume itself, so no reserve is added on top of the requested size.
+     *
+     * <p>For a template this returns the <b>virtual</b> size ({@code VMTemplateVO.size}), not the
+     * compressed size on secondary storage. The cached template LUN is written by the KVM agent
+     * with {@code qemu-img convert} from QCOW2 to RAW, so it must be able to hold the fully
+     * expanded image.</p>
+     */
     @Override
     public long getDataObjectSizeIncludingHypervisorSnapshotReserve(DataObject dataObject, StoragePool storagePool) {
-        return 0;
+        if (dataObject == null) {
+            return 0;
+        }
+        Long size = dataObject.getSize();
+        return size != null && size > 0 ? size : 0;
     }
 
     @Override
     public long getBytesRequiredForTemplate(TemplateInfo templateInfo, StoragePool storagePool) {
-        return 0;
+        if (templateInfo == null || storagePool == null) {
+            return 0;
+        }
+        // template_spool_ref is inserted in Allocated before the cache exists;
+        // only skip reservation when the template is Ready and has a backend identity.
+        VMTemplateStoragePoolVO templatePoolRef =
+                vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(), templateInfo.getId(), null);
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
+        if (isTemplateCachedOnPool(templatePoolRef, details)) {
+            return 0;
+        }
+        return getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo, storagePool);
+    }
+
+    /**
+     * Returns true when the primary template cache is present and usable for clone/deploy.
+     * A spool_ref row alone is not enough: CloudStack creates it in Allocated before the LUN/file exists.
+     * Ready is sufficient; downloadState is set alongside Ready on the managed-cache success path.
+     */
+    private boolean isTemplateCachedOnPool(VMTemplateStoragePoolVO templatePoolRef, Map<String, String> details) {
+        if (templatePoolRef == null) {
+            return false;
+        }
+        if (templatePoolRef.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+            return false;
+        }
+        if (details != null && isIscsi(details)) {
+            return StringUtils.isNotBlank(templatePoolRef.getLocalDownloadPath());
+        }
+        return StringUtils.isNotBlank(templatePoolRef.getInstallPath());
     }
 
     @Override
@@ -968,6 +1351,116 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }
         return cloudStackVolumeDeleteRequest;
 
+    }
+
+    private boolean isIscsi(Map<String, String> details) {
+        return ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL));
+    }
+
+    /**
+     * Builds the request that creates a blank volume (LUN for iSCSI, qcow2 file for NFS).
+     */
+    private CloudStackVolume createVolumeRequest(StoragePoolVO storagePool, Map<String, String> details, DataObject volumeObject) {
+        CloudStackVolume request = new CloudStackVolume();
+        String protocol = details.get(OntapStorageConstants.PROTOCOL);
+        if (ProtocolType.NFS3.name().equalsIgnoreCase(protocol)) {
+            request.setDatastoreId(String.valueOf(storagePool.getId()));
+            request.setVolumeInfo(volumeObject);
+        } else if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
+            Lun lunRequest = new Lun();
+            Svm svm = new Svm();
+            svm.setName(details.get(OntapStorageConstants.SVM_NAME));
+            String lunName = volumeObject.getName().replace(OntapStorageConstants.HYPHEN, OntapStorageConstants.UNDERSCORE);
+            if (!OntapStorageUtils.isValidName(lunName)) {
+                throw new InvalidParameterValueException("Invalid dataObject name [" + lunName
+                        + "]. It must start with a letter and can only contain letters, digits, and underscores, and be up to 200 characters long.");
+            }
+            lunRequest.setSvm(svm);
+            lunRequest.setName(OntapStorageUtils.getLunName(storagePool.getName(), lunName));
+            lunRequest.setOsType(Lun.OsTypeEnum.valueOf(OntapStorageUtils.getOSTypeFromHypervisor(storagePool.getHypervisor().name())));
+            LunSpace lunSpace = new LunSpace();
+            lunSpace.setSize(volumeObject.getSize());
+            lunRequest.setSpace(lunSpace);
+            request.setLun(lunRequest);
+        } else {
+            throw new CloudRuntimeException("Unsupported protocol " + protocol);
+        }
+        return request;
+    }
+
+    /**
+     * LUN path used to cache a template on this pool: {@code /vol/<flexvol>/cs_tmpl_<id>}.
+     */
+    private String getTemplateLunName(StoragePoolVO storagePool, long templateId) {
+        return OntapStorageUtils.getLunName(storagePool.getName(), OntapStorageConstants.TEMPLATE_LUN_PREFIX + templateId);
+    }
+
+    /**
+     * Builds the request that clones the cached template LUN into a new volume LUN.
+     *
+     * <p>Source identity mirrors the NFS file-clone path workflow: {@code clone.source.name} is
+     * the same deterministic ONTAP path used at template create
+     * ({@code /vol/<flexVol>/cs_tmpl_<templateId>}). {@code local_download_path} (LUN uuid) is
+     * still sent as a secondary identity.</p>
+     *
+     * <p>Size is omitted: ONTAP rejects a size on a clone create, and the clone inherits the
+     * source size. Growing to the requested volume size is a separate PATCH.</p>
+     */
+    private CloudStackVolume createCloneLunRequest(StoragePoolVO storagePool, Map<String, String> details,
+                                                   VolumeInfo volumeObject, VMTemplateStoragePoolVO templatePoolRef,
+                                                   long templateId) {
+        String sourceLunUuid = templatePoolRef.getLocalDownloadPath();
+        if (sourceLunUuid == null || sourceLunUuid.isEmpty()) {
+            throw new CloudRuntimeException("Template [" + templateId + "] has no cached LUN on pool ["
+                    + storagePool.getId() + "]; cannot clone volume [" + volumeObject.getId() + "]");
+        }
+
+        Svm svm = new Svm();
+        svm.setName(details.get(OntapStorageConstants.SVM_NAME));
+
+        String lunName = volumeObject.getName().replace(OntapStorageConstants.HYPHEN, OntapStorageConstants.UNDERSCORE);
+        if (!OntapStorageUtils.isValidName(lunName)) {
+            throw new InvalidParameterValueException("Invalid dataObject name [" + lunName
+                    + "]. It must start with a letter and can only contain letters, digits, and underscores, and be up to 200 characters long.");
+        }
+
+        Lun.Source source = new Lun.Source();
+        source.setName(getTemplateLunName(storagePool, templateId));
+        source.setUuid(sourceLunUuid);
+        Lun.Clone clone = new Lun.Clone();
+        clone.setSource(source);
+
+        Lun lunRequest = new Lun();
+        lunRequest.setSvm(svm);
+        lunRequest.setName(OntapStorageUtils.getLunName(storagePool.getName(), lunName));
+        lunRequest.setClone(clone);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lunRequest);
+        return request;
+    }
+
+    /**
+     * Builds the request that clones the cached qcow2 ({@code install_path}) into a new file
+     * named after the volume uuid, inside the same FlexVolume.
+     */
+    private CloudStackVolume createCloneFileRequest(StoragePoolVO storagePool, VolumeInfo volumeInfo,
+                                                    VMTemplateStoragePoolVO templatePoolRef, long templateId) {
+        String sourcePath = templatePoolRef.getInstallPath();
+        if (sourcePath == null || sourcePath.isEmpty()) {
+            throw new CloudRuntimeException("Template [" + templateId + "] has no cached file on pool ["
+                    + storagePool.getId() + "]; cannot clone volume [" + volumeInfo.getId() + "]");
+        }
+
+        FileInfo file = new FileInfo();
+        file.setPath(sourcePath);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setDatastoreId(String.valueOf(storagePool.getId()));
+        request.setVolumeInfo(volumeInfo);
+        request.setFile(file);
+        request.setDestinationPath(volumeInfo.getUuid());
+        return request;
     }
 
     // ──────────────────────────────────────────────────────────────────────────

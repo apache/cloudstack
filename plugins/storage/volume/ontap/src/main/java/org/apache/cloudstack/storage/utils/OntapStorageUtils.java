@@ -19,18 +19,12 @@
 
 package org.apache.cloudstack.storage.utils;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Lun;
-import org.apache.cloudstack.storage.feign.model.LunSpace;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
-import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.provider.StorageProviderFactory;
 import org.apache.cloudstack.storage.service.StorageStrategy;
-import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,48 +49,6 @@ public class OntapStorageUtils {
     public static String generateAuthHeader (String username, String password) {
         byte[] encodedBytes = Base64Utils.encode((username + AUTH_HEADER_COLON + password).getBytes(StandardCharsets.UTF_8));
         return BASIC + StringUtils.SPACE + new String(encodedBytes);
-    }
-
-    public static CloudStackVolume createCloudStackVolumeRequestByProtocol(StoragePoolVO storagePool, Map<String, String> details, DataObject volumeObject) {
-        CloudStackVolume cloudStackVolumeRequest = null;
-
-        String protocol = details.get(OntapStorageConstants.PROTOCOL);
-        ProtocolType protocolType = ProtocolType.valueOf(protocol);
-        switch (protocolType) {
-            case NFS3:
-                cloudStackVolumeRequest = new CloudStackVolume();
-                cloudStackVolumeRequest.setDatastoreId(String.valueOf(storagePool.getId()));
-                cloudStackVolumeRequest.setVolumeInfo(volumeObject);
-                break;
-            case ISCSI:
-                Svm svm = new Svm();
-                svm.setName(details.get(OntapStorageConstants.SVM_NAME));
-                cloudStackVolumeRequest = new CloudStackVolume();
-                Lun lunRequest = new Lun();
-                lunRequest.setSvm(svm);
-
-                LunSpace lunSpace = new LunSpace();
-                lunSpace.setSize(volumeObject.getSize());
-                lunRequest.setSpace(lunSpace);
-                //Lun name is full path like in unified "/vol/VolumeName/LunName"
-                String lunName = volumeObject.getName().replace(OntapStorageConstants.HYPHEN, OntapStorageConstants.UNDERSCORE);
-                if(!isValidName(lunName)) {
-                    String errMsg = "createAsync: Invalid dataObject name [" + lunName + "]. It must start with a letter and can only contain letters, digits, and underscores, and be up to 200 characters long.";
-                    throw new InvalidParameterValueException(errMsg);
-                }
-                String lunFullName = getLunName(storagePool.getName(), lunName);
-                lunRequest.setName(lunFullName);
-
-                String osType = getOSTypeFromHypervisor(storagePool.getHypervisor().name());
-                lunRequest.setOsType(Lun.OsTypeEnum.valueOf(osType));
-
-                cloudStackVolumeRequest.setLun(lunRequest);
-                break;
-            default:
-                throw new CloudRuntimeException("Unsupported protocol " + protocol);
-
-        }
-        return cloudStackVolumeRequest;
     }
 
     public static boolean isValidName(String name) {
