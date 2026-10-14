@@ -442,7 +442,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             nic.setIPv4Gateway(network.getGateway());
 
             String guestIp = null;
-            if (network.getSpecifyIpRanges()) {
+            if (GuestType.Shared.equals(network.getGuestType()) && network.getSpecifyIpRanges()) {
                 _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIPv4(), null);
             } else {
                 if (isGateway) {
