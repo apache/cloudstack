@@ -619,6 +619,30 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.detachVolumeFromVM(detachCmd);
     }
 
+    @Test
+    public void testDetachVolumeSkippedWhenAttachedToAnotherVm() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(200L);
+        Mockito.when(volumeDaoMock.findById(100L)).thenReturn(volume);
+
+        Volume result = volumeApiServiceImpl.detachVolumeViaDestroyVM(300L, 100L);
+
+        Assert.assertEquals(volume, result);
+        Mockito.verify(volumeDaoMock, Mockito.never()).detachVolume(Mockito.anyLong());
+    }
+
+    @Test
+    public void testDetachVolumeSkippedWhenAlreadyDetached() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(null);
+        Mockito.when(volumeDaoMock.findById(100L)).thenReturn(volume);
+
+        Volume result = volumeApiServiceImpl.detachVolumeViaDestroyVM(300L, 100L);
+
+        Assert.assertEquals(volume, result);
+        Mockito.verify(volumeDaoMock, Mockito.never()).detachVolume(Mockito.anyLong());
+    }
+
     /**
      * TESTS FOR ATTACH ROOT VOLUME, COUNT=7
      */
