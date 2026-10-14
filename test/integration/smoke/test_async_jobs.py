@@ -139,6 +139,7 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         self.assertIn("DeployVMCmd", job.cmd)
         self.assertEqual(job.jobinstanceid, self.virtual_machine.id)
 
+        self.assertEqual(job.jobinstancename, self.virtual_machine.name)
         by_name = self.find_job(self.list_jobs(jobstatus="SUCCEEDED", duration=1), self.deploy_job_id)
         self.assertIsNotNone(by_name, "Status filter by name did not match the deploy job")
 

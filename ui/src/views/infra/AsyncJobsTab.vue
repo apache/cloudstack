@@ -90,6 +90,14 @@
         </router-link>
         <span v-else>{{ record.jobinstancetype || '-' }}</span>
       </template>
+      <template #resource="{ record }">
+        <resource-label
+          v-if="record.jobinstanceid"
+          :resourceType="record.jobinstancetype"
+          :resourceId="record.jobinstanceid"
+          :resourceName="record.jobinstancename || record.jobinstanceid" />
+        <span v-else>-</span>
+      </template>
       <template #account="{ text, record }">
         <router-link :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
       </template>
@@ -161,6 +169,7 @@
 import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import SearchView from '@/components/view/SearchView'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { genericCompare } from '@/utils/sort.js'
 
 // Mirrors org.apache.cloudstack.jobs.JobInfo.Status ordinals.
@@ -172,7 +181,8 @@ const STATUS_CANCELLED = 3
 export default {
   name: 'AsyncJobsTab',
   components: {
-    SearchView
+    SearchView,
+    ResourceLabel
   },
   props: {
     resource: {
@@ -231,6 +241,7 @@ export default {
       ]
       if (!this.resourceType) {
         columns.push(column('jobinstancetype', this.$t('label.resourcetype'), 'jobinstance'))
+        columns.push(column('jobinstancename', this.$t('label.resource'), 'resource'))
       }
       columns.push(
         column('account', this.$t('label.account'), 'account'),
