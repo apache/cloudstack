@@ -537,9 +537,10 @@ public class StorPoolPrimaryDataStoreDriverTest {
         StorPoolVolumeDef updated = captor.getValue();
         Assert.assertEquals("~t.t.t", updated.getName());
         Assert.assertEquals("", updated.getTags().get("cs"));
-        Assert.assertNull(updated.getTags().get("uuid"));
-        Assert.assertNull(updated.getTags().get("qc"));
-        Assert.assertNull(updated.getTags().get("cvm"));
+        Assert.assertEquals("",updated.getTags().get("uuid"));
+        Assert.assertEquals("",updated.getTags().get("qc"));
+        Assert.assertEquals("",updated.getTags().get("cvm"));
+        Assert.assertEquals("",updated.getTags().get("vc_policy"));
     }
 
     private static JsonObject volumeJsonObject(String name, Long size, Long spaceUsed) {
