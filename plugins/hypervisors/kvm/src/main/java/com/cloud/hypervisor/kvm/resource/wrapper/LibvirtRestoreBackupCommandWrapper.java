@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
@@ -62,6 +64,9 @@ import com.cloud.vm.VirtualMachine;
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
+
+    /** Prefix of the chain anchors the RBD backup path takes; see NASBackupProvider. */
+    private static final String RBD_BACKUP_SNAPSHOT_PREFIX = "csbackup-";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
     // Detects whether a qcow2 file references a parent in its backing-file metadata.
     // Returns 0 (true) when a backing file is present, 1 when not. Uses --output=json
@@ -72,6 +77,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String FORMAT_QCOW2 = "qcow2";
     // `rbd info --format json` reports the image size in bytes.
     private static final Pattern RBD_INFO_SIZE = Pattern.compile("\"size\"\\s*:\\s*(\\d+)");
+    private static final Pattern RBD_SNAP_NAME = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+
     // Matches the features CloudStack itself creates RBD volumes with
     // (LibvirtStorageAdaptor.RBD_FEATURES), so a restored image behaves like any other. object-map
     // and fast-diff in particular are what make a later `rbd export-diff` cheap.
@@ -463,10 +470,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
      *
      * <p>The image is recreated first. A full diff only carries the extents that were allocated
      * when it was taken, so any block still allocated in the current image would otherwise show
-     * through the restore as stale data. Recreating the image also drops any RBD snapshots it
-     * carried, including CloudStack volume snapshots kept on primary storage — a restore rewinds
-     * the volume wholesale, and there is no way to guarantee the first requirement while keeping
-     * snapshots of content that is being replaced.</p>
+     * through the restore as stale data. Recreating the image also drops every RBD snapshot it
+     * carried: a restore rewinds the volume wholesale, and snapshots of content that is being
+     * replaced cannot be kept. The chain anchors this path takes are ours to drop, but a snapshot
+     * taken outside it — a CloudStack volume snapshot kept on primary storage, say — is not, so an
+     * image carrying one is refused rather than rewound.</p>
      */
     private boolean restoreRbdImageFromDiffChain(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool,
                                                  String volumePath, List<String> diffFiles, Long size) {
@@ -584,8 +592,14 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private boolean recreateRbdImage(List<String> connection, String image, long sizeBytes, String dataPool) {
         // `rbd rm` refuses to delete an image that still has snapshots, and a restore target
-        // normally carries the anchor snapshot of the backup chain it belongs to.
-        Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image));
+        // normally carries the anchor snapshot of the backup chain it belongs to. Ask first, so an
+        // image without snapshots is not handed a purge with nothing to do; when the listing itself
+        // fails we cannot tell, and purging is what we would have done anyway.
+        List<String> snapshots = rbdSnapshots(connection, image);
+        failIfImageCarriesForeignSnapshots(image, snapshots);
+        if (snapshots == null || CollectionUtils.isNotEmpty(snapshots)) {
+            Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image));
+        }
         if (Script.executeCommandForExitValue(rbdCommand(connection, "rm", image)) != 0
                 && rbdImageSize(connection, image) != null) {
             logger.error("Failed to remove RBD image {} before restoring it", image);
@@ -605,6 +619,43 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             return false;
         }
         return true;
+    }
+
+    /** The snapshots an image still carries, for explaining why it could not be removed. */
+    /**
+     * Stop before a restore removes a snapshot that this backup path did not take. The chain
+     * anchors it does take are its own to drop, but a CloudStack volume snapshot kept on primary
+     * storage, or anything else taken outside it, is content someone asked to keep: losing it is
+     * not something a restore should do quietly.
+     */
+    private void failIfImageCarriesForeignSnapshots(String image, List<String> snapshots) {
+        if (snapshots == null) {
+            return;
+        }
+        List<String> foreign = snapshots.stream()
+                .filter(snapshot -> !snapshot.startsWith(RBD_BACKUP_SNAPSHOT_PREFIX))
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(foreign)) {
+            throw new CloudRuntimeException(String.format("RBD image %s carries snapshot(s) [%s] which this backup "
+                    + "path did not take. Restoring the volume rewinds it wholesale and would remove them, so it is "
+                    + "refused; delete those snapshots first, or restore into a new volume instead.",
+                    image, String.join(", ", foreign)));
+        }
+    }
+
+    /** The snapshots an image carries, or {@code null} when they could not be listed at all. */
+    private List<String> rbdSnapshots(List<String> connection, String image) {
+        Pair<Integer, String> result = Script.executePipedCommands(
+                Collections.singletonList(rbdCommand(connection, "snap", "ls", image, "--format", "json")), 0);
+        if (result.first() == null || result.first() != 0 || StringUtils.isBlank(result.second())) {
+            return null;
+        }
+        List<String> names = new ArrayList<>();
+        Matcher matcher = RBD_SNAP_NAME.matcher(result.second());
+        while (matcher.find()) {
+            names.add(matcher.group(1));
+        }
+        return names;
     }
 
     private String rbdDataPool(KVMStoragePool pool) {

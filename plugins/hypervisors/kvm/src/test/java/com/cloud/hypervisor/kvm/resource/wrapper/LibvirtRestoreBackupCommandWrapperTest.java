@@ -177,9 +177,18 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                             }
                             return 0;
                         });
-                // `rbd info --format json` is the only piped command on this path.
+                // Two piped commands run on this path: `rbd info` for the size and `rbd snap ls`
+                // for what the image carries. They are told apart by the subcommand, since the
+                // info output has a "name" of its own which would otherwise read as a snapshot.
                 scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
-                        .thenReturn(new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}"));
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                return new Pair<>(0, "[]");
+                            }
+                            return new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}");
+                        });
 
                 Answer result = wrapper.execute(command, libvirtComputingResource);
                 Assert.assertTrue(((BackupAnswer) result).getResult());
@@ -205,6 +214,92 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Arrays.asList("/tmp/csbackup.abc123/test-vm/full/root.vol-uuid.rbddiff",
                               "/tmp/csbackup.abc123/test-vm/inc1/root.vol-uuid.rbddiff"),
                 importedDiffs);
+    }
+
+    @Test
+    public void testExecuteRefusesToRestoreAnRbdVolumeCarryingAForeignSnapshot() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        // The provider sets both; the chain paths are what an rbddiff restore actually reads.
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStore.getUuid()).thenReturn("ceph-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol-uuid"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol-uuid"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol-uuid"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new java.util.ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            // executeCommandForExitValue is varargs, so Mockito hands the
+                            // arguments over either already expanded or still packed.
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                // Two piped commands run on this path: `rbd info` for the size and `rbd snap ls`
+                // for what the image carries. They are told apart by the subcommand, since the
+                // info output has a "name" of its own which would otherwise read as a snapshot.
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                return new Pair<>(0, "[{\"name\":\"csbackup-1791\"},{\"name\":\"user-snap\"}]");
+                            }
+                            return new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}");
+                        });
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+                // The chain anchor is ours to drop; user-snap is not, so the restore is refused
+                // before the image is touched.
+                Assert.assertFalse(((BackupAnswer) result).getResult());
+                Assert.assertTrue(((BackupAnswer) result).getDetails().contains("user-snap"));
+                Assert.assertFalse(((BackupAnswer) result).getDetails().contains("csbackup-1791"));
+            }
+        }
+
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            Assert.assertFalse("the image must not be touched when a foreign snapshot is present",
+                    args.contains("rm") || args.contains("purge") || args.contains("import-diff"));
+        }
     }
 
     @Test
