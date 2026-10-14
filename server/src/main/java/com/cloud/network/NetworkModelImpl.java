@@ -2333,6 +2333,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
             allPossibleIps.remove(NetUtils.ip2Long(gateway));
 
+        if (StringUtils.isNoneBlank(network.getDhcpStartIp(), network.getDhcpEndIp())) {
+            long start = NetUtils.ip2Long(network.getDhcpStartIp());
+            long end = NetUtils.ip2Long(network.getDhcpEndIp());
+            allPossibleIps.removeIf(ip -> ip < start || ip > end);
+        }
+
         return allPossibleIps;
     }
 

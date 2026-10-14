@@ -44,6 +44,8 @@ public class NetworkProfile implements Network {
     private TrafficType trafficType;
     private String gateway;
     private String cidr;
+    private String dhcpStartIp;
+    private String dhcpEndIp;
     private final String networkCidr;
     private final String ip6Gateway;
     private final String ip6Cidr;
@@ -79,6 +81,8 @@ public class NetworkProfile implements Network {
         gateway = network.getGateway();
         cidr = network.getCidr();
         networkCidr = network.getNetworkCidr();
+        dhcpStartIp = network.getDhcpStartIp();
+        dhcpEndIp = network.getDhcpEndIp();
         ip6Gateway = network.getIp6Gateway();
         ip6Cidr = network.getIp6Cidr();
         networkOfferingId = network.getNetworkOfferingId();
@@ -226,6 +230,26 @@ public class NetworkProfile implements Network {
     @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+
+    @Override
+    public String getDhcpStartIp() {
+        return dhcpStartIp;
+    }
+
+    @Override
+    public void setDhcpStartIp(String dhcpStartIp) {
+        this.dhcpStartIp = dhcpStartIp;
+    }
+
+    @Override
+    public String getDhcpEndIp() {
+        return dhcpEndIp;
+    }
+
+    @Override
+    public void setDhcpEndIp(String dhcpEndIp) {
+        this.dhcpEndIp = dhcpEndIp;
     }
 
     @Override
