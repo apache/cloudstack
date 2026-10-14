@@ -259,6 +259,9 @@
                   {{ resource.arch }}
                 </a-tag>
               </div>
+              <div v-if="resource.details && resource.details['host.cpu.max.speed.mhz']">
+                {{ $t('label.host.cpu.max.speed') }}: {{ (resource.details['host.cpu.max.speed.mhz'] / 1000.0).toFixed(2) }} GHz
+              </div>
               <div>
                 <span v-if="resource.cpuused">
                   <a-progress

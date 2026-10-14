@@ -1322,6 +1322,7 @@
 "label.home": "Home",
 "label.host": "IP address",
 "label.host.alerts": "Hosts in alert state",
+"label.host.cpu.max.speed": "CPU maximum frequency (turbo)",
 "label.host.name": "Host name",
 "label.host.ovftool.version": "OVFTool Version",
 "label.host.vddk.support": "VDDK Support",
