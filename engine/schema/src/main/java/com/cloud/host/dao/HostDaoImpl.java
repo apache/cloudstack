@@ -118,6 +118,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnremovedIpAddressSearch;
 
     protected SearchBuilder<HostVO> GuidSearch;
+    protected SearchBuilder<HostVO> GuidPrefixSearch;
     protected SearchBuilder<HostVO> DcSearch;
     protected SearchBuilder<HostVO> PodSearch;
     protected SearchBuilder<HostVO> ClusterSearch;
@@ -311,6 +312,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         GuidSearch = createSearchBuilder();
         GuidSearch.and("guid", GuidSearch.entity().getGuid(), SearchCriteria.Op.EQ);
         GuidSearch.done();
+
+        GuidPrefixSearch = createSearchBuilder();
+        GuidPrefixSearch.and("guid", GuidPrefixSearch.entity().getGuid(), SearchCriteria.Op.LIKE);
+        GuidPrefixSearch.done();
 
         DcSearch = createSearchBuilder();
         DcSearch.and("dc", DcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -635,6 +640,19 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public HostVO findByGuid(String guid) {
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
         return findOneBy(sc);
+    }
+
+    @Override
+    public HostVO findByGuidIncludingRemoved(String guid) {
+        SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public HostVO findByGuidPrefixIncludingRemoved(String guidPrefix) {
+        SearchCriteria<HostVO> sc = GuidPrefixSearch.create();
+        sc.setParameters("guid", guidPrefix + "%");
+        return findOneIncludingRemovedBy(sc);
     }
 
     /*
