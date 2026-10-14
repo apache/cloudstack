@@ -17,32 +17,46 @@
 
 <template>
   <div>
-    <a-row :gutter="12" style="margin-bottom: 10px">
-      <a-col>
-        <a-select
-          v-model:value="statusFilter"
-          style="min-width: 160px"
-          @change="onFilterChange">
-          <a-select-option v-for="option in statusOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </a-select-option>
-        </a-select>
-      </a-col>
-      <a-col v-if="statusFilter !== 'pending'">
-        <a-select
-          v-model:value="durationHours"
-          style="min-width: 160px"
-          @change="onFilterChange">
-          <a-select-option v-for="option in durationOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </a-select-option>
-        </a-select>
-      </a-col>
-      <a-col>
-        <a-button :loading="tabLoading" @click="fetchData">
+    <a-row style="margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+      <a-col style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px">
+        <a-button :loading="tabLoading" size="small" @click="fetchData">
           <template #icon><reload-outlined /></template>
           {{ $t('label.refresh') }}
         </a-button>
+        <a-tooltip placement="right">
+          <template #title>{{ $t('label.filterby') }}</template>
+          <a-select
+            v-model:value="statusFilter"
+            :placeholder="$t('label.filterby')"
+            style="min-width: 120px"
+            size="small"
+            @change="onFilterChange">
+            <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
+            <a-select-option v-for="option in statusOptions" :key="option.value" :value="option.value" :label="option.label">
+              {{ option.label }}
+            </a-select-option>
+          </a-select>
+        </a-tooltip>
+        <a-tooltip v-if="statusFilter !== 'pending'" placement="right">
+          <template #title>{{ $t('label.period') }}</template>
+          <a-select
+            v-model:value="durationHours"
+            style="min-width: 140px"
+            size="small"
+            @change="onFilterChange">
+            <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
+            <a-select-option v-for="option in durationOptions" :key="option.value" :value="option.value" :label="option.label">
+              {{ option.label }}
+            </a-select-option>
+          </a-select>
+        </a-tooltip>
+      </a-col>
+      <a-col v-if="!resourceType" style="margin-left: auto">
+        <search-view
+          :searchFilters="searchFilters"
+          :searchParams="searchParams"
+          apiName="listAsyncJobs"
+          @search="onSearch" />
       </a-col>
     </a-row>
     <a-table
@@ -118,6 +132,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
+import SearchView from '@/components/view/SearchView'
 
 // Mirrors org.apache.cloudstack.jobs.JobInfo.Status ordinals.
 const STATUS_IN_PROGRESS = 0
@@ -127,6 +142,9 @@ const STATUS_CANCELLED = 3
 
 export default {
   name: 'AsyncJobsTab',
+  components: {
+    SearchView
+  },
   props: {
     resource: {
       type: Object,
@@ -151,6 +169,8 @@ export default {
       totalCount: 0,
       statusFilter: 'pending',
       durationHours: 24,
+      searchFilters: ['domainid', 'account', 'resourcetype'],
+      searchParams: {},
       statusOptions: [
         { value: 'pending', label: this.$t('label.pending') },
         { value: String(STATUS_SUCCEEDED), label: this.$t('label.success') },
@@ -271,6 +291,16 @@ export default {
       if (this.statusFilter !== 'pending' && this.durationHours > 0) {
         params.duration = this.durationHours
       }
+      if (!this.resourceType) {
+        for (const key of ['domainid', 'account', 'resourcetype']) {
+          if (this.searchParams[key]) {
+            params[key] = this.searchParams[key]
+          }
+        }
+        if (this.searchParams.searchQuery) {
+          params.keyword = this.searchParams.searchQuery
+        }
+      }
       this.tabLoading = true
       getAPI('listAsyncJobs', params).then(json => {
         this.totalCount = json?.listasyncjobsresponse?.count || 0
@@ -282,6 +312,11 @@ export default {
       })
     },
     onFilterChange () {
+      this.page = 1
+      this.fetchData()
+    },
+    onSearch (opts) {
+      this.searchParams = opts && Object.keys(opts).length > 0 ? opts : {}
       this.page = 1
       this.fetchData()
     },
