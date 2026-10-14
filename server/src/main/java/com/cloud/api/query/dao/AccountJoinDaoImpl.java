@@ -79,7 +79,6 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setState(account.getState().toString());
         accountResponse.setCreated(account.getCreated());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
-        accountResponse.setDefaultZone(account.getDataCenterUuid());
         accountResponse.setIsDefault(account.isDefault());
         if (view == ResponseView.Full) {
             accountResponse.setApiKeyAccess(account.getApiKeyAccess());
