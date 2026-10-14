@@ -736,6 +736,35 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 null, null, null, false, null);
     }
 
+    /**
+     * Non-blocking compatibility check: when hosts are added to a cluster that has a CPU baseline model, raise an alert for any
+     * newly added host that cannot support the model, so VMs pinned to the baseline will not silently fail to run on
+     * it. Wrapped so it can never affect the host-add result.
+     */
+    protected void warnIfHostsBreakClusterCpuBaseline(final List<HostVO> hosts, final Long clusterId) {
+        if (clusterId == null || hosts == null || hosts.isEmpty()) {
+            return;
+        }
+        try {
+            final String baseline = _vmMgr.getClusterCpuBaselineModel(clusterId);
+            if (org.apache.commons.lang3.StringUtils.isBlank(baseline)) {
+                return;
+            }
+            final List<String> incompatible = _vmMgr.findHostsIncompatibleWithCpuModel(clusterId, baseline);
+            for (final HostVO host : hosts) {
+                if (incompatible.contains(host.getName())) {
+                    final String msg = String.format("Host %s was added to cluster %d but does not support its CPU baseline model %s; " +
+                            "instances pinned to that baseline will not run on this host.", host.getName(), clusterId, baseline);
+                    logger.warn(msg);
+                    alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(),
+                            "Host incompatible with cluster CPU baseline", msg);
+                }
+            }
+        } catch (final Exception e) {
+            logger.warn("Could not verify newly added hosts against the cluster CPU baseline: " + e.getMessage(), e);
+        }
+    }
+
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName,
                String url, String username, String password, final String hypervisorType, final List<String> hostTags,
                List<String> storageAccessGroups, final Map<String, String> params, final boolean deferAgentCreation,
@@ -918,6 +947,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                                 _agentMgr.notifyMonitorsOfNewlyAddedHost(host.getId());
 
+                                warnIfHostsBreakClusterCpuBaseline(hosts, clusterId);
                                 return hosts;
                             }
                         }
@@ -953,6 +983,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     discoverer.postDiscovery(hosts, _nodeId);
                 }
                 logger.info("server resources successfully discovered by " + discoverer.getName());
+                warnIfHostsBreakClusterCpuBaseline(hosts, clusterId);
                 return hosts;
             }
         }

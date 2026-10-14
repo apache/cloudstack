@@ -5929,6 +5929,43 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void resolveMigrationNetworkIpTestReturnsNullForBlankLabel() {
+        Assert.assertNull(libvirtComputingResourceSpy.resolveMigrationNetworkIp(null));
+        Assert.assertNull(libvirtComputingResourceSpy.resolveMigrationNetworkIp("  "));
+    }
+
+    @Test
+    public void resolveMigrationNetworkIpTestResolvesTheLabelToItsIp() {
+        NetworkInterface migrateNic = Mockito.mock(NetworkInterface.class);
+        try (MockedStatic<NetUtils> netUtilsMockedStatic = Mockito.mockStatic(NetUtils.class)) {
+            netUtilsMockedStatic.when(() -> NetUtils.getNetworkInterface("cloudbr5")).thenReturn(migrateNic);
+            netUtilsMockedStatic.when(() -> NetUtils.getNetworkParams(migrateNic)).thenReturn(new String[] {"10.2.3.4", "aa:bb:cc:dd:ee:ff", "255.255.255.0"});
+
+            Assert.assertEquals("10.2.3.4", libvirtComputingResourceSpy.resolveMigrationNetworkIp("cloudbr5"));
+        }
+    }
+
+    @Test
+    public void resolveMigrationNetworkIpTestReturnsNullWhenLabelHasNoIp() {
+        NetworkInterface migrateNic = Mockito.mock(NetworkInterface.class);
+        try (MockedStatic<NetUtils> netUtilsMockedStatic = Mockito.mockStatic(NetUtils.class)) {
+            netUtilsMockedStatic.when(() -> NetUtils.getNetworkInterface("cloudbr5")).thenReturn(migrateNic);
+            netUtilsMockedStatic.when(() -> NetUtils.getNetworkParams(migrateNic)).thenReturn(new String[] {"", "aa:bb:cc:dd:ee:ff", ""});
+
+            Assert.assertNull(libvirtComputingResourceSpy.resolveMigrationNetworkIp("cloudbr5"));
+        }
+    }
+
+    @Test
+    public void resolveMigrationNetworkIpTestReturnsNullWhenLabelNotFound() {
+        try (MockedStatic<NetUtils> netUtilsMockedStatic = Mockito.mockStatic(NetUtils.class)) {
+            netUtilsMockedStatic.when(() -> NetUtils.getNetworkInterface("cloudbr5")).thenReturn(null);
+
+            Assert.assertNull(libvirtComputingResourceSpy.resolveMigrationNetworkIp("cloudbr5"));
+        }
+    }
+
+    @Test
     public void defineResourceNetworkInterfacesTestUseProperties() {
         NetworkInterface networkInterfaceMock1 = Mockito.mock(NetworkInterface.class);
         NetworkInterface networkInterfaceMock2 = Mockito.mock(NetworkInterface.class);

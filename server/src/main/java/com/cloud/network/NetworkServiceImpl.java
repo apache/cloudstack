@@ -135,8 +135,11 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
@@ -373,6 +376,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     PortForwardingRulesDao _portForwardingDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
     @Inject
     DataCenterVnetDao _dcVnetDao;
     @Inject
@@ -5442,7 +5447,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // traffictype already present
         // If yes, we can't add these traffics to one more physical network in the zone.
 
-        if (TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType) || TrafficType.Storage.equals(trafficType)) {
+        if (TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType) || TrafficType.Storage.equals(trafficType)
+                || TrafficType.Migration.equals(trafficType)) {
             if (!_physicalNetworkDao.listByZoneAndTrafficType(network.getDataCenterId(), trafficType).isEmpty()) {
                 throw new CloudRuntimeException("Fail to add the traffic type to physical network because Zone already has a physical network with this traffic type: " + trafficType);
             }
@@ -5519,6 +5525,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         case Control:
             xenLabel = "cloud_link_local_network";
             break;
+        case Migration:
         case Vpn:
         case None:
             break;
@@ -5597,8 +5604,28 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (_stnwMgr.isAnyStorageIpInUseInZone(pn.getDataCenterId())) {
                 throw new CloudRuntimeException("The Traffic Type is not deletable because there are still some storage network IP addresses in use:" + trafficType.getTrafficType());
             }
+        } else if (TrafficType.Migration.equals(trafficType.getTrafficType())) {
+            clearMigrationIpDetails(trafficType.getPhysicalNetworkId());
         }
         return _pNTrafficTypeDao.remove(id);
+    }
+
+    /**
+     * Clears the {@link Host#HOST_MIGRATION_IP} detail from the KVM hosts in the zone of the given physical
+     * network when its Migration traffic type is removed, so that live migration stops targeting the
+     * decommissioned migration address at once rather than only after each host reconnects and re-resolves it.
+     */
+    protected void clearMigrationIpDetails(long physicalNetworkId) {
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork == null) {
+            return;
+        }
+        for (HostVO host : _hostDao.listByDataCenterIdAndHypervisorType(physicalNetwork.getDataCenterId(), Hypervisor.HypervisorType.KVM)) {
+            DetailVO detail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_MIGRATION_IP);
+            if (detail != null) {
+                _hostDetailsDao.remove(detail.getId());
+            }
+        }
     }
 
     @Override

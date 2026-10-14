@@ -31,10 +31,12 @@ import com.cloud.storage.Storage;
 public class MigrateCommand extends Command {
     private String vmName;
     private String destinationIp;
+    private String migrateIp;
     private Map<String, MigrateDiskInfo> migrateStorage;
     private boolean migrateStorageManaged;
     private boolean migrateNonSharedInc;
     private boolean autoConvergence;
+    private String migrationEncryptionPolicy;
     private String hostGuid;
     private boolean windows;
     private VirtualMachineTO virtualMachine;
@@ -98,6 +100,14 @@ public class MigrateCommand extends Command {
         this.migrateNonSharedInc = migrateNonSharedInc;
     }
 
+    public String getMigrationEncryptionPolicy() {
+        return migrationEncryptionPolicy;
+    }
+
+    public void setMigrationEncryptionPolicy(String migrationEncryptionPolicy) {
+        this.migrationEncryptionPolicy = migrationEncryptionPolicy;
+    }
+
     public void setAutoConvergence(boolean autoConvergence) {
         this.autoConvergence = autoConvergence;
     }
@@ -116,6 +126,14 @@ public class MigrateCommand extends Command {
 
     public String getDestinationIp() {
         return destinationIp;
+    }
+
+    public void setMigrateIp(String migrateIp) {
+        this.migrateIp = migrateIp;
+    }
+
+    public String getMigrateIp() {
+        return migrateIp;
     }
 
     public String getVmName() {
