@@ -863,7 +863,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueRangeTestValidatesValueWhenConfigHasRange() {
-        Config config = Config.SecStorageEncryptCopy;
+        Config config = Config.CheckPodCIDRs;
         String name = config.name();
         String value = "value";
         String expectedResult = "expectedResult";
@@ -877,14 +877,16 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueRangeTestValidatesIntValueWhenConfigHasNumericRange() {
-        Config config = Config.RouterExtraPublicNics;
-        String name = config.name();
+        Config config = Mockito.mock(Config.class);
+        String range = "0-5";
+        Mockito.doReturn(range).when(config).getRange();
+        String name = "some.numeric.range.config";
         String value = "1";
         String expectedResult = "expectedResult";
 
-        Mockito.doReturn(expectedResult).when(configurationManagerImplSpy).validateIfIntValueIsInRange(name, value, config.getRange());
+        Mockito.doReturn(expectedResult).when(configurationManagerImplSpy).validateIfIntValueIsInRange(name, value, range);
 
-        String result = configurationManagerImplSpy.validateValueRange(name, value, config.getType(), config);
+        String result = configurationManagerImplSpy.validateValueRange(name, value, Integer.class, config);
 
         Assert.assertEquals(expectedResult, result);
     }
@@ -957,7 +959,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void getConfigurationTypeWrapperClassTestReturnsConfigType() {
-        Config configuration = Config.AlertEmailAddresses;
+        Config configuration = Config.AlertSMTPConnectionTimeout;
 
         Assert.assertEquals(configuration.getType(), configurationManagerImplSpy.getConfigurationTypeWrapperClass(configuration.key()));
     }

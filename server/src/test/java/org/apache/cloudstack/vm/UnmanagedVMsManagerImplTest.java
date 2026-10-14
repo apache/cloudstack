@@ -316,7 +316,6 @@ public class UnmanagedVMsManagerImplTest {
         ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
         clusterVO.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
         when(clusterDao.findById(anyLong())).thenReturn(clusterVO);
-        when(configurationDao.getValue(Mockito.anyString())).thenReturn(null);
         List<HostVO> hosts = new ArrayList<>();
         HostVO hostVO = Mockito.mock(HostVO.class);
         when(hostVO.isInMaintenanceStates()).thenReturn(false);

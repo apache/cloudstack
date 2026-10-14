@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -703,7 +702,6 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -893,8 +891,6 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
-    public static final ConfigKey<String> customCsIdentifier = new ConfigKey<>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
-    public static final ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true", "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
     public static final ConfigKey<Boolean> exposeCloudStackVersionInApiListCapabilities = new ConfigKey<>("Advanced", Boolean.class, "expose.cloudstack.version.api.list.capabilities", "true", "Indicates whether ACS version should show in the listCapabilities API.", true, ConfigKey.Scope.Global);
 
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
@@ -1153,8 +1149,8 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         }
 
         //Alerts purge configurations
-        final int alertPurgeInterval = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeInterval.key()), 60 * 60 * 24); // 1 day.
-        _alertPurgeDelay = NumbersUtil.parseInt(_configDao.getValue(Config.AlertPurgeDelay.key()), 0);
+        final int alertPurgeInterval = AlertPurgeInterval.value();
+        _alertPurgeDelay = AlertPurgeDelay.value();
         if (_alertPurgeDelay != 0) {
             _alertExecutor.scheduleAtFixedRate(new AlertPurgeTask(), alertPurgeInterval, alertPurgeInterval, TimeUnit.SECONDS);
         }
@@ -4448,7 +4444,18 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier,
+                OvmPublicNetwork, OvmPrivateNetwork, OvmGuestNetwork, Ovm3PublicNetwork, Ovm3PrivateNetwork, Ovm3GuestNetwork, Ovm3StorageNetwork,
+                KvmPublicNetwork, KvmPrivateNetwork, KvmGuestNetwork, ElasticLoadBalancerEnabled, ElasticLoadBalancerNetwork,
+                ApiLimitEnabled, ApiLimitInterval, ApiLimitMax,
+                PublishActionEvent, PublishAlertEvent, PublishResourceStateEvent, PublishUsageEvent,
+                EventPurgeInterval, LinkLocalIpNums, HypervisorList, ManagementNetwork, EventPurgeDelay,
+                AlertPurgeInterval, AlertPurgeDelay, ControlCidr, ControlGateway, DetailBatchQuerySize,
+                S3EnableRRS, S3MaxSingleUploadSize, CloudDnsName, InternalLbVmServiceOfferingId, RouterAggregationCommandEachTimeout,
+                VmwareRootDiskControllerType, VmwareSystemVmNicDeviceType, VmwareUseNexusVSwitch, VmwareUseDVSwitch,
+                XenServerSetupMultipath, XenServerHeartBeatTimeout, XenServerHeartBeatInterval, XenServerPVdriverVersion,
+                Ovm3HeartBeatTimeout, Ovm3HeartBeatInterval,
+                BaremetalProvisionDoneNotificationEnabled, BaremetalProvisionDoneNotificationPort, ExternalBaremetalSystemUrl};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4811,7 +4818,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         // check permissions
         _accountMgr.checkAccess(caller, null, true, _accountMgr.getAccount(user.getAccountId()));
 
-        String cloudIdentifier = _configDao.getValue("cloud.identifier");
+        String cloudIdentifier = NetworkModel.CloudIdentifier.value();
         if (cloudIdentifier == null) {
             cloudIdentifier = "";
         }
@@ -4860,10 +4867,10 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
-            final String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
+            final String elbEnabled = ElasticLoadBalancerEnabled.value();
             elasticLoadBalancerEnabled = elbEnabled == null ? false : Boolean.parseBoolean(elbEnabled);
             if (elasticLoadBalancerEnabled) {
-                final String networkType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
+                final String networkType = ElasticLoadBalancerNetwork.value();
                 if (networkType != null) {
                     supportELB = networkType;
                 }
@@ -4878,9 +4885,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
         // add some parameters UI needs to handle API throttling
-        final boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
-        final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
-        final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
+        final boolean apiLimitEnabled = ApiLimitEnabled.value();
+        final Integer apiLimitInterval = ApiLimitInterval.value();
+        final Integer apiLimitMax = ApiLimitMax.value();
 
         final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | isCallerAdmin);
@@ -5101,7 +5108,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
     @Override
     public List<String> getHypervisors(final Long zoneId) {
         final List<String> result = new ArrayList<>();
-        final String hypers = _configDao.getValue(Config.HypervisorList.key());
+        final String hypers = HypervisorList.value();
         final String[] hypervisors = hypers.split(",");
 
         if (zoneId != null) {

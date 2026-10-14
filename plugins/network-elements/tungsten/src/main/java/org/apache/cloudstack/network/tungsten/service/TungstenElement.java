@@ -25,7 +25,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -105,7 +104,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
@@ -179,8 +178,6 @@ public class TungstenElement extends AdapterBase
     VMInstanceDao vmInstanceDao;
     @Inject
     AgentManager agentMgr;
-    @Inject
-    ConfigurationDao configDao;
     @Inject
     VlanDao vlanDao;
     @Inject
@@ -436,11 +433,11 @@ public class TungstenElement extends AdapterBase
 
         // update haproxy
         TungstenCommand updateTungstenLoadBalancerPoolCommand;
-        String lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+        String lbStatsVisibility = NetworkOrchestrationService.NetworkLBHaproxyStatsVisbility.value();
         if (!lbStatsVisibility.equals("disabled")) {
-            String lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-            String lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-            String lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+            String lbStatsUri = NetworkOrchestrationService.NetworkLBHaproxyStatsUri.value();
+            String lbStatsAuth = NetworkOrchestrationService.NetworkLBHaproxyStatsAuth.value();
+            String lbStatsPort = NetworkOrchestrationService.NetworkLBHaproxyStatsPort.value();
             updateTungstenLoadBalancerPoolCommand = new UpdateTungstenLoadBalancerPoolCommand(
                     tungstenProjectFqn, TungstenUtils.getLoadBalancerPoolName(loadBalancingRule.getId()),
                     TungstenUtils.getLoadBalancerAlgorithm(loadBalancingRule.getAlgorithm()),

@@ -27,10 +27,10 @@ import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
@@ -96,7 +96,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
     private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
 
-        String configKey = Config.PublishResourceStateEvent.key();
+        String configKey = ManagementServer.PublishResourceStateEvent.key();
         String value = _configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
