@@ -213,6 +213,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
@@ -698,7 +699,9 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         cfgResponse.setSubGroup(configGroupAndSubGroup.second());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
-        if (cfg.isEncrypted()) {
+        if (cfg instanceof ConfigurationVO && cfg.isEncrypted()) {
+            cfgResponse.setValue(((ConfigurationVO) cfg).getRawValue());
+        } else if (cfg.isEncrypted()) {
             cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
         } else {
             cfgResponse.setValue(cfg.getValue());

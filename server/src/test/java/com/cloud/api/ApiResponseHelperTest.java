@@ -46,6 +46,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
@@ -57,10 +58,12 @@ import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 import com.cloud.capacity.Capacity;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
@@ -93,6 +96,7 @@ import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.NicSecondaryIp;
@@ -136,6 +140,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     ResourceIconManager resourceIconManager;
+
+    @Mock
+    ConfigurationManager configurationManagerMock;
 
     @Mock
     private ConsoleSessionVO consoleSessionMock;
@@ -799,5 +806,16 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getVmId(), response.getVmId());
             Assert.assertEquals(expected.getVmName(), response.getVmName());
         }
+    }
+
+    @Test
+    public void testCreateConfigurationResponseSecureValueIsReturnedAsStored() {
+        ConfigurationVO cfg = new ConfigurationVO("Secure", "DEFAULT", "test", "test.secure.setting", null, "test");
+        ReflectionTestUtils.setField(cfg, "value", "storedEncryptedValue");
+        Mockito.when(configurationManagerMock.getConfigurationGroupAndSubGroup(cfg.getName())).thenReturn(new Pair<>("Miscellaneous", "Others"));
+
+        ConfigurationResponse response = apiResponseHelper.createConfigurationResponse(cfg);
+
+        assertEquals("storedEncryptedValue", response.getValue());
     }
 }
