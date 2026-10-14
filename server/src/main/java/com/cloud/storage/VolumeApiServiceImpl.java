@@ -3559,6 +3559,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Volume volume = _volsDao.findById(volumeId);
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
+        // A queued detach can run after the volume was already detached and attached elsewhere; leave that attachment alone
+        if (volume.getInstanceId() == null || volume.getInstanceId() != vmId) {
+            logger.warn("Volume {} is no longer attached to VM {}, skipping detach", volume, vm);
+            return volume;
+        }
+
         String errorMsg = "Failed to detach volume " + volume.getName() + " from VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
 
