@@ -38,7 +38,7 @@
       </a-table>
       <div class="form-action">
         <a-button class="button-back" @click="handleDone">{{ selectedRowKeys.length > 0 ? $t('label.done') : $t('label.skip') }}</a-button>
-        <a-button class="button-next" type="primary" @click="handleSubmit" ref="submit">{{ $t('label.register.template') }}</a-button>
+        <a-button class="button-next" type="primary" @click="handleSubmit" :loading="submitting" ref="submit">{{ $t('label.register.template') }}</a-button>
       </div>
 
       <a-modal
@@ -94,6 +94,8 @@ export default {
     selectedRowKeys: [],
     defaultOsTypeId: null,
     deployedTemplates: {},
+    rowErrors: {},
+    submitting: false,
     showAlert: false
   }),
   created () {
@@ -119,21 +121,21 @@ export default {
     async initForm () {
       this.columns = [
         {
-          title: 'Name',
+          title: this.$t('label.name'),
           dataIndex: 'name',
           key: 'name',
           width: 240,
           sorter: (a, b) => { return genericCompare(a.name || '', b.name || '') }
         },
         {
-          title: 'Arch',
+          title: this.$t('label.arch'),
           dataIndex: 'arch',
           key: 'arch',
           width: 80,
           sorter: (a, b) => { return genericCompare(a.arch || '', b.arch || '') }
         },
         {
-          title: 'URL',
+          title: this.$t('label.url'),
           dataIndex: 'url',
           key: 'url'
         }
@@ -168,17 +170,27 @@ export default {
           const result = json.registertemplateresponse.template[0]
           resolve(result)
         }).catch(error => {
-          const message = error.response.headers['x-description']
-          reject(message)
+          reject(new Error(error?.response?.headers?.['x-description'] || error?.message))
         })
       })
     },
     async stepRegisterTemplates () {
+      if (this.submitting) {
+        return
+      }
       const templatesToRegister = this.predefinedTemplates.filter(template => this.selectedRowKeys.includes(template.id) && this.deployedTemplates[template.id] !== true)
       if (templatesToRegister.length === 0) {
         this.showAlert = true
         return
       }
+      this.submitting = true
+      try {
+        await this.submitTemplates(templatesToRegister)
+      } finally {
+        this.submitting = false
+      }
+    },
+    async submitTemplates (templatesToRegister) {
       const registrationResults = []
       for (const templateData of templatesToRegister) {
         const promise = this.registerTemplate(templateData)
@@ -187,10 +199,11 @@ export default {
             status: 'success',
             name: templateData.name
           }))
-          .catch(() => ({
+          .catch(error => ({
             id: templateData.id,
             status: 'error',
-            name: templateData.name
+            name: templateData.name,
+            error: error.message
           }))
         registrationResults.push(promise)
       }
@@ -201,23 +214,23 @@ export default {
       if (successful.length > 0) {
         this.$notification.success({
           message: this.$t('label.register.template'),
-          description: 'Successfully registered templates: ' + successful.map(r => r.name).join(', ')
+          description: this.$t('message.catalog.register.success', { names: successful.map(r => r.name).join(', ') })
         })
 
         successful.forEach(r => {
           this.deployedTemplates[r.id] = true
+          delete this.rowErrors[r.id]
           this.predefinedTemplates.find(t => t.id === r.id).disabled = true
         })
       }
       if (failed.length > 0) {
         this.$notification.error({
           message: this.$t('label.register.template'),
-          description: 'Failed registering templates: ' + failed.map(r => r.name).join(', ')
+          description: this.$t('message.catalog.register.failed', { names: failed.map(r => r.name).join(', ') })
         })
 
         failed.forEach(r => {
-          this.predefinedTemplates.find(t => t.id === r.id).disabled = true
-          this.selectedRowKeys = this.selectedRowKeys.filter(id => id !== r.id)
+          this.rowErrors[r.id] = r.error
         })
       }
     },

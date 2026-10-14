@@ -78,7 +78,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "True if this Template is a featured Template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if the Template is available to all accounts; default is true")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "True if the Template is available to all accounts; default is false")
     private Boolean publicTemplate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Template")
