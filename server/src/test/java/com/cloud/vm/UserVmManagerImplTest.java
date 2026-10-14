@@ -4274,7 +4274,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
                 () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
-        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
+        assertEquals("Deployment of virtual machine is supported only for Zone-wide or Cluster-wide storage pools", ex.getMessage());
     }
 
     @Test
@@ -4290,7 +4290,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
                 () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
-        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
+        assertEquals("Deployment of virtual machine is supported only for Zone-wide or Cluster-wide storage pools", ex.getMessage());
     }
 
     @Test
