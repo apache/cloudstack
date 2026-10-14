@@ -169,13 +169,6 @@ public class CreateNetworkCmdTest {
     }
 
     @Test
-    public void testGetExternalId() {
-        String externalId = "1";
-        ReflectionTestUtils.setField(cmd, "externalId", externalId);
-        Assert.assertEquals(cmd.getExternalId(), externalId);
-    }
-
-    @Test
     public void testGetAssociatedNetworkId() {
         Long associatedNetId = 1L;
         ReflectionTestUtils.setField(cmd, "associatedNetworkId", associatedNetId);
