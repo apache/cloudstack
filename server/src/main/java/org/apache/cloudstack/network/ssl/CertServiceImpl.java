@@ -128,6 +128,18 @@ public class CertServiceImpl implements CertService {
     public SslCertResponse uploadSslCert(final UploadSslCertCmd certCmd) {
         Preconditions.checkNotNull(certCmd);
 
+        final CallContext ctx = CallContext.current();
+        final Account caller = ctx.getCallingAccount();
+
+        Account owner;
+        if ((StringUtils.isNotBlank(certCmd.getAccountName()) && certCmd.getDomainId() != null) || certCmd.getProjectId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+        } else {
+            owner = caller;
+        }
+
+        Preconditions.checkNotNull(owner);
+
         final String cert = certCmd.getCert();
         final String key = certCmd.getKey();
         final String password = certCmd.getPassword();
@@ -138,17 +150,6 @@ public class CertServiceImpl implements CertService {
         logger.debug("Certificate Validation succeeded");
 
         final String fingerPrint = CertificateHelper.generateFingerPrint(parseCertificate(cert));
-
-        final CallContext ctx = CallContext.current();
-        final Account caller = ctx.getCallingAccount();
-
-        Account owner = null;
-        if (StringUtils.isNotEmpty(certCmd.getAccountName()) && certCmd.getDomainId() != null || certCmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
-        } else {
-            owner = caller;
-        }
-
         final Long accountId = owner.getId();
         final Long domainId = owner.getDomainId();
 
@@ -199,15 +200,43 @@ public class CertServiceImpl implements CertService {
         final Account caller = ctx.getCallingAccount();
 
         final Long certId = listSslCertCmd.getCertId();
-        final Long accountId = listSslCertCmd.getAccountId();
         final Long lbRuleId = listSslCertCmd.getLbId();
         final Long projectId = listSslCertCmd.getProjectId();
+        final Long accountId = listSslCertCmd.getAccountId();
+        final String accountName = listSslCertCmd.getAccountName();
+        final Long domainId = listSslCertCmd.getDomainId();
+
+        if (accountId != null && (StringUtils.isNotBlank(accountName) || domainId != null)) {
+            throw new InvalidParameterValueException("The accountid and account/domainid are mutually exclusive");
+        }
+
+        // Validate that only one of certid, lbid, projectid, or accountid/account can be specified
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(certId);
+        params.add(accountId != null ? accountId : accountName);
+        params.add(lbRuleId);
+        params.add(projectId);
+
+        int nonNullIds = 0;
+        for (Object param : params) {
+            if (param != null) {
+                nonNullIds++;
+            }
+        }
+        if (nonNullIds > 1) {
+            throw new InvalidParameterValueException("Only one of certid, lbid, projectid, or accountid/account can be specified");
+        }
+
+        Account owner;
+        if ((StringUtils.isNotBlank(accountName) && domainId != null) || projectId != null) {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        } else {
+            owner = caller;
+        }
+
+        Preconditions.checkNotNull(owner);
 
         final List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
-
-        if (certId == null && accountId == null && lbRuleId == null && projectId == null) {
-            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID or Project ID required");
-        }
 
         List<LoadBalancerCertMapVO> certLbMap = null;
         SslCertVO certVO = null;
@@ -241,7 +270,7 @@ public class CertServiceImpl implements CertService {
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                logger.debug("No certificate bound to loadbalancer id: {}", lbRuleId);
                 return certResponseList;
             }
 
@@ -273,8 +302,7 @@ public class CertServiceImpl implements CertService {
             return certResponseList;
         }
 
-        //reached here look by accountId
-        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
+        final List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId != null ? accountId : owner.getId());
         if (certVOList == null || certVOList.isEmpty()) {
             return certResponseList;
         }
@@ -374,7 +402,7 @@ public class CertServiceImpl implements CertService {
         }
 
         // No encryption for DSA
-        if (pubKey.getAlgorithm() != "RSA") {
+        if (!pubKey.getAlgorithm().equals("RSA")) {
             return;
         }
 
