@@ -52,5 +52,6 @@ public @interface Parameter {
 
     ApiArgValidator[] validations() default {};
 
+    String[] allowedValues() default {};
     boolean acceptedOnAdminPort() default true;
 }

@@ -67,9 +67,15 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.FORMAT,
-               type = CommandType.STRING,
-               required = true,
-               description = "The format for the Template. Possible values include QCOW2, RAW, VHD and OVA.")
+           type = CommandType.STRING,
+           required = true,
+           description = "The format for the Template. Possible values include QCOW2, RAW, VHD and OVA.",
+           allowedValues = {
+               "QCOW2",
+               "RAW",
+               "VHD",
+               "OVA"
+           })
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "The target hypervisor for the Template")
@@ -179,9 +185,15 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             since = "4.19.0")
     private String templateType;
 
-    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
-            since = "4.20")
+    @Parameter(name = ApiConstants.ARCH,
+           type = CommandType.STRING,
+           description = "the CPU arch of the template. Valid options are: x86_64, aarch64, s390x",
+           since = "4.20",
+           allowedValues = {
+               "x86_64",
+               "aarch64",
+               "s390x"
+           })
     private String arch;
 
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class,
