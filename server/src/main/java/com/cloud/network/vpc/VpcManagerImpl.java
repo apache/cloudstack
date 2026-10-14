@@ -1079,6 +1079,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 ConfigurationManagerImpl.setField(cmd, "specifyAsNumber", sourceOffering.isSpecifyAsNumber());
             }
 
+            Boolean conserveModeFieldValue = getRawFieldValue(cmd, "conserveMode", Boolean.class);
+            if (conserveModeFieldValue == null) {
+                ConfigurationManagerImpl.setField(cmd, "conserveMode", sourceOffering.isConserveMode());
+            }
+
             if (cmd.getInternetProtocol() == null) {
                 String internetProtocol = vpcOfferingDetailsDao.getDetail(sourceOffering.getId(), ApiConstants.INTERNET_PROTOCOL);
                 if (internetProtocol != null) {
