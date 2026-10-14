@@ -20,7 +20,9 @@ package com.cloud.api.query;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -104,6 +106,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.BucketCredentialDao;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -172,6 +175,9 @@ public class QueryManagerImplTest {
 
     @Mock
     BucketDao bucketDao;
+
+    @Mock
+    BucketCredentialDao bucketCredentialDao;
     @Mock
     VMTemplateDao templateDao;
 
@@ -432,6 +438,67 @@ public class QueryManagerImplTest {
         when(bucketDao.createSearchBuilder()).thenReturn(sb);
         when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(buckets, 2));
         queryManagerImplSpy.searchForBuckets(listBucketsCmd);
+    }
+
+    @Test
+    public void testSearchForBucketsFiltersByObjectStore() {
+        ListBucketsCmd listBucketsCmd = new ListBucketsCmd();
+        ReflectionTestUtils.setField(listBucketsCmd, "objectStorageId", 42L);
+        SearchBuilder<BucketVO> sb = mock(SearchBuilder.class);
+        BucketVO bucketVO = mock(BucketVO.class);
+        when(sb.entity()).thenReturn(bucketVO);
+        when(bucketDao.createSearchBuilder()).thenReturn(sb);
+        SearchCriteria<BucketVO> sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        queryManagerImplSpy.searchForBuckets(listBucketsCmd);
+
+        verify(sb).and(eq("objectStoreId"), any(), eq(SearchCriteria.Op.EQ));
+        verify(sc).setParameters("objectStoreId", 42L);
+    }
+
+    @Test
+    public void testSearchForBucketsFiltersByCredentialScopeBucket() {
+        ListBucketsCmd cmd = new ListBucketsCmd();
+        ReflectionTestUtils.setField(cmd, "credentialScope", "bucket");
+        SearchBuilder<BucketVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(mock(BucketVO.class));
+        when(bucketDao.createSearchBuilder()).thenReturn(sb);
+        SearchCriteria<BucketVO> sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(bucketCredentialDao.listBucketIdsWithCredential()).thenReturn(Arrays.asList(7L, 9L));
+        when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        queryManagerImplSpy.searchForBuckets(cmd);
+
+        verify(sc).setParameters("withCredential", 7L, 9L);
+        verify(sc, never()).setParameters(eq("withoutCredential"), any());
+    }
+
+    @Test
+    public void testSearchForBucketsFiltersByCredentialScopeAccount() {
+        ListBucketsCmd cmd = new ListBucketsCmd();
+        ReflectionTestUtils.setField(cmd, "credentialScope", "account");
+        SearchBuilder<BucketVO> sb = mock(SearchBuilder.class);
+        when(sb.entity()).thenReturn(mock(BucketVO.class));
+        when(bucketDao.createSearchBuilder()).thenReturn(sb);
+        SearchCriteria<BucketVO> sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        when(bucketCredentialDao.listBucketIdsWithCredential()).thenReturn(Arrays.asList(7L));
+        when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(new ArrayList<>(), 0));
+
+        queryManagerImplSpy.searchForBuckets(cmd);
+
+        verify(sc).setParameters("withoutCredential", 7L);
+        verify(sc, never()).setParameters(eq("withCredential"), any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testSearchForBucketsRejectsUnknownCredentialScope() {
+        ListBucketsCmd cmd = new ListBucketsCmd();
+        ReflectionTestUtils.setField(cmd, "credentialScope", "nonsense");
+        queryManagerImplSpy.searchForBuckets(cmd);
     }
 
     @Test
