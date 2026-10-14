@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.Listener;
+import com.cloud.agent.api.CancelCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.transport.Request;
 import com.cloud.hypervisor.Hypervisor;
@@ -118,6 +119,39 @@ public class DirectAgentAttacheTest {
     @Test
     public void testUnknownSequenceIsNotClaimedCancellable() {
         Assert.assertFalse(directAgentAttache.isExecutionCancellable(999L));
+    }
+
+    @Test
+    public void testTimeoutStopsCancellableHypervisorWork() throws Exception {
+        final Request request = submitRunning(404L);
+        Mockito.doReturn(true).when(_resource).isRequestSequenceCancellable(404L);
+        Mockito.doReturn(true).when(_resource).cancelRequestSequence(404L);
+
+        Assert.assertTrue(directAgentAttache.cancelRunningOnTimeout(404L, request));
+
+        Mockito.verify(_resource).cancelRequestSequence(404L);
+        Mockito.verify(runningTask).cancel(true);
+    }
+
+    @Test
+    public void testTimeoutLeavesNonCancellableHypervisorWorkAlone() throws Exception {
+        final Request request = submitRunning(505L);
+        Mockito.doReturn(false).when(_resource).isRequestSequenceCancellable(505L);
+
+        Assert.assertFalse(directAgentAttache.cancelRunningOnTimeout(505L, request));
+
+        Mockito.verify(_resource, Mockito.never()).cancelRequestSequence(Mockito.anyLong());
+        Mockito.verify(runningTask, Mockito.never()).cancel(Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testTimedOutCancelCommandIsNotCancelledItself() throws Exception {
+        final Request request = new Request(_id, -1, new CancelCommand(1L, "probe", true), false);
+        request.setSequence(606L);
+
+        Assert.assertFalse(directAgentAttache.cancelRunningOnTimeout(606L, request));
+
+        Mockito.verify(_resource, Mockito.never()).isRequestSequenceCancellable(Mockito.anyLong());
     }
 
     private Request newRequest(final long seq) {
