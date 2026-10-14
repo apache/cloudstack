@@ -248,6 +248,18 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total backup storage space (in GiB) available to the project", since = "4.21.0")
     private String backupStorageAvailable;
 
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_LIMIT)
+    @Param(description = "The number of Instance Snapshots that can be stored by this project")
+    private String instanceSnapshotLimit;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_TOTAL)
+    @Param(description = "The number of instance snapshots stored by this project")
+    private Long instanceSnapshotTotal;
+
+    @SerializedName(ApiConstants.INSTANCE_SNAPSHOT_AVAILABLE)
+    @Param(description = "The number of Instance snapshots available for this project")
+    private String instanceSnapshotAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "The total number of Templates which can be created by this project", since = "4.2.0")
     private String templateLimit;
@@ -408,6 +420,21 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setBackupStorageAvailable(String backupStorageAvailable) {
         this.backupStorageAvailable = backupStorageAvailable;
+    }
+
+    @Override
+    public void setInstanceSnapshotLimit(String instanceSnapshotLimit) {
+        this.instanceSnapshotLimit = instanceSnapshotLimit;
+    }
+
+    @Override
+    public void setInstanceSnapshotTotal(Long instanceSnapshotTotal) {
+        this.instanceSnapshotTotal = instanceSnapshotTotal;
+    }
+
+    @Override
+    public void setInstanceSnapshotAvailable(String instanceSnapshotAvailable) {
+        this.instanceSnapshotAvailable = instanceSnapshotAvailable;
     }
 
     @Override
