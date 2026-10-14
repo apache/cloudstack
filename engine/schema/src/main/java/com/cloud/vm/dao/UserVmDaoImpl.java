@@ -82,6 +82,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
+    protected GenericSearchBuilder<UserVmVO, Long> IdsByAccountOrDomainsAndStateSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountActiveAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
 
@@ -142,6 +143,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountSearch = createSearchBuilder();
         AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
+
+        IdsByAccountOrDomainsAndStateSearch = createSearchBuilder(Long.class);
+        IdsByAccountOrDomainsAndStateSearch.selectFields(IdsByAccountOrDomainsAndStateSearch.entity().getId());
+        IdsByAccountOrDomainsAndStateSearch.and("accountId", IdsByAccountOrDomainsAndStateSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        IdsByAccountOrDomainsAndStateSearch.and("domainIds", IdsByAccountOrDomainsAndStateSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        IdsByAccountOrDomainsAndStateSearch.and("state", IdsByAccountOrDomainsAndStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        IdsByAccountOrDomainsAndStateSearch.done();
 
         IdsSearch = createSearchBuilder();
         IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -316,6 +324,21 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         SearchCriteria<UserVmVO> sc = AccountSearch.create();
         sc.setParameters("account", id);
         return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, State state) {
+        SearchCriteria<Long> sc = IdsByAccountOrDomainsAndStateSearch.create();
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainIds != null) {
+            sc.setParameters("domainIds", domainIds.toArray());
+        }
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
+        return customSearch(sc, null);
     }
 
     @Override

@@ -46,7 +46,10 @@ public class WebhookDeliveryVO implements WebhookDelivery {
     private String uuid;
 
     @Column(name = "event_id")
-    private long eventId;
+    private Long eventId;
+
+    @Column(name = "event_type")
+    private String eventType;
 
     @Column(name = "webhook_id")
     private long webhookId;
@@ -85,8 +88,13 @@ public class WebhookDeliveryVO implements WebhookDelivery {
     }
 
     @Override
-    public long getEventId() {
+    public Long getEventId() {
         return eventId;
+    }
+
+    @Override
+    public String getEventType() {
+        return eventType;
     }
 
     @Override
@@ -138,10 +146,11 @@ public class WebhookDeliveryVO implements WebhookDelivery {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public WebhookDeliveryVO(long eventId, long webhookId, long managementServerId, String headers, String payload,
-             boolean success, String response, Date startTime, Date endTime) {
+    public WebhookDeliveryVO(Long eventId, String eventType, long webhookId, long managementServerId, String headers,
+             String payload, boolean success, String response, Date startTime, Date endTime) {
         this.uuid = UUID.randomUUID().toString();
         this.eventId = eventId;
+        this.eventType = eventType;
         this.webhookId = webhookId;
         this.mangementServerId = managementServerId;
         this.headers = headers;

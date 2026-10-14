@@ -27,7 +27,8 @@ public interface WebhookDelivery extends Identity, InternalIdentity {
     public static final String TEST_EVENT_TYPE = "TEST.WEBHOOK";
 
     long getId();
-    long getEventId();
+    Long getEventId();
+    String getEventType();
     long getWebhookId();
     long getManagementServerId();
     String getHeaders();
