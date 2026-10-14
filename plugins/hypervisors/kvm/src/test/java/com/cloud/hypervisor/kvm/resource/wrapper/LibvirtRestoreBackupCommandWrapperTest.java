@@ -696,6 +696,17 @@ public class LibvirtRestoreBackupCommandWrapperTest {
     }
 
     @Test
+    public void testAttachVolumeOmitsQcow2SubdriverForStorPool() throws Exception {
+        String[] cmd = captureAttachCommand(Storage.StoragePoolType.StorPool);
+        List<String> args = Arrays.asList(cmd);
+
+        // StorPoolStorageAdaptor#createPhysicalDisk always provisions RAW block devices,
+        // declaring qcow2 makes libvirt try to parse the raw data as a qcow2 image.
+        Assert.assertTrue(args.contains("attach-disk"));
+        Assert.assertFalse(args.contains("--subdriver"));
+    }
+
+    @Test
     public void testAttachVolumePassesRbdXmlThroughAFile() throws Exception {
         String[] cmd = captureAttachCommand(Storage.StoragePoolType.RBD);
         List<String> args = Arrays.asList(cmd);
