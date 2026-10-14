@@ -4483,6 +4483,7 @@
 "label.usage.jobs": "Usage Jobs",
 "label.jobresult": "Result",
 "label.pending": "Pending",
+"label.period": "Period",
 "label.cancelled": "Cancelled",
 "label.last.hour": "Last hour",
 "label.last.24.hours": "Last 24 hours",
