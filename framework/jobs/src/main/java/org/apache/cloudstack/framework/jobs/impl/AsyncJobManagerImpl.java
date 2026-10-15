@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -154,6 +155,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private MessageBus _messageBus;
     @Inject
     private AsyncJobMonitor _jobMonitor;
+
+    private final Map<Long, String> cancelRequestedJobs = new ConcurrentHashMap<>();
     @Inject
     private VMInstanceDao _vmInstanceDao;
     @Inject
@@ -349,18 +352,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     @DB
-    public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject, final boolean remove) {
+    public void completeAsyncJob(final long jobId, final Status requestedStatus, final int requestedResultCode, final String requestedResult, final boolean remove) {
         String resultObj = null;
         if (logger.isDebugEnabled()) {
-            resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
-            logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObj);
+            resultObj = convertHumanReadableJson(obfuscatePassword(requestedResult, HidePassword.value()));
+            logger.debug("Complete async job-" + jobId + ", jobStatus: " + requestedStatus + ", resultCode: " + requestedResultCode + ", result: " + resultObj);
         }
 
 
         final AsyncJobVO job = _jobDao.findById(jobId);
         if (job == null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " +
+                logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + requestedStatus + ", resultCode: " + requestedResultCode + ", result: " +
                     resultObj);
             }
             // still purge item from queue to avoid any blocking
@@ -376,6 +379,14 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return;
         }
+
+        final String cancelReason = requestedStatus == JobInfo.Status.FAILED ? cancelReasonFor(job) : null;
+        if (cancelReason != null) {
+            logger.info("job-{} failed while its cancellation was being carried out; recording it as cancelled", jobId);
+        }
+        final Status jobStatus = cancelReason != null ? JobInfo.Status.CANCELLED : requestedStatus;
+        final int resultCode = cancelReason != null ? 0 : requestedResultCode;
+        final String resultObject = cancelReason != null ? "Job is cancelled due to " + cancelReason : requestedResult;
 
         if (resultObject != null) {
             job.updateResultWithEncryptionIfNeeded(resultObject);
@@ -1477,6 +1488,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return true;
     }
 
+    /** The reason a cancel is in flight for this job, or for the API job a VM work job runs on behalf of; null otherwise. */
+    String cancelReasonFor(final AsyncJobVO job) {
+        String reason = cancelRequestedJobs.get(job.getId());
+        if (reason == null && job.getRelated() != null && !job.getRelated().isEmpty()) {
+            try {
+                reason = cancelRequestedJobs.get(Long.parseLong(job.getRelated()));
+            } catch (final NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return reason;
+    }
+
+    void markCancelRequested(final long jobId, final String reason) {
+        cancelRequestedJobs.put(jobId, reason);
+    }
+
     void cancelQueuedChildJobs(final long parentJobId, final String reason) {
         for (final AsyncJobVO child : _jobDao.listChildJobs(parentJobId)) {
             if (child.getStatus() != null && child.getStatus().done()) {
@@ -1571,6 +1599,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         logger.debug("Cancelling job-{} which is in progress.", jobId);
+        markCancelRequested(jobId, reason);
         try {
             for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
                 if (!handler.cancelJobExecution(jobId, reason)) {
@@ -1589,6 +1618,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         } catch (final Throwable t) {
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
             logger.error(errMessage, t);
+        } finally {
+            cancelRequestedJobs.remove(jobId);
         }
         return errMessage;
     }

@@ -33,6 +33,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.junit.Assert;
 import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
@@ -163,5 +164,23 @@ public class AsyncJobManagerImplTest {
         Mockito.verify(queueItemDao, Mockito.never()).getQueueItemIdByContentIdAndType(Mockito.eq(11L), Mockito.anyString());
         Mockito.verify(asyncJobManager, Mockito.never()).completeAsyncJob(Mockito.anyLong(), Mockito.any(), Mockito.anyInt(), Mockito.anyString());
         Mockito.verify(queueMgr, Mockito.never()).purgeItem(Mockito.anyLong());
+    }
+
+    @Test
+    public void testCancelReasonCoversTheJobAndItsVmWorkChild() {
+        asyncJobManager.markCancelRequested(10L, "user request");
+
+        Assert.assertEquals("user request", asyncJobManager.cancelReasonFor(childJob(10L, JobInfo.Status.IN_PROGRESS)));
+        Assert.assertEquals("user request", asyncJobManager.cancelReasonFor(childJob(11L, JobInfo.Status.IN_PROGRESS)));
+        AsyncJobVO other = childJob(12L, JobInfo.Status.IN_PROGRESS);
+        other.setRelated("99");
+        Assert.assertNull(asyncJobManager.cancelReasonFor(other));
+    }
+
+    @Test
+    public void testNoCancelReasonWithoutARequest() {
+        AsyncJobVO job = childJob(12L, JobInfo.Status.IN_PROGRESS);
+        job.setRelated("");
+        Assert.assertNull(asyncJobManager.cancelReasonFor(job));
     }
 }
