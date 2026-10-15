@@ -1140,7 +1140,12 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
         egress4_allow_all = False
         ingress6_allow_all = False
         egress6_allow_all = False
+        egress4_has_rules = False
+        egress6_has_rules = False
         for rule in rules:
+            if rule['ruletype'] == 'E':
+                egress4_has_rules = egress4_has_rules or bool(rule['ipv4'])
+                egress6_has_rules = egress6_has_rules or bool(rule['ipv6'])
             if rule['protocol'].lower() == 'all':
                 if '0.0.0.0/0' in rule['ipv4']:
                     if rule['ruletype'] == 'E':
@@ -1153,8 +1158,11 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
                     else:
                         ingress6_allow_all = True
 
-        conntrack4_not_needed = ingress4_allow_all and egress4_allow_all
-        conntrack6_not_needed = ingress6_allow_all and egress6_allow_all
+        # The NOTRACK rules apply to the IP in both directions, so conntrack can only be skipped when
+        # ingress allows all and egress is open as well: either an explicit allow-all egress rule or no
+        # egress rules at all (the egress chain then accepts everything).
+        conntrack4_not_needed = ingress4_allow_all and (egress4_allow_all or not egress4_has_rules)
+        conntrack6_not_needed = ingress6_allow_all and (egress6_allow_all or not egress6_has_rules)
 
         if conntrack4_not_needed:
             add_to_ipset(NOTRACK_IPV4_IPSET, ip4s, "add")
