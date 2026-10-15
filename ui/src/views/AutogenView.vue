@@ -899,6 +899,9 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
+      if (routeName === 'jobs') {
+        return 'pending'
+      }
       if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers', 'networkoffering', 'extension'].includes(routeName)) {
         return 'all'
       }
@@ -997,6 +1000,14 @@ export default {
       delete params.q
       delete params.filter
       delete params.irefresh
+      if (this.$route.name === 'jobs') {
+        const jobStatus = { succeeded: '1', failed: '2', cancelled: '3', all: '0,1,2,3' }[this.$route.query.filter]
+        if (jobStatus) {
+          params.jobstatus = jobStatus
+        } else {
+          delete params.duration
+        }
+      }
 
       this.searchFilters = this.$route && this.$route.meta && this.$route.meta.searchFilters
       this.filters = this.$route && this.$route.meta && this.$route.meta.filters
@@ -2099,6 +2110,10 @@ export default {
           query.isallocated = (filter === 'allocatedonly')
         } else {
           delete query.isallocated
+        }
+      } else if (this.$route.name === 'jobs') {
+        if (filter === 'pending') {
+          delete query.duration
         }
       } else if (this.$route.name === 'event') {
         if (filter === 'archived') {
