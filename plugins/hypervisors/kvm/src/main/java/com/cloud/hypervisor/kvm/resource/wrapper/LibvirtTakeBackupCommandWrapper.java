@@ -53,6 +53,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // chain metadata. Matches nasbackup.sh's "legacy-full" mode (make_checkpoint=0).
     private static final String MODE_LEGACY_FULL = "legacy-full";
 
+    // Backup methods, orthogonal to the mode. qcow2 is the push-mode path with QEMU dirty bitmaps,
+    // also assumed when the management server sends none. rbd is the Ceph-native path: it anchors
+    // each cycle on an `rbd snap` and exports the delta with `rbd export-diff`, so bitmapNew and
+    // bitmapParent carry RBD snapshot names rather than QEMU bitmap names, and nothing is rebased.
+    private static final String METHOD_QCOW2 = "qcow2";
+    private static final String METHOD_RBD = "rbd";
+
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
@@ -158,6 +165,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             argv.add("-M");
             argv.add(mode);
         }
+        if (StringUtils.isNotBlank(command.getMethod())) {
+            argv.add("--method");
+            argv.add(command.getMethod());
+        }
         if (StringUtils.isNotBlank(bitmapNew)) {
             argv.add("--bitmap-new");
             argv.add(bitmapNew);
@@ -182,6 +193,13 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
      */
     private String validateBackupArgs(TakeBackupCommand command) {
         String mode = command.getMode();
+        String method = StringUtils.defaultIfBlank(command.getMethod(), METHOD_QCOW2);
+        if (METHOD_RBD.equals(method)) {
+            return validateRbdBackupArgs(command, mode);
+        }
+        if (!METHOD_QCOW2.equals(method)) {
+            return "Unknown backup method: " + method;
+        }
         if (StringUtils.isBlank(mode)) {
             return null; // legacy full-only, no extra args expected
         }
@@ -210,9 +228,35 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     }
 
     /**
+     * An RBD chain anchors each cycle on an {@code rbd snap} whose name travels in bitmapNew, and
+     * an incremental diffs it against the previous anchor in bitmapParent. No parent file paths:
+     * the diff stream is replayed on restore rather than rebased onto its parent.
+     */
+    private String validateRbdBackupArgs(TakeBackupCommand command, String mode) {
+        if (!MODE_FULL.equals(mode) && !MODE_INCREMENTAL.equals(mode)) {
+            return "Unknown backup mode for the rbd method: " + mode;
+        }
+        if (command.getBitmapNew() == null || command.getBitmapNew().isEmpty()) {
+            return mode + " mode requires bitmapNew (the RBD snapshot to create as the chain anchor)";
+        }
+        if (MODE_INCREMENTAL.equals(mode)
+                && (command.getBitmapParent() == null || command.getBitmapParent().isEmpty())) {
+            return "incremental mode requires bitmapParent (the RBD snapshot to diff against)";
+        }
+        if (command.getVolumePaths() == null || command.getVolumePaths().isEmpty()) {
+            return mode + " mode requires the VM's volume paths";
+        }
+        return null;
+    }
+
+    /**
      * Sum the per-disk size lines emitted by nasbackup.sh. Single-volume mode emits one
      * line containing just the byte count; multi-volume mode emits one line per disk
      * whose first whitespace-separated token is the byte count.
+     *
+     * <p>Lines that do not start with a number are skipped rather than aborting the parse: the
+     * script's stdout also carries whatever the mount produced, and losing an otherwise complete
+     * backup over a stray warning line would be worse than reporting a size of 0.</p>
      */
     private long parseBackupSize(String stdout, List<String> diskPaths) {
         long backupSize = 0L;
@@ -223,7 +267,12 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         } else {
             for (String line : stdout.split("\n")) {
-                backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
+                String sizeToken = line.trim().split("\\s+")[0];
+                if (!sizeToken.matches("\\d+")) {
+                    logger.debug("Ignoring non-size line in nasbackup.sh output: {}", line);
+                    continue;
+                }
+                backupSize = backupSize + Long.parseLong(sizeToken);
             }
         }
         return backupSize;

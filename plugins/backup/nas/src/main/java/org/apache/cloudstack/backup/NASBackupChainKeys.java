@@ -27,8 +27,20 @@ public final class NASBackupChainKeys {
     /** UUID of the parent backup (full or previous incremental). Empty for full backups. */
     public static final String PARENT_BACKUP_ID = "nas.parent_backup_id";
 
-    /** QEMU dirty-bitmap name created by this backup, used as the {@code <incremental>} reference for the next one. */
+    /**
+     * Name of the point-in-time anchor this backup created, used as the parent reference for the
+     * next backup in the chain. Its meaning depends on the chain format: for {@link #FORMAT_QCOW2}
+     * chains it is the QEMU dirty-bitmap name used as the {@code <incremental>} reference; for
+     * {@link #FORMAT_RBD_DIFF} chains it is the RBD snapshot name used as {@code --from-snap}.
+     */
     public static final String BITMAP_NAME = "nas.bitmap_name";
+
+    /**
+     * On-NAS format of the chain this backup belongs to: {@link #FORMAT_QCOW2} (rebased qcow2
+     * files, the file-based storage path) or {@link #FORMAT_RBD_DIFF} ({@code rbd export-diff}
+     * streams, the Ceph/RBD path). Absent on legacy-full backups, which are always qcow2.
+     */
+    public static final String CHAIN_FORMAT = "nas.chain_format";
 
     /** Identifier shared by every backup in the same chain (the full anchors a chain; its incrementals inherit the id). */
     public static final String CHAIN_ID = "nas.chain_id";
@@ -49,6 +61,31 @@ public final class NASBackupChainKeys {
     public static final String TYPE_LEGACY_FULL = "legacy-full";
 
     /**
+     * In-memory backup-method sentinels used by {@code ChainDecision.method}: how a backup is
+     * taken, independent of whether it is a full or an incremental ({@code ChainDecision.mode}).
+     *
+     * <p>{@link #METHOD_QCOW2}: libvirt push-mode backup; incrementals come from QEMU persistent
+     * dirty bitmaps (libvirt checkpoints), which only qcow2 volumes can carry.</p>
+     */
+    public static final String METHOD_QCOW2 = "qcow2";
+
+    /**
+     * Content-based libvirt pull-mode backup, used for raw block-device storage such as
+     * LINSTOR/DRBD which cannot carry persistent dirty bitmaps. A full is written as a sparse
+     * qcow2 in a single pass; an incremental is a qcow2 overlay on the disk's NBD export,
+     * safe-rebased onto the parent so it holds only the clusters that differ.
+     */
+    public static final String METHOD_CONTENT = "content";
+
+    /**
+     * Ceph-native backup, used for RBD volumes. They are raw and cannot carry a persistent dirty
+     * bitmap, so each cycle anchors on an RBD snapshot and exports the delta with
+     * {@code rbd export-diff}. Unlike the other methods this one writes {@link #FORMAT_RBD_DIFF}
+     * streams rather than qcow2 files, which is what {@link #CHAIN_FORMAT} records for restore.
+     */
+    public static final String METHOD_RBD = "rbd";
+
+    /**
      * VM-scoped detail (stored in {@code vm_instance_details}) holding the QEMU dirty-bitmap
      * name that currently exists on the running VM and is therefore the only valid parent
      * for the next incremental backup. Written by {@link #BITMAP_NAME} on each successful
@@ -56,6 +93,10 @@ public final class NASBackupChainKeys {
      * must be a fresh full). When the VM has no detail, {@code decideChain} forces full.
      */
     public static final String VM_ACTIVE_CHECKPOINT_ID = "nas.active_checkpoint_id";
+
+    /** Chain format values persisted under {@link #CHAIN_FORMAT}; also the on-NAS file extension. */
+    public static final String FORMAT_QCOW2 = "qcow2";
+    public static final String FORMAT_RBD_DIFF = "rbddiff";
 
     private NASBackupChainKeys() {
     }
