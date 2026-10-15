@@ -29,7 +29,22 @@ export default {
       title: 'label.jobs',
       icon: 'ClockCircleOutlined',
       permission: ['listAsyncJobs'],
-      component: () => import('@/views/activity/JobsView.vue'),
+      columns: [
+        { field: 'cmd', customTitle: 'command' },
+        { field: 'jobstatus', customTitle: 'status' },
+        { field: 'jobinstancetype', customTitle: 'resourcetype' },
+        { field: 'jobinstancename', customTitle: 'resource' },
+        'account',
+        { field: 'domainpath', customTitle: 'domain' },
+        'managementservername',
+        'created',
+        'completed',
+        'jobresult'
+      ],
+      filters: () => {
+        return ['pending', 'succeeded', 'failed', 'cancelled', 'all']
+      },
+      searchFilters: ['domainid', 'account', 'resourcetype', 'duration'],
       related: [{
         name: 'event',
         title: 'label.events',
