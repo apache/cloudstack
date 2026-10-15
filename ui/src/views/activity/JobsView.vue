@@ -16,18 +16,21 @@
 // under the License.
 
 <template>
-  <a-card class="jobs-view">
+  <autogen-view v-if="$route.params.id" />
+  <a-card v-else class="jobs-view">
     <async-jobs-tab />
   </a-card>
 </template>
 
 <script>
 import AsyncJobsTab from '@/views/infra/AsyncJobsTab'
+import AutogenView from '@/views/AutogenView'
 
 export default {
   name: 'JobsView',
   components: {
-    AsyncJobsTab
+    AsyncJobsTab,
+    AutogenView
   }
 }
 </script>

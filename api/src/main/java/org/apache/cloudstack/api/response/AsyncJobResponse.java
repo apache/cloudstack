@@ -31,6 +31,10 @@ import com.cloud.serializer.Param;
 @EntityReference(value = JobInfo.class)
 public class AsyncJobResponse extends BaseResponse {
 
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "The ID of the async job", since = "24.0")
+    private String id;
+
     @SerializedName("accountid")
     @Param(description = "The Account ID that executed the async command")
     private String accountId;
@@ -42,6 +46,10 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName("domainid")
     @Param(description = "The domain ID that executed the async command")
     private String domainid;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "The domain name that executed the async command", since = "24.0")
+    private String domain;
 
     @SerializedName("domainpath")
     @Param(description = "The domain that executed the async command")
@@ -90,6 +98,18 @@ public class AsyncJobResponse extends BaseResponse {
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
     @Param(description = "the management server name of the host", since = "4.21.0")
     private String managementServerName;
+
+    @SerializedName("initmanagementservername")
+    @Param(description = "The name of the management server that initiated the job", since = "24.0")
+    private String initManagementServerName;
+
+    @SerializedName("executingmanagementservername")
+    @Param(description = "The name of the management server executing the job", since = "24.0")
+    private String executingManagementServerName;
+
+    @SerializedName("completemanagementservername")
+    @Param(description = "The name of the management server that completed the job", since = "24.0")
+    private String completeManagementServerName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The created date of the job")
@@ -145,6 +165,26 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setJobInstanceId(String jobInstanceId) {
         this.jobInstanceId = jobInstanceId;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public void setInitManagementServerName(String initManagementServerName) {
+        this.initManagementServerName = initManagementServerName;
+    }
+
+    public void setExecutingManagementServerName(String executingManagementServerName) {
+        this.executingManagementServerName = executingManagementServerName;
+    }
+
+    public void setCompleteManagementServerName(String completeManagementServerName) {
+        this.completeManagementServerName = completeManagementServerName;
     }
 
     public void setJobInstanceName(String jobInstanceName) {

@@ -55,17 +55,27 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         _count = "select count(distinct id) from async_job_view WHERE ";
     }
 
+    private String managementServerName(final Long msid) {
+        if (msid == null) {
+            return null;
+        }
+        final ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
+        return managementServer != null ? managementServer.getName() : null;
+    }
+
     @Override
     public AsyncJobResponse newAsyncJobResponse(final AsyncJobJoinVO job) {
         final AsyncJobResponse jobResponse = new AsyncJobResponse();
         jobResponse.setAccountId(job.getAccountUuid());
         jobResponse.setAccount(job.getAccountName());
         jobResponse.setDomainId(job.getDomainUuid());
+        jobResponse.setDomain(job.getDomainName());
         jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
         jobResponse.setRemoved(job.getRemoved());
+        jobResponse.setId(job.getUuid());
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
@@ -79,6 +89,9 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
             }
         }
 
+        jobResponse.setInitManagementServerName(managementServerName(job.getInitMsid()));
+        jobResponse.setExecutingManagementServerName(managementServerName(job.getExecutingMsid()));
+        jobResponse.setCompleteManagementServerName(managementServerName(job.getCompleteMsid()));
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
             jobResponse.setJobInstanceId(job.getInstanceUuid());
