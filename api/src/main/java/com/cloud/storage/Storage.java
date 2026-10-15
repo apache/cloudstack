@@ -185,7 +185,8 @@ public class Storage {
         Linstor(true, true, EncryptionSupport.Storage),
         DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
         StorPool(true, true, EncryptionSupport.Hypervisor),
-        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        FiberChannel(true, true, EncryptionSupport.Unsupported), // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        OntapiSCSI(true, true, EncryptionSupport.Unsupported); // NetApp ONTAP iSCSI
 
         private final boolean shared;
         private final boolean overProvisioning;
