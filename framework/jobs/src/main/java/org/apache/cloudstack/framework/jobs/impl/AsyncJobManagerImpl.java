@@ -391,7 +391,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return;
         }
 
-        final String cancelReason = requestedStatus == JobInfo.Status.FAILED ? cancelReasonFor(job) : null;
+        final String cancelReason = requestedStatus == JobInfo.Status.FAILED ? cancelReasonIncludingParent(job) : null;
         if (cancelReason != null) {
             logger.info("job-{} failed while its cancellation was being carried out; recording it as cancelled", jobId);
         }
@@ -1525,6 +1525,49 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         response.setErrorCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
         response.setErrorText(text);
         return JobSerializerHelper.toSerializedString(response);
+    }
+
+    @Override
+    public String getCancellationReason(final long jobId) {
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
+        if (job == null) {
+            return null;
+        }
+        final String reason = cancelReasonFor(job);
+        if (reason != null) {
+            return reason;
+        }
+        if (job.getStatus() == JobInfo.Status.CANCELLED) {
+            return "job was cancelled";
+        }
+        if (job.getRelated() != null && !job.getRelated().isEmpty()) {
+            try {
+                final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
+                if (parent != null && parent.getStatus() == JobInfo.Status.CANCELLED) {
+                    return "job-" + parent.getId() + " was cancelled";
+                }
+            } catch (final NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /** The in-flight reason, else the fact that the API job this VM work job runs for was already cancelled (possibly on another server). */
+    private String cancelReasonIncludingParent(final AsyncJobVO job) {
+        final String reason = cancelReasonFor(job);
+        if (reason != null || job.getRelated() == null || job.getRelated().isEmpty()) {
+            return reason;
+        }
+        try {
+            final AsyncJobVO parent = _jobDao.findByIdIncludingRemoved(Long.parseLong(job.getRelated()));
+            if (parent != null && parent.getStatus() == JobInfo.Status.CANCELLED) {
+                return "job-" + parent.getId() + " was cancelled";
+            }
+        } catch (final NumberFormatException ignored) {
+            return null;
+        }
+        return null;
     }
 
     void markCancelRequested(final long jobId, final String reason) {
