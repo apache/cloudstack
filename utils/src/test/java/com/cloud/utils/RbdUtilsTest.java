@@ -119,6 +119,7 @@ public class RbdUtilsTest {
     @Test
     public void testComposeOptionForMonHostsWithoutAPortLeavesTheMonitorAlone() {
         assertEquals("ceph-monitor", RbdUtils.composeOptionForMonHosts("ceph-monitor", 0));
+        assertEquals("fd00\\:\\:1", RbdUtils.composeOptionForMonHosts("fd00::1", 0));
     }
 
     @Test
