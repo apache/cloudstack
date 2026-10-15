@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { cancelJobAction } from '@/utils/asyncjob'
 
 export default {
   name: 'activity',
@@ -38,24 +39,7 @@ export default {
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/views/activity/JobDetailsTab.vue')))
       }],
-      actions: [
-        {
-          api: 'cancelAsyncJob',
-          icon: 'close-circle-outlined',
-          label: 'label.cancel.job',
-          message: 'message.confirm.cancel.job',
-          dataView: true,
-          args: ['jobid'],
-          mapping: {
-            jobid: {
-              value: (record) => { return record.jobid }
-            }
-          },
-          show: (record, store) => {
-            return ['Admin'].includes(store.userInfo.roletype)
-          }
-        }
-      ]
+      actions: [cancelJobAction]
     },
     {
       name: 'event',
