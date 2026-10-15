@@ -173,6 +173,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.agent.api.GetVmIpAddressAnswer;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.agent.api.GetVmNetworkStatsAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsCommand;
@@ -770,6 +771,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    private void updateNicIp6Address(NicVO nic, String vmIp6) {
+        if (nic == null || vmIp6 == null || !NetUtils.isValidIp6(vmIp6) || vmIp6.equals(nic.getIPv6Address())) {
+            return;
+        }
+        nic.setIPv6Address(vmIp6);
+        _nicDao.update(nic.getId(), nic);
+    }
+
     private class VmIpAddrFetchThread extends ManagedContextRunnable {
         long nicId;
         long vmId;
@@ -802,11 +811,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Answer answer = _agentMgr.send(hostId, cmd);
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();
+                    String vmIp6 = answer instanceof GetVmIpAddressAnswer ? ((GetVmIpAddressAnswer) answer).getIp6Address() : null;
                     if (vmIp == null) {
-                        // we got a valid response and the NIC does not have an IP assigned, as such we will update the database with null
+                        // we got a valid response and the NIC does not have an IPv4 address assigned, as such we will update the database with null
                         if (nic.getIPv4Address() != null) {
                             nic.setIPv4Address(null);
                             _nicDao.update(nicId, nic);
+                        }
+                        if (vmIp6 != null && NetUtils.isValidIp6(vmIp6)) {
+                            // IPv6-only guest
+                            updateNicIp6Address(nic, vmIp6);
+                            logger.debug("Instance [ID: {}, UUID: {}, name: {}] - IPv6 {} retrieved successfully", vmId, vmUuid, vmName, vmIp6);
+                            vmIdCountMap.remove(nicId);
+                            decrementCount = false;
                         }
                     } else if (NetUtils.isLinkLocalIp4(vmIp)) {
                         // a link-local (APIPA) address means the guest has not obtained a DHCP lease yet; do not record it,
@@ -823,6 +840,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // set this vm ip addr in vm nic.
                         if (nic != null) {
                             nic.setIPv4Address(vmIp);
+                            if (vmIp6 != null && NetUtils.isValidIp6(vmIp6)) {
+                                nic.setIPv6Address(vmIp6);
+                            }
                             _nicDao.update(nicId, nic);
                             logger.debug("Instance [ID: {}, UUID: {}, name: {}] - IP {} retrieved successfully", vmId, vmUuid, vmName, vmIp);
                             vmIdCountMap.remove(nicId);
