@@ -46,7 +46,7 @@ public class RbdUtils {
         return String.join(",", monitors);
     }
 
-    public static String addPortToRbdMonitor(String monitor, int port) {
+    protected static String addPortToRbdMonitor(String monitor, int port) {
         if (monitor.startsWith("[")) {
             // IPv6 address in square brackets, which has a port if followed by ":<port>"
             return monitor.contains("]:") ? monitor : monitor + ":" + port;
