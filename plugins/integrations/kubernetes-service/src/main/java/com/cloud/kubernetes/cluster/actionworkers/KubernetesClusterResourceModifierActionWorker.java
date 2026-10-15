@@ -80,6 +80,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -551,7 +552,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 rule = firewallRule;
                 break;
             }
-            if (rule == null) {
+            if (rule == null && firewallRule.getSourcePortStart() != null
+                    && firewallRule.getSourcePortStart() < KubernetesClusterService.KubernetesEtcdNodeStartPort.value()) {
                 PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
                 if (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) {
                     rule = firewallRule;
@@ -563,6 +565,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             logger.debug("The SSH firewall rule {} with the id {} was revoked", rule.getName(), rule.getId());
         }
         return rule;
+    }
+
+    protected void removeEtcdFirewallRules(final IpAddress publicIp) {
+        Long etcdNodeCount = kubernetesCluster.getEtcdNodeCount();
+        if (etcdNodeCount == null || etcdNodeCount <= 0) {
+            return;
+        }
+        int etcdStartPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+        int etcdEndPort = etcdStartPort + etcdNodeCount.intValue() - 1;
+        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
+        for (FirewallRuleVO firewallRule : firewallRules) {
+            Integer startPort = firewallRule.getSourcePortStart();
+            if (startPort != null && startPort >= etcdStartPort && startPort <= etcdEndPort) {
+                firewallService.revokeIngressFwRule(firewallRule.getId(), true);
+                logger.debug("The etcd SSH firewall rule {} with the id {} was revoked", firewallRule.getName(), firewallRule.getId());
+            }
+        }
     }
 
     protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {

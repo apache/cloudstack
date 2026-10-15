@@ -19,6 +19,7 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -209,5 +210,46 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Assert.assertNull(kubernetesClusterResourceModifierActionWorker.removeSshFirewallRule(publicIpMock, NETWORK_ID));
         Mockito.verifyNoMoreInteractions(firewallServiceMock);
+    }
+
+    @Test
+    public void removeSshFirewallRuleTestDoesNotPickEtcdRuleWhenNodeRuleMissing() {
+        FirewallRuleVO etcdRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(etcdRule.getSourcePortStart()).thenReturn(KubernetesClusterService.KubernetesEtcdNodeStartPort.value());
+        mockSshFirewallRules(etcdRule);
+
+        Assert.assertNull(kubernetesClusterResourceModifierActionWorker.removeSshFirewallRule(publicIpMock, NETWORK_ID));
+        Mockito.verify(firewallServiceMock, Mockito.never()).revokeIngressFwRule(Mockito.anyLong(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void removeEtcdFirewallRulesTestRevokesOnlyEtcdRangeRules() {
+        int etcdStart = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+        Mockito.when(kubernetesClusterMock.getEtcdNodeCount()).thenReturn(2L);
+
+        FirewallRuleVO nodeRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(nodeRule.getSourcePortStart()).thenReturn(KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT);
+        FirewallRuleVO etcdRuleOne = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(etcdRuleOne.getSourcePortStart()).thenReturn(etcdStart);
+        Mockito.when(etcdRuleOne.getId()).thenReturn(21L);
+        FirewallRuleVO etcdRuleTwo = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(etcdRuleTwo.getSourcePortStart()).thenReturn(etcdStart + 1);
+        Mockito.when(etcdRuleTwo.getId()).thenReturn(22L);
+        mockSshFirewallRules(nodeRule, etcdRuleOne, etcdRuleTwo);
+
+        kubernetesClusterResourceModifierActionWorker.removeEtcdFirewallRules(publicIpMock);
+
+        Mockito.verify(firewallServiceMock).revokeIngressFwRule(21L, true);
+        Mockito.verify(firewallServiceMock).revokeIngressFwRule(22L, true);
+        Mockito.verifyNoMoreInteractions(firewallServiceMock);
+    }
+
+    @Test
+    public void removeEtcdFirewallRulesTestNoOpWhenClusterHasNoEtcdNodes() {
+        Mockito.when(kubernetesClusterMock.getEtcdNodeCount()).thenReturn(null);
+
+        kubernetesClusterResourceModifierActionWorker.removeEtcdFirewallRules(publicIpMock);
+
+        Mockito.verifyNoInteractions(firewallServiceMock, firewallRulesDaoMock);
     }
 }
