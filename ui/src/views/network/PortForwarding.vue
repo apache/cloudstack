@@ -274,13 +274,15 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option
-                  v-for="(nic, nicIndex) in nics"
-                  :key="nic"
-                  :value="nic"
-                  :label="nic">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
+                <a-select-opt-group v-for="group in groupedNicIpOptions" :key="group.kind" :label="group.label">
+                  <a-select-option
+                    v-for="item in group.items"
+                    :key="item.ip"
+                    :value="item.ip"
+                    :label="item.ip + ' ' + item.networkname">
+                    {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                  </a-select-option>
+                </a-select-opt-group>
               </a-select>
             </template>
 
@@ -350,6 +352,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import { buildNicIpOptions, groupNicIpOptionsByKind, resolveNetworkIdForIp } from '@/utils/multiNetworkNic'
 
 export default {
   components: {
@@ -399,7 +402,7 @@ export default {
       addVmModalLoading: false,
       addVmModalNicLoading: false,
       vms: [],
-      nics: [],
+      nicIpOptions: [],
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -480,6 +483,9 @@ export default {
   computed: {
     hasSelected () {
       return this.selectedRowKeys.length > 0
+    },
+    groupedNicIpOptions () {
+      return groupNicIpOptionsByKind(this.nicIpOptions, this.$t)
     }
   },
   beforeCreate () {
@@ -653,7 +659,8 @@ export default {
       if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
-      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+      const primaryNetworkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = resolveNetworkIdForIp(this.nicIpOptions, this.newRule.vmguestip, primaryNetworkId)
       postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
@@ -706,7 +713,7 @@ export default {
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
       this.showConfirmationAction = false
-      this.nics = []
+      this.nicIpOptions = []
       this.checked = false
       this.resetTagInputs()
     },
@@ -806,20 +813,16 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchNics (e) {
-      this.nics = []
+      this.nicIpOptions = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
       getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
-        if (!response.listnicsresponse.nic || response.listnicsresponse.nic.length < 1) return
-        const nic = response.listnicsresponse.nic[0]
-        this.nics.push(nic.ipaddress)
-        if (nic.secondaryip && nic.secondaryip.length > 0) {
-          this.nics.push(...nic.secondaryip.map(ip => ip.ipaddress))
-        }
-        this.newRule.vmguestip = this.nics[0]
+        const nics = response.listnicsresponse.nic || []
+        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic))
+        this.newRule.vmguestip = this.nicIpOptions[0]?.ip
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1084,5 +1087,9 @@ export default {
     margin-bottom: 10px;
     width: 50%;
     float: right;
+  }
+
+  .nic-select__network {
+    color: rgba(0, 0, 0, 0.45);
   }
 </style>

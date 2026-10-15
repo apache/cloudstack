@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
@@ -27,11 +29,15 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd.NicNetworkGrouping;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -77,6 +83,13 @@ public class AssignVMCmd extends BaseCmd  {
                    "In case there is no network yet created for the new account the default network will be created.")
     private List<Long> networkIds;
 
+    @Parameter(name = ApiConstants.NIC_NETWORKS_LIST, type = CommandType.MAP, since = "24.0.0",
+            description = "one entry per nic, each naming the set of networks that nic is associated with as a multi-VLAN trunk."
+                    + " The first network id in each entry is the nic's primary network. Carries a trunk nic's associations across"
+                    + " this move instead of rebuilding them as separate nics. Can't be specified with networkIds."
+                    + " Example: nicnetworkslist[0].networkids=uuid1,uuid2,uuid3")
+    private Map nicNetworksList;
+
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
@@ -109,7 +122,26 @@ public class AssignVMCmd extends BaseCmd  {
     }
 
     public List<Long> getNetworkIds() {
+        if (MapUtils.isNotEmpty(nicNetworksList)) {
+            if (CollectionUtils.isNotEmpty(networkIds)) {
+                throw new InvalidParameterValueException(String.format("%s can't be specified along with %s",
+                        ApiConstants.NIC_NETWORKS_LIST, ApiConstants.NETWORK_IDS));
+            }
+            List<Long> primaryNetworkIds = new ArrayList<>();
+            for (NicNetworkGrouping grouping : getNicNetworksList()) {
+                primaryNetworkIds.add(grouping.getPrimaryNetworkId());
+            }
+            return primaryNetworkIds;
+        }
         return networkIds;
+    }
+
+    /**
+     * One entry per requested nic, each naming its full network association set (primary first). Empty when
+     * nicnetworkslist wasn't supplied, in which case the plain networkIds param keeps its exact present meaning.
+     */
+    public List<NicNetworkGrouping> getNicNetworksList() {
+        return BaseDeployVMCmd.parseNicNetworksList(nicNetworksList, _networkService);
     }
 
     public List<Long> getSecurityGroupIdList() {

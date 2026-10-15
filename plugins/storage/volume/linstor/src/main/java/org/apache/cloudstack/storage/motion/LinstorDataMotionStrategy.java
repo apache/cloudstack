@@ -37,12 +37,15 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -54,6 +57,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -115,6 +119,10 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
     private SnapshotDao _snapshotDao;
     @Inject
     private AgentManager _agentManager;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private NicDao nicDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
 
@@ -441,8 +449,9 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             }
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
+            Answer pfma;
             try {
-                Answer pfma = _agentManager.send(destHost.getId(), pfmc);
+                pfma = _agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -471,10 +480,16 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
+            VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, (PrepareForMigrationAnswer) pfma, hostDetailsDao, destHost.getId());
+
             MigrateAnswer migrateAnswer = (MigrateAnswer) _agentManager.send(srcHost.getId(), migrateCommand);
             boolean success = migrateAnswer != null && migrateAnswer.getResult();
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
+
+            if (success) {
+                VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger);
+            }
 
             if (migrateAnswer == null) {
                 throw new CloudRuntimeException("Unable to get an answer to the migrate command");

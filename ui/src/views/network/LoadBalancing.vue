@@ -545,13 +545,15 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option
-                  v-for="(nic, nicIndex) in nics[index]"
-                  :key="nic"
-                  :value="nic"
-                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
+                <a-select-opt-group v-for="group in groupedNicIpOptionsFor(index)" :key="group.kind" :label="group.label">
+                  <a-select-option
+                    v-for="item in group.items"
+                    :key="item.ip"
+                    :value="item.ip"
+                    :label="item.ip + ' ' + item.networkname">
+                    {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                  </a-select-option>
+                </a-select-opt-group>
               </a-select>
             </template>
 
@@ -812,6 +814,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildNicIpOptions, groupNicIpOptionsByKind, resolveNetworkIdForIp } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'LoadBalancing',
@@ -1060,6 +1063,9 @@ export default {
     }
   },
   methods: {
+    groupedNicIpOptionsFor (index) {
+      return groupNicIpOptionsByKind(this.nics[index] || [], this.$t)
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1853,13 +1859,9 @@ export default {
         networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
-        const newItem = []
-        newItem.push(response.listnicsresponse.nic[0].ipaddress)
-        if (response.listnicsresponse.nic[0].secondaryip) {
-          newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
-        }
-        this.nics[index] = newItem
-        this.newRule.vmguestip[index] = [this.nics[index][0]]
+        const nicsReturned = response.listnicsresponse.nic || []
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic))
+        this.newRule.vmguestip[index] = [this.nics[index][0]?.ip]
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1956,7 +1958,7 @@ export default {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
             if (this.vpcConserveMode) {
-              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], i, this.selectedTier)
             }
             innerCount++
           })
@@ -1964,7 +1966,7 @@ export default {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
           if (this.vpcConserveMode && ip != null) {
-            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], ip, this.selectedTier)
           }
           innerCount++
         }
@@ -2562,5 +2564,9 @@ export default {
     margin-bottom: 10px;
     width: 50%;
     float: right;
+  }
+
+  .nic-select__network {
+    color: rgba(0, 0, 0, 0.45);
   }
 </style>

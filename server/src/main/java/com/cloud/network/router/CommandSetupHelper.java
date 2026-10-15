@@ -157,7 +157,10 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 public class CommandSetupHelper {
 
@@ -170,6 +173,8 @@ public class CommandSetupHelper {
     private DomainDao domainDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -251,6 +256,8 @@ public class CommandSetupHelper {
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_NAME_FILE, customCloudName);
             }
 
+            addNicVlanMappingToVmData(vmDataCommand, vm, nic);
+
             cmds.addCommand("vmdata", vmDataCommand);
         }
     }
@@ -277,23 +284,38 @@ public class CommandSetupHelper {
     }
 
     public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, boolean remove, final Commands cmds) {
-        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIPv4Address(), vm.getHostName(), nic.getIPv6Address(),
-                _networkModel.getExecuteInSeqNtwkElmtCmd());
+        createDhcpEntryCommand(router, vm, nic.getMacAddress(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getIPv4Gateway(), nic.getIPv6Gateway(),
+                nic.getNetworkId(), nic.isDefaultNic(), remove, false, cmds);
+    }
 
-        String gatewayIp = nic.getIPv4Gateway();
+    // Same as createDhcpEntryCommand(router, vm, NicVO, ...), but for a nic's association with a network other
+    // than its primary (multi-VLAN trunk nics) - takes the addressing explicitly, since a nic's own DB row only
+    // ever carries its primary network's IP/gateway. Always called with isAssociatedNetwork=true: this is the
+    // one overload every trunk-association DHCP push goes through, directly (never via the NicVO overload above).
+    public void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final Commands cmds) {
+        createDhcpEntryCommand(router, vm, macAddress, ip4Address, ip6Address, ip4Gateway, ip6Gateway, networkId, isDefaultNic, remove, true, cmds);
+    }
+
+    private void createDhcpEntryCommand(final VirtualRouter router, final UserVm vm, final String macAddress, final String ip4Address, final String ip6Address,
+            final String ip4Gateway, final String ip6Gateway, final long networkId, final boolean isDefaultNic, boolean remove, final boolean isAssociatedNetwork,
+            final Commands cmds) {
+        final DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(macAddress, ip4Address, vm.getHostName(), ip6Address,
+                _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
 
-        dhcpCommand.setDefaultRouter(gatewayIp);
-        dhcpCommand.setIp6Gateway(nic.getIPv6Gateway());
+        dhcpCommand.setDefaultRouter(ip4Gateway);
+        dhcpCommand.setIp6Gateway(ip6Gateway);
         String ipaddress = null;
         final NicVO domrDefaultNic = findDefaultDnsIp(vm.getId());
         if (domrDefaultNic != null) {
             ipaddress = domrDefaultNic.getIPv4Address();
         }
         dhcpCommand.setDefaultDns(ipaddress);
-        dhcpCommand.setDuid(NetUtils.getDuidLL(nic.getMacAddress()));
-        dhcpCommand.setDefault(nic.isDefaultNic());
+        dhcpCommand.setDuid(NetUtils.getDuidLL(macAddress));
+        dhcpCommand.setDefault(isDefaultNic);
+        dhcpCommand.setAssociatedNetwork(isAssociatedNetwork);
         dhcpCommand.setRemove(remove);
 
         // Set DHCP lease timeout from zone-scoped config (0 = infinite)
@@ -302,7 +324,7 @@ public class CommandSetupHelper {
 
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
+        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmds.addCommand("dhcp", dhcpCommand);
@@ -818,6 +840,36 @@ public class CommandSetupHelper {
                 logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                 createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
+        }
+        createDhcpEntryCommandsForAssociatedNics(router, cmds, guestNetworkId, dc, dnsBasicZoneUpdates);
+    }
+
+    // A nic whose primary network is something else but is also associated with guestNetworkId (multi-VLAN
+    // trunk nic) is invisible to the primary-only lookup above, so a full VR rebuild would otherwise drop its
+    // entry - it would keep its current lease but fail to renew once this VR is the only one it can ask.
+    private void createDhcpEntryCommandsForAssociatedNics(final DomainRouterVO router, final Commands cmds, final long guestNetworkId,
+            final DataCenterVO dc, final String dnsBasicZoneUpdates) {
+        final NetworkVO network = _networkDao.findById(guestNetworkId);
+        if (network == null) {
+            return;
+        }
+        for (final NicNetworkMapVO association : _nicNetworkMapDao.listByNetworkId(guestNetworkId)) {
+            final NicVO nic = _nicDao.findById(association.getNicId());
+            if (nic == null) {
+                continue;
+            }
+            final UserVmVO vm = _userVmDao.findById(nic.getInstanceId());
+            if (vm == null || !(vm.getState() == VirtualMachine.State.Running || vm.getState() == VirtualMachine.State.Migrating
+                    || vm.getState() == VirtualMachine.State.Stopping)) {
+                continue;
+            }
+            if (dc.getNetworkType() == NetworkType.Basic && router.getPodIdToDeployIn().longValue() != vm.getPodIdToDeployIn().longValue()
+                    && dnsBasicZoneUpdates.equalsIgnoreCase("pod")) {
+                continue;
+            }
+            logger.debug("Creating dhcp entry for vm " + vm + "'s association with network " + guestNetworkId + " on domR " + router + ".");
+            createDhcpEntryCommand(router, vm, nic.getMacAddress(), association.getIp4Address(), association.getIp6Address(),
+                    network.getGateway(), network.getIp6Gateway(), guestNetworkId, false, false, cmds);
         }
     }
 
@@ -1359,6 +1411,38 @@ public class CommandSetupHelper {
                 final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
                 cmd.addVmData("metadata", keyValue.first(), keyValue.second());
             }
+        }
+    }
+
+    protected void addNicVlanMappingToVmData(VmDataCommand cmd, UserVm vm, NicVO nic) {
+        if (!nic.getMultiNetwork() || !VirtualMachineManager.AllowExposeNicVlanMapping.valueIn(vm.getAccountId())) {
+            return;
+        }
+        List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nic.getId());
+        List<NicVlanMappingEntry> mappings = new ArrayList<>();
+        for (NicNetworkMapVO association : associations) {
+            NetworkVO associatedNetwork = _networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null || associatedNetwork.getBroadcastDomainType() != BroadcastDomainType.Vlan || associatedNetwork.getBroadcastUri() == null) {
+                continue;
+            }
+            String vlanTag = BroadcastDomainType.Vlan.getValueFrom(associatedNetwork.getBroadcastUri());
+            mappings.add(new NicVlanMappingEntry(associatedNetwork.getUuid(), associatedNetwork.getName(), vlanTag));
+        }
+        // empty-string data is vmdata.py's signal to delete a previously-written file: once a nic has been
+        // trunked, its last association being removed must actively clear any stale file left from before,
+        // not just skip writing - the guest must never see associations that no longer exist
+        cmd.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.NIC_VLAN_MAPPING_FILE, mappings.isEmpty() ? "" : new Gson().toJson(mappings));
+    }
+
+    private static final class NicVlanMappingEntry {
+        private final String networkId;
+        private final String networkName;
+        private final String vlan;
+
+        private NicVlanMappingEntry(String networkId, String networkName, String vlan) {
+            this.networkId = networkId;
+            this.networkName = networkName;
+            this.vlan = vlan;
         }
     }
 

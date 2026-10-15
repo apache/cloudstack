@@ -159,6 +159,7 @@ import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpdateVmNicAnswer;
 import com.cloud.agent.api.UpdateVmNicCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -217,6 +218,7 @@ import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1494,6 +1496,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
+                if (!isHostReadyForMultiNetworkNics(vm, dest.getHost())) {
+                    logger.warn("Host {} does not have VLAN filtering enabled on its guest bridge, but {} has a multi-VLAN trunk nic; excluding this host and retrying", dest.getHost(), vm);
+                    lastKnownError = new CloudRuntimeException(String.format(
+                            "Host %s does not have VLAN filtering enabled on its guest bridge, so a multi-VLAN trunk nic cannot be plugged there", dest.getHost().getUuid()));
+                    avoids.addHost(dest.getHost().getId());
+                    continue;
+                }
+
                 avoids.addHost(dest.getHost().getId());
                 if (!template.isDeployAsIs()) {
                     journal.record("Deployment found - Attempt #" + (StartRetry.value() - retry), vmProfile, dest);
@@ -1756,6 +1766,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private boolean canExposeError(Account account) {
         return (account != null && account.getType() == Account.Type.ADMIN) || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value());
+    }
+
+    private boolean isHostReadyForMultiNetworkNics(VMInstanceVO vm, Host host) {
+        boolean hasMultiNetworkNic = _nicsDao.listByVmId(vm.getId()).stream().anyMatch(NicVO::getMultiNetwork);
+        if (!hasMultiNetworkNic) {
+            return true;
+        }
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), Host.HOST_VLAN_FILTERING_ENABLED);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
@@ -3357,7 +3376,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void executePostMigrationCommand(VMInstanceVO vm, VirtualMachineTO to, long dstHostId) {
-        if (!(vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId()))) {
+        if (vm.getHypervisorType() != HypervisorType.KVM
+                || !(hasClvmVolumes(vm.getId()) || vmNeedsPostMigrationVlanTrunkMembership(vm, dstHostId))) {
             return;
         }
         final String dstHostUuid = _hostDao.findById(dstHostId).getUuid();
@@ -3414,6 +3434,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.debug("Setting CPU shares to [{}] as part of migrate command for VM [{}].", newVmCpuShares, virtualMachineTO);
             migrateCommand.setNewVmCpuShares(newVmCpuShares);
         }
+
+        VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, prepareForMigrationAnswer, hostDetailsDao, destination.getHost().getId());
 
         return migrateCommand;
     }
@@ -4689,8 +4711,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final long isDefault = nic.isDefaultNic() ? 1 : 0;
 
                     if(VirtualMachine.Type.User.equals(vmVO.getType())) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(), vmVO.getId(),
-                                Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid(), vm.isDisplay());
+                        NicVO nicVO = _nicsDao.findById(nic.getId());
+                        UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(),
+                                vmVO.getId(), VirtualMachine.class.getName(), vmVO.getUuid(), nicVO, isDefault, vm.isDisplay());
                     }
                     return nic;
                 } else {
@@ -4776,8 +4799,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _userVmMgr.setupVmForPvlan(false, vm.getHostId(), nicProfile);
                 logger.debug("NIC is unplugged successfully for Instance {} in Network {}.", vm, network);
                 final long isDefault = nic.isDefaultNic() ? 1 : 0;
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                        Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplay());
+                UsageEventUtils.publishNicNetworkOfferingUsageEvents(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                        VirtualMachine.class.getName(), vm.getUuid(), nic, isDefault, vm.isDisplay());
             } else {
                 logger.warn("Failed to unplug NIC for the Instance {} from Network {}.", vm, network);
                 return false;
@@ -5399,7 +5422,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
-                AllowExposeDomainInMetadata, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
+                AllowExposeDomainInMetadata, AllowExposeNicVlanMapping, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
                 VmSyncPowerStateTransitioning, SystemVmEnableUserData
         };
     }
@@ -6549,6 +6572,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumes.stream()
             .map(v -> _storagePoolDao.findById(v.getPoolId()))
             .anyMatch(pool -> pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType()));
+    }
+
+    boolean vmNeedsPostMigrationVlanTrunkMembership(VMInstanceVO vm, long dstHostId) {
+        return VlanTrunkMigrationHelper.vmNeedsPostMigrationVlanTrunkMembership(vm.getId(), dstHostId, _nicsDao, hostDetailsDao);
     }
 
     private void executePreMigrationCommand(VMInstanceVO vm, VirtualMachineTO to, long srcHostId) {

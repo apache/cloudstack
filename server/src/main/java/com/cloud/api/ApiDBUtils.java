@@ -48,6 +48,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NicNetworkMapResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SharedFSResponse;
@@ -339,6 +340,8 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -356,6 +359,8 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -487,6 +492,7 @@ public class ApiDBUtils {
     static VMSnapshotDao s_vmSnapshotDao;
     static ClusterDetailsDao s_clusterDetailsDao;
     static NicSecondaryIpDao s_nicSecondaryIpDao;
+    static NicNetworkMapDao s_nicNetworkMapDao;
     static VpcProvisioningService s_vpcProvSvc;
     static AffinityGroupDao s_affinityGroupDao;
     static AffinityGroupJoinDao s_affinityGroupJoinDao;
@@ -736,6 +742,8 @@ public class ApiDBUtils {
     @Inject
     private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject
+    private NicNetworkMapDao nicNetworkMapDao;
+    @Inject
     private VpcProvisioningService vpcProvSvc;
     @Inject
     private AffinityGroupDao affinityGroupDao;
@@ -903,6 +911,7 @@ public class ApiDBUtils {
         s_vmSnapshotDao = vmSnapshotDao;
         s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
+        s_nicNetworkMapDao = nicNetworkMapDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
         s_affinityGroupJoinDao = affinityGroupJoinDao;
@@ -2244,6 +2253,46 @@ public class ApiDBUtils {
 
     public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
         return s_nicSecondaryIpDao.listByNicId(nicId);
+    }
+
+    /**
+     * Builds the response for every additional network a multi-VLAN trunk nic is associated with (beyond its
+     * primary network). Shared by every response builder that surfaces a nic's associations - {@code listNics},
+     * {@code listVirtualMachines}, and the associate/disassociate/change-primary command responses all need the
+     * identical shape, so it's built once here rather than duplicated per builder.
+     */
+    public static List<NicNetworkMapResponse> findAssociatedNetworkResponses(long nicId) {
+        List<NicNetworkMapVO> associations = s_nicNetworkMapDao.listByNicId(nicId);
+        List<NicNetworkMapResponse> associatedNetworkResponses = new ArrayList<>();
+        for (NicNetworkMapVO association : associations) {
+            NetworkVO associatedNetwork = findNetworkById(association.getNetworkId());
+            if (associatedNetwork == null) {
+                continue;
+            }
+            NicNetworkMapResponse associationResponse = new NicNetworkMapResponse();
+            associationResponse.setNetworkId(associatedNetwork.getUuid());
+            associationResponse.setNetworkName(associatedNetwork.getName());
+            if (associatedNetwork.getBroadcastUri() != null) {
+                associationResponse.setBroadcastUri(associatedNetwork.getBroadcastUri().toString());
+            }
+            // gateway/netmask/IPv6 gateway/IPv6 CIDR describe the associated network itself, not this nic's
+            // specific address on it - sourced the same way ApiResponseHelper#createNetworkResponse does for
+            // NetworkResponse. A Shared network with more than one IP range has these as a comma-separated
+            // list (one per range); only the first is surfaced here, matching that same existing convention.
+            associationResponse.setGateway(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getGateway()));
+            String cidr = StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getCidr());
+            if (associatedNetwork.getNetworkCidr() != null) {
+                associationResponse.setNetmask(NetUtils.cidr2Netmask(associatedNetwork.getNetworkCidr()));
+            } else if (cidr != null) {
+                associationResponse.setNetmask(NetUtils.cidr2Netmask(cidr));
+            }
+            associationResponse.setIp6Gateway(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getIp6Gateway()));
+            associationResponse.setIp6Cidr(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getIp6Cidr()));
+            associationResponse.setIpAddress(association.getIp4Address());
+            associationResponse.setIp6Address(association.getIp6Address());
+            associatedNetworkResponses.add(associationResponse);
+        }
+        return associatedNetworkResponses;
     }
 
     public static NicVO findNicById(long nicId) {

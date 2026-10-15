@@ -74,6 +74,7 @@ public interface NetworkModel {
     String CLOUD_DOMAIN_FILE = "cloud-domain";
     String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
     String CLOUD_NAME_FILE = "cloud-name";
+    String NIC_VLAN_MAPPING_FILE = "nic-vlan-mapping";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
@@ -136,6 +137,13 @@ public interface NetworkModel {
     List<? extends Network> listNetworksUsedByVm(long vmId, boolean isSystem);
 
     Nic getNicInNetwork(long vmId, long networkId);
+
+    /**
+     * Resolves the nic and guest ip(s) a VM answers on for a given network - the nic's own primary network match
+     * when one exists, or a trunk nic's association (from nic_network_map) otherwise. Returns null if the VM has
+     * neither a primary nor an associated nic in that network.
+     */
+    Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId);
 
     List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
 

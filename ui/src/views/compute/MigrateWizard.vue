@@ -49,6 +49,11 @@
             class="host-item__suitability-icon"
             twoToneColor="#52c41a"
             v-if="record.suitableformigration" />
+          <a-tooltip v-else-if="record.unsuitablereason" :title="record.unsuitablereason" placement="top">
+            <close-circle-two-tone
+              class="host-item__suitability-icon"
+              twoToneColor="#f5222d" />
+          </a-tooltip>
           <close-circle-two-tone
             class="host-item__suitability-icon"
             twoToneColor="#f5222d"

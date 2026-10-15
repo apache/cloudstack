@@ -20,9 +20,13 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +34,14 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
+import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
+import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
@@ -199,6 +208,210 @@ public class BridgeVifDriver extends VifDriverBase {
         return vNetId != null && protocol != null && !vNetId.equalsIgnoreCase("untagged");
     }
 
+    protected boolean usesSharedVlanAwareBridge(final NicTO nic) {
+        return nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && _libvirtComputingResource.hostSupportsVlanFiltering();
+    }
+
+    protected void plugTrunkVlanNic(LibvirtVMDef.InterfaceDef intf, NicTO nic, String trafficLabel, String guestOsType, String nicAdapter,
+            Integer networkRateKBps) throws InternalErrorException {
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
+            throw new InternalErrorException("Multi-VLAN trunk nics are only supported on VLAN-isolated guest networks");
+        }
+        if (!_libvirtComputingResource.hostSupportsVlanFiltering()) {
+            throw new InternalErrorException("vlan_filtering is not enabled on this host's guest bridge; "
+                    + "this host cannot accept a multi-VLAN trunk nic");
+        }
+
+        String brName = trafficLabel != null && !trafficLabel.isEmpty() ? trafficLabel : _bridges.get("guest");
+
+        Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
+        List<Integer> vlanTags = collectTrunkVlanTags(nic);
+        warnIfUplinkMissingVlanMembership(brName, vlanTags);
+
+        logger.debug("plugging trunk nic " + nic.getMac() + " onto guest bridge " + brName + " with vlan tags " + vlanTags
+                + ", native vlan " + primaryVlanTag);
+        intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
+
+        if (_libvirtComputingResource.hostSupportsVlanTrunkXml()) {
+            intf.setTrunkVlanTags(vlanTags, primaryVlanTag);
+        }
+        // else: older libvirt can't express trunk membership; ensureVlanTrunkMembership() applies it manually once the tap exists
+    }
+
+    private List<Integer> collectTrunkVlanTags(NicTO nic) throws InternalErrorException {
+        Set<Integer> vlanTags = new LinkedHashSet<>();
+        vlanTags.add(parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac()));
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                if (associatedNetwork.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
+                    throw new InternalErrorException("Multi-VLAN trunk nics only support VLAN-isolated associated networks");
+                }
+                vlanTags.add(parseVlanTag(associatedNetwork.getBroadcastUri(), "associated network " + associatedNetwork.getUuid()));
+            }
+        }
+        return new ArrayList<>(vlanTags);
+    }
+
+    private Integer parseVlanTag(URI broadcastUri, String description) throws InternalErrorException {
+        String vlanValue = broadcastUri == null ? null : Networks.BroadcastDomainType.getValue(broadcastUri);
+        if (StringUtils.isBlank(vlanValue)) {
+            throw new InternalErrorException("Cannot determine VLAN for " + description
+                    + ": no VLAN has been assigned yet (is the network implemented?). Refusing to plug this multi-VLAN trunk nic.");
+        }
+        try {
+            return Integer.valueOf(vlanValue);
+        } catch (NumberFormatException e) {
+            throw new InternalErrorException("Invalid VLAN value '" + vlanValue + "' for " + description);
+        }
+    }
+
+    /**
+     * The uplink's own tagged VLAN membership is the operator's responsibility, not CloudStack's - the uplink
+     * is never modified here. This only gives the operator a diagnostic signal: a VLAN missing from the uplink
+     * still lets same-host traffic on that VLAN work (pure bridge-local forwarding never touches the uplink),
+     * while cross-host traffic on it silently fails - a confusing signature this warning is meant to shortcut.
+     * Never blocks the plug and never throws; a failure to even read the uplink's membership is itself just logged.
+     */
+    private void warnIfUplinkMissingVlanMembership(String brName, List<Integer> vlanTags) {
+        String uplinkPif = _pifs.get(brName);
+        if (StringUtils.isBlank(uplinkPif)) {
+            logger.warn("Cannot determine the uplink interface for guest bridge {} to check VLAN membership for tags {}; "
+                    + "cross-host traffic for this nic will fail unless the uplink has already been configured for these VLANs", brName, vlanTags);
+            return;
+        }
+        try {
+            Map<Integer, Boolean> currentMembership = readCurrentVlanMembership(uplinkPif);
+            List<Integer> missingTags = new ArrayList<>();
+            for (Integer vlanTag : vlanTags) {
+                if (!currentMembership.containsKey(vlanTag)) {
+                    missingTags.add(vlanTag);
+                }
+            }
+            if (!missingTags.isEmpty()) {
+                logger.warn("Uplink {} is not a tagged member of VLAN(s) {}; same-host traffic on these VLANs will work, but cross-host "
+                        + "traffic will not, until an operator adds them (e.g. 'bridge vlan add dev {} vid <vlan>')", uplinkPif, missingTags, uplinkPif);
+            }
+        } catch (InternalErrorException e) {
+            logger.warn("Unable to check VLAN membership on uplink {}: {}", uplinkPif, e.getMessage());
+        }
+    }
+
+    @Override
+    public void ensureVlanTrunkMembership(LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException {
+        boolean usesSharedBridge = nic.isTrunkVlan() || usesSharedVlanAwareBridge(nic);
+        if (!usesSharedBridge || _libvirtComputingResource.hostSupportsVlanTrunkXml()) {
+            return;
+        }
+        String tapName = iface.getDevName();
+        if (StringUtils.isBlank(tapName)) {
+            throw new InternalErrorException("Cannot apply manual VLAN trunk membership: tap device name unknown for nic " + nic.getMac());
+        }
+        Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
+        for (Integer vlanTag : collectTrunkVlanTags(nic)) {
+            runBridgeVlanCommand("add", tapName, String.valueOf(vlanTag), vlanTag.equals(primaryVlanTag));
+        }
+    }
+
+    protected void runBridgeVlanCommand(String operation, String dev, String vid, boolean pvidUntagged) throws InternalErrorException {
+        final Script command = new Script("bridge", _timeout, logger);
+        command.add("vlan");
+        command.add(operation);
+        command.add("dev", dev);
+        command.add("vid", vid);
+        if (pvidUntagged) {
+            command.add("pvid");
+            command.add("untagged");
+        }
+        final String result = command.execute();
+        if (result != null) {
+            throw new InternalErrorException("Failed to " + operation + " VLAN " + vid + " membership on " + dev + ": " + result);
+        }
+    }
+
+    @Override
+    public void updateVlanTrunkMembership(Domain vm, LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException, LibvirtException {
+        boolean usesSharedBridge = nic.isTrunkVlan() || usesSharedVlanAwareBridge(nic);
+        if (!usesSharedBridge) {
+            throw new InternalErrorException("Nic " + nic.getMac() + " does not use the shared VLAN-aware bridge; cannot update its VLAN membership live");
+        }
+        if (!_libvirtComputingResource.hostSupportsVlanFiltering()) {
+            throw new InternalErrorException("vlan_filtering is not enabled on this host's guest bridge; cannot update multi-VLAN trunk membership live");
+        }
+
+        Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
+        List<Integer> vlanTags = collectTrunkVlanTags(nic);
+
+        if (_libvirtComputingResource.hostSupportsVlanTrunkXml()) {
+            iface.setTrunkVlanTags(vlanTags, primaryVlanTag);
+            // CloudStack's KVM domains are transient (no persistent libvirt config to update) - matches the
+            // existing LIVE-only precedent in LibvirtReplugNicCommandWrapper/LibvirtUpdateVmNicCommandWrapper.
+            // Persistence across a restart is already guaranteed by nic_network_map/nics.network_id, not libvirt.
+            vm.updateDeviceFlags(iface.toString(), Domain.DeviceModifyFlags.LIVE);
+        } else {
+            applyVlanTrunkMembershipDiff(iface.getDevName(), vlanTags, primaryVlanTag);
+        }
+    }
+
+    private void applyVlanTrunkMembershipDiff(String tapName, List<Integer> desiredVlanTags, Integer primaryVlanTag) throws InternalErrorException {
+        if (StringUtils.isBlank(tapName)) {
+            throw new InternalErrorException("Cannot update VLAN trunk membership: tap device name unknown");
+        }
+        Map<Integer, Boolean> currentMembership = readCurrentVlanMembership(tapName);
+        Set<Integer> desiredSet = new LinkedHashSet<>(desiredVlanTags);
+
+        for (Integer currentVlan : currentMembership.keySet()) {
+            if (!desiredSet.contains(currentVlan)) {
+                runBridgeVlanCommand("del", tapName, String.valueOf(currentVlan), false);
+            }
+        }
+        for (Integer desiredVlan : desiredSet) {
+            boolean shouldBePvid = desiredVlan.equals(primaryVlanTag);
+            Boolean currentlyPvid = currentMembership.get(desiredVlan);
+            if (currentlyPvid == null || currentlyPvid != shouldBePvid) {
+                runBridgeVlanCommand("add", tapName, String.valueOf(desiredVlan), shouldBePvid);
+            }
+        }
+    }
+
+    protected Map<Integer, Boolean> readCurrentVlanMembership(String tapName) throws InternalErrorException {
+        final Script command = new Script("bridge", _timeout, logger);
+        command.add("-j");
+        command.add("vlan");
+        command.add("show");
+        command.add("dev", tapName);
+        final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        final String errors = command.execute(parser);
+        if (errors != null) {
+            throw new InternalErrorException("Failed to read current VLAN membership for " + tapName + ": " + errors);
+        }
+
+        final Map<Integer, Boolean> membership = new LinkedHashMap<>();
+        final String json = parser.getLines();
+        if (StringUtils.isBlank(json)) {
+            return membership;
+        }
+        for (JsonElement deviceEl : JsonParser.parseString(json).getAsJsonArray()) {
+            JsonObject device = deviceEl.getAsJsonObject();
+            if (!device.has("vlans")) {
+                continue;
+            }
+            for (JsonElement vlanEl : device.getAsJsonArray("vlans")) {
+                JsonObject vlanObj = vlanEl.getAsJsonObject();
+                int vlan = vlanObj.get("vlan").getAsInt();
+                boolean pvid = false;
+                if (vlanObj.has("flags")) {
+                    for (JsonElement flagEl : vlanObj.getAsJsonArray("flags")) {
+                        if ("PVID".equalsIgnoreCase(flagEl.getAsString())) {
+                            pvid = true;
+                        }
+                    }
+                }
+                membership.put(vlan, pvid);
+            }
+        }
+        return membership;
+    }
+
     protected String createStorageVnetBridgeIfNeeded(NicTO nic, String trafficLabel,
                  String storageBrName) throws InternalErrorException {
         if (nic.getBroadcastUri() == null) {
@@ -248,8 +461,15 @@ public class BridgeVifDriver extends VifDriverBase {
         }
 
         if (nic.getType() == Networks.TrafficType.Guest) {
-            if (isBroadcastTypeVlanOrVxlan(nic) && isValidProtocolAndVnetId(vNetId, protocol)) {
-                    if (trafficLabel != null && !trafficLabel.isEmpty()) {
+            if (nic.isTrunkVlan()) {
+                plugTrunkVlanNic(intf, nic, trafficLabel, guestOsType, nicAdapter, networkRateKBps);
+            } else if (isBroadcastTypeVlanOrVxlan(nic) && isValidProtocolAndVnetId(vNetId, protocol)) {
+                    if (usesSharedVlanAwareBridge(nic)) {
+                        // host is VLAN-filtering-ready: single-VLAN nics share the same VLAN-aware bridge
+                        // trunk nics use, rather than getting their own dedicated per-VLAN bridge, so the
+                        // two mechanisms never end up on disconnected bridges for the same VLAN on one host
+                        plugTrunkVlanNic(intf, nic, trafficLabel, guestOsType, nicAdapter, networkRateKBps);
+                    } else if (trafficLabel != null && !trafficLabel.isEmpty()) {
                         logger.debug("creating a vNet dev and bridge for guest traffic per traffic label " + trafficLabel);
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);

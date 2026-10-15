@@ -29,7 +29,15 @@ public class HostForMigrationResponse extends HostResponse {
     @Param(description = "True if migrating an Instance to this host requires storage motion, false otherwise")
     private Boolean requiresStorageMotion;
 
+    @SerializedName("unsuitablereason")
+    @Param(description = "If this host is not suitable for migration, the reason why; null when suitable")
+    private String unsuitableReason;
+
     public void setRequiresStorageMotion(Boolean requiresStorageMotion) {
         this.requiresStorageMotion = requiresStorageMotion;
+    }
+
+    public void setUnsuitableReason(String unsuitableReason) {
+        this.unsuitableReason = unsuitableReason;
     }
 }

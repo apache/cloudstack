@@ -57,20 +57,75 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option key="" >{{ }}</a-select-option>
-            <a-select-option v-for="network in networks" :key="network.id">
+            <a-select-option v-for="network in availableNetworksForSelect" :key="network.id">
               {{ network.name }}
             </a-select-option>
           </a-select>
+          <div v-if="trunkGroups[record.deviceid] && trunkGroups[record.deviceid].length > 0" style="margin-top: 4px">
+            <a-tag v-for="assocId in trunkGroups[record.deviceid]" :key="assocId" closable @close.prevent.stop="removeFromGroup(record.deviceid, assocId)">
+              {{ networkNameById(assocId) }}
+            </a-tag>
+          </div>
         </a-form-item>
+      </template>
+      <template #associate="{ record }">
+        <tooltip-button
+          v-if="!record.management && values[record.deviceid]"
+          tooltipPlacement="top"
+          :tooltip="$t('label.network.add.associated')"
+          icon="plus-outlined"
+          size="small"
+          type="primary"
+          @onClick="openAssociateModal(record)" />
       </template>
     </a-table>
   </a-form>
+
+  <a-modal
+    :visible="showAssociateModal"
+    :title="$t('label.associate.network')"
+    :maskClosable="false"
+    :closable="true"
+    :footer="null"
+    @cancel="closeAssociateModal">
+    {{ $t('message.associate.network.desc') }}
+    <a-alert
+      type="warning"
+      show-icon
+      style="margin-top: 10px; margin-bottom: 10px"
+      :message="$t('message.associate.network.loop.warning')" />
+    <a-select
+      mode="multiple"
+      style="width: 100%"
+      :loading="associateModalLoading"
+      :placeholder="$t('label.networks')"
+      v-model:value="associateSelection"
+      optionFilterProp="label">
+      <a-select-option
+        v-for="network in associateModalNetworks"
+        :key="network.id"
+        :value="network.id"
+        :label="network.name">
+        {{ network.name }}
+      </a-select-option>
+    </a-select>
+    <div style="margin-top: 20px; text-align: right;">
+      <a-button @click="closeAssociateModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" style="margin-left: 8px" @click="confirmAssociate">{{ $t('label.ok') }}</a-button>
+    </div>
+  </a-modal>
 </template>
 
 <script>
 import { ref, reactive } from 'vue'
+import { getAPI } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import { isMultiNetworkNicEnabledForZone, fetchMultiNetworkNicEnabledForZone } from '@/utils/multiNetworkNic'
 export default {
   name: 'VnfNicsSelection',
+  components: {
+    TooltipButton
+  },
   props: {
     items: {
       type: Array,
@@ -87,12 +142,44 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    canTrunkNics: {
+      type: Boolean,
+      default: false
+    },
+    zoneId: {
+      type: String,
+      default: ''
     }
   },
   data () {
     return {
       values: {},
-      columns: [
+      trunkGroups: {},
+      showAssociateModal: false,
+      associateTarget: null,
+      associateSelection: [],
+      associateModalNetworks: [],
+      associateModalLoading: false,
+      associatedNetworkNames: {}
+    }
+  },
+  created () {
+    this.initForm()
+    fetchMultiNetworkNicEnabledForZone(this.zoneId)
+  },
+  computed: {
+    showTrunkNicControls () {
+      return this.canTrunkNics && isMultiNetworkNicEnabledForZone(this.zoneId)
+    },
+    groupedAwayNetworkIds () {
+      return Object.values(this.trunkGroups).flat()
+    },
+    availableNetworksForSelect () {
+      return this.networks.filter(network => !this.groupedAwayNetworkIds.includes(network.id))
+    },
+    columns () {
+      const cols = [
         {
           dataIndex: 'deviceid',
           title: this.$t('label.deviceid'),
@@ -120,20 +207,31 @@ export default {
         {
           dataIndex: 'description',
           title: this.$t('label.description'),
-          width: '35%',
+          width: this.showTrunkNicControls ? '25%' : '35%',
           slots: { customRender: 'description' }
         },
         {
           dataIndex: 'network',
           title: this.$t('label.network'),
-          width: '25%',
+          width: this.showTrunkNicControls ? '15%' : '25%',
           slots: { customRender: 'network' }
         }
       ]
+      if (this.showTrunkNicControls) {
+        cols.push({
+          dataIndex: 'associate',
+          title: '',
+          width: '10%',
+          slots: { customRender: 'associate' }
+        })
+      }
+      return cols
     }
   },
-  created () {
-    this.initForm()
+  watch: {
+    zoneId (newValue) {
+      fetchMultiNetworkNicEnabledForZone(newValue)
+    }
   },
   methods: {
     initForm () {
@@ -147,9 +245,72 @@ export default {
       this.form = reactive(form)
       this.rules = reactive(rules)
     },
+    networkNameById (id) {
+      const network = this.networks.find(item => item.id === id)
+      if (network) {
+        return network.name
+      }
+      return this.associatedNetworkNames[id] || id
+    },
     updateNicNetworkValue (value, deviceid) {
       this.values[deviceid] = this.networks.filter(network => network.id === value)?.[0] || null
+      if (!value && this.trunkGroups[deviceid]) {
+        // no primary network left for this nic, so any associated networks it had no longer make sense either
+        const prunedGroups = { ...this.trunkGroups }
+        delete prunedGroups[deviceid]
+        this.trunkGroups = prunedGroups
+        this.$emit('update-vnf-trunk-groups', this.trunkGroups)
+      }
       this.$emit('update-vnf-nic-networks', this.values)
+    },
+    openAssociateModal (record) {
+      this.associateTarget = record
+      this.associateSelection = []
+      this.associateModalNetworks = []
+      this.showAssociateModal = true
+      this.associateModalLoading = true
+      const alreadyUsedDeviceNetworkIds = Object.values(this.values).filter(Boolean).map(network => network.id)
+      const alreadyUsedNetworkIds = [...alreadyUsedDeviceNetworkIds, ...this.groupedAwayNetworkIds]
+      getAPI('listNetworks', {
+        listAll: true,
+        zoneid: this.zoneId
+      }).then(response => {
+        const allNetworks = response.listnetworksresponse.network || []
+        this.associateModalNetworks = allNetworks.filter(network => !alreadyUsedNetworkIds.includes(network.id))
+        const names = {}
+        allNetworks.forEach(network => { names[network.id] = network.name })
+        this.associatedNetworkNames = { ...this.associatedNetworkNames, ...names }
+      }).finally(() => {
+        this.associateModalLoading = false
+      })
+    },
+    closeAssociateModal () {
+      this.showAssociateModal = false
+      this.associateTarget = null
+      this.associateSelection = []
+      this.associateModalNetworks = []
+    },
+    confirmAssociate () {
+      if (!this.associateTarget || this.associateSelection.length === 0) {
+        this.closeAssociateModal()
+        return
+      }
+      const deviceid = this.associateTarget.deviceid
+      const existing = this.trunkGroups[deviceid] || []
+      this.trunkGroups = {
+        ...this.trunkGroups,
+        [deviceid]: [...existing, ...this.associateSelection]
+      }
+      this.$emit('update-vnf-trunk-groups', this.trunkGroups)
+      this.closeAssociateModal()
+    },
+    removeFromGroup (deviceid, assocId) {
+      const existing = this.trunkGroups[deviceid] || []
+      this.trunkGroups = {
+        ...this.trunkGroups,
+        [deviceid]: existing.filter(id => id !== assocId)
+      }
+      this.$emit('update-vnf-trunk-groups', this.trunkGroups)
     }
   }
 }

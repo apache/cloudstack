@@ -183,6 +183,12 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getNicsForTraffic(long, com.cloud.network.Networks.TrafficType)
      */

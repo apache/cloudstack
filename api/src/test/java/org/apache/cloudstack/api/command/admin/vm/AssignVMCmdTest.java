@@ -17,11 +17,97 @@
 
 package org.apache.cloudstack.api.command.admin.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import org.apache.cloudstack.api.ResponseGenerator;
+
 public class AssignVMCmdTest {
+
+    @Test
+    public void getNetworkIdsReturnsPlainNetworkIdsWhenNoNicNetworksList() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        List<Long> networkIds = Arrays.asList(1L, 2L);
+        ReflectionTestUtils.setField(cmd, "networkIds", networkIds);
+
+        assertEquals(networkIds, cmd.getNetworkIds());
+    }
+
+    @Test
+    public void getNetworkIdsThrowsWhenBothNicNetworksListAndNetworkIdsGiven() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        ReflectionTestUtils.setField(cmd, "networkIds", Arrays.asList(1L));
+        Map<String, Map<String, String>> nicNetworksList = new LinkedHashMap<>();
+        Map<String, String> entry = new HashMap<>();
+        entry.put("networkids", "some-network-uuid");
+        nicNetworksList.put("0", entry);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+
+        assertThrows(InvalidParameterValueException.class, cmd::getNetworkIds);
+    }
+
+    @Test
+    public void getNetworkIdsReturnsPrimaryNetworkIdsFromNicNetworksList() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        NetworkService networkService = mock(NetworkService.class);
+        cmd._networkService = networkService;
+
+        Network primaryNetwork = mock(Network.class);
+        when(primaryNetwork.getId()).thenReturn(55L);
+        when(networkService.getNetwork("primary-uuid")).thenReturn(primaryNetwork);
+        Network associatedNetwork = mock(Network.class);
+        when(associatedNetwork.getId()).thenReturn(66L);
+        when(networkService.getNetwork("associated-uuid")).thenReturn(associatedNetwork);
+
+        Map<String, Map<String, String>> nicNetworksList = new LinkedHashMap<>();
+        Map<String, String> entry = new HashMap<>();
+        entry.put("networkids", "primary-uuid,associated-uuid");
+        nicNetworksList.put("0", entry);
+        ReflectionTestUtils.setField(cmd, "nicNetworksList", nicNetworksList);
+
+        assertEquals(Arrays.asList(55L), cmd.getNetworkIds());
+    }
+
+    @Test
+    public void getEntityOwnerIdReturnsVmAccountWhenVmExists() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        ResponseGenerator responseGenerator = mock(ResponseGenerator.class);
+        cmd._responseGenerator = responseGenerator;
+        ReflectionTestUtils.setField(cmd, "virtualMachineId", 7L);
+        UserVm vm = mock(UserVm.class);
+        when(vm.getAccountId()).thenReturn(42L);
+        when(responseGenerator.findUserVmById(7L)).thenReturn(vm);
+
+        assertEquals(42L, cmd.getEntityOwnerId());
+    }
+
+    @Test
+    public void getEntityOwnerIdFallsBackToSystemAccountWhenVmMissing() {
+        AssignVMCmd cmd = new AssignVMCmd();
+        ResponseGenerator responseGenerator = mock(ResponseGenerator.class);
+        cmd._responseGenerator = responseGenerator;
+        ReflectionTestUtils.setField(cmd, "virtualMachineId", 7L);
+        when(responseGenerator.findUserVmById(7L)).thenReturn(null);
+
+        assertEquals(Account.ACCOUNT_ID_SYSTEM, cmd.getEntityOwnerId());
+    }
 
     @Test
     public void test_setSkipNetwork_default() {

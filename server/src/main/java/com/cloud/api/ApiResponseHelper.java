@@ -4891,6 +4891,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 response.setSecondaryIps(ipList);
             }
         }
+        /*trunked / associatednetworks - multi-VLAN trunk nic, if any*/
+        response.setTrunked(result.getMultiNetwork());
+        if (result.getMultiNetwork()) {
+            response.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(result.getId()));
+        }
         /*18: extra dhcp options */
         List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
                 .stream()
