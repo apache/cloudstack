@@ -19,13 +19,13 @@
 
 package org.apache.cloudstack.storage.feign.model;
 
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-
-import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -77,6 +77,17 @@ public class Aggregate {
     @JsonProperty("space")
     private AggregateSpace space = null;
 
+    @JsonProperty("node")
+    private Node node = null;
+
+
+    public Node getNode() {
+        return node;
+    }
+
+    public void setNode(Node node) {
+        this.node = node;
+    }
 
     public Aggregate name(String name) {
         this.name = name;
@@ -107,8 +118,16 @@ public class Aggregate {
         return state;
     }
 
+    public void setState(StateEnum state) {
+        this.state = state;
+    }
+
     public AggregateSpace getSpace() {
         return space;
+    }
+
+    public void setSpace(AggregateSpace space) {
+        this.space = space;
     }
 
     public Double getAvailableBlockStorageSpace() {
@@ -148,9 +167,32 @@ public class Aggregate {
         return "DiskAggregates [name=" + name + ", uuid=" + uuid + "]";
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Node {
+        @JsonProperty("name")
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
     public static class AggregateSpace {
         @JsonProperty("block_storage")
         private AggregateSpaceBlockStorage blockStorage = null;
+
+        public AggregateSpaceBlockStorage getBlockStorage() {
+            return blockStorage;
+        }
+
+        public void setBlockStorage(AggregateSpaceBlockStorage blockStorage) {
+            this.blockStorage = blockStorage;
+        }
     }
 
     public static class AggregateSpaceBlockStorage {
@@ -160,6 +202,14 @@ public class Aggregate {
         private Double size = null;
         @JsonProperty("used")
         private Double used = null;
+
+        public Double getAvailable() {
+            return available;
+        }
+
+        public void setAvailable(Double available) {
+            this.available = available;
+        }
     }
 
 }
