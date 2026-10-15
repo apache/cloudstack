@@ -186,6 +186,10 @@ public interface NetworkOrchestrationService {
     Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
+    // forces a network's state to Implemented; call only once implementNetwork() has reported success for it,
+    // to re-assert against a background cleanup task that can otherwise race it back to an earlier state
+    void markNetworkImplemented(long networkId);
+
     /**
      * Returns all extra dhcp options which are set on the provided nic
      * @param nicId

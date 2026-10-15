@@ -77,6 +77,17 @@
                 </a-list-item-meta>
                 <template #actions>
                   <a-popconfirm
+                    v-if="canChangePrimaryNetwork"
+                    :title="$t('message.change.primary.network.confirm')"
+                    @confirm="$emit('change-primary-network', { nic: record, network: item })"
+                    :okText="$t('label.yes')"
+                    :cancelText="$t('label.no')">
+                    <tooltip-button
+                      tooltipPlacement="top"
+                      :tooltip="$t('label.change.primary.network')"
+                      icon="arrow-up-outlined" />
+                  </a-popconfirm>
+                  <a-popconfirm
                     v-if="canManageAssociations"
                     :title="$t('message.disassociate.network.confirm')"
                     @confirm="$emit('disassociate-network', { nic: record, network: item })"
@@ -139,9 +150,13 @@ export default {
     canManageAssociations: {
       type: Boolean,
       default: false
+    },
+    canChangePrimaryNetwork: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['disassociate-network'],
+  emits: ['disassociate-network', 'change-primary-network'],
   components: {
     ResourceIcon,
     Status,

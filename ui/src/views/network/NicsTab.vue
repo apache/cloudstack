@@ -29,7 +29,9 @@
       :resource="resource"
       :loading="loading"
       :canManageAssociations="canManageAssociations"
-      @disassociate-network="onDisassociateNetwork">
+      :canChangePrimaryNetwork="canChangePrimaryNetwork"
+      @disassociate-network="onDisassociateNetwork"
+      @change-primary-network="onChangePrimaryNetwork">
       <template #actions="record">
         <a-popconfirm
         :title="$t('label.set.default.nic')"
@@ -411,6 +413,10 @@ export default {
     canManageAssociations () {
       return this.resource.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis) &&
         isMultiNetworkNicEnabledForZone(this.resource.zoneid)
+    },
+    canChangePrimaryNetwork () {
+      return this.canManageAssociations && ('changeNicPrimaryNetwork' in this.$store.getters.apis) &&
+        this.resource.state === 'Stopped'
     }
   },
   created () {
@@ -554,6 +560,35 @@ export default {
             this.loadingNic = false
           },
           loadingMessage: this.$t('message.disassociate.network.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loadingNic = false
+            this.$emit('refresh')
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loadingNic = false
+      })
+    },
+    onChangePrimaryNetwork ({ nic, network }) {
+      this.loadingNic = true
+      postAPI('changeNicPrimaryNetwork', {
+        nicid: nic.id,
+        networkid: network.networkid
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.changenicprimarynetworkresponse.jobid,
+          successMessage: this.$t('message.success.change.primary.network'),
+          successMethod: () => {
+            this.loadingNic = false
+            this.$emit('refresh')
+          },
+          errorMessage: this.$t('message.error.change.primary.network'),
+          errorMethod: () => {
+            this.loadingNic = false
+          },
+          loadingMessage: this.$t('message.change.primary.network.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.loadingNic = false

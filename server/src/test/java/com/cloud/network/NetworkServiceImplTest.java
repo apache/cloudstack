@@ -1861,8 +1861,11 @@ public class NetworkServiceImplTest {
     public void associateNetworkToNicFailsWhenRequestedNetworkSharesVlanWithAnExistingAssociation() throws Exception {
         NicVO nic = mockNic(11L, 5L, 205L, false);
         Mockito.when(nicDao.findById(11L)).thenReturn(nic);
-        UserVmVO vm = mockVm(VirtualMachine.State.Stopped, null);
+        UserVmVO vm = mockVm(VirtualMachine.State.Running, 1L);
         Mockito.when(userVmDao.findById(5L)).thenReturn(vm);
+        DetailVO readyDetail = Mockito.mock(DetailVO.class);
+        Mockito.when(readyDetail.getValue()).thenReturn("true");
+        Mockito.when(hostDetailsDao.findDetail(1L, Host.HOST_VLAN_FILTERING_ENABLED)).thenReturn(readyDetail);
         NetworkVO primaryNetwork = mockNetwork(205L, Network.GuestType.Isolated, 1L, 1L, null, Networks.BroadcastDomainType.Vlan, vlanUri(1174));
         Mockito.when(networkDao.findById(205L)).thenReturn(primaryNetwork);
         Mockito.when(nicNetworkMapDao.listByNicId(11L)).thenReturn(new ArrayList<>());

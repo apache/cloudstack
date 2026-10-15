@@ -2245,6 +2245,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 logger.warn("Failed to implement Network: {} as a part of preparing NIC {}", network, nic);
                 throw new CloudRuntimeException(String.format("Failed to implement Network ID=%s as a part preparing NIC %s", network, nic));
             }
+            implementAssociatedNetworks(nic, dest, context);
 
             final NetworkVO network = implemented.second();
             final NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
@@ -2253,6 +2254,55 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 setMtuInVRNicProfile(networks, network.getTrafficType(), profile);
             }
             vmProfile.addNic(profile);
+        }
+    }
+
+    // backstop: guarantees every associated network is implemented by the time its nic is prepared, regardless of
+    // how it got associated (e.g. a former primary demoted by changeNicPrimaryNetwork). Cheap no-op once implemented.
+    private void implementAssociatedNetworks(final NicVO nic, final DeployDestination dest, final ReservationContext context)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        final List<NicNetworkMapVO> associations = _nicNetworkMapDao.listByNicId(nic.getId());
+        for (final NicNetworkMapVO association : associations) {
+            final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(association.getNetworkId(), dest, context, false);
+            if (implemented == null || implemented.first() == null) {
+                NetworkVO network = _networksDao.findById(association.getNetworkId());
+                logger.warn("Failed to implement associated Network: {} as a part of preparing NIC {}", network, nic);
+                throw new CloudRuntimeException(String.format("Failed to implement associated Network ID=%s as a part of preparing NIC %s", network, nic));
+            }
+            markNetworkImplemented(association.getNetworkId());
+        }
+        if (!associations.isEmpty()) {
+            validateNoDuplicateVlanAcrossTrunk(nic, associations);
+        }
+    }
+
+    @Override
+    public void markNetworkImplemented(long networkId) {
+        NetworkVO network = _networksDao.findById(networkId);
+        if (!isNetworkImplemented(network)) {
+            network.setState(Network.State.Implemented);
+            _networksDao.update(networkId, network);
+        }
+    }
+
+    // network creation already prevents two networks from sharing a VLAN; this is just a backstop
+    private void validateNoDuplicateVlanAcrossTrunk(final NicVO nic, final List<NicNetworkMapVO> associations) {
+        final Map<URI, Long> vlanToNetworkId = new HashMap<>();
+        recordVlanOrThrow(_networksDao.findById(nic.getNetworkId()), vlanToNetworkId);
+        for (final NicNetworkMapVO association : associations) {
+            recordVlanOrThrow(_networksDao.findById(association.getNetworkId()), vlanToNetworkId);
+        }
+    }
+
+    private void recordVlanOrThrow(final NetworkVO network, final Map<URI, Long> vlanToNetworkId) {
+        final URI broadcastUri = network.getBroadcastUri();
+        if (broadcastUri == null) {
+            return;
+        }
+        final Long conflicting = vlanToNetworkId.put(broadcastUri, network.getId());
+        if (conflicting != null) {
+            throw new CloudRuntimeException(String.format(
+                    "Networks %s and %s share the same VLAN (%s) and cannot be associated with the same nic", conflicting, network.getId(), broadcastUri));
         }
     }
 

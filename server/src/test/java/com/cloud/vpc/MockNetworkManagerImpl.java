@@ -678,6 +678,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void markNetworkImplemented(long networkId) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Map<Integer, String> getExtraDhcpOptions(long nicId) {
         return null;
     }

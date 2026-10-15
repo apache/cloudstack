@@ -1013,8 +1013,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         validateTrunkSet(primaryNetwork, resultingSet);
         validateNoOverlappingCidrs(resultingSet);
-        implementRequestedNetworks(requestedNetworks, vm, caller);
-        validateNoDuplicateVlanAfterImplement(resultingSet, requestedNetworks);
+        // defer implement to the Instance's next start when stopped, like its primary network; a running Instance needs it now
+        boolean vmRunning = vm.getState() == VirtualMachine.State.Running;
+        if (vmRunning) {
+            implementRequestedNetworks(requestedNetworks, vm, caller);
+        }
+        validateNoDuplicateVlanAfterImplement(resultingSet, vmRunning ? requestedNetworks : Collections.emptyList());
         persistAssociations(nic, vm, requestedNetworks, ipAddressesMap);
         return requestedNetworks;
     }
@@ -1438,6 +1442,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (implemented == null || implemented.first() == null) {
             throw new CloudRuntimeException(String.format("Failed to implement network %s as part of associating it to a nic", network.getUuid()));
         }
+        _networkMgr.markNetworkImplemented(network.getId());
     }
 
     private void validateNoDuplicateVlan(List<NetworkVO> resultingSet, Set<Long> justRequestedIds) {
