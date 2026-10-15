@@ -165,10 +165,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -228,7 +224,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -250,7 +245,6 @@ import com.cloud.vm.VmWorkMigrateVolume;
 import com.cloud.vm.VmWorkResizeVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -302,10 +296,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private UserVmDao _userVmDao;
     @Inject
     private VMInstanceDetailsDao vmInstanceDetailsDao;
-    @Inject
-    private NicDao _nicDao;
-    @Inject
-    private NetworkModel _networkModel;
     @Inject
     private UserVmService _userVmService;
     @Inject
@@ -5368,41 +5358,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * The number of CD-ROM devices of the Instance. Each CD-ROM device occupies a device id, starting from
-     * {@link TemplateManager#CDROM_PRIMARY_DEVICE_SEQ}.
+     * The number of CD-ROM devices of the Instance (including the one of the config drive ISO, if any). Each CD-ROM
+     * device occupies a device id, starting from {@link TemplateManager#CDROM_PRIMARY_DEVICE_SEQ}.
      */
     protected int getVmCdromCount(VirtualMachine vm) {
         return _tmpltMgr.getVmCdromCount(vm);
     }
 
-    /**
-     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
-     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
-     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
-     * never been started.
-     */
-    protected boolean isConfigDriveUsed(VirtualMachine vm) {
-        if (vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
-            return true;
-        }
-        for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
-            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
-                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    @Override
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+        return getReservedDeviceIds(vm, getVmCdromCount(vm));
     }
 
     @Override
-    public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
+    public Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return getReservedDeviceIds(vm, _tmpltMgr.getVmCdromCount(vm, configDriveUsed));
+    }
+
+    private Set<Long> getReservedDeviceIds(VirtualMachine vm, int cdromCount) {
         Set<Long> reservedDeviceIds = new HashSet<>();
-        for (int i = 0; i < getVmCdromCount(vm); i++) {
+        for (int i = 0; i < cdromCount; i++) {
             reservedDeviceIds.add((long) TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + i);
-        }
-        if (isConfigDriveUsed(vm)) {
-            reservedDeviceIds.add(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue());
         }
         return reservedDeviceIds;
     }

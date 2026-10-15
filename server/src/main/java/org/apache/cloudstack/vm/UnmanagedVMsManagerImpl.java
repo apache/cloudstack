@@ -80,7 +80,6 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -904,9 +903,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * and the one of the config drive ISO (always kept free, as the NICs of the Instance are not imported yet at this point).
      */
     private Set<Long> getReservedDeviceIds(VirtualMachine vm) {
-        Set<Long> reservedDeviceIds = new HashSet<>(volumeApiService.getReservedDeviceIds(vm));
-        reservedDeviceIds.add(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue());
-        return reservedDeviceIds;
+        return volumeApiService.getReservedDeviceIds(vm, true);
     }
 
     private long getNextDeviceId(long deviceId, Set<Long> reservedDeviceIds) {

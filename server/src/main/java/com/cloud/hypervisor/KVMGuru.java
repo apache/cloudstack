@@ -27,7 +27,6 @@ import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
-import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
@@ -57,7 +56,6 @@ import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -376,8 +374,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 _instanceDao.update(vm.getId(), vm);
             }
            // the networks of the (possibly expunged) VM may not be available, so always keep the config drive device id free
-           Set<Long> reservedDeviceIds = new HashSet<>(volumeApiService.getReservedDeviceIds(vm));
-           reservedDeviceIds.add(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue());
+           Set<Long> reservedDeviceIds = volumeApiService.getReservedDeviceIds(vm, true);
            for (Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
                VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
                volume.setState(Volume.State.Ready);

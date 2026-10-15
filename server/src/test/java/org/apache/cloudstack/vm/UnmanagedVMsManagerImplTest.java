@@ -2030,9 +2030,10 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void getReservedDeviceIdsAlwaysIncludesConfigDriveDeviceId() {
+    public void getReservedDeviceIdsAlwaysReservesTheCdromOfConfigDrive() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
-        Mockito.when(volumeApiService.getReservedDeviceIds(vm)).thenReturn(Collections.singleton(3L));
+        // the networks of the Instance are not imported yet, so the config drive is always assumed
+        Mockito.when(volumeApiService.getReservedDeviceIds(vm, true)).thenReturn(new HashSet<>(java.util.Arrays.asList(3L, 4L)));
 
         Set<Long> reserved = ReflectionTestUtils.invokeMethod(unmanagedVMsManager, "getReservedDeviceIds", vm);
 

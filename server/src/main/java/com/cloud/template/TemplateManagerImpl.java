@@ -155,6 +155,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
@@ -219,6 +223,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -228,9 +233,11 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmIsoMapVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -264,6 +271,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private DataCenterDao _dcDao;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private NetworkModel _networkModel;
+    @Inject
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private VmIsoMapDao _vmIsoMapDao;
     @Inject
@@ -705,9 +718,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Pre-allocate every cdrom slot at boot. QEMU/IDE refuses to hot-add new cdrom drives, so
         // runtime attachIso can only media-swap into a slot the domain already owns.
         int totalSlots = Math.max(effectiveMaxCdroms(vm, dest.getHost().getId()), slotsNeededFor(slotToIsoId));
+        boolean configDriveUsed = isConfigDriveUsed(vm);
         for (int i = 0; i < totalSlots; i++) {
-            int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + i;
-            Long isoId = slotToIsoId.get(diskSeq);
+            int slot = CDROM_PRIMARY_DEVICE_SEQ + i;
+            int diskSeq = getIsoDeviceSeq(slot, configDriveUsed);
+            Long isoId = slotToIsoId.get(slot);
             profile.addDisk(isoId != null
                     ? buildIsoDisk(profile, vm, dest, poolId, diskSeq, isoId)
                     : buildEmptyCdromDisk(diskSeq));
@@ -719,6 +734,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getType() != VirtualMachine.Type.User) {
             return 1;
         }
+        return getVmCdromCount(vm, isConfigDriveUsed(vm));
+    }
+
+    @Override
+    public int getVmCdromCount(VirtualMachine vm, boolean configDriveUsed) {
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return 1;
+        }
         // all the CD-ROM devices supported by the host are defined for the Instance at boot, even if the configured
         // maximum number of ISOs (vm.iso.max.count) is lower or is increased later
         int cdromCount = advertisedCdromCap(hostIdForVm(vm));
@@ -726,7 +749,42 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (userVm != null) {
             cdromCount = Math.max(cdromCount, slotsNeededFor(loadAttachedIsoSlots(userVm)));
         }
-        return cdromCount;
+        // the config drive ISO is one more CD-ROM, it is not counted in the CD-ROMs supported for the ISOs
+        return cdromCount + (configDriveUsed ? 1 : 0);
+    }
+
+    /**
+     * Returns the device id of the CD-ROM of an ISO slot (the slots are the ones stored for the ISOs of the Instance,
+     * starting from {@link #CDROM_PRIMARY_DEVICE_SEQ}). The config drive ISO always has the device id
+     * {@link ConfigDriveNetworkElement#CONFIGDRIVEDISKSEQ}, so the slots from it are moved to the next device ids
+     * when the Instance uses config drive.
+     */
+    int getIsoDeviceSeq(int slot, boolean configDriveUsed) {
+        return configDriveUsed && slot >= ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ ? slot + 1 : slot;
+    }
+
+    /**
+     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
+     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
+     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
+     * never been started.
+     */
+    boolean isConfigDriveUsed(VirtualMachine vm) {
+        if (_vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            return true;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        if (CollectionUtils.isEmpty(nics)) {
+            return false;
+        }
+        for (NicVO nic : nics) {
+            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
+                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Long singleStoragePoolId(DeployDestination dest) {
@@ -1466,7 +1524,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         DataTO isoTO = tmplt.getTO();
-        DiskTO disk = new DiskTO(isoTO, (long) deviceSeq, null, Volume.Type.ISO);
+        int diskSeq = !isVirtualRouter ? getIsoDeviceSeq(deviceSeq, isConfigDriveUsed(vm)) : deviceSeq;
+        DiskTO disk = new DiskTO(isoTO, (long) diskSeq, null, Volume.Type.ISO);
 
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
