@@ -111,6 +111,19 @@ public class ActionEventUtils {
         return event.getId();
     }
 
+    public static void linkEventsToJob(final long jobId, final Long... eventIds) {
+        for (final Long eventId : eventIds) {
+            if (eventId == null || eventId == 0) {
+                continue;
+            }
+            final EventVO event = s_eventDao.findById(eventId);
+            if (event != null && event.getAsyncJobId() == null) {
+                event.setAsyncJobId(jobId);
+                s_eventDao.update(eventId, event);
+            }
+        }
+    }
+
     /*
      * Save event after scheduling an async job
      */
