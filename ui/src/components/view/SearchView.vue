@@ -278,6 +278,9 @@ export default {
       this.initFormFieldData()
     },
     retrieveFieldLabel (fieldName) {
+      if (fieldName === 'duration' && this.apiName.includes('listAsyncJobs')) {
+        fieldName = 'period'
+      }
       if (fieldName === 'groupid') {
         fieldName = 'group'
       }
@@ -343,7 +346,7 @@ export default {
           'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
-          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'hsmprofileid', 'kmskeyid', 'status'].includes(item)
+          'extensionid', 'backupoffering', 'volumeid', 'virtualmachineid', 'hsmprofileid', 'kmskeyid', 'status', 'duration'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -397,6 +400,15 @@ export default {
         this.fields[stateIndex].loading = true
         this.fields[stateIndex].opts = this.fetchState()
         this.fields[stateIndex].loading = false
+      }
+
+      if (arrayField.includes('duration')) {
+        const durationIndex = this.fields.findIndex(item => item.name === 'duration')
+        this.fields[durationIndex].opts = [
+          { id: 1, name: 'label.last.hour' },
+          { id: 24, name: 'label.last.24.hours' },
+          { id: 168, name: 'label.last.7.days' }
+        ]
       }
 
       if (arrayField.includes('level')) {
