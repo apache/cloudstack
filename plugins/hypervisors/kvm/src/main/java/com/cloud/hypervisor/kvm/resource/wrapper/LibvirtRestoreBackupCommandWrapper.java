@@ -25,10 +25,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
@@ -431,28 +433,30 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private String getDeviceToAttachDisk(String vmName) {
-        // --details adds a Device column (disk/cdrom) that the awk below filters on ($2=="disk")
-        // to exclude cdrom slots. cdrom entries (hdc, hdd) are listed after the virtio disks in
-        // domblklist's output, so without this filter, taking the last line would select a
-        // cdrom, not the actual disk.
+        // virsh runs on its own so its exit code is checked; behind a pipe only the last command's is.
+        // --details adds the Device column (disk/cdrom) used below to skip the cdrom slots.
         String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName, "--details" };
-        // Only virtio (vd*) targets are used: IDE/SATA disks cannot be hot-plugged.
-        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "$2==\"disk\" && $3 ~ /^vd/ {print $3}" };
-        String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "1" };
-        Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, awkCmd, tailCmd), 0);
-        if (result.first() == null || result.first() != 0) {
-            throw new CloudRuntimeException(String.format("Failed to determine the device to attach the restored volume to on VM [%s].", vmName));
+        Pair<Integer, String> result = Script.executePipedCommands(Collections.singletonList(domblkCmd), 0);
+        if (result.first() == null || result.first() != 0 || result.second() == null) {
+            throw new CloudRuntimeException(String.format("Failed to list the disks of VM [%s] to determine the device to attach the restored volume to.", vmName));
         }
-        // executePipedCommands appends a line separator to every line it reads, so the device
-        // name has to be trimmed before the last character can be incremented.
-        String currentDevice = result.second() == null ? "" : result.second().trim();
-        if (StringUtils.isBlank(currentDevice)) {
-            // The VM has no virtio disk yet (e.g. only an IDE or SCSI root disk), so vda is free.
-            return "vda";
+        // Rows are "<Type> <Device> <Target> <Source>". Only virtio (vd*) targets are collected: IDE/SATA
+        // disks cannot be hot-plugged. domblklist follows the domain XML order, where hot-plugged disks
+        // are appended, so the last target is not necessarily the highest one; pick the first free name.
+        Set<String> usedDevices = new HashSet<>();
+        for (String line : result.second().split("\\R")) {
+            String[] columns = line.trim().split("\\s+");
+            if (columns.length >= 3 && "disk".equals(columns[1]) && columns[2].startsWith("vd")) {
+                usedDevices.add(columns[2]);
+            }
         }
-        char lastChar = currentDevice.charAt(currentDevice.length() - 1);
-        char incrementedChar = (char) (lastChar + 1);
-        return currentDevice.substring(0, currentDevice.length() - 1) + incrementedChar;
+        for (char c = 'a'; c <= 'z'; c++) {
+            String device = "vd" + c;
+            if (!usedDevices.contains(device)) {
+                return device;
+            }
+        }
+        throw new CloudRuntimeException(String.format("No free virtio device is left to attach the restored volume to on VM [%s].", vmName));
     }
 
     private String getXmlForRbdDisk(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String deviceToAttachDiskTo) {
