@@ -55,6 +55,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -329,6 +330,11 @@ public class AffinityGroupServiceImplTest {
         @Bean
         public EventDao eventDao() {
             return Mockito.mock(EventDao.class);
+        }
+
+        @Bean
+        public AsyncJobManager asyncJobManager() {
+            return Mockito.mock(AsyncJobManager.class);
         }
 
         @Bean

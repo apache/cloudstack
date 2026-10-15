@@ -21,30 +21,49 @@ import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /** Thrown when an operation was stopped because its async job was cancelled. Unchecked: intermediate callers must not relabel it as a timeout. */
 public class OperationCancelledException extends CloudRuntimeException {
+
     private static final long serialVersionUID = SerialVersionUID.OperationCancelledException;
+
     long _agentId;
     long _seqId;
-    int _time;
+    long _elapsedSeconds;
     boolean _isActive;
     String _reason;
 
     transient Command[] _cmds;
 
-    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive, String reason) {
-        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled" + (reason != null ? ": " + reason : ""));
+    public OperationCancelledException(Command[] cmds, long agentId, long seqId, long elapsedSeconds, boolean isActive, String reason) {
+        super(commandNames(cmds) + " (seq " + seqId + ") on host " + agentId + " cancelled after " + elapsedSeconds + " s" + (reason != null ? ": " + reason : ""));
         _agentId = agentId;
         _seqId = seqId;
-        _time = time;
+        _elapsedSeconds = elapsedSeconds;
         _cmds = cmds;
         _isActive = isActive;
         _reason = reason;
     }
 
-    public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
-        this(cmds, agentId, seqId, time, isActive, null);
+    private OperationCancelledException(String message, Command[] cmds, long agentId, String reason) {
+        super(message);
+        _agentId = agentId;
+        _cmds = cmds;
+        _reason = reason;
+    }
+
+    /** The commands were never sent: its job had already been cancelled. */
+    public static OperationCancelledException updateCmdsNotSent(Command[] cmds, long agentId, long jobId) {
+        final String reason = "job-" + jobId + " was cancelled";
+        return new OperationCancelledException(commandNames(cmds) + " to host " + agentId + " not sent: " + reason, cmds, agentId, reason);
+    }
+
+    static String commandNames(Command[] cmds) {
+        if (cmds == null || cmds.length == 0) {
+            return "Command";
+        }
+        return Arrays.stream(cmds).map(cmd -> cmd == null ? "null" : cmd.getClass().getSimpleName()).collect(Collectors.joining(", "));
     }
 
     public long getAgentId() {
@@ -55,8 +74,8 @@ public class OperationCancelledException extends CloudRuntimeException {
         return _seqId;
     }
 
-    public int getWaitTime() {
-        return _time;
+    public long getElapsedSeconds() {
+        return _elapsedSeconds;
     }
 
     public boolean isActive() {

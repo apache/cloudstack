@@ -107,7 +107,7 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
                 assert (obj instanceof Pair);
                 return (Pair<JobInfo.Status, String>)obj;
             } catch (InvocationTargetException e) {
-                logger.error("Invocation exception, caused by: " + e.getCause());
+                logger.warn("Invocation exception, caused by: " + e.getCause());
 
                 // legacy CloudStack code relies on checked exception for error handling
                 // we need to re-throw the real exception here
