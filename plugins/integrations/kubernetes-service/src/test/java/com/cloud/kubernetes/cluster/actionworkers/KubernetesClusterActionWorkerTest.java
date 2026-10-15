@@ -239,10 +239,19 @@ public class KubernetesClusterActionWorkerTest {
                 new KubernetesClusterDetailsVO(DEFAULT_ID, ApiConstants.DOCKER_REGISTRY_URL, "https://index.docker.io/v1/", true));
         Mockito.when(kubernetesClusterDetailsDao.listDetails(DEFAULT_ID)).thenReturn(details);
         String config = actionWorker.updateKubeConfigWithRegistryDetails(actionWorker.readResourceFile("conf/k8s-control-node.yml"));
-        Assert.assertTrue(config.startsWith("#cloud-config"));
-        Assert.assertFalse(config.contains("{%"));
+        Assert.assertTrue(config.startsWith("## template: jinja"));
+        Assert.assertTrue(config.contains("{% if \"true\" == \"true\" %}"));
         Assert.assertTrue(config.contains("- path: /opt/bin/setup-containerd"));
         Assert.assertTrue(config.contains("- bash -x /opt/bin/setup-containerd"));
         Assert.assertTrue(config.contains("registry.mirrors.\\\"index.docker.io/v1/\\\""));
+    }
+
+    @Test
+    public void testUpdateKubeConfigWithRegistryDetailsControlNodeNoRegistry() throws IOException {
+        Mockito.when(kubernetesClusterDetailsDao.listDetails(DEFAULT_ID)).thenReturn(new ArrayList<>());
+        String config = actionWorker.updateKubeConfigWithRegistryDetails(actionWorker.readResourceFile("conf/k8s-control-node.yml"));
+        Assert.assertTrue(config.contains("{% if \"false\" == \"true\" %}"));
+        Assert.assertFalse(config.contains("{{ registry.enabled }}"));
+        Assert.assertFalse(config.contains("- bash -x /opt/bin/setup-containerd"));
     }
 }

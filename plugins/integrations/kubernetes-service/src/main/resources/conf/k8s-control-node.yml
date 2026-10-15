@@ -1,3 +1,4 @@
+## template: jinja
 #cloud-config
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -357,6 +358,7 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
+  {% if "{{ registry.enabled }}" == "true" %}
   - path: /opt/bin/setup-containerd
     permissions: '0755'
     owner: root:root
@@ -374,6 +376,7 @@ write_files:
       echo "Restarting containerd service"
       systemctl daemon-reload
       systemctl restart containerd
+  {% endif %}
 
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'
