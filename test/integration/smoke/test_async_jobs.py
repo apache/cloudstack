@@ -184,6 +184,10 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         events = self.apiclient.listEvents(cmd) or []
         self.assertTrue(events, "No events listed for deploy job %s" % self.deploy_job_id)
         self.assertTrue(any(event.type.startswith("VM.CREATE") for event in events), "No VM.CREATE event for the deploy job")
+        states = set(event.state for event in events)
+        self.assertIn("Scheduled", states, "The Scheduled event of the deploy job is not linked to it")
+        self.assertIn("Created", states, "The Created event of the deploy job is not linked to it")
+        self.assertIn("Completed", states, "The Completed event of the deploy job is not linked to it")
         for event in events:
             self.assertEqual(event.jobid, self.deploy_job_id, "Event %s of another job listed" % event.id)
 
