@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
@@ -63,6 +64,7 @@ public class ActionEventUtils {
     protected static Logger LOGGER = LogManager.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
+    private static AsyncJobManager s_jobMgr;
     private static AccountDao s_accountDao;
     private static ProjectDao s_projectDao;
     protected static UserDao s_userDao;
@@ -78,6 +80,8 @@ public class ActionEventUtils {
 
     @Inject
     EventDao eventDao;
+    @Inject
+    AsyncJobManager jobMgr;
     @Inject
     AccountDao accountDao;
     @Inject
@@ -95,6 +99,7 @@ public class ActionEventUtils {
     @PostConstruct
     void init() {
         s_eventDao = eventDao;
+        s_jobMgr = jobMgr;
         s_accountDao = accountDao;
         s_userDao = userDao;
         s_projectDao = projectDao;
@@ -224,6 +229,12 @@ public class ActionEventUtils {
         }
         event = s_eventDao.persist(event);
         return event;
+    }
+
+    /** Why the job running on this thread is being or has been cancelled; null when it is not. */
+    public static String cancellationReasonOfCurrentJob() {
+        final Long jobId = currentJobId();
+        return jobId != null && s_jobMgr != null ? s_jobMgr.getCancellationReason(jobId) : null;
     }
 
     /** The API job this thread works for (a VM work job's parent), or null outside a job. */

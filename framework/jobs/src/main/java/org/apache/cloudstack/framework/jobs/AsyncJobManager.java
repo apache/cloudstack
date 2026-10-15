@@ -47,6 +47,9 @@ public interface AsyncJobManager extends Manager {
 
     void finalizeCancelledJob(long jobId);
 
+    /** Why the job, or the API job a VM work job runs for, is being or has been cancelled; null when it is not. */
+    String getCancellationReason(long jobId);
+
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);

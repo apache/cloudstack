@@ -131,7 +131,7 @@ public abstract class AgentAttache {
 
     protected AgentManagerImpl _agentMgr;
     // cancelled because the job was cancelled, as opposed to timed out
-    private final Set<Long> _cancelledSequences = ConcurrentHashMap.newKeySet();
+    private final Map<Long, String> _cancelledSequences = new ConcurrentHashMap<>();
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
@@ -273,7 +273,11 @@ public abstract class AgentAttache {
 
     /** Job-cancel path; distinct from cancel(seq), which only drops the request on this side. */
     public boolean cancelExecution(final long seq) {
-        _cancelledSequences.add(seq);
+        return cancelExecution(seq, null);
+    }
+
+    public boolean cancelExecution(final long seq, final String reason) {
+        _cancelledSequences.put(seq, reason != null ? reason : "cancelled");
         if (!cancelRunning(seq)) {
             // refused: the command runs on and its sender must see the real answer
             _cancelledSequences.remove(seq);
@@ -281,6 +285,12 @@ public abstract class AgentAttache {
         }
         cancel(seq);
         return true;
+    }
+
+    /** The job's reason when the cancel came through cancelExecution; otherwise what the layer that noticed it says. */
+    private OperationCancelledException cancelled(final Request req, final long started, final boolean isActive, final String fallbackReason) {
+        final String reason = _cancelledSequences.getOrDefault(req.getSequence(), fallbackReason);
+        return new OperationCancelledException(req.getCommands(), _id, req.getSequence(), (System.currentTimeMillis() - started) / 1000, isActive, reason);
     }
 
     protected synchronized int findRequest(final Request req) {
@@ -464,13 +474,14 @@ public abstract class AgentAttache {
     public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
         long seq = req.getSequence();
+        final long started = System.currentTimeMillis();
         send(req, sl);
 
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
-                if (_cancelledSequences.contains(seq)) {
-                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
+                if (_cancelledSequences.containsKey(seq)) {
+                    throw cancelled(req, started, false, null);
                 }
                 Command[] cmds = req.getCommands();
                 if (cmds != null && cmds.length == 1 && (cmds[0] != null) && cmds[0].isReconcile()
@@ -483,15 +494,15 @@ public abstract class AgentAttache {
                     } catch (final InterruptedException e) {
                         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for the answer");
                         Thread.currentThread().interrupt();
-                        if (_cancelledSequences.contains(seq)) {
-                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
+                        if (_cancelledSequences.containsKey(seq)) {
+                            throw cancelled(req, started, true, "cancelled while waiting for the answer");
                         }
                     }
                 }
                 if (answers != null) {
                     for (Answer answer : answers) {
                         if (answer != null && answer.isCancelled()) {
-                            throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, answer.getDetails());
+                            throw cancelled(req, started, true, answer.getDetails());
                         }
                     }
 
@@ -499,8 +510,8 @@ public abstract class AgentAttache {
                     return answers;
                 }
 
-                if (_cancelledSequences.contains(seq)) {
-                    throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled while waiting for the answer");
+                if (_cancelledSequences.containsKey(seq)) {
+                    throw cancelled(req, started, true, "cancelled while waiting for the answer");
                 }
 
                 answers = sl.getAnswers(); // Try it again.

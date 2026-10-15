@@ -33,6 +33,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -206,11 +207,32 @@ public class AgentManagerImplTest {
         Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(false);
         mgr.new CancelledJobsCheckTask().runInContext();
         Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
-        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong());
+        Mockito.verify(attache, Mockito.never()).cancelExecution(Mockito.anyLong(), Mockito.anyString());
 
         Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
-        Mockito.when(attache.cancelExecution(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
         mgr.new CancelledJobsCheckTask().runInContext();
         Mockito.verify(asyncJobManager).finalizeCancelledJob(42L);
+    }
+
+    @Test
+    public void testCommandsInFlightHereForAJobCancelledElsewhereAreStopped() throws Exception {
+        final AsyncJobManager asyncJobManager = Mockito.mock(AsyncJobManager.class);
+        mgr.asyncJobManager = asyncJobManager;
+        Mockito.when(asyncJobManager.listCancelledJobsExecutingOn(mgr._nodeId)).thenReturn(Collections.emptyList());
+        final AsyncJobVO cancelled = new AsyncJobVO();
+        cancelled.setId(42L);
+        cancelled.setStatus(JobInfo.Status.CANCELLED);
+        Mockito.when(asyncJobManager.getAsyncJob(42L)).thenReturn(cancelled);
+        final AgentAttache attache = Mockito.mock(AgentAttache.class);
+        Mockito.doReturn(attache).when(mgr).getAttache(1L);
+        Mockito.when(attache.isExecutionCancellable(11L)).thenReturn(true);
+        Mockito.when(attache.cancelExecution(Mockito.eq(11L), Mockito.anyString())).thenReturn(true);
+        mgr._jobToHostIdAndReqSequenceMap.put(42L, new HashSet<>(Collections.singleton(new Pair<>(1L, 11L))));
+
+        mgr.new CancelledJobsCheckTask().runInContext();
+
+        Mockito.verify(attache).cancelExecution(Mockito.eq(11L), Mockito.anyString());
+        Mockito.verify(asyncJobManager, Mockito.never()).finalizeCancelledJob(Mockito.anyLong());
     }
 }
