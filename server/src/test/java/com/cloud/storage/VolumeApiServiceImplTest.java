@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -110,6 +111,10 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
@@ -129,6 +134,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -141,12 +147,17 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
@@ -164,6 +175,12 @@ public class VolumeApiServiceImplTest {
     private SnapshotManager snapshotManagerMock;
     @Mock
     private VolumeDataStoreDao volumeDataStoreDaoMock;
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDaoMock;
+    @Mock
+    private NicDao nicDaoMock;
+    @Mock
+    private NetworkModel networkModelMock;
     @Mock
     private VolumeDao volumeDaoMock;
     @Mock
@@ -2908,8 +2925,12 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-    private void mockVmCdromCount(UserVmVO vm, int cdromCount) {
-        lenient().doReturn(cdromCount).when(volumeApiServiceImpl).getVmCdromCount(vm);
+    private void mockVmNetworkProvidesConfigDrive(UserVmVO vm, boolean providesConfigDrive) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        lenient().when(nic.getNetworkId()).thenReturn(100L);
+        lenient().when(nicDaoMock.listByVmId(vm.getId())).thenReturn(Collections.singletonList(nic));
+        lenient().when(networkModelMock.isProviderSupportServiceInNetwork(eq(100L), eq(Service.UserData), eq(Provider.ConfigDrive))).thenReturn(providesConfigDrive);
+        lenient().doReturn(1).when(volumeApiServiceImpl).getVmCdromCount(vm);
     }
 
     private List<VolumeVO> mockVmVolumes(UserVmVO vm, long... deviceIds) {
@@ -2924,24 +2945,52 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void getReservedDeviceIdsReservesOneDeviceIdPerCdrom() {
+    public void getReservedDeviceIdsReturnsOnlyCdromWhenVmDoesNotUseConfigDrive() {
         UserVmVO vm = getMockedVm();
+        mockVmNetworkProvidesConfigDrive(vm, false);
 
-        mockVmCdromCount(vm, 1);
-        Assert.assertEquals(new HashSet<>(Arrays.asList(3L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+        Set<Long> reserved = volumeApiServiceImpl.getReservedDeviceIds(vm);
 
-        // e.g. the CD-ROM and the config drive ISO, which is attached as the CD-ROM following the ones of the ISOs
-        mockVmCdromCount(vm, 2);
-        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
-
-        mockVmCdromCount(vm, 3);
-        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
+        Assert.assertEquals(Collections.singleton((long) TemplateManager.CDROM_PRIMARY_DEVICE_SEQ), reserved);
     }
 
     @Test
-    public void getDeviceIdUsesDeviceId4WhenVmHasOneCdrom() throws Exception {
+    public void getReservedDeviceIdsIncludesConfigDriveWhenNetworkProvidesItBeforeFirstStart() {
+        // the config drive location detail is only added when the ISO is created, i.e. at the first start
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 1);
+        mockVmNetworkProvidesConfigDrive(vm, true);
+
+        Set<Long> reserved = volumeApiServiceImpl.getReservedDeviceIds(vm);
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList((long) TemplateManager.CDROM_PRIMARY_DEVICE_SEQ, ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue())), reserved);
+    }
+
+    @Test
+    public void getReservedDeviceIdsIncludesConfigDriveWhenConfigDriveLocationDetailExists() {
+        UserVmVO vm = getMockedVm();
+        when(vmInstanceDetailsDaoMock.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(mock(VMInstanceDetailVO.class));
+        doReturn(1).when(volumeApiServiceImpl).getVmCdromCount(vm);
+
+        Set<Long> reserved = volumeApiServiceImpl.getReservedDeviceIds(vm);
+
+        Assert.assertTrue(reserved.contains(ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ.longValue()));
+    }
+
+    @Test
+    public void getReservedDeviceIdsReservesOneDeviceIdPerCdrom() {
+        UserVmVO vm = getMockedVm();
+        mockVmNetworkProvidesConfigDrive(vm, false);
+        doReturn(3).when(volumeApiServiceImpl).getVmCdromCount(vm);
+
+        Set<Long> reserved = volumeApiServiceImpl.getReservedDeviceIds(vm);
+
+        Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), reserved);
+    }
+
+    @Test
+    public void getDeviceIdUsesDeviceId4WhenVmDoesNotUseConfigDrive() throws Exception {
+        UserVmVO vm = getMockedVm();
+        mockVmNetworkProvidesConfigDrive(vm, false);
         mockVmVolumes(vm, 0L, 1L, 2L);
 
         Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, null));
@@ -2949,9 +2998,9 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void getDeviceIdSkipsDeviceIdsOfAllCdroms() throws Exception {
+    public void getDeviceIdSkipsConfigDriveDeviceIdWhenVmUsesConfigDrive() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockVmNetworkProvidesConfigDrive(vm, true);
         mockVmVolumes(vm, 0L, 1L, 2L);
 
         Assert.assertEquals(Long.valueOf(5L), invokeGetDeviceId(vm, null));
@@ -2960,7 +3009,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void getDeviceIdRejectsReservedDeviceIds() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockVmNetworkProvidesConfigDrive(vm, true);
         mockVmVolumes(vm, 0L);
 
         for (long reservedDeviceId : new long[] {3L, 4L}) {
@@ -2974,9 +3023,9 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void getDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() throws Exception {
+    public void getDeviceIdKeepsMaxDataVolumesWhenVmUsesConfigDrive() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockVmNetworkProvidesConfigDrive(vm, true);
         List<VolumeVO> volumes = mockVmVolumes(vm, 0L);
 
         // 6 data volumes are supported by default

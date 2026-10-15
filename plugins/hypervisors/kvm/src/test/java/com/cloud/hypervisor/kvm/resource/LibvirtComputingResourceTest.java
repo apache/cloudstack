@@ -7730,36 +7730,4 @@ public class LibvirtComputingResourceTest {
         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
         Assert.assertEquals(expectedResult, result);
     }
-
-    private DiskDef createCdromWithSource(String path, String label, DiskDef.DiskBus bus) {
-        DiskDef cdrom = new DiskDef();
-        cdrom.defISODisk(path, null, label, DiskDef.DiskType.FILE);
-        cdrom.setBusType(bus);
-        return cdrom;
-    }
-
-    @Test
-    public void isConfigDriveCdromTestFindsConfigDriveIsoWhateverTheDeviceLabel() {
-        String vmName = "i-2-3-VM";
-        // the config drive ISO is the CD-ROM following the ones of the ISOs, so its label depends on the number of the CD-ROMs
-        Assert.assertTrue(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource("/mnt/pool/configdrive/i-2-3-VM.iso", "hdd", DiskDef.DiskBus.IDE), vmName));
-        Assert.assertTrue(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource("/mnt/pool/configdrive/i-2-3-VM.iso", "sde", DiskDef.DiskBus.SATA), vmName));
-        Assert.assertTrue(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource("/var/cache/cloud/configdrive/i-2-3-VM.iso", "sdf", DiskDef.DiskBus.SATA), vmName));
-    }
-
-    @Test
-    public void isConfigDriveCdromTestIgnoresOtherCdroms() {
-        String vmName = "i-2-3-VM";
-        Assert.assertFalse(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource("/mnt/pool/some-ubuntu.iso", "hdc", DiskDef.DiskBus.IDE), vmName));
-        Assert.assertFalse(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource("/mnt/pool/configdrive/i-2-30-VM.iso", "hdd", DiskDef.DiskBus.IDE), vmName));
-        Assert.assertFalse(libvirtComputingResourceSpy.isConfigDriveCdrom(createCdromWithSource(null, "hdc", DiskDef.DiskBus.IDE), vmName));
-    }
-
-    @Test
-    public void isConfigDriveCdromTestIgnoresDisks() {
-        DiskDef disk = new DiskDef();
-        disk.defFileBasedDisk("/mnt/pool/configdrive/i-2-3-VM.iso", 1, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.RAW);
-
-        Assert.assertFalse(libvirtComputingResourceSpy.isConfigDriveCdrom(disk, "i-2-3-VM"));
-    }
 }

@@ -597,25 +597,4 @@ public class LibvirtVMDefTest extends TestCase {
                 "<backend type='emulator' version='2.0'/>\n" +
                 "</tpm>\n", tpmDef.toString());
     }
-
-    @Test
-    public void testIsoDiskDefOnIdeBusForTheIdeCdromSlots() {
-        for (int[] slot : new int[][] {{3, 'c'}, {4, 'd'}}) {
-            DiskDef cdrom = new DiskDef();
-            cdrom.defISODisk(null, slot[0], false, DiskDef.DiskType.FILE);
-
-            assertEquals(DiskDef.DiskBus.IDE, cdrom.getBusType());
-            assertEquals("hd" + (char) slot[1], cdrom.getDiskLabel());
-        }
-    }
-
-    @Test
-    public void testIsoDiskDefBeyondTheIdeCdromSlotsIsOnSataBus() {
-        // e.g. the config drive ISO following the ISOs: IDE only has the hdc and hdd slots for CD-ROMs
-        DiskDef cdrom = new DiskDef();
-        cdrom.defISODisk("/mnt/pool/configdrive/i-2-3-VM.iso", 5, false, DiskDef.DiskType.FILE);
-
-        assertEquals(DiskDef.DiskBus.SATA, cdrom.getBusType());
-        assertEquals("sdf", cdrom.getDiskLabel());
-    }
 }

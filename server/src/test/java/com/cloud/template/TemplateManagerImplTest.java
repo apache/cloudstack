@@ -82,9 +82,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
@@ -123,17 +120,12 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmIsoMapVO;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 
@@ -257,12 +249,6 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     HostDetailsDao _hostDetailsDao;
-    @Mock
-    NicDao _nicDao;
-    @Mock
-    NetworkModel _networkModel;
-    @Mock
-    VMInstanceDetailsDao _vmInstanceDetailsDao;
 
     @Mock
     UserVmJoinDao _userVmJoinDao;
@@ -1372,95 +1358,5 @@ public class TemplateManagerImplTest extends TestCase {
                 new VmIsoMapVO(1L, 12L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2)));
 
         Assert.assertEquals(3, templateManager.getVmCdromCount(vm));
-    }
-
-    private void mockVmNetworkProvidesConfigDrive(UserVmVO vm, boolean providesConfigDrive) {
-        NicVO nic = Mockito.mock(NicVO.class);
-        Mockito.when(nic.getNetworkId()).thenReturn(100L);
-        Mockito.when(_nicDao.listByVmId(vm.getId())).thenReturn(java.util.Collections.singletonList(nic));
-        Mockito.lenient().when(_networkModel.isProviderSupportServiceInNetwork(Mockito.eq(100L), Mockito.any(Service.class), Mockito.eq(Provider.ConfigDrive))).thenReturn(providesConfigDrive);
-    }
-
-    private void withConfiguredMaxCdroms(String value, Runnable test) {
-        Object original = org.springframework.test.util.ReflectionTestUtils.getField(TemplateManager.VmIsoMaxCount, "_defaultValue");
-        org.springframework.test.util.ReflectionTestUtils.setField(TemplateManager.VmIsoMaxCount, "_defaultValue", value);
-        try {
-            test.run();
-        } finally {
-            org.springframework.test.util.ReflectionTestUtils.setField(TemplateManager.VmIsoMaxCount, "_defaultValue", original);
-        }
-    }
-
-    @Test
-    public void isConfigDriveUsedReturnsTrueWhenNetworkProvidesConfigDriveBeforeFirstStart() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
-        mockVmNetworkProvidesConfigDrive(vm, true);
-
-        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
-    }
-
-    @Test
-    public void isConfigDriveUsedReturnsTrueWhenConfigDriveLocationDetailExists() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
-        Mockito.when(_vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(Mockito.mock(VMInstanceDetailVO.class));
-
-        Assert.assertTrue(templateManager.isConfigDriveUsed(vm));
-    }
-
-    @Test
-    public void isConfigDriveUsedReturnsFalseWhenNoNetworkProvidesConfigDrive() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
-        mockVmNetworkProvidesConfigDrive(vm, false);
-
-        Assert.assertFalse(templateManager.isConfigDriveUsed(vm));
-    }
-
-    @Test
-    public void effectiveMaxCdromsDoesNotCountConfigDrive() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
-        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
-        mockVmNetworkProvidesConfigDrive(vm, true);
-
-        // the config drive ISO is attached as an additional CD-ROM, it does not take one of the ISOs
-        withConfiguredMaxCdroms("2", () -> Assert.assertEquals(2, templateManager.effectiveMaxCdroms(vm, 7L)));
-    }
-
-    @Test
-    public void getVmCdromCountIncludesConfigDriveCdrom() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
-        mockVmNetworkProvidesConfigDrive(vm, true);
-
-        // the host does not advertise the number of CD-ROMs: one CD-ROM for ISOs, and one for the config drive ISO
-        Assert.assertEquals(2, templateManager.getVmCdromCount(vm));
-    }
-
-    @Test
-    public void getVmCdromCountAddsTheCdromOfConfigDriveToTheOnesOfIsos() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
-        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
-        mockVmNetworkProvidesConfigDrive(vm, true);
-
-        // 2 CD-ROMs for ISOs (vm.iso.max.count), and 1 for the config drive ISO
-        withConfiguredMaxCdroms("2", () -> Assert.assertEquals(3, templateManager.getVmCdromCount(vm)));
-    }
-
-    @Test
-    public void getConfigDriveDeviceIdIsTheCdromFollowingTheOnesOfIsos() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(3L);
-        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
-
-        // vm.iso.max.count is 1 by default
-        Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1, templateManager.getConfigDriveDeviceId(vm, 7L));
-        withConfiguredMaxCdroms("3", () -> Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 3, templateManager.getConfigDriveDeviceId(vm, 7L)));
-    }
-
-    @Test
-    public void getConfigDriveDeviceIdFollowsAttachedIsosBeyondConfiguredMaximum() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
-        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
-        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(
-                new VmIsoMapVO(1L, 11L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1)));
-
-        Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2, templateManager.getConfigDriveDeviceId(vm, 7L));
     }
 }

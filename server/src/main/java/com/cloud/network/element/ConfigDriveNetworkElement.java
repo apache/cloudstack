@@ -73,7 +73,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
@@ -115,8 +114,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     NetworkModel _networkModel;
     @Inject
-    TemplateManager _templateMgr;
-    @Inject
     NetworkOrchestrationService _networkOrchestrationService;
     @Inject
     GuestOSCategoryDao _guestOSCategoryDao;
@@ -145,9 +142,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
 
-    // Device id of the config drive ISO when the Instance has a single ISO CD-ROM (the config drive ISO is the CD-ROM
-    // following the ones of the ISOs, see TemplateManager#getConfigDriveDeviceId). Used where the Instance is not known.
-    public static final Integer CONFIGDRIVEDISKSEQ = TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1;
+    public static final Integer CONFIGDRIVEDISKSEQ = 4;
 
     private boolean canHandle(TrafficType trafficType) {
         return trafficType.equals(TrafficType.Guest);
@@ -596,7 +591,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
         updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
-        addConfigDriveDisk(profile, null, host.getId());
+        addConfigDriveDisk(profile, null);
         return true;
     }
 
@@ -681,7 +676,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
         updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
-        addConfigDriveDisk(profile, dataStore, dest != null && dest.getHost() != null ? dest.getHost().getId() : null);
+        addConfigDriveDisk(profile, dataStore);
         return true;
     }
 
@@ -781,7 +776,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore, final Long hostId) throws ResourceUnavailableException {
+    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) throws ResourceUnavailableException {
         boolean isoAvailable = false;
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
         for (DiskTO dataTo : profile.getDisks()) {
@@ -803,7 +798,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             dataTO.setPath(isoPath);
             dataTO.setFormat(Storage.ImageFormat.ISO);
 
-            profile.addDisk(new DiskTO(dataTO, (long) _templateMgr.getConfigDriveDeviceId(profile.getVirtualMachine(), hostId), isoPath, Volume.Type.ISO));
+            profile.addDisk(new DiskTO(dataTO, CONFIGDRIVEDISKSEQ.longValue(), isoPath, Volume.Type.ISO));
         } else {
             logger.warn("Config drive ISO already is in Instance profile.");
         }
