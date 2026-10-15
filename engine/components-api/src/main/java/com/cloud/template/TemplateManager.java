@@ -17,6 +17,7 @@
 package com.cloud.template;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -185,22 +186,22 @@ public interface TemplateManager {
     void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest);
 
     /**
-     * Returns the number of CD-ROM devices of the Instance. The CD-ROM devices occupy the device ids starting from
-     * {@link #CDROM_PRIMARY_DEVICE_SEQ}, which therefore cannot be used by the volumes of the Instance.
+     * Returns the device ids of the CD-ROM devices of the Instance, starting from {@link #CDROM_PRIMARY_DEVICE_SEQ}.
+     * They cannot be used by the volumes of the Instance.
      * The hypervisor defines all the CD-ROM devices it supports for the Instance (see {@code host.cdrom.max.count}),
      * whether or not ISOs are attached to them. If the Instance uses config drive, the config drive ISO is one more
      * CD-ROM: it keeps its device id (4), and the CD-ROMs of the ISOs from that device id are moved to the next ones.
      *
      * @param vm the Instance
-     * @return the number of CD-ROM devices, including the one of the config drive ISO if the Instance uses config drive
+     * @return the device ids of the CD-ROM devices, including the one of the config drive ISO if the Instance uses config drive
      */
-    int getVmCdromCount(VirtualMachine vm);
+    Set<Long> getCdromDeviceIds(VirtualMachine vm);
 
     /**
-     * Same as {@link #getVmCdromCount(VirtualMachine)}, with the specified usage of config drive instead of the one of
+     * Same as {@link #getCdromDeviceIds(VirtualMachine)}, with the specified usage of config drive instead of the one of
      * the Instance. It is useful when the networks of the Instance are not known yet, e.g. when importing it.
      */
-    int getVmCdromCount(VirtualMachine vm, boolean configDriveUsed);
+    Set<Long> getCdromDeviceIds(VirtualMachine vm, boolean configDriveUsed);
 
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";

@@ -24,8 +24,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -730,15 +732,27 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public int getVmCdromCount(VirtualMachine vm) {
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm) {
         if (vm.getType() != VirtualMachine.Type.User) {
-            return 1;
+            return getCdromDeviceIds(1);
         }
-        return getVmCdromCount(vm, isConfigDriveUsed(vm));
+        return getCdromDeviceIds(vm, isConfigDriveUsed(vm));
     }
 
     @Override
-    public int getVmCdromCount(VirtualMachine vm, boolean configDriveUsed) {
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return getCdromDeviceIds(getCdromCount(vm, configDriveUsed));
+    }
+
+    private Set<Long> getCdromDeviceIds(int cdromCount) {
+        Set<Long> deviceIds = new HashSet<>();
+        for (int i = 0; i < cdromCount; i++) {
+            deviceIds.add((long) CDROM_PRIMARY_DEVICE_SEQ + i);
+        }
+        return deviceIds;
+    }
+
+    private int getCdromCount(VirtualMachine vm, boolean configDriveUsed) {
         if (vm.getType() != VirtualMachine.Type.User) {
             return 1;
         }

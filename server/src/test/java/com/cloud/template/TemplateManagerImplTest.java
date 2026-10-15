@@ -1330,6 +1330,10 @@ public class TemplateManagerImplTest extends TestCase {
         }
     }
 
+    private java.util.Set<Long> ids(Long... deviceIds) {
+        return new java.util.HashSet<>(Arrays.asList(deviceIds));
+    }
+
     private UserVmVO mockUserVmOnHostWithCdromCap(Long advertisedCap) {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
@@ -1345,36 +1349,36 @@ public class TemplateManagerImplTest extends TestCase {
     }
 
     @Test
-    public void getVmCdromCountReturnsOneForSystemVms() {
+    public void getCdromDeviceIdsReturnsOnlyThePrimaryCdromForSystemVms() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
 
-        Assert.assertEquals(1, templateManager.getVmCdromCount(vm));
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
     }
 
     @Test
-    public void getVmCdromCountReturnsAllCdromsAdvertisedByHostRegardlessOfConfiguredMaximum() {
+    public void getCdromDeviceIdsReturnsAllCdromsAdvertisedByHostRegardlessOfConfiguredMaximum() {
         // vm.iso.max.count defaults to 1, but the host defines all the CD-ROMs it supports
         UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
 
-        Assert.assertEquals(2, templateManager.getVmCdromCount(vm));
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm));
     }
 
     @Test
-    public void getVmCdromCountReturnsDefaultWhenHostDoesNotAdvertiseCdromCap() {
+    public void getCdromDeviceIdsReturnsDefaultWhenHostDoesNotAdvertiseCdromCap() {
         UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
 
-        Assert.assertEquals(TemplateManager.DEFAULT_CDROM_MAX_PER_VM, templateManager.getVmCdromCount(vm));
+        Assert.assertEquals(ids(3L), templateManager.getCdromDeviceIds(vm));
     }
 
     @Test
-    public void getVmCdromCountCoversAttachedIsosBeyondHostCap() {
+    public void getCdromDeviceIdsCoversAttachedIsosBeyondHostCap() {
         UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
         Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(Arrays.asList(
                 new VmIsoMapVO(1L, 11L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1),
                 new VmIsoMapVO(1L, 12L, TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2)));
 
-        Assert.assertEquals(3, templateManager.getVmCdromCount(vm));
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm));
     }
 
     private void mockVmNetworkProvidesConfigDrive(UserVmVO vm, boolean providesConfigDrive) {
@@ -1419,14 +1423,14 @@ public class TemplateManagerImplTest extends TestCase {
     }
 
     @Test
-    public void getVmCdromCountAddsTheCdromOfConfigDrive() {
+    public void getCdromDeviceIdsAddsTheCdromOfConfigDrive() {
         UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
         mockVmNetworkProvidesConfigDrive(vm, true);
 
         // the config drive ISO is one more CD-ROM than the ones supported for the ISOs
-        Assert.assertEquals(3, templateManager.getVmCdromCount(vm));
-        Assert.assertEquals(2, templateManager.getVmCdromCount(vm, false));
-        Assert.assertEquals(3, templateManager.getVmCdromCount(vm, true));
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm));
+        Assert.assertEquals(ids(3L, 4L), templateManager.getCdromDeviceIds(vm, false));
+        Assert.assertEquals(ids(3L, 4L, 5L), templateManager.getCdromDeviceIds(vm, true));
     }
 
     @Test

@@ -2911,8 +2911,8 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-    private void mockVmCdromCount(UserVmVO vm, int cdromCount) {
-        lenient().doReturn(cdromCount).when(volumeApiServiceImpl).getVmCdromCount(vm);
+    private void mockCdromDeviceIds(UserVmVO vm, Long... deviceIds) {
+        lenient().when(templateManagerMock.getCdromDeviceIds(vm)).thenReturn(new HashSet<>(Arrays.asList(deviceIds)));
     }
 
     private List<VolumeVO> mockVmVolumes(UserVmVO vm, long... deviceIds) {
@@ -2927,24 +2927,24 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void getReservedDeviceIdsReservesOneDeviceIdPerCdrom() {
+    public void getReservedDeviceIdsReturnsTheDeviceIdsOfTheCdroms() {
         UserVmVO vm = getMockedVm();
 
-        mockVmCdromCount(vm, 1);
+        mockCdromDeviceIds(vm, 3L);
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
 
         // e.g. the CD-ROM and the config drive ISO, which is attached as the CD-ROM following the ones of the ISOs
-        mockVmCdromCount(vm, 2);
+        mockCdromDeviceIds(vm, 3L, 4L);
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
 
-        mockVmCdromCount(vm, 3);
+        mockCdromDeviceIds(vm, 3L, 4L, 5L);
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm));
     }
 
     @Test
     public void getDeviceIdUsesDeviceId4WhenVmHasOneCdrom() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 1);
+        mockCdromDeviceIds(vm, 3L);
         mockVmVolumes(vm, 0L, 1L, 2L);
 
         Assert.assertEquals(Long.valueOf(4L), invokeGetDeviceId(vm, null));
@@ -2954,7 +2954,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void getDeviceIdSkipsDeviceIdsOfAllCdroms() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockCdromDeviceIds(vm, 3L, 4L);
         mockVmVolumes(vm, 0L, 1L, 2L);
 
         Assert.assertEquals(Long.valueOf(5L), invokeGetDeviceId(vm, null));
@@ -2963,7 +2963,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void getDeviceIdRejectsReservedDeviceIds() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockCdromDeviceIds(vm, 3L, 4L);
         mockVmVolumes(vm, 0L);
 
         for (long reservedDeviceId : new long[] {3L, 4L}) {
@@ -2979,7 +2979,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void getDeviceIdKeepsMaxDataVolumesWhenDeviceIdsAreReserved() throws Exception {
         UserVmVO vm = getMockedVm();
-        mockVmCdromCount(vm, 2);
+        mockCdromDeviceIds(vm, 3L, 4L);
         List<VolumeVO> volumes = mockVmVolumes(vm, 0L);
 
         // 6 data volumes are supported by default
@@ -3004,8 +3004,8 @@ public class VolumeApiServiceImplTest {
     @Test
     public void getReservedDeviceIdsWithConfigDriveReservesTheCdromOfConfigDrive() {
         UserVmVO vm = getMockedVm();
-        when(templateManagerMock.getVmCdromCount(vm, false)).thenReturn(2);
-        when(templateManagerMock.getVmCdromCount(vm, true)).thenReturn(3);
+        when(templateManagerMock.getCdromDeviceIds(vm, false)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L)));
+        when(templateManagerMock.getCdromDeviceIds(vm, true)).thenReturn(new HashSet<>(Arrays.asList(3L, 4L, 5L)));
 
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm, false));
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm, true));

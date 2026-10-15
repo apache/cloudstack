@@ -5357,30 +5357,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
-    /**
-     * The number of CD-ROM devices of the Instance (including the one of the config drive ISO, if any). Each CD-ROM
-     * device occupies a device id, starting from {@link TemplateManager#CDROM_PRIMARY_DEVICE_SEQ}.
-     */
-    protected int getVmCdromCount(VirtualMachine vm) {
-        return _tmpltMgr.getVmCdromCount(vm);
-    }
-
     @Override
     public Set<Long> getReservedDeviceIds(VirtualMachine vm) {
-        return getReservedDeviceIds(vm, getVmCdromCount(vm));
+        return _tmpltMgr.getCdromDeviceIds(vm);
     }
 
     @Override
     public Set<Long> getReservedDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
-        return getReservedDeviceIds(vm, _tmpltMgr.getVmCdromCount(vm, configDriveUsed));
-    }
-
-    private Set<Long> getReservedDeviceIds(VirtualMachine vm, int cdromCount) {
-        Set<Long> reservedDeviceIds = new HashSet<>();
-        for (int i = 0; i < cdromCount; i++) {
-            reservedDeviceIds.add((long) TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + i);
-        }
-        return reservedDeviceIds;
+        return _tmpltMgr.getCdromDeviceIds(vm, configDriveUsed);
     }
 
     /**
