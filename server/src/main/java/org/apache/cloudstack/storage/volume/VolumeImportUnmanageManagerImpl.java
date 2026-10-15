@@ -69,6 +69,8 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -120,6 +122,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeApiService volumeApiService;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -250,6 +254,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor && StringUtils.isNotBlank(volumePath)) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, volumePath);
+        }
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
         checkIfHostAndPoolSupported(host, pool);

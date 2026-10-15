@@ -40,6 +40,8 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: RAT licence checks
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: |
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.18:check
       - name: Rat Report
