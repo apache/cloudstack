@@ -80,6 +80,12 @@
       </template>
       <template #cmd="{ text, record }">
         <router-link :to="{ path: '/jobs/' + record.jobid }">{{ text ? text.split('.').pop() : record.jobid }}</router-link>
+        <quick-view
+          style="margin-left: 5px"
+          :actions="jobActions"
+          :resource="record"
+          :enabled="true"
+          @exec-action="(action) => execAction(action, record)" />
       </template>
       <template #jobstatus="{ text }">
         <a-tag :color="jobStatusColor(text)">{{ $t(jobStatusLabel(text)) }}</a-tag>
@@ -128,26 +134,6 @@
         </a-popover>
         <span v-else>-</span>
       </template>
-      <template #actions="{ record }">
-        <router-link v-if="canListEvents" :to="{ path: '/event', query: { jobid: record.jobid } }" style="margin-right: 8px">
-          {{ $t('label.events') }}
-        </router-link>
-        <a-popconfirm
-          v-if="canCancel(record)"
-          :title="$t('message.confirm.cancel.job')"
-          :ok-text="$t('label.ok')"
-          :cancel-text="$t('label.cancel')"
-          placement="topRight"
-          @confirm="cancelJob(record)">
-          <a-button
-            type="primary"
-            danger
-            size="small"
-            :loading="cancelling === record.jobid">
-            {{ $t('label.cancel.job') }}
-          </a-button>
-        </a-popconfirm>
-      </template>
     </a-table>
     <a-pagination
       class="row-element"
@@ -170,16 +156,17 @@
 
 <script>
 import { getAPI, postAPI } from '@/api'
-import { isAdmin } from '@/role'
 import SearchView from '@/components/view/SearchView'
+import QuickView from '@/components/view/QuickView'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { genericCompare } from '@/utils/sort.js'
-import { JOB_STATUS, jobStatusLabel, jobStatusColor, jobResultText, jobResultPretty, jobResourcePath } from '@/utils/asyncjob'
+import { JOB_STATUS, jobStatusLabel, jobStatusColor, jobResultText, jobResultPretty, jobResourcePath, cancelJobAction } from '@/utils/asyncjob'
 
 export default {
   name: 'AsyncJobsTab',
   components: {
     SearchView,
+    QuickView,
     ResourceLabel
   },
   props: {
@@ -209,6 +196,7 @@ export default {
       searchFilters: ['domainid', 'account', 'resourcetype'],
       searchParams: {},
       selectedColumns: [],
+      jobActions: [cancelJobAction],
       statusOptions: [
         { value: 'pending', label: this.$t('label.pending') },
         { value: String(JOB_STATUS.SUCCEEDED), label: this.$t('label.success') },
@@ -251,15 +239,6 @@ export default {
         column('created', this.$t('label.created'), 'created'),
         column('completed', this.$t('label.completed'), 'completed'),
         column('jobresult', this.$t('label.jobresult'), 'jobresult'))
-      if (this.showActions || this.canListEvents) {
-        columns.push({
-          key: 'actions',
-          title: this.$t('label.actions'),
-          dataIndex: 'actions',
-          width: 160,
-          slots: { customRender: 'actions' }
-        })
-      }
       return columns
     },
     columns () {
@@ -275,12 +254,6 @@ export default {
     },
     columnsStoreKey () {
       return 'asyncjobs:' + (this.resourceType || (this.scopedToManagementServer ? 'managementserver' : 'all'))
-    },
-    showActions () {
-      return isAdmin() && 'cancelAsyncJob' in this.$store.getters.apis
-    },
-    canListEvents () {
-      return 'listEvents' in this.$store.getters.apis
     },
     scopedToManagementServer () {
       return !this.resourceType && !!(this.resource && this.resource.id)
@@ -380,8 +353,17 @@ export default {
       this.pageSize = pageSize
       this.fetchData()
     },
-    canCancel (record) {
-      return this.showActions && record.jobstatus === JOB_STATUS.IN_PROGRESS
+    execAction (action, record) {
+      if (action.api !== 'cancelAsyncJob') {
+        return
+      }
+      this.$confirm({
+        title: this.$t(action.label),
+        content: this.$t(action.message),
+        okText: this.$t('label.ok'),
+        cancelText: this.$t('label.cancel'),
+        onOk: () => this.cancelJob(record)
+      })
     },
     cancelJob (record) {
       this.cancelling = record.jobid
