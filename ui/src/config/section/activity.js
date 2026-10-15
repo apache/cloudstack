@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
@@ -27,7 +28,34 @@ export default {
       title: 'label.jobs',
       icon: 'ClockCircleOutlined',
       permission: ['listAsyncJobs'],
-      component: () => import('@/views/activity/JobsView.vue')
+      component: () => import('@/views/activity/JobsView.vue'),
+      related: [{
+        name: 'event',
+        title: 'label.events',
+        param: 'jobid'
+      }],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/activity/JobDetailsTab.vue')))
+      }],
+      actions: [
+        {
+          api: 'cancelAsyncJob',
+          icon: 'close-circle-outlined',
+          label: 'label.cancel.job',
+          message: 'message.confirm.cancel.job',
+          dataView: true,
+          args: ['jobid'],
+          mapping: {
+            jobid: {
+              value: (record) => { return record.jobid }
+            }
+          },
+          show: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype)
+          }
+        }
+      ]
     },
     {
       name: 'event',

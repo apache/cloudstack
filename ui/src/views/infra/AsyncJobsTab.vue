@@ -78,14 +78,14 @@
           </a-menu>
         </div>
       </template>
-      <template #cmd="{ text }">
-        {{ text ? text.split('.').pop() : '' }}
+      <template #cmd="{ text, record }">
+        <router-link :to="{ path: '/jobs/' + record.jobid }">{{ text ? text.split('.').pop() : record.jobid }}</router-link>
       </template>
       <template #jobstatus="{ text }">
-        <a-tag :color="statusColor(text)">{{ statusLabel(text) }}</a-tag>
+        <a-tag :color="jobStatusColor(text)">{{ $t(jobStatusLabel(text)) }}</a-tag>
       </template>
       <template #jobinstance="{ record }">
-        <router-link v-if="resourcePath(record)" :to="{ path: resourcePath(record) }">
+        <router-link v-if="jobResourcePath(record.jobinstancetype, record.jobinstanceid)" :to="{ path: jobResourcePath(record.jobinstancetype, record.jobinstanceid) }">
           {{ record.jobinstancetype }}
         </router-link>
         <span v-else>{{ record.jobinstancetype || '-' }}</span>
@@ -111,20 +111,20 @@
         {{ text ? $toLocaleDate(text) : '-' }}
       </template>
       <template #jobresult="{ text }">
-        <a-popover v-if="resultText(text) !== '-'" placement="topLeft" overlayClassName="job-result-popover">
+        <a-popover v-if="jobResultText(text) !== '-'" placement="topLeft" overlayClassName="job-result-popover">
           <template #content>
             <div class="job-result-full">
               <a
                 href="javascript:;"
                 class="job-result-copy"
-                v-clipboard:copy="prettyResult(text)"
+                v-clipboard:copy="jobResultPretty(text)"
                 @click="$message.success($t('label.copied.clipboard'))">
                 <copy-outlined /> {{ $t('label.copy') }}
               </a>
-              <pre>{{ prettyResult(text) }}</pre>
+              <pre>{{ jobResultPretty(text) }}</pre>
             </div>
           </template>
-          <span class="job-result">{{ resultText(text) }}</span>
+          <span class="job-result">{{ jobResultText(text) }}</span>
         </a-popover>
         <span v-else>-</span>
       </template>
@@ -174,12 +174,7 @@ import { isAdmin } from '@/role'
 import SearchView from '@/components/view/SearchView'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { genericCompare } from '@/utils/sort.js'
-
-// Mirrors org.apache.cloudstack.jobs.JobInfo.Status ordinals.
-const STATUS_IN_PROGRESS = 0
-const STATUS_SUCCEEDED = 1
-const STATUS_FAILED = 2
-const STATUS_CANCELLED = 3
+import { JOB_STATUS, jobStatusLabel, jobStatusColor, jobResultText, jobResultPretty, jobResourcePath } from '@/utils/asyncjob'
 
 export default {
   name: 'AsyncJobsTab',
@@ -216,9 +211,9 @@ export default {
       selectedColumns: [],
       statusOptions: [
         { value: 'pending', label: this.$t('label.pending') },
-        { value: String(STATUS_SUCCEEDED), label: this.$t('label.success') },
-        { value: String(STATUS_FAILED), label: this.$t('label.failed') },
-        { value: String(STATUS_CANCELLED), label: this.$t('label.cancelled') },
+        { value: String(JOB_STATUS.SUCCEEDED), label: this.$t('label.success') },
+        { value: String(JOB_STATUS.FAILED), label: this.$t('label.failed') },
+        { value: String(JOB_STATUS.CANCELLED), label: this.$t('label.cancelled') },
         { value: 'all', label: this.$t('label.all') }
       ],
       durationOptions: [
@@ -302,6 +297,11 @@ export default {
     }
   },
   methods: {
+    jobStatusLabel,
+    jobStatusColor,
+    jobResultText,
+    jobResultPretty,
+    jobResourcePath,
     fetchData () {
       if (this.resourceType && !(this.resource && this.resource.id)) {
         this.jobs = []
@@ -321,7 +321,7 @@ export default {
       }
       // pending is the API default; a period only makes sense once completed jobs are included
       if (this.statusFilter === 'all') {
-        params.jobstatus = [STATUS_IN_PROGRESS, STATUS_SUCCEEDED, STATUS_FAILED, STATUS_CANCELLED].join(',')
+        params.jobstatus = [JOB_STATUS.IN_PROGRESS, JOB_STATUS.SUCCEEDED, JOB_STATUS.FAILED, JOB_STATUS.CANCELLED].join(',')
       } else if (this.statusFilter !== 'pending') {
         params.jobstatus = this.statusFilter
       }
@@ -366,21 +366,6 @@ export default {
       customColumns[userId][this.columnsStoreKey] = this.selectedColumns
       this.$store.dispatch('SetCustomColumns', customColumns)
     },
-    resultText (text) {
-      if (!text) {
-        return '-'
-      }
-      if (typeof text === 'object') {
-        return text.errortext || JSON.stringify(text)
-      }
-      return String(text)
-    },
-    prettyResult (text) {
-      if (text && typeof text === 'object' && !text.errortext) {
-        return JSON.stringify(text, null, 2)
-      }
-      return this.resultText(text)
-    },
     onFilterChange () {
       this.page = 1
       this.fetchData()
@@ -396,7 +381,7 @@ export default {
       this.fetchData()
     },
     canCancel (record) {
-      return this.showActions && record.jobstatus === STATUS_IN_PROGRESS
+      return this.showActions && record.jobstatus === JOB_STATUS.IN_PROGRESS
     },
     cancelJob (record) {
       this.cancelling = record.jobid
@@ -409,40 +394,6 @@ export default {
         this.cancelling = null
         this.fetchData()
       })
-    },
-    statusLabel (status) {
-      switch (status) {
-        case STATUS_IN_PROGRESS: return this.$t('label.pending')
-        case STATUS_SUCCEEDED: return this.$t('label.success')
-        case STATUS_FAILED: return this.$t('label.failed')
-        case STATUS_CANCELLED: return this.$t('label.cancelled')
-        default: return status
-      }
-    },
-    statusColor (status) {
-      switch (status) {
-        case STATUS_IN_PROGRESS: return 'blue'
-        case STATUS_SUCCEEDED: return 'green'
-        case STATUS_FAILED: return 'red'
-        case STATUS_CANCELLED: return 'orange'
-        default: return 'default'
-      }
-    },
-    resourcePath (record) {
-      if (!record.jobinstanceid) {
-        return null
-      }
-      switch (record.jobinstancetype) {
-        case 'VirtualMachine': return '/vm/' + record.jobinstanceid
-        case 'Volume': return '/volume/' + record.jobinstanceid
-        case 'Snapshot': return '/snapshot/' + record.jobinstanceid
-        case 'VmSnapshot': return '/vmsnapshot/' + record.jobinstanceid
-        case 'Template': return '/template/' + record.jobinstanceid
-        case 'Iso': return '/iso/' + record.jobinstanceid
-        case 'Network': return '/guestnetwork/' + record.jobinstanceid
-        case 'Host': return '/host/' + record.jobinstanceid
-        default: return null
-      }
     }
   }
 }
