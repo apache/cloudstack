@@ -76,3 +76,25 @@ export function jobResourcePath (resourceType, resourceId) {
     default: return null
   }
 }
+
+// The Cancel action as the list rows and the detail page show it: always present for admins, disabled once the job is done.
+export const cancelJobAction = {
+  api: 'cancelAsyncJob',
+  icon: 'close-circle-outlined',
+  danger: true,
+  label: 'label.cancel.job',
+  message: 'message.confirm.cancel.job',
+  dataView: true,
+  args: ['jobid'],
+  mapping: {
+    jobid: {
+      value: (record) => { return record.jobid }
+    }
+  },
+  show: (record, store) => {
+    return ['Admin'].includes(store.userInfo.roletype)
+  },
+  disabled: (record) => {
+    return record.jobstatus !== JOB_STATUS.IN_PROGRESS
+  }
+}
