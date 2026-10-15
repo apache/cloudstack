@@ -34,7 +34,7 @@ public class OperationCancelledException extends CloudRuntimeException {
     transient Command[] _cmds;
 
     public OperationCancelledException(Command[] cmds, long agentId, long seqId, int time, boolean isActive, String reason) {
-        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled after " + time + " secs");
+        super("Commands: " + Arrays.toString(cmds) + " to Host " + agentId + " with seqId " + seqId + " cancelled" + (reason != null ? ": " + reason : ""));
         _agentId = agentId;
         _seqId = seqId;
         _time = time;
