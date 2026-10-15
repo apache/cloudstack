@@ -659,7 +659,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             String[] awkCmd = captured[0].get(1);
             // The commands are executed without a shell, so the program must carry no shell quotes.
             Assert.assertEquals("awk", awkCmd[0]);
-            Assert.assertEquals("$2==\"disk\"{print $3}", awkCmd[1]);
+            Assert.assertEquals("$2==\"disk\" && $3 ~ /^vd/ {print $3}", awkCmd[1]);
         }
     }
 
@@ -686,8 +686,22 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         }
     }
 
+    @Test
+    public void testGetDeviceToAttachDiskUsesVdaWhenVmHasNoVirtioDisk() throws Exception {
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            // A VM with only an IDE root disk (hda) and cdroms (hdc, hdd): the awk filter keeps no rows.
+            scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                    .thenReturn(new Pair<>(0, ""));
+
+            // hdb would be picked otherwise, and IDE disks cannot be hot-plugged.
+            Assert.assertEquals("vda", invokeGetDeviceToAttachDisk("test-vm"));
+        }
+    }
+
     @Test(expected = CloudRuntimeException.class)
-    public void testGetDeviceToAttachDiskFailsWhenNoDeviceIsReturned() throws Exception {
+    public void testGetDeviceToAttachDiskFailsWhenDomblklistFails() throws Exception {
         try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
             scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
                     .thenAnswer(invocation -> invocation.getArgument(0));

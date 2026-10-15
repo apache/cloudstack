@@ -436,17 +436,19 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         // domblklist's output, so without this filter, taking the last line would select a
         // cdrom, not the actual disk.
         String[] domblkCmd = new String[] { Script.getExecutableAbsolutePath("virsh"), "domblklist", "--domain", vmName, "--details" };
-        // The commands are executed without a shell, so the awk program must be passed as a plain
-        // argument. Keeping the quotes a shell would have stripped makes awk fail with
-        // "invalid char" and produce no output.
-        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "$2==\"disk\"{print $3}" };
+        // Only virtio (vd*) targets are used: IDE/SATA disks cannot be hot-plugged.
+        String[] awkCmd = new String[] { Script.getExecutableAbsolutePath("awk"), "$2==\"disk\" && $3 ~ /^vd/ {print $3}" };
         String[] tailCmd = new String[] { Script.getExecutableAbsolutePath("tail"), "-n", "1" };
         Pair<Integer, String> result = Script.executePipedCommands(Arrays.asList(domblkCmd, awkCmd, tailCmd), 0);
+        if (result.first() == null || result.first() != 0) {
+            throw new CloudRuntimeException(String.format("Failed to determine the device to attach the restored volume to on VM [%s].", vmName));
+        }
         // executePipedCommands appends a line separator to every line it reads, so the device
         // name has to be trimmed before the last character can be incremented.
         String currentDevice = result.second() == null ? "" : result.second().trim();
-        if (result.first() == null || result.first() != 0 || StringUtils.isBlank(currentDevice)) {
-            throw new CloudRuntimeException(String.format("Failed to determine the device to attach the restored volume to on VM [%s].", vmName));
+        if (StringUtils.isBlank(currentDevice)) {
+            // The VM has no virtio disk yet (e.g. only an IDE or SCSI root disk), so vda is free.
+            return "vda";
         }
         char lastChar = currentDevice.charAt(currentDevice.length() - 1);
         char incrementedChar = (char) (lastChar + 1);
