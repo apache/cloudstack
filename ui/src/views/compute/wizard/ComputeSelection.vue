@@ -57,23 +57,38 @@
         </a-col>
         <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
           <a-form-item
-            :label="$t('label.memory.mb')"
+            :label="$t('label.memory')"
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">
-              <a-col :md="10" :lg="10" v-show="isConstrained && maxMemory && !isNaN(maxMemory)">
+              <a-col :md="14" :lg="14" v-show="isConstrained && maxMemory && !isNaN(maxMemory)">
                 <a-slider
-                  :min="minMemory"
-                  :max="maxMemory"
-                  v-model:value="memoryInputValue"
+                  :min="minMemoryInUnit"
+                  :max="maxMemoryInUnit"
+                  :step="memoryStep"
+                  v-model:value="memoryDisplayValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
-              <a-col :md="4" :lg="4">
-                <a-input-number
-                  v-model:value="memoryInputValue"
-                  @change="($event) => updateComputeMemory($event)"
-                />
+              <a-col :md="isConstrained ? 10 : 8" :lg="isConstrained ? 10 : 8">
+                <a-input-group compact style="display: flex">
+                  <a-input-number
+                    style="flex: 1"
+                    :min="isConstrained ? minMemoryInUnit : 0"
+                    :max="isConstrained ? maxMemoryInUnit : undefined"
+                    :step="memoryStep"
+                    :precision="memoryUnit === 'GiB' ? 2 : 0"
+                    v-model:value="memoryDisplayValue"
+                    @change="($event) => updateComputeMemory($event)"
+                  />
+                  <a-select
+                    v-model:value="memoryUnit"
+                    style="width: 75px"
+                    @change="handleUnitChange">
+                    <a-select-option value="GiB">GiB</a-select-option>
+                    <a-select-option value="MiB">MiB</a-select-option>
+                  </a-select>
+                </a-input-group>
               </a-col>
             </a-row>
           </a-form-item>
@@ -165,6 +180,8 @@ export default {
       cpuNumberInputValue: 0,
       cpuSpeedInputValue: 0,
       memoryInputValue: 0,
+      memoryDisplayValue: 0,
+      memoryUnit: 'GiB',
       errors: {
         cpu: {
           status: '',
@@ -192,6 +209,34 @@ export default {
       }
 
       return 8
+    },
+    minMemoryInUnit () {
+      if (!this.minMemory) return 0
+      if (this.memoryUnit === 'GiB') {
+        return parseFloat((this.minMemory / 1024).toFixed(2))
+      }
+      return this.minMemory
+    },
+    maxMemoryInUnit () {
+      if (!this.maxMemory) return 0
+      if (this.memoryUnit === 'GiB') {
+        return parseFloat((this.maxMemory / 1024).toFixed(2))
+      }
+      return this.maxMemory
+    },
+    memoryStep () {
+      if (this.memoryUnit === 'MiB') {
+        return 1
+      }
+      const range = this.maxMemoryInUnit - this.minMemoryInUnit
+      if (range <= 1) {
+        return 0.01
+      } else if (range <= 4) {
+        return 0.05
+      } else if (range <= 16) {
+        return 0.25
+      }
+      return 0.5
     }
   },
   watch: {
@@ -209,13 +254,16 @@ export default {
   methods: {
     fillValue () {
       this.cpuNumberInputValue = this.initialCpuValue > 0 ? this.initialCpuValue : this.minCpu
-      this.memoryInputValue = this.initialMemoryValue > 0 ? this.initialMemoryValue : this.minMemory
+      const rawMemory = this.initialMemoryValue > 0 ? this.initialMemoryValue : this.minMemory
+      this.memoryInputValue = rawMemory
+      this.memoryUnit = 'GiB'
+      this.memoryDisplayValue = rawMemory > 0 ? parseFloat((rawMemory / 1024).toFixed(2)) : 0
       this.cpuSpeedInputValue = this.cpuSpeed
 
       if (!this.preFillContent) {
         this.updateComputeCpuNumber(this.cpuNumberInputValue)
         this.updateComputeCpuSpeed(this.cpuSpeedInputValue)
-        this.updateComputeMemory(this.memoryInputValue)
+        this.updateComputeMemory(this.memoryDisplayValue)
         return
       }
       if (this.preFillContent.cpunumber) {
@@ -226,10 +274,28 @@ export default {
       }
       if (this.preFillContent.memory) {
         this.memoryInputValue = this.preFillContent.memory
+        this.memoryDisplayValue = parseFloat((this.memoryInputValue / 1024).toFixed(2))
       }
       this.updateComputeCpuNumber(this.preFillContent.cpunumber || this.cpuNumberInputValue)
       this.updateComputeCpuSpeed(this.preFillContent.cpuspeed || this.cpuSpeedInputValue)
-      this.updateComputeMemory(this.preFillContent.memory || this.memoryInputValue)
+      this.updateComputeMemory(this.memoryDisplayValue)
+    },
+    handleUnitChange (newUnit) {
+      if (newUnit === 'MiB') {
+        this.memoryDisplayValue = this.memoryInputValue > 0
+          ? this.memoryInputValue
+          : Math.round(this.memoryDisplayValue * 1024)
+      } else {
+        this.memoryDisplayValue = parseFloat((this.memoryInputValue / 1024).toFixed(2))
+      }
+      if (this.isConstrained) {
+        if (this.memoryDisplayValue < this.minMemoryInUnit) {
+          this.memoryDisplayValue = this.minMemoryInUnit
+        } else if (this.memoryDisplayValue > this.maxMemoryInUnit) {
+          this.memoryDisplayValue = this.maxMemoryInUnit
+        }
+      }
+      this.updateComputeMemory(this.memoryDisplayValue)
     },
     updateComputeCpuNumber (value) {
       if (!value) this.cpuNumberInputValue = 0
@@ -241,12 +307,31 @@ export default {
     updateComputeCpuSpeed (value) {
       this.$emit('update-compute-cpuspeed', this.cpuSpeedInputDecorator, value)
     },
-    updateComputeMemory (value) {
-      if (!value) this.memoryInputValue = 0
-      if (!this.validateInput('memory', value)) {
+    updateComputeMemory (displayValue) {
+      if (displayValue === null || displayValue === undefined) {
+        this.memoryDisplayValue = 0
+        displayValue = 0
+      } else {
+        this.memoryDisplayValue = displayValue
+      }
+      if (!this.validateInput('memory', displayValue)) {
         return
       }
-      this.$emit('update-compute-memory', this.memoryInputDecorator, value)
+      let memoryInMiB
+      if (this.memoryUnit === 'GiB') {
+        if (this.isConstrained && displayValue === this.minMemoryInUnit) {
+          memoryInMiB = this.minMemory
+        } else if (this.isConstrained && displayValue === this.maxMemoryInUnit) {
+          memoryInMiB = this.maxMemory
+        } else {
+          memoryInMiB = Math.round(displayValue * 1024)
+        }
+      } else {
+        memoryInMiB = Math.round(displayValue)
+      }
+
+      this.memoryInputValue = memoryInMiB
+      this.$emit('update-compute-memory', this.memoryInputDecorator, memoryInMiB)
     },
     validateInput (input, value) {
       this.errors[input].status = ''
@@ -271,8 +356,8 @@ export default {
           max = this.maxCpu
           break
         case 'memory':
-          min = this.minMemory
-          max = this.maxMemory
+          min = this.minMemoryInUnit
+          max = this.maxMemoryInUnit
           break
       }
 
@@ -285,7 +370,8 @@ export default {
       return true
     },
     checkValidRange (value, min, max) {
-      if (value < min || value > max) {
+      const epsilon = 0.001
+      if (value < (min - epsilon) || value > (max + epsilon)) {
         return false
       }
 
