@@ -732,28 +732,27 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return 1;
         }
         Long hostId = hostIdForVm(vm);
-        boolean configDriveUsed = isConfigDriveUsed(vm);
         // all the CD-ROM devices supported by the host are defined for the Instance at boot, even if the configured
         // maximum number of ISOs (vm.iso.max.count) is lower or is increased later
         int cdromCount = advertisedCdromCap(hostId);
-        int isoSlots = getIsoSlotCount(vm, hostId, configDriveUsed);
-        // the config drive ISO is attached as the CD-ROM following the ones of the ISOs
-        return Math.max(cdromCount, isoSlots + (configDriveUsed ? 1 : 0));
+        int isoSlots = getIsoSlotCount(vm, hostId);
+        // the config drive ISO is attached as the CD-ROM following the ones of the ISOs (it is not counted in vm.iso.max.count)
+        return Math.max(cdromCount, isoSlots + (isConfigDriveUsed(vm) ? 1 : 0));
     }
 
     @Override
     public int getConfigDriveDeviceId(VirtualMachine vm, Long hostId) {
         // the config drive ISO is attached as the CD-ROM following the ones of the ISOs
-        return CDROM_PRIMARY_DEVICE_SEQ + getIsoSlotCount(vm, hostId, true);
+        return CDROM_PRIMARY_DEVICE_SEQ + getIsoSlotCount(vm, hostId);
     }
 
     /**
      * The number of CD-ROM devices of the Instance which are used for ISOs, i.e. the ones allocated at boot.
      */
-    private int getIsoSlotCount(VirtualMachine vm, Long hostId, boolean configDriveUsed) {
+    private int getIsoSlotCount(VirtualMachine vm, Long hostId) {
         UserVmVO userVm = _userVmDao.findById(vm.getId());
         int slotsNeeded = userVm != null ? slotsNeededFor(loadAttachedIsoSlots(userVm)) : 0;
-        return Math.max(effectiveMaxCdroms(vm, hostId, configDriveUsed), slotsNeeded);
+        return Math.max(effectiveMaxCdroms(vm, hostId), slotsNeeded);
     }
 
     /**
@@ -1638,29 +1637,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
-        return effectiveMaxCdroms(vm, hostId, isConfigDriveUsed(vm));
-    }
-
     /**
-     * The maximum number of ISOs which can be attached to the Instance. The config drive ISO, if any, is attached as a
-     * CD-ROM as well, and therefore takes one of the CD-ROM devices supported by the host.
+     * The maximum number of ISOs which can be attached to the Instance. The config drive ISO is not counted.
      */
-    int effectiveMaxCdroms(VirtualMachine vm, Long hostId, boolean configDriveUsed) {
+    int effectiveMaxCdroms(VirtualMachine vm, Long hostId) {
         HostVO host = hostId != null ? _hostDao.findById(hostId) : null;
         Long clusterId = host != null ? host.getClusterId() : null;
         int configuredCap = VmIsoMaxCount.valueIn(clusterId);
         int hypervisorCap = advertisedCdromCap(hostId);
-        int effectiveMax = configuredCap;
         if (configuredCap > hypervisorCap) {
             logger.warn("{} is set to {} but the placement host supports a maximum of {} CD-ROM(s) per Instance. Clamping to {}.",
                     VmIsoMaxCount.key(), configuredCap, hypervisorCap, hypervisorCap);
-            effectiveMax = hypervisorCap;
+            return hypervisorCap;
         }
-        if (configDriveUsed && hypervisorCap > 1) {
-            effectiveMax = Math.min(effectiveMax, hypervisorCap - 1);
-        }
-        return effectiveMax;
+        return configuredCap;
     }
 
     int advertisedCdromCap(Long hostId) {

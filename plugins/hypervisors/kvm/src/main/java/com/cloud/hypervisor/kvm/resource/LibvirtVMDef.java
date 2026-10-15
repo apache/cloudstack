@@ -39,6 +39,7 @@ import com.cloud.agent.api.to.VirtualMachineMetadataTO;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.template.TemplateManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -58,7 +59,7 @@ public class LibvirtVMDef {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
     // CD-ROM slot allocation: getDevLabel() maps deviceSeq=3,4 to hdc and hdd on the IDE bus.
-    // Bumping this requires extending getDevLabel() (e.g. to spill onto SATA or a second IDE controller).
+    // The CD-ROMs beyond these slots (e.g. the config drive ISO following the ISOs) are on the SATA bus.
     public static final int MAX_CDROMS_PER_VM = 2;
 
     private String _hvsType;
@@ -1138,7 +1139,16 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
+        private boolean isIdeCdromSlot(Integer devId) {
+            return devId == null || devId < TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + MAX_CDROMS_PER_VM;
+        }
+
         public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
+            // the IDE bus only has the slots of MAX_CDROMS_PER_VM CD-ROMs (hdc and hdd), the other ones (e.g. the config drive ISO)
+            // are on the SATA bus
+            if (!isSecure && !isIdeCdromSlot(devId)) {
+                isSecure = true;
+            }
             if (!isSecure) {
                 defISODisk(volPath, devId, diskType);
             } else {

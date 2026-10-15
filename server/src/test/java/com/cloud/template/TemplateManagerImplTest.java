@@ -1416,22 +1416,13 @@ public class TemplateManagerImplTest extends TestCase {
     }
 
     @Test
-    public void effectiveMaxCdromsLeavesACdromForConfigDrive() {
+    public void effectiveMaxCdromsDoesNotCountConfigDrive() {
         UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
         Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
+        mockVmNetworkProvidesConfigDrive(vm, true);
 
-        withConfiguredMaxCdroms("2", () -> {
-            Assert.assertEquals(2, templateManager.effectiveMaxCdroms(vm, 7L, false));
-            Assert.assertEquals(1, templateManager.effectiveMaxCdroms(vm, 7L, true));
-        });
-    }
-
-    @Test
-    public void effectiveMaxCdromsKeepsOneCdromWhenHostDoesNotAdvertiseCdromCap() {
-        UserVmVO vm = mockUserVmOnHostWithCdromCap(null);
-        Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
-
-        Assert.assertEquals(1, templateManager.effectiveMaxCdroms(vm, 7L, true));
+        // the config drive ISO is attached as an additional CD-ROM, it does not take one of the ISOs
+        withConfiguredMaxCdroms("2", () -> Assert.assertEquals(2, templateManager.effectiveMaxCdroms(vm, 7L)));
     }
 
     @Test
@@ -1444,12 +1435,13 @@ public class TemplateManagerImplTest extends TestCase {
     }
 
     @Test
-    public void getVmCdromCountDoesNotExceedHostCapWhenConfigDriveTakesACdrom() {
+    public void getVmCdromCountAddsTheCdromOfConfigDriveToTheOnesOfIsos() {
         UserVmVO vm = mockUserVmOnHostWithCdromCap(2L);
         Mockito.when(_hostDao.findById(7L)).thenReturn(Mockito.mock(HostVO.class));
         mockVmNetworkProvidesConfigDrive(vm, true);
 
-        withConfiguredMaxCdroms("2", () -> Assert.assertEquals(2, templateManager.getVmCdromCount(vm)));
+        // 2 CD-ROMs for ISOs (vm.iso.max.count), and 1 for the config drive ISO
+        withConfiguredMaxCdroms("2", () -> Assert.assertEquals(3, templateManager.getVmCdromCount(vm)));
     }
 
     @Test
@@ -1459,7 +1451,7 @@ public class TemplateManagerImplTest extends TestCase {
 
         // vm.iso.max.count is 1 by default
         Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1, templateManager.getConfigDriveDeviceId(vm, 7L));
-        withConfiguredMaxCdroms("3", () -> Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 2, templateManager.getConfigDriveDeviceId(vm, 7L)));
+        withConfiguredMaxCdroms("3", () -> Assert.assertEquals(TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 3, templateManager.getConfigDriveDeviceId(vm, 7L)));
     }
 
     @Test
