@@ -17,8 +17,6 @@
 package org.apache.cloudstack.api.command.user.job;
 
 
-import com.cloud.event.EventTypes;
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.APICommand;
@@ -30,6 +28,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.jobs.AsyncJobService;
 
@@ -72,31 +71,25 @@ public class CancelAsyncJobCmd extends BaseCmd {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
-    public String getEventType() {
-        return EventTypes.EVENT_JOB_CANCEL;
-    }
-
-    public String getEventDescription() {
-        return "Cancelling job with id: " + id;
-    }
-
-    public ApiCommandResourceType getInstanceType() {
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Job;
     }
 
-    public Long getInstanceId() {
-        return getId();
+    @Override
+    public Long getApiResourceId() {
+        return id;
     }
 
     @Override
     public void execute() {
-        String status = asyncJobService.cancelAsyncJob(id, "Cancel requested by " + CallContext.current().getCallingUser().toString());
-        if (StringUtils.isBlank(status)) {
-            AsyncJobResponse response = _responseGenerator.cancelJobResponse(this);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, status);
+        try {
+            asyncJobService.cancelAsyncJob(id, "Cancelled by " + CallContext.current().getCallingUser().getUsername());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+        AsyncJobResponse response = _responseGenerator.cancelJobResponse(this);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 }

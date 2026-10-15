@@ -34,6 +34,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -277,11 +279,11 @@ public class AsyncJobManagerImplTest {
         when(jobDao.listChildJobs(10L)).thenReturn(Collections.singletonList(childJob(11L, JobInfo.Status.IN_PROGRESS)));
         when(queueItemDao.getQueueItemIdByContentIdAndType(11L, SyncQueueItem.AsyncJobContentType)).thenReturn(5L);
         when(queueItemDao.findById(5L)).thenReturn(queueItem(5L, null));
-        Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(0), Mockito.anyString());
+        Mockito.doNothing().when(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.anyString());
 
         asyncJobManager.cancelQueuedChildJobs(10L, "user request");
 
-        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(0), Mockito.contains("user request"));
+        Mockito.verify(asyncJobManager).completeAsyncJob(Mockito.eq(11L), Mockito.eq(JobInfo.Status.CANCELLED), Mockito.eq(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), Mockito.contains("user request"));
         Mockito.verify(jobMonitor).unregisterByJobId(11L);
         Mockito.verify(queueMgr).purgeItem(5L);
     }
@@ -327,5 +329,15 @@ public class AsyncJobManagerImplTest {
         AsyncJobVO job = childJob(12L, JobInfo.Status.IN_PROGRESS);
         job.setRelated("");
         Assert.assertNull(asyncJobManager.cancelReasonFor(job));
+    }
+
+    @Test
+    public void testCancelledResultReadsLikeAFailure() {
+        String serialized = AsyncJobManagerImpl.cancelledResult("Cancelled by admin via mgmt2");
+
+        Assert.assertTrue(serialized.startsWith(ExceptionResponse.class.getName() + "/"));
+        ExceptionResponse response = (ExceptionResponse) JobSerializerHelper.fromSerializedString(serialized);
+        Assert.assertEquals("Cancelled by admin via mgmt2", response.getErrorText());
+        Assert.assertEquals(Integer.valueOf(ApiErrorCode.INTERNAL_ERROR.getHttpCode()), response.getErrorCode());
     }
 }

@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.command.user.job.CancelAsyncJobCmd;
 import org.apache.cloudstack.command.ReconcileCommandService;
+import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -115,6 +116,10 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.event.EventTypes;
+import com.cloud.event.ActionEvent;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -159,6 +164,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private MessageBus _messageBus;
     @Inject
     private AsyncJobMonitor _jobMonitor;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     private final Map<Long, String> cancelRequestedJobs = new ConcurrentHashMap<>();
     @Inject
@@ -389,8 +396,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             logger.info("job-{} failed while its cancellation was being carried out; recording it as cancelled", jobId);
         }
         final Status jobStatus = cancelReason != null ? JobInfo.Status.CANCELLED : requestedStatus;
-        final int resultCode = cancelReason != null ? 0 : requestedResultCode;
-        final String resultObject = cancelReason != null ? "Job is cancelled due to " + cancelReason : requestedResult;
+        final int resultCode = cancelReason != null ? ApiErrorCode.INTERNAL_ERROR.getHttpCode() : requestedResultCode;
+        final String resultObject = cancelReason != null ? cancelledResult(cancelReason) : requestedResult;
 
         if (resultObject != null) {
             job.updateResultWithEncryptionIfNeeded(resultObject);
@@ -1508,6 +1515,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return reason;
     }
 
+    private String managementServerName(final long msid) {
+        final ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(msid);
+        return managementServer != null ? managementServer.getName() : String.valueOf(msid);
+    }
+
+    static String cancelledResult(final String text) {
+        final ExceptionResponse response = new ExceptionResponse();
+        response.setErrorCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
+        response.setErrorText(text);
+        return JobSerializerHelper.toSerializedString(response);
+    }
+
     void markCancelRequested(final long jobId, final String reason) {
         cancelRequestedJobs.put(jobId, reason);
     }
@@ -1527,7 +1546,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 continue;
             }
             logger.info("Cancelling queued job-{}, its parent job-{} was cancelled before it was scheduled", child.getId(), parentJobId);
-            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason + " (parent job cancelled before this job was scheduled)");
+            completeAsyncJob(child.getId(), JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(reason + " (parent job cancelled before this job was scheduled)"));
             _jobMonitor.unregisterByJobId(child.getId());
             _queueMgr.purgeItem(queueItemId);
         }
@@ -1563,14 +1582,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public String cancelAsyncJob(final long jobId, final String reason) {
+    @ActionEvent(eventType = EventTypes.EVENT_JOB_CANCEL, eventDescription = "cancelling async job")
+    public void cancelAsyncJob(final long jobId, final String reason) {
         final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
         String errMessage;
         if (job == null) {
             errMessage = "Cannot cancel, job no longer exists.";
             logger.debug(errMessage);
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
-            return errMessage;
+            throw new CloudRuntimeException(errMessage);
         }
 
         if (job.getExecutingMsid() != null || isActiveJob(jobId)) {
@@ -1580,12 +1600,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 if (apiCommand == null || !apiCommand.cancellable()) {
                     errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
                     logger.debug(errMessage);
-                    return errMessage;
+                    throw new CloudRuntimeException(errMessage);
                 }
             } catch (final ClassNotFoundException e) {
                 errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
                 logger.error(errMessage, e);
-                return errMessage;
+                throw new CloudRuntimeException(errMessage);
             }
         }
 
@@ -1593,7 +1613,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             errMessage = "Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".";
             logger.debug(errMessage);
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
-            return errMessage;
+            throw new CloudRuntimeException(errMessage);
         }
 
         // ask before changing state: a job whose work cannot be stopped is refused, not recorded as cancelled
@@ -1601,34 +1621,38 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             if (!handler.isJobExecutionCancellable(jobId)) {
                 errMessage = "Cannot cancel job-" + jobId + ", the operation it is running cannot be stopped at this point.";
                 logger.info(errMessage);
-                return errMessage;
+                throw new CloudRuntimeException(errMessage);
             }
         }
 
+        final String cancelledBy = reason + " via " + managementServerName(getMsid());
+        if (CallContext.current() != null) {
+            CallContext.current().setEventDetails("Job id: " + job.getUuid() + ". " + cancelledBy);
+        }
         logger.debug("Cancelling job-{} which is in progress.", jobId);
-        markCancelRequested(jobId, reason);
+        markCancelRequested(jobId, cancelledBy);
         try {
             for (final JobCancellationHandler handler : getJobCancellationHandlers()) {
                 if (!handler.cancelJobExecution(jobId, reason)) {
                     errMessage = "Cannot cancel job-" + jobId + ", the operation it is running could not be stopped.";
                     logger.info(errMessage);
-                    return errMessage;
+                    throw new CloudRuntimeException(errMessage);
                 }
             }
 
             // finalise here unless another management server is executing the job; its poller acknowledges
             final Long executingMsid = job.getExecutingMsid();
             final boolean finalizeNow = executingMsid == null || executingMsid == getMsid();
-            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, finalizeNow);
-            cancelQueuedChildJobs(jobId, reason);
-            return "";
+            completeAsyncJob(jobId, JobInfo.Status.CANCELLED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), cancelledResult(cancelledBy), finalizeNow);
+            cancelQueuedChildJobs(jobId, cancelledBy);
+            return;
         } catch (final Throwable t) {
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
             logger.error(errMessage, t);
         } finally {
             cancelRequestedJobs.remove(jobId);
         }
-        return errMessage;
+        throw new CloudRuntimeException(errMessage);
     }
 
     @Override
