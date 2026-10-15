@@ -3229,7 +3229,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // completed jobs are soft-deleted; anything but the pending-only default must include removed rows
         final boolean filterByStatus = cmd.getJobStatuses() != null;
-        final boolean includeRemoved = filterByStatus || cmd.getEndDate() != null || cmd.getDuration() != null;
+        final boolean includeRemoved = filterByStatus || cmd.getEndDate() != null || cmd.getDuration() != null || cmd.getId() != null;
 
         Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
@@ -3237,6 +3237,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (filterByStatus) {
             sb.and("statuses", sb.entity().getStatus(), SearchCriteria.Op.IN);
         }
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("instanceTypeNEQ", sb.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         boolean accountJoinIsDone = false;
@@ -3273,6 +3274,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
         if (filterByStatus) {
             sc.setParameters("statuses", cmd.getJobStatuses().toArray());
+        }
+        if (cmd.getId() != null) {
+            sc.setParameters("id", cmd.getId());
         }
         sc.setParameters("instanceTypeNEQ", AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE);
         if (listProjectResourcesCriteria != null) {

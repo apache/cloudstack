@@ -76,6 +76,9 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "job_cmd")
     private String cmd;
 
+    @Column(name = "job_init_msid")
+    private Long initMsid;
+
     @Column(name = "job_executing_msid")
     private Long executingMsid;
 
@@ -233,6 +236,10 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Override
     public String getName() {
         return null;
+    }
+
+    public Long getInitMsid() {
+        return initMsid;
     }
 
     public Long getExecutingMsid() {
