@@ -23,5 +23,5 @@ public interface AsyncJobService extends PluggableService {
     ConfigKey<Integer> CancelledJobInterval = new ConfigKey<>("Advanced", Integer.class, "job.cancelled.interval", "1",
             "Interval in seconds to check the jobs cancelled", false);
 
-    String cancelAsyncJob(long jobId, String reason);
+    void cancelAsyncJob(long jobId, String reason);
 }

@@ -197,6 +197,14 @@ class TestAsyncJobsManagement(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.cancel_job(self.deploy_job_id)
         self.assertEqual(self.query_job(self.deploy_job_id).jobstatus, JOB_SUCCEEDED, "Refused cancel changed the job")
+        cmd = listEvents.listEventsCmd()
+        cmd.listall = True
+        cmd.type = "JOB.CANCEL"
+        cmd.jobid = self.deploy_job_id
+        events = self.apiclient.listEvents(cmd) or []
+        self.assertTrue(events, "No JOB.CANCEL event recorded for the refused cancel of job %s" % self.deploy_job_id)
+        self.assertTrue(all(event.resourceid == self.deploy_job_id for event in events), "JOB.CANCEL event not tied to the job")
+        self.assertTrue(any("Cancelled by" in (event.description or "") for event in events), "JOB.CANCEL event does not name who cancelled")
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_07_cancel_unknown_job_is_refused(self):

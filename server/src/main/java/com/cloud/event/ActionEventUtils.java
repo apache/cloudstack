@@ -199,7 +199,11 @@ public class ActionEventUtils {
         event.setState(state);
         event.setDescription(description);
         event.setDisplay(eventDisplayEnabled);
-        event.setAsyncJobId(currentJobId());
+        Long jobId = currentJobId();
+        if (jobId == null && ApiCommandResourceType.Job.toString().equals(resourceType)) {
+            jobId = resourceId;
+        }
+        event.setAsyncJobId(jobId);
 
         if (domainId != null) {
             event.setDomainId(domainId);
