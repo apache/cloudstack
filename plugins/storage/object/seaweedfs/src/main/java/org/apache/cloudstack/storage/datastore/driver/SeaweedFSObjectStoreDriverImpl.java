@@ -538,6 +538,10 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
             String s3Url = getS3Url(storeId);
             BucketVO bucketVO = _bucketDao.findById(bucket.getId());
+            if (bucketVO == null) {
+                throw new CloudRuntimeException("Bucket record " + bucket.getId()
+                        + " not found for bucket " + bucketName);
+            }
             bucketVO.setAccessKey(accessKey);
             bucketVO.setSecretKey(secretKey);
             // Normalize the endpoint: s3Url is operator-supplied and may carry a
@@ -957,7 +961,18 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     public Map<String, Long> getAllBucketsUsage(long storeId) {
         Map<String, Long> bucketUsage = new HashMap<>();
         List<BucketVO> bucketList = _bucketDao.listByObjectStoreId(storeId);
-        if (bucketList.isEmpty()) {
+        // Rows can linger in Destroyed state while the caller's resource
+        // accounting settles. Their remote buckets are already gone, so they
+        // must not be required by the metrics scrape (no sample exists,
+        // which would force a scrape failure) nor listed by the S3 fallback
+        // (NoSuchBucket would fail the whole call).
+        List<BucketVO> liveBuckets = new ArrayList<>();
+        for (BucketVO bucket : bucketList) {
+            if (!Bucket.State.Destroyed.equals(bucket.getState())) {
+                liveBuckets.add(bucket);
+            }
+        }
+        if (liveBuckets.isEmpty()) {
             return bucketUsage;
         }
 
@@ -969,7 +984,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String metricsUrl = getMetricsUrl(storeId);
         if (metricsUrl != null) {
             java.util.Set<String> bucketNames = new java.util.HashSet<>();
-            for (BucketVO bucket : bucketList) {
+            for (BucketVO bucket : liveBuckets) {
                 bucketNames.add(bucket.getName());
             }
             try {
@@ -985,7 +1000,7 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         // production usage reporting. ListObjectsV2 only counts current
         // object versions; noncurrent versions and delete markers are omitted.
         AmazonS3 s3client = getS3ClientByStoreId(storeId);
-        for (BucketVO bucket : bucketList) {
+        for (BucketVO bucket : liveBuckets) {
             try {
                 long size = 0L;
                 com.amazonaws.services.s3.model.ListObjectsV2Result result;
@@ -1030,6 +1045,18 @@ public class SeaweedFSObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             if (store != null) {
                 s3Url = store.getUrl();
             }
+        }
+        // The object-store browser builds its MinIO client from only the host
+        // and port of the stored bucket URL and drops any path prefix, so a
+        // path-prefixed endpoint would work for server-side calls but break
+        // the browser. initialize() rejects such URLs at registration, but
+        // updateObjectStore can still set one on the generic store URL, so
+        // enforce it here too — at the point every operation resolves the
+        // endpoint.
+        if (SeaweedFSObjectStoreUtil.hasPathPrefix(s3Url)) {
+            throw new CloudRuntimeException("SeaweedFS S3 URL '" + s3Url + "' must not contain a path prefix "
+                    + "(e.g. '/s3'); the CloudStack object-store browser only uses the host and port and "
+                    + "cannot reach a path-prefixed endpoint. Expose SeaweedFS at the URL root.");
         }
         return s3Url;
     }

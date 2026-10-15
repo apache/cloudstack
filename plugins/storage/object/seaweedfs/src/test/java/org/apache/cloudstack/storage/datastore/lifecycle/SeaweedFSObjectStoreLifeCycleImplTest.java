@@ -248,6 +248,54 @@ public class SeaweedFSObjectStoreLifeCycleImplTest {
     }
 
     @Test
+    public void testInitializeS3UrlEqualToStoreUrlNotPersisted() {
+        // An s3Url identical to the store URL is redundant; persisting it
+        // would freeze the endpoint against later updateObjectStore URL
+        // changes, since the driver prefers the persisted detail.
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, TEST_URL);
+
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        ArgumentCaptor<Map<String, String>> detailsArg = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(objectStoreHelper).createObjectStore(anyMap(), detailsArg.capture());
+        assertFalse(detailsArg.getValue().containsKey(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL));
+    }
+
+    @Test
+    public void testInitializeIamUrlEqualToResolvedS3UrlNotPersisted() {
+        // An iamUrl identical to the resolved S3 endpoint is redundant: the
+        // driver's iamUrl fallback already tracks the current S3 endpoint,
+        // so persisting it would pin IAM to the old endpoint after a URL
+        // change.
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, TEST_S3_URL_OVERRIDE);
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, TEST_S3_URL_OVERRIDE);
+
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        ArgumentCaptor<Map<String, String>> detailsArg = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(objectStoreHelper).createObjectStore(anyMap(), detailsArg.capture());
+        assertEquals(TEST_S3_URL_OVERRIDE, detailsArg.getValue().get(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL));
+        assertFalse(detailsArg.getValue().containsKey(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL));
+    }
+
+    @Test
+    public void testInitializeIamUrlEqualToStoreUrlNotPersisted() {
+        // No explicit s3Url: iamUrl equal to the store URL matches the
+        // default resolution (iamUrl defaults to s3Url, which defaults to
+        // the store URL), so it must not be persisted.
+        detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, TEST_URL);
+
+        DataStore ds = lifecycle.initialize(dsInfos);
+        assertNotNull(ds);
+
+        ArgumentCaptor<Map<String, String>> detailsArg = ArgumentCaptor.forClass((Class<Map<String, String>>) (Class<?>) Map.class);
+        verify(objectStoreHelper).createObjectStore(anyMap(), detailsArg.capture());
+        assertFalse(detailsArg.getValue().containsKey(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL));
+    }
+
+    @Test
     public void testInitializeAcceptsRootOnlyS3Url() {
         // A URL with no path (or just "/") must be accepted.
         detailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, "http://s3-endpoint:8333/");

@@ -121,15 +121,19 @@ public class SeaweedFSObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             throw new CloudRuntimeException("Required SeaweedFS configuration parameters are missing/empty.");
         }
 
-        // Persist only explicitly-supplied endpoint overrides. Defaulted
-        // values are not written so the driver resolves them from the current
-        // store URL at runtime.
-        if (s3UrlExplicit) {
+        // Persist only explicitly-supplied endpoint overrides that differ
+        // from the value the driver would fall back to. Defaulted values are
+        // not written so the driver resolves them from the current store URL
+        // at runtime; a redundant override would freeze the endpoint against
+        // a later updateObjectStore URL change (the driver prefers the
+        // persisted detail over ObjectStoreVO.url, and the iamUrl fallback
+        // tracks the current S3 endpoint).
+        if (s3UrlExplicit && !StringUtils.equals(s3Url, url)) {
             details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, s3Url);
         } else {
             details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
         }
-        if (iamUrlExplicit) {
+        if (iamUrlExplicit && !StringUtils.equals(iamUrl, s3Url)) {
             details.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL, iamUrl);
         } else {
             details.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_IAM_URL);

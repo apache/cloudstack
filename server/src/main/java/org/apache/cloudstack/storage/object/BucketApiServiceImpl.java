@@ -556,15 +556,23 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         //ToDo track usage one last time when object store or bucket is removed
         List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
         for(ObjectStoreVO objectStoreVO: objectStores) {
-            ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-            Map<String, Long> bucketSizes = objectStore.getAllBucketsUsage();
-            List<BucketVO> buckets = _bucketDao.listByObjectStoreId(objectStoreVO.getId());
-            for(BucketVO bucket : buckets) {
-                Long size = bucketSizes.get(bucket.getName());
-                if( size != null){
-                    bucket.setSize(size);
-                    _bucketDao.update(bucket.getId(), bucket);
+            try {
+                ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+                Map<String, Long> bucketSizes = objectStore.getAllBucketsUsage();
+                List<BucketVO> buckets = _bucketDao.listByObjectStoreId(objectStoreVO.getId());
+                for(BucketVO bucket : buckets) {
+                    Long size = bucketSizes.get(bucket.getName());
+                    if( size != null){
+                        bucket.setSize(size);
+                        _bucketDao.update(bucket.getId(), bucket);
+                    }
                 }
+            } catch (Exception e) {
+                // A store whose usage cannot be collected (unreachable
+                // endpoint, partial failure) must not prevent the remaining
+                // object stores from being updated.
+                logger.warn("Failed to collect bucket usage for object store {}: {}", objectStoreVO.getName(), e.getMessage());
+                logger.debug("Bucket usage collection failure details", e);
             }
         }
     }

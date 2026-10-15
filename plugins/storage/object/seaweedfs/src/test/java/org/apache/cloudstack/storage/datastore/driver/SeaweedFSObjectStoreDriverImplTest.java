@@ -1241,6 +1241,105 @@ public class SeaweedFSObjectStoreDriverImplTest {
     }
 
     @Test
+    public void testGetAllBucketsUsageSkipsDestroyedRows() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+
+        BucketVO live = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "live", null, false, false, false, null);
+        BucketVO destroyed = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "gone", null, false, false, false, null);
+        destroyed.setState(Bucket.State.Destroyed);
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(live);
+        buckets.add(destroyed);
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        ListObjectsV2Result liveResult = mock(ListObjectsV2Result.class);
+        S3ObjectSummary s1 = new S3ObjectSummary(); s1.setSize(10L);
+        List<S3ObjectSummary> summaries = new ArrayList<>(); summaries.add(s1);
+        when(liveResult.getObjectSummaries()).thenReturn(summaries);
+        when(liveResult.isTruncated()).thenReturn(false);
+        when(s3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(liveResult);
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        // A Destroyed row's remote bucket is already gone; listing it would
+        // fail with NoSuchBucket and abort usage collection for the store.
+        assertEquals(1, usage.size());
+        assertEquals(10L, usage.get("live").longValue());
+        assertFalse(usage.containsKey("gone"));
+        verify(s3Client, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
+    }
+
+    @Test
+    public void testGetAllBucketsUsageMetricsSkipsDestroyedRows() throws Exception {
+        doReturn("http://metrics.local:9327").when(driver).getMetricsUrl(TEST_STORE_ID);
+
+        BucketVO live = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "live", null, false, false, false, null);
+        BucketVO destroyed = new BucketVO(TEST_ACCOUNT_ID, TEST_DOMAIN_ID, TEST_STORE_ID, "gone", null, false, false, false, null);
+        destroyed.setState(Bucket.State.Destroyed);
+        List<BucketVO> buckets = new ArrayList<>();
+        buckets.add(live);
+        buckets.add(destroyed);
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(buckets);
+
+        // The metrics endpoint exports a sample only for the live bucket. A
+        // Destroyed row must not be required by the scrape validation — no
+        // sample can ever exist for a deleted bucket — or every poll would
+        // fall back to the S3 listing while the row lingers.
+        String metricsBody = "SeaweedFS_s3_bucket_size_bytes{bucket=\"live\"} 5\n";
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn(metricsBody);
+        when(mockHttpClient.send(ArgumentMatchers.<HttpRequest>any(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        doReturn(mockHttpClient).when(driver).getS3ExtensionHttpClient();
+
+        Map<String, Long> usage = driver.getAllBucketsUsage(TEST_STORE_ID);
+        assertEquals(1, usage.size());
+        assertEquals(5L, usage.get("live").longValue());
+        assertFalse(usage.containsKey("gone"));
+        verify(s3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+    }
+
+    @Test
+    public void testGetS3UrlRejectsPathPrefixedStoreUrl() {
+        // updateObjectStore can change the generic store URL without the
+        // registration-time checks, so the driver must still reject a
+        // path-prefixed endpoint (which the object-store browser cannot reach).
+        storeDetailsMap.remove(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL);
+        when(objectStoreVO.getUrl()).thenReturn("http://s3-endpoint/s3");
+
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> driver.getS3Url(TEST_STORE_ID));
+        assertTrue(thrown.getMessage().contains("path prefix"));
+    }
+
+    @Test
+    public void testGetS3UrlRejectsPathPrefixedDetail() {
+        storeDetailsMap.put(SeaweedFSObjectStoreUtil.STORE_DETAILS_KEY_S3_URL, "http://s3-endpoint/s3");
+
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> driver.getS3Url(TEST_STORE_ID));
+        assertTrue(thrown.getMessage().contains("path prefix"));
+    }
+
+    @Test
+    public void testCreateBucketMissingRowFailsAndCleansUp() throws Exception {
+        doReturn(s3Client).when(driver).getS3ClientByStoreId(TEST_STORE_ID);
+        doReturn(iamClient).when(driver).getIAMClient(TEST_STORE_ID);
+        when(s3Client.doesBucketExistV2(TEST_BUCKET_NAME)).thenReturn(false);
+        // The BucketVO row is missing: the post-create section must throw a
+        // useful error rather than an NPE, and the cleanup path must still
+        // revoke the policy grant before freeing the remote bucket name.
+        when(bucketDao.findById(anyLong())).thenReturn(null);
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+
+        assertThrows(CloudRuntimeException.class, () -> driver.createBucket(bucketVo, false));
+
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(iamClient, s3Client);
+        inOrder.verify(iamClient).putUserPolicy(any(PutUserPolicyRequest.class));
+        inOrder.verify(s3Client).deleteBucket(TEST_BUCKET_NAME);
+    }
+
+    @Test
     public void testGetAllBucketsUsageMetricsUrlTrailingSlashNormalized() throws Exception {
         doReturn("http://metrics.local:9327/").when(driver).getMetricsUrl(TEST_STORE_ID);
 
