@@ -2419,6 +2419,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    public boolean wasRequestCancelled(final long sequence) {
+        return cancellableRequests.wasCancelRequested(sequence);
+    }
+
     @Override
     public boolean isRequestSequenceCancellable(final long sequence) {
         return cancellableRequests.isCancellable(sequence);

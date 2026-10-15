@@ -58,6 +58,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -662,8 +663,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Long jobId = getAsyncJobId();
         if (jobId != null && isJobCancelled(jobId)) {
-            logger.debug("job-{} for host: {}, with commands: {} is cancelled", jobId, hostId, commands);
-            throw new OperationCancelledException(commands.toCommands(), hostId, 0, 0, false);
+            logger.info("Not sending commands {} to host {}: job-{} was cancelled", commands, hostId, jobId);
+            throw OperationCancelledException.updateCmdsNotSent(commands.toCommands(), hostId, jobId);
         }
 
         int wait = getTimeout(commands, timeout);
@@ -2129,6 +2130,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                     asyncJobManager.finalizeCancelledJob(job.getId());
                 }
+
+                // a VM work job may run here on behalf of an API job executing on another server; its commands are keyed by that job
+                for (final Long jobId : _jobToHostIdAndReqSequenceMap.keySet()) {
+                    if (_cancelledJobs.containsKey(jobId)) {
+                        continue;
+                    }
+                    final AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
+                    if (job != null && job.getStatus() == JobInfo.Status.CANCELLED) {
+                        logger.info("Job-{} was cancelled elsewhere; stopping the commands in flight for it on this server", jobId);
+                        if (!cancelJobExecution(jobId, "Job was cancelled")) {
+                            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying on the next check", jobId);
+                        }
+                    }
+                }
             } catch (final Throwable e) {
                 logger.error("Unexpected exception in the cancelled jobs check task", e);
             }
@@ -2188,7 +2203,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 continue;
             }
             logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
-            if (!attache.cancelExecution(request.second())) {
+            if (!attache.cancelExecution(request.second(), reason)) {
                 allCancelled = false;
             }
         }
