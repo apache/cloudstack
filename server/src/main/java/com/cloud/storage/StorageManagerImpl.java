@@ -2550,7 +2550,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(msg);
         }
 
-        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
+        if (!Arrays.asList(StoragePoolStatus.Up, StoragePoolStatus.Disabled, StoragePoolStatus.ErrorInMaintenance).contains(primaryStorage.getStatus())) {
             throw new InvalidParameterValueException(String.format("Primary storage %s is not ready for migration, as the status is:%s", primaryStorage, primaryStorage.getStatus().toString()));
         }
 
@@ -2558,6 +2558,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
 
+        recordStatusBeforeMaintenance(primaryStorage);
         if (primaryStorage.getPoolType() == StoragePoolType.DatastoreCluster) {
             if (primaryStorage.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
                 throw new CloudRuntimeException(String.format("There is already a job running for preparation for maintenance of the storage pool %s", primaryStorage));
@@ -2580,6 +2581,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (StoragePoolVO childDatastore : childDatastores) {
+                    recordStatusBeforeMaintenance(childDatastore);
                     // set the pool state to prepare for maintenance, so that VMs will not migrate to the storagepools in the same cluster
                     childDatastore.setStatus(StoragePoolStatus.PrepareForMaintenance);
                     _storagePoolDao.update(childDatastore.getId(), childDatastore);
@@ -2606,6 +2608,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    /**
+     * Remembers a Disabled pool's status so that cancelling maintenance puts it back to Disabled instead of Up
+     * (restored in PrimaryDataStoreHelper#cancelMaintain). A retry from ErrorInMaintenance keeps what the
+     * first attempt recorded.
+     */
+    protected void recordStatusBeforeMaintenance(StoragePoolVO pool) {
+        if (pool.getStatus() == StoragePoolStatus.Disabled) {
+            _storagePoolDetailsDao.addDetail(pool.getId(), PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE, StoragePoolStatus.Disabled.name(), false);
+        } else if (pool.getStatus() == StoragePoolStatus.Up) {
+            _storagePoolDetailsDao.removeDetail(pool.getId(), PrimaryDataStoreLifeCycle.STATUS_BEFORE_MAINTENANCE);
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,
@@ -2622,7 +2637,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(msg);
         }
 
-        if (primaryStorage.getStatus().equals(StoragePoolStatus.Up) || primaryStorage.getStatus().equals(StoragePoolStatus.PrepareForMaintenance)) {
+        if (Arrays.asList(StoragePoolStatus.Up, StoragePoolStatus.Disabled, StoragePoolStatus.PrepareForMaintenance).contains(primaryStorage.getStatus())) {
             throw new StorageUnavailableException("Primary storage " + primaryStorage + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString(),
                     primaryStorageId);
         }
