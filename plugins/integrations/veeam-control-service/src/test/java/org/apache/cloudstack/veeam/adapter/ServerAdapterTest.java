@@ -31,6 +31,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
 import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -104,9 +106,12 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -147,6 +152,7 @@ public class ServerAdapterTest {
     @Mock ImageTransferDao imageTransferDao;
     @Mock ServiceOfferingDao serviceOfferingDao;
     @Mock VMTemplateDao templateDao;
+    @Mock VMTemplateZoneDao templateZoneDao;
     @Mock UserVmManager userVmManager;
     @Mock NicDao nicDao;
     @Mock AsyncJobDao asyncJobDao;
@@ -457,27 +463,117 @@ public class ServerAdapterTest {
 
     @Test
     public void testGetTemplateForInstanceCreation_NullUuid_ReturnsNull() {
-        assertNull(serverAdapter.getTemplateForInstanceCreation(null, null));
+        assertNull(serverAdapter.getTemplateForInstanceCreation(null, null, mock(DataCenterVO.class), mock(Account.class)));
+        verify(templateDao, never()).findByUuid(any());
     }
 
     @Test
     public void testGetTemplateForInstanceCreation_BlankUuid_ReturnsNull() {
-        assertNull(serverAdapter.getTemplateForInstanceCreation("   ", null));
+        assertNull(serverAdapter.getTemplateForInstanceCreation("   ", null, mock(DataCenterVO.class), mock(Account.class)));
+        verify(templateDao, never()).findByUuid(any());
     }
 
     @Test
     public void testGetTemplateForInstanceCreation_TemplateNotFound_ReturnsNull() {
+        ServerAdapter spyAdapter = spy(serverAdapter);
         when(templateDao.findByUuid("missing-uuid")).thenReturn(null);
-        assertNull(serverAdapter.getTemplateForInstanceCreation("missing-uuid", null));
+        assertNull(spyAdapter.getTemplateForInstanceCreation("missing-uuid", null, mock(DataCenterVO.class),
+                mock(Account.class)));
+        verify(spyAdapter, never()).isTemplateUsableForInstanceCreation(any(), any(), any());
     }
 
     @Test
-    public void testGetTemplateForInstanceCreation_TemplateFound_ReturnsTemplate() {
+    public void testGetTemplateForInstanceCreation_TemplateNotUsable_ReturnsNull() {
+        ServerAdapter spyAdapter = spy(serverAdapter);
         VMTemplateVO template = mock(VMTemplateVO.class);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        Account owner = mock(Account.class);
         when(templateDao.findByUuid("valid-uuid")).thenReturn(template);
-        assertEquals(template, serverAdapter.getTemplateForInstanceCreation("valid-uuid", null));
+        doReturn(false).when(spyAdapter).isTemplateUsableForInstanceCreation(template, zone, owner);
+        assertNull(spyAdapter.getTemplateForInstanceCreation("valid-uuid", null, zone, owner));
     }
 
+    @Test
+    public void testGetTemplateForInstanceCreation_TemplateUsable_ReturnsTemplate() {
+        ServerAdapter spyAdapter = spy(serverAdapter);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        Account owner = mock(Account.class);
+        when(templateDao.findByUuid("valid-uuid")).thenReturn(template);
+        doReturn(true).when(spyAdapter).isTemplateUsableForInstanceCreation(template, zone, owner);
+        assertEquals(template, spyAdapter.getTemplateForInstanceCreation("valid-uuid", null, zone, owner));
+    }
+
+    private VMTemplateVO mockTemplateForUsabilityCheck(VirtualMachineTemplate.State state) {
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getState()).thenReturn(state);
+        Mockito.lenient().when(template.getId()).thenReturn(5L);
+        return template;
+    }
+
+    private DataCenterVO mockZoneForUsabilityCheck() {
+        DataCenterVO zone = mock(DataCenterVO.class);
+        Mockito.lenient().when(zone.getId()).thenReturn(1L);
+        return zone;
+    }
+
+    @Test
+    public void testIsTemplateUsableForInstanceCreation_ActiveInZoneAndAccessible_ReturnsTrue() {
+        VMTemplateVO template = mockTemplateForUsabilityCheck(VirtualMachineTemplate.State.Active);
+        DataCenterVO zone = mockZoneForUsabilityCheck();
+        Account owner = mock(Account.class);
+        when(templateZoneDao.listByZoneTemplate(1L, 5L)).thenReturn(List.of(mock(VMTemplateZoneVO.class)));
+
+        assertTrue(serverAdapter.isTemplateUsableForInstanceCreation(template, zone, owner));
+        verify(accountService).checkAccess(owner, SecurityChecker.AccessType.UseEntry, false, template);
+    }
+
+    @Test
+    public void testIsTemplateUsableForInstanceCreation_NotActive_ReturnsFalse() {
+        for (VirtualMachineTemplate.State state : new VirtualMachineTemplate.State[] {
+                VirtualMachineTemplate.State.Inactive, VirtualMachineTemplate.State.NotUploaded,
+                VirtualMachineTemplate.State.UploadInProgress, VirtualMachineTemplate.State.UploadError,
+                VirtualMachineTemplate.State.UploadAbandoned}) {
+            VMTemplateVO template = mockTemplateForUsabilityCheck(state);
+            assertFalse("Expected not usable for state " + state, serverAdapter.isTemplateUsableForInstanceCreation(
+                    template, mockZoneForUsabilityCheck(), mock(Account.class)));
+        }
+        verify(templateZoneDao, never()).listByZoneTemplate(any(), Mockito.anyLong());
+        verify(accountService, never()).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class),
+                Mockito.anyBoolean(), any(VMTemplateVO.class));
+    }
+
+    @Test
+    public void testIsTemplateUsableForInstanceCreation_NotInZone_ReturnsFalse() {
+        VMTemplateVO template = mockTemplateForUsabilityCheck(VirtualMachineTemplate.State.Active);
+        DataCenterVO zone = mockZoneForUsabilityCheck();
+        when(templateZoneDao.listByZoneTemplate(1L, 5L)).thenReturn(Collections.emptyList());
+
+        assertFalse(serverAdapter.isTemplateUsableForInstanceCreation(template, zone, mock(Account.class)));
+        verify(accountService, never()).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class),
+                Mockito.anyBoolean(), any(VMTemplateVO.class));
+    }
+
+    @Test
+    public void testIsTemplateUsableForInstanceCreation_NullZoneRefs_ReturnsFalse() {
+        VMTemplateVO template = mockTemplateForUsabilityCheck(VirtualMachineTemplate.State.Active);
+        DataCenterVO zone = mockZoneForUsabilityCheck();
+        when(templateZoneDao.listByZoneTemplate(1L, 5L)).thenReturn(null);
+
+        assertFalse(serverAdapter.isTemplateUsableForInstanceCreation(template, zone, mock(Account.class)));
+    }
+
+    @Test
+    public void testIsTemplateUsableForInstanceCreation_NoPermission_ReturnsFalse() {
+        VMTemplateVO template = mockTemplateForUsabilityCheck(VirtualMachineTemplate.State.Active);
+        DataCenterVO zone = mockZoneForUsabilityCheck();
+        Account owner = mock(Account.class);
+        when(templateZoneDao.listByZoneTemplate(1L, 5L)).thenReturn(List.of(mock(VMTemplateZoneVO.class)));
+        doThrow(new PermissionDeniedException("denied")).when(accountService)
+                .checkAccess(owner, SecurityChecker.AccessType.UseEntry, false, template);
+
+        assertFalse(serverAdapter.isTemplateUsableForInstanceCreation(template, zone, owner));
+    }
 
     @Test
     public void testGetZoneById_NullId_ReturnsNull() {

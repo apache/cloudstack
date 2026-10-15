@@ -199,10 +199,12 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
@@ -305,6 +307,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     VMTemplateDao templateDao;
+
+    @Inject
+    VMTemplateZoneDao templateZoneDao;
 
     @Inject
     UserVmManager userVmManager;
@@ -655,17 +660,51 @@ public class ServerAdapter extends ManagerBase {
         return os;
     }
 
-    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid, GuestOS guestOs) {
+    /**
+     * Returns the template to create the Instance with, or null when the template is missing or not usable,
+     * in which case the Instance is created with the blank KVM template
+     * ({@link com.cloud.vm.VirtualMachineManager#KVM_BLANK_VM_TEMPLATE_NAME}).
+     */
+    protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid, GuestOS guestOs,
+                  com.cloud.dc.DataCenter zone, Account owner) {
         if (StringUtils.isBlank(templateUuid)) {
             return null;
         }
         VMTemplateVO template = templateDao.findByUuid(templateUuid);
         if (template == null) {
-            logger.warn("Template with ID {} not found, guest OS: {}, VM will be created with default template",
-                    guestOs, templateUuid);
+            logger.warn("Template with ID {} not found, VM will be created with the blank template and guest OS: {}",
+                    templateUuid, guestOs);
+            return null;
+        }
+        if (!isTemplateUsableForInstanceCreation(template, zone, owner)) {
+            logger.warn("{} is not usable, VM will be created with the blank template and guest OS: {}",
+                    template, guestOs);
             return null;
         }
         return template;
+    }
+
+    /**
+     * Checks whether the template can be used to create an Instance for the owner in the zone: the template must
+     * be active, available in the zone and the owner must have permission to use it.
+     */
+    protected boolean isTemplateUsableForInstanceCreation(VMTemplateVO template, com.cloud.dc.DataCenter zone,
+                  Account owner) {
+        if (!VirtualMachineTemplate.State.Active.equals(template.getState())) {
+            logger.warn("{} is not active, current state: {}", template, template.getState());
+            return false;
+        }
+        if (CollectionUtils.isEmpty(templateZoneDao.listByZoneTemplate(zone.getId(), template.getId()))) {
+            logger.warn("{} is not available in zone {}", template, zone);
+            return false;
+        }
+        try {
+            accountService.checkAccess(owner, SecurityChecker.AccessType.UseEntry, false, template);
+        } catch (PermissionDeniedException e) {
+            logger.warn("{} is not accessible for the account {}: {}", template, owner, e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     protected List<String> getValidatedSshKeyPairNames(String sshKeyPairNames, Account owner) {
@@ -852,7 +891,7 @@ public class ServerAdapter extends ManagerBase {
         if (bootMode != null) {
             cmd.setBootMode(bootMode.toString());
         }
-        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid, guestOs);
+        VMTemplateVO template = getTemplateForInstanceCreation(templateUuid, guestOs, zone, account);
         if (template != null) {
             cmd.setTemplateId(template.getId());
         } else if (guestOs != null) {
