@@ -1053,16 +1053,12 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         try {
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
             StorageStrategy storageStrategy = resolveStorageStrategy(poolDetails);
-            SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
-            String authHeader = storageStrategy.getAuthHeader();
 
             logger.info("rollbackFlexVolSnapshot: Rolling back FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
                     detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid);
 
-            JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
-            if (jobResponse != null && jobResponse.getJob() != null) {
-                storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 10, 2000);
-            }
+            storageStrategy.deleteFlexVolSnapshotForCloudStackVolume(
+                    detail.flexVolUuid, detail.snapshotUuid, detail.snapshotName);
         } catch (Exception e) {
             logger.error("rollbackFlexVolSnapshot: Rollback of FlexVol snapshot failed: {}", e.getMessage(), e);
         }

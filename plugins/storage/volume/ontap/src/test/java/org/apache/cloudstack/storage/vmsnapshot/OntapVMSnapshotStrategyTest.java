@@ -18,11 +18,13 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -58,6 +60,9 @@ import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.StorageStrategy;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -686,6 +691,44 @@ class OntapVMSnapshotStrategyTest {
                 () -> OntapVMSnapshotStrategy.FlexVolSnapshotDetail.parse("a::b::c::d::e"));
     }
 
+    @Test
+    void testRollbackFlexVolSnapshot_UsesSharedDelete() {
+        OntapVMSnapshotStrategy.FlexVolSnapshotDetail detail = new OntapVMSnapshotStrategy.FlexVolSnapshotDetail(
+                "flexvol-uuid-1", "snapshot-uuid-1", "snapshot-name-1", "volume-301.qcow2", POOL_ID_1, "NFS3");
+        doReturn(storageStrategy).when(strategy).resolveStorageStrategy(any());
+
+        assertDoesNotThrow(() -> strategy.rollbackFlexVolSnapshot(detail));
+
+        verify(storageStrategy).deleteFlexVolSnapshotForCloudStackVolume(
+                "flexvol-uuid-1", "snapshot-uuid-1", "snapshot-name-1");
+        verify(storageStrategy, never()).getSnapshotFeignClient();
+        verify(storageStrategy, never()).getAuthHeader();
+        verify(storageStrategy, never()).jobPollForSuccess(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void testRollbackFlexVolSnapshot_DeleteFailureIsLoggedAndNotThrown() {
+        OntapVMSnapshotStrategy.FlexVolSnapshotDetail detail = new OntapVMSnapshotStrategy.FlexVolSnapshotDetail(
+                "flexvol-uuid-1", "snapshot-uuid-1", "snapshot-name-1", "volume-301.qcow2", POOL_ID_1, "NFS3");
+        doReturn(storageStrategy).when(strategy).resolveStorageStrategy(any());
+        doThrow(new CloudRuntimeException("delete failed")).when(storageStrategy)
+                .deleteFlexVolSnapshotForCloudStackVolume(any(), any(), any());
+
+        Logger logger = (Logger) LogManager.getLogger(OntapVMSnapshotStrategy.class);
+        Appender appender = mock(Appender.class);
+        when(appender.getName()).thenReturn("rollback-test-appender");
+        when(appender.isStarted()).thenReturn(true);
+        logger.addAppender(appender);
+        try {
+            assertDoesNotThrow(() -> strategy.rollbackFlexVolSnapshot(detail));
+
+            verify(appender).append(argThat(event -> event.getMessage().getFormattedMessage()
+                    .contains("Rollback of FlexVol snapshot failed: delete failed")));
+        } finally {
+            logger.removeAppender(appender);
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // Tests: buildSnapshotName
     // ══════════════════════════════════════════════════════════════════════════
@@ -859,6 +902,36 @@ class OntapVMSnapshotStrategyTest {
         verify(snapshotFeignClient, never()).commitConsistencyGroupSnapshot(any(), any(), any(), any());
         verify(snapshotFeignClient, never()).deleteConsistencyGroup(any(), any());
         verify(vmSnapshotDetailsDao, atLeastOnce()).persist(any(VMSnapshotDetailsVO.class));
+    }
+
+    @Test
+    void testTakeVMSnapshot_RollbackDeleteFailurePreservesOriginalError() throws Exception {
+        VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
+        setupTakeSnapshotCommon(vmSnapshot);
+        setupSingleVolumeForTakeSnapshot();
+        String snapshotName = strategy.buildSnapshotName(vmSnapshot);
+        setupSingleFlexVolFlowMocks(snapshotName);
+
+        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+        when(freezeAnswer.getResult()).thenReturn(true);
+        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+        when(thawAnswer.getResult()).thenReturn(true);
+        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                .thenReturn(freezeAnswer)
+                .thenReturn(thawAnswer);
+        doThrow(new CloudRuntimeException("snapshot persistence failed")).when(vmSnapshotDetailsDao)
+                .persist(any(VMSnapshotDetailsVO.class));
+        doThrow(new CloudRuntimeException("rollback delete failed")).when(storageStrategy)
+                .deleteFlexVolSnapshotForCloudStackVolume(any(), any(), any());
+        when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                () -> strategy.takeVMSnapshot(vmSnapshot));
+
+        assertEquals("snapshot persistence failed", exception.getMessage());
+        verify(storageStrategy).deleteFlexVolSnapshotForCloudStackVolume(
+                eq("flexvol-uuid-1"), any(), eq(snapshotName));
     }
 
     @Test
