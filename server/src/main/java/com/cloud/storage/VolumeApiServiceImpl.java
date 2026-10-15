@@ -186,6 +186,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -304,6 +305,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private StoragePoolHostDao _storagePoolHostDao;
     @Inject
     private ImageStoreDao imageStoreDao;
     @Inject
@@ -431,6 +434,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+    // pool types whose volumes are files, on KVM
+    private static final Set<Storage.StoragePoolType> KVM_FILE_BASED_POOL_TYPES = Set.of(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.Filesystem);
 
     private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
     private static final List<Volume.State> validAttachStates = Arrays.asList(Volume.State.Allocated, Volume.State.Ready, Volume.State.Uploaded);
@@ -3755,7 +3761,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         boolean liveMigrateVolume = false;
         boolean srcAndDestOnStorPool = false;
-        boolean srcAndDestOnRBD = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
         VMInstanceVO vm = null;
@@ -3796,13 +3801,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
-                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo) && isSourceOrDestNotOnRBD(srcStoragePoolVO, destinationStoragePoolVo)) {
+                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo) && !isVolumeMigrationBetweenRbdAndFileBased(srcStoragePoolVO.getPoolType(), destinationStoragePoolVo.getPoolType())) {
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
+                    checkLocalPoolsOnHostOfRunningVm(vm, srcStoragePoolVO, destinationStoragePoolVo);
                     srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
-                    srcAndDestOnRBD = isSourceAndDestOnRBD(srcStoragePoolVO, destinationStoragePoolVo);
                 }
             }
 
@@ -3816,7 +3821,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcAndDestOnRBD && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+        // An encrypted (KVM) volume can be migrated between RBD and NFS pools, whether it is in use by a running Instance or not
+        StoragePoolVO destinationStoragePoolVO = _storagePoolDao.findById(storagePoolId);
+        boolean srcAndDestOnRbdOrNfs = destinationStoragePoolVO != null && isVolumeMigrationBetweenRbdAndFileBased(srcStoragePoolVO.getPoolType(), destinationStoragePoolVO.getPoolType());
+
+        if ((vol.getPassphraseId() != null || vol.getKmsKeyId() != null) && !srcAndDestOnStorPool && !srcAndDestOnRbdOrNfs && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
@@ -3997,14 +4006,33 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.StorPool;
     }
 
-    private boolean isSourceOrDestNotOnRBD(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
-        return storagePoolVO.getPoolType() != Storage.StoragePoolType.RBD
-                || destinationStoragePoolVo.getPoolType() != Storage.StoragePoolType.RBD;
+    /**
+     * A volume of a running Instance is live migrated in place on the host the Instance runs on, so a local (host scoped)
+     * pool involved in the migration must be the local pool of that very host.
+     */
+    protected void checkLocalPoolsOnHostOfRunningVm(VMInstanceVO vm, StoragePoolVO srcPool, StoragePoolVO destPool) {
+        for (StoragePoolVO pool : new StoragePoolVO[] {srcPool, destPool}) {
+            if (pool == null || !Storage.StoragePoolType.Filesystem.equals(pool.getPoolType())) {
+                continue;
+            }
+            if (vm.getHostId() == null || _storagePoolHostDao.findByPoolHost(pool.getId(), vm.getHostId()) == null) {
+                throw new InvalidParameterValueException(String.format("The volume of a running Instance can only be migrated to or from the local storage pool %s " +
+                        "of the host the Instance is running on", pool.getName()));
+            }
+        }
     }
 
-    private boolean isSourceAndDestOnRBD(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
-        return storagePoolVO.getPoolType() == Storage.StoragePoolType.RBD
-                && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.RBD;
+    /**
+     * True if KVM migrates (also encrypted) volumes between the pools, online or offline: between RBD pools and file based pools
+     * (NFS, SharedMountPoint or local), in any combination. For a running Instance a local pool has to be the one of the host
+     * the Instance runs on.
+     */
+    protected static boolean isVolumeMigrationBetweenRbdAndFileBased(Storage.StoragePoolType srcType, Storage.StoragePoolType destType) {
+        return isRbdOrFileBased(srcType) && isRbdOrFileBased(destType);
+    }
+
+    private static boolean isRbdOrFileBased(Storage.StoragePoolType poolType) {
+        return Storage.StoragePoolType.RBD.equals(poolType) || KVM_FILE_BASED_POOL_TYPES.contains(poolType);
     }
 
     /**

@@ -30,6 +30,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.LibvirtStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -81,16 +83,29 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
         PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
 
+        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
+        PrimaryDataStoreTO destPrimaryDataStore = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
+
         MigrateVolumeAnswer answer;
         if (Objects.equals(Storage.StoragePoolType.PowerFlex, srcPrimaryDataStore.getPoolType())) {
             answer = migratePowerFlexVolume(command, libvirtComputingResource);
-        } else if (Objects.equals(Storage.StoragePoolType.RBD, srcPrimaryDataStore.getPoolType())) {
+        } else if (Objects.equals(Storage.StoragePoolType.RBD, srcPrimaryDataStore.getPoolType())
+                || Objects.equals(Storage.StoragePoolType.RBD, destPrimaryDataStore.getPoolType())
+                || (isFileBasedPool(srcPrimaryDataStore) && isFileBasedPool(destPrimaryDataStore))) {
+            // RBD, NFS, SharedMountPoint and local volumes are live migrated in place with a libvirt block copy, as both pools are
+            // reachable from the host the Instance is running on (the command is sent to that host).
             answer = migrateRBDVolume(command, libvirtComputingResource);
         } else {
             answer = migrateRegularVolume(command, libvirtComputingResource);
         }
 
         return answer;
+    }
+
+    private static boolean isFileBasedPool(PrimaryDataStoreTO dataStore) {
+        return Objects.equals(Storage.StoragePoolType.NetworkFilesystem, dataStore.getPoolType())
+                || Objects.equals(Storage.StoragePoolType.SharedMountPoint, dataStore.getPoolType())
+                || Objects.equals(Storage.StoragePoolType.Filesystem, dataStore.getPoolType());
     }
 
     protected MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -387,11 +402,9 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
         PrimaryDataStoreTO sourcePool = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
-        final String sourceFilePath = String.format("%s/%s", sourcePool.getPath(), srcVolumeObjectTO.getPath());
 
         VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
         PrimaryDataStoreTO destPool = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
-        final String destFilePath = String.format("%s/%s", destPool.getPath(), destVolumeObjectTO.getPath());
 
         String destDiskLabel = null;
 
@@ -401,6 +414,8 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         Domain dm = null;
         MigrateVolumeAnswer answer = null;
+        boolean destVolumeCreated = false;
+        KVMStoragePool destKvmPool = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
             Connect conn = libvirtUtilitiesHelper.getConnection();
@@ -415,28 +430,62 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             }
 
             KVMStoragePool pool = storagePoolMgr.getStoragePool(destPool.getPoolType(), destPool.getUuid());
+            destKvmPool = pool;
             pool.connectPhysicalDisk(destVolumeObjectTO.getPath(), null);
+
+            KVMStoragePool srcKvmPool = storagePoolMgr.getStoragePool(sourcePool.getPoolType(), sourcePool.getUuid());
+            final String sourceFilePath = generateVolumePathOnHost(srcKvmPool, sourcePool, srcVolumeObjectTO);
+            final String destFilePath = generateVolumePathOnHost(pool, destPool, destVolumeObjectTO);
 
             String srcSecretUUID = null;
             String destSecretUUID = null;
             if (ArrayUtils.isNotEmpty(destVolumeObjectTO.getPassphrase())) {
                 srcSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, srcVolumeObjectTO.getPath(), srcVolumeObjectTO.getPassphrase());
                 destSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
+                if (Objects.equals(srcSecretUUID, destSecretUUID)) {
+                    // the secret is named after the volume path and is shared by both disks: keep it for the Instance
+                    srcSecretUUID = null;
+                }
             }
 
-            String diskdef = generateDestinationDiskXMLForRBD(dm, sourceFilePath, destFilePath, destSecretUUID, pool);
+            // A block copy between two RBD pools only has to copy the active layer, as the destination image is
+            // already provisioned. When NFS is involved the backing chain of the source differs from what the
+            // destination can reference, so the whole chain is flattened into the destination instead.
+            boolean srcAndDestOnRbd = Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())
+                    && Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType());
+
+            String diskdef = generateDestinationDiskXMLForRBD(dm, sourceFilePath, destFilePath, destSecretUUID, pool, destPool.getPoolType(),
+                    srcAndDestOnRbd);
+            if (diskdef == null) {
+                return new MigrateVolumeAnswer(command, false,
+                        String.format("Migrate volume failed as the disk with path %s was not found in the XML domain of vm %s", sourceFilePath, vmName), null);
+            }
             destDiskLabel = generateDestinationDiskLabel(diskdef);
 
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
             TypedParameter[] parameters = new TypedParameter[1];
             parameters[0] = parameter;
 
+            int blockCopyFlags = srcAndDestOnRbd ? Domain.BlockCopyFlags.SHALLOW : 0;
+            if (ArrayUtils.isNotEmpty(destVolumeObjectTO.getPassphrase())) {
+                // libvirt can not create (and format) an encrypted mirror itself, so the destination volume is
+                // created with its encryption header up front and the block copy writes into it.
+                KVMPhysicalDisk srcDisk = srcKvmPool.getPhysicalDisk(srcVolumeObjectTO.getPath());
+                long guestSize = srcDisk.getVirtualSize();
+                if (Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())) {
+                    guestSize -= LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
+                }
+                createEncryptedDestinationVolume(pool, destPool, destVolumeObjectTO, guestSize);
+                destVolumeCreated = true;
+                blockCopyFlags |= Domain.BlockCopyFlags.REUSE_EXT;
+            }
+
             cancelHook = new VolumeMigrationCancelHook(dm, destDiskLabel);
             libvirtComputingResource.addDisconnectHook(cancelHook);
 
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING_IN_BACKEND);
 
-            dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.SHALLOW);
+            dm.blockCopy(destDiskLabel, diskdef, parameters, blockCopyFlags);
             logger.info(String.format("Block copy has started for the volume %s : %s to %s", destDiskLabel, sourceFilePath, destFilePath));
 
             answer = checkBlockJobStatus(command, dm, destDiskLabel, sourceFilePath, destFilePath, libvirtComputingResource, conn, srcSecretUUID);
@@ -449,6 +498,17 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             }
             if (answer != null && answer.getResult()) {
                 answer = new MigrateVolumeAnswer(command, true, null, destVolumeObjectTO.getPath());
+
+                // Libvirt only detects the volume's real format (e.g. qcow2) if the destination pool
+                // already knew about it as such. Since the block copy wrote the file directly (not
+                // through libvirt's own volume-creation calls), any pool other than RBD needs an
+                // explicit refresh here; otherwise libvirt keeps whatever it inferred when the disk
+                // was first attached to this domain (or falls back to a filename-suffix guess), which
+                // for a volume carried over from RBD would wrongly be treated as a raw block device the
+                // next time the Instance is (re)started.
+                if (!Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
+                    pool.refresh();
+                }
             }
             return answer;
         } catch (Exception e) {
@@ -462,15 +522,21 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 }
             }
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
-            return new MigrateVolumeAnswer(command, false, msg, null);
+            answer = new MigrateVolumeAnswer(command, false, msg, null);
+            return answer;
         } finally {
             if (cancelHook != null) {
                 libvirtComputingResource.removeDisconnectHook(cancelHook);
             }
+            if (destVolumeCreated && (answer == null || !answer.getResult())) {
+                deleteDestinationVolume(destKvmPool, destPool, destVolumeObjectTO.getPath());
+            }
             if (answer != null && answer.getResult()) {
                 // Remove old volume after successful migration
                 KVMStoragePool libvirtSourcePool = storagePoolMgr.getStoragePool(sourcePool.getPoolType(), sourcePool.getUuid());
-                libvirtSourcePool.deletePhysicalDisk(srcVolumeObjectTO.getPath(), Storage.ImageFormat.RAW);
+                Storage.ImageFormat srcFormat = Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())
+                        ? Storage.ImageFormat.RAW : Storage.ImageFormat.QCOW2;
+                libvirtSourcePool.deletePhysicalDisk(srcVolumeObjectTO.getPath(), srcFormat);
             }
             if (dm != null) {
                 try {
@@ -482,10 +548,68 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         }
     }
 
-    protected String generateDestinationDiskXMLForRBD(Domain dm, String srcVolumePath, String diskFilePath, String destSecretUUID, KVMStoragePool pool) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+
+    /**
+     * Creates the (empty) destination volume of a live migration of an encrypted volume, with its encryption
+     * header, so that the block copy can write into it. An RBD volume gets a native librbd LUKS2 header, a volume
+     * on a file based pool is a qemu LUKS encrypted QCOW2 file.
+     *
+     * @param guestSize size of the disk as seen by the Instance
+     */
+    protected void createEncryptedDestinationVolume(KVMStoragePool pool, PrimaryDataStoreTO destPool, VolumeObjectTO destVolumeObjectTO, long guestSize) {
+        String path = destVolumeObjectTO.getPath();
+        // a previous failed attempt may have left the volume behind
+        deleteDestinationVolume(pool, destPool, path);
+        if (Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
+            // the LUKS2 header is carved out of the image, so it has to be added to what the Instance can use
+            pool.createPhysicalDisk(path, PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN,
+                    guestSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES, destVolumeObjectTO.getPassphrase());
+        } else {
+            pool.createPhysicalDisk(path, PhysicalDiskFormat.QCOW2, Storage.ProvisioningType.THIN, guestSize, destVolumeObjectTO.getPassphrase());
+        }
+    }
+
+    protected void deleteDestinationVolume(KVMStoragePool pool, PrimaryDataStoreTO destPool, String path) {
+        if (pool == null) {
+            return;
+        }
+        try {
+            pool.deletePhysicalDisk(path, Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())
+                    ? Storage.ImageFormat.RAW : Storage.ImageFormat.QCOW2);
+        } catch (Exception e) {
+            logger.debug("Could not remove the destination volume {} (it may not exist): {}", path, e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the path of the volume as it is referenced in the XML domain of the Instance on this host. RBD volumes
+     * are addressed as "<pool>/<image>", while file based volumes (e.g. NFS) are addressed by their path on the
+     * local mount point of the pool.
+     */
+    protected String generateVolumePathOnHost(KVMStoragePool kvmStoragePool, PrimaryDataStoreTO dataStore, VolumeObjectTO volumeObjectTO) {
+        if (Objects.equals(Storage.StoragePoolType.RBD, dataStore.getPoolType())) {
+            return String.format("%s/%s", dataStore.getPath(), volumeObjectTO.getPath());
+        }
+        return String.format("%s/%s", kvmStoragePool.getLocalPath(), volumeObjectTO.getPath());
+    }
+
+    /**
+     * Generates the XML of the destination disk used by the libvirt block copy. The source disk is located in the XML
+     * domain of the Instance by its current path, and is then rewritten to point at the destination pool. Both an RBD
+     * (network) and an NFS (file) destination are supported, independently of the type of the source disk.
+     */
+    /**
+     * Build the mirror disk XML handed to {@code blockCopy} from the disk the volume currently uses.
+     *
+     * @param shallowBlockCopy whether the copy will run with {@code VIR_DOMAIN_BLOCK_COPY_SHALLOW}, which decides
+     *                         whether the source's backing chain may be carried over to the mirror.
+     */
+    protected String generateDestinationDiskXMLForRBD(Domain dm, String srcVolumePath, String diskFilePath, String destSecretUUID, KVMStoragePool pool,
+            Storage.StoragePoolType destPoolType, boolean shallowBlockCopy)
+            throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
         final String domXml = dm.getXMLDesc(0);
 
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory dbFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(new ByteArrayInputStream(domXml.getBytes("UTF-8")));
         doc.getDocumentElement().normalize();
@@ -494,83 +618,166 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         for (int i = 0; i < disks.getLength(); i++) {
             Node diskNode = disks.item(i);
-            Node diskTypeAttribute = diskNode.getAttributes().getNamedItem("type");
-            if (diskTypeAttribute == null || !diskTypeAttribute.getNodeValue().equalsIgnoreCase(LibvirtVMDef.DiskDef.DiskType.NETWORK.toString())) {
+            if (!isDiskNodeOfVolume(diskNode, srcVolumePath)) {
                 continue;
             }
 
-            NodeList diskChildNodes = diskNode.getChildNodes();
-            boolean found = false;
-            for (int j = 0; j < diskChildNodes.getLength(); j++) {
-                Node diskChildNode = diskChildNodes.item(j);
+            logger.debug(String.format("Found disk node with source volume path %s, generating destination disk XML for %s on %s", srcVolumePath, diskFilePath,
+                    destPoolType));
+            updateDiskNodeForDestinationPool(doc, diskNode, diskFilePath, destSecretUUID, pool, destPoolType, shallowBlockCopy);
 
-                if ("source".equals(diskChildNode.getNodeName())) {
-                    NamedNodeMap diskNodeAttributes = diskChildNode.getAttributes();
-                    Node diskNodeAttribute = diskNodeAttributes.getNamedItem("protocol");
-                    if (diskNodeAttribute == null || !diskNodeAttribute.getNodeValue().equalsIgnoreCase(LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString())) {
-                        logger.debug("Skipped disk node with protocol: " + diskNodeAttribute);
-                        continue;
-                    }
-                    diskNodeAttribute = diskNodeAttributes.getNamedItem("name");
-                    if (diskNodeAttribute == null || !diskNodeAttribute.getNodeValue().contains(srcVolumePath)) {
-                        logger.debug("Skipped disk node with name: " + diskNodeAttribute);
-                        continue;
-                    }
+            StringWriter diskSection = new StringWriter();
+            Transformer xformer = TransformerFactory.newInstance().newTransformer();
+            xformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            xformer.transform(new DOMSource(diskNode), new StreamResult(diskSection));
 
-                    logger.debug(String.format("Found disk node with source RBD volume path %s: %s", srcVolumePath, diskNodeAttribute));
-                    diskNode.removeChild(diskChildNode);
-                    Element newChildSourceNode = doc.createElement("source");
-                    newChildSourceNode.setAttribute("protocol", LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString().toLowerCase());
-                    newChildSourceNode.setAttribute("name", diskFilePath);
-                    for (String sourceHost : pool.getSourceHost().split(",")) {
-                        Element newChildDiskNodeForHost = doc.createElement("host");
-                        newChildDiskNodeForHost.setAttribute("name", sourceHost);
-                        if (pool.getSourcePort() != 0) {
-                            newChildDiskNodeForHost.setAttribute("port", String.valueOf(pool.getSourcePort()));
-                        }
-                        newChildSourceNode.appendChild(newChildDiskNodeForHost);
-                    }
-                    diskNode.appendChild(newChildSourceNode);
+            return diskSection.toString();
+        }
+        return null;
+    }
 
-                    found = true;
-                    break;
+    /**
+     * True if the disk node is the one backing the volume with the given path, be it an RBD (network) or a file disk.
+     */
+    protected boolean isDiskNodeOfVolume(Node diskNode, String srcVolumePath) {
+        Node diskTypeAttribute = diskNode.getAttributes().getNamedItem("type");
+        if (diskTypeAttribute == null) {
+            return false;
+        }
+        String diskType = diskTypeAttribute.getNodeValue();
+        boolean networkDisk = LibvirtVMDef.DiskDef.DiskType.NETWORK.toString().equalsIgnoreCase(diskType);
+        boolean fileDisk = LibvirtVMDef.DiskDef.DiskType.FILE.toString().equalsIgnoreCase(diskType);
+        if (!networkDisk && !fileDisk) {
+            return false;
+        }
+
+        Node sourceNode = getChildNode(diskNode, "source");
+        if (sourceNode == null) {
+            return false;
+        }
+        NamedNodeMap sourceAttributes = sourceNode.getAttributes();
+
+        if (networkDisk) {
+            Node protocolAttribute = sourceAttributes.getNamedItem("protocol");
+            if (protocolAttribute == null || !protocolAttribute.getNodeValue().equalsIgnoreCase(LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString())) {
+                logger.debug("Skipped disk node with protocol: " + protocolAttribute);
+                return false;
+            }
+            Node nameAttribute = sourceAttributes.getNamedItem("name");
+            return nameAttribute != null && nameAttribute.getNodeValue().contains(srcVolumePath);
+        }
+
+        Node fileAttribute = sourceAttributes.getNamedItem("file");
+        return fileAttribute != null && fileAttribute.getNodeValue().contains(srcVolumePath);
+    }
+
+    /**
+     * Rewrites the disk node so that it refers to the volume on the destination pool. The disk type, the source, the
+     * driver type and the Ceph authentication are all adjusted to what the destination pool requires.
+     */
+    protected void updateDiskNodeForDestinationPool(Document doc, Node diskNode, String diskFilePath, String destSecretUUID, KVMStoragePool pool,
+            Storage.StoragePoolType destPoolType, boolean shallowBlockCopy) {
+        boolean destinationOnRbd = Objects.equals(Storage.StoragePoolType.RBD, destPoolType);
+
+        Element diskElement = (Element)diskNode;
+        diskElement.setAttribute("type", destinationOnRbd ? LibvirtVMDef.DiskDef.DiskType.NETWORK.toString().toLowerCase()
+                : LibvirtVMDef.DiskDef.DiskType.FILE.toString().toLowerCase());
+
+        Node sourceNode = getChildNode(diskNode, "source");
+        if (sourceNode != null) {
+            diskNode.removeChild(sourceNode);
+        }
+        diskNode.appendChild(destinationOnRbd ? createRbdSourceNode(doc, diskFilePath, pool) : createFileSourceNode(doc, diskFilePath));
+
+        // A disk cloned from a template keeps that template as its backing file, and libvirt reports the whole
+        // chain in the live domain XML. Only a shallow copy may carry that chain into the mirror: a full copy
+        // flattens every layer into the destination, so a <backingStore> there describes a chain the destination
+        // does not have. libvirt refuses that combination outright with "backingStore of mirror without
+        // VIR_DOMAIN_BLOCK_COPY_SHALLOW doesn't make sense", which is why the element is dropped here.
+        if (!shallowBlockCopy) {
+            Node backingStoreNode = getChildNode(diskNode, "backingStore");
+            if (backingStoreNode != null) {
+                diskNode.removeChild(backingStoreNode);
+            }
+        }
+
+        Node driverNode = getChildNode(diskNode, "driver");
+        if (driverNode instanceof Element) {
+            // RBD volumes are raw, whereas volumes on a file based pool are qcow2
+            ((Element)driverNode).setAttribute("type", destinationOnRbd ? "raw" : "qcow2");
+        }
+
+        // The Ceph authentication of the source pool does not apply to the destination pool, so it is always replaced
+        Node authNode = getChildNode(diskNode, "auth");
+        if (authNode != null) {
+            diskNode.removeChild(authNode);
+        }
+        if (destinationOnRbd && StringUtils.isNotBlank(pool.getAuthUserName())) {
+            diskNode.appendChild(createAuthNode(doc, pool));
+        }
+
+        if (StringUtils.isNotBlank(destSecretUUID)) {
+            Node encryptionNode = getChildNode(diskNode, "encryption");
+            if (encryptionNode instanceof Element) {
+                // librbd encrypts an RBD image natively (LUKS2), a file is encrypted by qemu (LUKS)
+                Element encryptionElement = (Element)encryptionNode;
+                if (destinationOnRbd) {
+                    encryptionElement.setAttribute("format", "luks2");
+                    encryptionElement.setAttribute("engine", "librbd");
+                } else {
+                    encryptionElement.setAttribute("format", "luks");
+                    encryptionElement.removeAttribute("engine");
                 }
             }
-            if (found) {
-                for (int j = 0; j < diskChildNodes.getLength(); j++) {
-                    Node diskChildNode = diskChildNodes.item(j);
-                    if ("auth".equals(diskChildNode.getNodeName())) {
-                        NamedNodeMap diskNodeAttributes = diskChildNode.getAttributes();
-                        Node diskNodeAttribute = diskNodeAttributes.getNamedItem("username");
-                        if (diskNodeAttribute != null) {
-                            diskNodeAttribute.setNodeValue(pool.getAuthUserName());
-                        }
-                        for (int m = 0;  m < diskChildNode.getChildNodes().getLength(); m++) {
-                            Node authChild = diskChildNode.getChildNodes().item(m);
-                            if ("secret".equals(authChild.getNodeName())) {
-                                NamedNodeMap secretAttributes = authChild.getAttributes();
-                                Node uuidAttribute = secretAttributes.getNamedItem("uuid");
-                                uuidAttribute.setTextContent(pool.getAuthSecretUUID());
-                            }
-                        }
-                    } else if ("encryption".equals(diskChildNode.getNodeName())) {
-                        for (int n = 0; n < diskChildNode.getChildNodes().getLength(); n++) {
-                            Node encryptionChild = diskChildNode.getChildNodes().item(n);
-                            if ("secret".equals(encryptionChild.getNodeName())) {
-                                NamedNodeMap secretAttributes = encryptionChild.getAttributes();
-                                Node uuidAttribute = secretAttributes.getNamedItem("uuid");
-                                uuidAttribute.setTextContent(destSecretUUID);
-                            }
-                        }
+            if (encryptionNode != null) {
+                Node secretNode = getChildNode(encryptionNode, "secret");
+                if (secretNode != null) {
+                    Node uuidAttribute = secretNode.getAttributes().getNamedItem("uuid");
+                    if (uuidAttribute != null) {
+                        uuidAttribute.setTextContent(destSecretUUID);
                     }
                 }
+            }
+        }
+    }
 
-                StringWriter diskSection = new StringWriter();
-                Transformer xformer = TransformerFactory.newInstance().newTransformer();
-                xformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-                xformer.transform(new DOMSource(diskNode), new StreamResult(diskSection));
+    protected Element createRbdSourceNode(Document doc, String diskFilePath, KVMStoragePool pool) {
+        Element sourceNode = doc.createElement("source");
+        sourceNode.setAttribute("protocol", LibvirtVMDef.DiskDef.DiskProtocol.RBD.toString().toLowerCase());
+        sourceNode.setAttribute("name", diskFilePath);
+        for (String sourceHost : pool.getSourceHost().split(",")) {
+            Element hostNode = doc.createElement("host");
+            hostNode.setAttribute("name", sourceHost);
+            if (pool.getSourcePort() != 0) {
+                hostNode.setAttribute("port", String.valueOf(pool.getSourcePort()));
+            }
+            sourceNode.appendChild(hostNode);
+        }
+        return sourceNode;
+    }
 
-                return diskSection.toString();
+    protected Element createFileSourceNode(Document doc, String diskFilePath) {
+        Element sourceNode = doc.createElement("source");
+        sourceNode.setAttribute("file", diskFilePath);
+        return sourceNode;
+    }
+
+    protected Element createAuthNode(Document doc, KVMStoragePool pool) {
+        Element authNode = doc.createElement("auth");
+        authNode.setAttribute("username", pool.getAuthUserName());
+        Element secretNode = doc.createElement("secret");
+        secretNode.setAttribute("type", "ceph");
+        secretNode.setAttribute("uuid", pool.getAuthSecretUUID());
+        authNode.appendChild(secretNode);
+        return authNode;
+    }
+
+    protected Node getChildNode(Node parent, String nodeName) {
+        NodeList childNodes = parent.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            if (nodeName.equals(childNode.getNodeName())) {
+                return childNode;
             }
         }
         return null;

@@ -21,8 +21,12 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +49,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +82,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.TemplateDownloaderUtil;
@@ -98,9 +104,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
     /* Space reserved at the front of an encrypted RBD image for the LUKS2 header/keyslots so the
        usable (decrypted) size still matches the requested volume size. */
-    private static final long LUKS2_HEADER_RESERVE_BYTES = 16L << 20; // 16 MiB
+    public static final long LUKS2_HEADER_RESERVE_BYTES = 16L << 20; // 16 MiB
     /* libvirt's VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS, not exposed as a constant by libvirt-java */
     private static final int VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS = 2;
+
+    /* pool types an encrypted volume can be copied between, see copyEncryptedPhysicalDisk */
+    private static final Set<StoragePoolType> ENCRYPTED_COPY_POOL_TYPES = Set.of(StoragePoolType.RBD, StoragePoolType.NetworkFilesystem,
+            StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint);
+    private static final String SRC_LUKS_SECRET_ID = "srcsec0";
+    private static final String DEST_LUKS_SECRET_ID = "destsec0";
 
     private static final Set<StoragePoolType> QEMU_IMG_MANAGED_POOL_TYPES = Set.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint);
 
@@ -1643,6 +1655,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = disk.getPool();
+        if (ArrayUtils.isNotEmpty(srcPassphrase) && ENCRYPTED_COPY_POOL_TYPES.contains(srcPool.getType())
+                && ENCRYPTED_COPY_POOL_TYPES.contains(destPool.getType())) {
+            // the volume keeps its passphrase when it is copied to another pool
+            return copyEncryptedPhysicalDisk(disk, name, destPool, timeout, srcPassphrase,
+                    ArrayUtils.isNotEmpty(dstPassphrase) ? dstPassphrase : srcPassphrase);
+        }
+
         /* Linstor images are always stored as RAW, but Linstor uses qcow2 in DB,
            to support snapshots(backuped) as qcow2 files. */
         PhysicalDiskFormat sourceFormat = srcPool.getType() != StoragePoolType.Linstor ?
@@ -1795,6 +1814,99 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         return newDisk;
+    }
+
+    /**
+     * Copies an encrypted volume to another pool. The data is read through the encryption of the source and written
+     * through the encryption of the destination, which is created up front: an RBD image gets a native librbd LUKS2
+     * header, a volume on a file based pool is a qemu LUKS encrypted QCOW2 file. Copying the encrypted data as is
+     * would not do: the destination may need another kind of encryption than the source, and an encrypted RBD clone
+     * reads the data it inherits from its (plaintext) parent unencrypted. Any backing chain of the source (an RBD
+     * parent or a QCOW2 backing file) is flattened into the destination.
+     */
+    private KVMPhysicalDisk copyEncryptedPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout,
+            byte[] srcPassphrase, byte[] dstPassphrase) {
+        KVMStoragePool srcPool = disk.getPool();
+        boolean srcOnRbd = srcPool.getType() == StoragePoolType.RBD;
+        boolean destOnRbd = destPool.getType() == StoragePoolType.RBD;
+        // the size of the disk as seen by the Instance: the LUKS2 header of an RBD image is carved out of the image
+        long guestSize = srcOnRbd ? disk.getVirtualSize() - LUKS2_HEADER_RESERVE_BYTES : disk.getVirtualSize();
+        logger.debug("Copying encrypted volume {} from pool {} to {} in pool {}, with a size of {}", disk.getPath(), srcPool.getUuid(),
+                name, destPool.getUuid(), toHumanReadableSize(guestSize));
+
+        KVMPhysicalDisk newDisk = destPool.createPhysicalDisk(name, destOnRbd ? PhysicalDiskFormat.RAW : PhysicalDiskFormat.QCOW2,
+                Storage.ProvisioningType.THIN, destOnRbd ? guestSize + LUKS2_HEADER_RESERVE_BYTES : guestSize, dstPassphrase);
+
+        List<Path> cephAuthFiles = new ArrayList<>();
+        try (KeyFile srcKeyFile = new KeyFile(srcPassphrase); KeyFile destKeyFile = new KeyFile(dstPassphrase)) {
+            QemuImageOptions srcImageOpts = encryptedImageOptions(srcPool, disk.getName(), disk.getPath(),
+                    disk.getFormat() == PhysicalDiskFormat.QCOW2 ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.LUKS, SRC_LUKS_SECRET_ID, cephAuthFiles);
+            srcImageOpts.setImageOptsFlag(true);
+            QemuImageOptions destImageOpts = encryptedImageOptions(destPool, name, newDisk.getPath(), PhysicalDiskFormat.QCOW2,
+                    DEST_LUKS_SECRET_ID, cephAuthFiles);
+
+            QemuImgFile srcFile = new QemuImgFile(disk.getPath(), srcOnRbd ? PhysicalDiskFormat.RAW : disk.getFormat());
+            List<QemuObject> secrets = List.of(createSecretObject(SRC_LUKS_SECRET_ID, srcKeyFile), createSecretObject(DEST_LUKS_SECRET_ID, destKeyFile));
+            new QemuImg(timeout).convert(srcFile, null, null, null, secrets, srcImageOpts, destImageOpts, null, false, false, false, false, null, null);
+        } catch (IOException | QemuImgException | LibvirtException e) {
+            logger.error("Failed to copy encrypted volume {} to {} in pool {}: {}", disk.getPath(), name, destPool.getUuid(), e.getMessage());
+            try {
+                destPool.deletePhysicalDisk(name, destOnRbd ? Storage.ImageFormat.RAW : Storage.ImageFormat.QCOW2);
+            } catch (Exception ex) {
+                logger.warn("Failed to remove {} from pool {} after the failed copy: {}", name, destPool.getUuid(), ex.getMessage());
+            }
+            throw new CloudRuntimeException(String.format("Failed to copy encrypted volume %s to %s", disk.getPath(), name), e);
+        } finally {
+            for (Path file : cephAuthFiles) {
+                try {
+                    Files.deleteIfExists(file);
+                } catch (IOException e) {
+                    logger.warn("Failed to remove temporary file {}: {}", file, e.getMessage());
+                }
+            }
+        }
+
+        newDisk.setFormat(destOnRbd ? PhysicalDiskFormat.RAW : PhysicalDiskFormat.QCOW2);
+        newDisk.setVirtualSize(guestSize);
+        newDisk.setQemuEncryptFormat(destOnRbd ? QemuObject.EncryptFormat.LUKS2 : QemuObject.EncryptFormat.LUKS);
+        return newDisk;
+    }
+
+    /**
+     * qemu image options addressing an encrypted volume: an RBD image (with librbd LUKS2 encryption, authenticated through
+     * a temporary ceph.conf and keyring that are added to {@code cephAuthFiles}) or a file of the given format.
+     */
+    private QemuImageOptions encryptedImageOptions(KVMStoragePool pool, String rbdImage, String filePath, PhysicalDiskFormat fileFormat,
+            String secretId, List<Path> cephAuthFiles) throws IOException {
+        if (pool.getType() != StoragePoolType.RBD) {
+            return new QemuImageOptions(fileFormat, filePath, secretId);
+        }
+        Path keyring = Files.createTempFile("cs-ceph-", ".keyring", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        cephAuthFiles.add(keyring);
+        Files.writeString(keyring, "[client." + pool.getAuthUserName() + "]\n\tkey = " + pool.getAuthSecret() + "\n");
+        Path conf = Files.createTempFile("cs-ceph-", ".conf", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        cephAuthFiles.add(conf);
+        String monHost = RbdUtils.getRbdMonitors(pool.getSourceHost(), pool.getSourcePort());
+        Files.writeString(conf, "[global]\nmon_host = " + monHost + "\nkeyring = " + keyring + "\n");
+
+        Map<String, String> options = new HashMap<>();
+        options.put("driver", "rbd");
+        options.put("pool", pool.getSourceDir());
+        options.put("image", rbdImage);
+        options.put("conf", conf.toString());
+        if (pool.getAuthUserName() != null) {
+            options.put("user", pool.getAuthUserName());
+        }
+        options.put("encrypt.format", CryptSetup.LuksType.LUKS2.toString());
+        options.put("encrypt.key-secret", secretId);
+        return new QemuImageOptions(options);
+    }
+
+    private QemuObject createSecretObject(String secretId, KeyFile keyFile) {
+        Map<QemuObject.ObjectParameter, String> params = new EnumMap<>(QemuObject.ObjectParameter.class);
+        params.put(QemuObject.ObjectParameter.ID, secretId);
+        params.put(QemuObject.ObjectParameter.FILE, keyFile.toString());
+        return new QemuObject(QemuObject.ObjectType.SECRET, params);
     }
 
     @Override

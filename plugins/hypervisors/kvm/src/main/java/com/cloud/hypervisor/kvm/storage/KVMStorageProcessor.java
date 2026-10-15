@@ -3488,7 +3488,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(path);
             ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
             newVol.setFormat(newVolumeFormat);
-            newVol.setEncryptFormat(destVol.getEncryptFormat());
+            // an encrypted volume copied to another kind of pool is encrypted differently (librbd LUKS2 on RBD, qemu LUKS otherwise)
+            newVol.setEncryptFormat(newVolume.getQemuEncryptFormat() != null ? newVolume.getQemuEncryptFormat().toString() : destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);

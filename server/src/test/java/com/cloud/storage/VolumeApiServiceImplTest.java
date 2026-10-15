@@ -124,6 +124,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -142,6 +143,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -159,6 +161,8 @@ public class VolumeApiServiceImplTest {
     @Spy
     @InjectMocks
     private VolumeApiServiceImpl volumeApiServiceImpl = new VolumeApiServiceImpl();
+    @Mock
+    private StoragePoolHostDao storagePoolHostDaoMock;
     @Mock
     private SnapshotManager snapshotManagerMock;
     @Mock
@@ -2895,5 +2899,98 @@ public class VolumeApiServiceImplTest {
                     "Exception message must reference Stopped-state requirement, was: " + e.getMessage(),
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
+    }
+
+    private static final List<Storage.StoragePoolType> FILE_BASED = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.Filesystem);
+
+    @Test
+    public void isVolumeMigrationBetweenRbdAndFileBasedBetweenRbdAndFileBasedPools() {
+        Assert.assertTrue(VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(Storage.StoragePoolType.RBD, Storage.StoragePoolType.RBD));
+        for (Storage.StoragePoolType fileBased : FILE_BASED) {
+            Assert.assertTrue("RBD -> " + fileBased, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(Storage.StoragePoolType.RBD, fileBased));
+            Assert.assertTrue(fileBased + " -> RBD", VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(fileBased, Storage.StoragePoolType.RBD));
+        }
+    }
+
+    @Test
+    public void isVolumeMigrationBetweenRbdAndFileBasedBetweenFileBasedPools() {
+        for (Storage.StoragePoolType src : FILE_BASED) {
+            for (Storage.StoragePoolType dest : FILE_BASED) {
+                Assert.assertTrue(src + " -> " + dest, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(src, dest));
+            }
+        }
+    }
+
+    @Test
+    public void isVolumeMigrationBetweenRbdAndFileBasedNotWithOtherPoolTypes() {
+        List<Storage.StoragePoolType> supported = new ArrayList<>(FILE_BASED);
+        supported.add(Storage.StoragePoolType.RBD);
+        for (Storage.StoragePoolType other : Arrays.asList(Storage.StoragePoolType.StorPool, Storage.StoragePoolType.PowerFlex,
+                Storage.StoragePoolType.Iscsi, Storage.StoragePoolType.CLVM, Storage.StoragePoolType.Linstor)) {
+            Assert.assertFalse(other + " -> " + other, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(other, other));
+            for (Storage.StoragePoolType type : supported) {
+                Assert.assertFalse(type + " -> " + other, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(type, other));
+                Assert.assertFalse(other + " -> " + type, VolumeApiServiceImpl.isVolumeMigrationBetweenRbdAndFileBased(other, type));
+            }
+        }
+    }
+
+    private StoragePoolVO poolOfType(long id, Storage.StoragePoolType type) {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        lenient().when(pool.getId()).thenReturn(id);
+        lenient().when(pool.getName()).thenReturn("pool-" + id);
+        lenient().when(pool.getPoolType()).thenReturn(type);
+        return pool;
+    }
+
+    @Test
+    public void checkLocalPoolsOnHostOfRunningVmAcceptsLocalPoolOfTheHostOfTheInstance() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getHostId()).thenReturn(10L);
+        StoragePoolVO rbd = poolOfType(1L, Storage.StoragePoolType.RBD);
+        StoragePoolVO local = poolOfType(2L, Storage.StoragePoolType.Filesystem);
+        when(storagePoolHostDaoMock.findByPoolHost(2L, 10L)).thenReturn(mock(StoragePoolHostVO.class));
+
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, rbd, local);
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, local, rbd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkLocalPoolsOnHostOfRunningVmRejectsLocalPoolOfAnotherHost() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getHostId()).thenReturn(10L);
+        StoragePoolVO rbd = poolOfType(1L, Storage.StoragePoolType.RBD);
+        StoragePoolVO local = poolOfType(2L, Storage.StoragePoolType.Filesystem);
+        when(storagePoolHostDaoMock.findByPoolHost(2L, 10L)).thenReturn(null);
+
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, rbd, local);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkLocalPoolsOnHostOfRunningVmRejectsLocalSourcePoolOfAnotherHost() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getHostId()).thenReturn(10L);
+        StoragePoolVO local = poolOfType(2L, Storage.StoragePoolType.Filesystem);
+        StoragePoolVO rbd = poolOfType(1L, Storage.StoragePoolType.RBD);
+        when(storagePoolHostDaoMock.findByPoolHost(2L, 10L)).thenReturn(null);
+
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, local, rbd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkLocalPoolsOnHostOfRunningVmRejectsLocalPoolWithoutHostOfTheInstance() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getHostId()).thenReturn(null);
+
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, poolOfType(1L, Storage.StoragePoolType.RBD), poolOfType(2L, Storage.StoragePoolType.Filesystem));
+    }
+
+    @Test
+    public void checkLocalPoolsOnHostOfRunningVmIgnoresPoolsWhichAreNotLocal() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, poolOfType(1L, Storage.StoragePoolType.RBD), poolOfType(2L, Storage.StoragePoolType.NetworkFilesystem));
+        volumeApiServiceImpl.checkLocalPoolsOnHostOfRunningVm(vm, poolOfType(3L, Storage.StoragePoolType.SharedMountPoint), poolOfType(1L, Storage.StoragePoolType.RBD));
+        Mockito.verifyNoInteractions(storagePoolHostDaoMock);
     }
 }
