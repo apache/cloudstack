@@ -108,7 +108,12 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             logger.error("Unable to complete {}, job origin: {}", job, job.getRelated());
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(e));
         } catch(Throwable e) {
-            logger.error("Unable to complete {}, job origin: {}", job, job.getRelated(), e);
+            final String cancelReason = _asyncJobMgr.getCancellationReason(job.getId());
+            if (cancelReason != null) {
+                logger.info("VM work job {} stopped by cancellation ({}), job origin: {}: {}", job.getId(), cancelReason, job.getRelated(), e.getMessage());
+            } else {
+                logger.error("Unable to complete {}, job origin: {}", job, job.getRelated(), e);
+            }
 
             //RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(e));

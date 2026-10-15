@@ -351,7 +351,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
         } catch (final LibvirtException e) {
-            logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            if (libvirtComputingResource.wasRequestCancelled(command.getRequestSequence())) {
+                logger.info("Migration of VM {} cancelled on request (seq {}): {}", vmName, command.getRequestSequence(), e.getMessage());
+            } else {
+                logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            }
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
                 logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
@@ -416,7 +420,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             commandState = Command.State.COMPLETED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         } else if (commandState == null) {
-            logger.error("Migration of VM {} failed with result: {}", vmName, result);
+            if (libvirtComputingResource.wasRequestCancelled(command.getRequestSequence())) {
+                logger.info("Migration of VM {} was cancelled (seq {}): {}", vmName, command.getRequestSequence(), result);
+            } else {
+                logger.error("Migration of VM {} failed with result: {}", vmName, result);
+            }
             commandState = Command.State.FAILED;
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
