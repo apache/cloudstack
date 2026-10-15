@@ -57,23 +57,42 @@
         </a-col>
         <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
           <a-form-item
-            :label="$t('label.memory.mb')"
+            :label="$t('label.memory')"
             :validate-status="errors.memory.status"
             :help="errors.memory.message">
             <a-row :gutter="12">
-              <a-col :md="10" :lg="10" v-show="isConstrained && maxMemory && !isNaN(maxMemory)">
+              <a-col :md="14" :lg="14" v-show="isConstrained && maxMemory && !isNaN(maxMemory) && maxMemory < 1000000000">
                 <a-slider
-                  :min="minMemory"
-                  :max="maxMemory"
-                  v-model:value="memoryInputValue"
+                  :min="minMemoryInUnit"
+                  :max="maxMemoryInUnit"
+                  :step="memoryStep"
+                  v-model:value="memoryDisplayValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
-              <a-col :md="4" :lg="4">
-                <a-input-number
-                  v-model:value="memoryInputValue"
-                  @change="($event) => updateComputeMemory($event)"
-                />
+              <a-col :md="isConstrained && maxMemory && !isNaN(maxMemory) && maxMemory < 1000000000 ? 10 : 24" :lg="isConstrained && maxMemory && !isNaN(maxMemory) && maxMemory < 1000000000 ? 10 : 24">
+                <a-input-group compact style="display: flex">
+                  <a-tooltip :title="memoryTooltipText" placement="topLeft" style="flex: 1; display: flex">
+                    <a-input-number
+                      style="width: 100%; min-width: 60px"
+                      :min="isConstrained ? minMemoryInUnit : 0"
+                      :max="isConstrained && maxMemoryInUnit > 0 ? maxMemoryInUnit : undefined"
+                      :step="memoryStep"
+                      :precision="memoryUnit === 'GiB' ? 2 : 0"
+                      v-model:value="memoryDisplayValue"
+                      @change="($event) => updateComputeMemory($event)"
+                    />
+                  </a-tooltip>
+                  <a-select
+                    v-model:value="memoryUnit"
+                    style="width: 75px"
+                    @change="handleUnitChange">
+                    <a-select-option value="GiB" :title="!isGiBAllowed ? $t('message.memory.gib.not.supported') : undefined">
+                      GiB
+                    </a-select-option>
+                    <a-select-option value="MiB">MiB</a-select-option>
+                  </a-select>
+                </a-input-group>
               </a-col>
             </a-row>
           </a-form-item>
@@ -96,6 +115,8 @@
 </template>
 
 <script>
+import { message } from 'ant-design-vue'
+
 export default {
   name: 'ComputeSelection',
   props: {
@@ -165,6 +186,8 @@ export default {
       cpuNumberInputValue: 0,
       cpuSpeedInputValue: 0,
       memoryInputValue: 0,
+      memoryDisplayValue: 0,
+      memoryUnit: 'GiB',
       errors: {
         cpu: {
           status: '',
@@ -192,6 +215,47 @@ export default {
       }
 
       return 8
+    },
+    isGiBAllowed () {
+      if (this.preFillContent && this.preFillContent.memory && (this.preFillContent.memory % 256 !== 0)) {
+        return false
+      }
+      if (this.initialMemoryValue > 0 && (this.initialMemoryValue % 256 !== 0)) {
+        return false
+      }
+      if (!this.isConstrained) {
+        return true
+      }
+      const isMinValid = !this.minMemory || (this.minMemory >= 256 && this.minMemory % 256 === 0)
+      const isMaxValid = !this.maxMemory || this.maxMemory >= Number.MAX_SAFE_INTEGER || (this.maxMemory >= 256 && this.maxMemory % 256 === 0)
+      return Boolean(isMinValid && isMaxValid)
+    },
+    minMemoryInUnit () {
+      if (!this.minMemory) return 0
+      if (this.memoryUnit === 'GiB') {
+        return this.minMemory / 1024
+      }
+      return this.minMemory
+    },
+    maxMemoryInUnit () {
+      if (!this.maxMemory || this.maxMemory >= Number.MAX_SAFE_INTEGER) return 0
+      if (this.memoryUnit === 'GiB') {
+        return this.maxMemory / 1024
+      }
+      return this.maxMemory
+    },
+    memoryStep () {
+      if (this.memoryUnit === 'GiB') {
+        return 0.25
+      }
+      return 1
+    },
+    memoryTooltipText () {
+      if (!this.memoryInputValue || this.memoryInputValue <= 0) return ''
+      if (this.memoryUnit === 'GiB') {
+        return `${this.memoryDisplayValue} GiB = ${this.memoryInputValue} MiB`
+      }
+      return ''
     }
   },
   watch: {
@@ -209,13 +273,28 @@ export default {
   methods: {
     fillValue () {
       this.cpuNumberInputValue = this.initialCpuValue > 0 ? this.initialCpuValue : this.minCpu
-      this.memoryInputValue = this.initialMemoryValue > 0 ? this.initialMemoryValue : this.minMemory
+      const rawMemory = (this.preFillContent && this.preFillContent.memory)
+        ? this.preFillContent.memory
+        : (this.initialMemoryValue > 0 ? this.initialMemoryValue : this.minMemory)
+
+      // Default to GiB only if GiB is allowed and rawMemory is 0 or multiple of 256 MiB
+      const shouldUseGiB = this.isGiBAllowed && (rawMemory === 0 || (rawMemory >= 256 && rawMemory % 256 === 0))
+      this.memoryUnit = shouldUseGiB ? 'GiB' : 'MiB'
+
+      if (rawMemory > 0) {
+        this.memoryInputValue = rawMemory
+        this.memoryDisplayValue = shouldUseGiB ? (rawMemory / 1024) : rawMemory
+      } else {
+        this.memoryInputValue = undefined
+        this.memoryDisplayValue = undefined
+      }
+
       this.cpuSpeedInputValue = this.cpuSpeed
 
       if (!this.preFillContent) {
         this.updateComputeCpuNumber(this.cpuNumberInputValue)
         this.updateComputeCpuSpeed(this.cpuSpeedInputValue)
-        this.updateComputeMemory(this.memoryInputValue)
+        this.$emit('update-compute-memory', this.memoryInputDecorator, this.memoryInputValue)
         return
       }
       if (this.preFillContent.cpunumber) {
@@ -224,16 +303,50 @@ export default {
       if (this.preFillContent.cpuspeed) {
         this.cpuSpeedInputValue = this.preFillContent.cpuspeed
       }
-      if (this.preFillContent.memory) {
-        this.memoryInputValue = this.preFillContent.memory
-      }
+
       this.updateComputeCpuNumber(this.preFillContent.cpunumber || this.cpuNumberInputValue)
       this.updateComputeCpuSpeed(this.preFillContent.cpuspeed || this.cpuSpeedInputValue)
-      this.updateComputeMemory(this.preFillContent.memory || this.memoryInputValue)
+      // Emit exact prefilled MiB without any conversion on load
+      this.$emit('update-compute-memory', this.memoryInputDecorator, this.memoryInputValue)
+    },
+    handleUnitChange (newUnit) {
+      if (newUnit === 'GiB') {
+        const currentMiB = this.memoryUnit === 'MiB' ? this.memoryDisplayValue : this.memoryInputValue
+        if (!this.isGiBAllowed || (currentMiB > 0 && currentMiB % 256 !== 0)) {
+          this.memoryUnit = 'MiB'
+          this.$nextTick(() => {
+            this.memoryUnit = 'MiB'
+          })
+          message.warning(
+            this.$t('message.memory.gib.not.supported') ||
+            'GiB unit is not available because memory limits or values must be multiples of 256 MiB (0.25 GiB). Please use MiB.'
+          )
+          return
+        }
+      }
+
+      if (newUnit === 'MiB') {
+        this.memoryDisplayValue = (this.memoryInputValue !== undefined && this.memoryInputValue !== null)
+          ? this.memoryInputValue
+          : (this.memoryDisplayValue ? Math.round(this.memoryDisplayValue * 1024) : undefined)
+      } else {
+        this.memoryDisplayValue = (this.memoryInputValue !== undefined && this.memoryInputValue !== null)
+          ? this.memoryInputValue / 1024
+          : (this.memoryDisplayValue ? this.memoryDisplayValue : undefined)
+      }
+      if (this.isConstrained) {
+        if (this.memoryDisplayValue < this.minMemoryInUnit) {
+          this.memoryDisplayValue = this.minMemoryInUnit
+        } else if (this.maxMemoryInUnit > 0 && this.memoryDisplayValue > this.maxMemoryInUnit) {
+          this.memoryDisplayValue = this.maxMemoryInUnit
+        }
+      }
+      this.updateComputeMemory(this.memoryDisplayValue)
     },
     updateComputeCpuNumber (value) {
-      if (!value) this.cpuNumberInputValue = 0
+      this.cpuNumberInputValue = value
       if (!this.validateInput('cpu', value)) {
+        this.$emit('update-compute-cpunumber', this.cpuNumberInputDecorator, undefined)
         return
       }
       this.$emit('update-compute-cpunumber', this.cpuNumberInputDecorator, value)
@@ -241,21 +354,42 @@ export default {
     updateComputeCpuSpeed (value) {
       this.$emit('update-compute-cpuspeed', this.cpuSpeedInputDecorator, value)
     },
-    updateComputeMemory (value) {
-      if (!value) this.memoryInputValue = 0
-      if (!this.validateInput('memory', value)) {
+    updateComputeMemory (displayValue) {
+      this.memoryDisplayValue = displayValue
+      if (!this.validateInput('memory', displayValue)) {
+        this.memoryInputValue = undefined
+        this.$emit('update-compute-memory', this.memoryInputDecorator, undefined)
         return
       }
-      this.$emit('update-compute-memory', this.memoryInputDecorator, value)
+      let memoryInMiB
+      if (this.memoryUnit === 'GiB') {
+        memoryInMiB = Math.round(displayValue * 1024)
+      } else {
+        memoryInMiB = Math.round(displayValue)
+      }
+
+      this.memoryInputValue = memoryInMiB
+      this.$emit('update-compute-memory', this.memoryInputDecorator, memoryInMiB)
     },
     validateInput (input, value) {
       this.errors[input].status = ''
       this.errors[input].message = ''
 
-      if (value === null || value === undefined || value.length === 0) {
+      if (value === null || value === undefined || value.length === 0 || value === '' || value === 0) {
         this.errors[input].status = 'error'
         this.errors[input].message = this.$t('message.error.required.input')
         return false
+      }
+
+      if (input === 'memory') {
+        if (this.memoryUnit === 'GiB') {
+          const isStepMultiple = Math.abs(value * 4 - Math.round(value * 4)) < 0.001
+          if (!isStepMultiple) {
+            this.errors.memory.status = 'error'
+            this.errors.memory.message = this.$t('message.error.memory.gib.step') || 'Please enter memory in multiples of 0.25 GiB (256 MiB), or switch to MiB.'
+            return false
+          }
+        }
       }
 
       if (!this.isConstrained) {
@@ -271,21 +405,25 @@ export default {
           max = this.maxCpu
           break
         case 'memory':
-          min = this.minMemory
-          max = this.maxMemory
+          min = this.minMemoryInUnit
+          max = this.maxMemoryInUnit
           break
       }
 
       if (!this.checkValidRange(value, min, max)) {
         this.errors[input].status = 'error'
-        this.errors[input].message = `${this.$t('message.please.enter.value')} ${this.$t('label.from')} ${min} ${this.$t('label.to')} ${max})`
+        this.errors[input].message = `${this.$t('message.please.enter.value')} ${this.$t('label.from')} ${min} ${this.$t('label.to')} ${max}`
         return false
       }
 
       return true
     },
     checkValidRange (value, min, max) {
-      if (value < min || value > max) {
+      const epsilon = 0.001
+      if (min !== undefined && min !== null && value < (min - epsilon)) {
+        return false
+      }
+      if (max !== undefined && max !== null && max > 0 && max < Number.MAX_SAFE_INTEGER && value > (max + epsilon)) {
         return false
       }
 
