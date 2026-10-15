@@ -224,6 +224,12 @@ export default {
         this.searchQuery = to.query.q
       }
       this.updateIsFiltered()
+    },
+    searchParams: {
+      deep: true,
+      handler () {
+        this.updateIsFiltered()
+      }
     }
   },
   mounted () {
