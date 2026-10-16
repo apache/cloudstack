@@ -357,6 +357,51 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
+    /**
+     * Checks that a resource which is not managed by CloudStack yet can be imported into this pool. It must
+     * belong to the resource group of the pool, otherwise a resource owned by a volume of another pool on the
+     * same controller could be imported a second time.
+     */
+    public void checkPhysicalDiskForImport(String name, LinstorStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        try {
+            List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
+                    Collections.singletonList(rscName), null, null, null, null);
+            if (rscDfns == null || rscDfns.isEmpty()) {
+                throw new CloudRuntimeException(String.format("Linstor: resource %s not found", rscName));
+            }
+            final String rscGrpName = rscDfns.get(0).getResourceGroupName();
+            if (rscGrpName == null || !rscGrpName.equalsIgnoreCase(pool.getResourceGroup())) {
+                throw new CloudRuntimeException(String.format(
+                        "Linstor: resource %s belongs to resource group %s, not to %s of this storage pool",
+                        rscName, rscGrpName, pool.getResourceGroup()));
+            }
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    /**
+     * Asks the controller whether the resource is in use (DRBD primary) on any node, which a qemu-img lock
+     * probe on this node cannot see.
+     */
+    public Boolean isPhysicalDiskInUse(String name, KVMStoragePool pool) {
+        final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        try {
+            String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
+            if (inUseNode != null) {
+                logger.info("Linstor: resource {} is in use on node {}", rscName, inUseNode);
+            }
+            return inUseNode != null;
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     private void removeTwoPrimariesRDProps(DevelopersApi api, String rscName, List<String> deleteProps)
             throws ApiException {
         ResourceDefinitionModify rdm = new ResourceDefinitionModify();
@@ -572,7 +617,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool)
     {
-        throw new UnsupportedOperationException("Listing disks is not supported for this configuration.");
+        // lists the resources of the pool's resource group by their volume path, for volume import
+        final String rscGrpName = ((LinstorStoragePool) pool).getResourceGroup();
+        final DevelopersApi api = getLinstorAPI(pool);
+        try {
+            List<KVMPhysicalDisk> disks = new ArrayList<>();
+            for (ResourceDefinition rd : api.resourceDefinitionList(null, true, null, null, null)) {
+                if (!rd.getName().toLowerCase().startsWith(LinstorUtil.RSC_PREFIX) || rd.getResourceGroupName() == null
+                        || !rd.getResourceGroupName().equalsIgnoreCase(rscGrpName)
+                        || rd.getVolumeDefinitions() == null || rd.getVolumeDefinitions().isEmpty()) {
+                    continue;
+                }
+                final KVMPhysicalDisk disk = new KVMPhysicalDisk(LinstorUtil.formatDrbdByResDevicePath(rd.getName()),
+                        rd.getName().substring(LinstorUtil.RSC_PREFIX.length()), pool);
+                final long size = rd.getVolumeDefinitions().get(0).getSizeKib() * 1024;
+                disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+                disk.setSize(size);
+                disk.setVirtualSize(size);
+                disks.add(disk);
+            }
+            return disks;
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
     }
 
     @Override

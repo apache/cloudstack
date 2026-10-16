@@ -3006,6 +3006,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             try {
                 long deviceId = 1L;
                 Storage.ImageFormat diskFormat = getImageFormatFromVolumeDetails(checkVolumeAnswer.getVolumeDetails());
+                // Linstor records its raw volumes with the hypervisor default format, and the templates made from
+                // their (qcow2) snapshot backups take that format, so keep an imported volume like a native one
+                if (Storage.StoragePoolType.Linstor == storagePool.getPoolType()) {
+                    diskFormat = null;
+                }
                 if(ImportSource.SHARED == importSource) {
                     diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
                             template, deviceId, poolId, diskPath, diskProfile, diskFormat));

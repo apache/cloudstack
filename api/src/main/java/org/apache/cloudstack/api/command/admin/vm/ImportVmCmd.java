@@ -92,7 +92,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     @Parameter(name = ApiConstants.DISK_PATH,
             type = CommandType.STRING,
-            description = "path of the disk image. It is the file name on file based storage pools (NFS, Local, SharedMountPoint), and the image name on RBD storage pools")
+            description = "path of the disk image. It is the file name on file based storage pools (NFS, Local, SharedMountPoint), the image name on RBD storage pools, and the resource name without the cs- prefix on Linstor storage pools")
     private String diskPath;
 
     @Parameter(name = ApiConstants.IMPORT_SOURCE,

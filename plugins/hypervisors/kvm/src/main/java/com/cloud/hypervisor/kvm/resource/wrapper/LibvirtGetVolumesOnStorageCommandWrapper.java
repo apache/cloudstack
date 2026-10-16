@@ -31,6 +31,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -74,6 +75,11 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
     private GetVolumesOnStorageAnswer addVolumeByVolumePath(final GetVolumesOnStorageCommand command, final KVMStoragePool storagePool, String volumePath) {
         List<VolumeOnStorageTO> volumes = new ArrayList<>();
 
+        try {
+            storagePool.checkPhysicalDiskForImport(volumePath);
+        } catch (CloudRuntimeException e) {
+            return new GetVolumesOnStorageAnswer(command, false, e.getMessage());
+        }
         KVMPhysicalDisk disk = storagePool.getPhysicalDisk(volumePath);
         if (disk != null) {
             if (!volumePath.equals(disk.getPath()) && !volumePath.equals(disk.getName())) {
@@ -97,6 +103,10 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
                 return new GetVolumesOnStorageAnswer(command, false, String.format("The file format is %s, but expected to be %s", fileFormat, disk.getFormat()));
             }
             addDetailsToVolumeOnStorageTO(volumeOnStorageTO, info, storagePool, disk);
+            // qemu's lock only reveals a guest on this host for pools such as Linstor, so ask the pool
+            if (Boolean.TRUE.equals(storagePool.isPhysicalDiskInUse(volumePath))) {
+                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(Boolean.TRUE));
+            }
 
             volumes.add(volumeOnStorageTO);
         }
