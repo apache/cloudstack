@@ -24,6 +24,7 @@ from marvin.cloudstackAPI import (cancelAsyncJob,
                                   listEvents,
                                   listUsageJobs,
                                   migrateVirtualMachine,
+                                  migrateVirtualMachineWithVolume,
                                   queryAsyncJobResult)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.codes import (JOB_CANCELLED,
@@ -33,8 +34,11 @@ from marvin.codes import (JOB_CANCELLED,
                           PASS)
 from marvin.lib.base import (Account,
                              DiskOffering,
+                             Host,
                              ServiceOffering,
-                             VirtualMachine)
+                             StoragePool,
+                             VirtualMachine,
+                             Volume)
 from marvin.lib.common import (get_domain,
                                get_test_template,
                                get_zone,
@@ -250,8 +254,61 @@ class TestAsyncJobsManagement(cloudstackTestCase):
             vm = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0]
             self.assertEqual(vm.hostid, source_host.id, "Cancelled migration left the instance on the target host")
 
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_09_cancelled_storage_migration_leaves_no_volume_behind(self):
+        """Cancelling a migration with storage rolls back the volume created on the target pool"""
+        if self.hypervisor.lower() not in CANCELLABLE_HYPERVISORS:
+            self.skipTest("Cancellation of hypervisor jobs is not implemented for %s" % self.hypervisor)
+
+        vm = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0]
+        root_volume = [v for v in Volume.list(self.apiclient, virtualmachineid=vm.id, listall=True) if v.type == "ROOT"][0]
+        target_hosts = Host.listForMigration(self.apiclient, virtualmachineid=vm.id) or []
+        target_pools = StoragePool.listForMigration(self.apiclient, id=root_volume.id) or []
+        if not target_hosts or not target_pools:
+            self.skipTest("Need a second host and a second primary storage pool to migrate to")
+
+        cmd = migrateVirtualMachineWithVolume.migrateVirtualMachineWithVolumeCmd()
+        cmd.virtualmachineid = vm.id
+        cmd.hostid = target_hosts[0].id
+        cmd.migrateto = [{"volume": str(root_volume.id), "pool": str(target_pools[0].id)}]
+        cmd.isAsync = "false"
+        jobid = self.apiclient.migrateVirtualMachineWithVolume(cmd, method="GET").jobid
+
+        # let the migration create its target volume and start copying before cancelling
+        time.sleep(10)
+        cancelled = True
+        try:
+            self.cancel_job(jobid)
+        except Exception as e:
+            self.debug("Cancel of storage migration job %s refused: %s" % (jobid, e))
+            cancelled = False
+
+        job = self.wait_for_job(jobid)
+        if cancelled:
+            self.assertEqual(job.jobstatus, JOB_CANCELLED, "Accepted cancel did not end the job as cancelled")
+        else:
+            self.assertIn(job.jobstatus, [JOB_SUCCEEDED, JOB_FAILED], "Refused cancel left the job in an odd state")
+
+        response = self.virtual_machine.getState(self.apiclient, VirtualMachine.RUNNING)
+        self.assertEqual(response[0], PASS, response[1])
+
+        # the rollback runs after the job is reported cancelled; give it a moment
+        deadline = time.time() + 120
+        while True:
+            volumes = Volume.list(self.apiclient, virtualmachineid=vm.id, listall=True) or []
+            roots = [v for v in volumes if v.type == "ROOT"]
+            if len(roots) == 1 and roots[0].state != "Destroy" or time.time() > deadline:
+                break
+            time.sleep(5)
+        self.assertEqual(len(roots), 1, "A volume created for the cancelled migration was left behind: %s"
+                         % [(v.id, v.state, v.storageid) for v in roots])
+        self.assertNotEqual(roots[0].state, "Destroy", "The instance's root volume is left in Destroy")
+        if cancelled:
+            self.assertEqual(roots[0].id, root_volume.id, "Cancelled migration replaced the root volume")
+            self.assertEqual(roots[0].storageid, root_volume.storageid, "Cancelled migration moved the root volume")
+
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_09_list_usage_jobs(self):
+    def test_10_list_usage_jobs(self):
         """Usage server jobs list without error, and filter by usage server"""
         cmd = listUsageJobs.listUsageJobsCmd()
         cmd.duration = 24

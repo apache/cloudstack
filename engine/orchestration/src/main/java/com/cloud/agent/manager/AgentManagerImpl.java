@@ -169,7 +169,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     // a job can have several commands in flight on several hosts
     protected final Map<Long, Set<Pair<Long, Long>>> _jobToHostIdAndReqSequenceMap = new ConcurrentHashMap<>();
     // sticky on purpose: workers consult it after the job row has been finalised
-    protected final Map<Long, Long> _cancelledJobs = new ConcurrentHashMap<>();
+    protected final Map<Long, CancelledJob> _cancelledJobs = new ConcurrentHashMap<>();
+
+    protected static final class CancelledJob {
+        final long since = System.currentTimeMillis();
+        volatile boolean handedToWorker;
+    }
     private static final long CANCELLED_JOB_MEMORY_MS = TimeUnit.HOURS.toMillis(1);
 
     @Inject
@@ -662,7 +667,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         final Long jobId = getAsyncJobId();
-        if (jobId != null && isJobCancelled(jobId)) {
+        if (refusesCommandsOf(jobId)) {
             logger.info("Not sending commands {} to host {}: job-{} was cancelled", commands, hostId, jobId);
             throw OperationCancelledException.updateCmdsNotSent(commands.toCommands(), hostId, jobId);
         }
@@ -2187,10 +2192,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         protected void runInContext() {
             try {
                 final long now = System.currentTimeMillis();
-                _cancelledJobs.values().removeIf(firstSeen -> now - firstSeen > CANCELLED_JOB_MEMORY_MS);
+                _cancelledJobs.values().removeIf(cancelled -> now - cancelled.since > CANCELLED_JOB_MEMORY_MS);
 
                 for (final AsyncJobVO job : asyncJobManager.listCancelRequestedJobsExecutingOn(_nodeId)) {
-                    _cancelledJobs.putIfAbsent(job.getId(), now);
+                    _cancelledJobs.computeIfAbsent(job.getId(), id -> new CancelledJob());
                     if (_jobToHostIdAndReqSequenceMap.containsKey(job.getId())) {
                         logger.info("Cancellation of job-{} on {} {} was requested, stopping its in-flight commands",
                                 job.getId(), job.getInstanceType(), job.getInstanceId());
@@ -2226,6 +2231,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return jobId != null && _cancelledJobs.containsKey(jobId);
     }
 
+    /** True once: the worker that has not yet seen its cancellation is stopped at this command; the commands it then sends to undo its work pass. */
+    protected boolean refusesCommandsOf(final Long jobId) {
+        final CancelledJob cancelled = jobId == null ? null : _cancelledJobs.get(jobId);
+        if (cancelled == null || cancelled.handedToWorker) {
+            return false;
+        }
+        cancelled.handedToWorker = true;
+        return true;
+    }
+
     @Override
     public boolean isJobExecutionCancellable(final long jobId) {
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
@@ -2252,7 +2267,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public boolean cancelJobExecution(final long jobId, final String reason) {
         // mark first, so a worker that carries on to its next command is refused there
-        _cancelledJobs.putIfAbsent(jobId, System.currentTimeMillis());
+        final CancelledJob cancelled = _cancelledJobs.computeIfAbsent(jobId, id -> new CancelledJob());
         final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
         if (CollectionUtils.isEmpty(inFlight)) {
             return true;
@@ -2274,7 +2289,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 continue;
             }
             logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
-            if (!attache.cancelExecution(request.second(), reason)) {
+            if (attache.cancelExecution(request.second(), reason)) {
+                cancelled.handedToWorker = true;
+            } else {
                 allCancelled = false;
             }
         }
