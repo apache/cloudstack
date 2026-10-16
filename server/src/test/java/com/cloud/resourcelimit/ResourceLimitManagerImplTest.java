@@ -597,6 +597,107 @@ public class ResourceLimitManagerImplTest {
     }
 
     @Test
+    public void testCheckAccountResourceLimitExceededSetsErrorContext() {
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(account.getAccountName()).thenReturn("myaccount");
+        Mockito.when(account.getDomainId()).thenReturn(2L);
+        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        ResourceLimitVO limit = new ResourceLimitVO();
+        limit.setMax(2L);
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, null)).thenReturn(limit);
+        Mockito.when(resourceCountDao.getResourceCount(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, null)).thenReturn(2L);
+        Mockito.when(reservationDao.getAccountReservation(1L, Resource.ResourceType.cpu, null)).thenReturn(0L);
+
+        try {
+            resourceLimitManager.checkAccountResourceLimit(account, null, Resource.ResourceType.cpu, null, 1);
+            Assert.fail("Expected a ResourceAllocationException when the account limit is exceeded");
+        } catch (ResourceAllocationException e) {
+            // expected
+        }
+
+        Map<String, Object> errorContext = CallContext.current().getErrorContextParameters();
+        Assert.assertEquals(Resource.ResourceOwnerType.Account, errorContext.get("resourceLimitCause"));
+        Assert.assertEquals(account, errorContext.get("resourceOwner"));
+        Assert.assertEquals("Account", errorContext.get("resourceOwnerType"));
+        Assert.assertEquals("CPU", errorContext.get("resourceTypeDisplay"));
+        Assert.assertEquals("2", errorContext.get("resourceLimit"));
+        Assert.assertEquals("2", errorContext.get("resourceAmount"));
+        Assert.assertEquals("0", errorContext.get("resourceReserved"));
+        Assert.assertEquals("1", errorContext.get("resourceRequested"));
+        Assert.assertNull("no domain context should be set for an account-caused limit", errorContext.get("resourceOwnerDomain"));
+    }
+
+    @Test
+    public void testCheckAccountResourceLimitExceededWithTagAndProjectSetsErrorContext() {
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(account.getDomainId()).thenReturn(2L);
+        ProjectVO project = Mockito.mock(ProjectVO.class);
+        Mockito.when(project.getName()).thenReturn("myproject");
+        String tag = hostTags.get(0);
+        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        ResourceLimitVO limit = new ResourceLimitVO();
+        limit.setMax(1L);
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, tag)).thenReturn(limit);
+        Mockito.when(resourceCountDao.getResourceCount(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, tag)).thenReturn(1L);
+        Mockito.when(reservationDao.getAccountReservation(1L, Resource.ResourceType.cpu, tag)).thenReturn(0L);
+
+        try {
+            resourceLimitManager.checkAccountResourceLimit(account, project, Resource.ResourceType.cpu, tag, 1);
+            Assert.fail("Expected a ResourceAllocationException when the account limit is exceeded");
+        } catch (ResourceAllocationException e) {
+            // expected
+        }
+
+        Map<String, Object> errorContext = CallContext.current().getErrorContextParameters();
+        Assert.assertEquals(Resource.ResourceOwnerType.Account, errorContext.get("resourceLimitCause"));
+        // the resource owner is the project, not the account, when a project is involved
+        Assert.assertEquals(project, errorContext.get("resourceOwner"));
+        Assert.assertEquals("Project", errorContext.get("resourceOwnerType"));
+        Assert.assertEquals("CPU (tag: " + tag + ")", errorContext.get("resourceTypeDisplay"));
+    }
+
+    @Test
+    public void testCheckDomainResourceLimitExceededSetsErrorContext() {
+        Long domainId = 2L;
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        Mockito.when(domain.getId()).thenReturn(domainId);
+        Mockito.when(domain.getUuid()).thenReturn("domain-uuid");
+        Mockito.when(domainDao.findById(domainId)).thenReturn(domain);
+        ResourceLimitVO limit = new ResourceLimitVO();
+        limit.setMax(1L);
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(domainId, Resource.ResourceOwnerType.Domain, Resource.ResourceType.cpu, null)).thenReturn(limit);
+        Mockito.when(resourceCountDao.getResourceCount(domainId, Resource.ResourceOwnerType.Domain, Resource.ResourceType.cpu, null)).thenReturn(1L);
+        Mockito.when(reservationDao.getDomainReservation(domainId, Resource.ResourceType.cpu, null)).thenReturn(0L);
+
+        try {
+            resourceLimitManager.checkDomainResourceLimit(domainId, Resource.ResourceType.cpu, null, 1);
+            Assert.fail("Expected a ResourceAllocationException when the domain limit is exceeded");
+        } catch (ResourceAllocationException e) {
+            // expected
+        }
+
+        Map<String, Object> errorContext = CallContext.current().getErrorContextParameters();
+        Assert.assertEquals(Resource.ResourceOwnerType.Domain, errorContext.get("resourceLimitCause"));
+        Assert.assertEquals(domain, errorContext.get("resourceOwnerDomain"));
+        Assert.assertNull("no account context should be set for a domain-caused limit", errorContext.get("resourceOwner"));
+        Assert.assertEquals("1", errorContext.get("resourceLimit"));
+    }
+
+    @Test
+    public void testCheckDomainResourceLimitSkipsRootDomainWithoutError() throws ResourceAllocationException {
+        // ROOT_DOMAIN is never limit-checked, so no error context should be recorded
+        DomainVO rootDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(rootDomain.getParent()).thenReturn(null);
+        Mockito.when(domainDao.findById(Domain.ROOT_DOMAIN)).thenReturn(rootDomain);
+
+        resourceLimitManager.checkDomainResourceLimit(Domain.ROOT_DOMAIN, Resource.ResourceType.cpu, null, 1);
+
+        Assert.assertTrue(CallContext.current().getErrorContextParameters().isEmpty());
+    }
+
+    @Test
     public void testRemoveResourceLimitAndCountForNonMatchingTags() {
         resourceLimitManager.removeResourceLimitAndCountForNonMatchingTags(1L, Resource.ResourceOwnerType.Account, hostTags, storageTags);
         Mockito.verify(resourceLimitDao, Mockito.times(1))

@@ -24,6 +24,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.SerialVersionUID;
@@ -41,6 +42,9 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
     transient protected ArrayList<Pair<Class<?>, String>> uuidList = new ArrayList<Pair<Class<?>, String>>();
 
     protected int csErrorCode;
+
+    protected String messageKey = null;
+    protected Map<String, Object> metadata = null;
 
     public CloudRuntimeException(String message) {
         super(message);
@@ -91,6 +95,11 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     public CloudRuntimeException(Throwable t) {
         super(t.getMessage(), t);
+        if (t instanceof CloudRuntimeException) {
+            CloudRuntimeException cre = (CloudRuntimeException)t;
+            setMessageKey(cre.getMessageKey());
+            setMetadata(cre.getMetadata());
+        }
     }
 
     @Override
@@ -137,5 +146,21 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
             uuidList.add(new Pair<Class<?>, String>(Class.forName(clzName), val));
         }
+    }
+
+    public String getMessageKey() {
+        return messageKey;
+    }
+
+    public void setMessageKey(String messageKey) {
+        this.messageKey = messageKey;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 }
