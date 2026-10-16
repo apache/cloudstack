@@ -116,6 +116,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
@@ -228,6 +229,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     ResourceManager _resourceMgr;
     @Inject
     ManagementServiceConfiguration mgmtServiceConf;
+    @Inject
+    protected PhysicalNetworkDao _physicalNetworkDao;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
@@ -2200,12 +2203,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 return;
             }
 
-            if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
+            HypervisorType hypervisorType = ((StartupRoutingCommand) cmd).getHypervisorType();
+            if (hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.LXC) {
                 Map<String, String> params = new HashMap<>();
                 params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                 params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
+                if (hypervisorType == HypervisorType.KVM) {
+                    params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(host.getDataCenterId())));
+                }
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
@@ -2281,6 +2288,24 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.debug("Propagating changes on host parameters to the agents");
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
+        }
+    }
+
+    @Override
+    public void propagateSystemTrafficLabelsToAgents(long zoneId) {
+        final Map<String, String> params = new HashMap<>();
+        params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(zoneId)));
+
+        final List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, zoneId);
+        for (final HostVO host : hosts) {
+            if (host.getHypervisorType() != HypervisorType.KVM) {
+                continue;
+            }
+            try {
+                easySend(host.getId(), new SetHostParamsCommand(params));
+            } catch (Exception e) {
+                logger.debug("Failed to send the system traffic labels to the agent of host [{}].", host, e);
+            }
         }
     }
 
