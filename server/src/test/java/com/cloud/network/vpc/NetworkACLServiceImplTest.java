@@ -543,6 +543,48 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
+    public void validatePortsAreUsableWithProtocolTestTcpAndUdpByNameOrNumber() {
+        for (String protocol : new String[] {"tcp", "udp", "6", "17"}) {
+            networkAclServiceImpl.validatePortsAreUsableWithProtocol(protocol, 22, 23);
+        }
+    }
+
+    @Test
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithoutPorts() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("47", null, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithPorts() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("132", 22, 22);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolTestOtherProtocolNumberWithStartPortOnly() {
+        networkAclServiceImpl.validatePortsAreUsableWithProtocol("47", 22, null);
+    }
+
+    @Test
+    public void validatePortsAreUsableWithProtocolOnUpdateTestStoredPortsKeptWhenProtocolNotGiven() {
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
+        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("47");
+
+        networkAclServiceImpl.validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmdMock, networkAclItemVoMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePortsAreUsableWithProtocolOnUpdateTestProtocolChangedOntoStoredPorts() {
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn("47");
+        Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("47");
+        Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(22);
+        Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(22);
+
+        networkAclServiceImpl.validatePortsAreUsableWithProtocolOnUpdate(updateNetworkACLItemCmdMock, networkAclItemVoMock);
+    }
+
+    @Test
     public void validateSourceCidrListTestEmptySourceCirdList() {
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(new ArrayList<>());
         networkAclServiceImpl.validateSourceCidrList(networkAclItemVoMock);
